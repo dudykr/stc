@@ -17,11 +17,11 @@ use swc_common::{
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::{resolve::Resolve, resolvers::node::NodeModulesResolver, TargetEnv};
-use tokio::sync::Mutex;
+use tokio::{spawn, sync::Mutex};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
-    lsp_types::*,
+    lsp_types::{notification::Progress, *},
     Client, LanguageServer, LspService, Server,
 };
 use tracing::info;
@@ -71,13 +71,13 @@ struct Data {
 
 /// A directory with `tsconfig.json` is treated as a package.
 struct TsProject {
-    checker: Checker,
+    checker: Arc<Checker>,
 
     open_cnt: usize,
 }
 
 impl StcLangServer {
-    fn create_project(&self) -> TsProject {
+    fn create_project(&self, project_root_dir: Option<&Path>) -> TsProject {
         let cm = Arc::new(SourceMap::default());
         let handler = Arc::new(Handler::with_tty_emitter(ColorConfig::Never, true, false, Some(cm.clone())));
 
@@ -101,6 +101,17 @@ impl StcLangServer {
             // TODO: tsc resolver
             NODE_RESOLVER.clone(),
         );
+        let checker = Arc::new(checker);
+
+        if let Some(project_root_dir) = project_root_dir {
+            spawn({
+                let project_root_dir = project_root_dir.to_owned();
+                let checker = checker.clone();
+                // TODO: parse tsconfig.json
+                async move { checker.load_typings(&project_root_dir, None, None) }
+            });
+        }
+
         TsProject { checker, open_cnt: 0 }
     }
 
@@ -115,14 +126,17 @@ impl StcLangServer {
                 log::warn!("{:?}", e);
 
                 let mut p = self.data.lock().await;
-                let project = p.project_without_root.get_or_insert_with(|| self.create_project());
+                let project = p.project_without_root.get_or_insert_with(|| self.create_project(None));
 
                 return op(project);
             }
         };
-        let parent = tsconfig_path.parent().unwrap();
+        let project_root_dir = tsconfig_path.parent().unwrap();
         let mut data = self.data.lock().await;
-        let project = data.projects.entry(parent.to_path_buf()).or_insert_with(|| self.create_project());
+        let project = data
+            .projects
+            .entry(project_root_dir.to_path_buf())
+            .or_insert_with(|| self.create_project(Some(&project_root_dir)));
 
         op(project)
     }
