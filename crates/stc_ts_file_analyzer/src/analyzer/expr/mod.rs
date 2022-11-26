@@ -729,6 +729,19 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        match declared {
+            Key::Computed(declared) => {
+                if self.check_if_type_matches_key(span, cur, &declared.ty, true) {
+                    return true;
+                }
+            }
+            _ => {
+                if declared.type_eq(cur) {
+                    return true;
+                }
+            }
+        }
+
         match cur {
             Key::Computed(cur) => {
                 if self.check_if_type_matches_key(span, declared, &cur.ty, true) {
