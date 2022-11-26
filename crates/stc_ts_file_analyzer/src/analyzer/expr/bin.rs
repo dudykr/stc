@@ -1563,6 +1563,10 @@ impl Analyzer<'_, '_> {
                     let possible = match prop_ty.normalize() {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) => false,
                         _ => self.castable(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?,
                     };
                     if possible {
