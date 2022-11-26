@@ -9,7 +9,7 @@ use std::{
 
 use anyhow::Context;
 use clap::Args;
-use futures_util::{future::Shared, FutureExt, TryFutureExt};
+use futures_util::{future::Shared, FutureExt};
 use once_cell::sync::Lazy;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
@@ -22,7 +22,7 @@ use swc_common::{
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::{resolve::Resolve, resolvers::node::NodeModulesResolver, TargetEnv};
-use tokio::{spawn, sync::Mutex, task::JoinHandle};
+use tokio::{spawn, sync::Mutex};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
@@ -158,6 +158,10 @@ impl StcLangServer {
             .or_insert_with(|| self.create_project(Some(project_root_dir)));
 
         op(project)
+    }
+
+    async fn checker_for(&self, uri: &Url) -> Arc<Checker> {
+        self.with_project(uri, |project| project.checker.clone()).await
     }
 }
 
