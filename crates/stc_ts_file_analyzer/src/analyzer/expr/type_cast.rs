@@ -251,6 +251,10 @@ impl Analyzer<'_, '_> {
         let from = from.normalize();
         let to = to.normalize();
 
+        if from.type_eq(to) {
+            return Ok(true);
+        }
+
         // Overlaps with all types.
         if from.is_any() || from.is_kwd(TsKeywordTypeKind::TsNullKeyword) || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(true);
