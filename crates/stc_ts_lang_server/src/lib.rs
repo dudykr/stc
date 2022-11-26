@@ -1,10 +1,15 @@
+#![feature(box_syntax)]
+
 use std::{
+    future::Future,
     path::{Path, PathBuf},
+    pin::Pin,
     sync::Arc,
 };
 
 use anyhow::Context;
 use clap::Args;
+use futures_util::{future::Shared, FutureExt, TryFutureExt};
 use once_cell::sync::Lazy;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
@@ -17,7 +22,7 @@ use swc_common::{
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::{resolve::Resolve, resolvers::node::NodeModulesResolver, TargetEnv};
-use tokio::{spawn, sync::Mutex};
+use tokio::{spawn, sync::Mutex, task::JoinHandle};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
@@ -69,9 +74,13 @@ struct Data {
     projects: AHashMap<PathBuf, TsProject>,
 }
 
+type OnceFuture<T> = Pin<Box<dyn Send + Future<Output = T>>>;
+
 /// A directory with `tsconfig.json` is treated as a package.
 struct TsProject {
     checker: Arc<Checker>,
+
+    load_typings: Option<Shared<OnceFuture<()>>>,
 
     open_cnt: usize,
 }
@@ -103,16 +112,26 @@ impl StcLangServer {
         );
         let checker = Arc::new(checker);
 
-        if let Some(project_root_dir) = project_root_dir {
-            spawn({
-                let project_root_dir = project_root_dir.to_owned();
-                let checker = checker.clone();
-                // TODO: parse tsconfig.json
-                async move { checker.load_typings(&project_root_dir, None, None) }
-            });
-        }
+        let load_typings = if let Some(project_root_dir) = project_root_dir {
+            let project_root_dir = project_root_dir.to_owned();
+            let checker = checker.clone();
+            let fut = Box::pin(async move {
+                let _ = spawn({
+                    // TODO: parse tsconfig.json
+                    async move { checker.load_typings(&project_root_dir, None, None) }
+                })
+                .await;
+            }) as OnceFuture<_>;
+            Some(fut.shared())
+        } else {
+            None
+        };
 
-        TsProject { checker, open_cnt: 0 }
+        TsProject {
+            checker,
+            open_cnt: 0,
+            load_typings,
+        }
     }
 
     async fn with_project<F, R>(&self, uri: &Url, op: F) -> R
