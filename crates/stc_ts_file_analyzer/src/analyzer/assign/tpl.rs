@@ -1,7 +1,7 @@
 #![allow(clippy::if_same_then_else)]
 
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{ctx, debug::dump_type_as_string, ErrorKind};
 use stc_ts_types::{LitType, TplType, Type};
 
 use crate::{
@@ -24,12 +24,32 @@ impl Analyzer<'_, '_> {
     /// orders.
     ///
     /// After splitting, we can check if each element is assignable.
-    pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
-        let r = r.normalize();
+        let r_ty = r_ty.normalize();
 
-        match r {
+        match r_ty {
             Type::Tpl(r) => {
+                let _ctx = ctx!(format!(
+                    "lhs = {}\nrhs = {}",
+                    dump_type_as_string(&Type::Tpl(l.clone())),
+                    dump_type_as_string(r_ty)
+                ));
+
+                // Fisrt
+                if let (Some(l), Some(r)) = (&l.quasis.first().unwrap().cooked, &r.quasis.first().unwrap().cooked) {
+                    if !r.starts_with(&**l) {
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("starts_with"));
+                    }
+                }
+
+                // Last
+                if let (Some(l), Some(r)) = (&l.quasis.last().unwrap().cooked, &r.quasis.last().unwrap().cooked) {
+                    if !r.ends_with(&**l) {
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("ends_with"));
+                    }
+                }
+
                 // TOOD(kdy1): We should iterator over two types, and check if each element is
                 // assignable.
 
