@@ -9,7 +9,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::stack;
+use stc_utils::{cache::Freeze, stack};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    #[instrument(skip(self, facts, ty))]
+    #[instrument(skip_all)]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.is_builtin {
             return ty;
@@ -386,6 +386,33 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             Ok(stack) => stack,
             Err(_) => return ty,
         };
+
+        // typeof x === 'object'
+        // => x = {} | undefined | null
+        if ty.is_unknown() && self.facts.contains(TypeFacts::TypeofEQObject) {
+            ty = Type::Union(Union {
+                span,
+                types: vec![
+                    Type::TypeLit(TypeLit {
+                        span,
+                        members: Default::default(),
+                        metadata: Default::default(),
+                    }),
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                    }),
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        metadata: Default::default(),
+                    }),
+                ],
+                metadata: Default::default(),
+            })
+            .freezed();
+        }
 
         // TODO(kdy1): Don't do anything if type fact is none.
 

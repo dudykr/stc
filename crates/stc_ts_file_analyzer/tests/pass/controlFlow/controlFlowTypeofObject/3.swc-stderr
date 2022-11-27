@@ -1,0 +1,73 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:7:5]
+ 7 | if (x == null) {
+   :     ^
+   `----
+
+Error: 
+  > unknown
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:7:5]
+ 7 | if (x == null) {
+   :     ^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:10:5]
+ 10 | if (typeof x === 'object') {
+    :            ^
+    `----
+
+Error: 
+  > unknown
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:10:5]
+ 10 | if (typeof x === 'object') {
+    :     ^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:10:5]
+ 10 | if (typeof x === 'object') {
+    :     ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:11:9]
+ 11 | obj(x);
+    :     ^
+    `----
+
+Error: 
+  > ({
+  | } | null)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:11:9]
+ 11 | obj(x);
+    : ^^^
+    `----
+
+Error: 
+  > (x: object) => void
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:11:9]
+ 11 | obj(x);
+    : ^^^^^^
+    `----
+
+Error: 
+  > void

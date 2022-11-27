@@ -216,8 +216,29 @@ impl TypeFacts {
             "boolean" => TypeFacts::BaseBooleanStrictFacts,
             "symbol" => TypeFacts::SymbolStrictFacts,
             "undefined" => TypeFacts::EQUndefined,
-            "object" => TypeFacts::ObjectStrictFacts,
-            "function" => TypeFacts::FunctionStrictFacts,
+            "object" => {
+                TypeFacts::TypeofEQObject
+                    | TypeFacts::TypeofNEString
+                    | TypeFacts::TypeofNENumber
+                    | TypeFacts::TypeofNEBigInt
+                    | TypeFacts::TypeofNEBoolean
+                    | TypeFacts::TypeofNESymbol
+                    | TypeFacts::TypeofNEFunction
+                    | TypeFacts::NEUndefined
+            }
+            "function" => {
+                TypeFacts::TypeofEQFunction
+                    | TypeFacts::TypeofNEString
+                    | TypeFacts::TypeofNENumber
+                    | TypeFacts::TypeofNEBigInt
+                    | TypeFacts::TypeofNEBoolean
+                    | TypeFacts::TypeofNESymbol
+                    | TypeFacts::TypeofNEObject
+                    | TypeFacts::NEUndefined
+                    | TypeFacts::NENull
+                    | TypeFacts::NEUndefinedOrNull
+                    | TypeFacts::Truthy
+            }
             _ => return None,
         })
     }

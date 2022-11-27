@@ -331,9 +331,9 @@ impl Analyzer<'_, '_> {
                 }) {
                     let ty = ty.clone().freezed();
                     if is_eq {
-                        self.add_deep_type_fact(span, name, ty, false);
-                    } else {
                         self.add_deep_type_fact(span, name, ty, true);
+                    } else {
+                        self.add_deep_type_fact(span, name, ty, false);
                     }
                 }
 
@@ -354,6 +354,7 @@ impl Analyzer<'_, '_> {
                 }) {
                     if self.ctx.in_cond {
                         let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+
                         prevent_generalize(&mut r);
                         r.make_clone_cheap();
 
