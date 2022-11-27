@@ -2009,6 +2009,7 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
+types/intersection/intersectionThisTypes.ts
 types/intersection/intersectionTypeAssignment.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
