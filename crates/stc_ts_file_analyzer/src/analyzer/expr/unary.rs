@@ -148,13 +148,15 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Some(Type::Keyword(KeywordType {
-            kind: TsKeywordTypeKind::TsUnknownKeyword,
-            ..
-        })) = arg_ty
-        {
-            debug_assert!(!arg.span().is_dummy());
-            return Err(ErrorKind::Unknown { span: arg.span() }.into());
+        if *op != op!("!") {
+            if let Some(Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                ..
+            })) = arg_ty
+            {
+                debug_assert!(!arg.span().is_dummy());
+                return Err(ErrorKind::Unknown { span: arg.span() }.into());
+            }
         }
 
         if let Some(arg) = arg_ty {
