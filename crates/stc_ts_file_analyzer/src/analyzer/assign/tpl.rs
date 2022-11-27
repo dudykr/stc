@@ -1,7 +1,7 @@
 #![allow(clippy::if_same_then_else)]
 
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_types::{LitType, TplType, Type};
 
 use crate::{
@@ -30,17 +30,19 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Tpl(r) => {
+                let _ctx = ctx!(format!("lhs = {:?}\nrhs = {:?}", l, r));
+
                 // Fisrt
                 if let (Some(l), Some(r)) = (&l.quasis.first().unwrap().cooked, &r.quasis.first().unwrap().cooked) {
                     if !r.starts_with(&**l) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("rhs does not start with lhs"));
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
                 }
 
                 // Last
                 if let (Some(l), Some(r)) = (&l.quasis.last().unwrap().cooked, &r.quasis.last().unwrap().cooked) {
                     if !l.ends_with(&**r) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("lhs does not end with rhs"));
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
                 }
 
