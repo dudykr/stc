@@ -30,6 +30,20 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Tpl(r) => {
+                // Fisrt
+                if let (Some(l), Some(r)) = (&l.quasis.first().unwrap().cooked, &r.quasis.first().unwrap().cooked) {
+                    if !r.starts_with(&**l) {
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("rhs does not start with lhs"));
+                    }
+                }
+
+                // Last
+                if let (Some(l), Some(r)) = (&l.quasis.last().unwrap().cooked, &r.quasis.last().unwrap().cooked) {
+                    if !l.ends_with(&**r) {
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("lhs does not end with rhs"));
+                    }
+                }
+
                 // TOOD(kdy1): We should iterator over two types, and check if each element is
                 // assignable.
 
