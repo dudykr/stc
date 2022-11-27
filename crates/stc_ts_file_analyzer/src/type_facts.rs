@@ -226,7 +226,19 @@ impl TypeFacts {
                     | TypeFacts::TypeofNEFunction
                     | TypeFacts::NEUndefined
             }
-            "function" => TypeFacts::TypeofEQFunction,
+            "function" => {
+                TypeFacts::TypeofEQFunction
+                    | TypeFacts::TypeofNEString
+                    | TypeFacts::TypeofNENumber
+                    | TypeFacts::TypeofNEBigInt
+                    | TypeFacts::TypeofNEBoolean
+                    | TypeFacts::TypeofNESymbol
+                    | TypeFacts::TypeofNEObject
+                    | TypeFacts::NEUndefined
+                    | TypeFacts::NENull
+                    | TypeFacts::NEUndefinedOrNull
+                    | TypeFacts::Truthy
+            }
             _ => return None,
         })
     }
