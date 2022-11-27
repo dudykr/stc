@@ -210,13 +210,22 @@ add_bitflags!(
 impl TypeFacts {
     pub fn typeof_eq(s: &str) -> Option<Self> {
         Some(match s {
-            "string" => TypeFacts::TypeofEQString,
-            "number" => TypeFacts::TypeofEQNumber,
-            "bigint" => TypeFacts::TypeofEQBigInt,
-            "boolean" => TypeFacts::TypeofEQBoolean,
-            "symbol" => TypeFacts::TypeofEQSymbol,
+            "string" => TypeFacts::BaseStringStrictFacts,
+            "number" => TypeFacts::BaseNumberStrictFacts,
+            "bigint" => TypeFacts::BaseBigIntStrictFacts,
+            "boolean" => TypeFacts::BaseBooleanStrictFacts,
+            "symbol" => TypeFacts::SymbolStrictFacts,
             "undefined" => TypeFacts::EQUndefined,
-            "object" => TypeFacts::TypeofEQObject,
+            "object" => {
+                TypeFacts::TypeofEQObject
+                    | TypeFacts::TypeofNEString
+                    | TypeFacts::TypeofNENumber
+                    | TypeFacts::TypeofNEBigInt
+                    | TypeFacts::TypeofNEBoolean
+                    | TypeFacts::TypeofNESymbol
+                    | TypeFacts::TypeofNEFunction
+                    | TypeFacts::NEUndefined
+            }
             "function" => TypeFacts::TypeofEQFunction,
             _ => return None,
         })
