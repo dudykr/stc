@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    #[instrument(skip(self, facts, ty))]
+    #[instrument(skip_all)]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.is_builtin {
             return ty;
