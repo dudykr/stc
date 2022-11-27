@@ -53,6 +53,7 @@ impl Analyzer<'_, '_> {
                         allow_missing_fields: true,
                         allow_assignment_of_param: true,
                         skip_call_and_constructor_elem: true,
+                        treat_array_as_interfaces: true,
                         ..Default::default()
                     },
                 )?;

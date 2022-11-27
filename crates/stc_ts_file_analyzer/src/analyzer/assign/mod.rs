@@ -161,6 +161,8 @@ pub(crate) struct AssignOpts {
 
     // Method definitions are bivariant (method shorthand)
     pub is_params_of_method_definition: bool,
+
+    pub treat_array_as_interfaces: bool,
 }
 
 #[derive(Default)]
@@ -1491,6 +1493,12 @@ impl Analyzer<'_, '_> {
                         };
 
                         if res.is_ok() {
+                            return Ok(());
+                        }
+                    }
+
+                    if opts.treat_array_as_interfaces {
+                        if rhs.is_type_lit() {
                             return Ok(());
                         }
                     }
