@@ -4011,28 +4011,6 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        // TODO(kdy1): This seems wrong. We should remove this if block and preserve
-        // only prevent_generalization part
-        if let Some(type_ann) = type_ann {
-            if let Type::Tpl(TplType { span, quasis, types, .. }) = self
-                .normalize(None, Cow::Borrowed(type_ann.normalize_instance()), Default::default())?
-                .as_ref()
-                .normalize()
-            {
-                return Ok(Type::Tpl(TplType {
-                    span: *span,
-                    quasis: quasis.clone(),
-                    types: types.clone(),
-                    metadata: TplTypeMetadata {
-                        common: CommonTypeMetadata {
-                            prevent_generalization: true,
-                            ..Default::default()
-                        },
-                    },
-                }));
-            }
-        }
-
         let types = e
             .exprs
             .iter()
