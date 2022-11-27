@@ -19,6 +19,7 @@ use crate::{
         Analyzer, Ctx,
     },
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
+    type_facts::TypeFacts,
     validator,
     validator::ValidateWith,
     VResult,
@@ -447,10 +448,13 @@ impl Analyzer<'_, '_> {
             RProp::Method(ref p) => {
                 let key = p.key.validate_with(self)?;
                 let computed = matches!(p.key, RPropName::Computed(..));
-                let method_type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
-                        .ok()
-                });
+                let method_type_ann = object_type
+                    .cloned()
+                    .map(|ty| self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, ty))
+                    .and_then(|obj| {
+                        self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                            .ok()
+                    });
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> VResult<_> {
