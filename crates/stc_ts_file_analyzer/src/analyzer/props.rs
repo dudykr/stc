@@ -1,12 +1,10 @@
 use std::borrow::Cow;
 
-use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RComputedPropName, RExpr, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName};
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
-use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -459,19 +457,7 @@ impl Analyzer<'_, '_> {
                         child.ctx.in_async = p.function.is_async;
                         child.ctx.in_generator = p.function.is_generator;
 
-                        if let Some(Type::Function(ty)) = method_type_ann.as_ref().map(|ty| ty.normalize()) {
-                            for p in p.function.params.iter().zip_longest(ty.params.iter()) {
-                                if let EitherOrBoth::Both(param, ty) = p {
-                                    // Store type infomations, so the pattern validator
-                                    // can use correct type.
-                                    if let Some(pat_node_id) = param.pat.node_id() {
-                                        if let Some(m) = &mut child.mutations {
-                                            m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        child.apply_fn_type_ann(p.function.params.iter().map(|v| &v.pat), method_type_ann.as_ref());
 
                         // We mark as wip
                         if !computed {
