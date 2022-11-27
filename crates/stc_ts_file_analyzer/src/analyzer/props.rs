@@ -19,6 +19,7 @@ use crate::{
         Analyzer, Ctx,
     },
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
+    type_facts::TypeFacts,
     validator,
     validator::ValidateWith,
     VResult,
@@ -387,8 +388,12 @@ impl Analyzer<'_, '_> {
                 let key = kv.key.validate_with(self)?;
                 let computed = matches!(kv.key, RPropName::Computed(_));
 
+                let object_type = object_type
+                    .cloned()
+                    .map(|ty| self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, ty));
+
                 let type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
                 });
 
