@@ -39,14 +39,14 @@ impl Analyzer<'_, '_> {
                 // Fisrt
                 if let (Some(l), Some(r)) = (&l.quasis.first().unwrap().cooked, &r.quasis.first().unwrap().cooked) {
                     if !r.starts_with(&**l) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("starts_with"));
                     }
                 }
 
                 // Last
                 if let (Some(l), Some(r)) = (&l.quasis.last().unwrap().cooked, &r.quasis.last().unwrap().cooked) {
-                    if !l.ends_with(&**r) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                    if !r.ends_with(&**l) {
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("ends_with"));
                     }
                 }
 
