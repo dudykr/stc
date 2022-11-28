@@ -4054,7 +4054,19 @@ impl Analyzer<'_, '_> {
                 nt.push(ty);
             }
 
-            nq.push(quasis.next().unwrap());
+            if !cur_str.is_empty() {
+                cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
+
+                nq.push(RTplElement {
+                    span: e.span,
+                    node_id: NodeId::invalid(),
+                    raw: cur_str.clone().into(),
+                    cooked: Some(take(&mut cur_str).into()),
+                    tail: false,
+                });
+            } else {
+                nq.push(quasis.next().unwrap());
+            }
 
             debug_assert_eq!(nq.len(), nt.len() + 1);
 
