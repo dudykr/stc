@@ -4054,7 +4054,7 @@ impl Analyzer<'_, '_> {
                 nt.push(ty);
             }
 
-            debug_assert_eq!(nq.len() + 1, nt.len());
+            debug_assert_eq!(nq.len(), nt.len() + 1);
 
             return Ok(Type::Tpl(TplType {
                 span: e.span,
