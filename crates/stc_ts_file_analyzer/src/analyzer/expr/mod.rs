@@ -2,6 +2,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
+    mem::take,
     time::{Duration, Instant},
 };
 
@@ -9,8 +10,8 @@ use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, ROptChainBase,
-    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName,
-    RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTplElement,
+    RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
@@ -4017,9 +4018,71 @@ impl Analyzer<'_, '_> {
             .map(|e| e.validate_with_default(self).map(|v| v.freezed()))
             .collect::<VResult<Vec<_>>>()?;
 
+        let quasis = e.quasis.clone();
+
+        if types.iter().any(|ty| ty.is_str_lit()) && quasis.iter().all(|q| q.cooked.is_some()) {
+            // We have to concat string literals
+            //
+            // https://github.com/dudykr/stc/issues/334
+
+            let mut nq = Vec::with_capacity(quasis.len());
+            let mut nt = Vec::with_capacity(types.len());
+            let mut quasis = quasis.into_iter();
+
+            let mut cur_str = String::new();
+
+            for ty in types {
+                if let Type::Lit(LitType { lit: RTsLit::Str(v), .. }) = ty.normalize() {
+                    cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
+                    cur_str.push_str(&v.value);
+                    continue;
+                }
+
+                if !cur_str.is_empty() {
+                    cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
+
+                    nq.push(RTplElement {
+                        span: e.span,
+                        node_id: NodeId::invalid(),
+                        raw: cur_str.clone().into(),
+                        cooked: Some(take(&mut cur_str).into()),
+                        tail: false,
+                    });
+                } else {
+                    nq.push(quasis.next().unwrap());
+                }
+                nt.push(ty);
+            }
+
+            if !cur_str.is_empty() {
+                cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
+
+                nq.push(RTplElement {
+                    span: e.span,
+                    node_id: NodeId::invalid(),
+                    raw: cur_str.clone().into(),
+                    cooked: Some(take(&mut cur_str).into()),
+                    tail: false,
+                });
+            } else {
+                nq.push(quasis.next().unwrap());
+            }
+
+            debug_assert_eq!(nq.len(), nt.len() + 1);
+
+            return Ok(Type::Tpl(TplType {
+                span: e.span,
+                quasis: nq,
+                types: nt,
+                metadata: TplTypeMetadata {
+                    common: CommonTypeMetadata { ..Default::default() },
+                },
+            }));
+        }
+
         Ok(Type::Tpl(TplType {
             span: e.span,
-            quasis: e.quasis.clone(),
+            quasis,
             types,
             metadata: TplTypeMetadata {
                 common: CommonTypeMetadata { ..Default::default() },
