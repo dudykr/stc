@@ -4031,7 +4031,7 @@ impl Analyzer<'_, '_> {
 
             let mut cur_str = String::new();
 
-            for (idx, ty) in types.into_iter().enumerate() {
+            for ty in types {
                 if let Type::Lit(LitType { lit: RTsLit::Str(v), .. }) = ty.normalize() {
                     cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
                     cur_str.push_str(&v.value);
