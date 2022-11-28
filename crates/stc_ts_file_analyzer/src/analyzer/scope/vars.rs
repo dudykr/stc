@@ -417,7 +417,9 @@ impl Analyzer<'_, '_> {
                 //
                 let mut used_keys = vec![];
 
-                for prop in &obj.props {
+                for (idx, prop) in obj.props.iter().enumerate() {
+                    let is_last = idx == obj.props.len() - 1;
+
                     match prop {
                         RObjectPatProp::KeyValue(prop) => {
                             let key = prop.key.validate_with(self)?;
@@ -646,6 +648,10 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         RObjectPatProp::Rest(pat) => {
+                            if !is_last {
+                                return Err(ErrorKind::RestPropertyNotLast { span: pat.span }.into());
+                            }
+
                             let rest_ty = ty
                                 .as_ref()
                                 .try_map(|ty| {

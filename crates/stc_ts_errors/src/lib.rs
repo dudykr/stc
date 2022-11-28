@@ -1429,6 +1429,11 @@ pub enum ErrorKind {
     ShouldBeInstanceMethod {
         span: Span,
     },
+
+    /// TS2462
+    RestPropertyNotLast {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1928,6 +1933,8 @@ impl ErrorKind {
             ErrorKind::ShouldBeStaticMethod { .. } => 2387,
 
             ErrorKind::ShouldBeInstanceMethod { .. } => 2388,
+
+            ErrorKind::RestPropertyNotLast { .. } => 2462,
 
             ErrorKind::DefinedWithAccessorInSuper { .. } => 2610,
 
