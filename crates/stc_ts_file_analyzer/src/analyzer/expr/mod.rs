@@ -4054,6 +4054,8 @@ impl Analyzer<'_, '_> {
                 nt.push(ty);
             }
 
+            nq.push(quasis.next().unwrap());
+
             debug_assert_eq!(nq.len(), nt.len() + 1);
 
             return Ok(Type::Tpl(TplType {
