@@ -1134,7 +1134,7 @@ impl Analyzer<'_, '_> {
     /// Otherwise, this method calculates type facts created by `if (a.foo) ;`.
     /// In this case, this method tests if `type_facts` matches the type of
     /// property and returns `never` if it does not.
-    pub(super) fn filter_types_with_property(
+    pub(super) fn narrow_types_with_property(
         &mut self,
         span: Span,
         src: &Type,
@@ -1156,7 +1156,7 @@ impl Analyzer<'_, '_> {
         if let Type::Union(ty) = src.normalize() {
             let mut new_types = vec![];
             for ty in &ty.types {
-                let ty = self.filter_types_with_property(span, ty, property, type_facts)?;
+                let ty = self.narrow_types_with_property(span, ty, property, type_facts)?;
                 new_types.push(ty);
             }
             new_types.retain(|ty| !ty.is_never());

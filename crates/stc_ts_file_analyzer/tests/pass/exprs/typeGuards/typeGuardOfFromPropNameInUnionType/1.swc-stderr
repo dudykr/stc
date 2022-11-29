@@ -1,0 +1,72 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:5:5]
+ 5 | if ("a" in x) {
+   :            ^
+   `----
+
+Error: 
+  > (A | B)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:5:5]
+ 5 | if ("a" in x) {
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:6:9]
+ 6 | x.a = "1";
+   : ^
+   `----
+
+Error: 
+  > A
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:6:9]
+ 6 | x.a = "1";
+   : ^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:6:9]
+ 6 | x.a = "1";
+   : ^^^^^^^^^
+   `----
+
+Error: 
+  > "1"
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:8:9]
+ 8 | x.b = 1;
+   : ^
+   `----
+
+Error: 
+  > B
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:8:9]
+ 8 | x.b = 1;
+   : ^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/1.ts:8:9]
+ 8 | x.b = 1;
+   : ^^^^^^^
+   `----
+
+Error: 
+  > 1
