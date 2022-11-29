@@ -1326,6 +1326,7 @@ expressions/typeGuards/typeGuardOfFormExpr1AndExpr2.ts
 expressions/typeGuards/typeGuardOfFormExpr1OrExpr2.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
 expressions/typeGuards/typeGuardOfFormInstanceOf.ts
+expressions/typeGuards/typeGuardOfFormIsType.ts
 expressions/typeGuards/typeGuardOfFormNotExpr.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
 expressions/typeGuards/typeGuardOfFormTypeOfFunction.ts

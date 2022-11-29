@@ -3094,20 +3094,22 @@ impl Analyzer<'_, '_> {
                 let mut new_types = vec![];
 
                 let mut upcasted = false;
-                for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
+                for ty in orig_ty.iter_union() {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
                         upcasted = true;
+                        new_types.push(new_ty.clone().into_owned());
+                    } else if let Some(true) = self.extends(span, ty, &new_ty, Default::default()) {
                         new_types.push(ty.clone());
                     }
                 }
 
                 // TODO(kdy1): Use super class instread of
-                if !upcasted {
+                if !upcasted && new_types.is_empty() {
                     new_types.push(new_ty.clone().into_owned());
                 }
 
                 new_types.dedup_type();
-                let mut new_ty = Type::union(new_types);
+                let mut new_ty = Type::new_union_without_dedup(span, new_types);
                 if upcasted {
                     new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
