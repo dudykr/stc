@@ -3107,7 +3107,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 new_types.dedup_type();
-                let mut new_ty = Type::union(new_types);
+                let mut new_ty = Type::new_union_without_dedup(span, new_types);
                 if upcasted {
                     new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
