@@ -697,7 +697,9 @@ impl Analyzer<'_, '_> {
                         if let Some(property) = left {
                             let new_ty = self.narrow_types_with_property(span, &rt, &property, None)?.fixed().freezed();
 
-                            self.add_deep_type_fact(span, name, new_ty, true);
+                            self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
+
+                            self.cur_facts.false_facts.excludes.entry(name).or_default().push(new_ty);
                         }
                     }
                 }
