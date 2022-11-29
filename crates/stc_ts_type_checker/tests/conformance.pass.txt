@@ -1846,6 +1846,7 @@ parser/ecmascript5/parserUsingConstructorAsIdentifier.ts
 parser/ecmascript5/parserVoidExpression1.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
+parser/ecmascript6/ComputedPropertyNames/parserCambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName17.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName2.ts

@@ -1228,10 +1228,20 @@ impl Analyzer<'_, '_> {
 
                     match id_ctx {
                         IdCtx::Var => {
-                            let res = self
-                                .env
-                                .get_global_var(span, sym)
-                                .context("tried to access a prperty of `globalThis`");
+                            // `globalThis.name` need to be treated as a special case.
+                            // See https://github.com/dudykr/stc/issues/337
+                            let res = if sym == "name" {
+                                Err(ErrorKind::NoSuchProperty {
+                                    span,
+                                    obj: Some(box obj.clone()),
+                                    prop: Some(box Key::Normal { span, sym: sym.clone() }),
+                                }
+                                .into())
+                            } else {
+                                self.env
+                                    .get_global_var(span, sym)
+                                    .context("tried to access a property of `globalThis`")
+                            };
 
                             // TODO(kdy1): Apply correct rule
                             if res.is_err() {
