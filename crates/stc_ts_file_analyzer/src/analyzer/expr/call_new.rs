@@ -3097,7 +3097,7 @@ impl Analyzer<'_, '_> {
                 for ty in orig_ty.iter_union() {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
                         upcasted = true;
-                        new_types.push(ty.clone());
+                        new_types.push(new_ty.clone().into_owned());
                     }
                 }
 
