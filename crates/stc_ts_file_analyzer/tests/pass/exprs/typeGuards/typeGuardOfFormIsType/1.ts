@@ -8,16 +8,9 @@ class C2 {
 class D1 extends C1 {
     p3: number;
 }
-var str: string;
 var num: number;
 
-function isC1(x: any): x is C1 {
-    return true;
-}
 
-function isC2(x: any): x is C2 {
-    return true;
-}
 
 function isD1(x: any): x is D1 {
     return true;
