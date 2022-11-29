@@ -5,7 +5,8 @@ use std::{
 
 use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RTsEntityName, RTsThisTypeOrIdent,
+    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RTsEntityName,
+    RTsThisTypeOrIdent,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
@@ -147,6 +148,7 @@ impl TryFrom<&'_ RExpr> for Name {
 
                 this.into()
             }),
+            RExpr::Paren(RParenExpr { expr, .. }) => (&**expr).try_into(),
 
             // TODO
             _ => Err(()),
