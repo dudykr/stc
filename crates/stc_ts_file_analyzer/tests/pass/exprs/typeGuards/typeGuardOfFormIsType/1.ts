@@ -17,4 +17,4 @@ function isD1(x: any): x is D1 {
 }
 
 export var c1Orc2: C1 | C2;
-num = isD1(c1Orc2) && c1Orc2.p3; // D1
+isD1(c1Orc2) && c1Orc2.p3; // D1
