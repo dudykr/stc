@@ -24,7 +24,4 @@ function isD1(x: any): x is D1 {
 }
 
 export var c1Orc2: C1 | C2;
-str = isC1(c1Orc2) && c1Orc2.p1; // C1
-num = isC2(c1Orc2) && c1Orc2.p2; // C2
-str = isD1(c1Orc2) && c1Orc2.p1; // D1
 num = isD1(c1Orc2) && c1Orc2.p3; // D1
