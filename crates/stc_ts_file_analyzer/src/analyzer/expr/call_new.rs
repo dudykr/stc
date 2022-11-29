@@ -3098,11 +3098,13 @@ impl Analyzer<'_, '_> {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
                         upcasted = true;
                         new_types.push(new_ty.clone().into_owned());
+                    } else if let Some(true) = self.extends(span, ty, &new_ty, Default::default()) {
+                        new_types.push(ty.clone());
                     }
                 }
 
                 // TODO(kdy1): Use super class instread of
-                if !upcasted {
+                if !upcasted && new_types.is_empty() {
                     new_types.push(new_ty.clone().into_owned());
                 }
 
