@@ -3094,7 +3094,7 @@ impl Analyzer<'_, '_> {
                 let mut new_types = vec![];
 
                 let mut upcasted = false;
-                for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
+                for ty in orig_ty.iter_union() {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
                         upcasted = true;
                         new_types.push(ty.clone());
