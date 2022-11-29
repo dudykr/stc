@@ -459,7 +459,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             return None;
         }
 
-        panic!("Failed to validate.\n{}\n{}", res.replace("$DIR/", "/"), file_name.display())
+        panic!("Failed to validate")
     } else {
         Some(res)
     }
