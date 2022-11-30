@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
                     .context("global this"));
                 }
 
-                return self.assign_with_opts(data, &to, rhs, opts);
+                self.assign_with_opts(data, &to, rhs, opts)
             }
             QueryExpr::Import(_) => {
                 unimplemented!("assignment of query type with import")
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
                 .context("global this"));
             }
 
-            return self.assign_with_opts(data, to, &rhs, opts);
+            self.assign_with_opts(data, to, &rhs, opts)
         } else {
             unimplemented!("assignment of query type with import")
         }

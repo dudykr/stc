@@ -48,13 +48,13 @@ where
             buf
         };
 
-        let test_name = format!("{}::{}", dir_name, file_name.replace("/", "::"));
+        let test_name = format!("{}::{}", dir_name, file_name.replace('/', "::"));
         let test_fn = op(entry.path().to_path_buf());
         let (test_fn, ignore) = match test_fn {
             Some(v) => (v, false),
             None => ((box || {}) as Box<dyn FnOnce() + Send + Sync>, true),
         };
-        let ignore = ignore || test_name.starts_with(".") || test_name.contains("::.");
+        let ignore = ignore || test_name.starts_with('.') || test_name.contains("::.");
 
         tests.push(TestDescAndFn {
             desc: TestDesc {

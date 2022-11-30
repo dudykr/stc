@@ -99,27 +99,24 @@ impl Debug for Error {
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
+    #[allow(clippy::only_used_in_recursion)]
     fn validate(&self, err: &Error) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
             let s = format!("{:?}", err);
-            if var != "" && s.contains(&var) {
+            if !var.is_empty() && s.contains(&var) {
                 crate::debug::print_backtrace();
             }
         }
 
-        match &*err.inner {
-            // Error::UndefinedSymbol { .. } => panic!(),
-            ErrorKind::Errors { ref errors, .. } => {
-                for err in errors {
-                    self.validate(err)
-                }
-                return;
+        if let ErrorKind::Errors { ref errors, .. } = &*err.inner {
+            for err in errors {
+                self.validate(err)
             }
-            _ => {}
+            return;
         }
 
         let code = err.code();
-        if 5000 <= code && code < 6000 {
+        if (5000..6000).contains(&code) {
             // This is error for invalid options.
         } else if err.span().is_dummy() {
             unreachable!("Error with a dummy span found: {:?}", err)
@@ -209,7 +206,7 @@ pub enum ErrorKind {
     },
 
     /// TS2610
-    DefinedWitHAccessorInSuper {
+    DefinedWithAccessorInSuper {
         span: Span,
     },
     /// TS5048
@@ -1432,6 +1429,11 @@ pub enum ErrorKind {
     ShouldBeInstanceMethod {
         span: Span,
     },
+
+    /// TS2462
+    RestPropertyNotLast {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1932,7 +1934,9 @@ impl ErrorKind {
 
             ErrorKind::ShouldBeInstanceMethod { .. } => 2388,
 
-            ErrorKind::DefinedWitHAccessorInSuper { .. } => 2610,
+            ErrorKind::RestPropertyNotLast { .. } => 2462,
+
+            ErrorKind::DefinedWithAccessorInSuper { .. } => 2610,
 
             ErrorKind::ClassPropNotInitialized { .. } => 2564,
 
@@ -1969,20 +1973,20 @@ impl ErrorKind {
     }
 
     pub fn is_property_not_found(&self) -> bool {
-        match self {
+        matches!(
+            self,
             ErrorKind::NoSuchProperty { .. }
-            | ErrorKind::NoSuchPropertyInClass { .. }
-            | ErrorKind::NoSuchPropertyInModule { .. }
-            | ErrorKind::NoSuchPropertyInThis { .. } => true,
-            _ => false,
-        }
+                | ErrorKind::NoSuchPropertyInClass { .. }
+                | ErrorKind::NoSuchPropertyInModule { .. }
+                | ErrorKind::NoSuchPropertyInThis { .. }
+        )
     }
 
     pub fn is_var_not_found(&self) -> bool {
-        match self {
-            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. } => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. }
+        )
     }
 
     pub fn is_assign_failure(&self) -> bool {
@@ -1990,10 +1994,7 @@ impl ErrorKind {
     }
 
     pub fn is_type_not_found(&self) -> bool {
-        match self {
-            Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
-            _ => false,
-        }
+        matches!(self, Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. })
     }
 
     #[cold]

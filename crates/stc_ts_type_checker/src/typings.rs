@@ -18,21 +18,18 @@ impl Checker {
         }
 
         let result = NodeResolver
-            .resolve_as_file(&dir)
-            .or_else(|_| NodeResolver.resolve_as_directory(&dir));
+            .resolve_as_file(dir)
+            .or_else(|_| NodeResolver.resolve_as_directory(dir));
 
-        match result {
-            Ok(entry) => {
-                let entry = Arc::new(FileName::Real(entry));
-                let start = Instant::now();
-                self.module_graph.load_all(&entry).unwrap();
+        if let Ok(entry) = result {
+            let entry = Arc::new(FileName::Real(entry));
+            let start = Instant::now();
+            self.module_graph.load_all(&entry).unwrap();
 
-                self.analyze_module(None, entry.clone());
+            self.analyze_module(None, entry);
 
-                let end = Instant::now();
-                log::debug!("Loading typings at `{}` took {:?}", dir.display(), end - start);
-            }
-            Err(_) => {}
+            let end = Instant::now();
+            log::debug!("Loading typings at `{}` took {:?}", dir.display(), end - start);
         }
     }
 

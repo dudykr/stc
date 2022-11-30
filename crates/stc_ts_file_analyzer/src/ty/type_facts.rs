@@ -9,12 +9,15 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::stack;
+use stc_utils::{cache::Freeze, stack};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
 
-use crate::{analyzer::Analyzer, type_facts::TypeFacts};
+use crate::{
+    analyzer::{Analyzer, NormalizeTypeOpts},
+    type_facts::TypeFacts,
+};
 
 impl Analyzer<'_, '_> {
     /// TODO(kdy1): Note: This method preserves [Type::Ref] in some cases.
@@ -22,7 +25,7 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    #[instrument(skip(self, facts, ty))]
+    #[instrument(skip_all)]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.is_builtin {
             return ty;
@@ -48,11 +51,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let cnt = if facts.contains(TypeFacts::TypeofEQString) { 1 } else { 0 }
-            + if facts.contains(TypeFacts::TypeofEQNumber) { 1 } else { 0 }
-            + if facts.contains(TypeFacts::TypeofEQBigInt) { 1 } else { 0 }
-            + if facts.contains(TypeFacts::TypeofEQBoolean) { 1 } else { 0 };
-        if cnt >= 2 {
+        let cnt = i32::from(facts.contains(TypeFacts::TypeofEQString))
+            + i32::from(facts.contains(TypeFacts::TypeofEQNumber))
+            + i32::from(facts.contains(TypeFacts::TypeofEQBigInt))
+            + i32::from(facts.contains(TypeFacts::TypeofEQBoolean));
+        if cnt > 1 {
             return Type::never(
                 ty.span(),
                 KeywordTypeMetadata {
@@ -62,7 +65,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let before = dump_type_as_string(&self.cm, &ty);
+        let before = dump_type_as_string(&ty);
         ty = ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts });
 
         // Add `(...args: any) => any` for typeof foo === 'function'
@@ -94,10 +97,7 @@ impl Analyzer<'_, '_> {
             // TODO(kdy1): PERF
             match ty.normalize_mut() {
                 Type::Union(u) => {
-                    let has_fn = u.types.iter().any(|ty| match ty.normalize() {
-                        Type::Function(..) => true,
-                        _ => false,
-                    });
+                    let has_fn = u.types.iter().any(|ty| matches!(ty.normalize(), Type::Function(..)));
 
                     if !has_fn {
                         u.types.push(fn_type)
@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let after = dump_type_as_string(&self.cm, &ty);
+        let after = dump_type_as_string(&ty);
 
         debug!("[types/fact] {} => {}\nTypeFacts: {:?}", before, after, facts);
 
@@ -128,9 +128,15 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 }
 
 impl TypeFactsHandler<'_, '_, '_> {
-    #[instrument(skip(self, ty))]
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
-        let ty = if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
+        let ty = if let Ok(ty) = self.analyzer.normalize(
+            Some(ty.span()),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        ) {
             ty
         } else {
             return true;
@@ -253,13 +259,12 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
             let has_any = keyword_types.iter().any(|&(fact, _)| self.facts.contains(fact));
 
             if has_any {
-                let allowed_keywords = keyword_types
+                if !keyword_types
                     .iter()
                     .filter(|&&(fact, _)| self.facts.contains(fact))
                     .map(|v| v.1)
-                    .collect::<Vec<_>>();
-
-                if !allowed_keywords.contains(&ty.kind) {
+                    .any(|x| x == ty.kind)
+                {
                     return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
@@ -319,10 +324,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u.types.retain(|v| !v.is_never());
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
-            u.types.retain(|ty| match ty.normalize() {
-                Type::Function(..) => false,
-                _ => true,
-            });
+            u.types.retain(|ty| !matches!(ty.normalize(), Type::Function(..)));
         }
 
         if self.facts != TypeFacts::None {
@@ -353,7 +355,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
 
                     Type::Param(..) => false,
 
-                    _ => self.can_be_primitive(&ty),
+                    _ => self.can_be_primitive(ty),
                 });
             }
         }
@@ -385,36 +387,61 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             Err(_) => return ty,
         };
 
+        // typeof x === 'object'
+        // => x = {} | undefined | null
+        if ty.is_unknown() && self.facts.contains(TypeFacts::TypeofEQObject) {
+            ty = Type::Union(Union {
+                span,
+                types: vec![
+                    Type::TypeLit(TypeLit {
+                        span,
+                        members: Default::default(),
+                        metadata: Default::default(),
+                    }),
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                    }),
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        metadata: Default::default(),
+                    }),
+                ],
+                metadata: Default::default(),
+            })
+            .freezed();
+        }
+
         // TODO(kdy1): Don't do anything if type fact is none.
 
-        match ty.normalize() {
-            Type::Lit(LitType {
-                span,
-                lit: RTsLit::Bool(v),
-                metadata,
-                ..
-            }) => {
-                if self.facts.contains(TypeFacts::Truthy) && !v.value {
-                    return Type::never(
-                        *span,
-                        KeywordTypeMetadata {
-                            common: metadata.common,
-                            ..Default::default()
-                        },
-                    );
-                }
-
-                if self.facts.contains(TypeFacts::Falsy) && v.value {
-                    return Type::never(
-                        *span,
-                        KeywordTypeMetadata {
-                            common: metadata.common,
-                            ..Default::default()
-                        },
-                    );
-                }
+        if let Type::Lit(LitType {
+            span,
+            lit: RTsLit::Bool(v),
+            metadata,
+            ..
+        }) = ty.normalize()
+        {
+            if self.facts.contains(TypeFacts::Truthy) && !v.value {
+                return Type::never(
+                    *span,
+                    KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
+                );
             }
-            _ => {}
+
+            if self.facts.contains(TypeFacts::Falsy) && v.value {
+                return Type::never(
+                    *span,
+                    KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
+                );
+            }
         }
 
         if !span.is_dummy() {

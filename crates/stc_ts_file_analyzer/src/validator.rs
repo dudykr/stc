@@ -45,10 +45,7 @@ where
             None
         };
 
-        match node {
-            Some(ref n) => Some(self.validate(n, ctxt)),
-            None => None,
-        }
+        node.as_ref().map(|n| self.validate(n, ctxt))
     }
 }
 

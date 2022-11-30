@@ -10,6 +10,7 @@ use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
 use swc_ecma_visit::VisitMutWith;
 
+pub mod lsp;
 pub mod tsc;
 pub mod visualizer;
 
@@ -22,7 +23,7 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, to
             no_early_errors: false,
         }),
         EsVersion::latest(),
-        SourceFileInput::from(&*fm),
+        SourceFileInput::from(fm),
         Some(comments),
     );
     let mut parser = Parser::new_from(lexer);
@@ -31,7 +32,6 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, to
         .map_err(|err| {
             HANDLER.with(|handler| {
                 err.into_diagnostic(handler).emit();
-                ()
             })
         })
         .unwrap();

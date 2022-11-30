@@ -38,7 +38,7 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, var: &RVarDecl) {
-        self.record(&*var);
+        self.record(var);
 
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
@@ -53,33 +53,25 @@ impl Analyzer<'_, '_> {
 
         // Set type of tuples.
         for decl in &var.decls {
-            match &decl.name {
-                RPat::Array(RArrayPat { span, elems, node_id, .. }) => {
-                    if let Some(m) = &self.mutations {
-                        if let Some(Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten() {
-                            for (i, elem) in elems.iter().enumerate() {
-                                match elem {
-                                    Some(pat) => {
-                                        //
-                                        if i < tuple.elems.len() {
-                                            let ty = &tuple.elems[i].ty;
-                                            if let Some(node_id) = pat.node_id() {
-                                                if let Some(m) = &mut self.mutations {
-                                                    m.for_pats.entry(node_id).or_default().ty = Some(*ty.clone());
-                                                }
-                                            }
+            if let RPat::Array(RArrayPat { span, elems, node_id, .. }) = &decl.name {
+                if let Some(m) = &self.mutations {
+                    if let Some(Type::Tuple(tuple)) = m.for_pats.get(node_id).map(|m| &m.ty).cloned().flatten() {
+                        for (i, elem) in elems.iter().enumerate() {
+                            if let Some(pat) = elem {
+                                //
+                                if i < tuple.elems.len() {
+                                    let ty = &tuple.elems[i].ty;
+                                    if let Some(node_id) = pat.node_id() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(node_id).or_default().ty = Some(*ty.clone());
                                         }
                                     }
-                                    None => {}
                                 }
                             }
                         }
                     }
-                    //
                 }
-                // TODO
-                //  RPat::Object(obj) => {}
-                _ => {}
+                //
             }
         }
 
@@ -157,16 +149,16 @@ impl Analyzer<'_, '_> {
 
             if let Some(ref init) = v.init {
                 let span = init.span();
-                let is_symbol_call = match &**init {
+                let is_symbol_call = matches!(
+                    &**init,
                     RExpr::Call(RCallExpr {
-                        callee:
-                            RCallee::Expr(box RExpr::Ident(RIdent {
-                                sym: js_word!("Symbol"), ..
-                            })),
+                        callee: RCallee::Expr(box RExpr::Ident(RIdent {
+                            sym: js_word!("Symbol"),
+                            ..
+                        })),
                         ..
-                    }) => true,
-                    _ => false,
-                };
+                    })
+                );
 
                 // Set `this` in
                 //
@@ -181,10 +173,7 @@ impl Analyzer<'_, '_> {
                 //         }
                 //     }
                 // };
-                let creates_new_this = match &**init {
-                    RExpr::Object(..) => true,
-                    _ => false,
-                };
+                let creates_new_this = matches!(&**init, RExpr::Object(..));
 
                 let old_this = if creates_new_this { self.scope.this.take() } else { None };
 
@@ -220,7 +209,7 @@ impl Analyzer<'_, '_> {
                     }};
                 }
 
-                debug_assert_eq!(self.ctx.allow_ref_declaring, true);
+                debug_assert!(self.ctx.allow_ref_declaring);
 
                 //  Check if v_ty is assignable to ty
                 match declared_ty {
@@ -307,14 +296,11 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     None => {
-                        self.ctx.prefer_tuple = match v.name {
-                            RPat::Array(_) | RPat::Object(..) => true,
-                            _ => false,
-                        };
+                        self.ctx.prefer_tuple = matches!(v.name, RPat::Array(_) | RPat::Object(..));
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
-                        let ty = (|| -> VResult<_> {
+                        let ty = {
                             match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
@@ -324,25 +310,19 @@ impl Analyzer<'_, '_> {
                                 _ => {}
                             }
 
-                            Ok(value_ty)
-                        })()?;
+                            value_ty
+                        };
 
-                        let should_generalize_fully = match v.name {
-                            RPat::Array(_) | RPat::Object(..) => false,
-                            _ => true,
-                        } && self.may_generalize(&ty)
-                            && !contains_type_param(&ty);
+                        let should_generalize_fully =
+                            !matches!(v.name, RPat::Array(_) | RPat::Object(..)) && self.may_generalize(&ty) && !contains_type_param(&ty);
 
                         debug!("var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
                         ty.assert_valid();
 
-                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit())
-                            && match v.name {
-                                RPat::Array(_) | RPat::Object(..) => false,
-                                _ => true,
-                            }
+                        #[allow(clippy::nonminimal_bool)]
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) && !matches!(v.name, RPat::Array(_) | RPat::Object(..))
                         {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
@@ -356,7 +336,7 @@ impl Analyzer<'_, '_> {
 
                         ty.assert_valid();
 
-                        debug!("[vars]: Type after generalization: {}", dump_type_as_string(&self.cm, &ty));
+                        debug!("[vars]: Type after generalization: {}", dump_type_as_string(&ty));
 
                         if should_generalize_fully {
                             match v.name {
@@ -377,22 +357,19 @@ impl Analyzer<'_, '_> {
                             };
                         }
 
-                        debug!("[vars]: Type after normalization: {}", dump_type_as_string(&self.cm, &ty));
+                        debug!("[vars]: Type after normalization: {}", dump_type_as_string(&ty));
 
-                        match ty.normalize() {
-                            Type::Ref(..) => {
-                                let ctx = Ctx {
-                                    preserve_ref: true,
-                                    ignore_expand_prevention_for_all: false,
-                                    ignore_expand_prevention_for_top: false,
-                                    ..self.ctx
-                                };
-                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
-                                ty.assert_valid();
+                        if let Type::Ref(..) = ty.normalize() {
+                            let ctx = Ctx {
+                                preserve_ref: true,
+                                ignore_expand_prevention_for_all: false,
+                                ignore_expand_prevention_for_top: false,
+                                ..self.ctx
+                            };
+                            ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                            ty.assert_valid();
 
-                                debug!("[vars]: Type after expansion: {}", dump_type_as_string(&self.cm, &ty));
-                            }
-                            _ => {}
+                            debug!("[vars]: Type after expansion: {}", dump_type_as_string(&ty));
                         }
 
                         ty.assert_valid();
@@ -632,7 +609,7 @@ impl Analyzer<'_, '_> {
                         })()?
                         .freezed();
 
-                        self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty.clone(), None, None)
+                        self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty, None, None)
                             .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
@@ -671,11 +648,8 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             })
                         });
-                        match ty {
-                            Some(ref mut ty) => {
-                                self.prevent_expansion(&mut *ty);
-                            }
-                            _ => {}
+                        if let Some(ref mut ty) = ty {
+                            self.prevent_expansion(&mut *ty);
                         }
 
                         ty.make_clone_cheap();
@@ -728,7 +702,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             };
 
-            debug_assert_eq!(self.ctx.allow_ref_declaring, true);
+            debug_assert!(self.ctx.allow_ref_declaring);
             if v.name.get_ty().is_none() {
                 self.declare_vars(VarKind::Var(kind), &v.name).report(&mut self.storage);
             }

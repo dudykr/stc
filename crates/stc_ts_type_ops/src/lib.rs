@@ -5,6 +5,7 @@
 #![feature(box_patterns)]
 #![feature(specialization)]
 #![allow(incomplete_features)]
+#![allow(clippy::needless_update)]
 
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_ast_rnode::RIdent;

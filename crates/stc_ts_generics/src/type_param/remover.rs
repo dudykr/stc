@@ -22,6 +22,7 @@ pub struct TypeParamRemover<'a> {
 }
 
 impl TypeParamRemover<'static> {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self { scope: Default::default() }
     }

@@ -541,6 +541,7 @@ controlFlow/controlFlowForInStatement2.ts
 controlFlow/controlFlowForInStatement2.ts
 controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowIfStatement.ts
+controlFlow/controlFlowInOperator.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceofExtendsFunction.ts
@@ -2303,6 +2304,7 @@ esnext/logicalAssignment/logicalAssignment1.ts
 esnext/logicalAssignment/logicalAssignment1.ts
 esnext/logicalAssignment/logicalAssignment10.ts
 esnext/logicalAssignment/logicalAssignment10.ts
+esnext/logicalAssignment/logicalAssignment11.ts
 esnext/logicalAssignment/logicalAssignment2.ts
 esnext/logicalAssignment/logicalAssignment2.ts
 esnext/logicalAssignment/logicalAssignment3.ts
@@ -2709,6 +2711,7 @@ expressions/typeGuards/typeGuardsWithAny.ts
 expressions/typeGuards/typeGuardsWithAny.ts
 expressions/typeGuards/typePredicateASI.ts
 expressions/typeGuards/typePredicateASI.ts
+expressions/typeSatisfaction/typeSatisfaction_contextualTyping1.ts
 expressions/typeSatisfaction/typeSatisfaction_ensureInterfaceImpl.ts
 expressions/typeSatisfaction/typeSatisfaction_ensureInterfaceImpl.ts
 expressions/typeSatisfaction/typeSatisfaction_optionalMemberConformance.ts
@@ -3693,6 +3696,7 @@ parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
+parser/ecmascript6/ComputedPropertyNames/parserCambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName17.ts
@@ -4017,6 +4021,7 @@ types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
+types/intersection/intersectionThisTypes.ts
 types/intersection/intersectionTypeAssignment.ts
 types/intersection/intersectionTypeAssignment.ts
 types/intersection/intersectionTypeEquivalence.ts
@@ -4440,6 +4445,7 @@ types/stringLiteral/stringLiteralTypesTypePredicates01.ts
 types/stringLiteral/stringLiteralTypesTypePredicates01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings01.ts
+types/stringLiteral/stringLiteralTypesWithTemplateStrings02.ts
 types/stringLiteral/stringLiteralTypesWithVariousOperators01.ts
 types/stringLiteral/stringLiteralTypesWithVariousOperators01.ts
 types/stringLiteral/stringLiteralTypesWithVariousOperators02.ts
@@ -4464,6 +4470,7 @@ types/thisType/thisTypeInInterfaces.ts
 types/thisType/thisTypeInInterfaces.ts
 types/thisType/thisTypeInObjectLiterals.ts
 types/thisType/thisTypeInObjectLiterals.ts
+types/thisType/thisTypeInObjectLiterals2.ts
 types/thisType/thisTypeInTaggedTemplateCall.ts
 types/thisType/thisTypeInTaggedTemplateCall.ts
 types/thisType/thisTypeInTuples.ts

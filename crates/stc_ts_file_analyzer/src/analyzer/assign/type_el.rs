@@ -107,10 +107,10 @@ impl Analyzer<'_, '_> {
                     }),
                     ..
                 }) => {
-                    if lhs.iter().any(|el| match el {
-                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
-                        _ => false,
-                    }) {
+                    if lhs
+                        .iter()
+                        .any(|el| matches!(el, TypeElement::Call(..) | TypeElement::Constructor(..)))
+                    {
                         return Ok(());
                     }
                 }
@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     let rhs_members = rhs_members
-                        .into_iter()
+                        .iter()
                         .enumerate()
                         .filter(|(index, _)| valid_rhs_indexes.contains(index))
                         .map(|(_, v)| v.clone())
@@ -195,22 +195,16 @@ impl Analyzer<'_, '_> {
                     .with_context(|| {
                         format!(
                             "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
-                            dump_type_as_string(
-                                &self.cm,
-                                &Type::TypeLit(TypeLit {
-                                    span: DUMMY_SP,
-                                    members: lhs.to_vec(),
-                                    metadata: Default::default()
-                                })
-                            ),
-                            dump_type_as_string(
-                                &self.cm,
-                                &Type::TypeLit(TypeLit {
-                                    span: DUMMY_SP,
-                                    members: rhs_members.to_vec(),
-                                    metadata: Default::default()
-                                })
-                            ),
+                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: lhs.to_vec(),
+                                metadata: Default::default()
+                            })),
+                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: rhs_members.to_vec(),
+                                metadata: Default::default()
+                            })),
                         )
                     })
                     .store(&mut errors);
@@ -234,18 +228,22 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
-                        if lhs.iter().all(|el| match el {
-                            TypeElement::Property(PropertySignature { optional: true, .. })
-                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                            _ => false,
+                        if lhs.iter().all(|el| {
+                            matches!(
+                                el,
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                    | TypeElement::Method(MethodSignature { optional: true, .. })
+                            )
                         }) {
                             return Ok(());
                         }
                     }
-                    if lhs.iter().any(|member| match member {
-                        TypeElement::Property(PropertySignature { optional: true, .. })
-                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                        _ => false,
+                    if lhs.iter().any(|member| {
+                        matches!(
+                            member,
+                            TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. })
+                        )
                     }) {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
@@ -384,19 +382,17 @@ impl Analyzer<'_, '_> {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err.into()),
-                            }
-                            .into(),
+                            },
                             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err.into()),
-                            }
-                            .into(),
+                            },
                             _ => err,
                         })
                         .with_context(|| {
                             format!(
                                 "tried to assign a class definition to type elements\nRHS = {}",
-                                dump_type_as_string(&self.cm, &rhs),
+                                dump_type_as_string(&rhs),
                             )
                         });
                 }
@@ -495,7 +491,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign the converted type to type elements:\nRHS={}",
-                                dump_type_as_string(&self.cm, &rhs)
+                                dump_type_as_string(&rhs)
                             )
                         });
                 }
@@ -564,7 +560,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign a keyword as builtin to type elements\nRHS = {}",
-                                dump_type_as_string(&self.cm, &rhs)
+                                dump_type_as_string(&rhs)
                             )
                         });
                 }
@@ -643,10 +639,10 @@ impl Analyzer<'_, '_> {
                                     ..
                                 })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
-                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, &&r_constraint, opts) {
+                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, r_constraint, opts) {
                                         if let Some(l_type_ann) = &l_index.type_ann {
                                             if let Some(r_ty) = &r_mapped.ty {
-                                                self.assign_with_opts(data, &l_type_ann, &r_ty, opts)
+                                                self.assign_with_opts(data, l_type_ann, r_ty, opts)
                                                     .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
@@ -681,18 +677,15 @@ impl Analyzer<'_, '_> {
                     let rhs = self
                         .normalize(
                             Some(span),
-                            Cow::Borrowed(&rhs),
+                            Cow::Borrowed(rhs),
                             NormalizeTypeOpts {
                                 normalize_keywords: true,
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| {
-                            ErrorKind::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err.into()),
-                            }
-                            .into()
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err.into()),
                         })
                         .context("failed to normalize")?;
 
@@ -708,7 +701,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Tpl(TplType { span: rhs_span, .. }) => {
-                    if lhs.len() == 0 {
+                    if lhs.is_empty() {
                         return Ok(());
                     }
 
@@ -761,13 +754,10 @@ impl Analyzer<'_, '_> {
 
         'l: for m in lhs {
             // Handle `toString()`
-            match m {
-                TypeElement::Method(ref m) => {
-                    if m.key == js_word!("toString") {
-                        continue;
-                    }
+            if let TypeElement::Method(ref m) = m {
+                if m.key == js_word!("toString") {
+                    continue;
                 }
-                _ => {}
             }
 
             // Handle optional
@@ -792,20 +782,17 @@ impl Analyzer<'_, '_> {
                         }
                         TypeElement::Property(ref lp) => {
                             for rm in body {
-                                match rm {
-                                    ClassMember::Property(ref rp) => {
-                                        match rp.accessibility {
-                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(ErrorKind::AccessibilityDiffers { span }.into());
-                                            }
-                                            _ => {}
+                                if let ClassMember::Property(ref rp) = rm {
+                                    match rp.accessibility {
+                                        Some(Accessibility::Private) | Some(Accessibility::Protected) => {
+                                            errors.push(ErrorKind::AccessibilityDiffers { span }.into());
                                         }
-
-                                        if lp.key.type_eq(&rp.key) {
-                                            continue 'l;
-                                        }
+                                        _ => {}
                                     }
-                                    _ => {}
+
+                                    if lp.key.type_eq(&rp.key) {
+                                        continue 'l;
+                                    }
                                 }
                             }
 
@@ -857,11 +844,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(ErrorKind::Errors {
-                span,
-                errors: errors.into(),
-            }
-            .into());
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         Ok(())
@@ -934,7 +917,7 @@ impl Analyzer<'_, '_> {
 
                         let res = self.assign_with_opts(
                             data,
-                            &l,
+                            l,
                             &parent,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
@@ -969,7 +952,7 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
+        for (i, m) in lhs.iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &[m], lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
@@ -994,7 +977,7 @@ impl Analyzer<'_, '_> {
         if !lhs_index.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_index, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -1002,7 +985,7 @@ impl Analyzer<'_, '_> {
         if !lhs_call.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_call, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -1010,7 +993,7 @@ impl Analyzer<'_, '_> {
         if !lhs_constructor.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_constructor, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -1090,7 +1073,7 @@ impl Analyzer<'_, '_> {
                             right_ident_span: Some(r_key.span()),
                             ..opts
                         };
-                        if l_key.type_eq(&*r_key) {
+                        if l_key.type_eq(r_key) {
                             match lm {
                                 TypeElement::Property(ref lp) => match rm {
                                     TypeElement::Property(ref rp) => {
@@ -1159,7 +1142,7 @@ impl Analyzer<'_, '_> {
                                             } else {
                                                 self.assign_with_opts(
                                                     data,
-                                                    &lp_ty,
+                                                    lp_ty,
                                                     &Type::Function(Function {
                                                         span,
                                                         type_params: rm.type_params.clone(),
@@ -1295,7 +1278,7 @@ impl Analyzer<'_, '_> {
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
                                             if let Some(r_prop_ty) = &r_prop.type_ann {
-                                                self.assign_with_opts(data, &l_index_ret_ty, &&r_prop_ty, opts)
+                                                self.assign_with_opts(data, l_index_ret_ty, r_prop_ty, opts)
                                                     .context("tried to assign a type of property to thr type of an index signature")?;
                                             }
                                         }
@@ -1315,7 +1298,7 @@ impl Analyzer<'_, '_> {
                                         if let Some(li_ret) = &li.type_ann {
                                             self.assign_with_opts(
                                                 data,
-                                                &li_ret,
+                                                li_ret,
                                                 &Type::Function(Function {
                                                     span: rm.span,
                                                     type_params: rm.type_params.clone(),
@@ -1349,7 +1332,7 @@ impl Analyzer<'_, '_> {
 
                                         if let Some(lt) = &li.type_ann {
                                             if let Some(rt) = &ri.type_ann {
-                                                self.assign_with_opts(data, &lt, &rt, opts)?;
+                                                self.assign_with_opts(data, lt, rt, opts)?;
                                             }
                                         }
 
@@ -1367,47 +1350,44 @@ impl Analyzer<'_, '_> {
                     TypeElement::Call(lc) => {
                         //
                         for (ri, rm) in rhs_members.iter().enumerate() {
-                            match rm {
-                                TypeElement::Call(rc) => {
-                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
-                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                            unhandled_rhs.remove(pos);
-                                            continue;
-                                        }
+                            if let TypeElement::Call(rc) = rm {
+                                for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                        continue;
                                     }
-
-                                    done = true;
-
-                                    let res = self
-                                        .assign_to_fn_like(
-                                            data,
-                                            true,
-                                            lc.type_params.as_ref(),
-                                            &lc.params,
-                                            lc.ret_ty.as_deref(),
-                                            rc.type_params.as_ref(),
-                                            &rc.params,
-                                            rc.ret_ty.as_deref(),
-                                            AssignOpts {
-                                                infer_type_params_of_left: true,
-                                                ..opts
-                                            },
-                                        )
-                                        .with_context(|| format!("tried to assign {}th element to a call signature", ri));
-
-                                    match res {
-                                        Ok(()) => {
-                                            missing_fields.drain(missing_field_start_idx..);
-                                            return Ok(());
-                                        }
-                                        Err(err) => {
-                                            errors.push(err);
-                                        }
-                                    }
-
-                                    continue;
                                 }
-                                _ => {}
+
+                                done = true;
+
+                                let res = self
+                                    .assign_to_fn_like(
+                                        data,
+                                        true,
+                                        lc.type_params.as_ref(),
+                                        &lc.params,
+                                        lc.ret_ty.as_deref(),
+                                        rc.type_params.as_ref(),
+                                        &rc.params,
+                                        rc.ret_ty.as_deref(),
+                                        AssignOpts {
+                                            infer_type_params_of_left: true,
+                                            ..opts
+                                        },
+                                    )
+                                    .with_context(|| format!("tried to assign {}th element to a call signature", ri));
+
+                                match res {
+                                    Ok(()) => {
+                                        missing_fields.drain(missing_field_start_idx..);
+                                        return Ok(());
+                                    }
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
+                                }
+
+                                continue;
                             }
                         }
 
@@ -1419,57 +1399,51 @@ impl Analyzer<'_, '_> {
                     TypeElement::Constructor(lc) => {
                         //
                         for rm in rhs_members {
-                            match rm {
-                                TypeElement::Constructor(rc) => {
-                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
-                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                            unhandled_rhs.remove(pos);
-                                            continue;
-                                        }
+                            if let TypeElement::Constructor(rc) = rm {
+                                for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                        continue;
                                     }
+                                }
 
-                                    done = true;
+                                done = true;
 
-                                    let res = self.assign_to_fn_like(
-                                        data,
-                                        false,
-                                        lc.type_params.as_ref(),
-                                        &lc.params,
-                                        lc.ret_ty.as_deref(),
-                                        rc.type_params.as_ref(),
-                                        &rc.params,
-                                        rc.ret_ty.as_deref(),
-                                        AssignOpts {
-                                            infer_type_params_of_left: true,
-                                            ..opts
-                                        },
-                                    );
+                                let res = self.assign_to_fn_like(
+                                    data,
+                                    false,
+                                    lc.type_params.as_ref(),
+                                    &lc.params,
+                                    lc.ret_ty.as_deref(),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
+                                );
 
-                                    match res {
-                                        Ok(()) => {
-                                            missing_fields.drain(missing_field_start_idx..);
+                                match res {
+                                    Ok(()) => {
+                                        missing_fields.drain(missing_field_start_idx..);
 
-                                            for rm in rhs_members {
-                                                match rm {
-                                                    TypeElement::Constructor(..) => {
-                                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                                            unhandled_rhs.remove(pos);
-                                                        }
-                                                    }
-                                                    _ => {}
+                                        for rm in rhs_members {
+                                            if let TypeElement::Constructor(..) = rm {
+                                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                                    unhandled_rhs.remove(pos);
                                                 }
                                             }
+                                        }
 
-                                            return Ok(());
-                                        }
-                                        Err(err) => {
-                                            errors.push(err);
-                                        }
+                                        return Ok(());
                                     }
-
-                                    continue;
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
                                 }
-                                _ => {}
+
+                                continue;
                             }
                         }
 

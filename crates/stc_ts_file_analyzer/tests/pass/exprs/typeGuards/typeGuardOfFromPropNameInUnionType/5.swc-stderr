@@ -1,0 +1,72 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:7:5]
+ 7 | if ("a" in x.prop) {
+   :            ^
+   `----
+
+Error: 
+  > ClassWithUnionProp
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:7:5]
+ 7 | if ("a" in x.prop) {
+   :            ^^^^^^
+   `----
+
+Error: 
+  > (A | B)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:7:5]
+ 7 | if ("a" in x.prop) {
+   :     ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:8:9]
+ 8 | let y: string = x.prop.a;
+   :                 ^^^^^^
+   `----
+
+Error: 
+  > A
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:8:9]
+ 8 | let y: string = x.prop.a;
+   :                 ^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:10:9]
+ 10 | let z: number = x.prop.b;
+    :                 ^
+    `----
+
+Error: 
+  > ClassWithUnionProp
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:10:9]
+ 10 | let z: number = x.prop.b;
+    :                 ^^^^^^
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/5.ts:10:9]
+ 10 | let z: number = x.prop.b;
+    :                 ^^^^^^^^
+    `----
+
+Error: 
+  > number

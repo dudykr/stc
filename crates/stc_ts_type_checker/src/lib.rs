@@ -82,11 +82,11 @@ impl Checker {
     where
         F: FnOnce() -> R,
     {
-        ::swc_common::GLOBALS.set(&self.globals(), || op())
+        ::swc_common::GLOBALS.set(self.globals(), op)
     }
 
     pub fn globals(&self) -> &swc_common::Globals {
-        &self.env.shared().swc_globals()
+        self.env.shared().swc_globals()
     }
 }
 
@@ -139,7 +139,7 @@ impl Checker {
             {
                 let lock = self.module_types.read();
                 // If a circular chunks are fully analyzed, used them.
-                if let Some(full) = lock.get(&id).map(|cell| cell.get().cloned()).flatten() {
+                if let Some(full) = lock.get(&id).and_then(|cell| cell.get().cloned()) {
                     return full;
                 }
             }
@@ -179,7 +179,7 @@ impl Checker {
                             errors: Default::default(),
                             info: Default::default(),
                         };
-                        let ids = set.iter().copied().collect::<Vec<_>>();
+                        let ids = set.to_vec();
                         let modules = ids
                             .iter()
                             .map(|&id| (id, self.module_graph.clone_module(id)))
@@ -214,15 +214,12 @@ impl Checker {
 
                             {
                                 apply_mutations(&mut mutations, &mut dts_module);
-                                cleanup_module_for_dts(&mut dts_module.body, &type_data);
+                                cleanup_module_for_dts(&mut dts_module.body, type_data);
                             }
 
                             // TODO(kdy1): Prevent duplicate work.
-                            match self.dts_modules.insert(*id, dts_module) {
-                                Some(..) => {
-                                    warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
-                                }
-                                None => {}
+                            if let Some(..) = self.dts_modules.insert(*id, dts_module) {
+                                warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                             }
                         }
 
@@ -257,7 +254,7 @@ impl Checker {
                     }
 
                     let lock = self.module_types.read();
-                    return lock.get(&id).map(|cell| cell.get().cloned()).flatten().unwrap();
+                    return lock.get(&id).and_then(|cell| cell.get().cloned()).unwrap();
                 }
             }
             info!("Request: {}\nRequested by {:?}\nCircular set: {:?}", path, starter, circular_set);
@@ -271,13 +268,13 @@ impl Checker {
             {
                 let start = Instant::now();
                 let mut did_work = false;
-                let v = self.module_types.read().get(&id).cloned().clone().unwrap();
+                let v = self.module_types.read().get(&id).cloned().unwrap();
                 // We now wait for dependency without holding lock
                 let res = v
                     .get_or_init(|| {
                         did_work = true;
-                        let result = self.analyze_non_circular_module(id, path.clone());
-                        result
+
+                        self.analyze_non_circular_module(id, path.clone())
                     })
                     .clone();
 
@@ -384,7 +381,7 @@ impl Checker {
 
 impl Load for Checker {
     fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
-        let path = self.module_graph.resolve(&base, src).ok()?;
+        let path = self.module_graph.resolve(base, src).ok()?;
         let id = self.module_graph.id(&path);
         Some(id)
     }
@@ -402,9 +399,9 @@ impl Load for Checker {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
-        let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
+        let data = self.analyze_module(Some(base_path), dep_path);
 
-        return Ok(data);
+        Ok(data)
     }
 
     fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
@@ -425,9 +422,9 @@ impl Load for Checker {
 
         info!("({}): Loading {}", base_path, dep_path);
 
-        let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
+        let data = self.analyze_module(Some(base_path), dep_path);
 
-        return Ok(data);
+        Ok(data)
     }
 
     fn declare_module(&self, name: &JsWord, module: Type) {

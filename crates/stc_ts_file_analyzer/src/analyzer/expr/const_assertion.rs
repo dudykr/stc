@@ -24,6 +24,8 @@ impl Analyzer<'_, '_> {
         if mode == TypeOfMode::RValue {
             let ctx = Ctx {
                 in_const_assertion: true,
+                cannot_be_tuple: false,
+                prefer_tuple: true,
                 ..self.ctx
             };
             let mut a = self.with_ctx(ctx);
@@ -38,11 +40,12 @@ impl Analyzer<'_, '_> {
 
             Ok(ty)
         } else {
-            return Err(ErrorKind::Unimplemented {
+            Err(ErrorKind::Unimplemented {
                 span,
-                msg: format!("Proper error reporting for using const assertion expression in left hand side of an assignment expression"),
+                msg: "Proper error reporting for using const assertion expression in left hand side of an assignment expression"
+                    .to_string(),
             }
-            .into());
+            .into())
         }
     }
 }

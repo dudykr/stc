@@ -6,4 +6,4 @@ use swc_common::Globals;
 
 pub(crate) static GLOBALS: Lazy<Arc<Globals>> = Lazy::new(Default::default);
 
-pub(crate) static MARKS: Lazy<Marks> = Lazy::new(|| Marks::new(&*GLOBALS));
+pub(crate) static MARKS: Lazy<Marks> = Lazy::new(|| Marks::new(&GLOBALS));

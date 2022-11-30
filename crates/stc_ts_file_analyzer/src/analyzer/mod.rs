@@ -24,7 +24,6 @@ use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 
-pub(crate) use self::scope::ScopeKind;
 use self::{
     control_flow::{CondFacts, Facts},
     pat::PatMode,
@@ -32,6 +31,7 @@ use self::{
     scope::{Scope, VarKind},
     util::ResultExt,
 };
+pub(crate) use self::{scope::ScopeKind, types::NormalizeTypeOpts};
 use crate::{
     loader::{Load, ModuleInfo},
     ty,
@@ -88,7 +88,6 @@ pub(crate) struct Ctx {
     use_undefined_for_empty_tuple: bool,
 
     allow_module_var: bool,
-    allow_namespace_var: bool,
 
     check_for_implicit_any: bool,
 
@@ -202,6 +201,8 @@ pub(crate) struct Ctx {
     is_fn_param: bool,
 
     in_module: bool,
+
+    checking_switch_discriminant_as_bin: bool,
 }
 
 impl Ctx {
@@ -430,6 +431,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         )
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
             self.env.clone(),
@@ -478,7 +480,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_unknown_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
-                allow_namespace_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 prefer_tuple: false,
@@ -528,6 +529,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_not_topmost_type: false,
                 is_fn_param: false,
                 in_module: false,
+                checking_switch_discriminant_as_bin: false,
             },
             loader,
             is_builtin,
@@ -699,7 +701,7 @@ impl<'b, 'c> Deref for WithCtx<'_, 'b, 'c> {
     type Target = Analyzer<'b, 'c>;
 
     fn deref(&self) -> &Self::Target {
-        &self.analyzer
+        self.analyzer
     }
 }
 
@@ -1033,7 +1035,7 @@ impl Analyzer<'_, '_> {
                     self.register_type(i.into(), ty.clone());
                 }
                 RTsModuleName::Str(s) => {
-                    let name: &str = &*s.value;
+                    let name: &str = &s.value;
 
                     if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
                         if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {

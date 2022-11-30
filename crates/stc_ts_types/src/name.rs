@@ -5,7 +5,8 @@ use std::{
 
 use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RTsEntityName, RTsThisTypeOrIdent,
+    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RTsEntityName,
+    RTsThisTypeOrIdent,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
@@ -27,6 +28,7 @@ impl Name {
         self.0[0].clone()
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -146,6 +148,7 @@ impl TryFrom<&'_ RExpr> for Name {
 
                 this.into()
             }),
+            RExpr::Paren(RParenExpr { expr, .. }) => (&**expr).try_into(),
 
             // TODO
             _ => Err(()),
@@ -177,6 +180,6 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
             _ => return Err(()),
         });
 
-        return Ok(name);
+        Ok(name)
     }
 }

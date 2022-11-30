@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
         let ty = match ty.normalize() {
             Type::Mapped(..) => self
                 .normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                .unwrap_or(Cow::Borrowed(&ty)),
+                .unwrap_or(Cow::Borrowed(ty)),
             _ => Cow::Borrowed(ty),
         };
 
@@ -228,7 +228,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
             },
         }),
 
-        _ => return ty,
+        _ => ty,
     }
 }
 
@@ -249,7 +249,7 @@ impl Fold<stc_ts_types::Function> for Generalizer {
 impl Fold<Type> for Generalizer {
     fn fold(&mut self, mut ty: Type) -> Type {
         match ty.normalize() {
-            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => return ty,
+            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(index_type) => return ty,
             _ => {}
         }
         if !self.force {
@@ -258,10 +258,7 @@ impl Fold<Type> for Generalizer {
             }
         }
 
-        let force = match ty.normalize() {
-            Type::TypeLit(..) => true,
-            _ => false,
-        };
+        let force = matches!(ty.normalize(), Type::TypeLit(..));
 
         let old = self.force;
         self.force = force;

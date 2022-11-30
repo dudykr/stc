@@ -53,6 +53,7 @@ impl Analyzer<'_, '_> {
                         allow_missing_fields: true,
                         allow_assignment_of_param: true,
                         skip_call_and_constructor_elem: true,
+                        treat_array_as_interfaces: true,
                         ..Default::default()
                     },
                 )?;
@@ -103,14 +104,9 @@ impl Analyzer<'_, '_> {
                             ErrorKind::MissingFields { .. } => {}
 
                             ErrorKind::Errors { errors, .. }
-                                if errors.iter().all(|err| match &**err {
-                                    ErrorKind::MissingFields { .. } => true,
-                                    _ => false,
-                                }) => {}
+                                if errors.iter().all(|err| matches!(&**err, ErrorKind::MissingFields { .. })) => {}
 
-                            _ => self
-                                .storage
-                                .report(err.convert(|err| ErrorKind::InterfaceNotCompatible { span }.into())),
+                            _ => self.storage.report(err.convert(|err| ErrorKind::InterfaceNotCompatible { span })),
                         }
                     }
                 }

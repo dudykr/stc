@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
                     return false;
                 }
                 dbg!(&scope.declaring_type_params);
-                scope.declaring_type_params.contains(&id)
+                scope.declaring_type_params.contains(id)
             })
             .is_some()
     }

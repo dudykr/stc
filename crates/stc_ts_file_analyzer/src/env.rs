@@ -23,6 +23,7 @@ use crate::{
 };
 
 pub trait BuiltInGen: Sized {
+    #[allow(clippy::new_ret_no_self)]
     fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
 
     fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> BuiltIn {
@@ -58,11 +59,10 @@ pub trait BuiltInGen: Sized {
 
         let iter = modules
             .iter()
-            .map(|module| match &*module.body {
+            .flat_map(|module| match &*module.body {
                 TsNamespaceBody::TsModuleBlock(TsModuleBlock { body, .. }) => body,
                 TsNamespaceBody::TsNamespaceDecl(_) => unreachable!(),
             })
-            .flatten()
             .cloned()
             .map(|orig| RModuleItem::from_orig(&mut node_id_gen, orig));
 
@@ -83,7 +83,7 @@ pub trait BuiltInGen: Sized {
         Self::from_module_items(env, modules.into_iter().flat_map(|module| module.body))
     }
 
-    fn from_module_items<'a, I>(env: &StableEnv, items: I) -> BuiltIn
+    fn from_module_items<I>(env: &StableEnv, items: I) -> BuiltIn
     where
         I: IntoIterator<Item = RModuleItem>,
     {
@@ -131,7 +131,7 @@ pub trait BuiltInGen: Sized {
                                                 .validate_with(analyzer)
                                                 .unwrap()
                                                 .into_iter()
-                                                .filter_map(|v| v)
+                                                .flatten()
                                                 .collect(),
                                             super_class: None,
                                             // implements: vec![],
@@ -227,11 +227,7 @@ pub trait BuiltInGen: Sized {
                                         _ => unreachable!("cannot merge interface with other type"),
                                     },
                                     Entry::Vacant(e) => {
-                                        let ty = i
-                                            .clone()
-                                            .validate_with(&mut analyzer)
-                                            .expect("builtin: failed to parse interface")
-                                            .into();
+                                        let ty = i.clone().validate_with(&mut analyzer).expect("builtin: failed to parse interface");
 
                                         e.insert(ty);
                                     }
@@ -274,6 +270,7 @@ impl BuiltInGen for BuiltIn {
 }
 
 pub trait EnvFactory {
+    #[allow(clippy::new_ret_no_self)]
     fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
     fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);

@@ -22,39 +22,36 @@ impl Analyzer<'_, '_> {
         declared.make_clone_cheap();
 
         let mut actual = self
-            .normalize(Some(span), Cow::Borrowed(&actual), Default::default())
+            .normalize(Some(span), Cow::Borrowed(actual), Default::default())
             .context("tried to normalize decalred type")?;
         actual.make_clone_cheap();
 
-        match actual.normalize() {
-            Type::Union(actual) => {
-                let mut new_types = vec![];
-                for actual in &actual.types {
-                    let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), &actual)?;
-                    new_types.push(ty);
-                }
-
-                new_types.dedup_type();
-
-                new_types.retain(|ty| !ty.is_never());
-                if new_types.is_empty() {
-                    return Ok(Type::never(
-                        actual.span,
-                        KeywordTypeMetadata {
-                            common: actual.metadata.common,
-                            ..Default::default()
-                        },
-                    ));
-                }
-
-                return Ok(Type::Union(Union {
-                    span: actual.span,
-                    types: new_types,
-                    metadata: actual.metadata,
-                })
-                .fixed());
+        if let Type::Union(actual) = actual.normalize() {
+            let mut new_types = vec![];
+            for actual in &actual.types {
+                let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), actual)?;
+                new_types.push(ty);
             }
-            _ => {}
+
+            new_types.dedup_type();
+
+            new_types.retain(|ty| !ty.is_never());
+            if new_types.is_empty() {
+                return Ok(Type::never(
+                    actual.span,
+                    KeywordTypeMetadata {
+                        common: actual.metadata.common,
+                        ..Default::default()
+                    },
+                ));
+            }
+
+            return Ok(Type::Union(Union {
+                span: actual.span,
+                types: new_types,
+                metadata: actual.metadata,
+            })
+            .fixed());
         }
 
         let mut declared = declared.into_owned();

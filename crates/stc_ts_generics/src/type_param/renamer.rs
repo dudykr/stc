@@ -64,22 +64,19 @@ impl Fold<Type> for TypeParamRenamer {
         ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
-        match ty.normalize() {
-            Type::Param(ref param) => {
-                if let Some(declared) = &self.declared {
-                    if !declared.contains(&param.name) {
-                        return ty;
-                    }
-                }
-
-                if let Some(mapped) = self.inferred.get(&param.name) {
-                    if self.declared.is_none() && mapped.is_type_param() {
-                        return ty;
-                    }
-                    return mapped.clone();
+        if let Type::Param(ref param) = ty.normalize() {
+            if let Some(declared) = &self.declared {
+                if !declared.contains(&param.name) {
+                    return ty;
                 }
             }
-            _ => {}
+
+            if let Some(mapped) = self.inferred.get(&param.name) {
+                if self.declared.is_none() && mapped.is_type_param() {
+                    return ty;
+                }
+                return mapped.clone();
+            }
         }
 
         ty

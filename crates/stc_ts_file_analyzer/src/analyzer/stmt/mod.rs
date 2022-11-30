@@ -50,12 +50,10 @@ impl Analyzer<'_, '_> {
         }
 
         let old_in_conditional = self.scope.return_values.in_conditional;
-        self.scope.return_values.in_conditional |= match s {
-            RStmt::If(_) => true,
-            RStmt::Switch(_) => true,
-            RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..) => true,
-            _ => false,
-        };
+        self.scope.return_values.in_conditional |= matches!(
+            s,
+            RStmt::If(_) | RStmt::Switch(_) | RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..)
+        );
 
         s.visit_children_with(self);
 
@@ -88,7 +86,6 @@ impl Analyzer<'_, '_> {
             if !has_break {
                 if let Known(v) = test.as_bool() {
                     self.ctx.in_unreachable = true;
-                    return;
                 }
             }
         }
