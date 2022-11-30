@@ -19,6 +19,16 @@ impl Analyzer<'_, '_> {
         let (order, skip) = self.reorder_stmts(stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
 
+        if cfg!(debug_assertions) {
+            for (i, ii) in order.iter().enumerate() {
+                for (j, ji) in order.iter().enumerate() {
+                    if i != j && ii == ji {
+                        panic!("Duplicate order: {} and {}", i, j);
+                    }
+                }
+            }
+        }
+
         if self.scope.is_root() {
             // We should track type declarations.
             for &idx in &order {
