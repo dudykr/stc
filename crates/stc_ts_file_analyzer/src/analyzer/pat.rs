@@ -379,7 +379,14 @@ impl Analyzer<'_, '_> {
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
                     PatMode::Decl => Some({
-                        let mut ty = p.right.validate_with_default(self)?.generalize_lit();
+                        let ctx = Ctx {
+                            reevaluating_argument: true,
+                            ..self.ctx
+                        };
+                        // TODO(kdy1): Remove this reevaluation
+                        //
+                        // We call declare_vars above, and it validates the default value
+                        let mut ty = p.right.validate_with_default(&mut *self.with_ctx(ctx))?.generalize_lit();
 
                         if self.ctx.is_fn_param {
                             // If the declaration includes an initializer expression (which is
