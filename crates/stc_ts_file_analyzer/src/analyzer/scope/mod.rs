@@ -13,7 +13,11 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, ErrorKind,
+};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
@@ -1245,6 +1249,13 @@ impl Analyzer<'_, '_> {
         {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
+
+            if cfg!(debug_assertions) {
+                if spans.contains(&(kind, span)) {
+                    print_backtrace();
+                    unreachable!("Duplicated declaration of variable: {:?} {:?} {:?}", name, kind, span);
+                }
+            }
 
             spans.push((kind, span));
 
