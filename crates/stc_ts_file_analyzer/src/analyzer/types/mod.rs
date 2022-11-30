@@ -749,10 +749,8 @@ impl Analyzer<'_, '_> {
                             en.name = None;
                             return Ok(Some(Type::EnumVariant(en)));
                         }
-                        if let Ok(result) = self.expand_enum_variant(elem.clone()) {
-                            if let Type::Lit(LitType { .. }) = result {
-                                return Ok(Some(elem.clone()));
-                            }
+                        if let Ok(Type::Lit(LitType { .. })) = self.expand_enum_variant(elem.clone()) {
+                            return Ok(Some(elem.clone()));
                         }
                     } else {
                         // enumVariant is Enum

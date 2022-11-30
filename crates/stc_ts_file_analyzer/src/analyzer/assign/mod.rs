@@ -1705,10 +1705,8 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
                             // Allow assigning enum with numeric values to
                             // string.
-                            if let Ok(result) = self.expand_enum_variant(rhs.clone()) {
-                                if let Type::Lit(LitType { lit: RTsLit::Str(..), .. }) = result {
-                                    return Ok(());
-                                }
+                            if let Ok(Type::Lit(LitType { lit: RTsLit::Str(..), .. })) = self.expand_enum_variant(rhs.clone()) {
+                                return Ok(());
                             }
 
                             fail!()
@@ -1737,13 +1735,11 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
                             // Allow assigning enum with numeric values to
                             // number.
-                            if let Ok(result) = self.expand_enum_variant(rhs.clone()) {
-                                if let Type::Lit(LitType {
-                                    lit: RTsLit::Number(..), ..
-                                }) = result
-                                {
-                                    return Ok(());
-                                }
+                            if let Ok(Type::Lit(LitType {
+                                lit: RTsLit::Number(..), ..
+                            })) = self.expand_enum_variant(rhs.clone())
+                            {
+                                return Ok(());
                             }
 
                             fail!()
