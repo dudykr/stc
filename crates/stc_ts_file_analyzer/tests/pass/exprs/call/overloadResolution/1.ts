@@ -4,7 +4,6 @@ function fn5(f: (n: string) => void): string;
 function fn5(f: (n: number) => void): number;
 function fn5() { return undefined; }
 var n = fn5((n) => n.toFixed());
-var s = fn5((n) => n.substr(0));
 
 
 export { }
