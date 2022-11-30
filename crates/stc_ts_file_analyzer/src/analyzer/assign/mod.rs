@@ -1040,24 +1040,20 @@ impl Analyzer<'_, '_> {
 
                 if let Some(items) = items {
                     for t in items {
-                        match t.normalize() {
-                            Type::Enum(en) => {
-                                if en.members.len() == 1 {
-                                    return Ok(());
-                                }
-
-                                for mem in en.members.iter() {
-                                    match mem.id {
-                                        RTsEnumMemberId::Ident(RIdent { ref sym, .. })
-                                        | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
-                                            if sym == name {
-                                                return Ok(());
-                                            }
-                                        }
-                                    };
-                                }
+                        if let Type::Enum(en) = t.normalize() {
+                            if en.members.len() == 1 {
+                                return Ok(());
                             }
-                            _ => {}
+
+                            for mem in en.members.iter() {
+                                match mem.id {
+                                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                                        if sym == name {
+                                            return Ok(());
+                                        }
+                                    }
+                                };
+                            }
                         }
                     }
                 }
@@ -1710,9 +1706,8 @@ impl Analyzer<'_, '_> {
                             // Allow assigning enum with numeric values to
                             // string.
                             if let Ok(result) = self.expand_enum_variant(rhs.clone()) {
-                                match result {
-                                    Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
-                                    _ => {}
+                                if let Type::Lit(LitType { lit: RTsLit::Str(..), .. }) = result {
+                                    return Ok(());
                                 }
                             }
 
@@ -1743,11 +1738,11 @@ impl Analyzer<'_, '_> {
                             // Allow assigning enum with numeric values to
                             // number.
                             if let Ok(result) = self.expand_enum_variant(rhs.clone()) {
-                                match result {
-                                    Type::Lit(LitType {
-                                        lit: RTsLit::Number(..), ..
-                                    }) => return Ok(()),
-                                    _ => {}
+                                if let Type::Lit(LitType {
+                                    lit: RTsLit::Number(..), ..
+                                }) = result
+                                {
+                                    return Ok(());
                                 }
                             }
 
