@@ -380,7 +380,7 @@ impl Analyzer<'_, '_> {
                 RPat::Assign(p) => match self.ctx.pat_mode {
                     PatMode::Decl => Some({
                         let ctx = Ctx {
-                            reevaluating_argument: true,
+                            reevaluating_assign_pat_rhs: true,
                             ..self.ctx
                         };
                         // TODO(kdy1): Remove this reevaluation
