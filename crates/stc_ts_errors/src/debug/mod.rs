@@ -217,32 +217,14 @@ fn filter(mut bt: Backtrace) -> Backtrace {
                     || s.contains("/libtest/")
                     || s.contains("/rustc/")
                     || s.contains("/stc_visit/")
-                    || s.contains("/validator.rs")
                     || s.contains("rust/library")
                     || s.contains("libpanic_unwind/")
-                    || s.contains("/ecmascript/visit/")
-                    || s.contains("swc_visit")
-                    || s.contains("types/src/visit.rs")
                 {
                     return false;
                 }
 
-                if len == 1 {
-                    if s.contains("scoped-tls") || s.contains("better_scoped_tls") {
-                        return false;
-                    }
-
-                    if s.contains("/ast/") {
-                        return false;
-                    }
-
-                    if s.contains("common") && s.ends_with("/fold.rs") {
-                        return false;
-                    }
-
-                    if s.contains("checker") && s.ends_with("/validator.rs") {
-                        return false;
-                    }
+                if len == 1 && (s.contains("scoped-tls") || s.contains("better_scoped_tls")) {
+                    return false;
                 }
 
                 //                println!("({}) Filename: {}", len, s);
