@@ -199,21 +199,14 @@ pub fn dump_backtrace() -> String {
 fn filter(mut bt: Backtrace) -> Backtrace {
     bt.resolve();
     let mut frames: Vec<_> = bt.into();
-    let mut done = false;
 
     frames.retain(|frame| {
-        if done {
-            return false;
-        }
-
         let symbols = frame.symbols();
         let len = symbols.len();
         for symbol in symbols {
-            let name = if let Some(name) = symbol.name().and_then(|s| s.as_str()) {
-                name
-            } else {
+            if symbol.name().and_then(|s| s.as_str()).is_none() {
                 return false;
-            };
+            }
 
             if let Some(filename) = symbol.filename() {
                 let s = filename.to_string_lossy();
@@ -223,40 +216,18 @@ fn filter(mut bt: Backtrace) -> Backtrace {
                     || s.contains("libstd")
                     || s.contains("/libtest/")
                     || s.contains("/rustc/")
-                    || s.contains("/visit/")
-                    || s.contains("/validator.rs")
+                    || s.contains("/stc_visit/")
                     || s.contains("rust/library")
                     || s.contains("libpanic_unwind/")
-                    || s.contains("/ecmascript/visit/")
-                    || s.contains("swc_visit")
-                    || s.contains("types/src/visit.rs")
                 {
                     return false;
                 }
 
-                if len == 1 {
-                    if s.contains("scoped-tls") {}
-
-                    if s.contains("/ast/") {
-                        return false;
-                    }
-
-                    if s.contains("common") && s.ends_with("/fold.rs") {
-                        return false;
-                    }
-
-                    if s.contains("checker") && s.ends_with("/validator.rs") {
-                        return false;
-                    }
+                if len == 1 && (s.contains("scoped-tls") || s.contains("better_scoped_tls")) {
+                    return false;
                 }
 
                 //                println!("({}) Filename: {}", len, s);
-            }
-
-            if name.contains("Module") {
-                done = true;
-                // Last one
-                return true;
             }
         }
 

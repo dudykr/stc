@@ -4,6 +4,7 @@ use stc_ts_ast_rnode::{RDecl, RIdent, RModuleDecl, RStmt};
 use stc_ts_ordering::{calc_eval_order, stmt::TypedId, types::Sortable};
 use stc_ts_types::Id;
 use stc_ts_utils::{AsModuleDecl, HasNodeId};
+use stc_utils::dedup;
 
 use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 
@@ -16,8 +17,10 @@ impl Analyzer<'_, '_> {
     where
         T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
     {
-        let (order, skip) = self.reorder_stmts(stmts);
+        let (mut order, skip) = self.reorder_stmts(stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
+
+        dedup(&mut order);
 
         if self.scope.is_root() {
             // We should track type declarations.
