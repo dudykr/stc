@@ -23,7 +23,7 @@ impl Analyzer<'_, '_> {
             for (i, ii) in order.iter().enumerate() {
                 for (j, ji) in order.iter().enumerate() {
                     if i != j && ii == ji {
-                        panic!("Duplicate order: {} and {}", i, j);
+                        panic!("Duplicate order: {} and {};\nOrder = {:#?}", i, j, order);
                     }
                 }
             }
