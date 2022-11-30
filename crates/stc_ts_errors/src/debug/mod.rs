@@ -228,7 +228,9 @@ fn filter(mut bt: Backtrace) -> Backtrace {
                 }
 
                 if len == 1 {
-                    if s.contains("scoped-tls") {}
+                    if s.contains("scoped-tls") || s.contains("better_scoped_tls") {
+                        return false;
+                    }
 
                     if s.contains("/ast/") {
                         return false;
