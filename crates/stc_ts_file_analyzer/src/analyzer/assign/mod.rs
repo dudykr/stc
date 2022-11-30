@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
@@ -513,19 +513,6 @@ impl Analyzer<'_, '_> {
                 let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
 
                 return Ok(Cow::Owned(ty));
-            }
-            Type::EnumVariant(EnumVariant {
-                name: Some(..),
-                enum_name,
-                span,
-                metadata,
-            }) => {
-                return Ok(Cow::Owned(Type::EnumVariant(EnumVariant {
-                    span: *span,
-                    enum_name: enum_name.clone(),
-                    metadata: *metadata,
-                    name: None,
-                })))
             }
             _ => {}
         }
@@ -1731,6 +1718,32 @@ impl Analyzer<'_, '_> {
                 match kind {
                     TsKeywordTypeKind::TsStringKeyword => match *rhs {
                         Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
+                        Type::EnumVariant(EnumVariant {
+                            name: None, ref enum_name, ..
+                        }) => {
+                            if let Some(types) = self.find_type(enum_name)? {
+                                for ty in types {
+                                    if let Type::Enum(ref e) = *ty.normalize() {
+                                        let condition = e.has_str && !e.has_num;
+                                        if condition {
+                                            return Ok(());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Type::EnumVariant(EnumVariant { ref name, .. }) => {
+                            // Allow assigning enum with numeric values to
+                            // string.
+                            if let Ok(result) = self.expand_enum_variant(rhs.clone()) {
+                                match result {
+                                    Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
+                                    _ => {}
+                                }
+                            }
+
+                            fail!()
+                        }
                         _ => {}
                     },
 
@@ -1738,18 +1751,29 @@ impl Analyzer<'_, '_> {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
                         }) => return Ok(()),
-
-                        Type::EnumVariant(ref v) => {
-                            // Allow assigning enum with numeric values to
-                            // number.
-                            if let Some(types) = self.find_type(&v.enum_name)? {
+                        Type::EnumVariant(EnumVariant {
+                            name: None, ref enum_name, ..
+                        }) => {
+                            if let Some(types) = self.find_type(enum_name)? {
                                 for ty in types {
                                     if let Type::Enum(ref e) = *ty.normalize() {
-                                        let is_num = e.has_num;
-                                        if is_num {
+                                        let condition = e.has_num && !e.has_str;
+                                        if condition {
                                             return Ok(());
                                         }
                                     }
+                                }
+                            }
+                        }
+                        Type::EnumVariant(EnumVariant { ref name, .. }) => {
+                            // Allow assigning enum with numeric values to
+                            // number.
+                            if let Ok(result) = self.expand_enum_variant(rhs.clone()) {
+                                match result {
+                                    Type::Lit(LitType {
+                                        lit: RTsLit::Number(..), ..
+                                    }) => return Ok(()),
+                                    _ => {}
                                 }
                             }
 

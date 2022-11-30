@@ -14,8 +14,8 @@ use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind,
-    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, Ref,
-    ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType,
+    Ref, ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -713,10 +713,6 @@ impl Analyzer<'_, '_> {
             return never!();
         }
 
-        if types.into_iter().filter(|t| t.is_enum_variant()).count() >= 2 {
-            return never!();
-        }
-
         if !self.rule().always_strict && types.len() == 2 {
             let (a, b) = (&types[0], &types[1]);
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
@@ -726,13 +722,56 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let is_enum_variant = types.iter().any(|ty| ty.is_enum_variant());
-        if is_enum_variant {
+        let enum_variant_iter = types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
+        let enum_variant_len = enum_variant_iter.len();
+
+        if enum_variant_len > 0 {
+            if let Some(first_enum) = enum_variant_iter.first() {
+                let mut enum_temp = first_enum.normalize();
+                let mut enum_temp_lit;
+                if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
+                    enum_temp_lit = etl;
+                }
+                let mut is_enum_value_nq = false;
+                for elem in enum_variant_iter.into_iter() {
+                    match elem.normalize() {
+                        Type::EnumVariant(el) => {
+                            if let Type::EnumVariant(en) = enum_temp {
+                                if let Type::EnumVariant(EnumVariant { name: None, .. }) = enum_temp {
+                                    enum_temp = elem;
+                                    continue;
+                                } else if en.enum_name != el.enum_name {
+                                    return never!();
+                                } else {
+                                    // eq two arguemnt enum_name
+                                    if let Ok(el_lit) = self.expand_enum_variant(elem.clone()) {
+                                        if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
+                                            if !etl.type_eq(&el_lit) {
+                                                is_enum_value_nq = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                if is_enum_value_nq {
+                    return never!();
+                }
+            }
             for elem in types.iter() {
                 match elem.normalize() {
                     Type::EnumVariant(ref ev) => {
                         if let Some(variant_name) = &ev.name {
                             // enumVariant is enumMemeber
+                            if enum_variant_len > 1 {
+                                let mut en = ev.clone();
+                                en.name = None;
+                                return Ok(Some(Type::EnumVariant(en)));
+                            }
                             if let Ok(result) = self.expand_enum_variant(elem.clone()) {
                                 match result {
                                     Type::Lit(LitType { .. }) => return Ok(Some(elem.clone())),
@@ -1286,11 +1325,6 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
-            Type::EnumVariant(e) => match self.expand_enum_variant(Type::EnumVariant(e.clone())) {
-                Ok(Type::TypeLit(ty)) => Cow::Owned(ty),
-                Ok(Type::Lit(ty)) => return self.convert_type_to_type_lit(span, Cow::Owned(Type::Lit(ty))),
-                _ => unreachable!(),
-            },
 
             Type::Class(c) => {
                 let mut members = vec![];
