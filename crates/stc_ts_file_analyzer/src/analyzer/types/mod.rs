@@ -755,7 +755,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         // enumVariant is Enum
                         if let Some(types) = self.find_type(&ev.enum_name)? {
-                            for ty in types.into_iter() {
+                            for ty in types {
                                 if let Type::Enum(e) = ty.normalize() {
                                     let mut str_lits = vec![];
                                     let mut num_lits = vec![];
