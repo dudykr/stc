@@ -2533,8 +2533,6 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 let indexed = self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
-                                println!("{:#?}: {:#?} {:#?} ", prop, index_ty, prop_ty);
-                                println!("index.type_ann: {:#?}", index.type_ann);
                                 if indexed {
                                     return Ok(index
                                         .type_ann
