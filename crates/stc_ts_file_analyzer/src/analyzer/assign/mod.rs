@@ -1145,15 +1145,15 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Lit(ref lhs) => match rhs.normalize() {
-                Type::Lit(r_lit) => {
-                    if is_lit_eq_ignore_span(lhs, r_lit) {
+                Type::Lit(rhs) => {
+                    if is_lit_eq_ignore_span(lhs, rhs) {
                         return Ok(());
                     } else {
                         return Err(ErrorKind::AssignFailed {
                             span: opts.left_ident_span.unwrap_or(span),
                             left: box to.clone(),
                             right_ident: None,
-                            right: box r_lit.clone().into(),
+                            right: box rhs.clone().into(),
                             cause: vec![],
                         }
                         .into());
