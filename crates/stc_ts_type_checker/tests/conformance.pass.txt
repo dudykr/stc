@@ -251,6 +251,8 @@ classes/propertyMemberDeclarations/staticAndNonStaticPropertiesSameName.ts
 classes/propertyMemberDeclarations/staticMemberInitialization.ts
 classes/propertyMemberDeclarations/staticPropertyAndFunctionWithSameName.ts
 classes/propertyMemberDeclarations/thisInInstanceMemberInitializer.ts
+classes/staticIndexSignature/staticIndexSignature1.ts
+classes/staticIndexSignature/staticIndexSignature6.ts
 constEnums/constEnum1.ts
 constEnums/constEnum3.ts
 constEnums/constEnum4.ts
@@ -1838,6 +1840,7 @@ parser/ecmascript5/parserS7.2_A1.5_T2.ts
 parser/ecmascript5/parserS7.3_A1.1_T2.ts
 parser/ecmascript5/parserS7.6.1.1_A1.10.ts
 parser/ecmascript5/parserS7.6_A4.2_T1.ts
+parser/ecmascript5/parserS7.6_A4.2_ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript5/parserSbp_7.9_A9_T3.ts
 parser/ecmascript5/parserSyntaxWalker.generated.ts
 parser/ecmascript5/parserUnicode1.ts
