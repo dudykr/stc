@@ -8,7 +8,7 @@ use stc_ts_ast_rnode::{
     RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
-use stc_ts_errors::{DebugExt, ErrorKind, Errors};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
@@ -729,7 +729,12 @@ impl Analyzer<'_, '_> {
             MethodKind::Setter => Ok(ClassMember::Property(ClassProperty {
                 span: c_span,
                 key,
-                value: Some(ret_ty),
+                value: if params.len() == 1 {
+                    params.get(0).map(|p| p.ty.clone())
+                } else {
+                    // TODO: Should emit TS1049 error here
+                    Some(box Type::any(key_span, Default::default()))
+                },
                 is_static: c.is_static,
                 accessibility: c.accessibility,
                 is_abstract: c.is_abstract,

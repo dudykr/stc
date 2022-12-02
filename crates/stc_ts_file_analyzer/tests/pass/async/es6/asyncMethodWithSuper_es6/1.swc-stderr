@@ -1,0 +1,36 @@
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6/1.ts:10:1]
+ 10 | class Derived extends Base {
+    :                       ^^^^
+    `----
+
+Error: 
+  > typeof Base
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6/1.ts:11:5]
+ 11 | c() { return async () => super.setter = '' }
+    :                          ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6/1.ts:11:5]
+ 11 | c() { return async () => super.setter = '' }
+    :                          ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ''
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6/1.ts:11:5]
+ 11 | c() { return async () => super.setter = '' }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => string
