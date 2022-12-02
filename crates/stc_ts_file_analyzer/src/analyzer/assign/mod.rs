@@ -1298,6 +1298,11 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => fail!(),
+
             Type::Intersection(Intersection { types, .. }) => {
                 // Filter out `never` types
                 if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {

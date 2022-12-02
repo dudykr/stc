@@ -15,7 +15,7 @@ interface I { foo: string }
 var b: I;
 x = b;
 
-x = { f() {} }
+x = { f() { } }
 
 module M { export var x = 1; }
 x = M;
