@@ -1732,7 +1732,7 @@ impl Analyzer<'_, '_> {
                     }) => {
                         return Ok(Type::Union(Union {
                             types: types
-                                .into_iter()
+                                .iter()
                                 .map(|inner_ty| {
                                     self.expand_intrinsic_types(
                                         span,
