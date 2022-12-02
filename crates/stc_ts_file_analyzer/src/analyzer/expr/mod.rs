@@ -2470,6 +2470,12 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
+                // This is used to handle case like `class A { static [s: string]: number,
+                // static [s: number]: 42 }` For MemberExpr `A[42] = 2`, even
+                // though `[s: string]: number` is fit with `A[42] = 2`,
+                // But `[s: number]: 42` has higher priority.
+                let mut index_signature_fallback = None;
+
                 //
                 for m in &cls.body {
                     //
@@ -2503,8 +2509,47 @@ impl Analyzer<'_, '_> {
                                 }));
                             }
                         }
+
+                        ClassMember::IndexSignature(ref index) => {
+                            if !index.is_static {
+                                continue;
+                            }
+
+                            if index.params.len() == 1 {
+                                // `[s: string]: boolean` can be indexed with a number.
+
+                                let index_ty = &index.params[0].ty;
+
+                                let prop_ty = prop.ty();
+
+                                let string_indexed_by_number = index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num();
+                                if string_indexed_by_number {
+                                    index_signature_fallback = Some(Ok(index
+                                        .type_ann
+                                        .clone()
+                                        .map(|v| *v)
+                                        .unwrap_or_else(|| Type::any(span, Default::default()))));
+                                    continue;
+                                }
+
+                                let indexed = self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
+                                println!("{:#?}: {:#?} {:#?} ", prop, index_ty, prop_ty);
+                                println!("index.type_ann: {:#?}", index.type_ann);
+                                if indexed {
+                                    return Ok(index
+                                        .type_ann
+                                        .clone()
+                                        .map(|v| *v)
+                                        .unwrap_or_else(|| Type::any(span, Default::default())));
+                                }
+                            }
+                        }
                         _ => {}
                     }
+                }
+
+                if let Some(fallback) = index_signature_fallback {
+                    return fallback;
                 }
 
                 if let Some(super_ty) = &cls.super_class {

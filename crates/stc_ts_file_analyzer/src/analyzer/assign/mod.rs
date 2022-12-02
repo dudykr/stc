@@ -14,7 +14,7 @@ use swc_ecma_ast::*;
 use tracing::{debug, error, info, span, Level};
 
 use crate::{
-    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    analyzer::{types::NormalizeTypeOpts, util::is_lit_eq_ignore_span, Analyzer},
     ty::TypeExt,
     VResult,
 };
@@ -36,6 +36,10 @@ pub(crate) struct AssignOpts {
     /// This field should be overrided by caller.
     pub span: Span,
     pub right_ident_span: Option<Span>,
+
+    // Span of X in expr `X = Y`
+    // This is used for better error display
+    pub left_ident_span: Option<Span>,
 
     /// # Values
     ///
@@ -1141,7 +1145,20 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Lit(ref lhs) => match rhs.normalize() {
-                Type::Lit(rhs) if lhs.eq_ignore_span(rhs) => return Ok(()),
+                Type::Lit(r_lit) => {
+                    if is_lit_eq_ignore_span(lhs, r_lit) {
+                        return Ok(());
+                    } else {
+                        return Err(ErrorKind::AssignFailed {
+                            span: opts.left_ident_span.unwrap_or(span),
+                            left: box to.clone().into(),
+                            right_ident: None,
+                            right: box r_lit.clone().into(),
+                            cause: vec![],
+                        }
+                        .into());
+                    }
+                }
                 Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
                     // expression below.

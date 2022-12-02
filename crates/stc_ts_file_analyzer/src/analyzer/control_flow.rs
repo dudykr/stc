@@ -688,7 +688,16 @@ impl Analyzer<'_, '_> {
                     lhs_ty.make_clone_cheap();
 
                     if op == op!("=") {
-                        self.assign(span, &mut Default::default(), &lhs_ty, ty)?;
+                        self.assign_with_opts(
+                            &mut Default::default(),
+                            &lhs_ty,
+                            ty,
+                            AssignOpts {
+                                span,
+                                left_ident_span: Some(lhs.span()),
+                                ..Default::default()
+                            },
+                        )?
                     } else {
                         self.assign_with_op(span, op, &lhs_ty, ty)?;
                     }
