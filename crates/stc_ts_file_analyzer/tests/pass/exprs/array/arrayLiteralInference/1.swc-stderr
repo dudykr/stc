@@ -265,4 +265,4 @@ Error:
     `----
 
 Error: 
-  > Map<AppType.Standard, ([AppStyle.Standard, AppStyle.MiniApp] | [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity])>
+  > Map<(AppType.Standard | AppType.Relationship | AppType.AdvancedList), ([AppStyle.Standard, AppStyle.MiniApp] | [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity])>

@@ -1,11 +1,12 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, Ref, RestType, ThisType, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, ThisType, Tuple, Type, TypeElement, TypeLit,
+    TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use swc_atoms::js_word;
@@ -967,6 +968,21 @@ impl Analyzer<'_, '_> {
                 ..
             }) => fail!(),
 
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => {
+                if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                    return Ok(());
+                }
+                if let Type::Query(QueryType { expr, .. }) = rhs.clone() {
+                    if let QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { sym, .. })) = *expr {
+                        if sym == js_word!("undefined") {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
             // Anything is assignable to unknown
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -987,13 +1003,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Enum(..) => fail!(),
 
-            Type::EnumVariant(EnumVariant { name: None, .. }) => {
-                let enum_name = match to {
-                    Type::EnumVariant(e) => e.enum_name.clone(),
-                    Type::Enum(e) => e.id.clone().into(),
-                    _ => unreachable!(),
-                };
-
+            Type::EnumVariant(EnumVariant { name: None, enum_name, .. }) => {
                 match rhs.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(..), ..
@@ -1003,11 +1013,24 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         // validEnumAssignments.ts insists that this is valid.
-                        return Ok(());
+                        // but if enum isn't has num, not assignable
+                        let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
+
+                        if let Some(items) = items {
+                            for t in items {
+                                if let Type::Enum(en) = t.normalize() {
+                                    if en.has_num {
+                                        return Ok(());
+                                    }
+                                }
+                            }
+                        }
+
+                        fail!()
                     }
 
                     Type::EnumVariant(rhs) => {
-                        if rhs.enum_name == enum_name {
+                        if rhs.enum_name == enum_name.clone() {
                             return Ok(());
                         }
                         fail!()
@@ -1031,35 +1054,59 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
-            Type::EnumVariant(ref e @ EnumVariant { name: Some(name), .. }) => {
+            Type::EnumVariant(
+                ref e @ EnumVariant {
+                    name: Some(name),
+                    enum_name,
+                    ..
+                },
+            ) => {
                 // Single-variant enums seem to be treated like a number.
+                // but if enum isn't has num, not assignable
                 //
                 // See typeArgumentInferenceWithObjectLiteral.ts
+                match rhs.normalize() {
+                    Type::EnumVariant(en) => {
+                        if !&en.enum_name.type_eq(&e.enum_name) {
+                            fail!()
+                        }
 
-                let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
-
-                if let Some(items) = items {
-                    for t in items {
-                        if let Type::Enum(en) = t.normalize() {
-                            if en.members.len() == 1 {
+                        if let Some(en_name) = &en.name {
+                            if en_name.type_eq(name) {
                                 return Ok(());
                             }
+                        }
 
-                            for mem in en.members.iter() {
-                                match mem.id {
-                                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
-                                        if sym == name {
-                                            return Ok(());
+                        fail!()
+                    }
+                    Type::Lit(LitType {
+                        lit: RTsLit::Number(..), ..
+                    })
+                    | Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    }) => {
+                        let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
+
+                        if let Some(items) = items {
+                            for t in items {
+                                if let Type::Enum(en) = t.normalize() {
+                                    if let Some(v) = en.members.iter().find(|m| match m.id {
+                                        RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                                        | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
+                                    }) {
+                                        match &*v.val {
+                                            RExpr::Lit(RLit::Num(..)) => return Ok(()),
+                                            _ => fail!(),
                                         }
                                     }
-                                };
+                                }
                             }
                         }
+                        fail!()
                     }
+                    _ => fail!(),
                 }
-
-                dbg!();
-                return Err(ErrorKind::InvalidLValue { span: e.span }.into());
             }
 
             Type::Intersection(ref li) => {
@@ -2068,11 +2115,14 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
-                //
+
                 match *rhs.normalize() {
                     Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
                         // TODO: Handle Type::Rest
 
+                        if rhs_elems.is_empty() {
+                            fail!()
+                        }
                         if elems.len() < rhs_elems.len() {
                             return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                         }

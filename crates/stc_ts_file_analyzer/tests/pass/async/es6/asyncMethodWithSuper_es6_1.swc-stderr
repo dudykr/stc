@@ -1,0 +1,297 @@
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:11:1]
+ 11 | class Derived extends Base {
+    :                       ^^^^
+    `----
+
+Error: 
+  > typeof Base
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:12:5]
+ 12 | a() { return async () => super.method('') }
+    :                          ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: string) => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:12:5]
+ 12 | a() { return async () => super.method('') }
+    :                          ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:12:5]
+ 12 | a() { return async () => super.method('') }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:13:5]
+ 13 | b() { return async () => super.getter }
+    :                          ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:13:5]
+ 13 | b() { return async () => super.getter }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:14:5]
+ 14 | c() { return async () => super.setter = '' }
+    :                          ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:14:5]
+ 14 | c() { return async () => super.setter = '' }
+    :                          ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ''
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:14:5]
+ 14 | c() { return async () => super.setter = '' }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => string
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:15:5]
+ 15 | d() { return async () => super["method"]('') }
+    :                          ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: string) => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:15:5]
+ 15 | d() { return async () => super["method"]('') }
+    :                          ^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:15:5]
+ 15 | d() { return async () => super["method"]('') }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:16:5]
+ 16 | e() { return async () => super["getter"] }
+    :                          ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:16:5]
+ 16 | e() { return async () => super["getter"] }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:17:5]
+ 17 | f() { return async () => super["setter"] = '' }
+    :                          ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:17:5]
+ 17 | f() { return async () => super["setter"] = '' }
+    :                          ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ''
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:17:5]
+ 17 | f() { return async () => super["setter"] = '' }
+    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => string
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:18:5]
+ 18 | static a() { return async () => super.method('') }
+    :                                 ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: string) => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:18:5]
+ 18 | static a() { return async () => super.method('') }
+    :                                 ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:18:5]
+ 18 | static a() { return async () => super.method('') }
+    :                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:19:5]
+ 19 | static b() { return async () => super.getter }
+    :                                 ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:19:5]
+ 19 | static b() { return async () => super.getter }
+    :                     ^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:20:5]
+ 20 | static c() { return async () => super.setter = '' }
+    :                                 ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:20:5]
+ 20 | static c() { return async () => super.setter = '' }
+    :                                 ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ''
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:20:5]
+ 20 | static c() { return async () => super.setter = '' }
+    :                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => string
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:21:5]
+ 21 | static d() { return async () => super["method"]('') }
+    :                                 ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: string) => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:21:5]
+ 21 | static d() { return async () => super["method"]('') }
+    :                                 ^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:21:5]
+ 21 | static d() { return async () => super["method"]('') }
+    :                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:22:5]
+ 22 | static e() { return async () => super["getter"] }
+    :                                 ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:22:5]
+ 22 | static e() { return async () => super["getter"] }
+    :                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => any
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:23:5]
+ 23 | static f() { return async () => super["setter"] = '' }
+    :                                 ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:23:5]
+ 23 | static f() { return async () => super["setter"] = '' }
+    :                                 ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ''
+
+  x Type
+    ,-[$DIR/tests/pass/async/es6/asyncMethodWithSuper_es6_1.ts:23:5]
+ 23 | static f() { return async () => super["setter"] = '' }
+    :                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => string

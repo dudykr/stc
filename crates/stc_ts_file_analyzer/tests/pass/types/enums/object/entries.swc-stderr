@@ -24,4 +24,4 @@ Error:
    `----
 
 Error: 
-  > [string, E.A][]
+  > [string, (E.A | E.B | string)][]
