@@ -1152,7 +1152,7 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::AssignFailed {
                             span: opts.left_ident_span.unwrap_or(span),
                             left: box to.clone(),
-                            right_ident: None,
+                            right_ident: opts.right_ident_span,
                             right: box rhs.clone().into(),
                             cause: vec![],
                         }
