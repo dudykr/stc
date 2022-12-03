@@ -1686,7 +1686,9 @@ impl Analyzer<'_, '_> {
                     },
 
                     Type::Array(..) | Type::Tuple(..) | Type::Class(..) | Type::ClassDef(..) => {
-                        fail!()
+                        if *kind != TsKeywordTypeKind::TsObjectKeyword {
+                            fail!()
+                        }
                     }
 
                     _ => {}
