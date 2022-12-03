@@ -1688,7 +1688,8 @@ impl Analyzer<'_, '_> {
                     match ty.normalize() {
                         Type::Keyword(KeywordType {
                             span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
+                            kind:
+                                TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUnknownKeyword,
                             ..
                         }) => {}
 
