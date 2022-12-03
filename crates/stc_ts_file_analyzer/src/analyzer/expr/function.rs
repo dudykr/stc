@@ -184,6 +184,10 @@ impl Analyzer<'_, '_> {
             });
 
             for (idx, param) in params.enumerate() {
+                if param.get_ty().is_some() {
+                    continue;
+                }
+
                 if let RPat::Rest(..) = param {
                     if let Ok(mut ty) = self.get_rest_elements(Some(param.span()), Cow::Borrowed(&params_tuple), idx) {
                         ty.make_clone_cheap();
