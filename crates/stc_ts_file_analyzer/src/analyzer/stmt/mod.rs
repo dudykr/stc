@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use rnode::VisitWith;
-use stc_ts_ast_rnode::{RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RExpr, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::ErrorKind;
 use stc_ts_types::{LitType, Type};
 use stc_utils::stack;
@@ -158,5 +158,22 @@ impl Analyzer<'_, '_> {
 
             res.report(&mut self.storage);
         }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &RExprStmt) {
+        let preserve_cond_facts = !matches!(&*node.expr, RExpr::Call(..));
+
+        let prev_cond_facts = self.cur_facts.clone();
+
+        node.expr.visit_with(self);
+
+        if preserve_cond_facts {
+            self.cur_facts = prev_cond_facts;
+        }
+
+        Ok(())
     }
 }
