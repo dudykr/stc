@@ -1783,7 +1783,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    fn extract_callee_candidates(&mut self, span: Span, kind: ExtractKind, callee: &Type) -> VResult<Vec<CallCandidate>> {
+    pub(super) fn extract_callee_candidates(&mut self, span: Span, kind: ExtractKind, callee: &Type) -> VResult<Vec<CallCandidate>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let callee = self
@@ -3504,7 +3504,7 @@ fn test_arg_check_result_order() {
 }
 
 /// TODO(kdy1): Use cow
-struct CallCandidate {
+pub(super) struct CallCandidate {
     pub type_params: Option<Vec<TypeParam>>,
     pub params: Vec<FnParam>,
     pub ret_ty: Type,
