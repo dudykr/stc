@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     fn is_valid_expr(e: &RExpr) -> bool {
                         match e {
-                            RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) => false,
+                            RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Bin(..) => false,
                             RExpr::Paren(r) => is_valid_expr(&r.expr),
                             _ => true,
                         }
