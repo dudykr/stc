@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit};
+use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
@@ -10,7 +10,7 @@ use stc_ts_types::{
     Type, TypeElement, TypeLit,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
-use swc_common::{Span, Spanned, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
 
@@ -190,6 +190,34 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 if let Some(constraint) = m.type_param.constraint.as_deref() {
+                    if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                        let index_signature = TypeElement::Index(IndexSignature {
+                            params: vec![FnParam {
+                                span,
+                                required: true,
+                                pat: RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: RIdent::new("___mapped".into(), span.with_ctxt(SyntaxContext::empty())),
+                                    type_ann: None,
+                                }),
+                                ty: box constraint.clone(),
+                            }],
+                            type_ann: m.ty.clone(),
+                            readonly: m.readonly.map_or(false, |v| match v {
+                                TruePlusMinus::True => true,
+                                TruePlusMinus::Plus => true,
+                                TruePlusMinus::Minus => false,
+                            }),
+                            span: m.span,
+                            is_static: false,
+                        });
+                        return Ok(Some(Type::TypeLit(TypeLit {
+                            span: m.span,
+                            members: vec![index_signature],
+                            metadata: Default::default(),
+                        })));
+                    }
+
                     if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
                         let members = keys
                             .into_iter()
