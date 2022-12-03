@@ -204,6 +204,7 @@ classes/members/privateNames/privateNameFieldAccess.ts
 classes/members/privateNames/privateNameFieldAssignment.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
+classes/members/privateNames/privateNameFieldUnaryMutation.ts
 classes/members/privateNames/privateNameLateSuper.ts
 classes/members/privateNames/privateNameMethodInStaticFieldInit.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
@@ -384,6 +385,7 @@ es6/Symbols/symbolType15.ts
 es6/Symbols/symbolType17.ts
 es6/Symbols/symbolType18.ts
 es6/Symbols/symbolType19.ts
+es6/Symbols/symbolType2.ts
 es6/Symbols/symbolType20.ts
 es6/Symbols/symbolType4.ts
 es6/Symbols/symbolType5.ts
@@ -1221,6 +1223,7 @@ expressions/binaryOperators/comparisonOperator/comparisonOperatorWithSubtypeObje
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithSubtypeObjectOnProperty.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithTwoOperandsAreAny.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithTypeParameter.ts
+expressions/binaryOperators/inOperator/inOperatorWithValidOperands.ts
 expressions/binaryOperators/instanceofOperator/instanceofOperatorWithAny.ts
 expressions/binaryOperators/instanceofOperator/instanceofOperatorWithInvalidStaticToString.ts
 expressions/binaryOperators/instanceofOperator/instanceofOperatorWithLHSIsObject.ts
