@@ -1742,7 +1742,7 @@ impl Analyzer<'_, '_> {
 
                     ty => {
                         if !self.is_valid_lhs_of_in(ty) {
-                            errors.push(ErrorKind::TS2360 { span: ls }.into());
+                            errors.push(ErrorKind::InvalidLhsOfInOperator { span: ls }.into());
                         }
                     }
                 }
