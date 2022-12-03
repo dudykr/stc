@@ -1090,7 +1090,14 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
-        let ty = self.normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })?;
+        let ty = self.normalize(
+            Some(span),
+            ty,
+            NormalizeTypeOpts {
+                preserve_intersection: true,
+                ..Default::default()
+            },
+        )?;
 
         if ty.is_type_lit() {
             match ty {
