@@ -1765,7 +1765,7 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             })
                             .freezed(),
-                            rt,
+                            ty,
                             AssignOpts {
                                 span: rs,
                                 ..Default::default()
