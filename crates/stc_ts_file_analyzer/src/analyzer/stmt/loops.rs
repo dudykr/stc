@@ -256,6 +256,9 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         });
+        if rhs.is_type_lit() {
+            return Ok(s);
+        }
         let n = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsNumberKeyword,
