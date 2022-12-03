@@ -1090,14 +1090,7 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
-        let ty = self.normalize(
-            Some(span),
-            ty,
-            NormalizeTypeOpts {
-                preserve_intersection: true,
-                ..Default::default()
-            },
-        )?;
+        let ty = self.normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })?;
 
         if ty.is_type_lit() {
             match ty {
@@ -1240,13 +1233,7 @@ impl Analyzer<'_, '_> {
                 let mut members = vec![];
                 for ty in &t.types {
                     let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(ty))?;
-
-                    members.extend(match opt {
-                        Some(ty) => ty.into_owned().members,
-                        None => {
-                            return Ok(None);
-                        }
-                    });
+                    members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
                 let members = self.merge_type_elements(span, members)?;
