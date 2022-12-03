@@ -1271,6 +1271,7 @@ expressions/functionCalls/forgottenNew.ts
 expressions/functionCalls/grammarAmbiguities.ts
 expressions/functionCalls/newWithSpreadES5.ts
 expressions/functionCalls/newWithSpreadES6.ts
+expressions/functionCalls/overloadResolutionConstructors.ts
 expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
 expressions/functionCalls/typeArgumentInferenceWithObjectLiteral.ts
@@ -2483,6 +2484,7 @@ types/union/discriminatedUnionTypes2.ts
 types/union/discriminatedUnionTypes3.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts
+types/union/unionTypeConstructSignatures.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeIndexSignature.ts
 types/union/unionTypeReduction.ts
