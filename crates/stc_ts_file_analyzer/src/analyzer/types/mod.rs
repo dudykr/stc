@@ -1240,7 +1240,13 @@ impl Analyzer<'_, '_> {
                 let mut members = vec![];
                 for ty in &t.types {
                     let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(ty))?;
-                    members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
+
+                    members.extend(match opt {
+                        Some(ty) => ty.into_owned().members,
+                        None => {
+                            return Ok(None);
+                        }
+                    });
                 }
 
                 let members = self.merge_type_elements(span, members)?;
