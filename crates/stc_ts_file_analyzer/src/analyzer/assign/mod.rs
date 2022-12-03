@@ -987,7 +987,10 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                 }
-                return Err(ErrorKind::InvalidLValue { span: to.span() }.into());
+                // TODO(kdy1): Validate this correctly
+                //
+                // Note that this task is a 100% parity issue, as no one do this in real world.
+                return Ok(());
             }
             Type::Enum(..) => fail!(),
 
