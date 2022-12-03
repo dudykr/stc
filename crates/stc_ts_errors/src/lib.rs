@@ -1198,7 +1198,8 @@ pub enum ErrorKind {
         span: Span,
     },
 
-    TS2360 {
+    /// TS2360
+    InvalidLhsOfInOperator {
         span: Span,
     },
 
@@ -1601,7 +1602,7 @@ impl ErrorKind {
             ErrorKind::TS1319 { .. } => 1319,
             ErrorKind::ExportEqualsMixedWithOtherExports { .. } => 2309,
             ErrorKind::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
-            ErrorKind::TS2360 { .. } => 2360,
+            ErrorKind::InvalidLhsOfInOperator { .. } => 2360,
             ErrorKind::InvalidRhsForInOperator { .. } => 2638,
             ErrorKind::WrongTypeForLhsOfNumericOperation { .. } => 2362,
             ErrorKind::WrongTypeForRhsOfNumericOperation { .. } => 2363,

@@ -1741,8 +1741,39 @@ impl Analyzer<'_, '_> {
                     }
 
                     ty => {
-                        if !self.is_valid_lhs_of_in(ty) {
-                            errors.push(ErrorKind::TS2360 { span: ls }.into());
+                        if let Err(err) = self.assign_with_opts(
+                            &mut Default::default(),
+                            &Type::Union(Union {
+                                span,
+                                types: vec![
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                ],
+                                metadata: Default::default(),
+                            })
+                            .freezed(),
+                            ty,
+                            AssignOpts {
+                                span: ls,
+                                ..Default::default()
+                            },
+                        ) {
+                            errors.push(err.context("tried to assign for LHS of `in` operator"));
+                        } else if !self.is_valid_lhs_of_in(ty) {
+                            errors.push(ErrorKind::InvalidLhsOfInOperator { span: ls }.into());
                         }
                     }
                 }
