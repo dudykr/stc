@@ -4,9 +4,10 @@ use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
 use stc_ts_types::{Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type};
 use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
-use swc_common::Spanned;
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 
+use super::call_new::ExtractKind;
 use crate::{
     analyzer::{assign::AssignOpts, expr::TypeOfMode, pat::PatMode, Analyzer, Ctx, ScopeKind},
     ty::TypeExt,
@@ -34,7 +35,7 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
 
-                child.apply_fn_type_ann(f.params.iter(), type_ann.as_deref());
+                child.apply_fn_type_ann(f.span, f.params.iter(), type_ann.as_deref());
 
                 for p in &f.params {
                     child.default_any_pat(p);
@@ -131,86 +132,93 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn apply_fn_type_ann<'a>(&mut self, params: impl Iterator<Item = &'a RPat> + Clone, type_ann: Option<&Type>) {
+    pub(crate) fn apply_fn_type_ann<'a>(&mut self, span: Span, params: impl Iterator<Item = &'a RPat> + Clone, type_ann: Option<&Type>) {
         if let Some(ty) = &type_ann {
             // See functionExpressionContextualTyping1.ts
             //
             // If a type annotation of function is union and there are two or more
             // function types, the type becomes any implicitly.
-            if ty.iter_union().filter(|ty| ty.is_fn_type()).count() == 1 {
-                for ty in ty.iter_union() {
-                    if let Type::Function(ty) = ty.normalize() {
-                        // Handle rest in `ty.params`.
-                        // If a rest parameter is present, we should adjust offset
+            let candidates = self.extract_callee_candidates(span, ExtractKind::Call, ty);
+            let candidates = match candidates {
+                Ok(candidates) => candidates,
+                _ => return,
+            };
+            if candidates.len() != 1 {
+                return;
+            }
 
-                        // We do it by creating a tuple and calling access_property
-                        // TODO(kdy1): This is not efficient.
-                        let mut params_tuple_els = vec![];
+            // Handle rest in `ty.params`.
+            // If a rest parameter is present, we should adjust offset
 
-                        for param in ty.params.iter() {
-                            match param.pat {
-                                RPat::Rest(..) => {
-                                    params_tuple_els.push(TupleElement {
-                                        span: param.span,
-                                        label: None,
-                                        ty: box Type::Rest(RestType {
-                                            span: param.span,
-                                            ty: param.ty.clone(),
-                                            metadata: Default::default(),
-                                        }),
-                                    });
-                                }
-                                _ => {
-                                    params_tuple_els.push(TupleElement {
-                                        span: param.span,
-                                        label: None,
-                                        ty: param.ty.clone(),
-                                    });
-                                }
+            // We do it by creating a tuple and calling access_property
+            // TODO(kdy1): This is not efficient.
+            let mut params_tuple_els = vec![];
+
+            for param in candidates[0].params.iter() {
+                match param.pat {
+                    RPat::Rest(..) => {
+                        params_tuple_els.push(TupleElement {
+                            span: param.span,
+                            label: None,
+                            ty: box Type::Rest(RestType {
+                                span: param.span,
+                                ty: param.ty.clone(),
+                                metadata: Default::default(),
+                            }),
+                        });
+                    }
+                    _ => {
+                        params_tuple_els.push(TupleElement {
+                            span: param.span,
+                            label: None,
+                            ty: param.ty.clone(),
+                        });
+                    }
+                }
+            }
+
+            let params_tuple = Type::Tuple(Tuple {
+                span,
+                elems: params_tuple_els,
+                metadata: Default::default(),
+            });
+
+            for (idx, param) in params.enumerate() {
+                if param.get_ty().is_some() {
+                    continue;
+                }
+
+                if let RPat::Rest(..) = param {
+                    if let Ok(mut ty) = self.get_rest_elements(Some(param.span()), Cow::Borrowed(&params_tuple), idx) {
+                        ty.make_clone_cheap();
+
+                        if let Some(pat_node_id) = param.node_id() {
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.into_owned());
                             }
                         }
+                    }
+                    continue;
+                }
 
-                        let params_tuple = Type::Tuple(Tuple {
-                            span: ty.span,
-                            elems: params_tuple_els,
-                            metadata: Default::default(),
-                        });
-
-                        for (idx, param) in params.clone().enumerate() {
-                            if let RPat::Rest(..) = param {
-                                if let Ok(mut ty) = self.get_rest_elements(Some(param.span()), Cow::Borrowed(&params_tuple), idx) {
-                                    ty.make_clone_cheap();
-
-                                    if let Some(pat_node_id) = param.node_id() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.into_owned());
-                                        }
-                                    }
-                                }
-                                continue;
-                            }
-
-                            if let Ok(ty) = self.access_property(
-                                param.span(),
-                                &params_tuple,
-                                &Key::Num(RNumber {
-                                    span: param.span(),
-                                    value: idx as f64,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                stc_ts_types::IdCtx::Var,
-                                Default::default(),
-                            ) {
-                                // Store type information, so the pattern
-                                // validator can use a correct
-                                // type.
-                                if let Some(pat_node_id) = param.node_id() {
-                                    if let Some(m) = &mut self.mutations {
-                                        m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.clone());
-                                    }
-                                }
-                            }
+                if let Ok(ty) = self.access_property(
+                    param.span(),
+                    &params_tuple,
+                    &Key::Num(RNumber {
+                        span: param.span(),
+                        value: idx as f64,
+                        raw: None,
+                    }),
+                    TypeOfMode::RValue,
+                    stc_ts_types::IdCtx::Var,
+                    Default::default(),
+                ) {
+                    // Store type information, so the pattern
+                    // validator can use a correct
+                    // type.
+                    if let Some(pat_node_id) = param.node_id() {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.clone());
                         }
                     }
                 }

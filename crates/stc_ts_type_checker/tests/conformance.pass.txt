@@ -1845,7 +1845,6 @@ parser/ecmascript5/parserS7.2_A1.5_T2.ts
 parser/ecmascript5/parserS7.3_A1.1_T2.ts
 parser/ecmascript5/parserS7.6.1.1_A1.10.ts
 parser/ecmascript5/parserS7.6_A4.2_T1.ts
-parser/ecmascript5/parserS7.6_A4.2_ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript5/parserSbp_7.9_A9_T3.ts
 parser/ecmascript5/parserSyntaxWalker.generated.ts
 parser/ecmascript5/parserUnicode1.ts
@@ -1856,7 +1855,6 @@ parser/ecmascript5/parserUsingConstructorAsIdentifier.ts
 parser/ecmascript5/parserVoidExpression1.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
-parser/ecmascript6/ComputedPropertyNames/parserCambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName17.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName2.ts
