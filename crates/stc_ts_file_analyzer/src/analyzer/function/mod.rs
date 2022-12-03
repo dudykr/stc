@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{ErrorKind, Errors};
@@ -8,7 +7,6 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
 };
-use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -327,19 +325,7 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            if let Some(Type::Function(ty)) = type_ann.as_ref().map(|ty| ty.normalize()) {
-                for p in f.params.iter().zip_longest(ty.params.iter()) {
-                    if let EitherOrBoth::Both(param, ty) = p {
-                        // Store type infomations, so the pattern validator can use correct
-                        // type.
-                        if let Some(pat_node_id) = param.pat.node_id() {
-                            if let Some(m) = &mut self.mutations {
-                                m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
-                            }
-                        }
-                    }
-                }
-            }
+            self.apply_fn_type_ann(f.span, f.params.iter().map(|p| &p.pat), type_ann);
 
             // if let Some(name) = name {
             //     // We use `typeof function` to infer recursive function's return type.

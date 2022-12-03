@@ -81,12 +81,15 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }) => {
-                    match &*e.arg {
-                        RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) => {
-                            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into());
+                    fn is_valid_expr(e: &RExpr) -> bool {
+                        match e {
+                            RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Bin(..) => false,
+                            RExpr::Paren(r) => is_valid_expr(&r.expr),
+                            _ => true,
                         }
-
-                        _ => {}
+                    }
+                    if !is_valid_expr(&e.arg) {
+                        self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into());
                     }
                     Ok(ty)
                 }

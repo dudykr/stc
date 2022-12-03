@@ -1688,7 +1688,8 @@ impl Analyzer<'_, '_> {
                     match ty.normalize() {
                         Type::Keyword(KeywordType {
                             span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
+                            kind:
+                                TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUnknownKeyword,
                             ..
                         }) => {}
 
@@ -1740,8 +1741,39 @@ impl Analyzer<'_, '_> {
                     }
 
                     ty => {
-                        if !self.is_valid_lhs_of_in(ty) {
-                            errors.push(ErrorKind::TS2360 { span: ls }.into());
+                        if let Err(err) = self.assign_with_opts(
+                            &mut Default::default(),
+                            &Type::Union(Union {
+                                span,
+                                types: vec![
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                ],
+                                metadata: Default::default(),
+                            })
+                            .freezed(),
+                            ty,
+                            AssignOpts {
+                                span: ls,
+                                ..Default::default()
+                            },
+                        ) {
+                            errors.push(err.context("tried to assign for LHS of `in` operator"));
+                        } else if !self.is_valid_lhs_of_in(ty) {
+                            errors.push(ErrorKind::InvalidLhsOfInOperator { span: ls }.into());
                         }
                     }
                 }
@@ -1762,7 +1794,21 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
-                        if !self.is_valid_rhs_of_in(rs, rt) {
+                        if let Err(err) = self.assign_with_opts(
+                            &mut Default::default(),
+                            &Type::Keyword(KeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsObjectKeyword,
+                                metadata: KeywordTypeMetadata::default(),
+                            }),
+                            rt,
+                            AssignOpts {
+                                span: rs,
+                                ..Default::default()
+                            },
+                        ) {
+                            errors.push(err.context("tried to assign for RHS of `in` operator"));
+                        } else if !self.is_valid_rhs_of_in(rs, rt) {
                             errors.push(
                                 ErrorKind::InvalidRhsForInOperator {
                                     span: rs,
@@ -1834,7 +1880,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_rhs_of_in(&mut self, span: Span, ty: &Type) -> bool {
-        if ty.is_any() {
+        if ty.is_any() || ty.is_never() {
             return true;
         }
 

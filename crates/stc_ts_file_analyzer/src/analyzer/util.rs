@@ -1,16 +1,16 @@
 use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
-use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
+use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsLit, RTsType};
 use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, QueryExpr, QueryType, Ref,
+    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr, QueryType, Ref,
     RefMetadata, Tuple, TypeElement, Union,
 };
 use stc_utils::cache::ALLOW_DEEP_CLONE;
-use swc_common::{Span, Spanned, SyntaxContext};
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
@@ -412,5 +412,12 @@ pub(crate) fn opt_union(span: Span, opt1: Option<Type>, opt2: Option<Type>) -> O
             })
             .fixed(),
         ),
+    }
+}
+
+pub(crate) fn is_lit_eq_ignore_span(l: &LitType, r: &LitType) -> bool {
+    match (&l.lit, &r.lit) {
+        (RTsLit::Str(l), RTsLit::Str(r)) => l.value == r.value,
+        _ => l.eq_ignore_span(r),
     }
 }
