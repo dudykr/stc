@@ -729,7 +729,12 @@ impl Analyzer<'_, '_> {
             MethodKind::Setter => Ok(ClassMember::Property(ClassProperty {
                 span: c_span,
                 key,
-                value: Some(ret_ty),
+                value: if params.len() == 1 {
+                    params.get(0).map(|p| p.ty.clone())
+                } else {
+                    // TODO: Should emit TS1049 error here
+                    Some(box Type::any(key_span, Default::default()))
+                },
                 is_static: c.is_static,
                 accessibility: c.accessibility,
                 is_abstract: c.is_abstract,
