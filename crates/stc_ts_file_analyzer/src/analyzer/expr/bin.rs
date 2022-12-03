@@ -1763,7 +1763,21 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
-                        if !self.is_valid_rhs_of_in(rs, rt) {
+                        if let Err(err) = self.assign_with_opts(
+                            &mut Default::default(),
+                            &Type::Keyword(KeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsObjectKeyword,
+                                metadata: KeywordTypeMetadata::default(),
+                            }),
+                            rt,
+                            AssignOpts {
+                                span: rs,
+                                ..Default::default()
+                            },
+                        ) {
+                            errors.push(err.context("tried to assign for RHS of `in` operator"));
+                        } else if !self.is_valid_rhs_of_in(rs, rt) {
                             errors.push(
                                 ErrorKind::InvalidRhsForInOperator {
                                     span: rs,
