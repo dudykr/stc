@@ -1849,7 +1849,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_rhs_of_in(&mut self, span: Span, ty: &Type) -> bool {
-        if ty.is_any() {
+        if ty.is_any() || ty.is_never() {
             return true;
         }
 
