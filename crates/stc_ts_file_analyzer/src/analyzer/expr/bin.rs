@@ -1767,7 +1767,7 @@ impl Analyzer<'_, '_> {
                             .freezed(),
                             ty,
                             AssignOpts {
-                                span: rs,
+                                span: ls,
                                 ..Default::default()
                             },
                         ) {
