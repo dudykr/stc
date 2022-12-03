@@ -190,7 +190,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 if let Some(constraint) = m.type_param.constraint.as_deref() {
-                    if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                    if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) || constraint.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
                         let index_signature = TypeElement::Index(IndexSignature {
                             params: vec![FnParam {
                                 span,
