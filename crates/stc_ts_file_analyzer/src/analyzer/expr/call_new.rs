@@ -837,29 +837,43 @@ impl Analyzer<'_, '_> {
             }
             let callee_str = dump_type_as_string(&callee);
 
-            self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
-                .convert_err(|err| match err {
-                    ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
-                        span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
-                    },
-                    ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
-                        span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
-                    },
-                    _ => err,
-                })
-                .with_context(|| {
-                    format!(
-                        "tried to call property by using access_property because the object type is not handled by call_property: \nobj = \
-                         {}\ncallee = {}\ncallee (before expanding): {}",
-                        dump_type_as_string(&obj_type),
-                        callee_str,
-                        callee_before_expanding,
-                    )
-                })
+            self.get_best_return_type(
+                span,
+                expr,
+                callee,
+                kind,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts {
+                    skip_check_for_overloads: true,
+                    ..Default::default()
+                },
+            )
+            .convert_err(|err| match err {
+                ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
+                    span,
+                    obj: box obj_type.clone(),
+                    key: box prop.clone(),
+                },
+                ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
+                    span,
+                    obj: box obj_type.clone(),
+                    key: box prop.clone(),
+                },
+                _ => err,
+            })
+            .with_context(|| {
+                format!(
+                    "tried to call property by using access_property because the object type is not handled by call_property: \nobj = \
+                     {}\ncallee = {}\ncallee (before expanding): {}",
+                    dump_type_as_string(&obj_type),
+                    callee_str,
+                    callee_before_expanding,
+                )
+            })
         })()
         .with_context(|| format!("tried to call a property of an object ({})", dump_type_as_string(obj_type)));
         self.scope.this = old_this;
@@ -1562,9 +1576,21 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => {
-                self.get_best_return_type(span, expr, ty.clone(), kind, type_args, args, arg_types, spread_arg_types, type_ann)
-            }
+            Type::Union(..) => self.get_best_return_type(
+                span,
+                expr,
+                ty.clone(),
+                kind,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts {
+                    skip_check_for_overloads: true,
+                    ..Default::default()
+                },
+            ),
 
             Type::Interface(ref i) => {
                 if kind == ExtractKind::New && &**i.name.sym() == "ArrayConstructor" {
@@ -1666,10 +1692,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_ann,
-                    SelectOpts {
-                        skip_check_for_overloads: true,
-                        ..Default::default()
-                    },
+                    SelectOpts { ..Default::default() },
                 )? {
                     return Ok(v);
                 }
@@ -1827,20 +1850,6 @@ impl Analyzer<'_, '_> {
                 return Ok(vec![candidate]);
             }
 
-            // Type::Union(ty) => {
-            //     // TODO(kdy1): We should select best one based on the arugment type and count.
-            //     let mut types = ty
-            //         .types
-            //         .iter()
-            //         .cloned()
-            //         .map(|callee| {
-            //             self.get_best_return_type(span, callee, kind, type_args, args, arg_types,
-            // spread_arg_types)         })
-            //         .collect::<Result<Vec<_>, _>>()?;
-
-            //     types.dedup_type();
-            //     return Ok(Type::union(types));
-            // }
             Type::Union(ref u) => {
                 let candidates = u
                     .types
@@ -1953,6 +1962,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: SelectOpts,
     ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1975,10 +1985,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
-            SelectOpts {
-                skip_check_for_overloads: true,
-                ..Default::default()
-            },
+            opts,
         )? {
             return Ok(v);
         }
