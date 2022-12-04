@@ -15,11 +15,11 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
-pub struct UnionNormalizer {
+pub struct ObjectUnionNormalizer {
     pub preserve_specified: bool,
 }
 
-impl UnionNormalizer {
+impl ObjectUnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
@@ -339,7 +339,7 @@ impl UnionNormalizer {
     }
 }
 
-impl VisitMut<Type> for UnionNormalizer {
+impl VisitMut<Type> for ObjectUnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
         ty.normalize_mut();
@@ -351,7 +351,7 @@ impl VisitMut<Type> for UnionNormalizer {
     }
 }
 
-impl VisitMut<Union> for UnionNormalizer {
+impl VisitMut<Union> for ObjectUnionNormalizer {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 

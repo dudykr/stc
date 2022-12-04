@@ -4,7 +4,7 @@ use rnode::VisitMutWith;
 use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_type_ops::{union_normalization::UnionNormalizer, Fix};
+use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
 use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union, UnionMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         let start = Instant::now();
-        ty.visit_mut_with(&mut UnionNormalizer { preserve_specified });
+        ty.visit_mut_with(&mut ObjectUnionNormalizer { preserve_specified });
 
         let end = Instant::now();
 
