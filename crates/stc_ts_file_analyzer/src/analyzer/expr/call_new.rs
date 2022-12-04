@@ -986,6 +986,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
+            SelectOpts { ..Default::default() },
         )? {
             return Ok(Some(v));
         }
@@ -1163,6 +1164,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
+            SelectOpts { ..Default::default() },
         )? {
             return Ok(v);
         }
@@ -1664,6 +1666,10 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_ann,
+                    SelectOpts {
+                        skip_check_for_overloads: true,
+                        ..Default::default()
+                    },
                 )? {
                     return Ok(v);
                 }
@@ -1738,6 +1744,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
+            SelectOpts { ..Default::default() },
         )? {
             return Ok(v);
         }
@@ -1968,6 +1975,10 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
+            SelectOpts {
+                skip_check_for_overloads: true,
+                ..Default::default()
+            },
         )? {
             return Ok(v);
         }
@@ -2185,6 +2196,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: SelectOpts,
     ) -> VResult<Option<Type>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -2211,7 +2223,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Check if all candidates are failed.
-        if callable.len() > 1
+        if !opts.skip_check_for_overloads
+            && callable.len() > 1
             && callable
                 .iter()
                 .all(|(_, res)| matches!(res, ArgCheckResult::WrongArgCount | ArgCheckResult::ArgTypeMismatch))
@@ -3495,6 +3508,12 @@ enum ArgCheckResult {
     MayBe,
     ArgTypeMismatch,
     WrongArgCount,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+struct SelectOpts {
+    /// Defaults to false.
+    skip_check_for_overloads: bool,
 }
 
 /// Ensure that sort work as expected.
