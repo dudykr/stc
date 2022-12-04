@@ -986,6 +986,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+                fail!()
             }
             // Anything is assignable to unknown
             Type::Keyword(KeywordType {
