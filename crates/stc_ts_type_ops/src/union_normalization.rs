@@ -15,6 +15,7 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
+/// See https://github.com/dudykr/stc/blob/e8f1daf0e336d978a1de5479ad9676093faf5921/crates/stc_ts_type_checker/tests/conformance/expressions/objectLiterals/objectLiteralNormalization.ts
 pub struct ObjectUnionNormalizer {
     pub preserve_specified: bool,
 }
