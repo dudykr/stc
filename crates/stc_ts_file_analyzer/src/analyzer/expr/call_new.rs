@@ -2210,6 +2210,15 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
+        // Check if all candidates are failed.
+        if callable.len() > 1
+            && callable
+                .iter()
+                .all(|(_, res)| matches!(res, ArgCheckResult::WrongArgCount | ArgCheckResult::ArgTypeMismatch))
+        {
+            return Err(ErrorKind::NoMatchingOverload { span }.context("tried to select a call candidate"));
+        }
+
         let (c, _) = callable.into_iter().next().unwrap();
 
         if candidates.len() == 1 {
