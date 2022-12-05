@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
-        dbg!(&l, &r);
+
         let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
         let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
 
@@ -649,108 +649,94 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Change this to extends call.
 
-        let res = if opts.for_overload {
-            let rhs = &r.ty.normalize();
-            if self.rule().strict_function_types {
-                return self
-                    .assign_with_opts(data, &l.ty, &r.ty, opts)
-                    .context("tried to assign the type of a parameter to another");
+        let res = if self.rule().strict_function_types {
+            if opts.for_overload {
+                self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                    .context("tried to assign the type of a parameter to another")
+            } else {
+                self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                    .context("tried to assign the type of a parameter to another (reversed due to variance)")
             }
+        } else {
+            if opts.for_overload {
+                let rhs = &r.ty.normalize();
 
-            match *rhs {
-                Type::EnumVariant(e) => {
+                if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
                         match lit {
                             Type::Lit(LitType {
                                 lit: RTsLit::Number(..), ..
-                            }) => {
-                                return self.assign_with_opts(
-                                    data,
-                                    &l.ty,
-                                    &Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                    }),
-                                    opts,
-                                )
-                            }
-                            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => {
-                                return self.assign_with_opts(
-                                    data,
-                                    &l.ty,
-                                    &Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                    }),
-                                    opts,
-                                )
-                            }
-                            _ => {
-                                return self
-                                    .assign_with_opts(data, &l.ty, &r.ty, opts)
-                                    .context("tried to assign the type of a parameter to another")
-                            }
+                            }) => self.assign_with_opts(
+                                data,
+                                &l.ty,
+                                &Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                }),
+                                opts,
+                            ),
+                            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => self.assign_with_opts(
+                                data,
+                                &l.ty,
+                                &Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                }),
+                                opts,
+                            ),
+                            _ => self
+                                .assign_with_opts(data, &l.ty, &r.ty, opts)
+                                .context("tried to assign the type of a parameter to another"),
                         }
+                    } else {
+                        self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                            .context("tried to assign the type of a parameter to another")
                     }
+                } else {
                     self.assign_with_opts(data, &l.ty, &r.ty, opts)
                         .context("tried to assign the type of a parameter to another")
                 }
-                _ => self
-                    .assign_with_opts(data, &l.ty, &r.ty, opts)
-                    .context("tried to assign the type of a parameter to another"),
-            }
-        } else {
-            let rhs = &r.ty.normalize();
-            if self.rule().strict_function_types {
-                return self
-                    .assign_with_opts(data, &r.ty, &l.ty, opts)
-                    .context("tried to assign the type of a parameter to another");
-            }
-            match *rhs {
-                Type::EnumVariant(e) => {
+            } else {
+                let rhs = &r.ty.normalize();
+                if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
                         match lit {
                             Type::Lit(LitType {
                                 lit: RTsLit::Number(..), ..
-                            }) => {
-                                return self.assign_with_opts(
-                                    data,
-                                    &Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                    }),
-                                    &r.ty,
-                                    opts,
-                                )
-                            }
-                            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => {
-                                return self.assign_with_opts(
-                                    data,
-                                    &Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                    }),
-                                    &l.ty,
-                                    opts,
-                                )
-                            }
-                            _ => {
-                                return self
-                                    .assign_with_opts(data, &r.ty, &l.ty, opts)
-                                    .context("tried to assign the type of a parameter to another")
-                            }
+                            }) => self.assign_with_opts(
+                                data,
+                                &Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                }),
+                                &r.ty,
+                                opts,
+                            ),
+                            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => self.assign_with_opts(
+                                data,
+                                &Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                }),
+                                &l.ty,
+                                opts,
+                            ),
+                            _ => self
+                                .assign_with_opts(data, &r.ty, &l.ty, opts)
+                                .context("tried to assign the type of a parameter to another"),
                         }
+                    } else {
+                        self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                            .context("tried to assign the type of a parameter to another")
                     }
+                } else {
                     self.assign_with_opts(data, &r.ty, &l.ty, opts)
                         .context("tried to assign the type of a parameter to another")
                 }
-                _ => self
-                    .assign_with_opts(data, &r.ty, &l.ty, opts)
-                    .context("tried to assign the type of a parameter to another"),
             }
         };
 
