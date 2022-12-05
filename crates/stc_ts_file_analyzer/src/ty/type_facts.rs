@@ -388,7 +388,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         };
 
         // typeof x === 'object'
-        // => x = {} | undefined | null
+        // => x = {} | null
         if ty.is_unknown() && self.facts.contains(TypeFacts::TypeofEQObject) {
             ty = Type::Union(Union {
                 span,
