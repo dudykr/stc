@@ -287,10 +287,6 @@ impl ObjectUnionNormalizer {
 
     #[instrument(skip(self, u))]
     fn normalize_keys(&self, u: &mut Union) {
-        if u.types.len() <= 1 {
-            return;
-        }
-
         let keys = self.find_keys(&u.types);
 
         let inexact = u.types.iter().any(|ty| match ty.normalize() {
@@ -361,6 +357,8 @@ impl VisitMut<Union> for ObjectUnionNormalizer {
             return;
         }
 
-        self.normalize_keys(u);
+        if u.types.len() > 1 {
+            self.normalize_keys(u);
+        }
     }
 }
