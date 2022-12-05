@@ -1,5 +1,4 @@
-// @strict: true
-// @declaration: true
+//@strict: true
 
 declare function obj(x: object): void;
 
