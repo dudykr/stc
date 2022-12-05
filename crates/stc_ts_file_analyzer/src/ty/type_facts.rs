@@ -388,7 +388,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         };
 
         // typeof x === 'object'
-        // => x = {} | undefined | null
+        // => x = {} | null
         if ty.is_unknown() && self.facts.contains(TypeFacts::TypeofEQObject) {
             ty = Type::Union(Union {
                 span,
@@ -396,11 +396,6 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
                     Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsObjectKeyword,
-                        metadata: Default::default(),
-                    }),
-                    Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
                     }),
                     Type::Keyword(KeywordType {
