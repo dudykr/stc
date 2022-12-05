@@ -358,6 +358,21 @@ impl Analyzer<'_, '_> {
                         prevent_generalize(&mut r);
                         r.make_clone_cheap();
 
+                        if let op!("==") | op!("!=") = op {
+                            if r.is_null() || r.is_undefined() {
+                                let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
+                                let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
+
+                                if op == op!("==") {
+                                    self.cur_facts.true_facts.facts.insert(name.clone(), eq);
+                                    self.cur_facts.false_facts.facts.insert(name.clone(), neq);
+                                } else {
+                                    self.cur_facts.true_facts.facts.insert(name.clone(), neq);
+                                    self.cur_facts.false_facts.facts.insert(name.clone(), eq);
+                                }
+                            }
+                        }
+
                         if op == op!("===") || op == op!("==") {
                             self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
