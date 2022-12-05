@@ -375,11 +375,36 @@ impl ObjectUnionNormalizer {
                             }
                         });
 
-                        if let Some(idx) = idx {
-                            if let TypeElement::Property(prop) = &mut ty.members[idx] {
-                                if let Some(ty) = prop.type_ann.as_deref_mut() {
-                                    insert_property_to(ty, &keys[1..], inexact)
-                                }
+                        let idx = match idx {
+                            Some(v) => v,
+                            _ => {
+                                let idx = ty.members.len();
+                                ty.members.push(TypeElement::Property(PropertySignature {
+                                    span: DUMMY_SP,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key: Key::Normal {
+                                        span: DUMMY_SP,
+                                        sym: key.clone(),
+                                    },
+                                    optional: true,
+                                    params: Default::default(),
+                                    type_ann: Some(box Type::TypeLit(TypeLit {
+                                        span: DUMMY_SP,
+                                        members: Default::default(),
+                                        metadata: Default::default(),
+                                    })),
+                                    type_params: Default::default(),
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }));
+                                idx
+                            }
+                        };
+
+                        if let TypeElement::Property(prop) = &mut ty.members[idx] {
+                            if let Some(ty) = prop.type_ann.as_deref_mut() {
+                                insert_property_to(ty, &keys[1..], inexact)
                             }
                         }
                     }
