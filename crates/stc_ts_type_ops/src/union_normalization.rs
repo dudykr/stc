@@ -24,7 +24,7 @@ impl ObjectUnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
+    fn find_keys(&self, types: &[Type]) -> IndexSet<Vec<JsWord>> {
         types
             .iter()
             .filter_map(|ty| match ty.normalize() {
@@ -288,46 +288,74 @@ impl ObjectUnionNormalizer {
     /// - `types`: Types of a union.
     #[instrument(skip_all)]
     fn normalize_keys(&self, types: &mut Vec<Type>) {
-        fn insert_property_to(ty: &mut Type, keys: &IndexSet<Vec<JsWord>>, inexact: bool) {
+        fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
             if let Some(ty) = ty.as_type_lit_mut() {
                 ty.metadata.inexact |= inexact;
                 ty.metadata.normalized = true;
 
-                for key in &keys {
-                    let has_key = ty.members.iter().any(|member| {
-                        if let Some(member_key) = member.non_computed_key() {
-                            *key == *member_key
-                        } else {
-                            false
-                        }
-                    });
+                match keys.len() {
+                    0 => {
+                        unreachable!()
+                    }
+                    1 => {
+                        let key = &keys[0];
+                        let has_key = ty.members.iter().any(|member| {
+                            if let Some(member_key) = member.non_computed_key() {
+                                *key == *member_key
+                            } else {
+                                false
+                            }
+                        });
 
-                    if !has_key {
-                        ty.members.push(TypeElement::Property(PropertySignature {
-                            span: DUMMY_SP,
-                            accessibility: None,
-                            readonly: false,
-                            key: Key::Normal {
+                        if !has_key {
+                            ty.members.push(TypeElement::Property(PropertySignature {
                                 span: DUMMY_SP,
-                                sym: key.clone(),
-                            },
-                            optional: true,
-                            params: Default::default(),
-                            type_ann: Some(box Type::Keyword(KeywordType {
-                                span: DUMMY_SP,
-                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                accessibility: None,
+                                readonly: false,
+                                key: Key::Normal {
+                                    span: DUMMY_SP,
+                                    sym: key.clone(),
+                                },
+                                optional: true,
+                                params: Default::default(),
+                                type_ann: Some(box Type::Keyword(KeywordType {
+                                    span: DUMMY_SP,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
+                                })),
+                                type_params: Default::default(),
                                 metadata: Default::default(),
-                            })),
-                            type_params: Default::default(),
-                            metadata: Default::default(),
-                            accessor: Default::default(),
-                        }))
+                                accessor: Default::default(),
+                            }))
+                        }
+                    }
+                    _ => {
+                        // Normalization applies to nested properties
+                        let key = &keys[0];
+                        let idx = ty.members.iter().position(|member| {
+                            if let Some(member_key) = member.non_computed_key() {
+                                *key == *member_key
+                            } else {
+                                false
+                            }
+                        });
+
+                        if let Some(idx) = idx {
+                            match &mut ty.members[idx] {
+                                TypeElement::Property(prop) => {
+                                    if let Some(ty) = prop.type_ann.as_mut().map(|v| &mut **v) {
+                                        insert_property_to(ty, &keys[1..], inexact)
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
             }
         }
 
-        let keys = self.find_keys(&*types);
+        let deep = self.find_keys(&*types);
 
         let inexact = types.iter().any(|ty| match ty.normalize() {
             Type::TypeLit(ty) => ty.metadata.inexact,
@@ -336,7 +364,9 @@ impl ObjectUnionNormalizer {
 
         // Add properties.
         for ty in types.iter_mut() {
-            insert_property_to(ty, &keys, inexact);
+            for keys in deep {
+                insert_property_to(ty, &keys, inexact);
+            }
         }
     }
 }
