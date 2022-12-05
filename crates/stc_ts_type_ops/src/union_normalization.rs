@@ -285,17 +285,18 @@ impl ObjectUnionNormalizer {
         u.types = new_types;
     }
 
-    #[instrument(skip(self, u))]
-    fn normalize_keys(&self, u: &mut Union) {
-        let keys = self.find_keys(&u.types);
+    /// - `types`: Types of a union.
+    #[instrument(skip_all)]
+    fn normalize_keys(&self, types: &mut Vec<Type>) {
+        let keys = self.find_keys(&*types);
 
-        let inexact = u.types.iter().any(|ty| match ty.normalize() {
+        let inexact = types.iter().any(|ty| match ty.normalize() {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
 
         // Add properties.
-        for ty in u.types.iter_mut() {
+        for ty in types.iter_mut() {
             if let Some(ty) = ty.as_type_lit_mut() {
                 ty.metadata.inexact |= inexact;
                 ty.metadata.normalized = true;
@@ -358,7 +359,7 @@ impl VisitMut<Union> for ObjectUnionNormalizer {
         }
 
         if u.types.len() > 1 {
-            self.normalize_keys(u);
+            self.normalize_keys(&mut u.types);
         }
     }
 }
