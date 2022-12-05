@@ -2,13 +2,13 @@ use std::borrow::Cow;
 
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
     ctx,
     debug::{dump_type_as_string, dump_type_map},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
-
+        dbg!(&l, &r);
         let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
         let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
 
@@ -650,11 +650,108 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Change this to extends call.
 
         let res = if opts.for_overload {
-            self.assign_with_opts(data, &l.ty, &r.ty, opts)
-                .context("tried to assign the type of a parameter to another")
+            let rhs = &r.ty.normalize();
+            if self.rule().strict_function_types {
+                return self
+                    .assign_with_opts(data, &l.ty, &r.ty, opts)
+                    .context("tried to assign the type of a parameter to another");
+            }
+
+            match *rhs {
+                Type::EnumVariant(e) => {
+                    if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
+                        match lit {
+                            Type::Lit(LitType {
+                                lit: RTsLit::Number(..), ..
+                            }) => {
+                                return self.assign_with_opts(
+                                    data,
+                                    &l.ty,
+                                    &Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    opts,
+                                )
+                            }
+                            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => {
+                                return self.assign_with_opts(
+                                    data,
+                                    &l.ty,
+                                    &Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    opts,
+                                )
+                            }
+                            _ => {
+                                return self
+                                    .assign_with_opts(data, &l.ty, &r.ty, opts)
+                                    .context("tried to assign the type of a parameter to another")
+                            }
+                        }
+                    }
+                    self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                        .context("tried to assign the type of a parameter to another")
+                }
+                _ => self
+                    .assign_with_opts(data, &l.ty, &r.ty, opts)
+                    .context("tried to assign the type of a parameter to another"),
+            }
         } else {
-            self.assign_with_opts(data, &r.ty, &l.ty, opts)
-                .context("tried to assign the type of a parameter to another (reversed due to variance)")
+            let rhs = &r.ty.normalize();
+            if self.rule().strict_function_types {
+                return self
+                    .assign_with_opts(data, &r.ty, &l.ty, opts)
+                    .context("tried to assign the type of a parameter to another");
+            }
+            match *rhs {
+                Type::EnumVariant(e) => {
+                    if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
+                        match lit {
+                            Type::Lit(LitType {
+                                lit: RTsLit::Number(..), ..
+                            }) => {
+                                return self.assign_with_opts(
+                                    data,
+                                    &Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    &r.ty,
+                                    opts,
+                                )
+                            }
+                            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => {
+                                return self.assign_with_opts(
+                                    data,
+                                    &Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                    &l.ty,
+                                    opts,
+                                )
+                            }
+                            _ => {
+                                return self
+                                    .assign_with_opts(data, &r.ty, &l.ty, opts)
+                                    .context("tried to assign the type of a parameter to another")
+                            }
+                        }
+                    }
+                    self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                        .context("tried to assign the type of a parameter to another")
+                }
+                _ => self
+                    .assign_with_opts(data, &r.ty, &l.ty, opts)
+                    .context("tried to assign the type of a parameter to another"),
+            }
         };
 
         res.convert_err(|err| match err {
