@@ -819,7 +819,10 @@ impl Analyzer<'_, '_> {
                         ..opts
                     },
                 )
-                .context("failed to normalize types while intersecting properties")?;
+                .context("failed to normalize types while intersecting properties")?
+                .freezed()
+                .into_owned()
+                .freezed();
 
             if let Type::TypeLit(elem_tl) = elem.normalize_instance() {
                 // Intersect property types
