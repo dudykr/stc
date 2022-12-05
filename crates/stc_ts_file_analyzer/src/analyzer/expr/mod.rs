@@ -113,7 +113,8 @@ impl Analyzer<'_, '_> {
             RExpr::Call(..) | RExpr::New(..) => true,
             _ => false,
         };
-        let preserve_unreachable_state = matches!(e, RExpr::Arrow(..) | RExpr::Fn(..));
+        // TODO(kdy1): I'm not sure why assignment is in this list.
+        let preserve_unreachable_state = matches!(e, RExpr::Arrow(..) | RExpr::Fn(..) | RExpr::Assign(..));
 
         let previous_unreachable_state = self.ctx.in_unreachable;
 
