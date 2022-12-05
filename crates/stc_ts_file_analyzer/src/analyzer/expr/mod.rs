@@ -113,6 +113,9 @@ impl Analyzer<'_, '_> {
             RExpr::Call(..) | RExpr::New(..) => true,
             _ => false,
         };
+        let preserve_unreachable_state = matches!(e, RExpr::Arrow(..) | RExpr::Fn(..));
+
+        let previous_unreachable_state = self.ctx.in_unreachable;
 
         let mut ty = (|| -> VResult<Type> {
             match e {
@@ -332,6 +335,10 @@ impl Analyzer<'_, '_> {
             // TODO(kdy1): Normalize?
             if ty.is_never() {
                 self.ctx.in_unreachable = true;
+            }
+
+            if preserve_unreachable_state {
+                self.ctx.in_unreachable = previous_unreachable_state;
             }
         }
 
