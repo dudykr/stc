@@ -1038,7 +1038,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::EnumVariant(rhs) => {
-                        if rhs.enum_name == enum_name.clone() {
+                        if rhs.enum_name == *enum_name {
                             return Ok(());
                         }
                         fail!()

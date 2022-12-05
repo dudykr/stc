@@ -713,7 +713,6 @@ impl Analyzer<'_, '_> {
         if enum_variant_len > 0 {
             if let Some(first_enum) = enum_variant_iter.first() {
                 let mut enum_temp = first_enum.normalize();
-                let mut is_enum_value_nq = false;
                 for elem in enum_variant_iter.into_iter() {
                     if let Type::EnumVariant(el) = elem.normalize() {
                         if let Type::EnumVariant(en) = enum_temp {
@@ -727,17 +726,13 @@ impl Analyzer<'_, '_> {
                                 if let Ok(el_lit) = self.expand_enum_variant(elem.clone()) {
                                     if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
                                         if !etl.type_eq(&el_lit) {
-                                            is_enum_value_nq = true;
-                                            break;
+                                            return never!();
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                if is_enum_value_nq {
-                    return never!();
                 }
             }
             for elem in types.iter() {
