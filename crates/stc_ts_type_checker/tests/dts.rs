@@ -56,7 +56,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
     let fname = file_name.display().to_string();
     let (expected_code, expected_module) = get_correct_dts(&file_name);
-    let expected_module = drop_span(expected_module.fold_with(&mut Normalizer));
+    let expected_module = drop_span(expected_module.fold_with(&mut TestNormalizer));
     println!("---------- Expected ----------\n{}", expected_code);
 
     let mut generated = NormalizedOutput::from(String::from("<iinvalid>"));
@@ -105,7 +105,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             String::from_utf8(buf).unwrap()
         };
 
-        let dts: Module = checker.take_dts(id).unwrap().fold_with(&mut Normalizer);
+        let dts: Module = checker.take_dts(id).unwrap().fold_with(&mut TestNormalizer);
 
         let generated_module = {
             let mut buf = vec![];
@@ -207,7 +207,7 @@ fn parse_dts(src: &str) -> Module {
                 return Err(());
             }
         };
-        let module = module.fold_with(&mut Normalizer);
+        let module = module.fold_with(&mut TestNormalizer);
         Ok(drop_span(module))
     })
     .unwrap()
@@ -269,8 +269,8 @@ fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
     .unwrap()
 }
 
-struct Normalizer;
-impl Normalizer {
+struct TestNormalizer;
+impl TestNormalizer {
     fn sort(&mut self, mut types: Vec<Box<TsType>>) -> Vec<Box<TsType>> {
         fn kwd_rank(kind: TsKeywordTypeKind) -> u8 {
             match kind {
@@ -331,7 +331,7 @@ impl Normalizer {
 }
 
 /// Sorts the type.
-impl swc_ecma_visit::Fold for Normalizer {
+impl swc_ecma_visit::Fold for TestNormalizer {
     fn fold_ts_union_type(&mut self, mut ty: TsUnionType) -> TsUnionType {
         ty = ty.fold_children_with(self);
         ty.types = self.sort(ty.types);

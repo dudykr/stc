@@ -15,24 +15,58 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
-pub struct UnionNormalizer {
+/// See https://github.com/dudykr/stc/blob/e8f1daf0e336d978a1de5479ad9676093faf5921/crates/stc_ts_type_checker/tests/conformance/expressions/objectLiterals/objectLiteralNormalization.ts
+pub struct ObjectUnionNormalizer {
     pub preserve_specified: bool,
 }
 
-impl UnionNormalizer {
+impl ObjectUnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
-        types
-            .iter()
-            .filter_map(|ty| match ty.normalize() {
-                Type::TypeLit(ty) => Some(&ty.members),
-                _ => None,
-            })
-            .flatten()
-            .filter_map(|member| member.non_computed_key().cloned())
-            .collect()
+    fn find_keys(&self, types: &[Type]) -> IndexSet<Vec<JsWord>> {
+        types.iter().flat_map(|t| self.find_keys_of_type(t)).collect()
+    }
+
+    fn find_keys_of_type(&self, ty: &Type) -> IndexSet<Vec<JsWord>> {
+        match ty.normalize() {
+            Type::TypeLit(ty) => {
+                let mut keys = IndexSet::default();
+
+                for el in ty.members.iter() {
+                    let key = el.non_computed_key().cloned();
+
+                    let key = match key {
+                        Some(v) => v,
+                        _ => continue,
+                    };
+
+                    if let TypeElement::Property(PropertySignature {
+                        type_ann: Some(type_ann), ..
+                    }) = el
+                    {
+                        let nested_keys = self.find_keys_of_type(type_ann);
+                        if nested_keys.is_empty() {
+                            keys.insert(vec![key]);
+                        } else {
+                            keys.extend(nested_keys.into_iter().map(|mut keys| {
+                                keys.insert(0, key.clone());
+                                keys
+                            }));
+                        }
+                        continue;
+                    }
+
+                    keys.insert(vec![key]);
+                }
+
+                return keys;
+            }
+            Type::Union(ty) => return self.find_keys(&ty.types),
+            _ => {}
+        }
+
+        Default::default()
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
@@ -284,62 +318,122 @@ impl UnionNormalizer {
         u.types = new_types;
     }
 
-    #[instrument(skip(self, u))]
-    fn normalize_keys(&self, u: &mut Union) {
-        if u.types.len() <= 1 {
-            return;
+    /// - `types`: Types of a union.
+    #[instrument(skip_all)]
+    fn normalize_keys(&self, types: &mut Vec<Type>) {
+        fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
+            if let Some(ty) = ty.as_union_type_mut() {
+                for ty in &mut ty.types {
+                    insert_property_to(ty, keys, inexact);
+                }
+                return;
+            }
+
+            if let Some(ty) = ty.as_type_lit_mut() {
+                ty.metadata.inexact |= inexact;
+                ty.metadata.normalized = true;
+
+                match keys.len() {
+                    0 => {
+                        unreachable!()
+                    }
+                    1 => {
+                        let key = &keys[0];
+                        let has_key = ty.members.iter().any(|member| {
+                            if let Some(member_key) = member.non_computed_key() {
+                                *key == *member_key
+                            } else {
+                                false
+                            }
+                        });
+
+                        if !has_key {
+                            ty.members.push(TypeElement::Property(PropertySignature {
+                                span: DUMMY_SP,
+                                accessibility: None,
+                                readonly: false,
+                                key: Key::Normal {
+                                    span: DUMMY_SP,
+                                    sym: key.clone(),
+                                },
+                                optional: true,
+                                params: Default::default(),
+                                type_ann: Some(box Type::Keyword(KeywordType {
+                                    span: DUMMY_SP,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
+                                })),
+                                type_params: Default::default(),
+                                metadata: Default::default(),
+                                accessor: Default::default(),
+                            }))
+                        }
+                    }
+                    _ => {
+                        // Normalization applies to nested properties
+                        let key = &keys[0];
+                        let idx = ty.members.iter().position(|member| {
+                            if let Some(member_key) = member.non_computed_key() {
+                                *key == *member_key
+                            } else {
+                                false
+                            }
+                        });
+
+                        let idx = match idx {
+                            Some(v) => v,
+                            _ => {
+                                let idx = ty.members.len();
+                                ty.members.push(TypeElement::Property(PropertySignature {
+                                    span: DUMMY_SP,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key: Key::Normal {
+                                        span: DUMMY_SP,
+                                        sym: key.clone(),
+                                    },
+                                    optional: true,
+                                    params: Default::default(),
+                                    type_ann: Some(box Type::TypeLit(TypeLit {
+                                        span: DUMMY_SP,
+                                        members: Default::default(),
+                                        metadata: Default::default(),
+                                    })),
+                                    type_params: Default::default(),
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }));
+                                idx
+                            }
+                        };
+
+                        if let TypeElement::Property(prop) = &mut ty.members[idx] {
+                            if let Some(ty) = prop.type_ann.as_deref_mut() {
+                                insert_property_to(ty, &keys[1..], inexact)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        let keys = self.find_keys(&u.types);
+        let deep = self.find_keys(&*types);
 
-        let inexact = u.types.iter().any(|ty| match ty.normalize() {
+        let inexact = types.iter().any(|ty| match ty.normalize() {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
 
         // Add properties.
-        for ty in u.types.iter_mut() {
-            if let Some(ty) = ty.as_type_lit_mut() {
-                ty.metadata.inexact |= inexact;
-                ty.metadata.normalized = true;
-
-                for key in &keys {
-                    let has_key = ty.members.iter().any(|member| {
-                        if let Some(member_key) = member.non_computed_key() {
-                            *key == *member_key
-                        } else {
-                            false
-                        }
-                    });
-
-                    if !has_key {
-                        ty.members.push(TypeElement::Property(PropertySignature {
-                            span: DUMMY_SP,
-                            accessibility: None,
-                            readonly: false,
-                            key: Key::Normal {
-                                span: DUMMY_SP,
-                                sym: key.clone(),
-                            },
-                            optional: true,
-                            params: Default::default(),
-                            type_ann: Some(box Type::Keyword(KeywordType {
-                                span: DUMMY_SP,
-                                kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
-                                metadata: Default::default(),
-                            })),
-                            type_params: Default::default(),
-                            metadata: Default::default(),
-                            accessor: Default::default(),
-                        }))
-                    }
-                }
+        for ty in types.iter_mut() {
+            for keys in &deep {
+                insert_property_to(ty, keys, inexact);
             }
         }
     }
 }
 
-impl VisitMut<Type> for UnionNormalizer {
+impl VisitMut<Type> for ObjectUnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
         ty.normalize_mut();
@@ -351,7 +445,7 @@ impl VisitMut<Type> for UnionNormalizer {
     }
 }
 
-impl VisitMut<Union> for UnionNormalizer {
+impl VisitMut<Union> for ObjectUnionNormalizer {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 
@@ -360,6 +454,8 @@ impl VisitMut<Union> for UnionNormalizer {
             return;
         }
 
-        self.normalize_keys(u);
+        if u.types.len() > 1 {
+            self.normalize_keys(&mut u.types);
+        }
     }
 }
