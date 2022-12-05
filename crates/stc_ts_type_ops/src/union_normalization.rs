@@ -31,38 +31,36 @@ impl ObjectUnionNormalizer {
     fn find_keys_of_type(&self, ty: &Type) -> IndexSet<Vec<JsWord>> {
         match ty.normalize() {
             Type::TypeLit(ty) => {
-                return ty
-                    .members
-                    .iter()
-                    .filter_map(|el| {
-                        let key = el.non_computed_key().cloned()?;
+                let mut keys = IndexSet::default();
 
-                        if let TypeElement::Property(PropertySignature {
-                            type_ann: Some(type_ann), ..
-                        }) = el
-                        {
-                            let nested_keys = self.find_keys_of_type(&type_ann);
-                            if nested_keys.is_empty() {
-                                return Some(vec![key]);
-                            } else {
-                                return Some(
-                                    nested_keys
-                                        .into_iter()
-                                        .map(|mut keys| {
-                                            keys.insert(0, key.clone());
-                                            keys
-                                        })
-                                        .collect::<Vec<_>>()
-                                        .into_iter()
-                                        .flatten()
-                                        .collect(),
-                                );
-                            }
+                for el in ty.members.iter() {
+                    let key = el.non_computed_key().cloned();
+
+                    let key = match key {
+                        Some(v) => v,
+                        _ => continue,
+                    };
+
+                    if let TypeElement::Property(PropertySignature {
+                        type_ann: Some(type_ann), ..
+                    }) = el
+                    {
+                        let nested_keys = self.find_keys_of_type(type_ann);
+                        if nested_keys.is_empty() {
+                            keys.insert(vec![key]);
+                        } else {
+                            keys.extend(nested_keys.into_iter().map(|mut keys| {
+                                keys.insert(0, key.clone());
+                                keys
+                            }));
                         }
+                        continue;
+                    }
 
-                        Some(vec![key])
-                    })
-                    .collect()
+                    keys.insert(vec![key]);
+                }
+
+                return keys;
             }
             Type::Union(ty) => return self.find_keys(&ty.types),
             _ => {}
@@ -418,6 +416,8 @@ impl ObjectUnionNormalizer {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
+
+        dbg!(&deep);
 
         // Add properties.
         for ty in types.iter_mut() {
