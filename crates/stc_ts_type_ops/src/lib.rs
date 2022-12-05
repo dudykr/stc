@@ -6,6 +6,7 @@
 #![feature(specialization)]
 #![allow(incomplete_features)]
 #![allow(clippy::needless_update)]
+#![allow(clippy::only_used_in_recursion)]
 
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_ast_rnode::RIdent;

@@ -32,7 +32,34 @@ impl ObjectUnionNormalizer {
                 _ => None,
             })
             .flatten()
-            .filter_map(|member| member.non_computed_key().cloned())
+            .filter_map(|el| {
+                let key = el.non_computed_key().cloned()?;
+
+                if let TypeElement::Property(PropertySignature {
+                    type_ann: Some(type_ann), ..
+                }) = el
+                {
+                    let nested_keys = self.find_keys(&[*type_ann.clone()]);
+                    if nested_keys.is_empty() {
+                        return Some(vec![key]);
+                    } else {
+                        return Some(
+                            nested_keys
+                                .into_iter()
+                                .map(|mut keys| {
+                                    keys.insert(0, key.clone());
+                                    keys
+                                })
+                                .collect::<Vec<_>>()
+                                .into_iter()
+                                .flatten()
+                                .collect(),
+                        );
+                    }
+                }
+
+                Some(vec![key])
+            })
             .collect()
     }
 
@@ -341,13 +368,10 @@ impl ObjectUnionNormalizer {
                         });
 
                         if let Some(idx) = idx {
-                            match &mut ty.members[idx] {
-                                TypeElement::Property(prop) => {
-                                    if let Some(ty) = prop.type_ann.as_mut().map(|v| &mut **v) {
-                                        insert_property_to(ty, &keys[1..], inexact)
-                                    }
+                            if let TypeElement::Property(prop) = &mut ty.members[idx] {
+                                if let Some(ty) = prop.type_ann.as_deref_mut() {
+                                    insert_property_to(ty, &keys[1..], inexact)
                                 }
-                                _ => {}
                             }
                         }
                     }
@@ -364,8 +388,8 @@ impl ObjectUnionNormalizer {
 
         // Add properties.
         for ty in types.iter_mut() {
-            for keys in deep {
-                insert_property_to(ty, &keys, inexact);
+            for keys in &deep {
+                insert_property_to(ty, keys, inexact);
             }
         }
     }
