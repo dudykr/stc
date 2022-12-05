@@ -323,7 +323,7 @@ impl ObjectUnionNormalizer {
                             params: Default::default(),
                             type_ann: Some(box Type::Keyword(KeywordType {
                                 span: DUMMY_SP,
-                                kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 metadata: Default::default(),
                             })),
                             type_params: Default::default(),
