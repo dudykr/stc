@@ -1,8 +1,9 @@
 //@strict: false
 
 type Container<Type extends string> = {
-    type: Type;
-}
+  type: Type;
+};
 
-export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
-
+export const f3 = (
+  t: Container<"a"> | (Container<"b"> & { dataB: boolean } & Container<"a">),
+): Container<"a"> => t;

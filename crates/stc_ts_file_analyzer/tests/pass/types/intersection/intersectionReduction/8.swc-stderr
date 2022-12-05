@@ -1,0 +1,21 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/8.ts:9:1]
+ 9 | ): number => t;
+   :              ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/8.ts:7:1]
+ 7 | ,-> export const f4 = (
+ 8 | |     t: number | (Container<"b"> & { dataB: boolean } & Container<"a">),
+ 9 | `-> ): number => t;
+   `----
+
+Error: 
+  > (t: (number | (Container<"b"> & {
+  |     dataB: boolean;
+  | } & Container<"a">))) => number
