@@ -322,6 +322,13 @@ impl ObjectUnionNormalizer {
     #[instrument(skip_all)]
     fn normalize_keys(&self, types: &mut Vec<Type>) {
         fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
+            if let Some(ty) = ty.as_union_type_mut() {
+                for ty in &mut ty.types {
+                    insert_property_to(ty, keys, inexact);
+                }
+                return;
+            }
+
             if let Some(ty) = ty.as_type_lit_mut() {
                 ty.metadata.inexact |= inexact;
                 ty.metadata.normalized = true;
@@ -416,8 +423,6 @@ impl ObjectUnionNormalizer {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
-
-        dbg!(&deep);
 
         // Add properties.
         for ty in types.iter_mut() {
