@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
                         prevent_generalize(&mut r);
                         r.make_clone_cheap();
 
-                        if op == op!("===") {
+                        if op == op!("===") || op == op!("==") {
                             self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                             self.add_deep_type_fact(span, name, r, true);
