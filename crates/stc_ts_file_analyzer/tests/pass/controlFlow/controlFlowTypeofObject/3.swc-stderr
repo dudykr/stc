@@ -51,8 +51,7 @@ Error:
     `----
 
 Error: 
-  > ({
-  | } | null)
+  > (object | null)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:11:9]
