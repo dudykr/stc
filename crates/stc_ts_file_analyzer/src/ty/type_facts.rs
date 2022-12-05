@@ -400,11 +400,6 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
                     }),
                     Type::Keyword(KeywordType {
                         span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                    }),
-                    Type::Keyword(KeywordType {
-                        span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         metadata: Default::default(),
                     }),
