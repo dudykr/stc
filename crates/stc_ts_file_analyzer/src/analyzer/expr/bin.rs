@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                     right: (&**right, rt.normalize()),
                 };
 
-                if !self.is_valid_for_switch_case(span, &lt, &rt)? {
+                if !self.can_compare_with_eq(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
                         self.storage.report(
                             ErrorKind::SwitchCaseTestNotCompatible {
@@ -358,7 +358,22 @@ impl Analyzer<'_, '_> {
                         prevent_generalize(&mut r);
                         r.make_clone_cheap();
 
-                        if op == op!("===") {
+                        if let op!("==") | op!("!=") = op {
+                            if r.is_null() || r.is_undefined() {
+                                let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
+                                let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
+
+                                if op == op!("==") {
+                                    self.cur_facts.true_facts.facts.insert(name.clone(), eq);
+                                    self.cur_facts.false_facts.facts.insert(name.clone(), neq);
+                                } else {
+                                    self.cur_facts.true_facts.facts.insert(name.clone(), neq);
+                                    self.cur_facts.false_facts.facts.insert(name.clone(), eq);
+                                }
+                            }
+                        }
+
+                        if op == op!("===") || op == op!("==") {
                             self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                             self.add_deep_type_fact(span, name, r, true);
@@ -960,7 +975,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
+    fn can_compare_with_eq(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
         let disc_ty = disc_ty.normalize();
         let case_ty = case_ty.normalize();
 

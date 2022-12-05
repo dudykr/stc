@@ -393,9 +393,9 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             ty = Type::Union(Union {
                 span,
                 types: vec![
-                    Type::TypeLit(TypeLit {
+                    Type::Keyword(KeywordType {
                         span,
-                        members: Default::default(),
+                        kind: TsKeywordTypeKind::TsObjectKeyword,
                         metadata: Default::default(),
                     }),
                     Type::Keyword(KeywordType {

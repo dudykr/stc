@@ -51,8 +51,7 @@ Error:
     `----
 
 Error: 
-  > {
-  | }
+  > object
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:10:9]
