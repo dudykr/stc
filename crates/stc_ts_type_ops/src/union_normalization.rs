@@ -24,43 +24,51 @@ impl ObjectUnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[Type]) -> IndexSet<Vec<JsWord>> {
-        types
-            .iter()
-            .filter_map(|ty| match ty.normalize() {
-                Type::TypeLit(ty) => Some(&ty.members),
-                _ => None,
-            })
-            .flatten()
-            .filter_map(|el| {
-                let key = el.non_computed_key().cloned()?;
+    fn find_keys(&self, types: &[Type]) -> IndexSet<Vec<JsWord>> {}
 
-                if let TypeElement::Property(PropertySignature {
-                    type_ann: Some(type_ann), ..
-                }) = el
-                {
-                    let nested_keys = self.find_keys(&[*type_ann.clone()]);
-                    if nested_keys.is_empty() {
-                        return Some(vec![key]);
-                    } else {
-                        return Some(
-                            nested_keys
-                                .into_iter()
-                                .map(|mut keys| {
-                                    keys.insert(0, key.clone());
-                                    keys
-                                })
-                                .collect::<Vec<_>>()
-                                .into_iter()
-                                .flatten()
-                                .collect(),
-                        );
-                    }
+    fn find_keys_of_type(&self, ty: &Type) -> IndexSet<Vec<JsWord>> {
+        for ty in types {
+            match ty.normalize() {
+                Type::TypeLit(ty) => {
+                    return ty
+                        .members
+                        .iter()
+                        .filter_map(|el| {
+                            let key = el.non_computed_key().cloned()?;
+
+                            if let TypeElement::Property(PropertySignature {
+                                type_ann: Some(type_ann), ..
+                            }) = el
+                            {
+                                let nested_keys = self.find_keys(&[*type_ann.clone()]);
+                                if nested_keys.is_empty() {
+                                    return Some(vec![key]);
+                                } else {
+                                    return Some(
+                                        nested_keys
+                                            .into_iter()
+                                            .map(|mut keys| {
+                                                keys.insert(0, key.clone());
+                                                keys
+                                            })
+                                            .collect::<Vec<_>>()
+                                            .into_iter()
+                                            .flatten()
+                                            .collect(),
+                                    );
+                                }
+                            }
+
+                            return Some(vec![key]);
+                        })
+                        .collect()
                 }
+                Type::Union(ty) => return,
+                _ => {}
+            }
+        }
 
-                Some(vec![key])
-            })
-            .collect()
+        Default::default()
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
@@ -386,6 +394,7 @@ impl ObjectUnionNormalizer {
             _ => false,
         });
 
+        dbg!(&deep);
         // Add properties.
         for ty in types.iter_mut() {
             for keys in &deep {
