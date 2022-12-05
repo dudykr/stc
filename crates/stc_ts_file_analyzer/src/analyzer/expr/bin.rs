@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                     right: (&**right, rt.normalize()),
                 };
 
-                if !self.is_valid_for_switch_case(span, &lt, &rt)? {
+                if !self.can_compare_with_eq(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
                         self.storage.report(
                             ErrorKind::SwitchCaseTestNotCompatible {
@@ -960,7 +960,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
+    fn can_compare_with_eq(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
         let disc_ty = disc_ty.normalize();
         let case_ty = case_ty.normalize();
 
