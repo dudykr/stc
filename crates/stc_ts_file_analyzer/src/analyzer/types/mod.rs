@@ -1,9 +1,9 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTplElement, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RLit, RNumber, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
@@ -13,9 +13,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
-    ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType, Ref,
-    ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ConstructorSignature, EnumVariant, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind,
+    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType,
+    Ref, ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -700,11 +700,110 @@ impl Analyzer<'_, '_> {
 
         if !self.rule().always_strict && types.len() == 2 {
             let (a, b) = (&types[0], &types[1]);
-
-            if (a.is_str_lit() && b.is_str_lit() || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
+            if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
                 return never!();
+            }
+        }
+
+        let enum_variant_iter = types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
+        let enum_variant_len = enum_variant_iter.len();
+
+        if enum_variant_len > 0 {
+            if let Some(first_enum) = enum_variant_iter.first() {
+                let mut enum_temp = first_enum.normalize();
+                for elem in enum_variant_iter.into_iter() {
+                    if let Type::EnumVariant(el) = elem.normalize() {
+                        if let Type::EnumVariant(en) = enum_temp {
+                            if let Type::EnumVariant(EnumVariant { name: None, .. }) = enum_temp {
+                                enum_temp = elem;
+                                continue;
+                            } else if en.enum_name != el.enum_name {
+                                return never!();
+                            } else {
+                                // eq two arguemnt enum_name
+                                if let Ok(el_lit) = self.expand_enum_variant(elem.clone()) {
+                                    if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
+                                        if !etl.type_eq(&el_lit) {
+                                            return never!();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for elem in types.iter() {
+                if let Type::EnumVariant(ref ev) = elem.normalize() {
+                    if let Some(variant_name) = &ev.name {
+                        // enumVariant is enumMemeber
+                        if enum_variant_len > 1 {
+                            let mut en = ev.clone();
+                            en.name = None;
+                            return Ok(Some(Type::EnumVariant(en)));
+                        }
+                        if let Ok(Type::Lit(LitType { .. })) = self.expand_enum_variant(elem.clone()) {
+                            return Ok(Some(elem.clone()));
+                        }
+                    } else {
+                        // enumVariant is Enum
+                        if let Some(types) = self.find_type(&ev.enum_name)? {
+                            for ty in types {
+                                if let Type::Enum(e) = ty.normalize() {
+                                    let mut str_lits = vec![];
+                                    let mut num_lits = vec![];
+                                    for v in e.members.iter() {
+                                        let key = match &v.id {
+                                            RTsEnumMemberId::Ident(i) => i.clone(),
+                                            RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
+                                        };
+                                        match *v.val {
+                                            RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
+                                                span: v.span,
+                                                enum_name: e.id.clone().into(),
+                                                name: Some(key.sym),
+                                                metadata: Default::default(),
+                                            })),
+                                            RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
+                                                span: v.span,
+                                                enum_name: e.id.clone().into(),
+                                                name: Some(key.sym),
+                                                metadata: Default::default(),
+                                            })),
+                                            _ => {}
+                                        }
+                                    }
+
+                                    if str_lits.is_empty() && is_str {
+                                        return never!();
+                                    }
+                                    if num_lits.is_empty() && is_num {
+                                        return never!();
+                                    }
+                                    if str_lits.is_empty() && is_num {
+                                        return Ok(Some(elem.clone()));
+                                    }
+                                    if num_lits.is_empty() && is_str {
+                                        return Ok(Some(elem.clone()));
+                                    }
+
+                                    let mut ty = Type::union(if is_str {
+                                        str_lits
+                                    } else if is_num {
+                                        num_lits
+                                    } else {
+                                        return never!();
+                                    });
+
+                                    ty.reposition(e.span);
+                                    return Ok(Some(ty));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

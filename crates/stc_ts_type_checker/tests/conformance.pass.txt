@@ -1164,6 +1164,7 @@ esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiteralInference.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
+expressions/arrayLiterals/arrayLiterals3.ts
 expressions/asOperator/asOpEmitParens.ts
 expressions/asOperator/asOperator1.ts
 expressions/asOperator/asOperator2.ts
@@ -1272,6 +1273,7 @@ expressions/functionCalls/newWithSpreadES5.ts
 expressions/functionCalls/newWithSpreadES6.ts
 expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
+expressions/functionCalls/typeArgumentInferenceWithObjectLiteral.ts
 expressions/functions/arrowFunctionExpressions.ts
 expressions/functions/contextuallyTypedFunctionExpressionsAndReturnAnnotations.ts
 expressions/functions/contextuallyTypedIife.ts
@@ -1857,6 +1859,7 @@ parser/ecmascript5/parserUsingConstructorAsIdentifier.ts
 parser/ecmascript5/parserVoidExpression1.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
+parser/ecmascript6/ComputedPropertyNames/parserCambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName17.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName2.ts
@@ -2271,6 +2274,7 @@ types/tuple/wideningTuples2.ts
 types/tuple/wideningTuples4.ts
 types/tuple/wideningTuples5.ts
 types/tuple/wideningTuples6.ts
+types/tySymbols/ES5SymbolProperty1.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
 types/typeAliases/circularTypeAliasForUnionWithClass.ts
@@ -2470,6 +2474,7 @@ types/typeRelationships/widenedTypes/arrayLiteralWidened.ts
 types/typeRelationships/widenedTypes/initializersWidened.ts
 types/typeRelationships/widenedTypes/objectLiteralWidened.ts
 types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
+types/typeRelationshipsSymbols/ES5SymbolProperty1.ts
 types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts

@@ -531,7 +531,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&mut self, ty: Type) -> VResult<Type> {
+    pub(super) fn expand_enum(&self, ty: Type) -> VResult<Type> {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
