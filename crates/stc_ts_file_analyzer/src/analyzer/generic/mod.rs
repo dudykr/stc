@@ -26,7 +26,6 @@ use stc_utils::{
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_parser::token::Keyword;
 use tracing::{debug, error, info, span, trace, warn, Level};
 
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
