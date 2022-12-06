@@ -12,7 +12,7 @@ use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_utils::DropSpan;
 use swc_ecma_visit::VisitMutWith;
-use tracing::info;
+use tracing::{info, Level};
 
 pub mod debugger;
 
@@ -70,7 +70,7 @@ impl SourceMapperExt for FakeSourceMap {
 }
 
 pub fn dump_type_as_string(t: &Type) -> String {
-    if !cfg!(debug_assertions) {
+    if !cfg!(debug_assertions) || !tracing::enabled!(Level::ERROR) {
         return String::new();
     }
 
