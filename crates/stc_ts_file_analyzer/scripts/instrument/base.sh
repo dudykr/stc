@@ -9,4 +9,4 @@ export CARGO_MANIFEST_DIR="$(pwd)"
 
 export STC_SKIP_EXEC=1
 
-cargo profile instruments -t time --features swc_common/concurrent --features tracing/max_level_off --test base $@
+cargo profile instruments -t time --features swc_common/concurrent --features tracing/max_level_off --test base $@ -- -Zunstable-options --report-time
