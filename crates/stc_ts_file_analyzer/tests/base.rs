@@ -2,6 +2,7 @@
 #![allow(clippy::manual_strip)]
 
 use std::{
+    env,
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
@@ -283,6 +284,10 @@ fn pass_only(input: PathBuf) {
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
+    if env::var("STC_SKIP_EXEC").unwrap_or_default() == "1" {
+        return;
+    }
+
     let mut actual = validate(&input);
     actual.sort();
 

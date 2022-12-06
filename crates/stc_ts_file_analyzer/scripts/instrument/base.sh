@@ -6,4 +6,6 @@ set -eu
 export RUST_LOG=off
 export MIMALLOC_SHOW_STATS=1
 
+export STC_SKIP_EXEC=1
+
 cargo profile instruments -t time --features swc_common/concurrent --test base $@
