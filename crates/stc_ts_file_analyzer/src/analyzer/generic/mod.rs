@@ -26,6 +26,7 @@ use stc_utils::{
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use swc_ecma_parser::token::Keyword;
 use tracing::{debug, error, info, span, trace, warn, Level};
 
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
@@ -534,6 +535,12 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
+                match param {
+                    Type::TypeLit(..) => {
+                        return self.infer_type_using_type_lit_and_union(span, inferred, param, arg, opts);
+                    }
+                    _ => {}
+                };
             }
 
             _ => {}
@@ -678,7 +685,70 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
+                                dbg!(&e);
+                                dbg!(!e.is_empty(), !opts.append_type_as_union, !is_ok_to_append(e, arg));
+
                                 if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) {
+                                    // undeifined > string | number | boolean > unknown > Object > any
+
+                                    for p in e.clone() {
+                                        match p {
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                ..
+                                            }) => {}
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsObjectKeyword,
+                                                ..
+                                            }) => {
+                                                if let Type::Keyword(KeywordType {
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    ..
+                                                }) = arg
+                                                {
+                                                    e.clear();
+                                                    e.push(arg.clone());
+                                                }
+                                            }
+
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                                ..
+                                            }) => {
+                                                if let Type::Keyword(KeywordType {
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsObjectKeyword,
+                                                    ..
+                                                }) = arg
+                                                {
+                                                    e.clear();
+                                                    e.push(arg.clone());
+                                                }
+                                            }
+                                            Type::Keyword(KeywordType {
+                                                kind:
+                                                    TsKeywordTypeKind::TsBigIntKeyword
+                                                    | TsKeywordTypeKind::TsBooleanKeyword
+                                                    | TsKeywordTypeKind::TsNumberKeyword
+                                                    | TsKeywordTypeKind::TsStringKeyword
+                                                    | TsKeywordTypeKind::TsSymbolKeyword,
+                                                ..
+                                            }) => {
+                                                if let Type::Keyword(KeywordType {
+                                                    kind:
+                                                        TsKeywordTypeKind::TsAnyKeyword
+                                                        | TsKeywordTypeKind::TsObjectKeyword
+                                                        | TsKeywordTypeKind::TsUnknownKeyword,
+                                                    ..
+                                                }) = arg
+                                                {
+                                                    e.clear();
+                                                    e.push(arg.clone());
+                                                }
+                                            }
+                                            _ => {}
+                                        };
+                                    }
+
                                     debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
 
                                     inferred.errored.insert(name.clone());
@@ -707,7 +777,7 @@ impl Analyzer<'_, '_> {
 
                                 let param_ty = Type::union(e.clone()).freezed();
                                 e.push(arg.clone());
-
+                                dbg!(&e);
                                 if let Type::Param(param) = param_ty.normalize() {
                                     self.insert_inferred(span, inferred, param, Cow::Borrowed(arg), opts)?;
                                 }
@@ -2446,6 +2516,5 @@ fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
             return true;
         }
     }
-
     false
 }

@@ -1,0 +1,35 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/2.ts:10:1]
+ 10 | export let r1 = f10(a1);  // unknown
+    :                     ^^
+    `----
+
+Error: 
+  > ({
+  |     kind: 'a';
+  |     foo: string;
+  | } | {
+  |     kind: 'd';
+  |     foo: unknown;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/2.ts:10:1]
+ 10 | export let r1 = f10(a1);  // unknown
+    :                 ^^^
+    `----
+
+Error: 
+  > <T>(x: {
+  |     foo: T;
+  | }) => T
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/2.ts:10:1]
+ 10 | export let r1 = f10(a1);  // unknown
+    :                 ^^^^^^^
+    `----
+
+Error: 
+  > unknown
