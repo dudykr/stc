@@ -189,7 +189,5 @@ impl Fixer {
 impl VisitMut<Type> for Fixer {
     fn visit_mut(&mut self, ty: &mut Type) {
         self.fix_type(ty);
-
-        ty.assert_valid();
     }
 }
