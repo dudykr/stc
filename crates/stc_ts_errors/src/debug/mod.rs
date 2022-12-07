@@ -145,10 +145,6 @@ pub fn dump_type_as_string(t: &Type) -> String {
     s.to_string()
 }
 
-pub fn dbg_type(name: &str, t: &Type) {
-    let s = dump_type_as_string(t);
-    eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
-}
 pub fn print_type(name: &str, t: &Type) {
     let s = dump_type_as_string(t);
     info!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
