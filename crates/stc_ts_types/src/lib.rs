@@ -280,7 +280,7 @@ impl Clone for Type {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Type, [u8; 104]);
+assert_eq_size!(Type, [u8; 112]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -674,7 +674,7 @@ pub struct InferType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(InferType, [u8; 80]);
+assert_eq_size!(InferType, [u8; 88]);
 
 impl Debug for InferType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -865,7 +865,7 @@ pub struct Mapped {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Mapped, [u8; 96]);
+assert_eq_size!(Mapped, [u8; 104]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
@@ -1233,6 +1233,7 @@ pub struct TypeParam {
     pub span: Span,
     pub name: Id,
     pub constraint: Option<Box<Type>>,
+    pub resolved_constraint: Option<Box<Type>>,
     pub default: Option<Box<Type>>,
     pub metadata: TypeParamMetadata,
 

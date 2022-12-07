@@ -203,6 +203,7 @@ impl Analyzer<'_, '_> {
                         span: ty.span(),
                         name,
                         constraint: None,
+                        resolved_constraint: None,
                         default: None,
                         metadata: TypeParamMetadata {
                             common: ty.metadata(),

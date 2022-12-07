@@ -1702,13 +1702,13 @@ impl Analyzer<'_, '_> {
                 metadata,
                 ..
             }) => {
-                match constraint.normalize() {
+                let resolved_constraint = match constraint.normalize() {
                     Type::Lit(LitType {
                         span: constraint_span,
                         lit: RTsLit::Str(s),
                         metadata,
-                    }) => {
-                        return self.expand_intrinsic_types(
+                    }) => self
+                        .expand_intrinsic_types(
                             span,
                             &Intrinsic {
                                 span: ty.span,
@@ -1723,38 +1723,37 @@ impl Analyzer<'_, '_> {
                                 },
                                 metadata: ty.metadata,
                             },
-                        );
-                    }
+                        )
+                        .ok()
+                        .map(|value| box value),
                     Type::Union(Union {
                         types,
                         span: union_span,
                         metadata,
-                    }) => {
-                        return Ok(Type::Union(Union {
-                            types: types
-                                .iter()
-                                .map(|inner_ty| {
-                                    self.expand_intrinsic_types(
-                                        span,
-                                        &Intrinsic {
-                                            span: ty.span(),
-                                            kind: ty.kind.clone(),
-                                            type_args: TypeParamInstantiation {
-                                                span: inner_ty.span(),
-                                                params: vec![inner_ty.clone()],
-                                            },
-                                            metadata: ty.metadata,
+                    }) => Some(box Type::Union(Union {
+                        types: types
+                            .iter()
+                            .map(|inner_ty| {
+                                self.expand_intrinsic_types(
+                                    span,
+                                    &Intrinsic {
+                                        span: ty.span(),
+                                        kind: ty.kind.clone(),
+                                        type_args: TypeParamInstantiation {
+                                            span: inner_ty.span(),
+                                            params: vec![inner_ty.clone()],
                                         },
-                                    )
-                                })
-                                .map(Result::unwrap)
-                                .collect(),
-                            span: *union_span,
-                            metadata: *metadata,
-                        }));
-                    }
-                    _ => {}
-                }
+                                        metadata: ty.metadata,
+                                    },
+                                )
+                            })
+                            .map(Result::unwrap)
+                            .collect(),
+                        span: *union_span,
+                        metadata: *metadata,
+                    })),
+                    _ => None,
+                };
 
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
@@ -1767,6 +1766,7 @@ impl Analyzer<'_, '_> {
                     span: *param_span,
                     name: name.clone(),
                     constraint: Some(box constraint),
+                    resolved_constraint,
                     default: default.clone(),
                     metadata: *metadata,
                     tracker: Default::default(),

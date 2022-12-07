@@ -639,6 +639,7 @@ impl Analyzer<'_, '_> {
                                 span: arg.span(),
                                 name: name.clone(),
                                 constraint: None,
+                                resolved_constraint: None,
                                 default: None,
                                 metadata: TypeParamMetadata {
                                     common: arg.metadata(),
