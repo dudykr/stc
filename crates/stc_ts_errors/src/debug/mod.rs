@@ -70,7 +70,7 @@ impl SourceMapperExt for FakeSourceMap {
 }
 
 pub fn dump_type_as_string(t: &Type) -> String {
-    if !cfg!(debug_assertions) || !tracing::enabled!(Level::ERROR) {
+    if !tracing::enabled!(Level::ERROR) {
         return String::new();
     }
 
@@ -78,6 +78,10 @@ pub fn dump_type_as_string(t: &Type) -> String {
 }
 
 pub fn force_dump_type_as_string(t: &Type) -> String {
+    if !cfg!(debug_assertions) {
+        return String::new();
+    }
+
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
