@@ -74,6 +74,10 @@ pub fn dump_type_as_string(t: &Type) -> String {
         return String::new();
     }
 
+    force_dump_type_as_string(t)
+}
+
+pub fn force_dump_type_as_string(t: &Type) -> String {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
