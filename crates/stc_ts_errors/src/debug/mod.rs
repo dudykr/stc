@@ -12,7 +12,7 @@ use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_utils::DropSpan;
 use swc_ecma_visit::VisitMutWith;
-use tracing::info;
+use tracing::{info, Level};
 
 pub mod debugger;
 
@@ -70,6 +70,14 @@ impl SourceMapperExt for FakeSourceMap {
 }
 
 pub fn dump_type_as_string(t: &Type) -> String {
+    if !tracing::enabled!(Level::ERROR) {
+        return String::new();
+    }
+
+    force_dump_type_as_string(t)
+}
+
+pub fn force_dump_type_as_string(t: &Type) -> String {
     if !cfg!(debug_assertions) {
         return String::new();
     }
@@ -145,10 +153,6 @@ pub fn dump_type_as_string(t: &Type) -> String {
     s.to_string()
 }
 
-pub fn dbg_type(name: &str, t: &Type) {
-    let s = dump_type_as_string(t);
-    eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
-}
 pub fn print_type(name: &str, t: &Type) {
     let s = dump_type_as_string(t);
     info!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);

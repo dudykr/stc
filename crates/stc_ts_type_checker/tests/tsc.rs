@@ -729,34 +729,35 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             }
         }
 
+        if print_matched_errors() {
+            eprintln!(
+                "\n============================================================\n{:?}
+============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
+                 {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
+                err,
+                expected_errors.len(),
+                full_ref_err_cnt,
+                extra_err_count,
+                expected_errors,
+                extra_errors,
+                full_ref_errors,
+                full_actual_errors,
+            );
+        } else {
+            eprintln!(
+                "\n============================================================\n{:?}
+============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
+                 {:?}\nUnwanted: {:?}",
+                err,
+                expected_errors.len(),
+                full_ref_err_cnt,
+                extra_err_count,
+                expected_errors,
+                extra_errors,
+            );
+        }
         if !success {
-            if print_matched_errors() {
-                panic!(
-                    "\n============================================================\n{:?}
-    ============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
-                     {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
-                    err,
-                    expected_errors.len(),
-                    full_ref_err_cnt,
-                    extra_err_count,
-                    expected_errors,
-                    extra_errors,
-                    full_ref_errors,
-                    full_actual_errors,
-                );
-            } else {
-                panic!(
-                    "\n============================================================\n{:?}
-    ============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
-                     {:?}\nUnwanted: {:?}",
-                    err,
-                    expected_errors.len(),
-                    full_ref_err_cnt,
-                    extra_err_count,
-                    expected_errors,
-                    extra_errors,
-                );
-            }
+            panic!()
         }
     }
 
