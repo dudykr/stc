@@ -71,6 +71,7 @@ impl SourceMapperExt for FakeSourceMap {
 
 pub fn dump_type_as_string(t: &Type) -> String {
     if !tracing::enabled!(Level::WARN) {
+    if !tracing::enabled!(Level::ERROR) {
         return String::new();
     }
 
