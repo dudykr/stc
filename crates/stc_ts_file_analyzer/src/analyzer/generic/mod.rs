@@ -684,9 +684,6 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                dbg!(&e);
-                                dbg!(!e.is_empty(), !opts.append_type_as_union, !is_ok_to_append(e, arg));
-
                                 let append_able = (self.rule().strict_null_checks
                                     && (arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || arg.is_kwd(TsKeywordTypeKind::TsNullKeyword)));
 
@@ -862,7 +859,7 @@ impl Analyzer<'_, '_> {
 
                                 let param_ty = Type::union(e.clone()).freezed();
                                 e.push(arg.clone());
-                                dbg!(&e);
+
                                 if let Type::Param(param) = param_ty.normalize() {
                                     self.insert_inferred(span, inferred, param, Cow::Borrowed(arg), opts)?;
                                 }
