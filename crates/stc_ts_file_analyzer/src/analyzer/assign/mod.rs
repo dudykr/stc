@@ -555,8 +555,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(left);
-            let r = dump_type_as_string(right);
+            let l = force_dump_type_as_string(left);
+            let r = force_dump_type_as_string(right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
