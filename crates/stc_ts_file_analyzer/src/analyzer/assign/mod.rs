@@ -1,7 +1,11 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind,
+};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
@@ -551,8 +555,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(left);
-            let r = dump_type_as_string(right);
+            let l = force_dump_type_as_string(left);
+            let r = force_dump_type_as_string(right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
@@ -609,8 +613,8 @@ impl Analyzer<'_, '_> {
                 let _ctx = ctx!(format!(
                     "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
                     line!(),
-                    dump_type_as_string(to),
-                    dump_type_as_string(rhs)
+                    force_dump_type_as_string(to),
+                    force_dump_type_as_string(rhs)
                 ));
                 return Err(ErrorKind::AssignFailed {
                     span,
