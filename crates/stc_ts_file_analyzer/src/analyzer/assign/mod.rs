@@ -1138,14 +1138,14 @@ impl Analyzer<'_, '_> {
                     fail!()
                 }
 
+                // This is required to handle intersections of function-like types.
                 if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
-                    return self
+                    if self
                         .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
-                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
-                            span: err.span(),
-                            cause: Some(box err.into()),
-                        })
-                        .context("tried to assign to a type literal created from an intersection");
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
 
                 for ty in &li.types {
