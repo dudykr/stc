@@ -19,7 +19,7 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Intersection, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
     QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
 };
@@ -43,7 +43,7 @@ use crate::{
     },
     ty,
     ty::{
-        Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+        Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
         TypeParamInstantiation,
     },
     type_facts::TypeFacts,
@@ -1017,7 +1017,14 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
-        Ok(Some(Type::union(matching_elements)))
+        Ok(Some(match type_mode {
+            TypeOfMode::LValue => Type::Intersection(Intersection {
+                span,
+                types: matching_elements,
+                metadata: Default::default(),
+            }),
+            TypeOfMode::RValue => Type::union(matching_elements),
+        }))
     }
 
     pub(super) fn access_property(

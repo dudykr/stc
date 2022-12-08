@@ -684,8 +684,8 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                let append_able = (self.rule().strict_null_checks
-                                    && (arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || arg.is_kwd(TsKeywordTypeKind::TsNullKeyword)));
+                                let append_able = self.rule().strict_null_checks
+                                    && (arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || arg.is_kwd(TsKeywordTypeKind::TsNullKeyword));
 
                                 if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) && !append_able {
                                     // @strict null check = false;

@@ -511,12 +511,12 @@ impl Analyzer<'_, '_> {
             | Type::Instance(..)
             | Type::Intrinsic(..)
             | Type::Mapped(..)
+            | Type::Intersection(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             }) => {
                 let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
-
                 return Ok(Cow::Owned(ty));
             }
             _ => {}
@@ -583,9 +583,6 @@ impl Analyzer<'_, '_> {
         };
 
         // It's valid to assign any to everything.
-        if rhs.is_any() {
-            return Ok(());
-        }
 
         if opts.allow_unknown_type && rhs.is_unknown() {
             return Ok(());
@@ -718,6 +715,12 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if rhs.is_any() {
+            if to.normalize().is_never() {
+                fail!()
+            }
+            return Ok(());
+        }
         if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
             return res;
         }
@@ -1128,7 +1131,7 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
                 }
 
                 for ty in &li.types {
@@ -2106,7 +2109,7 @@ impl Analyzer<'_, '_> {
                             "tried to assign to a function type: {}",
                             dump_type_as_string(&Type::Function(lf.clone()))
                         )
-                    })
+                    });
                 }
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
