@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
         default: Option<Type>,
         opts: DeclareVarsOpts,
     ) -> VResult<()> {
-        let _ctx = ctx!("add_vars");
+        let _ctx = ctx!(format!("add_vars: {:?}", opts));
 
         if let Some(ty) = &ty {
             ty.assert_valid();
