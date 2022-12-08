@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
         default: Option<Type>,
         opts: DeclareVarsOpts,
     ) -> VResult<()> {
-        let _ctx = ctx!("add_vars");
+        let _ctx = ctx!(format!("add_vars: {:?}", opts));
 
         if let Some(ty) = &ty {
             ty.assert_valid();
@@ -252,6 +252,34 @@ impl Analyzer<'_, '_> {
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
+                            if let RPat::Rest(elem) = elem {
+                                // Rest element is special.
+                                let type_for_rest_arg = match ty {
+                                    Some(ty) => self
+                                        .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
+                                        .context("tried to get lefting elements of an iterator to declare variables using a rest pattern")
+                                        .map(Cow::into_owned)
+                                        .report(&mut self.storage),
+                                    None => None,
+                                }
+                                .freezed();
+
+                                let default = match default {
+                                    Some(ty) => self
+                                        .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
+                                        .context("tried to get lefting elements of an iterator to declare variables using a rest pattern")
+                                        .map(Cow::into_owned)
+                                        .report(&mut self.storage),
+                                    None => None,
+                                }
+                                .freezed();
+
+                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                    .context("tried to declare lefting elements to the arugment of a rest pattern")
+                                    .report(&mut self.storage);
+                                break;
+                            }
+
                             let elem_ty = ty
                                 .as_ref()
                                 .try_map(|ty| -> VResult<Type> {
