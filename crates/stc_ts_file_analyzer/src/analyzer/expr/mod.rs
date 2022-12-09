@@ -925,9 +925,11 @@ impl Analyzer<'_, '_> {
         }
 
         if matching_elements.len() == 1 {
-            return Ok(matching_elements.pop());
+            return Ok(Some(
+                self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
+                    .into_owned(),
+            ));
         }
-
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
 
         if is_callable {
@@ -1017,13 +1019,21 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
+        let mut res_vec = vec![];
+
+        for el in matching_elements.iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el.clone()), Default::default()) {
+                res_vec.push(res.normalize().clone());
+            }
+        }
+        dbg!(&res_vec);
         Ok(Some(match type_mode {
             TypeOfMode::LValue => Type::Intersection(Intersection {
                 span,
-                types: matching_elements,
+                types: res_vec,
                 metadata: Default::default(),
             }),
-            TypeOfMode::RValue => Type::union(matching_elements),
+            TypeOfMode::RValue => Type::union(res_vec),
         }))
     }
 

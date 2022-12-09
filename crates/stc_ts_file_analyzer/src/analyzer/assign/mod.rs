@@ -732,7 +732,9 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
-
+        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            fail!()
+        }
         if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
             fail!()
         }
@@ -2373,10 +2375,6 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {}
-        }
-
-        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            fail!()
         }
 
         match (to, rhs) {
