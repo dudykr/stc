@@ -1540,6 +1540,30 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     }
+                    
+                    if let Some(super_class) = self.scope.get_super_class() {
+                        let super_class = super_class.clone();
+                        let ctx = Ctx {
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ..self.ctx
+                        };
+                        let super_class = self.with_ctx(ctx).expand(
+                            *span,
+                            super_class,
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )?;
+
+                        if let Type::Class(Class { def, .. }) = super_class {
+                            if let Ok(v) = self.access_property(*span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
+                                return Ok(v);
+                            }
+                        }
+                    }
 
                     dbg!();
 
