@@ -1,7 +1,11 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind,
+};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
@@ -511,12 +515,12 @@ impl Analyzer<'_, '_> {
             | Type::Instance(..)
             | Type::Intrinsic(..)
             | Type::Mapped(..)
+            | Type::Intersection(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             }) => {
                 let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
-
                 return Ok(Cow::Owned(ty));
             }
             _ => {}
@@ -551,8 +555,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(left);
-            let r = dump_type_as_string(right);
+            let l = force_dump_type_as_string(left);
+            let r = force_dump_type_as_string(right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
@@ -583,9 +587,6 @@ impl Analyzer<'_, '_> {
         };
 
         // It's valid to assign any to everything.
-        if rhs.is_any() {
-            return Ok(());
-        }
 
         if opts.allow_unknown_type && rhs.is_unknown() {
             return Ok(());
@@ -609,8 +610,8 @@ impl Analyzer<'_, '_> {
                 let _ctx = ctx!(format!(
                     "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
                     line!(),
-                    dump_type_as_string(to),
-                    dump_type_as_string(rhs)
+                    force_dump_type_as_string(to),
+                    force_dump_type_as_string(rhs)
                 ));
                 return Err(ErrorKind::AssignFailed {
                     span,
@@ -718,6 +719,12 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if rhs.is_any() {
+            if to.normalize().is_never() {
+                fail!()
+            }
+            return Ok(());
+        }
         if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
             return res;
         }
@@ -725,7 +732,9 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
-
+        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            fail!()
+        }
         if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
             fail!()
         }
@@ -1128,7 +1137,17 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
+                }
+
+                // This is required to handle intersections of function-like types.
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
+                    if self
+                        .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
 
                 for ty in &li.types {
@@ -2106,7 +2125,7 @@ impl Analyzer<'_, '_> {
                             "tried to assign to a function type: {}",
                             dump_type_as_string(&Type::Function(lf.clone()))
                         )
-                    })
+                    });
                 }
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -2356,10 +2375,6 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {}
-        }
-
-        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            fail!()
         }
 
         match (to, rhs) {
