@@ -1323,7 +1323,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     // Infer type arguments using constructors.
-                    let constructors = cls
+                    let mut constructors = cls
                         .body
                         .iter()
                         .filter_map(|member| match member {
@@ -1332,29 +1332,19 @@ impl Analyzer<'_, '_> {
                         })
                         .collect_vec();
 
-                    let mut constructors = constructors
-                        .iter()
-                        .map(|c| {
-                            let res = self.check_call_args(
-                                span,
-                                c.type_params.as_ref().map(|v| &*v.params),
-                                &c.params,
-                                type_args,
-                                args,
-                                arg_types,
-                                spread_arg_types,
-                            );
-                            (c, res)
-                        })
-                        .collect::<Vec<_>>();
+                    constructors.sort_by_cached_key(|c| {
+                        self.check_call_args(
+                            span,
+                            c.type_params.as_ref().map(|v| &*v.params),
+                            &c.params,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        )
+                    });
 
-                    constructors.sort_by_key(|(_, res)| *res);
-
-                    if let Some((constructor, t)) = constructors.first() {
-                        //
-                        println!("Constructor thing");
-                        println!("{:?}", t);
-
+                    if let Some(constructor) = constructors.first() {
                         let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
 
@@ -2031,17 +2021,6 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> VResult<()> {
-        // print_backtrace();
-        // println!(
-        //     "validate_arg_count: {} {} {} {}",
-        //     params.len(),
-        //     args.len(),
-        //     arg_types.len(),
-        //     spread_arg_types.len()
-        // );
-        // println!("validate_arg_count: {:?} {:?} {:?} {:?}", params, args, arg_types,
-        // spread_arg_types);
-
         /// Count required parameter count.
         fn count_required_pat(p: &RPat) -> usize {
             match p {
@@ -2223,7 +2202,6 @@ impl Analyzer<'_, '_> {
         let mut callable = candidates
             .iter()
             .map(|c| {
-                println!("CHECK CALL ARGS SELECT & INVOKE");
                 let res = self.check_call_args(
                     span,
                     c.type_params.as_deref(),
@@ -2239,8 +2217,6 @@ impl Analyzer<'_, '_> {
             .collect::<Vec<_>>();
         callable.sort_by_key(|(_, res)| *res);
 
-        // println!("callable len: {}", callable.len());
-
         if candidates.is_empty() {
             return Ok(None);
         }
@@ -2250,29 +2226,12 @@ impl Analyzer<'_, '_> {
             && callable.len() > 1
             && callable
                 .iter()
-                .all(|(_, res)| matches!(res, ArgCheckResult::WrongArgCount(_) | ArgCheckResult::ArgTypeMismatch))
+                .all(|(_, res)| matches!(res, ArgCheckResult::WrongArgCount | ArgCheckResult::ArgTypeMismatch))
         {
             return Err(ErrorKind::NoMatchingOverload { span }.context("tried to select a call candidate"));
         }
 
-        // let (c, _) = callable.into_iter().next().unwrap();
-        let (c, v) = callable.into_iter().next().unwrap();
-
-        // println!("v {:?}", v);
-
-        if let ArgCheckResult::WrongArgCount(ArgType::TypeArg) = v {
-            // println!("WrongArgCount");
-            let type_args_len = type_args.map(|v| Some(v.params.len())).unwrap_or(None);
-
-            self.storage.report(
-                ErrorKind::ExpectedNTypeArgsButGotM {
-                    span,
-                    min: c.type_params.as_ref().map(|v| v.len()).unwrap_or(0),
-                    max: type_args_len,
-                }
-                .into(),
-            );
-        }
+        let (c, _) = callable.into_iter().next().unwrap();
 
         if candidates.len() == 1 {
             return self
@@ -2380,10 +2339,15 @@ impl Analyzer<'_, '_> {
         self.expand_this_in_type(&mut ret_ty);
 
         {
-            // println!("do i get claled from here?");
             let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
 
             arg_check_res.report(&mut self.storage);
+        }
+
+        {
+            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+
+            type_arg_check_res.report(&mut self.storage);
         }
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
@@ -3219,7 +3183,6 @@ impl Analyzer<'_, '_> {
             if let Some(type_args) = type_args {
                 // TODO(kdy1): Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
-                    // println!("Type parameter count mismatch");
                     return Err(ErrorKind::TypeParameterCountMismatch {
                         span,
                         max: type_params.len(),
@@ -3268,21 +3231,12 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ArgCheckResult {
-        println!("CHECK CALL ARGS");
-        // println!(
-        //     "check_call_args: {:?}, {:?}, {:?}, {:?}, {:?}, {:?}",
-        //     type_params, params, type_args, args, arg_types, spread_arg_types
-        // );
-
-        // println!("le of type args: {:?}", type_args.map(|v| v.params.len()));
-
         if self.validate_type_args_count(span, type_params, type_args).is_err() {
-            return ArgCheckResult::WrongArgCount(ArgType::TypeArg);
+            return ArgCheckResult::WrongArgCount;
         }
-        // println!("OK!");
 
         if self.validate_arg_count(span, params, args, arg_types, spread_arg_types).is_err() {
-            return ArgCheckResult::WrongArgCount(ArgType::Arg);
+            return ArgCheckResult::WrongArgCount;
         }
 
         self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
@@ -3558,13 +3512,7 @@ enum ArgCheckResult {
     Exact,
     MayBe,
     ArgTypeMismatch,
-    WrongArgCount(ArgType),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-enum ArgType {
-    TypeArg,
-    Arg,
+    WrongArgCount,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -3580,7 +3528,7 @@ fn test_arg_check_result_order() {
         ArgCheckResult::Exact,
         ArgCheckResult::MayBe,
         ArgCheckResult::ArgTypeMismatch,
-        ArgCheckResult::WrongArgCount(ArgType::TypeArg),
+        ArgCheckResult::WrongArgCount,
     ];
     let expected = v.clone();
     v.sort();

@@ -1368,13 +1368,6 @@ pub enum ErrorKind {
         min: usize,
     },
 
-    // TS2558
-    ExpectedNTypeArgsButGotM {
-        span: Span,
-        min: usize,
-        max: Option<usize>,
-    },
-
     ExpectedAtLeastNArgsButGotMOrMore {
         span: Span,
         min: usize,
@@ -1671,7 +1664,7 @@ impl ErrorKind {
             ErrorKind::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
             ErrorKind::SpreadMustBeTupleOrPassedToRest { .. } => 2556,
 
-            ErrorKind::ExpectedNTypeArgsButGotM { .. } => 2558,
+            ErrorKind::TypeParameterCountMismatch { .. } => 2558,
 
             ErrorKind::ReferencedInInit { .. } => 2372,
 
