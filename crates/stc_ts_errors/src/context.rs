@@ -7,7 +7,7 @@ macro_rules! ctx {
     ($($t:tt)*) => {{
         if cfg!(debug_assertions) {
             Some($crate::context::new(|| {
-                ($($t)*).to_string()
+                format!("{} (at {}:{}:{})", $($t)*, file!(), line!(), column!())
             }))
         } else {
             None
