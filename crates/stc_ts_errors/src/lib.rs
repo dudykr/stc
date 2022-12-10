@@ -1862,7 +1862,7 @@ impl ErrorKind {
 
             ErrorKind::CannotAssignToReadonlyProperty { .. } => 2540,
 
-            ErrorKind::ReadOnly { .. } => 2546,
+            ErrorKind::ReadOnly { .. } => 2540,
 
             ErrorKind::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
 
