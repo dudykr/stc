@@ -1551,6 +1551,11 @@ impl ErrorKind {
             // TS18049: '{0}' is possibly 'null' or 'undefined'.
             2533 | 18049 => 2533,
 
+            // TS2739: Missing properties with a type name
+            // TS2740: Missing properties with type names
+            // TS2741: Mssing properties with comparison-like error message
+            2739 | 2740 | 2741 => 2741,
+
             _ => code,
         }
     }
