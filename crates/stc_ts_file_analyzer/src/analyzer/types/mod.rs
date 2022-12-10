@@ -690,24 +690,45 @@ impl Analyzer<'_, '_> {
             }};
         }
 
-        let is_str = types.iter().any(|ty| ty.is_str());
-        let is_num = types.iter().any(|ty| ty.is_num());
-        let is_bool = types.iter().any(|ty| ty.is_bool());
+        let mut normalize_types = vec![];
+
+        // set normalize all
+        for el in types.iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el.clone()), Default::default()) {
+                normalize_types.push(res.normalize().clone());
+            }
+        }
+
+        let is_str = normalize_types.iter().any(|ty| ty.is_str());
+        let is_num = normalize_types.iter().any(|ty| ty.is_num());
+        let is_bool = normalize_types.iter().any(|ty| ty.is_bool());
 
         if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
             return never!();
         }
 
-        if types.len() == 2 {
-            let (a, b) = (&types[0], &types[1]);
+        if normalize_types.len() == 2 {
+            let (a, b) = (&normalize_types[0], &normalize_types[1]);
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
                 return never!();
             }
+            match (a, b) {
+                (Type::Union(u), other) | (other, Type::Union(u)) => {
+                    for i in &u.types {
+                        if i.type_eq(other) {
+                            return Ok(Some(other.clone()));
+                        }
+                    }
+                }
+
+                _ => {}
+            }
         }
 
-        let enum_variant_iter = types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
+        // has enum_variant
+        let enum_variant_iter = normalize_types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
         let enum_variant_len = enum_variant_iter.len();
 
         if enum_variant_len > 0 {
@@ -735,7 +756,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            for elem in types.iter() {
+            for elem in normalize_types.iter() {
                 if let Type::EnumVariant(ref ev) = elem.normalize() {
                     if let Some(variant_name) = &ev.name {
                         // enumVariant is enumMemeber

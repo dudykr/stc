@@ -1026,7 +1026,7 @@ impl Analyzer<'_, '_> {
                 res_vec.push(res.normalize().clone());
             }
         }
-        dbg!(&res_vec);
+
         Ok(Some(match type_mode {
             TypeOfMode::LValue => Type::Intersection(Intersection {
                 span,
