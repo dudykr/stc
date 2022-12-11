@@ -1725,33 +1725,39 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .ok()
+                        .map(|value| value.freezed())
                         .map(|value| box value),
                     Type::Union(Union {
                         types,
                         span: union_span,
                         metadata,
-                    }) => Some(box Type::Union(Union {
-                        types: types
-                            .iter()
-                            .map(|inner_ty| {
-                                self.expand_intrinsic_types(
-                                    span,
-                                    &Intrinsic {
-                                        span: ty.span(),
-                                        kind: ty.kind.clone(),
-                                        type_args: TypeParamInstantiation {
-                                            span: inner_ty.span(),
-                                            params: vec![inner_ty.clone()],
+                    }) => Some(
+                        box Type::Union(Union {
+                            types: types
+                                .iter()
+                                .map(|inner_ty| {
+                                    self.expand_intrinsic_types(
+                                        span,
+                                        &Intrinsic {
+                                            span: ty.span(),
+                                            kind: ty.kind.clone(),
+                                            type_args: TypeParamInstantiation {
+                                                span: inner_ty.span(),
+                                                params: vec![inner_ty.clone()],
+                                            },
+                                            metadata: ty.metadata,
                                         },
-                                        metadata: ty.metadata,
-                                    },
-                                )
-                            })
-                            .map(Result::unwrap)
-                            .collect(),
-                        span: *union_span,
-                        metadata: *metadata,
-                    })),
+                                    )
+                                })
+                                .map(|val| val.ok())
+                                .map(|val| val.freezed())
+                                .flatten()
+                                .collect(),
+                            span: *union_span,
+                            metadata: *metadata,
+                        })
+                        .freezed(),
+                    ),
                     _ => None,
                 };
 

@@ -572,6 +572,8 @@ impl Analyzer<'_, '_> {
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
     fn assign_without_wrapping(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
+        // println!("to: {:#?}", to);
+        // println!("rhs: {:#?}", rhs);
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
@@ -1242,6 +1244,29 @@ impl Analyzer<'_, '_> {
 
                     fail!()
                 }
+                Type::Union(rhs) => {
+                    if rhs
+                        .types
+                        .iter()
+                        .find(|ty| self.assign_with_opts(data, to, ty, opts).is_ok())
+                        .is_some()
+                    {
+                        return Ok(());
+                    }
+                    fail!()
+                }
+                Type::Intrinsic(rhs) => {
+                    if rhs
+                        .type_args
+                        .params
+                        .iter()
+                        .find(|param| self.assign_with_opts(data, to, param, opts).is_ok())
+                        .is_some()
+                    {
+                        return Ok(());
+                    }
+                    fail!()
+                }
                 _ => {
                     if let RTsLit::Str(lhs) = &lhs.lit {
                         if let Type::Tpl(rhs) = rhs {
@@ -1431,9 +1456,17 @@ impl Analyzer<'_, '_> {
             }) => return Ok(()),
 
             Type::Param(TypeParam {
-                ref name, ref constraint, ..
+                ref name,
+                ref constraint,
+                ref resolved_constraint,
+                ..
             }) => {
-                //
+                let constraint = if resolved_constraint.is_some() {
+                    resolved_constraint
+                } else {
+                    constraint
+                };
+
                 if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
                     if opts.allow_assignment_to_param {
                         return Ok(());
