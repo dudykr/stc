@@ -695,15 +695,40 @@ impl Analyzer<'_, '_> {
         // set normalize all
         for el in types.iter() {
             if let Ok(res) = self.normalize(Some(span), Cow::Owned(el.clone()), Default::default()) {
-                normalize_types.push(res.normalize().clone());
+                let result = res.into_owned();
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                    ..
+                }) = &result
+                {
+                    continue;
+                }
+                normalize_types.push(result);
             }
         }
 
+        // has never; return never
+        if normalize_types.iter().any(|ty| ty.is_never()) {
+            return never!();
+        }
+        // has any, return any
+        if normalize_types.iter().any(|ty| ty.is_any()) {
+            return Ok(Some(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: KeywordTypeMetadata { ..Default::default() },
+            })));
+        }
+
+        let is_symbol = normalize_types.iter().any(|ty| ty.is_symbol());
         let is_str = normalize_types.iter().any(|ty| ty.is_str());
         let is_num = normalize_types.iter().any(|ty| ty.is_num());
         let is_bool = normalize_types.iter().any(|ty| ty.is_bool());
-
-        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+        let is_null = normalize_types.iter().any(|ty| ty.is_null());
+        let is_undefined = normalize_types.iter().any(|ty| ty.is_undefined());
+        if u32::from(is_symbol) + u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) + u32::from(is_null) + u32::from(is_undefined)
+            >= 2
+        {
             return never!();
         }
 
@@ -828,61 +853,146 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let mut property_types = vec![];
+        {
+            // never check logic
+            let mut property_types = vec![];
 
-        for elem in types.iter() {
-            let elem = self
-                .normalize(
-                    Some(span),
-                    Cow::Borrowed(elem),
-                    NormalizeTypeOpts {
-                        preserve_global_this: true,
-                        ..opts
-                    },
-                )
-                .context("failed to normalize types while intersecting properties")?
-                .freezed()
-                .into_owned()
-                .freezed();
+            for elem in types.iter() {
+                let elem = self
+                    .normalize(
+                        Some(span),
+                        Cow::Borrowed(elem),
+                        NormalizeTypeOpts {
+                            preserve_global_this: true,
+                            ..opts
+                        },
+                    )
+                    .context("failed to normalize types while intersecting properties")?
+                    .freezed()
+                    .into_owned()
+                    .freezed();
 
-            if let Type::TypeLit(elem_tl) = elem.normalize_instance() {
-                // Intersect property types
-                'outer: for e in elem_tl.members.iter() {
-                    if let TypeElement::Property(p) = e {
-                        for prev in property_types.iter_mut() {
-                            if let TypeElement::Property(prev) = prev {
-                                if prev.key.type_eq(&p.key) {
-                                    let prev_type = prev
-                                        .type_ann
-                                        .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
-                                    let other = p
-                                        .type_ann
-                                        .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                if let Type::TypeLit(elem_tl) = elem.normalize_instance() {
+                    // Intersect property types
+                    'outer: for e in elem_tl.members.iter() {
+                        if let TypeElement::Property(p) = e {
+                            for prev in property_types.iter_mut() {
+                                if let TypeElement::Property(prev) = prev {
+                                    if prev.key.type_eq(&p.key) {
+                                        let prev_type = prev
+                                            .type_ann
+                                            .clone()
+                                            .map(|v| *v)
+                                            .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                                        let other = p
+                                            .type_ann
+                                            .clone()
+                                            .map(|v| *v)
+                                            .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
 
-                                    let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
+                                        let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
 
-                                    if let Some(new) = new {
-                                        if new.is_never() {
-                                            return never!();
+                                        if let Some(new) = new {
+                                            if new.is_never() {
+                                                return never!();
+                                            }
+                                            prev.type_ann = Some(box new);
+                                            continue 'outer;
                                         }
-                                        prev.type_ann = Some(box new);
-                                        continue 'outer;
                                     }
                                 }
                             }
                         }
+                        property_types.push(e.clone());
                     }
-
-                    property_types.push(e.clone());
                 }
             }
         }
 
-        Ok(None)
+        let mut all_has_undefined = true;
+        let mut all_has_null = true;
+        let mut intersection_vec: Vec<Type> = vec![];
+
+        for elem in normalize_types.iter() {
+            if let Type::Union(Union { types, .. }) = elem {
+                let mut null_chk = false;
+                let mut undefined_chk = false;
+                for elem in types {
+                    if elem.is_null() {
+                        null_chk = true;
+                    } else if elem.is_undefined() {
+                        undefined_chk = true;
+                    }
+                }
+                if !null_chk {
+                    all_has_null = false;
+                } else if !undefined_chk {
+                    all_has_undefined = false;
+                } // never type should not push
+                intersection_vec.push(elem.clone());
+                continue;
+            }
+
+            all_has_null = false;
+            all_has_undefined = false;
+            intersection_vec.push(elem.clone());
+        }
+
+        let ret_intersection = Type::Intersection(Intersection {
+            span,
+            types: intersection_vec.clone(), // delete unknown
+            metadata: Default::default(),
+        });
+
+        if !all_has_null && !all_has_undefined {
+            return Ok(Some(ret_intersection));
+        }
+
+        let mut ret_union = vec![ret_intersection];
+        if all_has_null {
+            ret_union = ret_union
+                .iter()
+                .map(|mut ty| {
+                    if let Type::Intersection(Intersection { types, .. }) = ty {
+                        for elem in types {
+                            if let Type::Union(Union { types, .. }) = elem.clone() {
+                                elem = Type::union(types.iter().map(|m| m.clone()).filter(|p| !p.is_null()).collect_vec());
+                            }
+                        }
+                    }
+
+                    ty
+                })
+                .collect();
+            ret_union.push(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsNullKeyword,
+                metadata: KeywordTypeMetadata { ..Default::default() },
+            }))
+        }
+        if all_has_undefined {
+            ret_union = ret_union
+                .iter()
+                .map(|mut ty| {
+                    if let Type::Intersection(Intersection { types, .. }) = ty {
+                        for elem in types {
+                            if let Type::Union(Union { types, .. }) = elem.clone() {
+                                elem = Type::union(types.iter().map(|m| m.clone()).filter(|p| !p.is_undefined()).collect_vec());
+                            }
+                        }
+                    }
+
+                    ty
+                })
+                .collect();
+            ret_union.push(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                metadata: KeywordTypeMetadata { ..Default::default() },
+            }))
+        }
+
+        return Ok(Some(Type::union(ret_union)));
     }
 
     // This is part of normalization.
