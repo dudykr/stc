@@ -1021,9 +1021,9 @@ impl Analyzer<'_, '_> {
 
         let mut res_vec = vec![];
 
-        for el in matching_elements.iter() {
-            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el.clone()), Default::default()) {
-                res_vec.push(res.normalize().clone());
+        for el in matching_elements.into_iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
+                res_vec.push(res.into_owned());
             }
         }
 
