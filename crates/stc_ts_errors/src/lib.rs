@@ -25,6 +25,7 @@ use swc_common::{
 use swc_ecma_ast::{AssignOp, BinaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
+#[cfg(debug_assertions)]
 use crate::context::with_ctx;
 
 pub mod context;
@@ -55,7 +56,10 @@ impl std::ops::Deref for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
+            #[cfg(debug_assertions)]
             contexts: with_ctx(|contexts| contexts.iter().rev().map(|v| v()).collect()),
+            #[cfg(not(debug_assertions))]
+            contexts: (),
             inner: Box::new(kind),
         }
     }
@@ -63,10 +67,7 @@ impl From<ErrorKind> for Error {
 
 impl Error {
     pub fn context(mut self, context: impl Display) -> Error {
-        if !cfg!(debug_assertions) {
-            return self;
-        }
-
+        #[cfg(debug_assertions)]
         self.contexts.push(context.to_string());
         self
     }
@@ -87,6 +88,7 @@ impl Error {
 
 impl Debug for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        #[cfg(debug_assertions)]
         for ctx in self.contexts.iter().rev() {
             writeln!(f, "{}: {}", Yellow.paint("context"), ctx)?;
         }
@@ -2012,6 +2014,7 @@ impl ErrorKind {
                 ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
                 _ => {
                     if let Some(idx) = buf.iter().position(|prev| prev.inner == e.inner) {
+                        #[cfg(debug_assertions)]
                         buf[idx].contexts.push(format!("duplicate: {}", e.contexts.join("\n")));
                         continue;
                     }
