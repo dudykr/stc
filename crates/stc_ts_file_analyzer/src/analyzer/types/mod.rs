@@ -734,16 +734,19 @@ impl Analyzer<'_, '_> {
 
         if normalize_types.len() == 2 {
             let (a, b) = (&normalize_types[0], &normalize_types[1]);
+            dbg!(&a, &b);
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
                 return never!();
             }
-            match (a, b) {
+            match (a.normalize(), b.normalize()) {
                 (Type::Union(u), other) | (other, Type::Union(u)) => {
+                    let other_normalize = other.normalize();
                     for i in &u.types {
-                        if i.type_eq(other) {
-                            return Ok(Some(other.clone()));
+                        let i_normalize = i.normalize();
+                        if i_normalize.type_eq(other_normalize) {
+                            return Ok(Some(other_normalize.clone()));
                         }
                     }
                 }
@@ -914,7 +917,7 @@ impl Analyzer<'_, '_> {
         let mut intersection_vec: Vec<Type> = vec![];
 
         for elem in normalize_types.iter() {
-            if let Type::Union(Union { types, .. }) = elem {
+            if let Type::Union(Union { types, .. }) = elem.normalize() {
                 let mut null_chk = false;
                 let mut undefined_chk = false;
                 for elem in types {
@@ -940,7 +943,7 @@ impl Analyzer<'_, '_> {
 
         let ret_intersection = Type::Intersection(Intersection {
             span,
-            types: intersection_vec.clone(), // delete unknown
+            types: intersection_vec,
             metadata: Default::default(),
         });
 
@@ -950,41 +953,28 @@ impl Analyzer<'_, '_> {
 
         let mut ret_union = vec![ret_intersection];
         if all_has_null {
-            ret_union = ret_union
-                .iter()
-                .map(|mut ty| {
-                    if let Type::Intersection(Intersection { types, .. }) = ty {
-                        for elem in types {
-                            if let Type::Union(Union { types, .. }) = elem.clone() {
-                                elem = Type::union(types.iter().map(|m| m.clone()).filter(|p| !p.is_null()).collect_vec());
-                            }
+            let mut temp = vec![];
+            for ty in ret_union {
+                if let Type::Intersection(Intersection { types, .. }) = ty.normalize() {
+                    let mut types_vec = vec![];
+                    for elem in types {
+                        let temp = elem.normalize();
+                        if let Type::Union(Union { types, .. }) = temp {
+                            types_vec.push(Type::union(types.iter().cloned().filter(|p| !p.is_null()).collect_vec()));
+                        } else {
+                            types_vec.push(temp.clone());
                         }
                     }
-
-                    ty
-                })
-                .collect();
-            ret_union.push(Type::Keyword(KeywordType {
-                span,
-                kind: TsKeywordTypeKind::TsNullKeyword,
-                metadata: KeywordTypeMetadata { ..Default::default() },
-            }))
-        }
-        if all_has_undefined {
-            ret_union = ret_union
-                .iter()
-                .map(|mut ty| {
-                    if let Type::Intersection(Intersection { types, .. }) = ty {
-                        for elem in types {
-                            if let Type::Union(Union { types, .. }) = elem.clone() {
-                                elem = Type::union(types.iter().map(|m| m.clone()).filter(|p| !p.is_undefined()).collect_vec());
-                            }
-                        }
-                    }
-
-                    ty
-                })
-                .collect();
+                    temp.push(Type::Intersection(Intersection {
+                        span,
+                        types: types_vec,
+                        metadata: Default::default(),
+                    }));
+                    continue;
+                }
+                temp.push(ty);
+            }
+            ret_union = temp;
             ret_union.push(Type::Keyword(KeywordType {
                 span,
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -992,7 +982,37 @@ impl Analyzer<'_, '_> {
             }))
         }
 
-        return Ok(Some(Type::union(ret_union)));
+        if all_has_undefined {
+            let mut temp = vec![];
+            for ty in ret_union {
+                if let Type::Intersection(Intersection { types, .. }) = ty.normalize() {
+                    let mut types_vec = vec![];
+                    for elem in types {
+                        let temp = elem.normalize();
+                        if let Type::Union(Union { types, .. }) = temp {
+                            types_vec.push(Type::union(types.iter().cloned().filter(|p| !p.is_undefined()).collect_vec()));
+                        } else {
+                            types_vec.push(temp.clone());
+                        }
+                    }
+                    temp.push(Type::Intersection(Intersection {
+                        span,
+                        types: types_vec,
+                        metadata: Default::default(),
+                    }));
+                    continue;
+                }
+                temp.push(ty);
+            }
+            ret_union = temp;
+            ret_union.push(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                metadata: KeywordTypeMetadata { ..Default::default() },
+            }))
+        }
+
+        Ok(Some(Type::union(ret_union)))
     }
 
     // This is part of normalization.
