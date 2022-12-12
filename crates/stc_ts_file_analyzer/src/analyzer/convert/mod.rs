@@ -1219,6 +1219,21 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
+                        Some(RPat::Rest(pat)) => {
+                            self.default_any_pat(&pat.arg);
+
+                            let elem_ty = if let Some(m) = &mut self.mutations {
+                                m.for_pats.entry(pat.arg.node_id().unwrap()).or_default().ty.take().unwrap()
+                            } else {
+                                unreachable!();
+                            };
+                            Type::Rest(RestType {
+                                span,
+                                ty: box elem_ty,
+                                metadata: Default::default(),
+                            })
+                        }
+
                         _ => Type::any(DUMMY_SP, Default::default()),
                     };
 
