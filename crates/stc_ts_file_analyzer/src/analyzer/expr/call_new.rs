@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, print_type},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_type},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -825,7 +825,7 @@ impl Analyzer<'_, '_> {
                 .access_property(span, &obj_type, prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
                 .context("tried to access property to call it")?;
 
-            let callee_before_expanding = dump_type_as_string(&callee);
+            let callee_before_expanding = force_dump_type_as_string(&callee);
             let callee = self
                 .normalize(Some(span), Cow::Owned(callee), NormalizeTypeOpts { ..Default::default() })?
                 .into_owned();
@@ -835,7 +835,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span }.into())
                 }
             }
-            let callee_str = dump_type_as_string(&callee);
+            let callee_str = force_dump_type_as_string(&callee);
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
                 .convert_err(|err| match err {
@@ -855,7 +855,7 @@ impl Analyzer<'_, '_> {
                     format!(
                         "tried to call property by using access_property because the object type is not handled by call_property: \nobj = \
                          {}\ncallee = {}\ncallee (before expanding): {}",
-                        dump_type_as_string(&obj_type),
+                        force_dump_type_as_string(&obj_type),
                         callee_str,
                         callee_before_expanding,
                     )
