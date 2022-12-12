@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::widen::Widen;
 use stc_ts_types::{
-    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata,
+    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, RestType, Tuple, TupleElement, TypeElMetadata,
     TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
@@ -81,6 +81,12 @@ impl Analyzer<'_, '_> {
             RPat::Rest(r) => {
                 if let RPat::Array(..) = &*r.arg {
                     return self.default_type_for_pat(&r.arg);
+                } else {
+                    return Ok(Type::Rest(RestType {
+                        span,
+                        ty: box self.default_type_for_pat(&r.arg)?,
+                        metadata: Default::default(),
+                    }));
                 }
             }
             RPat::Object(obj) => {
