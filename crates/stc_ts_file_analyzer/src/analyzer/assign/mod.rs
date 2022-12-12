@@ -2165,16 +2165,17 @@ impl Analyzer<'_, '_> {
 
                 match *rhs.normalize() {
                     Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
-                        // TODO: Handle Type::Rest
-
                         if rhs_elems.is_empty() {
                             fail!()
                         }
-                        if elems.len() < rhs_elems.len() {
-                            return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
-                        }
 
-                        // TODO: Handle Type::Rest
+                        if elems.len() < rhs_elems.len() {
+                            if elems.iter().any(|elem| elem.ty.is_rest()) {
+                                // Type::Rest eats many elements
+                            } else {
+                                return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
+                            }
+                        }
 
                         if elems.len() > rhs_elems.len() {
                             let is_lhs_any_tuple = elems.iter().all(|l| {

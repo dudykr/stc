@@ -224,6 +224,11 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         let ty = self.expand(span, ty, Default::default())?;
+                        let error_for_null_or_undefined = if matches!(v.name, RPat::Array(..) | RPat::Object(..)) {
+                            self.deny_null_or_undefined(span, &ty)
+                        } else {
+                            Ok(())
+                        };
                         ty.assert_valid();
                         let mut ty = (|| {
                             if !should_instantiate_type_ann(&ty) {
@@ -258,10 +263,13 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         };
 
-                        match self
-                            .assign_with_opts(&mut Default::default(), &ty, &value_ty, opts)
-                            .context("tried to assign from var decl")
-                        {
+                        let res = match error_for_null_or_undefined {
+                            Ok(()) => self
+                                .assign_with_opts(&mut Default::default(), &ty, &value_ty, opts)
+                                .context("tried to assign from var decl"),
+                            Err(err) => Err(err),
+                        };
+                        match res {
                             Ok(()) => {
                                 let mut ty = ty;
                                 prevent_generalize(&mut ty);
