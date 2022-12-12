@@ -2386,6 +2386,12 @@ impl Analyzer<'_, '_> {
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
 
             (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
+
+            (Type::Rest(l), Type::Rest(r)) => {
+                return self
+                    .assign_with_opts(data, &l.ty, &r.ty, opts)
+                    .context("tried to assign to a rest type")
+            }
             _ => {}
         }
 
