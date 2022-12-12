@@ -1038,6 +1038,13 @@ impl Analyzer<'_, '_> {
                     intersection_vec.push(elem.clone());
                     continue;
                     }
+                    if !null_chk {
+                        all_has_null = false;
+                    } else if !undefined_chk {
+                        all_has_undefined = false;
+                    } // never type should not push
+                    intersection_vec.push(elem.clone());
+                    continue;
                 }
 
                 match temp_ty.clone() {
