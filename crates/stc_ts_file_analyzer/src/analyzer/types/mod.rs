@@ -734,7 +734,6 @@ impl Analyzer<'_, '_> {
 
         if normalize_types.len() == 2 {
             let (a, b) = (&normalize_types[0], &normalize_types[1]);
-            dbg!(&a, &b);
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
@@ -917,29 +916,39 @@ impl Analyzer<'_, '_> {
         let mut intersection_vec: Vec<Type> = vec![];
 
         for elem in normalize_types.iter() {
-            if let Type::Union(Union { types, .. }) = elem.normalize() {
-                let mut null_chk = false;
-                let mut undefined_chk = false;
-                for elem in types {
-                    if elem.is_null() {
-                        null_chk = true;
-                    } else if elem.is_undefined() {
-                        undefined_chk = true;
+            match elem.normalize() {
+                Type::Union(Union { types, .. }) => {
+                    let mut null_chk = false;
+                    let mut undefined_chk = false;
+                    for elem in types {
+                        if elem.is_null() {
+                            null_chk = true;
+                        } else if elem.is_undefined() {
+                            undefined_chk = true;
+                        }
                     }
+                    if !null_chk {
+                        all_has_null = false;
+                    } else if !undefined_chk {
+                        all_has_undefined = false;
+                    } // never type should not push
+                    intersection_vec.push(elem.clone());
+                    continue;
                 }
-                if !null_chk {
-                    all_has_null = false;
-                } else if !undefined_chk {
-                    all_has_undefined = false;
-                } // never type should not push
-                intersection_vec.push(elem.clone());
-                continue;
+                Type::Intersection(Intersection { types, .. }) => {
+                    for elem in types {
+                        intersection_vec.push(elem.clone());
+                    }
+                    continue;
+                }
+                _ => {}
             }
 
             all_has_null = false;
             all_has_undefined = false;
             intersection_vec.push(elem.clone());
         }
+        intersection_vec.make_clone_cheap();
 
         let ret_intersection = Type::Intersection(Intersection {
             span,
