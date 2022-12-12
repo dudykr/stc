@@ -1009,7 +1009,25 @@ impl Analyzer<'_, '_> {
                             continue 'outer;
                         }
                         _ => {}
+        for elem in normalize_types.iter() {
+            match elem.normalize() {
+                Type::Union(Union { types, .. }) => {
+                    let mut null_chk = false;
+                    let mut undefined_chk = false;
+                    for elem in types {
+                        if elem.is_null() {
+                            null_chk = true;
+                        } else if elem.is_undefined() {
+                            undefined_chk = true;
+                        }
                     }
+                    if !null_chk {
+                        all_has_null = false;
+                    } else if !undefined_chk {
+                        all_has_undefined = false;
+                    } // never type should not push
+                    intersection_vec.push(elem.clone());
+                    continue;
                 }
 
                 match temp_ty.clone() {
@@ -1116,6 +1134,43 @@ impl Analyzer<'_, '_> {
                                 }));
                                 temp_ty = Type::union(temp);
                             }
+                Type::Intersection(Intersection { types, .. }) => {
+                    for elem in types {
+                        intersection_vec.push(elem.clone());
+                    }
+                    continue;
+                }
+                _ => {}
+            }
+
+            all_has_null = false;
+            all_has_undefined = false;
+            intersection_vec.push(elem.clone());
+        }
+        intersection_vec.make_clone_cheap();
+
+        let ret_intersection = Type::Intersection(Intersection {
+            span,
+            types: intersection_vec,
+            metadata: Default::default(),
+        });
+
+        if !all_has_null && !all_has_undefined {
+            return Ok(Some(ret_intersection));
+        }
+
+        let mut ret_union = vec![ret_intersection];
+        if all_has_null {
+            let mut temp = vec![];
+            for ty in ret_union {
+                if let Type::Intersection(Intersection { types, .. }) = ty.normalize() {
+                    let mut types_vec = vec![];
+                    for elem in types {
+                        let temp = elem.normalize();
+                        if let Type::Union(Union { types, .. }) = temp {
+                            types_vec.push(Type::union(types.iter().cloned().filter(|p| !p.is_null()).collect_vec()));
+                        } else {
+                            types_vec.push(temp.clone());
                         }
                     }
                     _ => {}
