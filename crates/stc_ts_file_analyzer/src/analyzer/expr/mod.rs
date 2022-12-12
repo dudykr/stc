@@ -1540,7 +1540,7 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     }
-                    
+
                     if let Some(super_class) = self.scope.get_super_class() {
                         let super_class = super_class.clone();
                         let ctx = Ctx {
