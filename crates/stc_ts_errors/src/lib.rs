@@ -1666,6 +1666,8 @@ impl ErrorKind {
             ErrorKind::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
             ErrorKind::SpreadMustBeTupleOrPassedToRest { .. } => 2556,
 
+            ErrorKind::TypeParameterCountMismatch { .. } => 2558,
+
             ErrorKind::ReferencedInInit { .. } => 2372,
 
             ErrorKind::InvalidDeleteOperand { .. } => 2703,

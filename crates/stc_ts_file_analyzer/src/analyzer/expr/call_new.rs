@@ -1345,7 +1345,6 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(constructor) = constructors.first() {
-                        //
                         let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
 
@@ -2343,6 +2342,12 @@ impl Analyzer<'_, '_> {
             let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
 
             arg_check_res.report(&mut self.storage);
+        }
+
+        {
+            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+
+            type_arg_check_res.report(&mut self.storage);
         }
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
