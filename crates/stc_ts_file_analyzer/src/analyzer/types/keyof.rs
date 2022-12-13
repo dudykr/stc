@@ -257,8 +257,8 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )?;
-                        if elem_ty.is_rest() {
-                            types.push(self.keyof(elem.span, &elem_ty)?);
+                        if let Some(rest) = elem_ty.as_rest() {
+                            types.push(self.keyof(elem.span, &rest.ty)?);
                         } else {
                             types.push(Type::Lit(LitType {
                                 span,
