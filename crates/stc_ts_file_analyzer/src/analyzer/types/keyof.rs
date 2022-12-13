@@ -25,6 +25,23 @@ impl Analyzer<'_, '_> {
     ///
     /// ## `ty`
     /// Should be operand of `keyof`.
+    ///
+    /// # Implementation note for Tuple
+    ///
+    /// ```ts
+    /// 
+    /// function f15<T extends string[], U extends T>(k0: keyof T, k1: keyof [...T], k2: keyof [...U], k3: keyof [1, 2, ...T]) {
+    ///     k0 = 'length';
+    ///     k1 = 'length';
+    ///     k2 = 'length';
+    ///     k0 = 'slice';
+    ///     k1 = 'slice';
+    ///     k2 = 'slice';
+    ///     k3 = '0';
+    ///     k3 = '1';
+    ///     k3 = '2';  // Error
+    /// }
+    /// ```
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -221,6 +238,8 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }));
                 }
+
+                Type::Tuple(ty) => {}
 
                 Type::Array(..) | Type::Tuple(..) => {
                     return self
