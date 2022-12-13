@@ -1242,7 +1242,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if param.is_str_lit() {
+        if param.is_str_lit() || param.is_bool_lit() || param.is_num_lit() {
             // Prevent logging
             return Ok(());
         }
