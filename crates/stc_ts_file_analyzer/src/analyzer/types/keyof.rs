@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
@@ -9,7 +9,7 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, PropertySignature, Ref, Type,
+    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
     TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
@@ -246,11 +246,30 @@ impl Analyzer<'_, '_> {
                 Type::Tuple(ty) => {
                     let mut types = vec![];
 
-                    for elem in &ty.elems {
+                    for (idx, elem) in ty.elems.iter().enumerate() {
                         let _ctx = ctx!("tried to get key of a tuple element");
 
-                        let elem_types = self.keyof(elem.span, &elem.ty)?;
-                        types.push(elem_types);
+                        let elem_ty = self.normalize(
+                            Some(elem.span),
+                            Cow::Borrowed(&elem.ty),
+                            NormalizeTypeOpts {
+                                preserve_global_this: true,
+                                ..Default::default()
+                            },
+                        )?;
+                        if elem_ty.is_rest() {
+                            types.push(self.keyof(elem.span, &elem_ty)?);
+                        } else {
+                            types.push(Type::Lit(LitType {
+                                span,
+                                lit: RTsLit::Number(RNumber {
+                                    span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                metadata: Default::default(),
+                            }))
+                        }
                     }
 
                     return Ok(Type::new_union(span, types));
