@@ -898,14 +898,12 @@ impl Analyzer<'_, '_> {
                                             .map(|v| *v)
                                             .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
 
-                                        dbg!(&prev_type, &other);
                                         let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
 
                                         if let Some(mut new) = new {
                                             if new.is_never() {
                                                 return never!();
                                             }
-                                            dbg!(dump_type_as_string(&&new));
                                             new.make_clone_cheap();
                                             prev.type_ann = Some(box new);
                                             continue 'outer;
@@ -921,11 +919,6 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            dbg!(dump_type_as_string(&Type::Intersection(Intersection {
-                span,
-                types: normalize_types.clone(),
-                metadata: Default::default(),
-            })));
             if let Some(first_ty) = normalize_types.first() {
                 let mut temp_ty: Type = first_ty.normalize().clone();
 
@@ -993,7 +986,6 @@ impl Analyzer<'_, '_> {
                         }
                         (Type::Intersection(Intersection { types: i, .. }), other)
                         | (other, Type::Intersection(Intersection { types: i, .. })) => {
-                            dbg!(&other);
                             let mut temp = vec![other];
                             for elem in i {
                                 temp.push(elem);
@@ -1120,21 +1112,12 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
                 if first_ty.normalize().clone().type_eq(&temp_ty) {
-                    dbg!(
-                        123456789,
-                        dump_type_as_string(&Type::Intersection(Intersection {
-                            span,
-                            types: normalize_types.clone(),
-                            metadata: Default::default(),
-                        }))
-                    );
                     return Ok(Some(Type::Intersection(Intersection {
                         span,
                         types: normalize_types,
                         metadata: Default::default(),
                     })));
                 }
-                dbg!(dump_type_as_string(&temp_ty));
                 return Ok(Some(temp_ty));
             }
         }
