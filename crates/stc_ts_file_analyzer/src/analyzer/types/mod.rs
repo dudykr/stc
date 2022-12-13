@@ -1716,6 +1716,11 @@ impl Analyzer<'_, '_> {
     }
 
     fn merge_type_elements(&mut self, span: Span, mut els: Vec<TypeElement>) -> VResult<Vec<TypeElement>> {
+        let _stack = match stack::track(span) {
+            Ok(v) => v,
+            Err(_) => return Ok(els),
+        };
+
         run(|| {
             // As merging is not common, we optimize it by creating a new vector only if
             // there's a conflict
