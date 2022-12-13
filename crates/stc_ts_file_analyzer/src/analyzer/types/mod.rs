@@ -1045,6 +1045,7 @@ impl Analyzer<'_, '_> {
                     } // never type should not push
                     intersection_vec.push(elem.clone());
                     continue;
+                    }
                 }
 
                 match temp_ty.clone() {
