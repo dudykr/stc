@@ -2401,14 +2401,20 @@ impl Analyzer<'_, '_> {
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
 
             (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
+
+            (Type::Rest(l), Type::Rest(r)) => {
+                return self
+                    .assign_with_opts(data, &l.ty, &r.ty, opts)
+                    .context("tried to assign to a rest type")
+            }
             _ => {}
         }
 
         // TODO(kdy1): Implement full type checker
         error!(
             "unimplemented: assign: \nLeft: {}\nRight: {}",
-            dump_type_as_string(to),
-            dump_type_as_string(rhs)
+            force_dump_type_as_string(to),
+            force_dump_type_as_string(rhs)
         );
         Ok(())
     }

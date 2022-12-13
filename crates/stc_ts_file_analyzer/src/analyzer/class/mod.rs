@@ -579,6 +579,7 @@ impl Analyzer<'_, '_> {
                 child.ctx.in_declare |= c.function.body.is_none();
                 child.ctx.in_async = c.function.is_async;
                 child.ctx.in_generator = c.function.is_generator;
+                child.ctx.in_static_method = c.is_static;
 
                 child.scope.declaring_prop = match &key {
                     Key::Normal { sym, .. } => Some(Id::word(sym.clone())),

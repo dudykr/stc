@@ -1,0 +1,36 @@
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/accessibility/privateClassPropertyAccessibleWithinNestedClass/1.ts:5:5]
+ 5 | private static foo() { return this.foo; }
+   :                               ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/accessibility/privateClassPropertyAccessibleWithinNestedClass/1.ts:5:5]
+ 5 | private static foo() { return this.foo; }
+   :                               ^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/accessibility/privateClassPropertyAccessibleWithinNestedClass/1.ts:6:5]
+ 6 | private static bar() { this.foo(); }
+   :                        ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/accessibility/privateClassPropertyAccessibleWithinNestedClass/1.ts:6:5]
+ 6 | private static bar() { this.foo(); }
+   :                        ^^^^^^^^^^
+   `----
+
+Error: 
+  > any

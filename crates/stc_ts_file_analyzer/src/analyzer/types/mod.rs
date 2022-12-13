@@ -6,7 +6,7 @@ use rnode::{VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RLit, RNumber, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_generics::ExpandGenericOpts;
@@ -1709,7 +1709,7 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {
-                error!("unimplemented: type_to_type_lit: {:?}", ty);
+                error!("unimplemented: type_to_type_lit: {}", force_dump_type_as_string(ty));
                 return Ok(None);
             }
         }))
