@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, PropertySignature, Ref, Type,
@@ -239,9 +239,20 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::Tuple(ty) => {}
+                Type::Tuple(ty) => {
+                    let mut types = vec![];
 
-                Type::Array(..) | Type::Tuple(..) => {
+                    for elem in &ty.elems {
+                        let _ctx = ctx!("tried to get key of a tuple element");
+
+                        let elem_types = self.keyof(elem.span, &elem.ty)?;
+                        types.push(elem_types);
+                    }
+
+                    return Ok(Type::new_union(span, types));
+                }
+
+                Type::Array(..) => {
                     return self
                         .keyof(
                             span,
