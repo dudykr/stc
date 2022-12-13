@@ -191,10 +191,17 @@ impl Analyzer<'_, '_> {
                             return Ok(ty);
                         }
                     }
-                    Ok(Type::from(ThisType {
-                        span,
-                        metadata: Default::default(),
-                    }))
+                    if self.ctx.in_static_method {
+                        Ok(Type::from(StaticThis {
+                            span,
+                            metadata: Default::default(),
+                        }))
+                    } else {
+                        Ok(Type::from(ThisType {
+                            span,
+                            metadata: Default::default(),
+                        }))
+                    }
                 }
 
                 RExpr::Ident(ref i) => {
@@ -1354,16 +1361,20 @@ impl Analyzer<'_, '_> {
             // TODO(kdy1): Use parent scope
 
             // Recursive method call
-            if !computed
-                && obj.is_this()
-                && !self.ctx.in_computed_prop_name
-                && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
-            {
-                if let Some(declaring) = &self.scope.declaring_prop() {
-                    if prop == declaring.sym() {
-                        return Ok(Type::any(span, Default::default()));
+            match &obj {
+                Type::This(..) | Type::StaticThis(..) => {
+                    if !computed
+                        && !self.ctx.in_computed_prop_name
+                        && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
+                    {
+                        if let Some(declaring) = &self.scope.declaring_prop() {
+                            if prop == declaring.sym() {
+                                return Ok(Type::any(span, Default::default()));
+                            }
+                        }
                     }
                 }
+                _ => {}
             }
 
             match &obj {
@@ -1527,6 +1538,30 @@ impl Analyzer<'_, '_> {
                             }
 
                             _ => {}
+                        }
+                    }
+
+                    if let Some(super_class) = self.scope.get_super_class() {
+                        let super_class = super_class.clone();
+                        let ctx = Ctx {
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ..self.ctx
+                        };
+                        let super_class = self.with_ctx(ctx).expand(
+                            *span,
+                            super_class,
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )?;
+
+                        if let Type::Class(Class { def, .. }) = super_class {
+                            if let Ok(v) = self.access_property(*span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
+                                return Ok(v);
+                            }
                         }
                     }
 

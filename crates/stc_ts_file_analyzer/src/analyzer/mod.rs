@@ -134,6 +134,7 @@ pub(crate) struct Ctx {
     report_error_for_non_local_vars: bool,
 
     in_static_property_initializer: bool,
+    in_static_method: bool,
 
     reevaluating_call_or_new: bool,
     reevaluating_argument: bool,
@@ -503,6 +504,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_actual_type: false,
                 report_error_for_non_local_vars: false,
                 in_static_property_initializer: false,
+                in_static_method: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
                 reevaluating_assign_pat_rhs: false,
