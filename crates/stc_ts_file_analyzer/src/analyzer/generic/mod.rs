@@ -5,7 +5,7 @@ use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace, print_type},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt,
 };
 use stc_ts_generics::{
@@ -1242,7 +1242,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if param.is_str_lit() {
+        if param.is_str_lit() || param.is_bool_lit() || param.is_num_lit() {
             // Prevent logging
             return Ok(());
         }
@@ -1253,9 +1253,9 @@ impl Analyzer<'_, '_> {
         }
 
         error!(
-            "infer_arg_type: unimplemented\nparam  = {}\narg = {}",
-            dump_type_as_string(param),
-            dump_type_as_string(arg),
+            "unimplemented: infer_type\nparam  = {}\narg = {}",
+            force_dump_type_as_string(param),
+            force_dump_type_as_string(arg),
         );
         Ok(())
     }
