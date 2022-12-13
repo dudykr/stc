@@ -22,7 +22,7 @@ Error:
     `----
 
 Error: 
-  > (((x: number) => number & (s: string) => string) | undefined)
+  > (undefined | (x: number) => number | (s: string) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/1.ts:11:1]
@@ -149,7 +149,7 @@ Error:
     `----
 
 Error: 
-  > ((<T>(x: T) => number & <T>(s: T) => string) | undefined)
+  > (undefined | <T>(x: T) => number | <T>(s: T) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/1.ts:25:1]
