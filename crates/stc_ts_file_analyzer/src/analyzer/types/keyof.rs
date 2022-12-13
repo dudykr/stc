@@ -1,11 +1,15 @@
 use std::borrow::Cow;
 
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt,
+};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, PropertySignature, Ref, Type,
+    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
     TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
@@ -25,6 +29,23 @@ impl Analyzer<'_, '_> {
     ///
     /// ## `ty`
     /// Should be operand of `keyof`.
+    ///
+    /// # Implementation note for Tuple
+    ///
+    /// ```ts
+    /// 
+    /// function f15<T extends string[], U extends T>(k0: keyof T, k1: keyof [...T], k2: keyof [...U], k3: keyof [1, 2, ...T]) {
+    ///     k0 = 'length';
+    ///     k1 = 'length';
+    ///     k2 = 'length';
+    ///     k0 = 'slice';
+    ///     k1 = 'slice';
+    ///     k2 = 'slice';
+    ///     k3 = '0';
+    ///     k3 = '1';
+    ///     k3 = '2';  // Error
+    /// }
+    /// ```
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -222,7 +243,39 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::Array(..) | Type::Tuple(..) => {
+                Type::Tuple(ty) => {
+                    let mut types = vec![];
+
+                    for (idx, elem) in ty.elems.iter().enumerate() {
+                        let _ctx = ctx!("tried to get key of a tuple element");
+
+                        let elem_ty = self.normalize(
+                            Some(elem.span),
+                            Cow::Borrowed(&elem.ty),
+                            NormalizeTypeOpts {
+                                preserve_global_this: true,
+                                ..Default::default()
+                            },
+                        )?;
+                        if let Some(rest) = elem_ty.as_rest() {
+                            types.push(self.keyof(elem.span, &rest.ty)?);
+                        } else {
+                            types.push(Type::Lit(LitType {
+                                span,
+                                lit: RTsLit::Number(RNumber {
+                                    span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                metadata: Default::default(),
+                            }))
+                        }
+                    }
+
+                    return Ok(Type::new_union(span, types));
+                }
+
+                Type::Array(..) => {
                     return self
                         .keyof(
                             span,
@@ -315,7 +368,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("keyof: {}", dump_type_as_string(&ty));
+            unimplemented!("keyof: {}", force_dump_type_as_string(&ty));
         })()?;
 
         ty.assert_valid();
