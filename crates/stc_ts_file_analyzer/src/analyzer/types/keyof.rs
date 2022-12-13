@@ -2,7 +2,11 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt,
+};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, PropertySignature, Ref, Type,
@@ -345,7 +349,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("keyof: {}", dump_type_as_string(&ty));
+            unimplemented!("keyof: {}", force_dump_type_as_string(&ty));
         })()?;
 
         ty.assert_valid();
