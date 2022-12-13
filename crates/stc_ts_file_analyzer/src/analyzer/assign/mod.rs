@@ -2398,8 +2398,8 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Implement full type checker
         error!(
             "unimplemented: assign: \nLeft: {}\nRight: {}",
-            dump_type_as_string(to),
-            dump_type_as_string(rhs)
+            force_dump_type_as_string(to),
+            force_dump_type_as_string(rhs)
         );
         Ok(())
     }

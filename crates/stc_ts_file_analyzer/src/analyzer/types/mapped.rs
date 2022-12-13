@@ -3,7 +3,10 @@ use std::{borrow::Cow, collections::HashMap};
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt,
+};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
     Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
@@ -323,7 +326,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => Ok(None),
 
             _ => {
-                error!("unimplemented: convert_type_to_keys: {:#?}", ty);
+                error!("unimplemented: convert_type_to_keys: {}", force_dump_type_as_string(ty));
                 Ok(None)
             }
         }

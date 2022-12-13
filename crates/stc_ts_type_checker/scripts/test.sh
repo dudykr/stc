@@ -15,7 +15,7 @@ export RUST_LOG=debug,swc_common=off
 export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
-RUST_LOG=off ./scripts/base.sh  --features tracing/max_level_off
+RUST_LOG=error ./scripts/base.sh  --features tracing/max_level_error
 
 TEST="$@" cargo test --color always -q --test tsc
 
