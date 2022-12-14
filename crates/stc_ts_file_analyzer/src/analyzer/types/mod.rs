@@ -691,10 +691,16 @@ impl Analyzer<'_, '_> {
         }
 
         let mut normalize_types = vec![];
-
         // set normalize all
         for el in types.iter() {
-            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el.clone()), Default::default()) {
+            if let Ok(res) = self.normalize(
+                Some(span),
+                Cow::Owned(el.clone()),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    ..opts
+                },
+            ) {
                 let result = res.into_owned();
 
                 match &result.normalize() {
@@ -708,7 +714,10 @@ impl Analyzer<'_, '_> {
                         normalize_types.push(ty.normalize().clone());
                         continue;
                     }
-                    _ => normalize_types.push(result),
+                    _ => {
+                        normalize_types.push(result);
+                        continue;
+                    }
                 }
             }
         }

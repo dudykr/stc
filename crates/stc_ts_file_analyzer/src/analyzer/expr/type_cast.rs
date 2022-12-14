@@ -264,8 +264,13 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if let Type::TypeLit(to) = to {
-            if to.members.is_empty() {
+        // if let Type::TypeLit(to) = to {
+        //     if to.members.is_empty() {
+        //         return Ok(true);
+        //     }
+        // }
+        if let Type::TypeLit(from) = from {
+            if from.members.is_empty() {
                 return Ok(true);
             }
         }
