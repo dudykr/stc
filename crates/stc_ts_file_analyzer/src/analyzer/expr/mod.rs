@@ -1040,15 +1040,18 @@ impl Analyzer<'_, '_> {
                     .into_owned(),
             ));
         }
-
-        Ok(Some(match type_mode {
+        let result = match type_mode {
             TypeOfMode::LValue => Type::Intersection(Intersection {
                 span,
                 types: res_vec,
                 metadata: Default::default(),
             }),
             TypeOfMode::RValue => Type::union(res_vec),
-        }))
+        };
+
+        Ok(Some(
+            self.normalize(Some(span), Cow::Owned(result), Default::default())?.into_owned(),
+        ))
     }
 
     pub(super) fn access_property(
@@ -1176,7 +1179,17 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
-            Ok(ty)
+
+            Ok(analyzer
+                .normalize(
+                    Some(span),
+                    Cow::Owned(ty),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )?
+                .into_owned())
         });
 
         if !self.is_builtin {
@@ -2240,7 +2253,17 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(Interface { ref body, extends, .. }) => {
                 if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
-                    return Ok(v);
+                    return Ok(self
+                        .normalize(
+                            Some(span),
+                            Cow::Owned(v),
+                            NormalizeTypeOpts {
+                                preserve_global_this: true,
+                                ..Default::default()
+                            },
+                        )
+                        .unwrap()
+                        .into_owned());
                 }
 
                 for super_ty in extends {
@@ -2758,9 +2781,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    dbg!(&ty);
                     if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
-                        dbg!(&v);
                         new.push(v);
                     }
                 }
@@ -2790,7 +2811,18 @@ impl Analyzer<'_, '_> {
                 .fixed();
 
                 // ty.respan(span);
-                return Ok(ty);
+                return Ok(self
+                    .normalize(
+                        Some(span),
+                        Cow::Owned(ty),
+                        NormalizeTypeOpts {
+                            preserve_global_this: true,
+                            preserve_intersection: true,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap()
+                    .into_owned());
             }
 
             Type::Mapped(m) => {
