@@ -1034,6 +1034,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if res_vec.len() == 1 {
+            return Ok(Some(
+                self.normalize(Some(span), Cow::Owned(res_vec.pop().unwrap()), Default::default())?
+                    .into_owned(),
+            ));
+        }
+
         Ok(Some(match type_mode {
             TypeOfMode::LValue => Type::Intersection(Intersection {
                 span,
@@ -1152,7 +1159,20 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
+            let normalize_obj = analyzer
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(obj),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )?
+                .into_owned();
+            normalize_obj.assert_valid();
+            let mut ty = analyzer
+                .access_property_inner(span, &normalize_obj, prop, type_mode, id_ctx, opts)?
+                .fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
@@ -2373,7 +2393,15 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     ) {
-                        Ok(ty) => tys.push(ty),
+                        Ok(ty) => {
+                            if let Type::Union(ty::Union { types, .. }) = ty {
+                                for mem in types {
+                                    tys.push(mem);
+                                }
+                                continue;
+                            }
+                            tys.push(ty)
+                        }
                         Err(err) => errors.push(err),
                     }
                 }
@@ -2730,10 +2758,13 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
+                    dbg!(&ty);
                     if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
+                        dbg!(&v);
                         new.push(v);
                     }
                 }
+
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
                     new.retain(|prop_ty| match prop_ty.normalize() {
@@ -2757,6 +2788,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 })
                 .fixed();
+
                 // ty.respan(span);
                 return Ok(ty);
             }
