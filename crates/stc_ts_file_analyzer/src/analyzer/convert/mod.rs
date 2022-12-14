@@ -264,7 +264,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<Type> {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
-                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
+                "any" | "void" | "never" | "unknown" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
                     child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span }.into());
                 }
                 _ => {}
