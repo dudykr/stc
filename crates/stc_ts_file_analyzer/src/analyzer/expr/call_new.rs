@@ -3325,6 +3325,7 @@ impl Analyzer<'_, '_> {
         }
 
         for (arg, param) in args.iter().zip(c.params.iter()) {
+            // TODO(kdy1):  Handle rest
             if arg.spread.is_some() || matches!(param.pat, RPat::Rest(..)) {
                 break;
             }
