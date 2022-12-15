@@ -486,7 +486,7 @@ impl Analyzer<'_, '_> {
 
             callee_ty.make_clone_cheap();
 
-            analyzer.apply_callee_type_ann(span, kind, args, &callee_ty)?;
+            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.make_clone_cheap();
 
@@ -3289,9 +3289,27 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn apply_callee_type_ann(&mut self, span: Span, kind: ExtractKind, args: &[RExprOrSpread], callee: &Type) -> VResult<()> {
+    fn apply_type_ann_from_callee(&mut self, span: Span, kind: ExtractKind, args: &[RExprOrSpread], callee: &Type) -> VResult<()> {
         let c = self.extract_callee_candidates(span, kind, callee)?;
 
+        if c.len() != 1 {
+            return Ok(());
+        }
+
+        let c = c.into_iter().next().unwrap();
+
+        for (arg, param) in args.iter().zip(c.params.iter()) {
+            if arg.spread.is_some() {
+                break;
+            }
+
+            self.apply_type_ann_for_arg(&arg.expr, &param.ty)?;
+        }
+
+        Ok(())
+    }
+
+    fn apply_type_ann_for_arg(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
         Ok(())
     }
 
