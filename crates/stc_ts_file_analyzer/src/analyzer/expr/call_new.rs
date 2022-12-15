@@ -327,7 +327,13 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 // Validate object
-                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
+                let mut obj_type = obj
+                    .validate_with_default(self)
+                    .unwrap_or_else(|err| {
+                        self.storage.report(err);
+                        Type::any(span, Default::default())
+                    })
+                    .generalize_lit();
                 {
                     // Handle toString()
 
