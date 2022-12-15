@@ -837,13 +837,15 @@ impl Analyzer<'_, '_> {
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
+        let mut is_read_only_error = false;
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(ErrorKind::ReadOnly { span }.into());
+                                is_read_only_error = true;
+                                continue;
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -931,12 +933,21 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if matching_elements.len() == 1 {
-            return Ok(Some(
-                self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
-                    .into_owned(),
-            ));
-        }
+        match matching_elements.len() {
+            0 => {
+                if is_read_only_error {
+                    return Err(ErrorKind::ReadOnly { span }.into());
+                }
+            }
+            1 => {
+                return Ok(Some(
+                    self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
+                        .into_owned(),
+                ))
+            }
+            _ => {}
+        };
+
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
 
         if is_callable {
@@ -1179,8 +1190,7 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
-
-            Ok(analyzer
+            let result = analyzer
                 .normalize(
                     Some(span),
                     Cow::Owned(ty),
@@ -1189,7 +1199,8 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?
-                .into_owned())
+                .into_owned();
+            Ok(result)
         });
 
         if !self.is_builtin {
@@ -2253,17 +2264,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(Interface { ref body, extends, .. }) => {
                 if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
-                    return Ok(self
-                        .normalize(
-                            Some(span),
-                            Cow::Owned(v),
-                            NormalizeTypeOpts {
-                                preserve_global_this: true,
-                                ..Default::default()
-                            },
-                        )
-                        .unwrap()
-                        .into_owned());
+                    return Ok(v);
                 }
 
                 for super_ty in extends {
