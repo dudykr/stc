@@ -11,20 +11,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:14:1]
  14 | if (isC_multipleParams(a, 0)) {
-    :                        ^
-    `----
-
-Error: 
-  > A
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:14:1]
- 14 | if (isC_multipleParams(a, 0)) {
     :     ^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > (p1: any, p2: any) => p1 is C
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:14:1]
+ 14 | if (isC_multipleParams(a, 0)) {
+    :                        ^
+    `----
+
+Error: 
+  > A
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:14:1]

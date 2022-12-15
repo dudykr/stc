@@ -47,20 +47,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/2.ts:10:9]
  10 | obj(x);
-    :     ^
-    `----
-
-Error: 
-  > object
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/2.ts:10:9]
- 10 | obj(x);
     : ^^^
     `----
 
 Error: 
   > (x: object) => void
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/2.ts:10:9]
+ 10 | obj(x);
+    :     ^
+    `----
+
+Error: 
+  > object
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/2.ts:10:9]

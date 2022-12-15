@@ -2,15 +2,6 @@
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
  3 | if (o2?.f(x)) {
-   :           ^
-   `----
-
-Error: 
-  > (string | number)
-
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
- 3 | if (o2?.f(x)) {
    :     ^^
    `----
 
@@ -27,6 +18,15 @@ Error:
 
 Error: 
   > (undefined | (x: any) => x is number)
+
+  x Type
+   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
+ 3 | if (o2?.f(x)) {
+   :           ^
+   `----
+
+Error: 
+  > (string | number)
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
@@ -89,15 +89,6 @@ Error:
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
  7 | o2?.f(x);
-   :       ^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
- 7 | o2?.f(x);
    : ^^
    `----
 
@@ -114,6 +105,15 @@ Error:
 
 Error: 
   > (x: any) => x is number
+
+  x Type
+   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
+ 7 | o2?.f(x);
+   :       ^
+   `----
+
+Error: 
+  > number
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]

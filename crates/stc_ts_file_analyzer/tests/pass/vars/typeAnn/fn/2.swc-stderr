@@ -2,11 +2,11 @@
   x Type
    ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
  9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
-   :                                                              ^
+   :                                           ^^^^^^^
    `----
 
 Error: 
-  > any
+  > <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
 
   x Type
    ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
@@ -16,6 +16,15 @@ Error:
 
 Error: 
   > <W>(x: Box<W>) => W
+
+  x Type
+   ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
+ 9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+   :                                                              ^
+   `----
+
+Error: 
+  > any
 
   x Type
    ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
@@ -38,20 +47,20 @@ Error:
   x Type
    ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
  9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
-   :                                                                              ^
-   `----
-
-Error: 
-  > any
-
-  x Type
-   ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
- 9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
    :                                                                       ^^^^^^
    `----
 
 Error: 
   > <T>(a: T[]) => T
+
+  x Type
+   ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
+ 9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+   :                                                                              ^
+   `----
+
+Error: 
+  > any
 
   x Type
    ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
@@ -70,15 +79,6 @@ Error:
 
 Error: 
   > (b: any) => T
-
-  x Type
-   ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]
- 9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
-   :                                           ^^^^^^^
-   `----
-
-Error: 
-  > <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
 
   x Type
    ,-[$DIR/tests/pass/vars/typeAnn/fn/2.ts:9:1]

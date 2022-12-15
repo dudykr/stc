@@ -11,20 +11,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/predicate/type-guard-2.ts:12:1]
  12 | if (isA(subType)) {
-    :         ^^^^^^^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/type-guard-2.ts:12:1]
- 12 | if (isA(subType)) {
     :     ^^^
     `----
 
 Error: 
   > (p1: any) => p1 is A
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/type-guard-2.ts:12:1]
+ 12 | if (isA(subType)) {
+    :         ^^^^^^^
+    `----
+
+Error: 
+  > C
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/type-guard-2.ts:12:1]

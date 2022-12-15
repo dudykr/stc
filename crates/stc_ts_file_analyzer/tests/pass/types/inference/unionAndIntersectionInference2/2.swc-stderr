@@ -2,6 +2,15 @@
   x Type
    ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference2/2.ts:4:1]
  4 | f1(d1); // { name: string }
+   : ^^
+   `----
+
+Error: 
+  > <T>(x: (T | string)) => T
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference2/2.ts:4:1]
+ 4 | f1(d1); // { name: string }
    :    ^^
    `----
 
@@ -9,15 +18,6 @@ Error:
   > (string | {
   |     name: string;
   | })
-
-  x Type
-   ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference2/2.ts:4:1]
- 4 | f1(d1); // { name: string }
-   : ^^
-   `----
-
-Error: 
-  > <T>(x: (T | string)) => T
 
   x Type
    ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference2/2.ts:4:1]

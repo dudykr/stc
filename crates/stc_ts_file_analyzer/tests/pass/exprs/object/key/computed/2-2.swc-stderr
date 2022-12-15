@@ -1,5 +1,16 @@
 
   x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:5:1]
+ 5 | extractIndexer({
+   : ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > <T>(p: {
+  |     [n: number]: T;
+  | }) => T
+
+  x Type
    ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:6:5]
  6 | [E.x]: ""
    :  ^
@@ -28,17 +39,6 @@ Error:
   > {
   |     [E.x]: "";
   | }
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:5:1]
- 5 | extractIndexer({
-   : ^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > <T>(p: {
-  |     [n: number]: T;
-  | }) => T
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:5:1]

@@ -2,6 +2,24 @@
   x Type
    ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:1]
  9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+   :                                                      ^^^^^^^
+   `----
+
+Error: 
+  > PromiseConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:1]
+ 9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+   :                                                      ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Promise<void>
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:1]
+ 9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
    :                                                                                    ^^^^^^^^^^^^^^^^
    `----
 
@@ -31,24 +49,6 @@ Error:
   > () => {
   |     name: 'test';
   | }
-
-  x Type
-   ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:1]
- 9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
-   :                                                      ^^^^^^^
-   `----
-
-Error: 
-  > PromiseConstructor
-
-  x Type
-   ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:1]
- 9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
-   :                                                      ^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > Promise<void>
 
   x Type
    ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:1]

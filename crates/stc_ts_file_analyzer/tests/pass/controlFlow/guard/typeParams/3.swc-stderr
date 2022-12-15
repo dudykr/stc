@@ -78,20 +78,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]
  11 | strings.push(value);
-    :              ^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]
- 11 | strings.push(value);
     : ^^^^^^^
     `----
 
 Error: 
   > string[]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]
+ 11 | strings.push(value);
+    :              ^^^^^
+    `----
+
+Error: 
+  > string
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]

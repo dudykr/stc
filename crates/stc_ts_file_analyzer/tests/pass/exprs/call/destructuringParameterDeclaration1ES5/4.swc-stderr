@@ -74,6 +74,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+   : ^^
+   `----
+
+Error: 
+  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+ 4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :     ^^^^^^^^^^
    `----
 
@@ -106,15 +115,6 @@ Error:
 
 Error: 
   > [["string"], 1, [[true, false]]]
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
- 4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
-   : ^^
-   `----
-
-Error: 
-  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
 
   x Type
    ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]

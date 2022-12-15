@@ -92,6 +92,15 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
  37 | f([container1, container2], (value1, value2) => {
+    : ^
+    `----
+
+Error: 
+  > <T extends Container<unknown>[]>(containers: [...T], callback: (...values: UnwrapContainers<T>) => void) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | f([container1, container2], (value1, value2) => {
     :    ^^^^^^^^^^
     `----
 
@@ -152,15 +161,6 @@ Error:
 
 Error: 
   > (value1: any, value2: any) => void
-
-  x Type
-    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
- 37 | f([container1, container2], (value1, value2) => {
-    : ^
-    `----
-
-Error: 
-  > <T extends Container<unknown>[]>(containers: [...T], callback: (...values: UnwrapContainers<T>) => void) => void
 
   x Type
     ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]

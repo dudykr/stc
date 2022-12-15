@@ -11,6 +11,15 @@ Error:
   x Type
     ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
  13 | var r2 = foo4(<T>(x: T) => x);
+    :          ^^^^
+    `----
+
+Error: 
+  > (cb: typeof a) => typeof a
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
+ 13 | var r2 = foo4(<T>(x: T) => x);
     :                            ^
     `----
 
@@ -25,15 +34,6 @@ Error:
 
 Error: 
   > <T>(x: T) => T
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
- 13 | var r2 = foo4(<T>(x: T) => x);
-    :          ^^^^
-    `----
-
-Error: 
-  > (cb: typeof a) => typeof a
 
   x Type
     ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]

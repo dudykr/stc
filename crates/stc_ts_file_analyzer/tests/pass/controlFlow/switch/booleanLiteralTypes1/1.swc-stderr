@@ -104,20 +104,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
  15 | return assertNever(x);
-    :                    ^
-    `----
-
-Error: 
-  > never
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
- 15 | return assertNever(x);
     :        ^^^^^^^^^^^
     `----
 
 Error: 
   > (x: never) => never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
+ 15 | return assertNever(x);
+    :                    ^
+    `----
+
+Error: 
+  > never
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]

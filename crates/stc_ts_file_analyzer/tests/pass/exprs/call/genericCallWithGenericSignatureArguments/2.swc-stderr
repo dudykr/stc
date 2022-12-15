@@ -11,6 +11,15 @@ Error:
   x Type
     ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:1]
  10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
+    :          ^^^
+    `----
+
+Error: 
+  > <T>(a: (x: T) => T, b: (x: T) => T) => (x: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:1]
+ 10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
     :              ^^^^^^^^^^^^^^^^^^^
     `----
 
@@ -25,15 +34,6 @@ Error:
 
 Error: 
   > (x: string) => ''
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:1]
- 10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
-    :          ^^^
-    `----
-
-Error: 
-  > <T>(a: (x: T) => T, b: (x: T) => T) => (x: T) => T
 
   x Type
     ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:1]
