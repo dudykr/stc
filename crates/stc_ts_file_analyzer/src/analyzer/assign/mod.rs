@@ -2169,7 +2169,7 @@ impl Analyzer<'_, '_> {
                                     Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                         ..
-                                    })
+                                    }) | Type::Optional(..)
                                 )
                             });
 
