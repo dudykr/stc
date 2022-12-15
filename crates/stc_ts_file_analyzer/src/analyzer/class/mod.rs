@@ -1501,7 +1501,7 @@ impl Analyzer<'_, '_> {
 
             // We handle type parameters first.
             let type_params = try_opt!(c.type_params.validate_with(child)).map(Box::new);
-            child.resolve_parent_interfaces(&c.implements);
+            child.resolve_parent_interfaces(&c.implements, false);
 
             let mut super_class = {
                 // Then, we can expand super class
