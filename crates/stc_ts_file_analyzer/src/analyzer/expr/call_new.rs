@@ -255,17 +255,6 @@ impl Analyzer<'_, '_> {
 
         let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
-        // For debugging
-        if false {
-            for (i, ty) in arg_types.iter().enumerate() {
-                print_type(&format!("arg {}", i), &ty.ty);
-            }
-
-            for (i, ty) in spread_arg_types.iter().enumerate() {
-                print_type(&format!("spreaded arg {}", i), &ty.ty);
-            }
-        }
-
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
