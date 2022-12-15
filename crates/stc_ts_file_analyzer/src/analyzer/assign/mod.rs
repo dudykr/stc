@@ -2163,7 +2163,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if elems.len() > rhs_elems.len() {
-                            let is_lhs_any_tuple = elems.iter().skip(rhs_elems.len()).all(|l| {
+                            let is_len_fine = elems.iter().skip(rhs_elems.len()).all(|l| {
                                 matches!(
                                     *l.ty,
                                     Type::Keyword(KeywordType {
@@ -2173,11 +2173,9 @@ impl Analyzer<'_, '_> {
                                 )
                             });
 
-                            if is_lhs_any_tuple {
-                                return Ok(());
+                            if !is_len_fine {
+                                return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                             }
-
-                            return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                         }
 
                         let mut errors = vec![];
