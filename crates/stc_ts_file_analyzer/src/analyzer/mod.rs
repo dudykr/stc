@@ -659,7 +659,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             return "".into();
         }
         let loc = self.cm.lookup_char_pos(span.lo);
-        format!("({}:{})", loc.line, loc.col_display)
+        let hic = self.cm.lookup_char_pos(span.hi);
+        format!("({}:{}-{:?})", loc.line, loc.col_display + 1, hic.col_display + 1)
     }
 
     fn validate_with<F>(&mut self, op: F)
