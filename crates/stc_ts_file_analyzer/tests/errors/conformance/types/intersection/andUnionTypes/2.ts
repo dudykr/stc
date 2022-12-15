@@ -9,4 +9,4 @@ var a: A;
 var b: B;
 var anb: A & B;
 
-anb = a;
+anb = b;
