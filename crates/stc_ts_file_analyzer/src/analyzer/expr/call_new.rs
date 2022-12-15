@@ -2464,6 +2464,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // TODO: Use apply_fn_type_ann instead
                 let mut patch_arg = |idx: usize, pat: &RPat| -> VResult<()> {
                     if actual_params.len() <= idx {
                         return Ok(());
