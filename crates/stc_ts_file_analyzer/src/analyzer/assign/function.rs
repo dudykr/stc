@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use fxhash::FxHashMap;
-use itertools::{EitherOrBoth, Itertools};
+use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
     ctx,
@@ -781,7 +781,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
-        let li = l.iter().filter(|p| {
+        let mut li = l.iter().filter(|p| {
             !matches!(
                 p.pat,
                 RPat::Ident(RBindingIdent {
@@ -790,7 +790,7 @@ impl Analyzer<'_, '_> {
                 })
             )
         });
-        let ri = r.iter().filter(|p| {
+        let mut ri = r.iter().filter(|p| {
             !matches!(
                 p.pat,
                 RPat::Ident(RBindingIdent {
@@ -833,37 +833,70 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        for pair in li.zip_longest(ri) {
-            match pair {
-                EitherOrBoth::Both(lp, rp) => {
-                    // TODO(kdy1): What should we do?
-                    if opts.allow_assignment_to_param {
-                        if let Ok(()) = self.assign_param(
-                            data,
-                            rp,
-                            lp,
-                            AssignOpts {
-                                allow_unknown_type: true,
-                                ..opts
-                            },
-                        ) {
-                            continue;
-                        }
+        loop {
+            let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
+
+            let l = li.next();
+            let r = ri.next();
+
+            let (Some(l), Some(r)) = (l, r) else {
+                break
+            };
+
+            // TODO(kdy1): What should we do?
+            if opts.allow_assignment_to_param {
+                if let Ok(()) = self.assign_param(
+                    data,
+                    r,
+                    l,
+                    AssignOpts {
+                        allow_unknown_type: true,
+                        ..opts
+                    },
+                ) {
+                    continue;
+                }
+            }
+
+            // A rest pattern is always the last
+            match (&l.pat, &r.pat) {
+                (RPat::Rest(..), RPat::Rest(..)) => {
+                    let _ctx = ctx!(format!("tried to assign a rest parameter to another rest parameter"));
+                    self.assign_param(data, l, r, opts)?;
+                    break;
+                }
+
+                (RPat::Rest(..), _) => {
+                    self.assign_param(data, l, r, opts)?;
+
+                    for r in ri {
+                        self.assign_param(data, l, r, opts)?;
                     }
 
-                    let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
+                    return Ok(());
+                }
+
+                (_, RPat::Rest(..)) => {
+                    self.assign_param(data, l, r, opts)?;
+
+                    for l in li {
+                        self.assign_param(data, l, r, opts)?;
+                    }
+
+                    return Ok(());
+                }
+
+                _ => {
                     self.assign_param(
                         data,
-                        lp,
-                        rp,
+                        l,
+                        r,
                         AssignOpts {
                             allow_unknown_type: true,
                             ..opts
                         },
                     )?;
                 }
-                EitherOrBoth::Left(_) => {}
-                EitherOrBoth::Right(_) => {}
             }
         }
 
