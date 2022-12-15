@@ -898,6 +898,10 @@ impl Analyzer<'_, '_> {
                     if let Some(r_tuple) = r_ty.as_tuple() {
                         let mut ri = r_tuple.elems.iter();
 
+                        let r = ri.next();
+                        if let Some(ri) = r {
+                            self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                        }
                         for l in li {
                             let r = ri.next();
                             if let Some(ri) = r {
