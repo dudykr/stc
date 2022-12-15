@@ -6,4 +6,4 @@
    `----
 
 Error: 
-  > (T & U)
+  > (string | undefined)

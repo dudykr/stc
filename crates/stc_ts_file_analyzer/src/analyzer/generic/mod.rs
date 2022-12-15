@@ -534,6 +534,12 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
+                match param {
+                    Type::TypeLit(..) => {
+                        return self.infer_type_using_type_lit_and_union(span, inferred, param, arg, opts);
+                    }
+                    _ => {}
+                };
             }
 
             _ => {}
@@ -678,10 +684,161 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) {
-                                    debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
+                                let append_able = self.rule().strict_null_checks
+                                    && (arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || arg.is_kwd(TsKeywordTypeKind::TsNullKeyword));
+                                dbg!(&e);
+                                dbg!(!e.is_empty(), !opts.append_type_as_union, !is_ok_to_append(e, arg));
 
-                                    inferred.errored.insert(name.clone());
+                                let append_able = self.rule().strict_null_checks
+                                    && (arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || arg.is_kwd(TsKeywordTypeKind::TsNullKeyword));
+
+                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) && !append_able {
+                                    // @strict null check = false;
+                                    // never > undefined > null > string | number | boolean | symbol | bigint |
+                                    // TsIntrinsicKeyword > unknown > Object > Any
+                                    let mut insert_error = true;
+                                    for p in e.clone() {
+                                        match p {
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsVoidKeyword,
+                                                ..
+                                            }) => {
+                                                if arg.is_keyword() {
+                                                    if arg.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
+                                                        || arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                                        || arg.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                                                    {
+                                                        e.clear();
+                                                        e.push(arg.clone());
+                                                        insert_error = false;
+                                                    } else {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                ..
+                                            }) => {}
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsObjectKeyword,
+                                                ..
+                                            }) => {
+                                                if let Type::Keyword(KeywordType {
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    ..
+                                                }) = arg
+                                                {
+                                                    e.clear();
+                                                    e.push(arg.clone());
+                                                    insert_error = false;
+                                                } else if arg.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                                                    break;
+                                                }
+                                            }
+
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                                ..
+                                            }) => {
+                                                if let Type::Keyword(KeywordType {
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsObjectKeyword,
+                                                    ..
+                                                }) = arg
+                                                {
+                                                    e.clear();
+                                                    e.push(arg.clone());
+                                                    insert_error = false;
+                                                } else {
+                                                    break;
+                                                }
+                                            }
+                                            Type::Keyword(KeywordType {
+                                                kind:
+                                                    TsKeywordTypeKind::TsBigIntKeyword
+                                                    | TsKeywordTypeKind::TsBooleanKeyword
+                                                    | TsKeywordTypeKind::TsNumberKeyword
+                                                    | TsKeywordTypeKind::TsStringKeyword
+                                                    | TsKeywordTypeKind::TsSymbolKeyword
+                                                    | TsKeywordTypeKind::TsIntrinsicKeyword,
+                                                ..
+                                            }) => {
+                                                if arg.is_keyword() {
+                                                    if let Type::Keyword(KeywordType {
+                                                        kind:
+                                                            TsKeywordTypeKind::TsAnyKeyword
+                                                            | TsKeywordTypeKind::TsObjectKeyword
+                                                            | TsKeywordTypeKind::TsUnknownKeyword,
+                                                        ..
+                                                    }) = arg
+                                                    {
+                                                        e.clear();
+                                                        e.push(arg.clone());
+                                                        insert_error = false;
+                                                    } else if arg.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                                                        break;
+                                                    }
+                                                };
+                                            }
+
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsNullKeyword,
+                                                ..
+                                            }) => {
+                                                if arg.is_keyword() {
+                                                    if !arg.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
+                                                        || !arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                                        || !arg.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                                                    {
+                                                        e.clear();
+                                                        e.push(arg.clone());
+                                                        insert_error = false;
+                                                    } else {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                ..
+                                            }) => {
+                                                if arg.is_keyword() {
+                                                    if !arg.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
+                                                        || !arg.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                                    {
+                                                        e.clear();
+                                                        e.push(arg.clone());
+                                                        insert_error = false;
+                                                    } else {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            Type::Keyword(KeywordType {
+                                                kind: TsKeywordTypeKind::TsNeverKeyword,
+                                                ..
+                                            }) => {
+                                                if arg.is_keyword() {
+                                                    if !arg.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+                                                        e.clear();
+                                                        e.push(arg.clone());
+                                                        insert_error = false;
+                                                    } else {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            _ => {}
+                                        };
+                                    }
+
+                                    if insert_error {
+                                        debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
+
+                                        inferred.errored.insert(name.clone());
+                                    }
                                     return Ok(());
                                 }
 

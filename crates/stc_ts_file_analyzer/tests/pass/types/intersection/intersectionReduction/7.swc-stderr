@@ -1,20 +1,23 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:1]
- 7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
-   :                                                                                                   ^
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:9:1]
+ 9 | ): Container<"a"> => t;
+   :                      ^
    `----
 
 Error: 
-  > number
+  > {
+  |     type: "a";
+  | }
 
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:1]
- 7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
-   :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 | ,-> export const f3 = (
+ 8 | |     t: Container<"a"> | (Container<"b"> & { dataB: boolean } & Container<"a">),
+ 9 | `-> ): Container<"a"> => t;
    `----
 
 Error: 
-  > (t: (number | (Container<"b"> & {
+  > (t: (Container<"a"> | (Container<"b"> & {
   |     dataB: boolean;
-  | } & Container<"a">))) => number
+  | } & Container<"a">))) => Container<"a">

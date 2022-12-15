@@ -139,6 +139,33 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    pub(super) fn infer_type_using_type_lit_and_union(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Type,
+        arg: &Union,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
+        let arg_forms = arg.types.iter().map(TypeForm::from).collect_vec();
+        let type_form = TypeForm::from(param);
+
+        let matched_paths = arg_forms.iter().map(|arg| compare_type_forms(arg, &type_form)).collect_vec();
+        let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
+
+        if let Some(max) = max {
+            for (idx, (arg, type_path)) in arg.types.iter().zip(matched_paths.iter()).enumerate() {
+                if type_path == max {
+                    self.infer_type(span, inferred, param, arg, opts)?;
+                }
+            }
+
+            return Ok(());
+        }
+
+        Ok(())
+    }
+
     pub(super) fn insert_inferred(
         &mut self,
         span: Span,

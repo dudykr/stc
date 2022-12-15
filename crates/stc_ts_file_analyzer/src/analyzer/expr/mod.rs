@@ -837,13 +837,15 @@ impl Analyzer<'_, '_> {
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
+        let mut is_read_only_error = false;
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(ErrorKind::ReadOnly { span }.into());
+                                is_read_only_error = true;
+                                continue;
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -930,6 +932,21 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        match matching_elements.len() {
+            0 => {
+                if is_read_only_error {
+                    return Err(ErrorKind::ReadOnly { span }.into());
+                }
+            }
+            1 => {
+                return Ok(Some(
+                    self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
+                        .into_owned(),
+                ))
+            }
+            _ => {}
+        };
 
         if matching_elements.len() == 1 {
             return Ok(matching_elements.pop());
@@ -1024,7 +1041,32 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
-        Ok(Some(Type::union(matching_elements)))
+        let mut res_vec = vec![];
+
+        for el in matching_elements.into_iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
+                res_vec.push(res.into_owned());
+            }
+        }
+
+        if res_vec.len() == 1 {
+            return Ok(Some(
+                self.normalize(Some(span), Cow::Owned(res_vec.pop().unwrap()), Default::default())?
+                    .into_owned(),
+            ));
+        }
+        let result = match type_mode {
+            TypeOfMode::LValue => Type::Intersection(Intersection {
+                span,
+                types: res_vec,
+                metadata: Default::default(),
+            }),
+            TypeOfMode::RValue => Type::union(res_vec),
+        };
+
+        Ok(Some(
+            self.normalize(Some(span), Cow::Owned(result), Default::default())?.into_owned(),
+        ))
     }
 
     pub(super) fn access_property(
@@ -1135,11 +1177,34 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
+            let normalize_obj = analyzer
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(obj),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )?
+                .into_owned();
+            normalize_obj.assert_valid();
+            let mut ty = analyzer
+                .access_property_inner(span, &normalize_obj, prop, type_mode, id_ctx, opts)?
+                .fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
-            Ok(ty)
+            let result = analyzer
+                .normalize(
+                    Some(span),
+                    Cow::Owned(ty),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )?
+                .into_owned();
+            Ok(result)
         });
 
         if !self.is_builtin {
@@ -2356,7 +2421,15 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     ) {
-                        Ok(ty) => tys.push(ty),
+                        Ok(ty) => {
+                            if let Type::Union(ty::Union { types, .. }) = ty {
+                                for mem in types {
+                                    tys.push(mem);
+                                }
+                                continue;
+                            }
+                            tys.push(ty)
+                        }
                         Err(err) => errors.push(err),
                     }
                 }
@@ -2741,7 +2814,18 @@ impl Analyzer<'_, '_> {
                 })
                 .fixed();
                 // ty.respan(span);
-                return Ok(ty);
+                return Ok(self
+                    .normalize(
+                        Some(span),
+                        Cow::Owned(ty),
+                        NormalizeTypeOpts {
+                            preserve_global_this: true,
+                            preserve_intersection: true,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap()
+                    .into_owned());
             }
 
             Type::Mapped(m) => {

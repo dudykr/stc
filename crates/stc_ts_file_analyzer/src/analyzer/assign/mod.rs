@@ -509,10 +509,12 @@ impl Analyzer<'_, '_> {
                     },
                 })));
             }
+
             Type::Conditional(..)
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
             | Type::Instance(..)
+            | Type::Intersection(..)
             | Type::Intrinsic(..)
             | Type::Mapped(..)
             | Type::Operator(Operator {
@@ -520,7 +522,6 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
-
                 return Ok(Cow::Owned(ty));
             }
             _ => {}
@@ -585,11 +586,6 @@ impl Analyzer<'_, '_> {
         } else {
             None
         };
-
-        // It's valid to assign any to everything.
-        if rhs.is_any() {
-            return Ok(());
-        }
 
         if opts.allow_unknown_type && rhs.is_unknown() {
             return Ok(());
@@ -718,6 +714,14 @@ impl Analyzer<'_, '_> {
             }};
         }
 
+        // It's valid to assign any to everything.
+        if rhs.is_any() {
+            if to.normalize().is_never() {
+                fail!()
+            }
+            return Ok(());
+        }
+
         if to.type_eq(rhs) {
             return Ok(());
         }
@@ -728,6 +732,9 @@ impl Analyzer<'_, '_> {
 
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
+        }
+        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            fail!()
         }
 
         if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
@@ -1132,7 +1139,17 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
+                }
+
+                // This is required to handle intersections of function-like types.
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
+                    if self
+                        .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
 
                 for ty in &li.types {
@@ -2361,7 +2378,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+        if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
             fail!()
         }
 

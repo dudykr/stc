@@ -1,19 +1,19 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
- 14 | export let r2 = f10(a2);  // string
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:12:1]
+ 12 | export let r2 = f10(a2); // string
     :                     ^^
     `----
 
 Error: 
   > {
-  |     kind: 'a';
+  |     kind: "a";
   |     foo: string;
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
- 14 | export let r2 = f10(a2);  // string
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:12:1]
+ 12 | export let r2 = f10(a2); // string
     :                 ^^^
     `----
 
@@ -23,8 +23,8 @@ Error:
   | }) => T
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
- 14 | export let r2 = f10(a2);  // string
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:12:1]
+ 12 | export let r2 = f10(a2); // string
     :                 ^^^^^^^
     `----
 

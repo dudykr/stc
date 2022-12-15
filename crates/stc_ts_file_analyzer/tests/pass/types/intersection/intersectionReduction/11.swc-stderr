@@ -1,0 +1,9 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/11.ts:14:3]
+ 14 | const b: B2 = alsoShouldBeB;
+    :               ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > B2

@@ -1,0 +1,9 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/12.ts:19:3]
+ 19 | let ab: ABI = x;
+    :               ^
+    `----
+
+Error: 
+  > CA

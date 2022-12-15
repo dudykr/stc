@@ -1,0 +1,76 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:4:5]
+ 4 | const data = { param: 'value' };
+   :              ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     param: 'value';
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:9:5]
+ 9 | } = data;
+   :     ^^^^
+   `----
+
+Error: 
+  > {
+  |     param: string;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:8:9]
+ 8 | param = (() => { foo = undefined })(),
+   :                        ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:8:9]
+ 8 | param = (() => { foo = undefined })(),
+   :                  ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:8:9]
+ 8 | param = (() => { foo = undefined })(),
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => void
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:8:9]
+ 8 | param = (() => { foo = undefined })(),
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => void
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:8:9]
+ 8 | param = (() => { foo = undefined })(),
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/3.ts:11:5]
+ 11 | foo;  // should be string | undefined
+    : ^^^
+    `----
+
+Error: 
+  > string
