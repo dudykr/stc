@@ -647,19 +647,28 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.assign_param_type(data, &l.ty, &r.ty, opts)
+    }
+
+    /// Implementation of `assign_param`.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
+    fn assign_param_type(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
+        let span = opts.span;
+        debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
+
         // TODO(kdy1): Change this to extends call.
 
         let res = if self.rule().strict_function_types {
             if opts.for_overload {
-                self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                self.assign_with_opts(data, l, r, opts)
                     .context("tried to assign the type of a parameter to another")
             } else {
-                self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                self.assign_with_opts(data, r, l, opts)
                     .context("tried to assign the type of a parameter to another (reversed due to variance)")
             }
         } else {
             if opts.for_overload {
-                let rhs = &r.ty.normalize();
+                let rhs = &r.normalize();
 
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
@@ -668,7 +677,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Number(..), ..
                             }) => self.assign_with_opts(
                                 data,
-                                &l.ty,
+                                l,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -678,7 +687,7 @@ impl Analyzer<'_, '_> {
                             ),
                             Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => self.assign_with_opts(
                                 data,
-                                &l.ty,
+                                l,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -687,19 +696,19 @@ impl Analyzer<'_, '_> {
                                 opts,
                             ),
                             _ => self
-                                .assign_with_opts(data, &l.ty, &r.ty, opts)
+                                .assign_with_opts(data, l, r, opts)
                                 .context("tried to assign the type of a parameter to another"),
                         }
                     } else {
-                        self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                        self.assign_with_opts(data, l, r, opts)
                             .context("tried to assign the type of a parameter to another")
                     }
                 } else {
-                    self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                    self.assign_with_opts(data, l, r, opts)
                         .context("tried to assign the type of a parameter to another")
                 }
             } else {
-                let rhs = &r.ty.normalize();
+                let rhs = r.normalize();
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
                         match lit {
@@ -712,7 +721,7 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
                                 }),
-                                &r.ty,
+                                r,
                                 opts,
                             ),
                             Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => self.assign_with_opts(
@@ -722,19 +731,19 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
                                 }),
-                                &l.ty,
+                                l,
                                 opts,
                             ),
                             _ => self
-                                .assign_with_opts(data, &r.ty, &l.ty, opts)
+                                .assign_with_opts(data, r, l, opts)
                                 .context("tried to assign the type of a parameter to another"),
                         }
                     } else {
-                        self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                        self.assign_with_opts(data, r, l, opts)
                             .context("tried to assign the type of a parameter to another")
                     }
                 } else {
-                    self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                    self.assign_with_opts(data, r, l, opts)
                         .context("tried to assign the type of a parameter to another")
                 }
             }
