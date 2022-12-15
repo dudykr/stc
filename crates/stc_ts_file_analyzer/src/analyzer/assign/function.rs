@@ -5,7 +5,7 @@ use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
     ctx,
-    debug::{dump_type_as_string, dump_type_map},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
@@ -834,14 +834,14 @@ impl Analyzer<'_, '_> {
         }
 
         loop {
-            let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
-
             let l = li.next();
             let r = ri.next();
 
             let (Some(l), Some(r)) = (l, r) else {
                 break
             };
+
+            let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
 
             // TODO(kdy1): What should we do?
             if opts.allow_assignment_to_param {
@@ -879,7 +879,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 (_, RPat::Rest(..)) => {
-                    let _ctx = ctx!(format!("tried to assign a rest parameter to parameters"));
+                    let _ctx = ctx!(format!(
+                        "tried to assign a rest parameter to parameters; l_ty = {}",
+                        force_dump_type_as_string(&l.ty)
+                    ));
 
                     self.assign_param(data, l, r, opts)?;
 
