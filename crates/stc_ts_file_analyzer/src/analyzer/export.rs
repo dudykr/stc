@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
 
                 let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
-                let class_ty = c.class.validate_with(self)?;
+                let class_ty = c.class.validate_with_args(self, None)?;
                 let class_ty = Type::ClassDef(class_ty).freezed();
                 self.register_type(var_name.clone(), class_ty.clone());
 
