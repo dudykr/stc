@@ -893,6 +893,21 @@ impl Analyzer<'_, '_> {
                         force_dump_type_as_string(&r.ty)
                     ));
 
+                    // If r is a tuple, we should assign each element to l.
+                    let r_ty = self.normalize(Some(span), Cow::Borrowed(&r.ty), Default::default())?;
+                    if let Some(r_tuple) = r_ty.as_tuple() {
+                        let mut ri = r_tuple.elems.iter();
+
+                        for l in li {
+                            let r = ri.next();
+                            if let Some(ri) = r {
+                                self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                            }
+                        }
+
+                        return Ok(());
+                    }
+
                     self.assign_param(data, l, r, opts)?;
 
                     for l in li {
