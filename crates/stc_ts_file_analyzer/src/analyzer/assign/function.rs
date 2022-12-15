@@ -867,6 +867,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 (RPat::Rest(..), _) => {
+                    let _ctx = ctx!(format!("tried to assign parameters to a rest parameter"));
+
                     self.assign_param(data, l, r, opts)?;
 
                     for r in ri {
@@ -877,6 +879,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 (_, RPat::Rest(..)) => {
+                    let _ctx = ctx!(format!("tried to assign a rest parameter to parameters"));
+
                     self.assign_param(data, l, r, opts)?;
 
                     for l in li {
