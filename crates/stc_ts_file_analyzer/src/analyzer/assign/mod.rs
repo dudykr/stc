@@ -2163,7 +2163,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if elems.len() > rhs_elems.len() {
-                            let is_lhs_any_tuple = elems.iter().all(|l| {
+                            let is_lhs_any_tuple = elems.iter().skip(rhs_elems.len()).all(|l| {
                                 matches!(
                                     *l.ty,
                                     Type::Keyword(KeywordType {
