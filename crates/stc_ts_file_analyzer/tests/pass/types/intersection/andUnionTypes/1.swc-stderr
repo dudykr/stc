@@ -1,0 +1,165 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:18:1]
+ 18 | var anb: A & B = {} as A & B;
+    :                  ^^
+    `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:18:1]
+ 18 | var anb: A & B = {} as A & B;
+    :                  ^^^^^^^^^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:20:1]
+ 20 | var cnd: C & D = {} as C & D;
+    :                  ^^
+    `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:20:1]
+ 20 | var cnd: C & D = {} as C & D;
+    :                  ^^^^^^^^^^^
+    `----
+
+Error: 
+  > (C & D)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:23:1]
+ 23 | var y: (A | B) & (C | D) = {} as (A | B) & (C | D);
+    :                            ^^
+    `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:23:1]
+ 23 | var y: (A | B) & (C | D) = {} as (A | B) & (C | D);
+    :                            ^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ((A | B) & (C | D))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:25:1]
+ 25 | a = anb; // Ok
+    :     ^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:25:1]
+ 25 | a = anb; // Ok
+    : ^^^^^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:26:1]
+ 26 | b = anb; // Ok
+    :     ^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:26:1]
+ 26 | b = anb; // Ok
+    : ^^^^^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:28:1]
+ 28 | x = anb; // Ok
+    :     ^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:28:1]
+ 28 | x = anb; // Ok
+    : ^^^^^^^
+    `----
+
+Error: 
+  > (A & B)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:29:1]
+ 29 | x = cnd; // Ok
+    :     ^^^
+    `----
+
+Error: 
+  > (C & D)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:29:1]
+ 29 | x = cnd; // Ok
+    : ^^^^^^^
+    `----
+
+Error: 
+  > (C & D)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:31:1]
+ 31 | aob = y; // Ok
+    :       ^
+    `----
+
+Error: 
+  > ((A | B) & (C | D))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:31:1]
+ 31 | aob = y; // Ok
+    : ^^^^^^^
+    `----
+
+Error: 
+  > ((A | B) & (C | D))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:32:1]
+ 32 | cod = y; // Ok
+    :       ^
+    `----
+
+Error: 
+  > ((A | B) & (C | D))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:32:1]
+ 32 | cod = y; // Ok
+    : ^^^^^^^
+    `----
+
+Error: 
+  > ((A | B) & (C | D))
