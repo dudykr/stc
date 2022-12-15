@@ -3542,11 +3542,16 @@ impl Analyzer<'_, '_> {
                     }
                     .into())
                 } else {
-                    Err(ErrorKind::NoSuchVar {
-                        span,
-                        name: i.clone().into(),
+                    match &*i.sym {
+                        "any" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "undefined" | "symbol" => {
+                            Err(ErrorKind::CannotExportNonLocalVar { span }.into())
+                        }
+                        _ => Err(ErrorKind::NoSuchVar {
+                            span,
+                            name: i.clone().into(),
+                        }
+                        .into()),
                     }
-                    .into())
                 }
             }
         }
