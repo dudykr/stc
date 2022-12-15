@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
         let span = s.span();
         let line_col = self.line_col(span);
 
-        let tracing_span = span!(Level::ERROR, "Statement", line_col = &*line_col);
+        let tracing_span = span!(Level::ERROR, "Stmt", line_col = &*line_col);
         let _tracing_guard = tracing_span.enter();
 
         warn!("Statement start");
