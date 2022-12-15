@@ -2190,6 +2190,8 @@ types/rest/objectRest2.ts
 types/rest/objectRestAssignment.ts
 types/rest/objectRestCatchES5.ts
 types/rest/objectRestForOf.ts
+types/rest/objectRestParameter.ts
+types/rest/objectRestParameterES5.ts
 types/rest/objectRestReadonly.ts
 types/specifyingTypes/predefinedTypes/objectTypesWithPredefinedTypesAsName.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
