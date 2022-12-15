@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(ErrorKind::SuperCannotUseTypeArgs { span }.into())
                 }
 
-                self.validate_args(args).report(&mut self.storage);
+                self.validate_args(args, None).report(&mut self.storage);
 
                 self.scope.mark_as_super_called();
 
@@ -361,7 +361,7 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                let mut arg_types = self.validate_args(args)?;
+                let mut arg_types = self.validate_args(args, None)?;
                 arg_types.make_clone_cheap();
 
                 let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
@@ -486,7 +486,7 @@ impl Analyzer<'_, '_> {
 
             callee_ty.make_clone_cheap();
 
-            let mut arg_types = analyzer.validate_args(args)?;
+            let mut arg_types = analyzer.validate_args(args, Some(&callee_ty))?;
             arg_types.make_clone_cheap();
 
             let spread_arg_types = analyzer.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
@@ -3287,7 +3287,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn validate_args(&mut self, args: &[RExprOrSpread]) -> VResult<Vec<TypeOrSpread>> {
+    fn validate_args(&mut self, args: &[RExprOrSpread], callee_type_ann: Option<&Type>) -> VResult<Vec<TypeOrSpread>> {
         let ctx = Ctx {
             in_argument: true,
             should_store_truthy_for_access: false,
