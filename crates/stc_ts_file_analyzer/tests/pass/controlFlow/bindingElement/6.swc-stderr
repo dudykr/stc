@@ -1,0 +1,154 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:9:5]
+ 9 | let window = {} as Window;
+   :              ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:9:5]
+ 9 | let window = {} as Window;
+   :              ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Window
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:10:5]
+ 10 | window.window = window;
+    : ^^^^^^
+    `----
+
+Error: 
+  > Window
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:10:5]
+ 10 | window.window = window;
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Window
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:10:5]
+ 10 | window.window = window;
+    :                 ^^^^^^
+    `----
+
+Error: 
+  > Window
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:10:5]
+ 10 | window.window = window;
+    : ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Window
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:13:9]
+ 13 | { [(() => { foo = ""; return 'window' as const })()]: bar } } = window;
+    :                                                                 ^^^^^^
+    `----
+
+Error: 
+  > Window
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:12:5]
+ 12 | const { [(() => { return 'window' as const })()]:
+    :                          ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:12:5]
+ 12 | const { [(() => { return 'window' as const })()]:
+    :           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:12:5]
+ 12 | const { [(() => { return 'window' as const })()]:
+    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:12:5]
+ 12 | const { [(() => { return 'window' as const })()]:
+    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:13:9]
+ 13 | { [(() => { foo = ""; return 'window' as const })()]: bar } } = window;
+    :             ^^^^^^^^
+    `----
+
+Error: 
+  > ""
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:13:9]
+ 13 | { [(() => { foo = ""; return 'window' as const })()]: bar } } = window;
+    :                              ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:13:9]
+ 13 | { [(() => { foo = ""; return 'window' as const })()]: bar } } = window;
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:13:9]
+ 13 | { [(() => { foo = ""; return 'window' as const })()]: bar } } = window;
+    :    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > () => 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:13:9]
+ 13 | { [(() => { foo = ""; return 'window' as const })()]: bar } } = window;
+    :    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 'window'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/6.ts:15:5]
+ 15 | foo;  // should be string
+    : ^^^
+    `----
+
+Error: 
+  > (string | undefined)
