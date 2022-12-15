@@ -1,5 +1,3 @@
-use std::any::type_name;
-
 use rnode::RNode;
 use stc_ts_ast_rnode::{
     RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType, RTsTypeElement, RTsTypeParam,
@@ -38,13 +36,6 @@ where
     type Output = Option<<Self as Validate<'c, T>>::Output>;
 
     fn validate(&mut self, node: &Option<T>, ctxt: Self::Context) -> Self::Output {
-        let _tracing_guard = if cfg!(feature = "profile") {
-            let ty = type_name::<T>();
-            Some(tracing::span!(tracing::Level::ERROR, "validate<Option<T>>", ty = ty).entered())
-        } else {
-            None
-        };
-
         node.as_ref().map(|n| self.validate(n, ctxt))
     }
 }
@@ -84,12 +75,6 @@ where
     type Output = Result<Vec<O>, E>;
 
     fn validate(&mut self, nodes: &Vec<T>, ctxt: Self::Context) -> Self::Output {
-        let _tracing_guard = if cfg!(feature = "profile") {
-            let ty = type_name::<T>();
-            Some(tracing::span!(tracing::Level::ERROR, "validate<Vec<T>>", ty = ty).entered())
-        } else {
-            None
-        };
         nodes.iter().map(|node| self.validate(node, ctxt)).collect()
     }
 }
