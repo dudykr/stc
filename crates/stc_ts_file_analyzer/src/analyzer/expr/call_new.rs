@@ -3293,11 +3293,11 @@ impl Analyzer<'_, '_> {
             should_store_truthy_for_access: false,
             ..self.ctx
         };
-        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+        self.with_ctx(ctx).with(|this: &mut Analyzer| {
             let args: Vec<_> = args
                 .iter()
                 .map(|arg| {
-                    arg.validate_with(a).report(&mut a.storage).unwrap_or_else(|| TypeOrSpread {
+                    arg.validate_with(this).report(&mut this.storage).unwrap_or_else(|| TypeOrSpread {
                         span: arg.span(),
                         spread: arg.spread,
                         ty: box Type::any(arg.expr.span(), Default::default()),
