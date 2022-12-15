@@ -880,8 +880,8 @@ impl Analyzer<'_, '_> {
 
                 (_, RPat::Rest(..)) => {
                     let _ctx = ctx!(format!(
-                        "tried to assign a rest parameter to parameters; l_ty = {}",
-                        force_dump_type_as_string(&l.ty)
+                        "tried to assign a rest parameter to parameters; r_ty = {}",
+                        force_dump_type_as_string(&r.ty)
                     ));
 
                     self.assign_param(data, l, r, opts)?;
