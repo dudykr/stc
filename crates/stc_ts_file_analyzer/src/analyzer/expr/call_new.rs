@@ -3299,7 +3299,7 @@ impl Analyzer<'_, '_> {
         let c = c.into_iter().next().unwrap();
 
         for (arg, param) in args.iter().zip(c.params.iter()) {
-            if arg.spread.is_some() {
+            if arg.spread.is_some() || matches!(param.pat, RPat::Rest(..)) {
                 break;
             }
 
