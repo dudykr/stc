@@ -18,8 +18,9 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Function, Id, IdCtx, IndexedAccessType, Instance,
-    Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
+    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -423,7 +424,16 @@ impl Analyzer<'_, '_> {
             let mut callee_ty = {
                 let callee_ty = callee.validate_with_default(analyzer).unwrap_or_else(|err| {
                     analyzer.storage.report(err);
-                    Type::any(span, Default::default())
+                    Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    )
                 });
                 match callee_ty.normalize() {
                     Type::Keyword(KeywordType {
