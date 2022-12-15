@@ -2165,7 +2165,7 @@ impl Analyzer<'_, '_> {
                         if elems.len() > rhs_elems.len() {
                             let is_len_fine = elems.iter().skip(rhs_elems.len()).all(|l| {
                                 matches!(
-                                    *l.ty,
+                                    l.ty.normalize_instance(),
                                     Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                         ..
