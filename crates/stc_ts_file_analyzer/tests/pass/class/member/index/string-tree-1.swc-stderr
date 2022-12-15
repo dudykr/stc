@@ -51,7 +51,7 @@ Error:
     `----
 
 Error: 
-  > StringTree
+  > (string | StringTreeCollection)
 
   x Type
     ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
@@ -78,7 +78,7 @@ Error:
     `----
 
 Error: 
-  > StringTree
+  > (string | StringTreeCollection)
 
   x Type
     ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
