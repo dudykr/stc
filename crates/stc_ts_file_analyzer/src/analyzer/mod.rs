@@ -868,7 +868,17 @@ impl Analyzer<'_, '_> {
                 RTsModuleRef::TsEntityName(ref e) => analyzer
                     .type_of_ts_entity_name(node.span, &e.clone().into(), None)
                     .convert_err(|err| match err {
-                        ErrorKind::TypeNotFound { span, .. } => ErrorKind::NoSuchNamespace { span },
+                        ErrorKind::TypeNotFound {
+                            span,
+                            name,
+                            ctxt,
+                            type_args,
+                        } => ErrorKind::NamspaceNotFound {
+                            span,
+                            name,
+                            ctxt,
+                            type_args,
+                        },
                         _ => err,
                     })
                     .unwrap_or_else(|err| {

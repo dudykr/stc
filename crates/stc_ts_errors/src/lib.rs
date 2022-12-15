@@ -129,11 +129,6 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
-    /// TS2503
-    NoSuchNamespace {
-        span: Span,
-    },
-
     /// TS2430
     InvalidInterfaceInheritance {
         span: Span,
@@ -1982,8 +1977,6 @@ impl ErrorKind {
             ErrorKind::InvalidInterfaceInheritance { .. } => 2430,
 
             ErrorKind::TargetLacksConstructSignature { .. } => 7009,
-
-            ErrorKind::NoSuchNamespace { .. } => 2503,
 
             _ => 0,
         }
