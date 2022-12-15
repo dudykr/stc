@@ -250,11 +250,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let mut arg_types = self.validate_args(args)?;
-        arg_types.make_clone_cheap();
-
-        let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
-
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
@@ -365,6 +360,11 @@ impl Analyzer<'_, '_> {
                         .expect("Builtin type named 'String' should exist"),
                     _ => obj_type,
                 };
+
+                let mut arg_types = self.validate_args(args)?;
+                arg_types.make_clone_cheap();
+
+                let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
                 return self
                     .call_property(
@@ -485,6 +485,11 @@ impl Analyzer<'_, '_> {
             )?;
 
             callee_ty.make_clone_cheap();
+
+            let mut arg_types = analyzer.validate_args(args)?;
+            arg_types.make_clone_cheap();
+
+            let spread_arg_types = analyzer.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
             let expanded_ty = analyzer.extract(
                 span,
