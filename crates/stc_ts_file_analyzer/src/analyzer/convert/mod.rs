@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
             child.prevent_expansion(&mut ty.body);
             ty.body.make_clone_cheap();
 
-            child.resolve_parent_interfaces(&d.extends);
+            child.resolve_parent_interfaces(&d.extends, true);
             child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
             child.report_error_for_wrong_interface_inheritance(d.id.span, &ty.body, &ty.extends);
 

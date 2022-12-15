@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RExpr, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{LitType, Type};
 use stc_utils::stack;
 use swc_common::{Spanned, DUMMY_SP};
@@ -142,7 +142,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
     #[instrument(skip(self, parents))]
-    pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
+    pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs], is_for_interface: bool) {
         if self.is_builtin {
             return;
         }
@@ -153,7 +153,16 @@ impl Analyzer<'_, '_> {
                 let type_args = try_opt!(parent.type_args.validate_with(self));
                 let span = parent.span;
 
-                self.report_error_for_unresolve_type(span, &parent.expr, type_args.as_ref())?;
+                self.report_error_for_unresolve_type(span, &parent.expr, type_args.as_ref())
+                    .convert_err(|err| match err {
+                        ErrorKind::TypeNotFound {
+                            name,
+                            ctxt,
+                            type_args,
+                            span,
+                        } if is_for_interface => ErrorKind::NotExtendableType { span },
+                        _ => err,
+                    })?;
             };
 
             res.report(&mut self.storage);

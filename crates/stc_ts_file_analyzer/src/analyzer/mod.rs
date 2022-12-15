@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_base_type_ops::bindings::Bindings;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
-use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
+use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
@@ -867,6 +867,20 @@ impl Analyzer<'_, '_> {
             let ty = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => analyzer
                     .type_of_ts_entity_name(node.span, &e.clone().into(), None)
+                    .convert_err(|err| match err {
+                        ErrorKind::TypeNotFound {
+                            span,
+                            name,
+                            ctxt,
+                            type_args,
+                        } => ErrorKind::NamspaceNotFound {
+                            span,
+                            name,
+                            ctxt,
+                            type_args,
+                        },
+                        _ => err,
+                    })
                     .unwrap_or_else(|err| {
                         analyzer.storage.report(err);
                         Type::any(node.span, Default::default())
