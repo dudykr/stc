@@ -3311,9 +3311,7 @@ impl Analyzer<'_, '_> {
 
     fn apply_type_ann_for_arg(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
         match arg {
-            RExpr::Paren(arg) => {
-                return self.apply_type_ann_for_arg(&arg.expr, type_ann);
-            }
+            RExpr::Paren(arg) => return self.apply_type_ann_for_arg(&arg.expr, type_ann),
             RExpr::Fn(arg) => {
                 self.apply_fn_type_ann(arg.span(), arg.function.params.iter().map(|v| &v.pat), Some(type_ann));
             }
