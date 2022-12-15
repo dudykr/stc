@@ -202,11 +202,7 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                     fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> Self::Output {
                         let (context_pats) = ctxt;
 
-                        let ret = {
-                            let _tracing_guard =
-                                tracing::span!(tracing::Level::ERROR, concat!("validate<", stringify!(NodeType), ">")).entered();
-                            (|| body)()
-                        };
+                        let ret = { (|| body)() };
 
                         ret
                     }

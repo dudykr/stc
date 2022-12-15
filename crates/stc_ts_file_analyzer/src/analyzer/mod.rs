@@ -658,9 +658,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         if span.is_dummy() {
             return "".into();
         }
-        let loc = self.cm.lookup_char_pos(span.lo);
-        let hic = self.cm.lookup_char_pos(span.hi);
-        format!("({}:{}-{:?})", loc.line, loc.col_display + 1, hic.col_display + 1)
+        let lo = self.cm.lookup_char_pos(span.lo);
+        let hi = self.cm.lookup_char_pos(span.hi);
+        format!("({}:{}-{}:{})", lo.line, lo.col_display + 1, hi.line, hi.col_display + 1)
     }
 
     fn validate_with<F>(&mut self, op: F)
