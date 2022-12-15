@@ -14,7 +14,10 @@ use stc_ts_ast_rnode::{
     RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind, Errors,
+};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
@@ -1146,7 +1149,7 @@ impl Analyzer<'_, '_> {
             res = res.with_context(|| {
                 format!(
                     "tried to access property of an object ({}, id_ctx = {:?})\nProp={:?}",
-                    dump_type_as_string(obj),
+                    force_dump_type_as_string(obj),
                     id_ctx,
                     prop
                 )
