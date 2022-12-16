@@ -912,6 +912,8 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
+                    let _ctx = ctx!(format!("tried to assign a rest parameter to parameters where r-ty is not a tuple"));
+
                     self.assign_param(data, l, r, opts)?;
 
                     for l in li {
