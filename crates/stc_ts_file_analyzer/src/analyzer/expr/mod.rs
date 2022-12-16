@@ -1829,20 +1829,19 @@ impl Analyzer<'_, '_> {
                 for v in c.def.body.iter() {
                     match v {
                         ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
-                            if class_prop.key.is_private() {
-                                self.storage
-                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                return Ok(Type::any(span, Default::default()));
-                            }
-
-                            if let Some(declaring) = self.scope.declaring_prop.as_ref() {
-                                if class_prop.key == *declaring.sym() {
-                                    return Err(ErrorKind::ReferencedInInit { span }.into());
-                                }
-                            }
-
-                            //
                             if self.key_matches(span, &class_prop.key, prop, false) {
+                                if class_prop.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
+                                if let Some(declaring) = self.scope.declaring_prop.as_ref() {
+                                    if class_prop.key == *declaring.sym() {
+                                        return Err(ErrorKind::ReferencedInInit { span }.into());
+                                    }
+                                }
+
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
                                     None => Type::any(span, Default::default()),
@@ -1850,15 +1849,15 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
-                            if mtd.key.is_private() {
-                                self.storage
-                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                return Ok(Type::any(span, Default::default()));
-                            }
-
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 if mtd.is_abstract {
                                     self.storage.report(ErrorKind::CannotAccessAbstractMember { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
+                                if mtd.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
