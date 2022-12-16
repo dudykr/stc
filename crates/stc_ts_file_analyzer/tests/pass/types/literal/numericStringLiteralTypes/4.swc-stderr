@@ -1,0 +1,120 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:12:1]
+ 12 | const container1 = createContainer('hi')
+    :                    ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends unknown>(value: T) => Container<T>
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:12:1]
+ 12 | const container1 = createContainer('hi')
+    :                    ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Container<string>
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:13:1]
+ 13 | const container2 = createContainer(2)
+    :                    ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends unknown>(value: T) => Container<T>
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:13:1]
+ 13 | const container2 = createContainer(2)
+    :                    ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Container<number>
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:15:1]
+ 15 | f([container1, container2], (value1, value2) => {
+    :    ^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     value: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:15:1]
+ 15 | f([container1, container2], (value1, value2) => {
+    :                ^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     value: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:15:1]
+ 15 | f([container1, container2], (value1, value2) => {
+    :   ^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (({
+  |     value: string;
+  | } | {
+  |     value: number;
+  | }))[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:16:5]
+ 16 | value1;  // string
+    : ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:17:5]
+ 17 | value2;  // number
+    : ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:15:1]
+ 15 | ,-> f([container1, container2], (value1, value2) => {
+ 16 | |       value1;  // string
+ 17 | |       value2;  // number
+ 18 | `-> });
+    `----
+
+Error: 
+  > (value1: any, value2: any) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:15:1]
+ 15 | f([container1, container2], (value1, value2) => {
+    : ^
+    `----
+
+Error: 
+  > <T extends Container<unknown>[]>(containers: [...T], callback: (...values: UnwrapContainers<T>) => void) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/4.ts:15:1]
+ 15 | ,-> f([container1, container2], (value1, value2) => {
+ 16 | |       value1;  // string
+ 17 | |       value2;  // number
+ 18 | `-> });
+    `----
+
+Error: 
+  > void

@@ -1,0 +1,54 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/1.ts:11:5]
+ 11 | let s = a[x];  // boolean
+    :         ^
+    `----
+
+Error: 
+  > boolean[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/1.ts:11:5]
+ 11 | let s = a[x];  // boolean
+    :           ^
+    `----
+
+Error: 
+  > `${number}`
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/1.ts:11:5]
+ 11 | let s = a[x];  // boolean
+    :         ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/1.ts:15:5]
+ 15 | let s = a[x];  // boolean
+    :         ^
+    `----
+
+Error: 
+  > boolean[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/1.ts:15:5]
+ 15 | let s = a[x];  // boolean
+    :           ^
+    `----
+
+Error: 
+  > (number | `${number}`)
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes/1.ts:15:5]
+ 15 | let s = a[x];  // boolean
+    :         ^^^^
+    `----
+
+Error: 
+  > boolean

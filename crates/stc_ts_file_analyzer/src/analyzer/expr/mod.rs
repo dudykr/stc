@@ -1177,34 +1177,11 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-            let normalize_obj = analyzer
-                .normalize(
-                    Some(span),
-                    Cow::Borrowed(obj),
-                    NormalizeTypeOpts {
-                        preserve_global_this: true,
-                        ..Default::default()
-                    },
-                )?
-                .into_owned();
-            normalize_obj.assert_valid();
-            let mut ty = analyzer
-                .access_property_inner(span, &normalize_obj, prop, type_mode, id_ctx, opts)?
-                .fixed();
+            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
-            let result = analyzer
-                .normalize(
-                    Some(span),
-                    Cow::Owned(ty),
-                    NormalizeTypeOpts {
-                        preserve_global_this: true,
-                        ..Default::default()
-                    },
-                )?
-                .into_owned();
-            Ok(result)
+            Ok(ty)
         });
 
         if !self.is_builtin {
@@ -2268,7 +2245,11 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(Interface { ref body, extends, .. }) => {
                 if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
-                    return Ok(v);
+                    let result = self
+                        .normalize(Some(span), Cow::Owned(v), NormalizeTypeOpts { ..Default::default() })
+                        .unwrap()
+                        .into_owned();
+                    return Ok(result);
                 }
 
                 for super_ty in extends {
@@ -2466,6 +2447,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO(kdy1): Validate that the ty has same type instead of returning union.
                 let ty = Type::union(tys);
+
                 ty.assert_valid();
                 return Ok(ty);
             }
@@ -2787,7 +2769,19 @@ impl Analyzer<'_, '_> {
                 let mut new = vec![];
                 for ty in types {
                     if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
-                        new.push(v);
+                        let res = self
+                            .normalize(
+                                Some(span),
+                                Cow::Owned(v),
+                                NormalizeTypeOpts {
+                                    preserve_global_this: true,
+                                    preserve_intersection: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap()
+                            .into_owned();
+                        new.push(res);
                     }
                 }
                 // Exclude accesses to type params.
