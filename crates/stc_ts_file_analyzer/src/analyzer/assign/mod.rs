@@ -1163,17 +1163,27 @@ impl Analyzer<'_, '_> {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, opts)
-                            .with_context(|| {
-                                format!(
-                                    "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
-                                    dump_type_as_string(&Type::TypeLit(lhs.into_owned()))
-                                )
-                            })
-                            .convert_err(|err| ErrorKind::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err.into()),
-                            })?;
+                        self.assign_to_type_elements(
+                            data,
+                            lhs.span,
+                            &lhs.members,
+                            rhs,
+                            lhs.metadata,
+                            AssignOpts {
+                                allow_missing_fields: false,
+                                ..opts
+                            },
+                        )
+                        .with_context(|| {
+                            format!(
+                                "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
+                                dump_type_as_string(&Type::TypeLit(lhs.into_owned()))
+                            )
+                        })
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err.into()),
+                        })?;
 
                         errors.retain(|err| !matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. }));
                     }
@@ -1677,7 +1687,6 @@ impl Analyzer<'_, '_> {
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs_if_expanded: true,
-                                allow_missing_fields: false,
                                 ..opts
                             },
                         )
