@@ -319,14 +319,17 @@ impl Analyzer<'_, '_> {
         };
         self.with_ctx(ctx).validate_with(|a| {
             let ctx = ctx!("tried to reexport with named export specifier");
-            a.type_of_var(
-                &match &node.orig {
-                    RModuleExportName::Ident(v) => v.clone(),
-                    RModuleExportName::Str(v) => RIdent::new(v.value.clone(), v.span),
-                },
-                TypeOfMode::RValue,
-                None,
-            )?;
+            let ident = match &node.orig {
+                RModuleExportName::Ident(v) => v.clone(),
+                RModuleExportName::Str(v) => RIdent::new(v.value.clone(), v.span),
+            };
+
+            match &*ident.sym {
+                "any" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "undefined" | "symbol" => {
+                    return Err(ErrorKind::CannotExportNonLocalVar { span: ident.span }.into())
+                }
+                _ => a.type_of_var(&ident, TypeOfMode::RValue, None)?,
+            };
 
             Ok(())
         });
