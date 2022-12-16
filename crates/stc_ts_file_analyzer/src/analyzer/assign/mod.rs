@@ -1677,6 +1677,7 @@ impl Analyzer<'_, '_> {
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs_if_expanded: true,
+                                allow_missing_fields: false,
                                 ..opts
                             },
                         )
@@ -1700,6 +1701,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_ref_type()
                             || ty.is_query()
                             || ty.is_fn_type()
+                            || ty.is_intersection()
                     });
 
                 if should_use_single_error {
