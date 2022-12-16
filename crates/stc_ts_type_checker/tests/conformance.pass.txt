@@ -1451,6 +1451,7 @@ externalModules/exportClassNameWithObjectCommonJS.ts
 externalModules/exportClassNameWithObjectSystem.ts
 externalModules/exportClassNameWithObjectUMD.ts
 externalModules/exportDefaultClassNameWithObject.ts
+externalModules/exportNonLocalDeclarations.ts
 externalModules/multipleExportDefault1.ts
 externalModules/multipleExportDefault2.ts
 externalModules/multipleExportDefault3.ts
