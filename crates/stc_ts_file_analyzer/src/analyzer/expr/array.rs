@@ -2,11 +2,15 @@ use std::{borrow::Cow, time::Instant};
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind,
+};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Symbol, Tuple,
-    TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
+    TupleElement, Type, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{
     cache::Freeze,
@@ -589,7 +593,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn get_iterator_inner<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
-        let ty_str = dump_type_as_string(&ty);
+        let ty_str = force_dump_type_as_string(&ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
 
@@ -638,6 +642,16 @@ impl Analyzer<'_, '_> {
                 | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => return Err(ErrorKind::NotArrayType { span }.into()),
 
                 Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+                Type::Param(TypeParam {
+                    constraint: Some(constraint),
+                    ..
+                }) => {
+                    let _ctx = ctx!("tried to get iterator from type parameter constraint");
+                    return self
+                        .get_iterator(span, Cow::Borrowed(constraint), opts)
+                        .map(Cow::into_owned)
+                        .map(Cow::Owned);
+                }
                 Type::Union(u) => {
                     let types = u
                         .types

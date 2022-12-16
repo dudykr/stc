@@ -3649,8 +3649,7 @@ impl Analyzer<'_, '_> {
             match res {
                 Ok(()) => {}
                 Err(err) => {
-                    self.storage.report(err);
-                    return Ok(Type::any(span, Default::default()));
+                    return Err(err);
                 }
             }
         }
