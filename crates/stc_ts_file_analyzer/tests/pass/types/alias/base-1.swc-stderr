@@ -2,6 +2,15 @@
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
  55 | foo13(x13_1, x13_2);
+    : ^^^^^
+    `----
+
+Error: 
+  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
     :       ^^^^^
     `----
 
@@ -20,20 +29,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
  55 | foo13(x13_1, x13_2);
-    : ^^^^^
-    `----
-
-Error: 
-  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
-
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
- 55 | foo13(x13_1, x13_2);
     : ^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
+ 56 | foo13(x13_2, x13_1);
+    : ^^^^^
+    `----
+
+Error: 
+  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
@@ -56,20 +65,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
  56 | foo13(x13_2, x13_1);
-    : ^^^^^
-    `----
-
-Error: 
-  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
-
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
- 56 | foo13(x13_2, x13_1);
     : ^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
+ 72 | f15(E.x).toLowerCase();
+    : ^^^
+    `----
+
+Error: 
+  > ((a: string) => boolean | (a: Meters) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
@@ -92,15 +101,6 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
  72 | f15(E.x).toLowerCase();
-    : ^^^
-    `----
-
-Error: 
-  > ((a: string) => boolean | (a: Meters) => string)
-
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
- 72 | f15(E.x).toLowerCase();
     : ^^^^^^^^
     `----
 
@@ -119,20 +119,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]
  77 | f16(x);
-    :     ^
-    `----
-
-Error: 
-  > [string, boolean]
-
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]
- 77 | f16(x);
     : ^^^
     `----
 
 Error: 
   > (s: StringAndBoolean) => string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]
+ 77 | f16(x);
+    :     ^
+    `----
+
+Error: 
+  > [string, boolean]
 
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]

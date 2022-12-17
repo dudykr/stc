@@ -2,6 +2,15 @@
   x Type
     ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
  12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
+    :                                           ^^^^^^^
+    `----
+
+Error: 
+  > <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
+ 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
     :                                                   ^^^^
     `----
 
@@ -16,15 +25,6 @@ Error:
 
 Error: 
   > <V>(x: V) => Box<V>
-
-  x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
- 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
-    :                                           ^^^^^^^
-    `----
-
-Error: 
-  > <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
 
   x Type
     ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]

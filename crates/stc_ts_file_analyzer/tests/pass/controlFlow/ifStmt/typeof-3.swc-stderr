@@ -29,20 +29,20 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]
  3 | return JSON.parse(data);
-   :                   ^^^^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]
- 3 | return JSON.parse(data);
    :        ^^^^
    `----
 
 Error: 
   > JSON
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]
+ 3 | return JSON.parse(data);
+   :                   ^^^^
+   `----
+
+Error: 
+  > string
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]

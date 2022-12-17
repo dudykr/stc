@@ -2,15 +2,6 @@
   x Type
    ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
  5 | return g(x);
-   :          ^
-   `----
-
-Error: 
-  > T
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
- 5 | return g(x);
    :        ^
    `----
 
@@ -20,11 +11,29 @@ Error:
   x Type
    ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
  5 | return g(x);
+   :          ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
+ 5 | return g(x);
    :        ^^^^
    `----
 
 Error: 
   > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                ^^^
+   `----
+
+Error: 
+  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
 
   x Type
    ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
@@ -142,15 +151,6 @@ Error:
 
 Error: 
   > (x: any) => any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
- 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-   :                ^^^
-   `----
-
-Error: 
-  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
 
   x Type
    ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]

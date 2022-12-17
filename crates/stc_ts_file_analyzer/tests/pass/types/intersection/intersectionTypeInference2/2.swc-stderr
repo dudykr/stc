@@ -2,6 +2,17 @@
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
  5 | f2(obj, 'a');
+   : ^^
+   `----
+
+Error: 
+  > <T, Key extends keyof T>(obj: {
+  |     [K in keyof T]: T[K];
+  | }, key: Key) => T[Key]
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+ 5 | f2(obj, 'a');
    :    ^^^
    `----
 
@@ -11,17 +22,6 @@ Error:
   | } & {
   |     b: string;
   | })
-
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
- 5 | f2(obj, 'a');
-   : ^^
-   `----
-
-Error: 
-  > <T, Key extends keyof T>(obj: {
-  |     [K in keyof T]: T[K];
-  | }, key: Key) => T[Key]
 
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
@@ -35,6 +35,17 @@ Error:
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]
  6 | f2(obj, 'b');
+   : ^^
+   `----
+
+Error: 
+  > <T, Key extends keyof T>(obj: {
+  |     [K in keyof T]: T[K];
+  | }, key: Key) => T[Key]
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]
+ 6 | f2(obj, 'b');
    :    ^^^
    `----
 
@@ -44,17 +55,6 @@ Error:
   | } & {
   |     b: string;
   | })
-
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]
- 6 | f2(obj, 'b');
-   : ^^
-   `----
-
-Error: 
-  > <T, Key extends keyof T>(obj: {
-  |     [K in keyof T]: T[K];
-  | }, key: Key) => T[Key]
 
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]

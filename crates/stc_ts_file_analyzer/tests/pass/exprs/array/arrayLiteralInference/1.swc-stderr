@@ -1,5 +1,14 @@
 
   x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:1]
+ 25 | const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
+    :                                                                   ^^^
+    `----
+
+Error: 
+  > MapConstructor
+
+  x Type
     ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
  26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
     :  ^^^^^^^
@@ -245,15 +254,6 @@ Error:
 Error: 
   > [[AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]], [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]], [AppType.AdvancedList, [AppStyle.Standard,
   | AppStyle.MiniApp]]]
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:1]
- 25 | const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
-    :                                                                   ^^^
-    `----
-
-Error: 
-  > MapConstructor
 
   x Type
     ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:1]

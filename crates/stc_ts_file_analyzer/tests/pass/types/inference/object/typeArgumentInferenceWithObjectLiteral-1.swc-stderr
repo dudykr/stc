@@ -2,6 +2,18 @@
   x Type
    ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:8:1]
  8 | var v1 = f1({ w: x => x, r: () => 0 }, 0);
+   :          ^^
+   `----
+
+Error: 
+  > <T, U>(a: {
+  |     w: (x: T) => U;
+  |     r: () => T;
+  | }, b: T) => U
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:8:1]
+ 8 | var v1 = f1({ w: x => x, r: () => 0 }, 0);
    :                       ^
    `----
 
@@ -41,6 +53,16 @@ Error:
   x Type
    ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:8:1]
  8 | var v1 = f1({ w: x => x, r: () => 0 }, 0);
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:9:1]
+ 9 | var v1 = f1({ w: x => x, r: () => 0 }, E1.X);
    :          ^^
    `----
 
@@ -49,16 +71,6 @@ Error:
   |     w: (x: T) => U;
   |     r: () => T;
   | }, b: T) => U
-
-  x Type
-   ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:8:1]
- 8 | var v1 = f1({ w: x => x, r: () => 0 }, 0);
-   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > {
-  | }
 
   x Type
    ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:9:1]
@@ -120,24 +132,24 @@ Error:
   x Type
    ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:9:1]
  9 | var v1 = f1({ w: x => x, r: () => 0 }, E1.X);
-   :          ^^
-   `----
-
-Error: 
-  > <T, U>(a: {
-  |     w: (x: T) => U;
-  |     r: () => T;
-  | }, b: T) => U
-
-  x Type
-   ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:9:1]
- 9 | var v1 = f1({ w: x => x, r: () => 0 }, E1.X);
    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
 
 Error: 
   > {
   | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:10:1]
+ 10 | var v1 = f1({ w: x => x, r: () => E1.X }, 0);
+    :          ^^
+    `----
+
+Error: 
+  > <T, U>(a: {
+  |     w: (x: T) => U;
+  |     r: () => T;
+  | }, b: T) => U
 
   x Type
     ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:10:1]
@@ -195,18 +207,6 @@ Error:
   |     w: (x: any) => any;
   |     r: () => E1.X;
   | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:10:1]
- 10 | var v1 = f1({ w: x => x, r: () => E1.X }, 0);
-    :          ^^
-    `----
-
-Error: 
-  > <T, U>(a: {
-  |     w: (x: T) => U;
-  |     r: () => T;
-  | }, b: T) => U
 
   x Type
     ,-[$DIR/tests/pass/types/inference/object/typeArgumentInferenceWithObjectLiteral-1.ts:10:1]

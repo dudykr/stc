@@ -2,15 +2,6 @@
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
  11 | o?.x(d = 1);
-    :      ^^^^^
-    `----
-
-Error: 
-  > 1
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
- 11 | o?.x(d = 1);
     : ^
     `----
 
@@ -29,6 +20,15 @@ Error:
 
 Error: 
   > (undefined | any)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+    :      ^^^^^
+    `----
+
+Error: 
+  > 1
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]

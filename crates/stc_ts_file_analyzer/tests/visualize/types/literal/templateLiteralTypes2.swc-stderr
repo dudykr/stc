@@ -614,6 +614,15 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
  60 | let x1 = widening(`foo${s}`);
+    :          ^^^^^^^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
+ 60 | let x1 = widening(`foo${s}`);
     :                         ^
     `----
 
@@ -632,20 +641,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
  60 | let x1 = widening(`foo${s}`);
-    :          ^^^^^^^^
-    `----
-
-Error: 
-  > <T>(x: T) => T
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
- 60 | let x1 = widening(`foo${s}`);
     :          ^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :          ^^^^^^^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
@@ -686,20 +695,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
  61 | let x2 = widening(cond ? 'a' : `foo${s}`);
-    :          ^^^^^^^^
-    `----
-
-Error: 
-  > <T>(x: T) => T
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
- 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
     :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > (string | `foo${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
+ 62 | let y1 = nonWidening(`foo${s}`);
+    :          ^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends (string | number | symbol)>(x: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
@@ -722,20 +731,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
  62 | let y1 = nonWidening(`foo${s}`);
-    :          ^^^^^^^^^^^
-    `----
-
-Error: 
-  > <T extends (string | number | symbol)>(x: T) => T
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
- 62 | let y1 = nonWidening(`foo${s}`);
     :          ^^^^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :          ^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends (string | number | symbol)>(x: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
@@ -772,15 +781,6 @@ Error:
 
 Error: 
   > ('a' | `foo${string}`)
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
- 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
-    :          ^^^^^^^^^^^
-    `----
-
-Error: 
-  > <T extends (string | number | symbol)>(x: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
@@ -839,6 +839,15 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
  80 | let x1 = g1(`xyz-${s}`);  // string
+    :          ^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
+ 80 | let x1 = g1(`xyz-${s}`);  // string
     :                    ^
     `----
 
@@ -853,15 +862,6 @@ Error:
 
 Error: 
   > `xyz-${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
- 80 | let x1 = g1(`xyz-${s}`);  // string
-    :          ^^
-    `----
-
-Error: 
-  > <T>(x: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
@@ -875,6 +875,15 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
  81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
+    :          ^^
+    `----
+
+Error: 
+  > <T extends string>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
+ 81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
     :                    ^
     `----
 
@@ -889,15 +898,6 @@ Error:
 
 Error: 
   > `xyz-${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
- 81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
-    :          ^^
-    `----
-
-Error: 
-  > <T extends string>(x: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
@@ -930,20 +930,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
  90 | const t2 = takesLiteral(id2); // "baz"
-    :                         ^^^
-    `----
-
-Error: 
-  > "foo.bar.baz"
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
- 90 | const t2 = takesLiteral(id2); // "baz"
     :            ^^^^^^^^^^^^
     `----
 
 Error: 
   > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
+ 90 | const t2 = takesLiteral(id2); // "baz"
+    :                         ^^^
+    `----
+
+Error: 
+  > "foo.bar.baz"
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
@@ -954,6 +954,15 @@ Error:
 Error: 
   > "foo.bar.baz" extends `foo.bar.${infer R}` ? {
   | } : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
+ 93 | const t3 = takesLiteral(`foo.bar.${someString}`);  // string
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
@@ -972,15 +981,6 @@ Error:
 
 Error: 
   > `foo.bar.${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
- 93 | const t3 = takesLiteral(`foo.bar.${someString}`);  // string
-    :            ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
@@ -1013,20 +1013,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
  96 | const t4 = takesLiteral(id4);  // unknown
-    :                         ^^^
-    `----
-
-Error: 
-  > `foo.bar.${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
- 96 | const t4 = takesLiteral(id4);  // unknown
     :            ^^^^^^^^^^^^
     `----
 
 Error: 
   > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
+ 96 | const t4 = takesLiteral(id4);  // unknown
+    :                         ^^^
+    `----
+
+Error: 
+  > `foo.bar.${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
@@ -1037,6 +1037,15 @@ Error:
 Error: 
   > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
   | } : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
+ 99 | const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
@@ -1055,15 +1064,6 @@ Error:
 
 Error: 
   > `foo.bar.${('abc' | 'def' | 'ghi')}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
- 99 | const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
-    :            ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
@@ -1134,6 +1134,16 @@ Error:
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
  121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
+     : ^^
+     `----
+
+Error: 
+  > (transform: ("-moz-initial" | (string & {
+  | }))) => number
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
+ 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
      :              ^^^^^^^^^^^^^^^^^
      `----
 
@@ -1159,16 +1169,6 @@ Error:
 
 Error: 
   > `rotate(${number}dig)`
-
-  x Type
-     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
- 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
-     : ^^
-     `----
-
-Error: 
-  > (transform: ("-moz-initial" | (string & {
-  | }))) => number
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]

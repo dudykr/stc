@@ -52,6 +52,15 @@ Error:
   x Type
     ,-[$DIR/tests/pass/exprs/array/spread/class/1.ts:15:1]
  15 | export const b = array.concat([...new SymbolIterator]);
+    :                  ^^^^^
+    `----
+
+Error: 
+  > symbol[]
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/spread/class/1.ts:15:1]
+ 15 | export const b = array.concat([...new SymbolIterator]);
     :                                       ^^^^^^^^^^^^^^
     `----
 
@@ -71,15 +80,6 @@ Error:
     ,-[$DIR/tests/pass/exprs/array/spread/class/1.ts:15:1]
  15 | export const b = array.concat([...new SymbolIterator]);
     :                               ^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > symbol[]
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/array/spread/class/1.ts:15:1]
- 15 | export const b = array.concat([...new SymbolIterator]);
-    :                  ^^^^^
     `----
 
 Error: 

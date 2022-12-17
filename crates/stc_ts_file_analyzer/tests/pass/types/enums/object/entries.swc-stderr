@@ -2,20 +2,20 @@
   x Type
    ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]
  2 | export var entries5 = Object.entries(E);                   // [string, any][]
-   :                                      ^
-   `----
-
-Error: 
-  > E
-
-  x Type
-   ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]
- 2 | export var entries5 = Object.entries(E);                   // [string, any][]
    :                       ^^^^^^
    `----
 
 Error: 
   > ObjectConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]
+ 2 | export var entries5 = Object.entries(E);                   // [string, any][]
+   :                                      ^
+   `----
+
+Error: 
+  > E
 
   x Type
    ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]

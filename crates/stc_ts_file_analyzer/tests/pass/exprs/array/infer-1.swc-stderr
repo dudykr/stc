@@ -2,6 +2,15 @@
   x Type
    ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
  2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                   ^^^
+   `----
+
+Error: 
+  > <T>(...args: T[]) => T[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
+ 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
    :                                       ^^^^^^^^^^^
    `----
 
@@ -20,15 +29,6 @@ Error:
   > {
   |     x: false;
   | }
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
- 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
-   :                                   ^^^
-   `----
-
-Error: 
-  > <T>(...args: T[]) => T[]
 
   x Type
    ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
