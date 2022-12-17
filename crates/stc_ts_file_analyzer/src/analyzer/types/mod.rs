@@ -13,9 +13,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
-    ConstructorSignature, EnumVariant, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind,
-    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType,
-    Ref, ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ConstructorSignature, EnumVariant, Id, IdCtx, IndexedAccessType, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType, Ref, ThisType,
+    ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -884,14 +884,7 @@ impl Analyzer<'_, '_> {
 
         Ok(match ty {
             // For self-references in classes, we preserve `instanceof` type.
-            Type::Ref(..) => Type::Instance(Instance {
-                span: actual_span,
-                ty: box ty,
-                metadata: InstanceMetadata {
-                    common: metadata,
-                    ..Default::default()
-                },
-            }),
+            Type::Ref(..) => ty,
 
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,

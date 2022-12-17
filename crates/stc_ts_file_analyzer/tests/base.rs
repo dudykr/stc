@@ -478,7 +478,7 @@ fn visualize(file_name: PathBuf) {
     println!("[SUCCESS]{}", file_name.display())
 }
 
-#[testing::fixture("tests/pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+#[testing::fixture("tests/pass/async/test/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
     let res = run_test(file_name.clone(), false).unwrap();
 

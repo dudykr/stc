@@ -713,6 +713,8 @@ impl Analyzer<'_, '_> {
             (Key::Private(d), Key::Private(cur)) => {
                 if *d.id.sym() == *cur.id.sym() {
                     return true;
+                } else {
+                    return false;
                 }
             }
             (Key::Private(..), _) | (_, Key::Private(..)) => return false,
@@ -2854,17 +2856,18 @@ impl Analyzer<'_, '_> {
                         RTsEntityName::Ident(i) => {
                             if let Some(class) = self.scope.get_this_class_name() {
                                 if class == *i {
-                                    return self.access_property(
-                                        span,
-                                        &Type::StaticThis(StaticThis {
+                                    let this = if self.ctx.in_static_method {
+                                        Type::StaticThis(StaticThis {
                                             span,
                                             metadata: Default::default(),
-                                        }),
-                                        prop,
-                                        type_mode,
-                                        id_ctx,
-                                        opts,
-                                    );
+                                        })
+                                    } else {
+                                        Type::This(ThisType {
+                                            span,
+                                            metadata: Default::default(),
+                                        })
+                                    };
+                                    return self.access_property(span, &this, prop, type_mode, id_ctx, opts);
                                 }
                             }
                         }

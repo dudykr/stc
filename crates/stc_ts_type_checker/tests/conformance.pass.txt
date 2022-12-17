@@ -219,6 +219,7 @@ classes/members/privateNames/privateNameStaticFieldAssignment.ts
 classes/members/privateNames/privateNameStaticFieldUnaryMutation.ts
 classes/members/privateNames/privateNameStaticMethodInStaticFieldInit.ts
 classes/members/privateNames/privateNamesAndFields.ts
+classes/members/privateNames/privateNamesInGenericClasses.ts
 classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesUnique-1.ts
 classes/members/privateNames/privateNamesUnique-4.ts
