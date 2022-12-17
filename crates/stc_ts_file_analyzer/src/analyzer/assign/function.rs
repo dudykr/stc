@@ -881,11 +881,7 @@ impl Analyzer<'_, '_> {
                         force_dump_type_as_string(&l.ty)
                     ));
 
-                    self.assign_param(data, l, r, opts)?;
-
-                    for r in ri {
-                        self.assign_param(data, l, r, opts)?;
-                    }
+                    // TODO(kdy1): Implement correcr logic
 
                     return Ok(());
                 }
