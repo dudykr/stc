@@ -69,6 +69,13 @@ impl Analyzer<'_, '_> {
         debug!("visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
+        let mut unconditional_throw = None;
+        for stmt in stmts {
+            let RStmt::Throw(throws) = stmt else {continue};
+            unconditional_throw = Some(throws.span);
+            break;
+        }
+
         let cannot_fallback_to_iterable_iterator = self.rule().strict_null_checks && {
             let mut v = YieldValueUsageFinder::default();
 
@@ -95,13 +102,7 @@ impl Analyzer<'_, '_> {
 
             {
                 //  Expand return types if no element references a type parameter
-                let can_expand = values.return_types.iter().all(|ty| {
-                    if should_preserve_ref(ty) {
-                        return false;
-                    }
-
-                    true
-                });
+                let can_expand = !values.return_types.iter().any(should_preserve_ref);
 
                 if can_expand {
                     values.return_types = values
@@ -146,6 +147,12 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<_, _>>()
                         .report(&mut self.storage)
                         .unwrap_or_default();
+                }
+            }
+
+            {
+                if let Some(span) = unconditional_throw {
+                    values.return_types.push(Type::never(span, Default::default()));
                 }
             }
 
