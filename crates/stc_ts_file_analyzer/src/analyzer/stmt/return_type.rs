@@ -71,9 +71,10 @@ impl Analyzer<'_, '_> {
 
         let mut unconditional_throw = None;
         for stmt in stmts {
-            let RStmt::Throw(throws) = stmt else {continue};
-            unconditional_throw = Some(throws.span);
-            break;
+            if let RStmt::Throw(throws) = stmt {
+                unconditional_throw = Some(throws.span);
+                break;
+            }
         }
 
         let cannot_fallback_to_iterable_iterator = self.rule().strict_null_checks && {
