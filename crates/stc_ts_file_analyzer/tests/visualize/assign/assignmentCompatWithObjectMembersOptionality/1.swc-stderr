@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:4:1]
+ 4 | class Derived extends Base { bar: string; }
+   :                       ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:25:1]
+ 25 | c = d; // error
+    :     ^
+    `----
+
+Error: 
+  > D
+
+  x Type
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:25:1]
+ 25 | c = d; // error
+    : ^^^^^
+    `----
+
+Error: 
+  > D
+
+  x Type
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:26:1]
+ 26 | c = e; // error
+    :     ^
+    `----
+
+Error: 
+  > E
+
+  x Type
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:26:1]
+ 26 | c = e; // error
+    : ^^^^^
+    `----
+
+Error: 
+  > E
