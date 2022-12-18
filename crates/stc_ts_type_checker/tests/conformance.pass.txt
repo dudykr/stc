@@ -3732,6 +3732,7 @@ parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
+parser/ecmascript6/ComputedPropertyNames/parserCambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName17.ts
@@ -4563,6 +4564,7 @@ types/tuple/wideningTuples5.ts
 types/tuple/wideningTuples5.ts
 types/tuple/wideningTuples6.ts
 types/tuple/wideningTuples6.ts
+types/tySymbols/ES5SymbolProperty1.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
@@ -4749,7 +4751,6 @@ types/typeRelationships/comparable/switchCaseWithIntersectionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithIntersectionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
-types/typeRelationships/comparable/typeAssertionsWithIntersectionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
 types/typeRelationships/instanceOf/narrowingConstrainedTypeVariable.ts
@@ -4786,8 +4787,6 @@ types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures5.
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures5.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithNumericIndexer5.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithNumericIndexer5.ts
-types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembers2.ts
-types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembers3.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembers4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembers4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality.ts
@@ -4968,6 +4967,7 @@ types/typeRelationships/widenedTypes/objectLiteralWidened.ts
 types/typeRelationships/widenedTypes/objectLiteralWidened.ts
 types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
 types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
+types/typeRelationshipsSymbols/ES5SymbolProperty1.ts
 types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
@@ -4996,5 +4996,4 @@ types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
-types/unknown/unknownType2.ts
 types/unknown/unknownType2.ts
