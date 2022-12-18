@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
+ 6 | if (v instanceof C) {
+   :     ^
+   `----
+
+Error: 
+  > (T | U)
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
+ 6 | if (v instanceof C) {
+   :                  ^
+   `----
+
+Error: 
+  > typeof C
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
+ 6 | if (v instanceof C) {
+   :     ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:7:9]
+ 7 | const x: T = v;
+   :              ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:10:9]
+ 10 | const y: U = v;
+    :              ^
+    `----
+
+Error: 
+  > U

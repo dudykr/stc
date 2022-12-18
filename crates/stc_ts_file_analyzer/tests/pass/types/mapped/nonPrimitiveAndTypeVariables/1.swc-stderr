@@ -1,0 +1,11 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/nonPrimitiveAndTypeVariables/1.ts:8:1]
+ 8 | export let a: A<{ a: 0 | 1 }, 0> = { a: 0 };
+   :                                    ^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     a: 0;
+  | }
