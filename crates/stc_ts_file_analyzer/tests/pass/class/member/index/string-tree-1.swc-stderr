@@ -1,0 +1,108 @@
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:6:1]
+ 6 | class StringTreeCollection extends StringTreeCollectionBase { }
+   :                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > typeof StringTreeCollectionBase
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
+ 9 | if (typeof x !== "string") {
+   :            ^
+   `----
+
+Error: 
+  > (string | StringTreeCollection)
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
+ 9 | if (typeof x !== "string") {
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
+ 9 | if (typeof x !== "string") {
+   :     ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
+ 10 | x[0] = "";
+    : ^
+    `----
+
+Error: 
+  > StringTreeCollection
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
+ 10 | x[0] = "";
+    : ^^^^
+    `----
+
+Error: 
+  > StringTree
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
+ 10 | x[0] = "";
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > ""
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
+ 11 | x[0] = new StringTreeCollection;
+    : ^
+    `----
+
+Error: 
+  > StringTreeCollection
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
+ 11 | x[0] = new StringTreeCollection;
+    : ^^^^
+    `----
+
+Error: 
+  > StringTree
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
+ 11 | x[0] = new StringTreeCollection;
+    :            ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > typeof StringTreeCollection
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
+ 11 | x[0] = new StringTreeCollection;
+    :        ^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > StringTreeCollection
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
+ 11 | x[0] = new StringTreeCollection;
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > StringTreeCollection
