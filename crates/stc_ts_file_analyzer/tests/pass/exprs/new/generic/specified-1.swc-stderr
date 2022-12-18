@@ -1,0 +1,72 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:7:1]
+ 7 | export var aGenericClass: D<string> = new D<string>();
+   :                                           ^
+   `----
+
+Error: 
+  > typeof D
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:7:1]
+ 7 | export var aGenericClass: D<string> = new D<string>();
+   :                                       ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > D
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:9:1]
+ 9 | aGenericClass.source
+   : ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > D
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:9:1]
+ 9 | aGenericClass.source
+   : ^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:10:1]
+ 10 | aGenericClass.recurse
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > D
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:10:1]
+ 10 | aGenericClass.recurse
+    : ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > D
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:11:1]
+ 11 | aGenericClass.wrapped
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > D
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/new/generic/specified-1.ts:11:1]
+ 11 | aGenericClass.wrapped
+    : ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > D
