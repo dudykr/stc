@@ -1,0 +1,128 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:2:1]
+ 2 | class Derived1 extends Base { private m; }
+   :                        ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:3:1]
+ 3 | class Derived2 extends Base { private n; }
+   :                        ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :             ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :         ^^^^^^^^^^
+   `----
+
+Error: 
+  > Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                              ^^^^^^^^
+   `----
+
+Error: 
+  > typeof Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                          ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                                   ^^^^^^^^
+   `----
+
+Error: 
+  > typeof Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                               ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:8:1]
+ 8 | export function x131(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { }
+   :                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (n: Base[]) => any
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:9:1]
+ 9 | export function x132(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { }
+   :                                                                  ^^
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:9:1]
+ 9 | export function x132(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { }
+   :                                                                      ^^
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:9:1]
+ 9 | export function x132(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { }
+   :                                                                 ^^^^^^^^
+   `----
+
+Error: 
+  > [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:9:1]
+ 9 | export function x132(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { }
+   :                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (n: Base[]) => [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:9:1]
+ 9 | export function x132(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { }
+   :                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     func: (n: Base[]) => [Derived1, Derived2];
+  | }
