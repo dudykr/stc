@@ -1,0 +1,54 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:4:1]
+ 4 | var r = x[1];
+   :         ^
+   `----
+
+Error: 
+  > new () => string[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:4:1]
+ 4 | var r = x[1];
+   :         ^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:5:1]
+ 5 | var r2 = new r();
+   :              ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:5:1]
+ 5 | var r2 = new r();
+   :          ^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:6:1]
+ 6 | var r2b = r();
+   :           ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:6:1]
+ 6 | var r2b = r();
+   :           ^^^
+   `----
+
+Error: 
+  > any
