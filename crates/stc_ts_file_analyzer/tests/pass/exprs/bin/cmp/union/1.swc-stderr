@@ -1,0 +1,48 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:5]
+ 2 | if (x.a === 0) {
+   :     ^
+   `----
+
+Error: 
+  > ({
+  |     a: 0;
+  |     b: string;
+  | } | {
+  |     a: T;
+  |     c: number;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:5]
+ 2 | if (x.a === 0) {
+   :     ^^^
+   `----
+
+Error: 
+  > (0 | T)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:5]
+ 2 | if (x.a === 0) {
+   :     ^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:3:9]
+ 3 | x
+   : ^
+   `----
+
+Error: 
+  > ({
+  |     a: 0;
+  |     b: string;
+  | } | {
+  |     a: T;
+  |     c: number;
+  | })
