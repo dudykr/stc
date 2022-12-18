@@ -1,0 +1,9 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/11.ts:8:1]
+ 8 | s1 = 1;
+   : ^^^^^^
+   `----
+
+Error: 
+  > 1

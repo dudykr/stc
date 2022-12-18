@@ -1,0 +1,12 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:8:1]
+ 8 | export let a: A = x;
+   :                   ^
+   `----
+
+Error: 
+  > {
+  |     kind: 'a';
+  |     foo: string;
+  | }

@@ -1,0 +1,12 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:9:1]
+ 9 | let a: A = x;
+   :            ^
+   `----
+
+Error: 
+  > {
+  |     kind: "a";
+  |     foo: string;
+  | }
