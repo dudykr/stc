@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, opts)
+                        self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, AssignOpts { ..opts })
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
@@ -1700,6 +1700,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_ref_type()
                             || ty.is_query()
                             || ty.is_fn_type()
+                            || ty.is_intersection()
                     });
 
                 if should_use_single_error {
