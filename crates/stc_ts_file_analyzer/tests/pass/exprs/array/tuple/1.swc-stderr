@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/tuple/1.ts:2:1]
+ 2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
+   :                                    ^^^^^^^^^
+   `----
+
+Error: 
+  > [1, 2, 3]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/tuple/1.ts:2:1]
+ 2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
+   :                                               ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ["hello", "string"]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/tuple/1.ts:2:1]
+ 2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
+   :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [[1, 2, 3], ["hello", "string"]]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/tuple/1.ts:8:1]
+ 8 | var c0: tup = [...temp2];                         // Error
+   :                   ^^^^^
+   `----
+
+Error: 
+  > [number[], string[]]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/tuple/1.ts:8:1]
+ 8 | var c0: tup = [...temp2];                         // Error
+   :               ^^^^^^^^^^
+   `----
+
+Error: 
+  > [number[], string[]]
