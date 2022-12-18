@@ -11,6 +11,15 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]
  12 | var r2 = foo(b);
+    :          ^^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]
+ 12 | var r2 = foo(b);
     :              ^
     `----
 
@@ -19,15 +28,6 @@ Error:
   |     [x: string]: Object;
   |     [x: number]: T;
   | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]
- 12 | var r2 = foo(b);
-    :          ^^^
-    `----
-
-Error: 
-  > <T>(x: T) => T
 
   x Type
     ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]

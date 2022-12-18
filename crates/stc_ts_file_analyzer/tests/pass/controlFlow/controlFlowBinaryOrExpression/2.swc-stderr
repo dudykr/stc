@@ -20,6 +20,15 @@ Error:
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
  17 | if (isHTMLCollection(sourceObj)) {
+    :     ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (sourceObj: any) => sourceObj is HTMLCollection
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
+ 17 | if (isHTMLCollection(sourceObj)) {
     :                      ^^^^^^^^^
     `----
 
@@ -27,15 +36,6 @@ Error:
   > ({
   |     a: string;
   | } | HTMLCollection | NodeList)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
- 17 | if (isHTMLCollection(sourceObj)) {
-    :     ^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > (sourceObj: any) => sourceObj is HTMLCollection
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]

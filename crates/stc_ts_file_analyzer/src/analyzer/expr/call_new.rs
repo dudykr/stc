@@ -18,8 +18,9 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Function, Id, IdCtx, IndexedAccessType, Instance,
-    Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
+    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -250,22 +251,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let mut arg_types = self.validate_args(args)?;
-        arg_types.make_clone_cheap();
-
-        let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
-
-        // For debugging
-        if false {
-            for (i, ty) in arg_types.iter().enumerate() {
-                print_type(&format!("arg {}", i), &ty.ty);
-            }
-
-            for (i, ty) in spread_arg_types.iter().enumerate() {
-                print_type(&format!("spreaded arg {}", i), &ty.ty);
-            }
-        }
-
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
@@ -343,7 +328,13 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 // Validate object
-                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
+                let mut obj_type = obj
+                    .validate_with_default(self)
+                    .unwrap_or_else(|err| {
+                        self.storage.report(err);
+                        Type::any(span, Default::default())
+                    })
+                    .generalize_lit();
                 {
                     // Handle toString()
 
@@ -376,6 +367,11 @@ impl Analyzer<'_, '_> {
                         .expect("Builtin type named 'String' should exist"),
                     _ => obj_type,
                 };
+
+                let mut arg_types = self.validate_args(args)?;
+                arg_types.make_clone_cheap();
+
+                let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
                 return self
                     .call_property(
@@ -426,7 +422,19 @@ impl Analyzer<'_, '_> {
             };
 
             let mut callee_ty = {
-                let callee_ty = callee.validate_with_default(analyzer)?;
+                let callee_ty = callee.validate_with_default(analyzer).unwrap_or_else(|err| {
+                    analyzer.storage.report(err);
+                    Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    )
+                });
                 match callee_ty.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -496,6 +504,12 @@ impl Analyzer<'_, '_> {
             )?;
 
             callee_ty.make_clone_cheap();
+
+            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
+            let mut arg_types = analyzer.validate_args(args)?;
+            arg_types.make_clone_cheap();
+
+            let spread_arg_types = analyzer.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
             let expanded_ty = analyzer.extract(
                 span,
@@ -2470,6 +2484,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // TODO: Use apply_fn_type_ann instead
                 let mut patch_arg = |idx: usize, pat: &RPat| -> VResult<()> {
                     if actual_params.len() <= idx {
                         return Ok(());
@@ -3293,17 +3308,60 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    fn apply_type_ann_from_callee(&mut self, span: Span, kind: ExtractKind, args: &[RExprOrSpread], callee: &Type) -> VResult<()> {
+        let c = self.extract_callee_candidates(span, kind, callee)?;
+
+        if c.len() != 1 {
+            return Ok(());
+        }
+
+        let c = c.into_iter().next().unwrap();
+
+        // TODO(kdy1): Refactor generic inference logic to use this function.
+        // Currently, the reevaluation logic in get_return_type interferes with this
+        // function
+        if c.type_params.is_some() {
+            return Ok(());
+        }
+
+        for (arg, param) in args.iter().zip(c.params.iter()) {
+            // TODO(kdy1):  Handle rest
+            if arg.spread.is_some() || matches!(param.pat, RPat::Rest(..)) {
+                break;
+            }
+
+            self.apply_type_ann_for_arg(&arg.expr, &param.ty)?;
+        }
+
+        Ok(())
+    }
+
+    fn apply_type_ann_for_arg(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
+        match arg {
+            RExpr::Paren(arg) => return self.apply_type_ann_for_arg(&arg.expr, type_ann),
+            RExpr::Fn(arg) => {
+                self.apply_fn_type_ann(arg.span(), arg.function.params.iter().map(|v| &v.pat), Some(type_ann));
+            }
+            RExpr::Arrow(arg) => {
+                self.apply_fn_type_ann(arg.span(), arg.params.iter(), Some(type_ann));
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
     fn validate_args(&mut self, args: &[RExprOrSpread]) -> VResult<Vec<TypeOrSpread>> {
         let ctx = Ctx {
             in_argument: true,
             should_store_truthy_for_access: false,
             ..self.ctx
         };
-        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+        self.with_ctx(ctx).with(|this: &mut Analyzer| {
             let args: Vec<_> = args
                 .iter()
                 .map(|arg| {
-                    arg.validate_with(a).report(&mut a.storage).unwrap_or_else(|| TypeOrSpread {
+                    arg.validate_with(this).report(&mut this.storage).unwrap_or_else(|| TypeOrSpread {
                         span: arg.span(),
                         spread: arg.spread,
                         ty: box Type::any(arg.expr.span(), Default::default()),

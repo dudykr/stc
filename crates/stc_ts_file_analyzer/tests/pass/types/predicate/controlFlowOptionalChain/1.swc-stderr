@@ -2,20 +2,20 @@
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:1]
  4 | if (f?.(x)) {
-   :         ^
-   `----
-
-Error: 
-  > (string | number)
-
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:1]
- 4 | if (f?.(x)) {
    :     ^
    `----
 
 Error: 
   > (undefined | (x: any) => x is number)
+
+  x Type
+   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:1]
+ 4 | if (f?.(x)) {
+   :         ^
+   `----
+
+Error: 
+  > (string | number)
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:1]
@@ -47,20 +47,20 @@ Error:
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:7:5]
  7 | f(x);
-   :   ^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:7:5]
- 7 | f(x);
    : ^
    `----
 
 Error: 
   > (x: any) => x is number
+
+  x Type
+   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:7:5]
+ 7 | f(x);
+   :   ^
+   `----
+
+Error: 
+  > number
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:7:5]
@@ -92,20 +92,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:12:5]
  12 | f(x);
-    :   ^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:12:5]
- 12 | f(x);
     : ^
     `----
 
 Error: 
   > (undefined | (x: any) => x is number)
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:12:5]
+ 12 | f(x);
+    :   ^
+    `----
+
+Error: 
+  > string
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:12:5]
@@ -137,20 +137,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:1]
  16 | f(x);
-    :   ^
-    `----
-
-Error: 
-  > (string | number)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:1]
- 16 | f(x);
     : ^
     `----
 
 Error: 
   > (undefined | (x: any) => x is number)
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:1]
+ 16 | f(x);
+    :   ^
+    `----
+
+Error: 
+  > (string | number)
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:1]

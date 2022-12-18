@@ -20,20 +20,20 @@ Error:
   x Type
    ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]
  6 | foo(class { static prop = "hello" }).length;
-   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > typeof anonymous class
-
-  x Type
-   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]
- 6 | foo(class { static prop = "hello" }).length;
    : ^^^
    `----
 
 Error: 
   > <T>(x?: typeof anonymous class) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]
+ 6 | foo(class { static prop = "hello" }).length;
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > typeof anonymous class
 
   x Type
    ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]

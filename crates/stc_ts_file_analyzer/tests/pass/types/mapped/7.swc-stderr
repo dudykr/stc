@@ -1,5 +1,14 @@
 
   x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | let vue = new Vue({
+    :               ^^^
+    `----
+
+Error: 
+  > new <P>(options: VueOptions<P>) => P
+
+  x Type
     ,-[$DIR/tests/pass/types/mapped/7.ts:17:13]
  17 | return this.x;
     :        ^^^^
@@ -87,15 +96,6 @@ Error:
   |         };
   |     };
   | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
- 14 | let vue = new Vue({
-    :               ^^^
-    `----
-
-Error: 
-  > new <P>(options: VueOptions<P>) => P
 
   x Type
     ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]

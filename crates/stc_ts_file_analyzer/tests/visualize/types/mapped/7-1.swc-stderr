@@ -1,5 +1,14 @@
 
   x Type
+    ,-[$DIR/tests/visualize/types/mapped/7-1.ts:10:1]
+ 10 | let vue = new Vue({
+    :               ^^^
+    `----
+
+Error: 
+  > new <P>(options: Accessors<P>) => P
+
+  x Type
     ,-[$DIR/tests/visualize/types/mapped/7-1.ts:12:9]
  12 | return this.x;
     :        ^^^^
@@ -58,15 +67,6 @@ Error:
   |         set(value: string): void;
   |     };
   | }
-
-  x Type
-    ,-[$DIR/tests/visualize/types/mapped/7-1.ts:10:1]
- 10 | let vue = new Vue({
-    :               ^^^
-    `----
-
-Error: 
-  > new <P>(options: Accessors<P>) => P
 
   x Type
     ,-[$DIR/tests/visualize/types/mapped/7-1.ts:10:1]

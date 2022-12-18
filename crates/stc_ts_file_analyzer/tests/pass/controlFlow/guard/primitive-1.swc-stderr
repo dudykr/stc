@@ -29,6 +29,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:9]
  3 | console.log("Aha!! It's a Date in " + thing.getFullYear());
+   : ^^^^^^^
+   `----
+
+Error: 
+  > Console
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:9]
+ 3 | console.log("Aha!! It's a Date in " + thing.getFullYear());
    :                                       ^^^^^
    `----
 
@@ -52,15 +61,6 @@ Error:
 
 Error: 
   > string
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:9]
- 3 | console.log("Aha!! It's a Date in " + thing.getFullYear());
-   : ^^^^^^^
-   `----
-
-Error: 
-  > Console
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:9]
@@ -101,6 +101,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:9]
  5 | console.log("Aha!! It's a string of length " + thing.length);
+   : ^^^^^^^
+   `----
+
+Error: 
+  > Console
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:9]
+ 5 | console.log("Aha!! It's a string of length " + thing.length);
    :                                                ^^^^^
    `----
 
@@ -128,20 +137,20 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:9]
  5 | console.log("Aha!! It's a string of length " + thing.length);
-   : ^^^^^^^
-   `----
-
-Error: 
-  > Console
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:9]
- 5 | console.log("Aha!! It's a string of length " + thing.length);
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
 
 Error: 
   > void
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:9]
+ 7 | console.log("Aha!! It's the number " + thing.toPrecision(3));
+   : ^^^^^^^
+   `----
+
+Error: 
+  > Console
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:9]
@@ -173,20 +182,20 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:9]
  7 | console.log("Aha!! It's the number " + thing.toPrecision(3));
-   : ^^^^^^^
-   `----
-
-Error: 
-  > Console
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:9]
- 7 | console.log("Aha!! It's the number " + thing.toPrecision(3));
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
 
 Error: 
   > void
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1]
+ 11 | distinguish(new Date());
+    : ^^^^^^^^^^^
+    `----
+
+Error: 
+  > (thing: (string | number | Date)) => void
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1]
@@ -205,15 +214,6 @@ Error:
 
 Error: 
   > Date
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1]
- 11 | distinguish(new Date());
-    : ^^^^^^^^^^^
-    `----
-
-Error: 
-  > (thing: (string | number | Date)) => void
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1]

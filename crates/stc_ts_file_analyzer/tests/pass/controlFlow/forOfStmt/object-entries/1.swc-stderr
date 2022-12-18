@@ -14,6 +14,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:1]
  3 | for (var x of Object.values(o)) {
+   :               ^^^^^^
+   `----
+
+Error: 
+  > ObjectConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:1]
+ 3 | for (var x of Object.values(o)) {
    :                             ^
    `----
 
@@ -22,15 +31,6 @@ Error:
   |     a: number;
   |     b: number;
   | }
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:1]
- 3 | for (var x of Object.values(o)) {
-   :               ^^^^^^
-   `----
-
-Error: 
-  > ObjectConstructor
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:1]
@@ -53,6 +53,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:1]
  7 | export var entries = Object.entries(o);
+   :                      ^^^^^^
+   `----
+
+Error: 
+  > ObjectConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:1]
+ 7 | export var entries = Object.entries(o);
    :                                     ^
    `----
 
@@ -61,15 +70,6 @@ Error:
   |     a: number;
   |     b: number;
   | }
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:1]
- 7 | export var entries = Object.entries(o);
-   :                      ^^^^^^
-   `----
-
-Error: 
-  > ObjectConstructor
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:1]

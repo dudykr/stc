@@ -11,6 +11,15 @@ Error:
   x Type
    ,-[$DIR/tests/visualize/exprs/call/overloadResolution/2.ts:7:1]
  7 | var s = fn5((n) => n.substr(0));
+   :         ^^^
+   `----
+
+Error: 
+  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number | () => any)
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/2.ts:7:1]
+ 7 | var s = fn5((n) => n.substr(0));
    :                    ^
    `----
 
@@ -34,15 +43,6 @@ Error:
 
 Error: 
   > (n: any) => any
-
-  x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/2.ts:7:1]
- 7 | var s = fn5((n) => n.substr(0));
-   :         ^^^
-   `----
-
-Error: 
-  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number | () => any)
 
   x Type
    ,-[$DIR/tests/visualize/exprs/call/overloadResolution/2.ts:7:1]

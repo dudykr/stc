@@ -2,6 +2,15 @@
   x Type
     ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
  14 | return draw({ color: currentColor });
+    :        ^^^^
+    `----
+
+Error: 
+  > (val: (Blue | Yellow)) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
+ 14 | return draw({ color: currentColor });
     :                      ^^^^^^^^^^^^
     `----
 
@@ -18,15 +27,6 @@ Error:
   > {
   |     color: ('blue' | 'yellow' | undefined);
   | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
- 14 | return draw({ color: currentColor });
-    :        ^^^^
-    `----
-
-Error: 
-  > (val: (Blue | Yellow)) => void
 
   x Type
     ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]

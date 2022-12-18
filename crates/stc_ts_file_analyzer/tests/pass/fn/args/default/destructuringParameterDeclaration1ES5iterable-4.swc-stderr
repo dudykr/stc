@@ -74,6 +74,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+   :                ^^
+   `----
+
+Error: 
+  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+ 9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                    ^^^^^^^^^^
    `----
 
@@ -106,15 +115,6 @@ Error:
 
 Error: 
   > [["string"], 1, [[true, false]]]
-
-  x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
- 9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
-   :                ^^
-   `----
-
-Error: 
-  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
 
   x Type
    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
