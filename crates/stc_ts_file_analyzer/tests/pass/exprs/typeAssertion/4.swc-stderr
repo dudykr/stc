@@ -1,0 +1,63 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:6:5]
+ 6 | let x: string | number | undefined = undefined;
+   :                                      ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:7:5]
+ 7 | x;  // undefined
+   : ^
+   `----
+
+Error: 
+  > (string | number | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
+ 8 | if (typeof x === "string") {
+   :            ^
+   `----
+
+Error: 
+  > (string | number | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
+ 8 | if (typeof x === "string") {
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
+ 8 | if (typeof x === "string") {
+   :     ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:9:9]
+ 9 | x;  // string (guard as assertion)
+   : ^
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:11:5]
+ 11 | x;  // string | undefined
+    : ^
+    `----
+
+Error: 
+  > (string | number | undefined)
