@@ -7,7 +7,7 @@ function fail(message?: string): never {
 
 function f01(x: string | undefined) {
     if (x === undefined) fail("undefined argument");
-    x.length;  // string
+    x.length;  // number
 }
 
 export { }

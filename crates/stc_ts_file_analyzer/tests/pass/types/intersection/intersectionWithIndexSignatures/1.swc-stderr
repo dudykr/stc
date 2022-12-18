@@ -1,0 +1,48 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:10:1]
+ 10 | ta1 = sa1;
+    :       ^^^
+    `----
+
+Error: 
+  > {
+  |     x: (A & B);
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:10:1]
+ 10 | ta1 = sa1;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     x: (A & B);
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:11:1]
+ 11 | ta1 = sa2;
+    :       ^^^
+    `----
+
+Error: 
+  > ({
+  |     x: A;
+  | } & {
+  |     x: B;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:11:1]
+ 11 | ta1 = sa2;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > ({
+  |     x: A;
+  | } & {
+  |     x: B;
+  | })
