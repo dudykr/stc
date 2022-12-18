@@ -1,0 +1,45 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/1.ts:10:1]
+ 10 | if (obj1 instanceof A) { // narrowed to A.
+    :     ^^^^
+    `----
+
+Error: 
+  > (A | string)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/1.ts:10:1]
+ 10 | if (obj1 instanceof A) { // narrowed to A.
+    :                     ^
+    `----
+
+Error: 
+  > AConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/1.ts:10:1]
+ 10 | if (obj1 instanceof A) { // narrowed to A.
+    :     ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/1.ts:11:5]
+ 11 | obj1.foo;
+    : ^^^^
+    `----
+
+Error: 
+  > A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/1.ts:11:5]
+ 11 | obj1.foo;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > string
