@@ -1,0 +1,108 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:4:5]
+ 4 | return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
+   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Guid
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:7:1]
+ 7 | let map1: { [x: string]: number } = {};
+   :                                     ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:8:1]
+ 8 | let guid = createGuid();
+   :            ^^^^^^^^^^
+   `----
+
+Error: 
+  > () => Guid
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:8:1]
+ 8 | let guid = createGuid();
+   :            ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Guid
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1]
+ 9 | map1[guid] = 123;  // Can with tagged string
+   : ^^^^
+   `----
+
+Error: 
+  > {
+  |     [x: string]: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1]
+ 9 | map1[guid] = 123;  // Can with tagged string
+   :      ^^^^
+   `----
+
+Error: 
+  > (string & {
+  |     $Guid: any;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1]
+ 9 | map1[guid] = 123;  // Can with tagged string
+   : ^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1]
+ 9 | map1[guid] = 123;  // Can with tagged string
+   : ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 123
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:11:1]
+ 11 | export const s3 = guid + guid;
+    :                   ^^^^
+    `----
+
+Error: 
+  > (string & {
+  |     $Guid: any;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:11:1]
+ 11 | export const s3 = guid + guid;
+    :                          ^^^^
+    `----
+
+Error: 
+  > (string & {
+  |     $Guid: any;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:11:1]
+ 11 | export const s3 = guid + guid;
+    :                   ^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
