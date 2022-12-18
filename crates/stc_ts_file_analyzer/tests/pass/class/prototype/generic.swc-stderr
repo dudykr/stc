@@ -1,0 +1,93 @@
+
+  x Type
+   ,-[$DIR/tests/pass/class/prototype/generic.ts:7:1]
+ 7 | class D<T, U> extends C<T, U> {
+   :                       ^
+   `----
+
+Error: 
+  > typeof C
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:12:1]
+ 12 | var r = C.prototype; // C<any, any>
+    :         ^
+    `----
+
+Error: 
+  > typeof C
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:12:1]
+ 12 | var r = C.prototype; // C<any, any>
+    :         ^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     foo: any;
+  |     bar: any;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:13:1]
+ 13 | var ra = r.foo; // any
+    :          ^
+    `----
+
+Error: 
+  > {
+  |     foo: any;
+  |     bar: any;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:13:1]
+ 13 | var ra = r.foo; // any
+    :          ^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:14:1]
+ 14 | var r2 = D.prototype; // D<any, any>
+    :          ^
+    `----
+
+Error: 
+  > typeof D
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:14:1]
+ 14 | var r2 = D.prototype; // D<any, any>
+    :          ^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     baz: any;
+  |     bing: any;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:15:1]
+ 15 | var rb = r2.baz; // any
+    :          ^^
+    `----
+
+Error: 
+  > {
+  |     baz: any;
+  |     bing: any;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/generic.ts:15:1]
+ 15 | var rb = r2.baz; // any
+    :          ^^^^^^
+    `----
+
+Error: 
+  > any
