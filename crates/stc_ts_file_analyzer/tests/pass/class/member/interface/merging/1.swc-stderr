@@ -1,0 +1,135 @@
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:15:1]
+ 15 | class Child extends BaseClass {
+    :                     ^^^^^^^^^
+    `----
+
+Error: 
+  > typeof BaseClass
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:22:1]
+ 22 | child.required;
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:22:1]
+ 22 | child.required;
+    : ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:23:1]
+ 23 | child.optional;
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:23:1]
+ 23 | child.optional;
+    : ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:24:1]
+ 24 | child.additional;
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:24:1]
+ 24 | child.additional;
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:25:1]
+ 25 | child.baseNumber;
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:25:1]
+ 25 | child.baseNumber;
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:26:1]
+ 26 | child.classNumber;
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:26:1]
+ 26 | child.classNumber;
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:27:1]
+ 27 | child.baseMethod();
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:27:1]
+ 27 | child.baseMethod();
+    : ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:28:1]
+ 28 | child.method();
+    : ^^^^^
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:28:1]
+ 28 | child.method();
+    : ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
