@@ -1,0 +1,101 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:7:9]
+ 7 | this.t = this.t;
+   : ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:7:9]
+ 7 | this.t = this.t;
+   : ^^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:7:9]
+ 7 | this.t = this.t;
+   :          ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:7:9]
+ 7 | this.t = this.t;
+   :          ^^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:7:9]
+ 7 | this.t = this.t;
+   : ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:8:9]
+ 8 | this.u = this.u;
+   : ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:8:9]
+ 8 | this.u = this.u;
+   : ^^^^^^
+   `----
+
+Error: 
+  > U
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:8:9]
+ 8 | this.u = this.u;
+   :          ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:8:9]
+ 8 | this.u = this.u;
+   :          ^^^^^^
+   `----
+
+Error: 
+  > U
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:8:9]
+ 8 | this.u = this.u;
+   : ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > U
+
+  x Type
+   ,-[$DIR/tests/pass/types/this/class/type-param/1.ts:6:5]
+ 6 | ,-> r = () => {
+ 7 | |           this.t = this.t;
+ 8 | |           this.u = this.u;
+ 9 | `->     }
+   `----
+
+Error: 
+  > () => void
