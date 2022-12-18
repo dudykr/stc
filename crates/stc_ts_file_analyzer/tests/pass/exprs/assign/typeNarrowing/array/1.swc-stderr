@@ -1,0 +1,53 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+ 2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
+   :                                     ^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: "ok";
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+ 2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
+   :                                    ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: "ok";
+  | }[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:3:1]
+ 3 | arr.push({ x: "ok" });
+   : ^^^
+   `----
+
+Error: 
+  > {
+  |     x?: "ok";
+  | }[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:3:1]
+ 3 | arr.push({ x: "ok" });
+   :          ^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: "ok";
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:3:1]
+ 3 | arr.push({ x: "ok" });
+   : ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
