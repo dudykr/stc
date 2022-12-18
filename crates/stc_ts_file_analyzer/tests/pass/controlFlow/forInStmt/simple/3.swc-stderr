@@ -1,0 +1,109 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:6:5]
+ 6 | const b = k in obj;
+   :           ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:6:5]
+ 6 | const b = k in obj;
+   :                ^^^
+   `----
+
+Error: 
+  > {
+  |     [P in K]: T[P];
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:6:5]
+ 6 | const b = k in obj;
+   :           ^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:8:5]
+ 8 | for (k1 in obj) {
+   :            ^^^
+   `----
+
+Error: 
+  > {
+  |     [P in K]: T[P];
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:9:9]
+ 9 | let x1 = obj[k1];
+   :          ^^^
+   `----
+
+Error: 
+  > {
+  |     [P in K]: T[P];
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:9:9]
+ 9 | let x1 = obj[k1];
+   :              ^^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:9:9]
+ 9 | let x1 = obj[k1];
+   :          ^^^^^^^
+   `----
+
+Error: 
+  > T[P]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:11:5]
+ 11 | for (let k2 in obj) {
+    :                ^^^
+    `----
+
+Error: 
+  > {
+  |     [P in K]: T[P];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:12:9]
+ 12 | let x2 = obj[k2];
+    :          ^^^
+    `----
+
+Error: 
+  > {
+  |     [P in K]: T[P];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:12:9]
+ 12 | let x2 = obj[k2];
+    :              ^^
+    `----
+
+Error: 
+  > P
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/3.ts:12:9]
+ 12 | let x2 = obj[k2];
+    :          ^^^^^^^
+    `----
+
+Error: 
+  > T[P]
