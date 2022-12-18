@@ -1,0 +1,21 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/10.ts:6:5]
+ 6 | set [`hello bye`](v) { },
+   :      ^^^^^^^^^^^
+   `----
+
+Error: 
+  > "hello bye"
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/10.ts:5:1]
+ 5 | ,-> var v = {
+ 6 | |       set [`hello bye`](v) { },
+ 7 | `-> }
+   `----
+
+Error: 
+  > {
+  |     [`hello bye`]: any;
+  | }
