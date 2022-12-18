@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/nested-1.ts:4:13]
+ 4 | yield (foo);
+   :        ^^^
+   `----
+
+Error: 
+  > typeof foo
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/nested-1.ts:4:13]
+ 4 | yield (foo);
+   :       ^^^^^
+   `----
+
+Error: 
+  > typeof foo
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/nested-1.ts:4:13]
+ 4 | yield (foo);
+   : ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any

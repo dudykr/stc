@@ -1,0 +1,29 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
+ 2 | var v = { [yield]: foo }
+   :            ^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
+ 2 | var v = { [yield]: foo }
+   :                    ^^^
+   `----
+
+Error: 
+  > typeof foo
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
+ 2 | var v = { [yield]: foo }
+   :         ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     [yield]: typeof foo;
+  | }
