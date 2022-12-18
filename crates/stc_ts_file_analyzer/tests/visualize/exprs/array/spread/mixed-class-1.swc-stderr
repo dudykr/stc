@@ -1,0 +1,77 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:9:5]
+ 9 | [Symbol.iterator]() {
+   :  ^^^^^^
+   `----
+
+Error: 
+  > SymbolConstructor
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:9:5]
+ 9 | [Symbol.iterator]() {
+   :  ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > symbol
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:4:13]
+ 4 | value: Symbol(),
+   :        ^^^^^^^^
+   `----
+
+Error: 
+  > symbol
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:3:9]
+ 3 | ,-> return {
+ 4 | |               value: Symbol(),
+ 5 | |               done: false
+ 6 | `->         };
+   `----
+
+Error: 
+  > {
+  |     value: symbol;
+  |     done: false;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:10:9]
+ 10 | return this;
+    :        ^^^^
+    `----
+
+Error: 
+  > this
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:14:1]
+ 14 | export var array: number[] = [0, 1, ...new SymbolIterator];
+    :                                            ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > typeof SymbolIterator
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:14:1]
+ 14 | export var array: number[] = [0, 1, ...new SymbolIterator];
+    :                                        ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > SymbolIterator
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:14:1]
+ 14 | export var array: number[] = [0, 1, ...new SymbolIterator];
+    :                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ((0 | 1 | symbol))[]
