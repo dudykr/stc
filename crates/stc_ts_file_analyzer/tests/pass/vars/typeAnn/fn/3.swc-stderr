@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/pass/vars/typeAnn/fn/3.ts:2:1]
+ 2 | const fn: fn = a => a;
+   :                     ^
+   `----
+
+Error: 
+  > A
+
+  x Type
+   ,-[$DIR/tests/pass/vars/typeAnn/fn/3.ts:2:1]
+ 2 | const fn: fn = a => a;
+   :                ^^^^^^
+   `----
+
+Error: 
+  > (a: A) => A

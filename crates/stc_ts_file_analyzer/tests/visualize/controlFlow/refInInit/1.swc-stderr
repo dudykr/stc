@@ -1,0 +1,9 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/controlFlow/refInInit/1.ts:1:1]
+ 1 | for (var of of of) { }
+   :                ^^
+   `----
+
+Error: 
+  > any
