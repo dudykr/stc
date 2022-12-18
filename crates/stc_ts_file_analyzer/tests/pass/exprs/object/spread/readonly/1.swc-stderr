@@ -1,0 +1,59 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:8:1]
+  8 | ,-> export const obj: Readonly<ObjType> = {
+  9 | |       foo: 'bar',
+ 10 | |       baz: 'qux',
+ 11 | |       quux: 'quuz',
+ 12 | `-> }
+    `----
+
+Error: 
+  > {
+  |     foo: 'bar';
+  |     baz: 'qux';
+  |     quux: 'quuz';
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:14:1]
+ 14 | export const { foo, ...rest } = obj
+    :                                 ^^^
+    `----
+
+Error: 
+  > {
+  |     readonly foo: string;
+  |     readonly baz: string;
+  |     readonly quux: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
+ 16 | delete rest.baz
+    :        ^^^^
+    `----
+
+Error: 
+  > {
+  |     readonly baz: string;
+  |     readonly quux: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
+ 16 | delete rest.baz
+    :        ^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
+ 16 | delete rest.baz
+    : ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
