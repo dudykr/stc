@@ -1,0 +1,45 @@
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    : ^^^
+    `----
+
+Error: 
+  > <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    :     ^
+    `----
+
+Error: 
+  > (number | string)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    :        ^
+    `----
+
+Error: 
+  > (number | string)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    :           ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (number | string)
