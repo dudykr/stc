@@ -1,0 +1,108 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1]
+ 13 | xyz.x.a = "hello";
+    : ^^^
+    `----
+
+Error: 
+  > (X & Y & Z)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1]
+ 13 | xyz.x.a = "hello";
+    : ^^^^^
+    `----
+
+Error: 
+  > (A & B & C)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1]
+ 13 | xyz.x.a = "hello";
+    : ^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1]
+ 13 | xyz.x.a = "hello";
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "hello"
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1]
+ 14 | xyz.x.b = "hello";
+    : ^^^
+    `----
+
+Error: 
+  > (X & Y & Z)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1]
+ 14 | xyz.x.b = "hello";
+    : ^^^^^
+    `----
+
+Error: 
+  > (A & B & C)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1]
+ 14 | xyz.x.b = "hello";
+    : ^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1]
+ 14 | xyz.x.b = "hello";
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "hello"
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1]
+ 15 | xyz.x.c = "hello";
+    : ^^^
+    `----
+
+Error: 
+  > (X & Y & Z)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1]
+ 15 | xyz.x.c = "hello";
+    : ^^^^^
+    `----
+
+Error: 
+  > (A & B & C)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1]
+ 15 | xyz.x.c = "hello";
+    : ^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1]
+ 15 | xyz.x.c = "hello";
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "hello"
