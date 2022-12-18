@@ -1,0 +1,30 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/11.ts:6:5]
+ 6 | get [`hello ${a} bye`]() { return 0; }
+   :               ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/11.ts:6:5]
+ 6 | get [`hello ${a} bye`]() { return 0; }
+   :      ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > `hello ${any} bye`
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/11.ts:5:1]
+ 5 | ,-> var v = {
+ 6 | |       get [`hello ${a} bye`]() { return 0; }
+ 7 | `-> }
+   `----
+
+Error: 
+  > {
+  |     readonly [`hello ${a} bye`]: 0;
+  | }

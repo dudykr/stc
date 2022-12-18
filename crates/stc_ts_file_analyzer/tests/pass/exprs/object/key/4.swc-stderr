@@ -1,0 +1,39 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/4.ts:6:5]
+ 6 | set [s + n](v) { },
+   :      ^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/4.ts:6:5]
+ 6 | set [s + n](v) { },
+   :          ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/4.ts:6:5]
+ 6 | set [s + n](v) { },
+   :      ^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/4.ts:5:1]
+ 5 | ,-> var v = {
+ 6 | |       set [s + n](v) { },
+ 7 | `-> }
+   `----
+
+Error: 
+  > {
+  |     [s + n]: any;
+  | }
