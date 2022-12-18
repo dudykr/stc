@@ -1,0 +1,176 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | let vue = new Vue({
+    :               ^^^
+    `----
+
+Error: 
+  > new <P>(options: VueOptions<P>) => P
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:17:13]
+ 17 | return this.x;
+    :        ^^^^
+    `----
+
+Error: 
+  > this
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:17:13]
+ 17 | return this.x;
+    :        ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:19:9]
+ 19 | ,-> hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | `->         }
+    `----
+
+Error: 
+  > {
+  |     get(): "hi";
+  |     set(value: string): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:15:5]
+ 15 | ,-> computed: {
+ 16 | |           test(): number {
+ 17 | |               return this.x;
+ 18 | |           },
+ 19 | |           hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | |           }
+ 26 | `->     }
+    `----
+
+Error: 
+  > {
+  |     test(): number;
+  |     hello: {
+  |         get(): "hi";
+  |         set(value: string): void;
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | ,-> let vue = new Vue({
+ 15 | |       computed: {
+ 16 | |           test(): number {
+ 17 | |               return this.x;
+ 18 | |           },
+ 19 | |           hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | |           }
+ 26 | |       }
+ 27 | `-> });
+    `----
+
+Error: 
+  > {
+  |     computed: {
+  |         test(): number;
+  |         hello: {
+  |             get(): "hi";
+  |             set(value: string): void;
+  |         };
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | ,-> let vue = new Vue({
+ 15 | |       computed: {
+ 16 | |           test(): number {
+ 17 | |               return this.x;
+ 18 | |           },
+ 19 | |           hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | |           }
+ 26 | |       }
+ 27 | `-> });
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:29:1]
+ 29 | vue;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:30:1]
+ 30 | vue.test;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:30:1]
+ 30 | vue.test;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:31:1]
+ 31 | vue.hello;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:31:1]
+ 31 | vue.hello;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > string

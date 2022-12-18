@@ -1,0 +1,20 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/3.ts:2:5]
+ 2 | x = {};
+   :     ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/3.ts:2:5]
+ 2 | x = {};
+   : ^^^^^^
+   `----
+
+Error: 
+  > {
+  | }
