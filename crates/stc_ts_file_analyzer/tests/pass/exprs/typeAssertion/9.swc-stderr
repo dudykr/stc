@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:9:5]
+ 9 | x!.slice();
+   : ^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:9:5]
+ 9 | x!.slice();
+   : ^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:9:5]
+ 9 | x!.slice();
+   : ^^^^^^^^^^
+   `----
+
+Error: 
+  > string
