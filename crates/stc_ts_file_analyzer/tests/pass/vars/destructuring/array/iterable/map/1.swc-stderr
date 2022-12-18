@@ -2,6 +2,15 @@
   x Type
    ,-[$DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:1]
  1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
+   :                                         ^^^
+   `----
+
+Error: 
+  > MapConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:1]
+ 1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
    :                                              ^^^^^^^^^^
    `----
 
@@ -25,15 +34,6 @@ Error:
 
 Error: 
   > [["", true], ["hello", true]]
-
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:1]
- 1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
-   :                                         ^^^
-   `----
-
-Error: 
-  > MapConstructor
 
   x Type
    ,-[$DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:1]

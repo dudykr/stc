@@ -29,20 +29,20 @@ Error:
   x Type
    ,-[$DIR/tests/pass/exprs/unary/typeof/simple.ts:4:5]
  4 | console.log(s)
-   :             ^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/unary/typeof/simple.ts:4:5]
- 4 | console.log(s)
    : ^^^^^^^
    `----
 
 Error: 
   > Console
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/simple.ts:4:5]
+ 4 | console.log(s)
+   :             ^
+   `----
+
+Error: 
+  > string
 
   x Type
    ,-[$DIR/tests/pass/exprs/unary/typeof/simple.ts:4:5]

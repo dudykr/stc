@@ -1,12 +1,12 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:2:5]
- 2 | .finally(function () { });
-   :          ^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
+ 1 | export let promise1 = new Promise(function (resolve, reject) { })
+   :                           ^^^^^^^
    `----
 
 Error: 
-  > () => void
+  > PromiseConstructor
 
   x Type
    ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
@@ -16,15 +16,6 @@ Error:
 
 Error: 
   > (resolve: any, reject: any) => void
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
- 1 | export let promise1 = new Promise(function (resolve, reject) { })
-   :                           ^^^^^^^
-   `----
-
-Error: 
-  > PromiseConstructor
 
   x Type
    ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
@@ -43,6 +34,15 @@ Error:
 
 Error: 
   > Promise<T>
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:2:5]
+ 2 | .finally(function () { });
+   :          ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => void
 
   x Type
    ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]

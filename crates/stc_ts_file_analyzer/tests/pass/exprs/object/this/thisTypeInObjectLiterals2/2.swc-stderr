@@ -1,5 +1,14 @@
 
   x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:1]
+ 16 | let vue = new Vue({
+    :               ^^^
+    `----
+
+Error: 
+  > new <D, M, P>(options: VueOptions<D, M, P>) => (D & M & P)
+
+  x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:5]
  17 | data: () => ({ x: 1, y: 2 }),
     :              ^^^^^^^^^^^^^^
@@ -168,15 +177,6 @@ Error:
   |         };
   |     };
   | }
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:1]
- 16 | let vue = new Vue({
-    :               ^^^
-    `----
-
-Error: 
-  > new <D, M, P>(options: VueOptions<D, M, P>) => (D & M & P)
 
   x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:1]

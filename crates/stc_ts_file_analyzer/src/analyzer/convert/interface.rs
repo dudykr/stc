@@ -102,10 +102,9 @@ impl Analyzer<'_, '_> {
                     ) {
                         match &*err {
                             ErrorKind::MissingFields { .. } => {}
-
                             ErrorKind::Errors { errors, .. }
                                 if errors.iter().all(|err| matches!(&**err, ErrorKind::MissingFields { .. })) => {}
-
+                            ErrorKind::ObjectAssignFailed { .. } => {}
                             _ => self.storage.report(err.convert(|err| ErrorKind::InterfaceNotCompatible { span })),
                         }
                     }

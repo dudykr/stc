@@ -78,11 +78,13 @@ Error:
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
  27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                          ^^^^^^
+    :          ^^^^^^^^
     `----
 
 Error: 
-  > None
+  > <a>(some: a) => {
+  |     some: a;
+  | }
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
@@ -92,6 +94,15 @@ Error:
 
 Error: 
   > <a>(value: Optional<a>) => value is Some<a>
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
+ 27 | result = someFrom(isSome(result) ? result.some : makeSome());
+    :                          ^^^^^^
+    `----
+
+Error: 
+  > None
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
@@ -146,17 +157,6 @@ Error:
 
 Error: 
   > (a | r)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :          ^^^^^^^^
-    `----
-
-Error: 
-  > <a>(some: a) => {
-  |     some: a;
-  | }
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]

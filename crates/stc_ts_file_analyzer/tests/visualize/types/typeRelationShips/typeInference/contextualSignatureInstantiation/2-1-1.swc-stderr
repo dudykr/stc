@@ -2,20 +2,20 @@
   x Type
     ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1-1.ts:13:1]
  13 | bar(1, "one", g);
-    :               ^
-    `----
-
-Error: 
-  > <T>(x: T, y: T) => T
-
-  x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1-1.ts:13:1]
- 13 | bar(1, "one", g);
     : ^^^
     `----
 
 Error: 
   > <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1-1.ts:13:1]
+ 13 | bar(1, "one", g);
+    :               ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1-1.ts:13:1]

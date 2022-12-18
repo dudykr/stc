@@ -2,20 +2,20 @@
   x Type
     ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:1]
  15 | var a = bar(1, 1, g);      // Should be number
-    :                   ^
-    `----
-
-Error: 
-  > <T>(x: T, y: T) => T
-
-  x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:1]
- 15 | var a = bar(1, 1, g);      // Should be number
     :         ^^^
     `----
 
 Error: 
   > <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:1]
+ 15 | var a = bar(1, 1, g);      // Should be number
+    :                   ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:1]
@@ -29,20 +29,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:1]
  16 | var a = baz(1, 1, g);      // Should be number
-    :                   ^
-    `----
-
-Error: 
-  > <T>(x: T, y: T) => T
-
-  x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:1]
- 16 | var a = baz(1, 1, g);      // Should be number
     :         ^^^
     `----
 
 Error: 
   > <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:1]
+ 16 | var a = baz(1, 1, g);      // Should be number
+    :                   ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
 
   x Type
     ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:1]

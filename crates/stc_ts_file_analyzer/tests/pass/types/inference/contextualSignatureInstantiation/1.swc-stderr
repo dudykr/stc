@@ -2,20 +2,20 @@
   x Type
     ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:12:1]
  12 | var d = bar(1, "one", h);  // Should be number[] | string[]
-    :                       ^
-    `----
-
-Error: 
-  > <T, U>(x: T, y: U) => (T[] | U[])
-
-  x Type
-    ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:12:1]
- 12 | var d = bar(1, "one", h);  // Should be number[] | string[]
     :         ^^^
     `----
 
 Error: 
   > <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:12:1]
+ 12 | var d = bar(1, "one", h);  // Should be number[] | string[]
+    :                       ^
+    `----
+
+Error: 
+  > <T, U>(x: T, y: U) => (T[] | U[])
 
   x Type
     ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:12:1]
@@ -29,20 +29,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:13:1]
  13 | var d = bar("one", 1, h);  // Should be number[] | string[]
-    :                       ^
-    `----
-
-Error: 
-  > <T, U>(x: T, y: U) => (T[] | U[])
-
-  x Type
-    ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:13:1]
- 13 | var d = bar("one", 1, h);  // Should be number[] | string[]
     :         ^^^
     `----
 
 Error: 
   > <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:13:1]
+ 13 | var d = bar("one", 1, h);  // Should be number[] | string[]
+    :                       ^
+    `----
+
+Error: 
+  > <T, U>(x: T, y: U) => (T[] | U[])
 
   x Type
     ,-[$DIR/tests/pass/types/inference/contextualSignatureInstantiation/1.ts:13:1]

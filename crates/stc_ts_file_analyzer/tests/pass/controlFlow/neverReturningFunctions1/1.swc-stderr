@@ -2,20 +2,20 @@
   x Type
    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:5:5]
  5 | throw new Error(message);
-   :                 ^^^^^^^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:5:5]
- 5 | throw new Error(message);
    :           ^^^^^
    `----
 
 Error: 
   > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:5:5]
+ 5 | throw new Error(message);
+   :                 ^^^^^^^
+   `----
+
+Error: 
+  > string
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:5:5]

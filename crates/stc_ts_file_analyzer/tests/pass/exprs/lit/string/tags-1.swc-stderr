@@ -52,20 +52,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
  29 | if (!hasKind(x, "B")) {
-    :              ^
-    `----
-
-Error: 
-  > A
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
- 29 | if (!hasKind(x, "B")) {
     :      ^^^^^^^
     `----
 
 Error: 
   > ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
+ 29 | if (!hasKind(x, "B")) {
+    :              ^
+    `----
+
+Error: 
+  > A
 
   x Type
     ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]

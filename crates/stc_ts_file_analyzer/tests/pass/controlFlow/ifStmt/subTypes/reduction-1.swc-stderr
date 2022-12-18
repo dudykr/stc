@@ -92,16 +92,6 @@ Error:
   x Type
     ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]
  21 | v.onChanges({});
-    :             ^^
-    `----
-
-Error: 
-  > {
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]
- 21 | v.onChanges({});
     : ^
     `----
 
@@ -109,6 +99,16 @@ Error:
   > (Validator & {
   |     onChanges?: OnChanges["onChanges"];
   | })
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]
+ 21 | v.onChanges({});
+    :             ^^
+    `----
+
+Error: 
+  > {
+  | }
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]

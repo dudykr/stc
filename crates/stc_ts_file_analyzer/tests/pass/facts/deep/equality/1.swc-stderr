@@ -53,20 +53,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
  18 | useA(foo.obj.obj2)
-    :      ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > A
-
-  x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
- 18 | useA(foo.obj.obj2)
     : ^^^^
     `----
 
 Error: 
   > (a: A) => void
+
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
+ 18 | useA(foo.obj.obj2)
+    :      ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > A
 
   x Type
     ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]

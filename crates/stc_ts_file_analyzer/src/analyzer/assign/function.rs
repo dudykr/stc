@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 
 use fxhash::FxHashMap;
-use itertools::{EitherOrBoth, Itertools};
+use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
     ctx,
-    debug::{dump_type_as_string, dump_type_map},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
@@ -647,19 +647,28 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.assign_param_type(data, &l.ty, &r.ty, opts)
+    }
+
+    /// Implementation of `assign_param`.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
+    fn assign_param_type(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
+        let span = opts.span;
+        debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
+
         // TODO(kdy1): Change this to extends call.
 
         let res = if self.rule().strict_function_types {
             if opts.for_overload {
-                self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                self.assign_with_opts(data, l, r, opts)
                     .context("tried to assign the type of a parameter to another")
             } else {
-                self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                self.assign_with_opts(data, r, l, opts)
                     .context("tried to assign the type of a parameter to another (reversed due to variance)")
             }
         } else {
             if opts.for_overload {
-                let rhs = &r.ty.normalize();
+                let rhs = &r.normalize();
 
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
@@ -668,7 +677,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Number(..), ..
                             }) => self.assign_with_opts(
                                 data,
-                                &l.ty,
+                                l,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -678,7 +687,7 @@ impl Analyzer<'_, '_> {
                             ),
                             Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => self.assign_with_opts(
                                 data,
-                                &l.ty,
+                                l,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -687,19 +696,19 @@ impl Analyzer<'_, '_> {
                                 opts,
                             ),
                             _ => self
-                                .assign_with_opts(data, &l.ty, &r.ty, opts)
+                                .assign_with_opts(data, l, r, opts)
                                 .context("tried to assign the type of a parameter to another"),
                         }
                     } else {
-                        self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                        self.assign_with_opts(data, l, r, opts)
                             .context("tried to assign the type of a parameter to another")
                     }
                 } else {
-                    self.assign_with_opts(data, &l.ty, &r.ty, opts)
+                    self.assign_with_opts(data, l, r, opts)
                         .context("tried to assign the type of a parameter to another")
                 }
             } else {
-                let rhs = &r.ty.normalize();
+                let rhs = r.normalize();
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
                         match lit {
@@ -712,7 +721,7 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
                                 }),
-                                &r.ty,
+                                r,
                                 opts,
                             ),
                             Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => self.assign_with_opts(
@@ -722,19 +731,19 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
                                 }),
-                                &l.ty,
+                                l,
                                 opts,
                             ),
                             _ => self
-                                .assign_with_opts(data, &r.ty, &l.ty, opts)
+                                .assign_with_opts(data, r, l, opts)
                                 .context("tried to assign the type of a parameter to another"),
                         }
                     } else {
-                        self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                        self.assign_with_opts(data, r, l, opts)
                             .context("tried to assign the type of a parameter to another")
                     }
                 } else {
-                    self.assign_with_opts(data, &r.ty, &l.ty, opts)
+                    self.assign_with_opts(data, r, l, opts)
                         .context("tried to assign the type of a parameter to another")
                 }
             }
@@ -781,7 +790,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
-        let li = l.iter().filter(|p| {
+        let mut li = l.iter().filter(|p| {
             !matches!(
                 p.pat,
                 RPat::Ident(RBindingIdent {
@@ -790,7 +799,7 @@ impl Analyzer<'_, '_> {
                 })
             )
         });
-        let ri = r.iter().filter(|p| {
+        let mut ri = r.iter().filter(|p| {
             !matches!(
                 p.pat,
                 RPat::Ident(RBindingIdent {
@@ -833,37 +842,97 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        for pair in li.zip_longest(ri) {
-            match pair {
-                EitherOrBoth::Both(lp, rp) => {
-                    // TODO(kdy1): What should we do?
-                    if opts.allow_assignment_to_param {
-                        if let Ok(()) = self.assign_param(
-                            data,
-                            rp,
-                            lp,
-                            AssignOpts {
-                                allow_unknown_type: true,
-                                ..opts
-                            },
-                        ) {
-                            continue;
+        loop {
+            let l = li.next();
+            let r = ri.next();
+
+            let (Some(l), Some(r)) = (l, r) else {
+                break
+            };
+
+            let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
+
+            // TODO(kdy1): What should we do?
+            if opts.allow_assignment_to_param {
+                if let Ok(()) = self.assign_param(
+                    data,
+                    r,
+                    l,
+                    AssignOpts {
+                        allow_unknown_type: true,
+                        ..opts
+                    },
+                ) {
+                    continue;
+                }
+            }
+
+            // A rest pattern is always the last
+            match (&l.pat, &r.pat) {
+                (RPat::Rest(..), RPat::Rest(..)) => {
+                    let _ctx = ctx!(format!("tried to assign a rest parameter to another rest parameter"));
+                    self.assign_param(data, l, r, opts)?;
+                    break;
+                }
+
+                (RPat::Rest(..), _) => {
+                    let _ctx = ctx!(format!(
+                        "tried to assign parameters to a rest parameter; l_ty = {}",
+                        force_dump_type_as_string(&l.ty)
+                    ));
+
+                    // TODO(kdy1): Implement correcr logic
+
+                    return Ok(());
+                }
+
+                (_, RPat::Rest(..)) => {
+                    let _ctx = ctx!(format!(
+                        "tried to assign a rest parameter to parameters; r_ty = {}",
+                        force_dump_type_as_string(&r.ty)
+                    ));
+
+                    // If r is a tuple, we should assign each element to l.
+                    let r_ty = self.normalize(Some(span), Cow::Borrowed(&r.ty), Default::default())?;
+                    if let Some(r_tuple) = r_ty.as_tuple() {
+                        let mut ri = r_tuple.elems.iter();
+
+                        let r = ri.next();
+                        if let Some(ri) = r {
+                            self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
                         }
+                        for l in li {
+                            let r = ri.next();
+                            if let Some(ri) = r {
+                                self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                            }
+                        }
+
+                        return Ok(());
                     }
 
-                    let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
+                    let _ctx = ctx!(format!("tried to assign a rest parameter to parameters where r-ty is not a tuple"));
+
+                    self.assign_param(data, l, r, opts)?;
+
+                    for l in li {
+                        self.assign_param(data, l, r, opts)?;
+                    }
+
+                    return Ok(());
+                }
+
+                _ => {
                     self.assign_param(
                         data,
-                        lp,
-                        rp,
+                        l,
+                        r,
                         AssignOpts {
                             allow_unknown_type: true,
                             ..opts
                         },
                     )?;
                 }
-                EitherOrBoth::Left(_) => {}
-                EitherOrBoth::Right(_) => {}
             }
         }
 

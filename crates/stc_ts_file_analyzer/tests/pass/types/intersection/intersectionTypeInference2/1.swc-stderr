@@ -2,15 +2,6 @@
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]
  6 | f(a);  // never
-   :   ^
-   `----
-
-Error: 
-  > never
-
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]
- 6 | f(a);  // never
    : ^
    `----
 
@@ -18,6 +9,15 @@ Error:
   > <T>(x: {
   |     prop: T;
   | }) => T
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]
+ 6 | f(a);  // never
+   :   ^
+   `----
+
+Error: 
+  > never
 
   x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]

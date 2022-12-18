@@ -25,7 +25,7 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/this/contextual-1.ts:14:1]
  14 | var y = x.a(x);
-    :             ^
+    :         ^
     `----
 
 Error: 
@@ -34,7 +34,7 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/this/contextual-1.ts:14:1]
  14 | var y = x.a(x);
-    :         ^
+    :             ^
     `----
 
 Error: 

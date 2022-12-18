@@ -11,6 +11,15 @@ Error:
   x Type
    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
  8 | super.baz(a, y);
+   : ^^^^^^^^^
+   `----
+
+Error: 
+  > (a: string, y?: number) => void
+
+  x Type
+   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
+ 8 | super.baz(a, y);
    :           ^
    `----
 
@@ -25,15 +34,6 @@ Error:
 
 Error: 
   > number
-
-  x Type
-   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
- 8 | super.baz(a, y);
-   : ^^^^^^^^^
-   `----
-
-Error: 
-  > (a: string, y?: number) => void
 
   x Type
    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
