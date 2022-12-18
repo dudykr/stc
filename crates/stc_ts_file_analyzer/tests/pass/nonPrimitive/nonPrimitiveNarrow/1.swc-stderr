@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+ 7 | if (a instanceof Narrow) {
+   :     ^
+   `----
+
+Error: 
+  > object
+
+  x Type
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+ 7 | if (a instanceof Narrow) {
+   :                  ^^^^^^
+   `----
+
+Error: 
+  > typeof Narrow
+
+  x Type
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+ 7 | if (a instanceof Narrow) {
+   :     ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:8:5]
+ 8 | a.narrowed; // ok
+   : ^
+   `----
+
+Error: 
+  > Narrow
+
+  x Type
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:8:5]
+ 8 | a.narrowed; // ok
+   : ^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
