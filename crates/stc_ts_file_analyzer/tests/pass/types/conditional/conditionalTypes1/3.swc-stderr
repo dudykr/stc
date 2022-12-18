@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/3.ts:2:5]
+ 2 | x = y;
+   :     ^
+   `----
+
+Error: 
+  > T extends (null | undefined) ? never : T
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/3.ts:2:5]
+ 2 | x = y;
+   : ^^^^^
+   `----
+
+Error: 
+  > T extends (null | undefined) ? never : T
