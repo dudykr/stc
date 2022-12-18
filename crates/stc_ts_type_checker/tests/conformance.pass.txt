@@ -1865,7 +1865,6 @@ parser/ecmascript5/parserUsingConstructorAsIdentifier.ts
 parser/ecmascript5/parserVoidExpression1.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript5/parservoidInQualifiedName2.ts
-parser/ecmascript6/ComputedPropertyNames/parserCambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName17.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName2.ts
@@ -2025,7 +2024,6 @@ types/forAwait/types.forAwait.es2018.1.ts
 types/forAwait/types.forAwait.es2018.2.ts
 types/forAwait/types.forAwait.es2018.3.ts
 types/intersection/contextualIntersectionType.ts
-types/intersection/intersectionAndUnionTypes.ts
 types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
@@ -2283,7 +2281,6 @@ types/tuple/wideningTuples2.ts
 types/tuple/wideningTuples4.ts
 types/tuple/wideningTuples5.ts
 types/tuple/wideningTuples6.ts
-types/tySymbols/ES5SymbolProperty1.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
 types/typeAliases/circularTypeAliasForUnionWithClass.ts
@@ -2485,7 +2482,6 @@ types/typeRelationships/widenedTypes/arrayLiteralWidened.ts
 types/typeRelationships/widenedTypes/initializersWidened.ts
 types/typeRelationships/widenedTypes/objectLiteralWidened.ts
 types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
-types/typeRelationshipsSymbols/ES5SymbolProperty1.ts
 types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts
