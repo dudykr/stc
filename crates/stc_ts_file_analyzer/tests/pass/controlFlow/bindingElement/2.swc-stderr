@@ -46,7 +46,7 @@ Error:
    `----
 
 Error: 
-  > () => void
+  > () => never
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/bindingElement/2.ts:8:9]
@@ -55,7 +55,7 @@ Error:
    `----
 
 Error: 
-  > () => void
+  > () => never
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/bindingElement/2.ts:8:9]
@@ -64,7 +64,7 @@ Error:
    `----
 
 Error: 
-  > void
+  > never
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/bindingElement/2.ts:11:5]

@@ -2,6 +2,17 @@
   x Type
     ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:12:1]
  12 | export let r2 = f10(a2); // string
+    :                 ^^^
+    `----
+
+Error: 
+  > <T>(x: {
+  |     foo: T;
+  | }) => T
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:12:1]
+ 12 | export let r2 = f10(a2); // string
     :                     ^^
     `----
 
@@ -14,27 +25,6 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:12:1]
  12 | export let r2 = f10(a2); // string
-    :                 ^^^
-    `----
-
-Error: 
-  > <T>(x: {
-  |     foo: T;
-  | }) => T
-
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
- 14 | export let r2 = f10(a2);  // string
-    :                 ^^^
-    `----
-
-Error: 
-  > <T>(x: {
-  |     foo: T;
-  | }) => T
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
- 14 | export let r2 = f10(a2);  // string
     :                 ^^^^^^^
     `----
 

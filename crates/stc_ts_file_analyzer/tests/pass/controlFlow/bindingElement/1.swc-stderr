@@ -46,7 +46,7 @@ Error:
    `----
 
 Error: 
-  > () => void
+  > () => never
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/bindingElement/1.ts:7:9]
@@ -55,7 +55,7 @@ Error:
    `----
 
 Error: 
-  > () => void
+  > () => never
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/bindingElement/1.ts:7:9]
@@ -64,16 +64,7 @@ Error:
    `----
 
 Error: 
-  > void
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/bindingElement/1.ts:10:5]
- 10 | console.log(param); // should not trigger 'Unreachable code detected.'
-    :             ^^^^^
-    `----
-
-Error: 
-  > string
+  > never
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/bindingElement/1.ts:10:5]
@@ -83,6 +74,15 @@ Error:
 
 Error: 
   > Console
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/bindingElement/1.ts:10:5]
+ 10 | console.log(param); // should not trigger 'Unreachable code detected.'
+    :             ^^^^^
+    `----
+
+Error: 
+  > string
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/bindingElement/1.ts:10:5]

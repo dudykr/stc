@@ -1180,11 +1180,23 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
+            dbg!(&obj);
+            let mut ty = analyzer.access_property_inner(span, &obj, prop, type_mode, id_ctx, opts)?.fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
-            Ok(ty)
+            let mut result = analyzer
+                .normalize(
+                    Some(span),
+                    Cow::Owned(ty),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )?
+                .into_owned();
+            result.make_clone_cheap();
+            Ok(result)
         });
 
         if !self.is_builtin {
@@ -2248,11 +2260,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(Interface { ref body, extends, .. }) => {
                 if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
-                    let result = self
-                        .normalize(Some(span), Cow::Owned(v), NormalizeTypeOpts { ..Default::default() })
-                        .unwrap()
-                        .into_owned();
-                    return Ok(result);
+                    return Ok(v);
                 }
 
                 for super_ty in extends {
@@ -2772,19 +2780,7 @@ impl Analyzer<'_, '_> {
                 let mut new = vec![];
                 for ty in types {
                     if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
-                        let res = self
-                            .normalize(
-                                Some(span),
-                                Cow::Owned(v),
-                                NormalizeTypeOpts {
-                                    preserve_global_this: true,
-                                    preserve_intersection: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .unwrap()
-                            .into_owned();
-                        new.push(res);
+                        new.push(v);
                     }
                 }
                 // Exclude accesses to type params.
