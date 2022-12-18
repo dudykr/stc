@@ -1,0 +1,117 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:5:5]
+ 5 | return g(x);
+   :        ^
+   `----
+
+Error: 
+  > (x: T) => T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:5:5]
+ 5 | return g(x);
+   :          ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:5:5]
+ 5 | return g(x);
+   :        ^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :         ^^^
+   `----
+
+Error: 
+  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :                    ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :               ^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :              ^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :             ^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :                                ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :                           ^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :                          ^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :                         ^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts:8:1]
+ 8 | var g = fun(((x => x)), ((x => x)), 10);
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
