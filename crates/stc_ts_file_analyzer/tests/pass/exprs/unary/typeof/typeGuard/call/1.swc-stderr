@@ -1,0 +1,90 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:3:5]
+ 3 | for (const k of keys) {
+   :                 ^^^^
+   `----
+
+Error: 
+  > K[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:4:9]
+ 4 | const item = obj[k];
+   :              ^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:4:9]
+ 4 | const item = obj[k];
+   :                  ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:4:9]
+ 4 | const item = obj[k];
+   :              ^^^^^^
+   `----
+
+Error: 
+  > T[K]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:5:9]
+ 5 | if (typeof item == 'function')
+   :            ^^^^
+   `----
+
+Error: 
+  > T[K]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:5:9]
+ 5 | if (typeof item == 'function')
+   :     ^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:5:9]
+ 5 | if (typeof item == 'function')
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:13]
+ 6 | item.call(obj);
+   : ^^^^
+   `----
+
+Error: 
+  > (T[K] | (...args: any) => any)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:13]
+ 6 | item.call(obj);
+   :           ^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:13]
+ 6 | item.call(obj);
+   : ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
