@@ -1,0 +1,94 @@
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:5:9]
+ 5 | *[Symbol.iterator]() {
+   :   ^^^^^^
+   `----
+
+Error: 
+  > SymbolConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:5:9]
+ 5 | *[Symbol.iterator]() {
+   :   ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > symbol
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:6:13]
+ 6 | yield (x: string) => x.length
+   :                      ^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:6:13]
+ 6 | yield (x: string) => x.length
+   :                      ^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:6:13]
+ 6 | yield (x: string) => x.length
+   :       ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: string) => number
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:6:13]
+ 6 | yield (x: string) => x.length
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:4:5]
+ 4 | ,-> yield* {
+ 5 | |           *[Symbol.iterator]() {
+ 6 | |               yield (x: string) => x.length
+ 7 | |           }
+ 8 | `->     }
+   `----
+
+Error: 
+  > {
+  |     [Symbol.iterator](): Generator<(x: string) => number, void, unknown>;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:4:5]
+ 4 | ,-> yield* {
+ 5 | |           *[Symbol.iterator]() {
+ 6 | |               yield (x: string) => x.length
+ 7 | |           }
+ 8 | `->     }
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/fn/generator/infer/1.ts:3:1]
+ 3 | ,-> export const gen = function* () {
+ 4 | |       yield* {
+ 5 | |           *[Symbol.iterator]() {
+ 6 | |               yield (x: string) => x.length
+ 7 | |           }
+ 8 | |       }
+ 9 | `-> };
+   `----
+
+Error: 
+  > () => Generator<(x: string) => number, void, unknown>
