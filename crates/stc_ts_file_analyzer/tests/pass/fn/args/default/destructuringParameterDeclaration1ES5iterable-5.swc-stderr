@@ -1,0 +1,30 @@
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-5.ts:9:1]
+ 9 | export default c2({});         // Implied type is {z?: number}
+   :                ^^
+   `----
+
+Error: 
+  > ({ z =10  }: {
+  |     z?;
+  | }) => void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-5.ts:9:1]
+ 9 | export default c2({});         // Implied type is {z?: number}
+   :                   ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-5.ts:9:1]
+ 9 | export default c2({});         // Implied type is {z?: number}
+   :                ^^^^^^
+   `----
+
+Error: 
+  > void
