@@ -1,0 +1,36 @@
+
+  x Type
+   ,-[$DIR/tests/pass/variance/covariance/1.ts:1:1]
+ 1 | let arrayStringOrNumber: Array<string | number> = [];
+   :                                                   ^^
+   `----
+
+Error: 
+  > []
+
+  x Type
+   ,-[$DIR/tests/pass/variance/covariance/1.ts:2:1]
+ 2 | let arrayString: Array<string> = [];
+   :                                  ^^
+   `----
+
+Error: 
+  > []
+
+  x Type
+   ,-[$DIR/tests/pass/variance/covariance/1.ts:4:1]
+ 4 | arrayStringOrNumber = arrayString; // Ok
+   :                       ^^^^^^^^^^^
+   `----
+
+Error: 
+  > string[]
+
+  x Type
+   ,-[$DIR/tests/pass/variance/covariance/1.ts:4:1]
+ 4 | arrayStringOrNumber = arrayString; // Ok
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string[]
