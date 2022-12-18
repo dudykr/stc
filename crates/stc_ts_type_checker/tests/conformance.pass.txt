@@ -2667,6 +2667,7 @@ expressions/typeGuards/typeGuardFunction.ts
 expressions/typeGuards/typeGuardFunctionGenerics.ts
 expressions/typeGuards/typeGuardFunctionGenerics.ts
 expressions/typeGuards/typeGuardIntersectionTypes.ts
+expressions/typeGuards/typeGuardIntersectionTypes.ts
 expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
