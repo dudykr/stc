@@ -1,5 +1,5 @@
 use rnode::{Fold, FoldWith};
-use stc_ts_types::{Array, ArrayMetadata, KeywordType, Type};
+use stc_ts_types::{Array, ArrayMetadata, KeywordType, PropertySignature, Type};
 use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -55,5 +55,15 @@ impl Fold<Type> for Widen {
 
             _ => ty,
         }
+    }
+}
+
+impl Fold<PropertySignature> for Widen {
+    fn fold(&mut self, mut value: PropertySignature) -> PropertySignature {
+        value = value.fold_children_with(self);
+
+        value.optional = true;
+
+        value
     }
 }
