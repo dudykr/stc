@@ -376,11 +376,46 @@ pub enum Key {
 impl TypeEq for Key {
     fn type_eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Key::Computed(l), Key::Computed(r)) => l.type_eq(r),
             (Key::Normal { sym: l, .. }, Key::Normal { sym: r, .. }) => l == r,
             (Key::Num(l), Key::Num(r)) => l.type_eq(r),
             (Key::BigInt(l), Key::BigInt(r)) => l.type_eq(r),
             (Key::Private(l), Key::Private(r)) => l.type_eq(r),
+
+            (Key::Private(..), _) | (_, Key::Private(..)) => false,
+
+            (Key::Computed(ComputedKey { ty: a, .. }), b) | (b, Key::Computed(ComputedKey { ty: a, .. })) => match b {
+                Key::Computed(b) => a.type_eq(&b.ty),
+                Key::Normal { sym, .. } => match &**a {
+                    Type::Lit(LitType {
+                        lit: RTsLit::Str(RStr { value: v, .. }),
+                        ..
+                    }) => v == sym,
+                    Type::Lit(LitType {
+                        lit: RTsLit::Number(RNumber { value: v, .. }),
+                        ..
+                    }) => Ok(*v) == sym.parse::<f64>(),
+                    _ => false,
+                },
+                Key::Num(b) => match &**a {
+                    Type::Lit(LitType {
+                        lit: RTsLit::Str(RStr { value: v, .. }),
+                        ..
+                    }) => Ok(b.value) == v.parse::<f64>(),
+                    Type::Lit(LitType {
+                        lit: RTsLit::Number(RNumber { value: v, .. }),
+                        ..
+                    }) => *v == b.value,
+                    _ => false,
+                },
+                Key::BigInt(b) => match &**a {
+                    Type::Lit(LitType {
+                        lit: RTsLit::BigInt(RBigInt { value: v, .. }),
+                        ..
+                    }) => *v == b.value,
+                    _ => false,
+                },
+                Key::Private(..) => false,
+            },
 
             (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
             | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
