@@ -1,0 +1,99 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:5:5]
+ 5 | const fail = (): never => { throw new Error(); };
+   :                                       ^^^^^
+   `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:5:5]
+ 5 | const fail = (): never => { throw new Error(); };
+   :                                   ^^^^^^^^^^^
+   `----
+
+Error: 
+  > Error
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:5:5]
+ 5 | const fail = (): never => { throw new Error(); };
+   :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:6:5]
+ 6 | const f = [fail];
+   :            ^^^^
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:6:5]
+ 6 | const f = [fail];
+   :           ^^^^^^
+   `----
+
+Error: 
+  > () => never[]
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:7:5]
+ 7 | fail();  // No effect (missing type annotation)
+   : ^^^^
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:7:5]
+ 7 | fail();  // No effect (missing type annotation)
+   : ^^^^^^
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:8:5]
+ 8 | f[0]();  // No effect (not a dotted name)
+   : ^
+   `----
+
+Error: 
+  > () => never[]
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:8:5]
+ 8 | f[0]();  // No effect (not a dotted name)
+   : ^^^^
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:8:5]
+ 8 | f[0]();  // No effect (not a dotted name)
+   : ^^^^^^
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:9:5]
+ 9 | f;
+   : ^
+   `----
+
+Error: 
+  > () => never[]
