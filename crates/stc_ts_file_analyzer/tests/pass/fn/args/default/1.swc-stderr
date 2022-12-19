@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/1.ts:2:1]
+ 2 | export function foo({ z }: { z?: string } = {}) { }
+   :                                             ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/1.ts:4:1]
+ 4 | foo({})
+   : ^^^
+   `----
+
+Error: 
+  > ({ z  }: {
+  |     z?: string;
+  | }) => void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/1.ts:4:1]
+ 4 | foo({})
+   :     ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/default/1.ts:4:1]
+ 4 | foo({})
+   : ^^^^^^^
+   `----
+
+Error: 
+  > void
