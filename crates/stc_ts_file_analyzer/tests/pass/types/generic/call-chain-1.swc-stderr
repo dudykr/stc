@@ -107,8 +107,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
- 7 | export let t1 = a?.m?.({ x: 12 });
-   :                 ^
+ 7 | export let t1: 12 | undefined = a?.m?.({ x: 12 });
+   :                                 ^
    `----
 
 Error: 
@@ -120,8 +120,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
- 7 | export let t1 = a?.m?.({ x: 12 });
-   :                 ^^^^
+ 7 | export let t1: 12 | undefined = a?.m?.({ x: 12 });
+   :                                 ^^^^
    `----
 
 Error: 
@@ -131,8 +131,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
- 7 | export let t1 = a?.m?.({ x: 12 });
-   :                        ^^^^^^^^^
+ 7 | export let t1: 12 | undefined = a?.m?.({ x: 12 });
+   :                                        ^^^^^^^^^
    `----
 
 Error: 
@@ -142,12 +142,12 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
- 7 | export let t1 = a?.m?.({ x: 12 });
-   :                 ^^^^^^^^^^^^^^^^^
+ 7 | export let t1: 12 | undefined = a?.m?.({ x: 12 });
+   :                                 ^^^^^^^^^^^^^^^^^
    `----
 
 Error: 
-  > (undefined | number)
+  > (undefined | 12)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]

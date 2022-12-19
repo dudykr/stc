@@ -10,8 +10,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
- 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
-    :                          ^^^^^
+ 12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
+    :                                    ^^^^^
     `----
 
 Error: 
@@ -19,8 +19,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
- 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
-    :                                           ^^
+ 12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
+    :                                                     ^^
     `----
 
 Error: 
@@ -28,8 +28,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
- 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
-    :                          ^^^^^^^^^^^^^^^^^^^
+ 12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
+    :                                    ^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
@@ -37,8 +37,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
- 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
-    :                                                 ^^^^^
+ 12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
+    :                                                           ^^^^^
     `----
 
 Error: 
@@ -46,8 +46,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
- 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
-    :                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
+    :                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
