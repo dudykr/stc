@@ -1,0 +1,207 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :     ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :         ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :           ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :         ^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   : ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   :      ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   :        ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   :      ^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   : ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   : ^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:6:5]
+ 6 | for (const v of vs) {
+   :                 ^^
+   `----
+
+Error: 
+  > T[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :     ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :         ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :           ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :         ^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   : ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   :      ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   :        ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   :      ^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   : ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   : ^^^^^^^^^
+   `----
+
+Error: 
+  > number
