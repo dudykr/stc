@@ -1,0 +1,54 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:9:1]
+ 9 | class C extends A {
+   :                 ^
+   `----
+
+Error: 
+  > typeof A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
+ 17 | let union3: boolean | B = isA(union2) || union2;
+    :                           ^^^
+    `----
+
+Error: 
+  > (p1: any) => p1 is A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
+ 17 | let union3: boolean | B = isA(union2) || union2;
+    :                               ^^^^^^
+    `----
+
+Error: 
+  > (C | B)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
+ 17 | let union3: boolean | B = isA(union2) || union2;
+    :                           ^^^^^^^^^^^
+    `----
+
+Error: 
+  > p1 is A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
+ 17 | let union3: boolean | B = isA(union2) || union2;
+    :                                          ^^^^^^
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
+ 17 | let union3: boolean | B = isA(union2) || union2;
+    :                           ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (p1 is A | B)
