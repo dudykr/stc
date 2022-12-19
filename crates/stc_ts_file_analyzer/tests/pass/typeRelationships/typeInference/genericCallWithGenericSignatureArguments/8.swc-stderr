@@ -1,0 +1,63 @@
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:6:5]
+ 6 | return r;
+   :        ^
+   `----
+
+Error: 
+  > (x: T) => T
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:8:1]
+ 8 | var r5 = foo(new Object(), (x) => '', (x) => ''); // Object => Object
+   :          ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: (x: T) => T, b: (x: T) => T) => (x: T) => T
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:8:1]
+ 8 | var r5 = foo(new Object(), (x) => '', (x) => ''); // Object => Object
+   :                  ^^^^^^
+   `----
+
+Error: 
+  > ObjectConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:8:1]
+ 8 | var r5 = foo(new Object(), (x) => '', (x) => ''); // Object => Object
+   :              ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Object
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:8:1]
+ 8 | var r5 = foo(new Object(), (x) => '', (x) => ''); // Object => Object
+   :                            ^^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:8:1]
+ 8 | var r5 = foo(new Object(), (x) => '', (x) => ''); // Object => Object
+   :                                       ^^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/8.ts:8:1]
+ 8 | var r5 = foo(new Object(), (x) => '', (x) => ''); // Object => Object
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: Object) => Object
