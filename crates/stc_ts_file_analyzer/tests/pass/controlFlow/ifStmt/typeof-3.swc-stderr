@@ -1,0 +1,63 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:2:5]
+ 2 | if (typeof data === 'string') {
+   :            ^^^^
+   `----
+
+Error: 
+  > (string | T)
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:2:5]
+ 2 | if (typeof data === 'string') {
+   :     ^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:2:5]
+ 2 | if (typeof data === 'string') {
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]
+ 3 | return JSON.parse(data);
+   :        ^^^^
+   `----
+
+Error: 
+  > JSON
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]
+ 3 | return JSON.parse(data);
+   :                   ^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:9]
+ 3 | return JSON.parse(data);
+   :        ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:5:9]
+ 5 | return data;
+   :        ^^^^
+   `----
+
+Error: 
+  > T
