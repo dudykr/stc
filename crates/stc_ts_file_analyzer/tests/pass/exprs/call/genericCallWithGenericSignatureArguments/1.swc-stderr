@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/1.ts:6:5]
+ 6 | return r;
+   :        ^
+   `----
+
+Error: 
+  > (x: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/1.ts:10:1]
+ 10 | var r1b = foo((x) => 1, (x) => ''); // {} => {}
+    :           ^^^
+    `----
+
+Error: 
+  > <T>(a: (x: T) => T, b: (x: T) => T) => (x: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/1.ts:10:1]
+ 10 | var r1b = foo((x) => 1, (x) => ''); // {} => {}
+    :               ^^^^^^^^
+    `----
+
+Error: 
+  > (x: any) => 1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/1.ts:10:1]
+ 10 | var r1b = foo((x) => 1, (x) => ''); // {} => {}
+    :                         ^^^^^^^^^
+    `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/1.ts:10:1]
+ 10 | var r1b = foo((x) => 1, (x) => ''); // {} => {}
+    :           ^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: unknown) => unknown
