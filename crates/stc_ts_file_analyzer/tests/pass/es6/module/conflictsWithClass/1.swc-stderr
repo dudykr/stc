@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:8:3]
+ 8 | var inside = foo
+   :              ^^^
+   `----
+
+Error: 
+  > Foo
+
+  x Type
+   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:9:3]
+ 9 | var a = inside.a
+   :         ^^^^^^
+   `----
+
+Error: 
+  > Foo
+
+  x Type
+   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:9:3]
+ 9 | var a = inside.a
+   :         ^^^^^^^^
+   `----
+
+Error: 
+  > string
