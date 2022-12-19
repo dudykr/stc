@@ -732,10 +732,17 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2344
+    NotSatisfyConstraint {
+        span: Span,
+        left: Box<Type>,
+        right: Box<Type>,
+    },
+
+    /// TS2345
     WrongArgType {
         /// Span of argument.
         span: Span,
-
         inner: Box<Error>,
     },
 
@@ -1686,6 +1693,7 @@ impl ErrorKind {
 
             ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
             ErrorKind::CannotCreateInstanceOfAbstractClass { .. } => 2511,
+            ErrorKind::NotSatisfyConstraint { .. } => 2344,
             ErrorKind::WrongArgType { .. } => 2345,
 
             ErrorKind::ComputedMemberInEnumWithStrMember { .. } => 2553,
