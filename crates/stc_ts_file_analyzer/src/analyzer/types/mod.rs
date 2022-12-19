@@ -722,6 +722,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        normalize_types.dedup_type();
+
+        if normalize_types.len() == 1 {
+            return Ok(Some(normalize_types.into_iter().next().unwrap()));
+        }
         // has never; return never
         if normalize_types.iter().any(|ty| ty.is_never()) {
             return never!();
@@ -955,6 +960,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             }
+                            temp_vec.dedup_type();
                             if temp_vec.is_empty() {
                                 return never!();
                             } else if temp_vec.len() < 2 {
@@ -976,14 +982,14 @@ impl Analyzer<'_, '_> {
                             continue 'outer;
                         }
 
-                        (Type::Intersection(Intersection { types: i1, .. }), Type::Intersection(Intersection { types: i2, .. })) => {
+                        (
+                            Type::Intersection(Intersection { types: mut i1, .. }),
+                            Type::Intersection(Intersection { types: mut i2, .. }),
+                        ) => {
                             let mut temp = vec![];
-                            for elem in i1 {
-                                temp.push(elem);
-                            }
-                            for elem in i2 {
-                                temp.push(elem);
-                            }
+                            temp.append(&mut i1);
+                            temp.append(&mut i2);
+                            temp.dedup_type();
                             temp.fix();
                             temp.make_clone_cheap();
                             temp_ty = Type::Intersection(Intersection {
@@ -993,12 +999,11 @@ impl Analyzer<'_, '_> {
                             });
                             continue 'outer;
                         }
-                        (Type::Intersection(Intersection { types: i, .. }), other)
-                        | (other, Type::Intersection(Intersection { types: i, .. })) => {
+                        (Type::Intersection(Intersection { types: mut i, .. }), other)
+                        | (other, Type::Intersection(Intersection { types: mut i, .. })) => {
                             let mut temp = vec![other];
-                            for elem in i {
-                                temp.push(elem);
-                            }
+                            temp.append(&mut i);
+                            temp.dedup_type();
                             temp.fix();
                             temp.make_clone_cheap();
                             temp_ty = Type::Intersection(Intersection {

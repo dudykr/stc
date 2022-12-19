@@ -1180,23 +1180,11 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-            dbg!(&obj);
-            let mut ty = analyzer.access_property_inner(span, &obj, prop, type_mode, id_ctx, opts)?.fixed();
+            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
-            let mut result = analyzer
-                .normalize(
-                    Some(span),
-                    Cow::Owned(ty),
-                    NormalizeTypeOpts {
-                        preserve_global_this: true,
-                        ..Default::default()
-                    },
-                )?
-                .into_owned();
-            result.make_clone_cheap();
-            Ok(result)
+            Ok(ty)
         });
 
         if !self.is_builtin {
@@ -2414,10 +2402,8 @@ impl Analyzer<'_, '_> {
                         },
                     ) {
                         Ok(ty) => {
-                            if let Type::Union(ty::Union { types, .. }) = ty {
-                                for mem in types {
-                                    tys.push(mem);
-                                }
+                            if let Type::Union(ty::Union { mut types, .. }) = ty {
+                                tys.append(&mut types);
                                 continue;
                             }
                             tys.push(ty)
@@ -2458,7 +2444,6 @@ impl Analyzer<'_, '_> {
 
                 // TODO(kdy1): Validate that the ty has same type instead of returning union.
                 let ty = Type::union(tys);
-
                 ty.assert_valid();
                 return Ok(ty);
             }
@@ -2780,6 +2765,10 @@ impl Analyzer<'_, '_> {
                 let mut new = vec![];
                 for ty in types {
                     if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
+                        if let Type::Intersection(Intersection { mut types, .. }) = v {
+                            new.append(&mut types);
+                            continue;
+                        }
                         new.push(v);
                     }
                 }
@@ -2791,14 +2780,14 @@ impl Analyzer<'_, '_> {
                     });
                 }
 
+                new.dedup_type();
+
                 // print_backtrace();
                 if new.len() == 1 {
                     let mut ty = new.into_iter().next().unwrap();
                     ty.respan(span);
                     return Ok(ty);
                 }
-
-                new.dedup_type();
 
                 let ty = Type::Intersection(Intersection {
                     span,
@@ -2807,18 +2796,7 @@ impl Analyzer<'_, '_> {
                 })
                 .fixed();
                 // ty.respan(span);
-                return Ok(self
-                    .normalize(
-                        Some(span),
-                        Cow::Owned(ty),
-                        NormalizeTypeOpts {
-                            preserve_global_this: true,
-                            preserve_intersection: true,
-                            ..Default::default()
-                        },
-                    )
-                    .unwrap()
-                    .into_owned());
+                return Ok(ty);
             }
 
             Type::Mapped(m) => {

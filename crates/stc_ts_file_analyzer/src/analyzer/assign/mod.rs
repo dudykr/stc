@@ -514,7 +514,6 @@ impl Analyzer<'_, '_> {
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
             | Type::Instance(..)
-            | Type::Intersection(..)
             | Type::Intrinsic(..)
             | Type::Mapped(..)
             | Type::Operator(Operator {
@@ -586,14 +585,6 @@ impl Analyzer<'_, '_> {
         } else {
             None
         };
-
-        if opts.allow_unknown_type && rhs.is_unknown() {
-            return Ok(());
-        }
-
-        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            return Ok(());
-        }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
@@ -723,6 +714,14 @@ impl Analyzer<'_, '_> {
         }
 
         if to.type_eq(rhs) {
+            return Ok(());
+        }
+
+        if opts.allow_unknown_type && rhs.is_unknown() {
+            return Ok(());
+        }
+
+        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
             return Ok(());
         }
 
@@ -2377,8 +2376,12 @@ impl Analyzer<'_, '_> {
 
             _ => {}
         }
-
         if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            if let Some(flag) = opts.allow_assignment_of_void {
+                if flag {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
