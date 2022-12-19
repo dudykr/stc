@@ -1,0 +1,54 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:8:1]
+ 8 | class D1 extends C1 {
+   :                  ^^
+   `----
+
+Error: 
+  > typeof C1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+ 19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
+    :                             ^^^^
+    `----
+
+Error: 
+  > (x: any) => x is C1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+ 19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
+    :                                  ^^^^^^
+    `----
+
+Error: 
+  > (C2 | D1)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+ 19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
+    :                             ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > x is C1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+ 19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
+    :                                             ^^^^^^
+    `----
+
+Error: 
+  > D1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+ 19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
+    :                             ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > D1
