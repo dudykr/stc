@@ -1,0 +1,81 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:6:5]
+ 6 | return class extends A<U> { }
+   :                      ^
+   `----
+
+Error: 
+  > typeof A
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:6:5]
+ 6 | return class extends A<U> { }
+   :        ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > typeof anonymous class
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:9:1]
+ 9 | class K extends B1<number>() {
+   :                 ^^
+   `----
+
+Error: 
+  > <U>() => typeof anonymous class
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:9:1]
+ 9 | class K extends B1<number>() {
+   :                 ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > typeof anonymous class
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:1]
+ 12 | var k = new K();
+    :             ^
+    `----
+
+Error: 
+  > typeof K
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:1]
+ 12 | var k = new K();
+    :         ^^^^^^^
+    `----
+
+Error: 
+  > K
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:13:1]
+ 13 | k.genericVar = 12;
+    : ^
+    `----
+
+Error: 
+  > K
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:13:1]
+ 13 | k.genericVar = 12;
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:13:1]
+ 13 | k.genericVar = 12;
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 12
