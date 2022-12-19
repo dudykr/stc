@@ -1331,7 +1331,30 @@ impl Analyzer<'_, '_> {
                     }
 
                     if let Some(type_params) = &cls.type_params {
-                        for param in &type_params.params {
+                        for (i, param) in type_params.params.iter().enumerate() {
+                            if let Some(constraint) = &param.constraint {
+                                if let Some(type_args) = type_args {
+                                    if let Some(type_arg) = type_args.params.get(i) {
+                                        if let Err(err) = self.assign_with_opts(
+                                            &mut Default::default(),
+                                            constraint,
+                                            type_arg,
+                                            AssignOpts {
+                                                span,
+                                                allow_assignment_to_param_constraint: true,
+                                                ..Default::default()
+                                            },
+                                        ) {
+                                            return Err(ErrorKind::NotSatisfyConstraint {
+                                                span,
+                                                left: constraint.clone(),
+                                                right: box type_arg.clone(),
+                                            }
+                                            .into());
+                                        }
+                                    }
+                                }
+                            };
                             self.register_type(param.name.clone(), Type::Param(param.clone()));
                         }
                     }
