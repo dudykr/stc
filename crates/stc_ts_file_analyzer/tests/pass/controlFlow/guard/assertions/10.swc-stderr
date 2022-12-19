@@ -1,0 +1,67 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:12:1]
+ 12 | export const none: None = { none: '' };
+    :                           ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     none: '';
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:15:5]
+ 15 | return 'some' in value;
+    :                  ^^^^^
+    `----
+
+Error: 
+  > (Some | None)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:15:5]
+ 15 | return 'some' in value;
+    :        ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:19:5]
+ 19 | return { some };
+    :        ^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     some: a;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5]
+ 24 | x!.slice();
+    : ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5]
+ 24 | x!.slice();
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5]
+ 24 | x!.slice();
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > string
