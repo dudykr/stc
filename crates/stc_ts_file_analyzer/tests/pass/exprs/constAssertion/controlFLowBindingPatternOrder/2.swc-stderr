@@ -1,6 +1,6 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :                                             ^^^^^^
    `----
@@ -9,7 +9,7 @@ Error:
   > [8, 9]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :                                             ^^^^^^^^^^^^^^^
    `----
@@ -18,7 +18,7 @@ Error:
   > [8, 9]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :                                            ^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +27,7 @@ Error:
   > [[8, 9]]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :                      ^^^^^
    `----
@@ -36,7 +36,7 @@ Error:
   > 0
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :                     ^^^^^^^^^^
    `----
@@ -45,7 +45,7 @@ Error:
   > [0, 9]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :                     ^^^^^^^^^^^^^^^^^^^
    `----
@@ -54,7 +54,7 @@ Error:
   > [0, 9]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:2:1]
  2 | const [{ [a]: b } = [a = 0, 9] as const] = [[8, 9] as const];
    :           ^
    `----
@@ -63,7 +63,7 @@ Error:
   > 0
 
   x Type
-   ,-[$DIR/tests/pass/exprs/constAssertion/controlFlowBindingPatternOrder/2.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts:3:1]
  3 | const bb: 0 | 8 = b;
    :                   ^
    `----
