@@ -840,13 +840,15 @@ impl Analyzer<'_, '_> {
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
+        let mut is_read_only_error = false;
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(ErrorKind::ReadOnly { span }.into());
+                                is_read_only_error = true;
+                                continue;
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -932,6 +934,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+        }
+
+        if is_read_only_error {
+            return Err(ErrorKind::ReadOnly { span }.into());
+        }
+        if matching_elements.len() == 1 {
+            return Ok(Some(
+                self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
+                    .into_owned(),
+            ));
         }
 
         if matching_elements.len() == 1 {
@@ -1027,7 +1039,32 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
-        Ok(Some(Type::union(matching_elements)))
+        let mut res_vec = vec![];
+
+        for el in matching_elements.into_iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
+                res_vec.push(res.into_owned());
+            }
+        }
+        res_vec.dedup_type();
+        if res_vec.len() == 1 {
+            return Ok(Some(
+                self.normalize(Some(span), Cow::Owned(res_vec.pop().unwrap()), Default::default())?
+                    .into_owned(),
+            ));
+        }
+        let result = match type_mode {
+            TypeOfMode::LValue => Type::Intersection(Intersection {
+                span,
+                types: res_vec,
+                metadata: Default::default(),
+            }),
+            TypeOfMode::RValue => Type::union(res_vec),
+        };
+
+        Ok(Some(
+            self.normalize(Some(span), Cow::Owned(result), Default::default())?.into_owned(),
+        ))
     }
 
     pub(super) fn access_property(
@@ -2205,8 +2242,12 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(Interface { ref body, extends, .. }) => {
-                if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
-                    return Ok(v);
+                match self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
+                    Ok(Some(v)) => return Ok(v),
+                    Err(err) => {
+                        return Err(err);
+                    }
+                    Ok(None) => {}
                 }
 
                 for super_ty in extends {
@@ -2359,7 +2400,13 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     ) {
-                        Ok(ty) => tys.push(ty),
+                        Ok(ty) => {
+                            if let Type::Union(ty::Union { mut types, .. }) = ty {
+                                tys.append(&mut types);
+                                continue;
+                            }
+                            tys.push(ty)
+                        }
                         Err(err) => errors.push(err),
                     }
                 }
@@ -2715,10 +2762,24 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { ref types, .. }) => {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
+                let mut errors = vec![];
                 for ty in types {
-                    if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
-                        new.push(v);
+                    match self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
+                        Ok(v) => {
+                            if let Type::Intersection(Intersection { mut types, .. }) = v {
+                                new.append(&mut types);
+                                continue;
+                            }
+                            new.push(v);
+                        }
+                        Err(err) => {
+                            errors.push(err);
+                        }
                     }
+                }
+
+                if errors.len() == types.len() {
+                    return Err(ErrorKind::Errors { span, errors }.into());
                 }
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
@@ -2727,6 +2788,8 @@ impl Analyzer<'_, '_> {
                         _ => true,
                     });
                 }
+
+                new.dedup_type();
 
                 // print_backtrace();
                 if new.len() == 1 {

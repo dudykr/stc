@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/readOnly/1.ts:9:1]
+ 9 | mutable.value = 12;
+   : ^^^^^^^
+   `----
+
+Error: 
+  > (Base & Mutable)
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/readOnly/1.ts:9:1]
+ 9 | mutable.value = 12;
+   : ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/readOnly/1.ts:9:1]
+ 9 | mutable.value = 12;
+   : ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 12

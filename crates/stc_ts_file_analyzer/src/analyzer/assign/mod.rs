@@ -587,17 +587,6 @@ impl Analyzer<'_, '_> {
         };
 
         // It's valid to assign any to everything.
-        if rhs.is_any() {
-            return Ok(());
-        }
-
-        if opts.allow_unknown_type && rhs.is_unknown() {
-            return Ok(());
-        }
-
-        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            return Ok(());
-        }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
@@ -722,6 +711,23 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if rhs.is_any() {
+            if to.normalize().is_never() {
+                fail!()
+            }
+            return Ok(());
+        }
+
+        if opts.allow_unknown_type && rhs.is_unknown() {
+            return Ok(());
+        }
+        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(());
+        }
+        if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+            fail!()
+        }
+
         if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
             return res;
         }
@@ -730,7 +736,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             fail!()
         }
 
@@ -1132,7 +1138,17 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
+                }
+
+                // This is required to handle intersections of function-like types.
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
+                    if self
+                        .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
 
                 for ty in &li.types {
@@ -2362,7 +2378,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+        if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            if let Some(flag) = opts.allow_assignment_of_void {
+                if flag {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
