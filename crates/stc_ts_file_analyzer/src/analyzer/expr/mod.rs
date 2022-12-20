@@ -841,6 +841,10 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
         let mut is_read_only_error = false;
+        dbg!(dump_type_as_string(obj));
+        dbg!(&prop);
+        dbg!(&type_mode);
+        dbg!(&members);
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
@@ -2245,6 +2249,7 @@ impl Analyzer<'_, '_> {
                 match self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
                     Ok(Some(v)) => return Ok(v),
                     Err(err) => {
+                        dbg!(123456);
                         return Err(err);
                     }
                     Ok(None) => {}

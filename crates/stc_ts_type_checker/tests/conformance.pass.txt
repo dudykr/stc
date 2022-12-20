@@ -2028,6 +2028,8 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
+types/intersection/intersectionReductionStrict.ts
+types/intersection/intersectionReduction.ts
 types/intersection/intersectionThisTypes.ts
 types/intersection/intersectionTypeAssignment.ts
 types/intersection/intersectionTypeEquivalence.ts
@@ -2035,6 +2037,7 @@ types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
 types/intersection/intersectionTypeInference.ts
 types/intersection/intersectionTypeMembers.ts
+types/intersection/intersectionWithUnionConstraint.ts
 types/intersection/operatorsAndIntersectionTypes.ts
 types/intersection/recursiveIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts
