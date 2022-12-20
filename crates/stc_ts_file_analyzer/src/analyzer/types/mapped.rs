@@ -10,7 +10,7 @@ use stc_ts_errors::{
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
     Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
-    Type, TypeElement, TypeLit,
+    Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -76,7 +76,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some(array) = keyof_operand.as_array() {
+                if let Some(array) = keyof_operand.as_array_without_readonly() {
                     let ty = Type::Array(Array {
                         span,
                         elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
@@ -84,6 +84,22 @@ impl Analyzer<'_, '_> {
                     })
                     .freezed();
                     return Ok(Some(ty));
+                }
+
+                if let Type::Param(TypeParam {
+                    constraint: Some(constraint),
+                    ..
+                }) = keyof_operand.normalize()
+                {
+                    if let Some(array) = constraint.as_array_without_readonly() {
+                        let ty = Type::Array(Array {
+                            span,
+                            elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                            metadata: array.metadata,
+                        })
+                        .freezed();
+                        return Ok(Some(ty));
+                    }
                 }
 
                 let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;

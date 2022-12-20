@@ -523,15 +523,6 @@ impl Analyzer<'_, '_> {
 
                             let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&prop_ty)));
 
-                            if let Type::IndexedAccessType(prop_ty) = prop_ty.normalize() {
-                                match prop_ty.index_type.normalize() {
-                                    Type::Param(..) => {}
-                                    _ => {
-                                        panic!("{:?}", prop_ty);
-                                    }
-                                }
-                            }
-
                             let ty = self
                                 .normalize(span, Cow::Owned(prop_ty), opts)
                                 .context("tried to normalize the type of property")?
