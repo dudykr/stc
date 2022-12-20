@@ -2,7 +2,6 @@ use stc_ts_ast_rnode::{RCallExpr, RCallee, RExpr, RMemberExpr, RMemberProp, ROpt
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
-use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
     analyzer::{
@@ -32,7 +31,7 @@ impl Analyzer<'_, '_> {
                 )?;
                 let obj = me.obj.validate_with_default(self)?;
 
-                let is_obj_optional = self.is_obj_optional(&obj)?;
+                let is_obj_optional = self.can_be_undefined(span, &obj)?;
 
                 let obj = obj.remove_falsy();
 
@@ -76,25 +75,6 @@ impl Analyzer<'_, '_> {
         .validate_with_args(self, type_ann)?;
 
         Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
-    }
-}
-
-impl Analyzer<'_, '_> {
-    pub(super) fn is_obj_optional(&mut self, obj: &Type) -> VResult<bool> {
-        if obj.is_kwd(TsKeywordTypeKind::TsNullKeyword) || obj.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            return Ok(true);
-        }
-
-        if let Type::Union(u) = obj.normalize() {
-            for ty in u.types.iter() {
-                if self.is_obj_optional(ty)? {
-                    return Ok(true);
-                }
-            }
-            return Ok(false);
-        }
-
-        Ok(false)
     }
 }
 
