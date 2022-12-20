@@ -28,4 +28,4 @@ Error:
    `----
 
 Error: 
-  > number
+  > (undefined | number)
