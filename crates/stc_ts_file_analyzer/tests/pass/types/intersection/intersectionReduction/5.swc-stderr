@@ -1,0 +1,36 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/5.ts:9:1]
+ 9 | t1 = t2;
+   :      ^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/5.ts:9:1]
+ 9 | t1 = t2;
+   : ^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/5.ts:10:1]
+ 10 | t2 = t1;
+    :      ^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/5.ts:10:1]
+ 10 | t2 = t1;
+    : ^^^^^^^
+    `----
+
+Error: 
+  > undefined
