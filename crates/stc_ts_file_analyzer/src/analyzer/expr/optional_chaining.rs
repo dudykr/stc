@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
         }
         .validate_with_args(self, type_ann)?;
 
-        Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+        Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
     }
 }
 
