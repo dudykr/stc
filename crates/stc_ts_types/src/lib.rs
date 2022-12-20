@@ -1515,7 +1515,7 @@ impl Type {
         match self.normalize_instance() {
             Type::Array(t) => Some(t),
             Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
+                op: TsTypeOperatorOp::ReadOnly,
                 ty,
                 ..
             }) => ty.as_array_without_readonly(),
