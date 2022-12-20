@@ -5,6 +5,7 @@ type TupleUnionFunc = (...params: ArgsUnion) => number;
 
 const funcUnionTupleRest: TupleUnionFunc = (...params) => {
   const [num, strOrErr] = params;
+  strOrErr;
   return num;
 };
 
