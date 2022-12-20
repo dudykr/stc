@@ -931,7 +931,7 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
+        normalize_types.make_clone_cheap();
         {
             if let Some(first_ty) = normalize_types.first() {
                 let mut temp_ty: Type = first_ty.normalize().clone();
@@ -976,6 +976,7 @@ impl Analyzer<'_, '_> {
                                 let assign_ty = Type::union(temp_vec);
                                 temp_ty = assign_ty;
                             }
+
                             temp_ty.make_clone_cheap();
                             continue 'outer;
                         }
@@ -1140,6 +1141,9 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     })));
                 }
+
+                temp_ty.make_clone_cheap();
+
                 return Ok(Some(temp_ty));
             }
         }
