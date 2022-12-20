@@ -1470,6 +1470,20 @@ impl Analyzer<'_, '_> {
 
                 match to.normalize() {
                     Type::Union(..) => {}
+                    Type::Mapped(m) => {
+                        if let Some(
+                            constraint @ Type::Operator(Operator {
+                                op: TsTypeOperatorOp::KeyOf,
+                                ty,
+                                ..
+                            }),
+                        ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                        {
+                            if rhs.type_eq(ty) {
+                                return Ok(());
+                            }
+                        }
+                    }
                     _ => {
                         fail!()
                     }
