@@ -3825,7 +3825,7 @@ impl Analyzer<'_, '_> {
             obj_ty.assert_valid();
 
             if is_obj_opt_chain {
-                should_be_optional = self.can_be_undefined(span, &obj_ty)?;
+                should_be_optional = self.can_be_undefined(span, &obj_ty, true)?;
             }
 
             obj_ty

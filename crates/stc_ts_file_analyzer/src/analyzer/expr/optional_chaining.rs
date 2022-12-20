@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
                 )?;
                 let obj = me.obj.validate_with_default(self)?;
 
-                let is_obj_optional = self.can_be_undefined(span, &obj)?;
+                let is_obj_optional = self.can_be_undefined(span, &obj, true)?;
 
                 let obj = obj.remove_falsy();
 
