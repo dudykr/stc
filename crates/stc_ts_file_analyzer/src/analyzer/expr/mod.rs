@@ -1111,6 +1111,23 @@ impl Analyzer<'_, '_> {
                 Type::Lit(LitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
+                    if let Ok(value) = prop.value.parse::<f64>() {
+                        if let Ok(ty) = self.access_property(
+                            span,
+                            obj,
+                            &Key::Num(RNumber {
+                                span: prop.span,
+                                value,
+                                raw: None,
+                            }),
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        ) {
+                            return Ok(ty);
+                        }
+                    }
+
                     let res = self
                         .access_property(
                             span,

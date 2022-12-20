@@ -81,7 +81,7 @@ Error:
     `----
 
 Error: 
-  > Object
+  > T
 
   x Type
     ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:13:5]

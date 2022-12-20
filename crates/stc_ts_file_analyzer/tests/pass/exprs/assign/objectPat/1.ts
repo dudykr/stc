@@ -14,6 +14,7 @@ function f1<T extends { a: string, b: number }>(obj: T) {
     a2;
     b2;
     b2;
+    r2;
     r3;
     r4;
     r5;

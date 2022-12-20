@@ -28,8 +28,8 @@ Error:
 
 Error: 
   > (z?: any, o?: {
-  |     x: number;
-  |     y: any;
+  |     x?: number;
+  |     y?: any;
   | }) => void
 
   x Type
