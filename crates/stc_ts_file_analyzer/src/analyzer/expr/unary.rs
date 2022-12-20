@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
                         | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span },
                         _ => err,
                     })?;
-                    if !self.can_be_undefined(span, &ty)? {
+                    if !self.can_be_undefined(span, &ty, false)? {
                         return Err(ErrorKind::DeleteOperandMustBeOptional { span }.into());
                     }
                 }
