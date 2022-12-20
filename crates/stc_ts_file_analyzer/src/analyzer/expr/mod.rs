@@ -24,7 +24,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
+    QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata, Union,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -841,10 +841,6 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
         let mut is_read_only_error = false;
-        dbg!(dump_type_as_string(obj));
-        dbg!(&prop);
-        dbg!(&type_mode);
-        dbg!(&members);
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
@@ -948,10 +944,6 @@ impl Analyzer<'_, '_> {
                 self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
                     .into_owned(),
             ));
-        }
-
-        if matching_elements.len() == 1 {
-            return Ok(matching_elements.pop());
         }
 
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
@@ -2266,7 +2258,6 @@ impl Analyzer<'_, '_> {
                 match self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
                     Ok(Some(v)) => return Ok(v),
                     Err(err) => {
-                        dbg!(123456);
                         return Err(err);
                     }
                     Ok(None) => {}
@@ -2784,8 +2775,14 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { ref types, .. }) => {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
+                let mut union_vec = vec![];
                 let mut errors = vec![];
+
                 for ty in types {
+                    if let Type::Union(Union { types, .. }) = ty {
+                        union_vec.append(&mut types.clone());
+                        continue;
+                    }
                     match self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
                         Ok(v) => {
                             if let Type::Intersection(Intersection { mut types, .. }) = v {
@@ -2820,14 +2817,22 @@ impl Analyzer<'_, '_> {
                     return Ok(ty);
                 }
 
-                new.dedup_type();
-
                 let ty = Type::Intersection(Intersection {
                     span,
                     types: new,
                     metadata: Default::default(),
                 })
                 .fixed();
+
+                if !union_vec.is_empty() {
+                    let mut rescuve_vec = vec![];
+                    for i in union_vec {
+                        if let Ok(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts) {
+                            rescuve_vec.push(v);
+                        }
+                    }
+                    return Ok(Type::union(rescuve_vec));
+                }
                 // ty.respan(span);
                 return Ok(ty);
             }

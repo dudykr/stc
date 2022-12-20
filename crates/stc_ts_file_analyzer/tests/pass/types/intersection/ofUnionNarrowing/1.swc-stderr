@@ -1,0 +1,114 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:11:1]
+ 11 | if (q.a !== undefined) {
+    :     ^
+    `----
+
+Error: 
+  > (X & ({
+  |     a: object;
+  |     b: undefined;
+  | } | {
+  |     a: undefined;
+  |     b: object;
+  | }))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:11:1]
+ 11 | if (q.a !== undefined) {
+    :     ^^^
+    `----
+
+Error: 
+  > (undefined | {
+  |     aProp: string;
+  | } | object)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:11:1]
+ 11 | if (q.a !== undefined) {
+    :             ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:11:1]
+ 11 | if (q.a !== undefined) {
+    :     ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:12:5]
+ 12 | q.a.aProp;
+    : ^
+    `----
+
+Error: 
+  > (X & ({
+  |     a: object;
+  |     b: undefined;
+  | } | {
+  |     a: undefined;
+  |     b: object;
+  | }))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:12:5]
+ 12 | q.a.aProp;
+    : ^^^
+    `----
+
+Error: 
+  > ({
+  |     aProp: string;
+  | } | object)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:12:5]
+ 12 | q.a.aProp;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > (string | any)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:15:5]
+ 15 | q.b.bProp;
+    : ^
+    `----
+
+Error: 
+  > (X & ({
+  |     a: object;
+  |     b: undefined;
+  | } | {
+  |     a: undefined;
+  |     b: object;
+  | }))
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:15:5]
+ 15 | q.b.bProp;
+    : ^^^
+    `----
+
+Error: 
+  > (undefined | {
+  |     bProp: string;
+  | } | object)
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:15:5]
+ 15 | q.b.bProp;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > (string | any)
