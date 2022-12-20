@@ -1021,7 +1021,13 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(match &*ty {
-            Type::Class(..) | Type::ClassDef(..) | Type::Enum(..) | Type::EnumVariant(..) | Type::Keyword(..) | Type::Lit(..) => false,
+            Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Enum(..)
+            | Type::EnumVariant(..)
+            | Type::Keyword(..)
+            | Type::Lit(..)
+            | Type::TypeLit(..) => false,
             Type::Union(ty) => {
                 for ty in &ty.types {
                     if self.can_be_undefined(span, ty, include_null)? {
