@@ -927,5 +927,7 @@ fn remove_readonly(ty: &mut Type) {
                 p.readonly = false;
             }
         }
+
+        ty.make_clone_cheap();
     }
 }
