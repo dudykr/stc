@@ -81,7 +81,7 @@ Error:
     `----
 
 Error: 
-  > Object
+  > T
 
   x Type
     ,-[$DIR/tests/pass/types/generic/extends/1.ts:15:5]

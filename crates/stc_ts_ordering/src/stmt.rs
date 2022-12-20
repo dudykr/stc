@@ -137,13 +137,6 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
         }) => {
             map.insert(
                 TypedId {
-                    kind: IdCtx::Type,
-                    id: i.clone().into(),
-                },
-                Default::default(),
-            );
-            map.insert(
-                TypedId {
                     kind: IdCtx::Var,
                     id: i.clone().into(),
                 },

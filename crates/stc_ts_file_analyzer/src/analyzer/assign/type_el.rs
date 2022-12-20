@@ -1086,7 +1086,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if !opts.for_castablity {
-                                            if !lp.optional && rp.optional {
+                                            if !lp.optional && rp.optional && !lp.type_ann.as_deref().map_or(true, |ty| ty.is_any()) {
                                                 return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span }.into());
                                             }
                                         }

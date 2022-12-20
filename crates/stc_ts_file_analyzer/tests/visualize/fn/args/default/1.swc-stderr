@@ -1,0 +1,41 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:2:1]
+ 2 | export function foo({ z } = { z: 1 }) { }
+   :                             ^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     z: 1;
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:4:1]
+ 4 | foo({})
+   : ^^^
+   `----
+
+Error: 
+  > ({ z  }: {
+  |     z?: number;
+  | }) => void
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:4:1]
+ 4 | foo({})
+   :     ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:4:1]
+ 4 | foo({})
+   : ^^^^^^^
+   `----
+
+Error: 
+  > void
