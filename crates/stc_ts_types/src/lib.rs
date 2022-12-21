@@ -23,7 +23,6 @@ use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use private::Tracker;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
@@ -48,6 +47,7 @@ use swc_ecma_utils::{
     Value::{Known, Unknown},
 };
 use tracing::instrument;
+use tracker::Tracker;
 use triomphe::Arc;
 
 use self::type_id::SymbolId;
@@ -67,7 +67,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
-mod private;
+mod tracker;
 pub mod type_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
