@@ -41,7 +41,7 @@
         "Uncapitalize"
     ],
     "ignorePaths": [
-        "target"
+        "target",
         "fxhash",
         "smallvec"
     ]
