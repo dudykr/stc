@@ -81,6 +81,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 AssignOpts {
                                     span,
