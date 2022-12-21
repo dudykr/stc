@@ -473,16 +473,19 @@ impl Key {
                     raw: None,
                 }),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
             Key::Num(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::Number(n.clone()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
             Key::BigInt(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::BigInt(n.clone()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
             Key::Private(..) => unimplemented!("access to type elements using private name"),
         }
@@ -1364,6 +1367,7 @@ impl Type {
                 span,
                 types: tys,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
         }
     }
@@ -1383,6 +1387,7 @@ impl Type {
                                 span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
                         }
 
@@ -1399,6 +1404,7 @@ impl Type {
                         span,
                         types: elements,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                 }
 
@@ -1406,6 +1412,7 @@ impl Type {
                     span,
                     types,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
         };
@@ -1425,6 +1432,7 @@ impl Type {
                     span,
                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
             }
 
@@ -1496,6 +1504,7 @@ impl Type {
                 span,
                 types: elements,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
         };
         ty.assert_valid();
@@ -1520,6 +1529,7 @@ impl Type {
                     common: lit.metadata.common,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
             _ => self,
         }
