@@ -166,6 +166,7 @@ impl Analyzer<'_, '_> {
                                         span: DUMMY_SP,
                                         label: None,
                                         ty,
+                                        tracker: Default::default(),
                                     })
                                     .collect(),
                                 metadata: TupleMetadata {
@@ -861,6 +862,7 @@ impl Analyzer<'_, '_> {
                                 span: arg_iat.span,
                                 members: vec![],
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             };
                             for member in &param.members {
                                 match member {

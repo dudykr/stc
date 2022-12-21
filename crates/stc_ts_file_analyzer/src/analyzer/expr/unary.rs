@@ -135,6 +135,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -143,6 +144,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
             _ => {}
@@ -176,6 +178,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 

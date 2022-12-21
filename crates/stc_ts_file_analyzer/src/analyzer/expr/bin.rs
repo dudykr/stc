@@ -677,6 +677,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -702,6 +703,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -732,6 +734,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -1072,6 +1075,7 @@ impl Analyzer<'_, '_> {
                 span: orig.span,
                 types: new_types,
                 metadata: orig.metadata,
+                tracker: Default::default(),
             })
             .fixed());
         }
@@ -1775,19 +1779,23 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsStringKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                 ],
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .freezed(),
                             ty,
