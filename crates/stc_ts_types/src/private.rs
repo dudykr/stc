@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use swc_common::{EqIgnoreSpan, TypeEq};
 use tracing::info;
 
-/// A type used to make types private, so we can track all type creation.
+/// A type used to track all type creations. You can construct this type using
+/// `Default::default()` and it will print a log message.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub(crate) struct Tracker<const N: &'static str> {
     _priv: (),
