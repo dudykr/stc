@@ -821,6 +821,7 @@ impl Analyzer<'_, '_> {
             qualifier: t.qualifier.clone(),
             type_params: try_opt!(t.type_args.validate_with(self)).map(Box::new),
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -968,6 +969,7 @@ impl Analyzer<'_, '_> {
                 RTsType::TsThisType(this) => Type::This(ThisType {
                     span: this.span,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
                 RTsType::TsLitType(ty) => {
                     if let RTsLit::Tpl(t) = &ty.lit {
@@ -984,6 +986,7 @@ impl Analyzer<'_, '_> {
                             },
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     })
                 }
                 RTsType::TsKeywordType(ty) => {
@@ -1005,6 +1008,7 @@ impl Analyzer<'_, '_> {
                         span: ty.span,
                         kind: ty.kind,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
@@ -1236,6 +1240,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 ty: box elem_ty,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                         }
 
@@ -1247,10 +1252,12 @@ impl Analyzer<'_, '_> {
                         // TODO?
                         label: None,
                         ty: box ty,
+                        tracker: Default::default(),
                     }
                 })
                 .collect(),
             metadata: Default::default(),
+            tracker: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
@@ -1333,6 +1340,7 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             });
         }

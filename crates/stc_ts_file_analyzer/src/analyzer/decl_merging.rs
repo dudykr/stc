@@ -69,6 +69,7 @@ impl Analyzer<'_, '_> {
                                         constraint: None,
                                         default: None,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                 );
                             }
@@ -108,6 +109,7 @@ impl Analyzer<'_, '_> {
                                     constraint: None,
                                     default: None,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             );
                         }
