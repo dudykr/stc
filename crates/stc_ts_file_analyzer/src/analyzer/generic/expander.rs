@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
+    pub(in super::super) fn expand_type_params<T>(&self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
@@ -338,6 +338,10 @@ impl Analyzer<'_, '_> {
                     return Some(false);
                 }
             }
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            }) => return Some(false),
             _ => {}
         }
         // dbg!(child, parent);

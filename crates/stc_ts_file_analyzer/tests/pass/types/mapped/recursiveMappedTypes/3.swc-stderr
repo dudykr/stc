@@ -1,0 +1,9 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/3.ts:16:1]
+ 16 | a // "type" | "minimum_count" | "maximum_count" | undefined
+    : ^
+    `----
+
+Error: 
+  > ("type" | "minimum_count" | "maximum_count")

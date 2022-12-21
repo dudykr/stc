@@ -244,6 +244,8 @@ impl Analyzer<'_, '_> {
                                 let ty = match &m.ty {
                                     Some(mapped_ty) => self
                                         .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
+                                        .map(|t| self.normalize(Some(span), Cow::Owned(t), Default::default()))?
+                                        .map(|t| t.into_owned())
                                         .map(Box::new)
                                         .map(Some)?,
                                     None => None,
@@ -285,7 +287,8 @@ impl Analyzer<'_, '_> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
         type_params.insert(mapped_type_param, key.ty().into_owned().freezed());
-        self.expand_type_params(&type_params, mapped_ty, Default::default())
+        let result = self.expand_type_params(&type_params, mapped_ty, Default::default())?;
+        Ok(result)
     }
 
     /// Evaluate a type and convert it to keys.
