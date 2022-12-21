@@ -2424,6 +2424,7 @@ impl Expander<'_, '_, '_> {
                     params,
                     ret_ty,
                     metadata,
+                    ..
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
                     // TODO(kdy1): PERF
@@ -2435,6 +2436,7 @@ impl Expander<'_, '_, '_> {
                         params,
                         ret_ty,
                         metadata,
+                        tracker: Default::default(),
                     });
                 }
 
@@ -2497,6 +2499,7 @@ impl Expander<'_, '_, '_> {
                 true_type,
                 false_type,
                 metadata,
+                tracker: Default::default(),
             });
         }
 
