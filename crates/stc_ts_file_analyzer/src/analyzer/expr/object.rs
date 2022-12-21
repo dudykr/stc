@@ -238,6 +238,7 @@ impl Analyzer<'_, '_> {
                                 common: common_metadata,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         })
                         .fixed())
                     }
@@ -254,6 +255,7 @@ impl Analyzer<'_, '_> {
                         .map(|to| self.append_type(to, rhs.clone()))
                         .collect::<Result<_, _>>()?,
                     metadata: to.metadata,
+                    tracker: Default::default(),
                 })
                 .fixed())
             }
@@ -299,6 +301,7 @@ impl Analyzer<'_, '_> {
                     .map(|to| self.append_type_element(to, rhs.clone()))
                     .collect::<Result<_, _>>()?,
                 metadata: to.metadata,
+                tracker: Default::default(),
             })
             .fixed()),
             _ => {

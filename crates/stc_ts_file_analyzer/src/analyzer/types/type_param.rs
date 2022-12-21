@@ -29,6 +29,7 @@ impl Analyzer<'_, '_> {
                 constraint: None,
                 default: None,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
             .collect_vec();
         if let Type::Function(f) = ty {

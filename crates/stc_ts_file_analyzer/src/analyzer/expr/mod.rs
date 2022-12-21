@@ -3770,6 +3770,7 @@ impl Analyzer<'_, '_> {
                     type_name: RTsEntityName::Ident(i.clone()),
                     type_args: type_args.cloned().map(Box::new),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
             RExpr::Member(RMemberExpr {
@@ -3825,6 +3826,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 ])
                 .freezed())
@@ -4182,6 +4184,7 @@ impl Analyzer<'_, '_> {
                     raw: None,
                 }),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -4250,6 +4253,7 @@ impl Analyzer<'_, '_> {
                 metadata: TplTypeMetadata {
                     common: CommonTypeMetadata { ..Default::default() },
                 },
+                tracker: Default::default(),
             }));
         }
 
@@ -4260,6 +4264,7 @@ impl Analyzer<'_, '_> {
             metadata: TplTypeMetadata {
                 common: CommonTypeMetadata { ..Default::default() },
             },
+            tracker: Default::default(),
         }))
     }
 }

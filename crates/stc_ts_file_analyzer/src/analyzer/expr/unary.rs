@@ -298,6 +298,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::Number(ref v) => {
@@ -308,6 +309,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::Str(ref v) => {
@@ -318,6 +320,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::Tpl(ref v) => {
@@ -328,6 +331,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::BigInt(ref v) => {
@@ -339,6 +343,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
         }
@@ -351,6 +356,7 @@ fn negate(ty: Type) -> Type {
             common: ty.metadata(),
             ..Default::default()
         },
+        tracker: Default::default(),
     }
     .into()
 }
