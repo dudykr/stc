@@ -89,7 +89,7 @@ pub(crate) struct Scope<'a> {
     /// Used while validating super class and static class properties. Otherwise
     /// [None].
     ///
-    /// Required to handle static properies.
+    /// Required to handle static properties.
     pub(super) this_class_name: Option<Id>,
     /// Only contains instance members.
     ///

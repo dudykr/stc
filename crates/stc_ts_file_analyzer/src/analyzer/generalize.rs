@@ -190,6 +190,7 @@ impl Fold<Type> for Simplifier<'_> {
                                         common: metadata.common,
                                         ..Default::default()
                                     },
+                                    tracker: Default::default(),
                                 })
                             }
                             TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
@@ -210,6 +211,7 @@ impl Fold<Type> for Simplifier<'_> {
                                         common: metadata.common,
                                         ..Default::default()
                                     },
+                                    tracker: Default::default(),
                                 })
                             }
                         },

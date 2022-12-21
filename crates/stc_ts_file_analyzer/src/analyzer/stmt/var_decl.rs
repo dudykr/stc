@@ -486,6 +486,7 @@ impl Analyzer<'_, '_> {
                                                 }),
                                             },
                                             metadata: *metadata,
+                                            tracker: Default::default(),
                                         })
                                     }
 
@@ -497,6 +498,7 @@ impl Analyzer<'_, '_> {
                                             common: metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     }),
 
                                     _ => ty,
@@ -512,6 +514,7 @@ impl Analyzer<'_, '_> {
                                             span,
                                             expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         }));
                                     }
                                 }
