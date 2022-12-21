@@ -1665,6 +1665,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1673,6 +1674,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1681,6 +1683,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1689,6 +1692,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1697,6 +1701,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 }
@@ -2516,6 +2521,7 @@ impl VisitMut<Type> for Freezer {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
         );
 
