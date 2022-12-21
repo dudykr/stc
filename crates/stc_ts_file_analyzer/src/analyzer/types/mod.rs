@@ -219,6 +219,7 @@ impl Analyzer<'_, '_> {
                             span: arr.span,
                             elem_type,
                             metadata: arr.metadata,
+                            tracker: Default::default(),
                         })));
                     }
 
@@ -347,6 +348,7 @@ impl Analyzer<'_, '_> {
                                     span: actual_span.with_ctxt(SyntaxContext::empty()),
                                     types,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 })
                                 .fixed();
 
@@ -1622,7 +1624,7 @@ impl Analyzer<'_, '_> {
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                let new_val = apply_intrinsics(&ty.kind, &s.value);
+                let new_val = apply_intrinsic(&ty.kind, &s.value);
 
                 return Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
@@ -1635,6 +1637,7 @@ impl Analyzer<'_, '_> {
                         common: arg.params[0].metadata(),
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 }));
             }
             Type::Tpl(TplType {
@@ -1646,8 +1649,8 @@ impl Analyzer<'_, '_> {
                 let quasis = quasis
                     .iter()
                     .map(|quasis| {
-                        let raw = apply_intrinsics(&ty.kind, &quasis.raw);
-                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsics(&ty.kind, cooked));
+                        let raw = apply_intrinsic(&ty.kind, &quasis.raw);
+                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsic(&ty.kind, cooked));
 
                         RTplElement {
                             raw,
@@ -1967,7 +1970,7 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     }
 }
 
-fn apply_intrinsics<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
+fn apply_intrinsic<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
     let raw = raw.as_ref();
 
     match intrinsics {

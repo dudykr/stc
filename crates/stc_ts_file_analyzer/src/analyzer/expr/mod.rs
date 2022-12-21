@@ -2070,16 +2070,19 @@ impl Analyzer<'_, '_> {
                             raw: None,
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Num(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::BigInt(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Private(..) => {
                         unreachable!()
