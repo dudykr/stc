@@ -1287,7 +1287,7 @@ pub enum ErrorKind {
     },
 
     /// TS2515
-    ClassDoesNotImplementMemeber {
+    ClassDoesNotImplementMember {
         span: Span,
         key: Box<Key>,
     },
@@ -1638,7 +1638,7 @@ impl ErrorKind {
             ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
             ErrorKind::TS2389 { .. } => 2389,
             ErrorKind::TS2447 { .. } => 2447,
-            ErrorKind::ClassDoesNotImplementMemeber { .. } => 2515,
+            ErrorKind::ClassDoesNotImplementMember { .. } => 2515,
             ErrorKind::TS2531 { .. } => 2531,
             ErrorKind::TS2567 { .. } => 2567,
             ErrorKind::TS2585 { .. } => 2585,

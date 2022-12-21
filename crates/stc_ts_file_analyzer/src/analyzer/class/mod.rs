@@ -1414,7 +1414,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(key) = sm.key() {
                         errors.push(
-                            ErrorKind::ClassDoesNotImplementMemeber {
+                            ErrorKind::ClassDoesNotImplementMember {
                                 span,
                                 key: box key.into_owned(),
                             }

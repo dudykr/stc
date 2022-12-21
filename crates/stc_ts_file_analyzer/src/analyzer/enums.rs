@@ -119,6 +119,7 @@ impl Analyzer<'_, '_> {
                 id: e.id.clone(),
                 members,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }
         };
 
@@ -389,6 +390,7 @@ impl Analyzer<'_, '_> {
                     getter: true,
                     setter: false,
                 },
+                tracker: Default::default(),
             }))
         }
         {
@@ -404,6 +406,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
@@ -414,6 +417,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -431,6 +435,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
@@ -441,6 +446,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 is_static: false,
             }));
