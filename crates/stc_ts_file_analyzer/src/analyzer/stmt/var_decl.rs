@@ -38,8 +38,6 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, var: &RVarDecl) {
-        self.record(var);
-
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             var_kind: var.kind,
@@ -82,8 +80,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, v: &RVarDeclarator) {
-        self.record(v);
-
         let marks = self.marks();
 
         let kind = self.ctx.var_kind;
@@ -239,6 +235,7 @@ impl Analyzer<'_, '_> {
                                 span: ty.span(),
                                 metadata: InstanceMetadata { common: ty.metadata() },
                                 ty: box ty,
+                                tracker: Default::default(),
                             })
                         })();
                         ty.assert_valid();
@@ -399,12 +396,14 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
 
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                                         metadata: KeywordTypeMetadata { common, .. },
+                                        ..
                                     })
                                     | Type::Operator(Operator {
                                         span,
@@ -423,7 +422,7 @@ impl Analyzer<'_, '_> {
                                         ..
                                     }) => {
                                         match self.ctx.var_kind {
-                                            // It's `uniqute symbol` only if it's `Symbol()`
+                                            // It's `unique symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
                                                 span: *span,
                                                 op: TsTypeOperatorOp::Unique,
@@ -434,11 +433,13 @@ impl Analyzer<'_, '_> {
                                                         common: *common,
                                                         ..Default::default()
                                                     },
+                                                    tracker: Default::default(),
                                                 }),
                                                 metadata: OperatorMetadata {
                                                     common: *common,
                                                     ..Default::default()
                                                 },
+                                                tracker: Default::default(),
                                             }),
 
                                             _ => Type::Keyword(KeywordType {
@@ -448,6 +449,7 @@ impl Analyzer<'_, '_> {
                                                     common: *common,
                                                     ..Default::default()
                                                 },
+                                                tracker: Default::default(),
                                             }),
                                         }
                                     }
@@ -476,6 +478,7 @@ impl Analyzer<'_, '_> {
                                                             common: elem_metadata.common,
                                                             ..Default::default()
                                                         },
+                                                        tracker: Default::default(),
                                                     })
                                                 }
                                                 None => box Type::Keyword(KeywordType {
@@ -485,9 +488,11 @@ impl Analyzer<'_, '_> {
                                                         common: elem_metadata.common,
                                                         ..Default::default()
                                                     },
+                                                    tracker: Default::default(),
                                                 }),
                                             },
                                             metadata: *metadata,
+                                            tracker: Default::default(),
                                         })
                                     }
 
@@ -499,6 +504,7 @@ impl Analyzer<'_, '_> {
                                             common: metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     }),
 
                                     _ => ty,
@@ -514,6 +520,7 @@ impl Analyzer<'_, '_> {
                                             span,
                                             expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         }));
                                     }
                                 }
@@ -581,12 +588,12 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widening"));
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widening"));
                                             }
                                             _ => {}
                                         }
@@ -654,6 +661,7 @@ impl Analyzer<'_, '_> {
                                 span: i.id.span,
                                 ty: box ty,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                         });
                         if let Some(ref mut ty) = ty {

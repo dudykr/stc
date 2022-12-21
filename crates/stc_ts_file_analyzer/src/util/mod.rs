@@ -73,7 +73,7 @@ impl RemoveTypes for Type {
         }
 
         match self {
-            Type::Keyword(KeywordType { kind, span, metadata }) => match kind {
+            Type::Keyword(KeywordType { kind, span, metadata, .. }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
                     return Type::never(span, metadata);
                 }
@@ -146,6 +146,7 @@ impl RemoveTypes for Intersection {
             span: self.span,
             types,
             metadata: self.metadata,
+            tracker: Default::default(),
         }
         .into()
     }
@@ -170,6 +171,7 @@ impl RemoveTypes for Intersection {
             span: self.span,
             types,
             metadata: self.metadata,
+            tracker: Default::default(),
         }
         .into()
     }
@@ -202,6 +204,7 @@ impl RemoveTypes for Union {
             span: self.span,
             types,
             metadata: self.metadata,
+            tracker: Default::default(),
         }
         .into()
     }
@@ -232,6 +235,7 @@ impl RemoveTypes for Union {
             span: self.span,
             types,
             metadata: self.metadata,
+            tracker: Default::default(),
         }
         .into()
     }

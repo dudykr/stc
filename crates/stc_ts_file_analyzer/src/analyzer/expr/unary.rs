@@ -95,16 +95,19 @@ impl Analyzer<'_, '_> {
                             span,
                             lit: RTsLit::Str(RStr { span, value, raw: None }),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })
                         .map(Type::Lit)
                         .collect(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -127,6 +130,7 @@ impl Analyzer<'_, '_> {
                                 raw: None,
                             }),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -135,6 +139,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -143,6 +148,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
             _ => {}
@@ -176,6 +182,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -285,7 +292,10 @@ impl Analyzer<'_, '_> {
 }
 
 fn negate(ty: Type) -> Type {
-    if let Type::Lit(LitType { ref lit, span, metadata }) = ty {
+    if let Type::Lit(LitType {
+        ref lit, span, metadata, ..
+    }) = ty
+    {
         match *lit {
             RTsLit::Bool(ref v) => {
                 return Type::Lit(LitType {
@@ -295,6 +305,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::Number(ref v) => {
@@ -305,6 +316,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::Str(ref v) => {
@@ -315,6 +327,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::Tpl(ref v) => {
@@ -325,6 +338,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
             RTsLit::BigInt(ref v) => {
@@ -336,6 +350,7 @@ fn negate(ty: Type) -> Type {
                     }),
                     span,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
         }
@@ -348,6 +363,7 @@ fn negate(ty: Type) -> Type {
             common: ty.metadata(),
             ..Default::default()
         },
+        tracker: Default::default(),
     }
     .into()
 }

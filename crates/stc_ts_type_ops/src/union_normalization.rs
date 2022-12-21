@@ -148,6 +148,7 @@ impl ObjectUnionNormalizer {
                 common: u.metadata.common,
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 
@@ -298,6 +299,7 @@ impl ObjectUnionNormalizer {
                 specified: self.preserve_specified && prev_specified,
                 ..Default::default()
             },
+            tracker: Default::default(),
         };
 
         if extra_members.is_empty() {
@@ -362,6 +364,7 @@ impl ObjectUnionNormalizer {
                                     span: DUMMY_SP,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 })),
                                 type_params: Default::default(),
                                 metadata: Default::default(),
@@ -398,6 +401,7 @@ impl ObjectUnionNormalizer {
                                         span: DUMMY_SP,
                                         members: Default::default(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })),
                                     type_params: Default::default(),
                                     metadata: Default::default(),

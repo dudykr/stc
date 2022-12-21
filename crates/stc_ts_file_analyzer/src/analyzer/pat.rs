@@ -72,10 +72,12 @@ impl Analyzer<'_, '_> {
                                 // TODO?
                                 label: None,
                                 ty: box ty,
+                                tracker: Default::default(),
                             })
                         })
                         .collect::<VResult<_>>()?,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
             RPat::Rest(r) => {
@@ -86,6 +88,7 @@ impl Analyzer<'_, '_> {
                         span,
                         ty: box self.default_type_for_pat(&r.arg)?,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -146,6 +149,7 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 }));
             }
             RPat::Assign(pat) => return self.default_type_for_pat(&pat.left),
@@ -178,7 +182,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPat) -> VResult<ty::FnParam> {
-        self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
@@ -226,6 +229,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 ty: box ty,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                         })
                     })
@@ -321,7 +325,7 @@ impl Analyzer<'_, '_> {
                     let ty = assign_pat.left.get_ty().map(|v| v.validate_with(self));
 
                     // If pat mode is declare, assignment of default value will be handled by
-                    // variable declator function.
+                    // variable declarator function.
                     if let PatMode::Assign = self.ctx.pat_mode {
                         if let Some(Ok(ty)) = &ty {
                             self.assign_with_opts(
@@ -355,6 +359,7 @@ impl Analyzer<'_, '_> {
                                             common: tuple.metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     });
                                 }
                                 _ => {

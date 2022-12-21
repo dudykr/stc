@@ -81,6 +81,7 @@ impl Analyzer<'_, '_> {
                         span,
                         elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                         metadata: array.metadata,
+                        tracker: Default::default(),
                     })
                     .freezed();
                     return Ok(Some(ty));
@@ -96,6 +97,7 @@ impl Analyzer<'_, '_> {
                             span,
                             elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                             metadata: array.metadata,
+                            tracker: Default::default(),
                         })
                         .freezed();
                         return Ok(Some(ty));
@@ -167,6 +169,7 @@ impl Analyzer<'_, '_> {
                         span: m.span,
                         members,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })));
                 }
 
@@ -234,6 +237,7 @@ impl Analyzer<'_, '_> {
                             span: m.span,
                             members: vec![index_signature],
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })));
                     }
 
@@ -271,6 +275,7 @@ impl Analyzer<'_, '_> {
                             span: m.span,
                             members,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })));
                     }
                 }

@@ -507,6 +507,7 @@ impl Analyzer<'_, '_> {
                         common: metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })));
             }
             Type::Conditional(..)
@@ -657,6 +658,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             opts,
                         )
@@ -672,6 +674,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             opts,
                         )
@@ -687,6 +690,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             opts,
                         )
@@ -704,11 +708,13 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             ],
                         ),
@@ -2341,6 +2347,7 @@ impl Analyzer<'_, '_> {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         rhs,
                         opts,
@@ -2436,6 +2443,7 @@ impl Analyzer<'_, '_> {
                             raw: None,
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }

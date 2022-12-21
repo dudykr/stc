@@ -26,8 +26,6 @@ mod return_type;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> VResult<ty::Function> {
-        self.record(f);
-
         let marks = self.marks();
 
         if !self.ctx.reevaluating() && !self.ctx.ignore_errors && f.body.is_some() {
@@ -134,6 +132,7 @@ impl Analyzer<'_, '_> {
                             common: metadata,
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     }),
 
                     _ => ret_ty,
@@ -218,6 +217,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -226,6 +226,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                 }
                 None => Type::any(f.span, Default::default()),
@@ -249,6 +250,7 @@ impl Analyzer<'_, '_> {
                 params,
                 ret_ty: box declared_ret_ty.unwrap_or(inferred_return_type),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         })
     }
@@ -320,7 +322,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    /// TODO(kdy1): Handle recursive funciton
+    /// TODO(kdy1): Handle recursive function
     fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);

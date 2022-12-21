@@ -88,6 +88,7 @@ impl Analyzer<'_, '_> {
                                 metadata: KeywordTypeMetadata {
                                     common: ty.metadata.common,
                                 },
+                                tracker: Default::default(),
                             }),
                         )
                         .context("tried applying `keyof` to a literal by delegating to keyword type handler")
@@ -98,21 +99,25 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         });
                         let number = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         });
                         let symbol = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsSymbolKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         });
                         return Ok(Type::Union(Union {
                             span,
                             types: vec![string, number, symbol],
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsVoidKeyword
@@ -124,6 +129,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsNeverKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword | TsKeywordTypeKind::TsStringKeyword => {
@@ -147,9 +153,10 @@ impl Analyzer<'_, '_> {
                                     type_name: RTsEntityName::Ident(RIdent::new(name, DUMMY_SP)),
                                     type_args: None,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             )
-                            .context("tried to get keys of builitin interface types");
+                            .context("tried to get keys of builtin interface types");
                     }
 
                     TsKeywordTypeKind::TsBigIntKeyword => {}
@@ -162,19 +169,23 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             ],
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }))
                     }
                     TsKeywordTypeKind::TsIntrinsicKeyword => {}
@@ -240,6 +251,7 @@ impl Analyzer<'_, '_> {
                         types: key_types,
 
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -268,6 +280,7 @@ impl Analyzer<'_, '_> {
                                     raw: None,
                                 }),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }))
                         }
                     }
@@ -284,6 +297,7 @@ impl Analyzer<'_, '_> {
                                 type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                         )
                         .context("tried to get keys of Array (builtin)");
@@ -355,6 +369,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
 
