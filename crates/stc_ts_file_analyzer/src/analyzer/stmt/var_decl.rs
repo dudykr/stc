@@ -421,7 +421,7 @@ impl Analyzer<'_, '_> {
                                         ..
                                     }) => {
                                         match self.ctx.var_kind {
-                                            // It's `uniqute symbol` only if it's `Symbol()`
+                                            // It's `unique symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
                                                 span: *span,
                                                 op: TsTypeOperatorOp::Unique,
@@ -432,11 +432,13 @@ impl Analyzer<'_, '_> {
                                                         common: *common,
                                                         ..Default::default()
                                                     },
+                                                    tracker: Default::default(),
                                                 }),
                                                 metadata: OperatorMetadata {
                                                     common: *common,
                                                     ..Default::default()
                                                 },
+                                                tracker: Default::default(),
                                             }),
 
                                             _ => Type::Keyword(KeywordType {
@@ -446,6 +448,7 @@ impl Analyzer<'_, '_> {
                                                     common: *common,
                                                     ..Default::default()
                                                 },
+                                                tracker: Default::default(),
                                             }),
                                         }
                                     }
@@ -582,12 +585,12 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widening"));
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widening"));
                                             }
                                             _ => {}
                                         }

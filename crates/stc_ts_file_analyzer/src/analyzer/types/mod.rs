@@ -540,6 +540,7 @@ impl Analyzer<'_, '_> {
                             obj_type: obj_ty,
                             index_type: index_ty,
                             metadata: iat.metadata,
+                            tracker: Default::default(),
                         })));
                     }
 
@@ -1553,6 +1554,7 @@ impl Analyzer<'_, '_> {
                                 span: to_type.span(),
                                 types: vec![*to_type.clone(), *from_type],
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .fixed()
                             .freezed(),
@@ -1645,6 +1647,7 @@ impl Analyzer<'_, '_> {
                 quasis,
                 types,
                 metadata,
+                ..
             }) => {
                 let quasis = quasis
                     .iter()
@@ -1665,6 +1668,7 @@ impl Analyzer<'_, '_> {
                     quasis,
                     types: types.clone(),
                     metadata: *metadata,
+                    tracker: Default::default(),
                 }));
             }
 
@@ -1674,6 +1678,7 @@ impl Analyzer<'_, '_> {
                 constraint: Some(constraint),
                 default,
                 metadata,
+                ..
             }) => {
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
@@ -1688,6 +1693,7 @@ impl Analyzer<'_, '_> {
                     constraint: Some(box constraint),
                     default: default.clone(),
                     metadata: *metadata,
+                    tracker: Default::default(),
                 });
 
                 return Ok(Type::Intrinsic(Intrinsic {
