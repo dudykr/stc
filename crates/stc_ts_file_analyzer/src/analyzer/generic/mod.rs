@@ -57,7 +57,7 @@ pub(super) struct InferData {
     errored: FxHashSet<Id>,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
-    /// inferring type of funcation parametrs. We cannot know the type before
+    /// inferring type of function parameters. We cannot know the type before
     /// it. So we store the default type while it.
     ///
     /// ```ts
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // We allocate a new vertor only if required.
+        // We allocate a new vector only if required.
         let mut actual_args;
         let args = if args.iter().any(|arg| arg.spread.is_some()) {
             actual_args = vec![];
@@ -2226,6 +2226,7 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
                         common: p.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 });
             }
             _ => {}
@@ -2356,6 +2357,7 @@ impl Fold<Type> for MappedReverser {
                             span,
                             members: vec![TypeElement::Property(PropertySignature { type_ann: mapped.ty, ..p })],
                             metadata,
+                            tracker: Default::default(),
                         });
 
                         return Type::Mapped(Mapped { ty: Some(ty), ..mapped });
@@ -2440,6 +2442,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
                     span: DUMMY_SP,
                     ty,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
             }
         },

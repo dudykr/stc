@@ -72,10 +72,12 @@ impl Analyzer<'_, '_> {
                                 // TODO?
                                 label: None,
                                 ty: box ty,
+                                tracker: Default::default(),
                             })
                         })
                         .collect::<VResult<_>>()?,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
             RPat::Rest(r) => {

@@ -322,6 +322,7 @@ fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> t
         name,
         exports: box exports,
         metadata: Default::default(),
+        tracker: Default::default(),
     }
 }
 
