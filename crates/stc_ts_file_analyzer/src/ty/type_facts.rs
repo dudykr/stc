@@ -45,6 +45,7 @@ impl Analyzer<'_, '_> {
                             common: common_metadata,
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     });
                 }
                 _ => {}
@@ -92,6 +93,7 @@ impl Analyzer<'_, '_> {
                 params: vec![param],
                 ret_ty: box Type::any(DUMMY_SP, Default::default()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             });
 
             // TODO(kdy1): PERF
@@ -108,6 +110,7 @@ impl Analyzer<'_, '_> {
                         span: ty.span(),
                         types: vec![ty.take(), fn_type],
                         metadata: UnionMetadata { common: ty.metadata() },
+                        tracker: Default::default(),
                     })
                 }
             }
@@ -244,6 +247,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                         metadata: ty.metadata,
+                        tracker: Default::default(),
                     };
                 }
             }
