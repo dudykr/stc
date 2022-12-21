@@ -793,6 +793,7 @@ impl Analyzer<'_, '_> {
                         metadata: UnionMetadata {
                             common: tuple.metadata.common,
                         },
+                        tracker: Default::default(),
                     })
                     .fixed(),
                 ));
@@ -817,6 +818,7 @@ impl Analyzer<'_, '_> {
                         span: u.span,
                         types,
                         metadata: u.metadata,
+                        tracker: Default::default(),
                     })
                     .fixed(),
                 ));
@@ -837,6 +839,7 @@ impl Analyzer<'_, '_> {
                     span: i.span,
                     types,
                     metadata: i.metadata,
+                    tracker: Default::default(),
                 })));
             }
 

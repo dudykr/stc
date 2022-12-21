@@ -202,6 +202,7 @@ impl RemoveTypes for Union {
             span: self.span,
             types,
             metadata: self.metadata,
+            tracker: Default::default(),
         }
         .into()
     }
@@ -232,6 +233,7 @@ impl RemoveTypes for Union {
             span: self.span,
             types,
             metadata: self.metadata,
+            tracker: Default::default(),
         }
         .into()
     }

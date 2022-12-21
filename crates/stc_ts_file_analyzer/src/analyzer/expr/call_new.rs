@@ -2880,7 +2880,7 @@ impl Analyzer<'_, '_> {
                                     let arg = match args_iter.next() {
                                         Some(v) => v,
                                         None => {
-                                            // TODO(kdy1): Arugment count
+                                            // TODO(kdy1): Argument count
                                             break;
                                         }
                                     };

@@ -442,6 +442,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                     .fixed()
                                     .freezed(),
@@ -504,6 +505,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -520,6 +522,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -540,6 +543,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -570,6 +574,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
                 // At this point rhs cannot be string.
@@ -581,6 +586,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -599,6 +605,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -644,6 +651,7 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -651,6 +659,7 @@ impl Analyzer<'_, '_> {
                 span,
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
 
             op!("instanceof") => {
