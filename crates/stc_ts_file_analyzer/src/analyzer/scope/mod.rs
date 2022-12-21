@@ -985,7 +985,7 @@ impl Analyzer<'_, '_> {
             }
 
             {
-                // Improted variables
+                // Imported variables
                 if let Some(info) = self.imports_by_id.get(name) {
                     match info.data.normalize() {
                         Type::Module(data) => {
