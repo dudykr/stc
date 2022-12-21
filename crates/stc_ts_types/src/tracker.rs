@@ -35,7 +35,7 @@ impl<const N: &'static str> Default for Tracker<N> {
         #[cfg(debug_assertions)]
         {
             let loc = Location::caller();
-            info!("Creating `{}` from {:?}", N, loc);
+            info!("Creating `{}` from {}", N, loc);
         }
 
         Self { _priv: () }
