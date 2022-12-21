@@ -951,7 +951,7 @@ impl Analyzer<'_, '_> {
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
 
         if is_callable {
-            // Handle funciton-like interfaces
+            // Handle function-like interfaces
             // Example of code handled by this block is `Error.call`
 
             let obj = self.env.get_global_type(span, &js_word!("Function"))?;
@@ -1119,8 +1119,8 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tired to access property using string as a key");
-                    // As some types has rules about computed propeties, we use the result only if
-                    // it sucesses.
+                    // As some types has rules about computed properties, we use the result only if
+                    // it successes.
                     if let Ok(ty) = res {
                         return Ok(ty);
                     }
@@ -2099,6 +2099,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     index_type: prop_ty,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2110,6 +2111,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2280,6 +2282,7 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -2316,6 +2319,7 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -2349,6 +2353,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -2423,6 +2428,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }));
                             tys.dedup_type();
                             let ty = Type::union(tys);
@@ -2491,6 +2497,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
 
@@ -2507,6 +2514,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
 
@@ -2529,6 +2537,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }));
                         }
 
