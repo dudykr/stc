@@ -68,7 +68,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RComputedPropName) -> VResult<Key> {
-        self.record(node);
         let ctx = Ctx {
             in_computed_prop_name: true,
             ..self.ctx
@@ -206,8 +205,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, prop: &RProp, object_type: Option<&Type>) -> VResult<TypeElement> {
-        self.record(prop);
-
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Object,
             in_shorthand: matches!(prop, RProp::Shorthand(..)),

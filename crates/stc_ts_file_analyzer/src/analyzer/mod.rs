@@ -21,7 +21,7 @@ use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, panic_ctx, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
-use swc_common::{FileName, SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
+use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 
 use self::{
@@ -843,8 +843,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsImportEqualsDecl) {
-        self.record(node);
-
         let ctxt = self.ctx.module_id;
 
         let ctx = Ctx {
@@ -967,6 +965,7 @@ impl Analyzer<'_, '_> {
                     span,
                     exports: box exports,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 };
                 let ty = Type::Namespace(ty).freezed();
 
@@ -1026,6 +1025,7 @@ impl Analyzer<'_, '_> {
                         span,
                         exports: box exports,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     };
                     let ty = Type::Module(ty).freezed();
                     return Ok(Some(ty));
