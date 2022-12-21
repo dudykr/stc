@@ -35,6 +35,7 @@
         "renamer",
         "respan",
         "rnode",
+        "rposition",
         "rustc",
         "rustfmt",
         "rvalue",

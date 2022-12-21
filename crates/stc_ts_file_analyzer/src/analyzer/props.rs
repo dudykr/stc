@@ -482,6 +482,7 @@ impl Analyzer<'_, '_> {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                 });
                             inferred_ret_ty.make_clone_cheap();
@@ -527,8 +528,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> VResult<TypeElement> {
-        self.record(n);
-
         let key = n.key.validate_with(self)?;
         let computed = key.is_computed();
 

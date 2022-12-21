@@ -439,6 +439,7 @@ impl Scope<'_> {
                                         span: DUMMY_SP,
                                         types,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                     .fixed()
                                 }
@@ -588,6 +589,7 @@ impl Scope<'_> {
                         span: DUMMY_SP,
                         types: vec![prev_ty, ty],
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                     .fixed()
                     .freezed();
@@ -1984,6 +1986,7 @@ impl Expander<'_, '_, '_> {
                                             span,
                                             members: vec![],
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         })),
                                         InferTypeOpts { ..Default::default() },
                                     )?;
@@ -2009,6 +2012,7 @@ impl Expander<'_, '_, '_> {
                                             span: self.span,
                                             def: box def,
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         });
                                     };
 
@@ -2046,6 +2050,7 @@ impl Expander<'_, '_, '_> {
                                         span: self.span,
                                         def: box def,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
                                 };
 
@@ -2130,6 +2135,7 @@ impl Expander<'_, '_, '_> {
                     enum_name: e.id.clone().into(),
                     name: None,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })));
             }
         }
@@ -2414,8 +2420,18 @@ impl Expander<'_, '_, '_> {
                     return ty;
                 }
 
-                Type::Union(Union { span, types, metadata }) => {
-                    return Type::Union(Union { span, types, metadata });
+                Type::Union(Union {
+                    span,
+                    types,
+                    metadata,
+                    tracker,
+                }) => {
+                    return Type::Union(Union {
+                        span,
+                        types,
+                        metadata,
+                        tracker,
+                    });
                 }
 
                 Type::Function(ty::Function {
