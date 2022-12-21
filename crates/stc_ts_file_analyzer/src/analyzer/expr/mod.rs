@@ -1707,6 +1707,7 @@ impl Analyzer<'_, '_> {
                                 common: obj.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -1778,6 +1779,7 @@ impl Analyzer<'_, '_> {
                             enum_name: e.id.clone().into(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     Key::Num(RNumber { value, .. }) => {
@@ -1793,6 +1795,7 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     },
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 });
                                 return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                             }
@@ -1801,6 +1804,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -1818,6 +1822,7 @@ impl Analyzer<'_, '_> {
                             span: prop.span().with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -1850,6 +1855,7 @@ impl Analyzer<'_, '_> {
                                             common: metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     });
                                     return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                                 }
