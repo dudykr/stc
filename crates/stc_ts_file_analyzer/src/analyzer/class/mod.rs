@@ -1252,7 +1252,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_confliicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
+    fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
     fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
@@ -1923,7 +1923,7 @@ impl Analyzer<'_, '_> {
 
             child.validate_inherited_members_from_super_class(None, &class);
             child.report_errors_for_wrong_impls_of_class(None, &class);
-            child.report_errors_for_confliicting_interfaces(&class.implements);
+            child.report_errors_for_conflicting_interfaces(&class.implements);
 
             Ok(class)
         })?;

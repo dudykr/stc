@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Enum> {
         for m in &e.members {
-            self.validate_with(|a| a.validate_enum_memeber_name(&m.id));
+            self.validate_with(|a| a.validate_enum_member_name(&m.id));
         }
 
         let mut default = 0.0;
@@ -329,7 +329,7 @@ impl Evaluator<'_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_enum_memeber_name(&mut self, e: &RTsEnumMemberId) -> VResult<()> {
+    fn validate_enum_member_name(&mut self, e: &RTsEnumMemberId) -> VResult<()> {
         match e {
             RTsEnumMemberId::Ident(i) => {}
             RTsEnumMemberId::Str(s) => {
