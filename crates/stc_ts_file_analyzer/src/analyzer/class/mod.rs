@@ -126,8 +126,10 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
                 metadata: OperatorMetadata { common: ty.metadata() },
+                tracker: Default::default(),
             }),
             _ => ty,
         }))
@@ -684,6 +686,7 @@ impl Analyzer<'_, '_> {
                         TsKeywordTypeKind::TsAnyKeyword
                     },
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             })
         });
@@ -1274,6 +1277,7 @@ impl Analyzer<'_, '_> {
                 common: class.metadata.common,
                 ..Default::default()
             },
+            tracker: Default::default(),
         });
 
         for parent in &*class.implements {
