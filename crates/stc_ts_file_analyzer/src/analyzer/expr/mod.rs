@@ -104,8 +104,6 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        self.record(e);
-
         let _stack = stack::start(64);
         let _ctx = debug_ctx!(format!("validate\nExpr: {:?}", e));
 
@@ -165,6 +163,7 @@ impl Analyzer<'_, '_> {
                                 span.with_ctxt(SyntaxContext::empty()),
                             ))),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -198,11 +197,13 @@ impl Analyzer<'_, '_> {
                         Ok(Type::from(StaticThis {
                             span,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }))
                     } else {
                         Ok(Type::from(ThisType {
                             span,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }))
                     }
                 }
@@ -213,6 +214,7 @@ impl Analyzer<'_, '_> {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     let ty = self.type_of_var(i, mode, type_args)?;
@@ -231,21 +233,25 @@ impl Analyzer<'_, '_> {
                     span: v.span,
                     lit: RTsLit::Bool(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Str(ref v)) => Ok(Type::Lit(LitType {
                     span: v.span,
                     lit: RTsLit::Str(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Num(v)) => Ok(Type::Lit(LitType {
                     span: v.span,
                     lit: RTsLit::Number(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::BigInt(v)) => Ok(Type::Lit(LitType {
                     span: v.span,
                     lit: RTsLit::BigInt(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {

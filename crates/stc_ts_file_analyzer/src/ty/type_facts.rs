@@ -397,14 +397,17 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsObjectKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 ],
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
             .freezed();
         }
