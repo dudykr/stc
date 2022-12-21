@@ -1134,8 +1134,8 @@ impl Analyzer<'_, '_> {
                 Type::Lit(LitType {
                     lit: RTsLit::Number(n), ..
                 }) => {
-                    // As some types has rules about computed propeties, we use the result only if
-                    // it sucesses.
+                    // As some types has rules about computed properties, we use the result only if
+                    // it successes.
                     if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx, opts) {
                         return Ok(ty);
                     }
@@ -1310,7 +1310,7 @@ impl Analyzer<'_, '_> {
                             return self
                                 .env
                                 .get_global_type(span, sym)
-                                .context("tried to access a prperty of `globalThis`")
+                                .context("tried to access a property of `globalThis`")
                                 .convert_err(|err| match err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
                                         span,
@@ -2549,6 +2549,7 @@ impl Analyzer<'_, '_> {
                                 raw: None,
                             }),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -2608,6 +2609,7 @@ impl Analyzer<'_, '_> {
                                     params: m.params.clone(),
                                     ret_ty: m.ret_ty.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -3077,7 +3079,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Expand type paramters using `type_args`.
+    /// Expand type parameters using `type_args`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
         match ty.normalize() {
@@ -3162,10 +3164,11 @@ impl Analyzer<'_, '_> {
             // We will expand this type query to proper type while calculating returns types
             // of a function.
             return Ok(Type::Query(QueryType {
-                // TODO(kdy1): This is a regession.
+                // TODO(kdy1): This is a regression.
                 span: span.with_ctxt(SyntaxContext::empty()),
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
