@@ -903,7 +903,7 @@ impl Analyzer<'_, '_> {
     }
 
     ///
-    /// # Exmaple
+    /// # Example
     ///
     ///
     ///
@@ -1016,7 +1016,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    /// We have to check for inheritnace.
+    /// We have to check for inheritance.
     ///
     /// ```ts
     /// class C1 {
@@ -1040,7 +1040,7 @@ impl Analyzer<'_, '_> {
     ///
     /// # Related tests
     ///
-    /// ## narrowingConstrainedTypeVaraible.ts
+    /// ## narrowingConstrainedTypeVariable.ts
     ///
     /// In the test, there's `function f2<T extends C, U extends D>(v: T | U)
     /// {}`.
@@ -1097,6 +1097,7 @@ impl Analyzer<'_, '_> {
                         span,
                         def: box ty.clone(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })),
                     &orig_ty,
                 )
@@ -1133,6 +1134,7 @@ impl Analyzer<'_, '_> {
                         span,
                         def: box def.clone(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
                 return Ok(orig_ty.into_owned());
