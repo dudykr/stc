@@ -195,6 +195,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                         metadata: ty.metadata,
+                        tracker: Default::default(),
                     }
                 }
                 _ => {}
@@ -210,6 +211,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                 span: ty.span,
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 metadata: ty.metadata,
+                tracker: Default::default(),
             };
         }
 
@@ -269,6 +271,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                         metadata: ty.metadata,
+                        tracker: Default::default(),
                     };
                 }
             }

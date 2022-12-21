@@ -2562,6 +2562,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box Type::union(types),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
 
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
@@ -2668,6 +2669,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     prop,
                     type_mode,
@@ -2697,6 +2699,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     types,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -2799,6 +2802,7 @@ impl Analyzer<'_, '_> {
                     span,
                     types: new,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
                 .fixed();
                 // ty.respan(span);
@@ -2892,6 +2896,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     index_type: box prop.ty().into_owned(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2909,6 +2914,7 @@ impl Analyzer<'_, '_> {
                             obj_type: box obj,
                             index_type,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 } else {
@@ -2922,6 +2928,7 @@ impl Analyzer<'_, '_> {
                                         &Type::StaticThis(StaticThis {
                                             span,
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         }),
                                         prop,
                                         type_mode,
@@ -2963,6 +2970,7 @@ impl Analyzer<'_, '_> {
                     readonly: false,
                     index_type,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
                 return Ok(ty);
             }
@@ -2988,6 +2996,7 @@ impl Analyzer<'_, '_> {
                         span,
                         members: Default::default(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -3009,6 +3018,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     prop,
                     type_mode,
@@ -3071,6 +3081,7 @@ impl Analyzer<'_, '_> {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                 }
                 ty
@@ -3316,6 +3327,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::StaticThis(StaticThis {
                     span,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
         }
@@ -4107,7 +4119,7 @@ impl Analyzer<'_, '_> {
             .map(|scope| scope.kind())
         {
             Some(ScopeKind::Class) => {
-                // Using proerties of super class in class property names are not allowed.
+                // Using properties of super class in class property names are not allowed.
                 self.storage
                     .report(ErrorKind::CannotReferenceSuperInComputedPropName { span }.into())
             }
