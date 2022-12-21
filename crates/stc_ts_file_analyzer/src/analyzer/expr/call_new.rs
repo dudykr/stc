@@ -3204,6 +3204,7 @@ impl Analyzer<'_, '_> {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -3470,6 +3471,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         metadata,
+                        ..
                     }),
                 ..
             }) => {
@@ -3477,6 +3479,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     metadata: *metadata,
+                    tracker: Default::default(),
                 });
             }
 
@@ -3546,6 +3549,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         common: metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .fixed();
             }
@@ -3580,6 +3584,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                             params: vec![ty.clone()],
                                         }),
                                         metadata: *metadata,
+                                        tracker: Default::default(),
                                     }))
                                 }
                             } else {
