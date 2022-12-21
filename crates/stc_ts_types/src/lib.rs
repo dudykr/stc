@@ -1509,6 +1509,19 @@ impl Type {
             _ => false,
         }
     }
+
+    /// Returns [Some] if `self` is an array or an readonly array.
+    pub fn as_array_without_readonly(&self) -> Option<&Array> {
+        match self.normalize_instance() {
+            Type::Array(t) => Some(t),
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::ReadOnly,
+                ty,
+                ..
+            }) => ty.as_array_without_readonly(),
+            _ => None,
+        }
+    }
 }
 
 impl Type {

@@ -964,7 +964,7 @@ impl Analyzer<'_, '_> {
                 Some((names, r_ty))
             }
         }) {
-            if !self.can_be_undefined(span, r_ty)? {
+            if !self.can_be_undefined(span, r_ty, false)? {
                 for name in names {
                     self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
                 }

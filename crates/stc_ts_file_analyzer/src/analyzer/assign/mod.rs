@@ -774,17 +774,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::IndexedAccessType(rhs) = rhs {
-            let err = ErrorKind::NoSuchProperty {
-                span,
-                obj: Some(rhs.obj_type.clone()),
-                // TODO
-                prop: None,
-            }
-            .into();
-            return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
-        }
-
         match to {
             Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(RIdent {

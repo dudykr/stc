@@ -523,15 +523,6 @@ impl Analyzer<'_, '_> {
 
                             let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&prop_ty)));
 
-                            if let Type::IndexedAccessType(prop_ty) = prop_ty.normalize() {
-                                match prop_ty.index_type.normalize() {
-                                    Type::Param(..) => {}
-                                    _ => {
-                                        panic!("{:?}", prop_ty);
-                                    }
-                                }
-                            }
-
                             let ty = self
                                 .normalize(span, Cow::Owned(prop_ty), opts)
                                 .context("tried to normalize the type of property")?
@@ -1283,7 +1274,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, span, ty))]
-    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> VResult<bool> {
+    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -1292,15 +1283,31 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
+        if include_null {
+            if ty.is_null() {
+                return Ok(true);
+            }
+        } else {
+            if ty.is_null() {
+                return Ok(false);
+            }
+        }
+
         if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
             return Ok(true);
         }
 
         Ok(match &*ty {
-            Type::Class(..) | Type::ClassDef(..) | Type::Enum(..) | Type::EnumVariant(..) | Type::Keyword(..) | Type::Lit(..) => false,
+            Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Enum(..)
+            | Type::EnumVariant(..)
+            | Type::Keyword(..)
+            | Type::Lit(..)
+            | Type::TypeLit(..) => false,
             Type::Union(ty) => {
                 for ty in &ty.types {
-                    if self.can_be_undefined(span, ty)? {
+                    if self.can_be_undefined(span, ty, include_null)? {
                         return Ok(true);
                     }
                 }

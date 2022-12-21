@@ -36,8 +36,8 @@ Error:
 
 Error: 
   > {
-  |     readonly baz: string;
-  |     readonly quux: string;
+  |     baz: string;
+  |     quux: string;
   | }
 
   x Type

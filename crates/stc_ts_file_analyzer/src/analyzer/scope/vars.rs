@@ -5,7 +5,7 @@ use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -683,7 +683,7 @@ impl Analyzer<'_, '_> {
                                 return Err(ErrorKind::RestPropertyNotLast { span: pat.span }.into());
                             }
 
-                            let rest_ty = ty
+                            let mut rest_ty = ty
                                 .as_ref()
                                 .try_map(|ty| {
                                     self.exclude_props(pat.span(), ty, &used_keys)
@@ -691,9 +691,17 @@ impl Analyzer<'_, '_> {
                                 })?
                                 .freezed();
 
-                            let default = default
+                            let mut default = default
                                 .and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok())
                                 .freezed();
+
+                            if let Some(ty) = &mut rest_ty {
+                                remove_readonly(ty);
+                            }
+
+                            if let Some(ty) = &mut default {
+                                remove_readonly(ty);
+                            }
 
                             return self
                                 .add_vars(&pat.arg, rest_ty, None, default, opts)
@@ -909,5 +917,17 @@ impl Analyzer<'_, '_> {
             .freezed())
         })
         .context("tried to ensure iterator")
+    }
+}
+
+fn remove_readonly(ty: &mut Type) {
+    if let Some(tl) = ty.as_type_lit_mut() {
+        for m in &mut tl.members {
+            if let TypeElement::Property(p) = m {
+                p.readonly = false;
+            }
+        }
+
+        ty.make_clone_cheap();
     }
 }
