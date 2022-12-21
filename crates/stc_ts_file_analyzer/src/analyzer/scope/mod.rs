@@ -2343,7 +2343,7 @@ impl Expander<'_, '_, '_> {
                             span: cond_span,
                             check_type:
                                 box Type::IndexedAccessType(IndexedAccessType {
-                                    span: checl_type_span,
+                                    span: check_type_span,
                                     ref obj_type,
                                     index_type: box Type::Param(ref index_type),
                                     ..
