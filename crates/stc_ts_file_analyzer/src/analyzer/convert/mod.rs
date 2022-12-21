@@ -48,8 +48,6 @@ mod interface;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsTypeParamDecl) -> VResult<TypeParamDecl> {
-        self.record(decl);
-
         if self.is_builtin {
             Ok(TypeParamDecl {
                 span: decl.span,
@@ -172,8 +170,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     #[inline]
     fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<Type> {
-        self.record(ann);
-
         let ctx = Ctx {
             in_actual_type: true,
             ..self.ctx
@@ -186,7 +182,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<Type> {
-        self.record(d);
         let span = d.span;
 
         let alias = {
@@ -733,6 +728,7 @@ impl Analyzer<'_, '_> {
                         span: t.span,
                         elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -817,6 +813,7 @@ impl Analyzer<'_, '_> {
                 },
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 }

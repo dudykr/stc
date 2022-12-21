@@ -140,7 +140,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RClassProp) -> VResult<ClassProperty> {
         let marks = self.marks();
-        self.record(p);
 
         if p.is_static {
             if let RPropName::Ident(i) = &p.key {
@@ -234,8 +233,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RConstructor, super_class: Option<&Type>) -> VResult<ConstructorSignature> {
-        self.record(c);
-
         let c_span = c.span();
 
         if !self.is_builtin
@@ -414,8 +411,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsFnParam) -> VResult<FnParam> {
-        self.record(p);
-
         let span = p.span();
 
         macro_rules! ty {
@@ -566,8 +561,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassMethod) -> VResult<ClassMember> {
-        self.record(c);
-
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
@@ -1458,8 +1451,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClass) -> VResult<ClassDef> {
-        self.record(c);
-
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -1999,8 +1990,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassDecl) -> VResult<()> {
-        self.record(c);
-
         let ctx = Ctx {
             in_declare: self.ctx.in_declare || c.declare,
             ..self.ctx

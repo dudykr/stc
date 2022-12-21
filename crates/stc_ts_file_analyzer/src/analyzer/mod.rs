@@ -304,19 +304,6 @@ struct PerModuleData {
     exports_spans: FxHashMap<(JsWord, IdCtx), Vec<Span>>,
 }
 
-/// TODO
-const NO_DUP: bool = false;
-
-impl Analyzer<'_, '_> {
-    /// Mark node as visited. This method panics if Analyzer had visited node.
-    fn record<N>(&mut self, node: &N)
-    where
-        N: Debug + Spanned,
-    {
-        if cfg!(debug_assertions) && NO_DUP {}
-    }
-}
-
 // TODO(kdy1):
 //#[validator] #[validator]impl Analyzer<'_, '_> {
 //    type Output = ValidationResult<ty::Module>;
