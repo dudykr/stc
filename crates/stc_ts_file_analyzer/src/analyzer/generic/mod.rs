@@ -1216,6 +1216,7 @@ impl Analyzer<'_, '_> {
                                 types,
                                 span,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .freezed()]),
                         );
@@ -1443,6 +1444,7 @@ impl Analyzer<'_, '_> {
                                             common: param.metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     })),
                                     Key::Num(n) => {
                                         key_types.push(Type::Lit(LitType {
@@ -1452,6 +1454,7 @@ impl Analyzer<'_, '_> {
                                                 common: param.metadata.common,
                                                 ..Default::default()
                                             },
+                                            tracker: Default::default(),
                                         }));
                                     }
                                     _ => {

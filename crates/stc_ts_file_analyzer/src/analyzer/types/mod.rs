@@ -1425,6 +1425,7 @@ impl Analyzer<'_, '_> {
                             common: ty.metadata.common,
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     })),
                     type_params: Default::default(),
                     metadata: Default::default(),
@@ -1524,6 +1525,7 @@ impl Analyzer<'_, '_> {
                                             common: to_type.metadata(),
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     })
                                     .freezed(),
                                 )
@@ -1534,6 +1536,7 @@ impl Analyzer<'_, '_> {
                                         span: to_type.span(),
                                         types: vec![*to_type.clone(), *from_type],
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                     .fixed()
                                     .freezed(),
