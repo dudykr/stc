@@ -1497,6 +1497,7 @@ impl Analyzer<'_, '_> {
                     span: u.span,
                     types,
                     metadata: u.metadata,
+                    tracker: Default::default(),
                 });
             }
 

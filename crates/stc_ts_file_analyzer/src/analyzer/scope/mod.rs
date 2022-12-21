@@ -1097,6 +1097,7 @@ impl Analyzer<'_, '_> {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         });
         #[allow(dead_code)]
@@ -1104,6 +1105,7 @@ impl Analyzer<'_, '_> {
             Type::StaticThis(StaticThis {
                 span: DUMMY_SP,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         });
 

@@ -98,21 +98,25 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         });
                         let number = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         });
                         let symbol = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsSymbolKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         });
                         return Ok(Type::Union(Union {
                             span,
                             types: vec![string, number, symbol],
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsVoidKeyword
