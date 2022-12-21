@@ -37,7 +37,13 @@ impl Analyzer<'_, '_> {
                 Some(v) => {
                     v.params = params;
                 }
-                None => f.type_params = Some(TypeParamDecl { span: DUMMY_SP, params }),
+                None => {
+                    f.type_params = Some(TypeParamDecl {
+                        span: DUMMY_SP,
+                        params,
+                        tracker: Default::default(),
+                    })
+                }
             }
         }
     }
@@ -48,7 +54,7 @@ struct TypeParamUsageFinder {
     used: IndexSet<Id, FxBuildHasher>,
 }
 
-/// Ignore usages of type parameters in `contraint`.
+/// Ignore usages of type parameters in `constraint`.
 impl Visit<TypeParam> for TypeParamUsageFinder {
     fn visit(&mut self, ty: &TypeParam) {
         ty.default.visit_with(self);

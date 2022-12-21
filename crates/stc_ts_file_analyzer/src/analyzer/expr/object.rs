@@ -28,6 +28,7 @@ impl Analyzer<'_, '_> {
                 span: node.span,
                 members: vec![],
                 metadata: Default::default(),
+                tracker: Default::default(),
             });
 
             let mut known_keys = vec![];
@@ -58,7 +59,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        debug!("Normlaized unions (time = {:?})", end - start);
+        debug!("Normalized unions (time = {:?})", end - start);
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
@@ -127,7 +128,7 @@ impl Analyzer<'_, '_> {
                             let span = key.span();
 
                             // Check if duplicate key exists.
-                            // We show errors on the second key and latters.
+                            // We show errors on the second key and the latter.
                             //
                             // See: es6/Symbols/symbolProperty36.ts
 
@@ -164,7 +165,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Type::Function(..) = to.normalize() {
-            // objectSpead.ts says
+            // objectSpread.ts says
             //
             //
             // functions result in { }

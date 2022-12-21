@@ -3282,6 +3282,7 @@ impl Analyzer<'_, '_> {
                 span: i.span.with_ctxt(SyntaxContext::empty()),
                 types: modules,
                 metadata: Default::default(),
+                tracker: Default::default(),
             });
             ty.fix();
             ty.make_clone_cheap();
@@ -3599,6 +3600,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         },
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -3656,6 +3658,7 @@ impl Analyzer<'_, '_> {
                             // parser)
                             elem_type: box type_args.clone().params.into_iter().next().unwrap(),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
