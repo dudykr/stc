@@ -23,6 +23,7 @@
         "inflector",
         "itertools",
         "keyof",
+        "nonminimal",
         "opentelemetry",
         "pmutil",
         "qself",
