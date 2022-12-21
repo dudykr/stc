@@ -254,6 +254,7 @@ impl Analyzer<'_, '_> {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -261,6 +262,7 @@ impl Analyzer<'_, '_> {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
                 RExpr::Lit(RLit::Regex(..)) => Ok(Type::Ref(Ref {
@@ -273,6 +275,7 @@ impl Analyzer<'_, '_> {
                     }),
                     type_args: None,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
 
                 RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),

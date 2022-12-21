@@ -535,6 +535,7 @@ impl Analyzer<'_, '_> {
                         }),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
 
                     let rhs = self.normalize(Some(span), Cow::Owned(rhs), Default::default())?;
@@ -605,6 +606,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 },
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             lhs_metadata,
                             opts,
@@ -718,6 +720,7 @@ impl Analyzer<'_, '_> {
                             span: *rhs_span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         lhs_metadata,
                         opts,
@@ -1156,6 +1159,7 @@ impl Analyzer<'_, '_> {
                                                             box Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                                                         }),
                                                         metadata: Default::default(),
+                                                        tracker: Default::default(),
                                                     }),
                                                     opts,
                                                 )
@@ -1312,6 +1316,7 @@ impl Analyzer<'_, '_> {
                                                         box Type::any(rm.span.with_ctxt(SyntaxContext::empty()), Default::default())
                                                     }),
                                                     metadata: Default::default(),
+                                                    tracker: Default::default(),
                                                 }),
                                                 AssignOpts {
                                                     allow_assignment_to_param: false,
