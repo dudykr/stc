@@ -558,8 +558,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RSwitchStmt) -> VResult<()> {
-        self.record(stmt);
-
         let discriminant_ty = self.report_errors_for_incomparable_switch_cases(stmt).report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
@@ -1305,8 +1303,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
-        self.record(e);
-
         let RCondExpr {
             span,
             ref test,

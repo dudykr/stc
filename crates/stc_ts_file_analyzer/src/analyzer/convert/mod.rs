@@ -120,8 +120,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsTypeParam) -> VResult<TypeParam> {
-        self.record(p);
-
         let ctx = Ctx {
             in_actual_type: true,
             ..self.ctx
@@ -713,8 +711,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
-        self.record(t);
-
         let span = t.span;
         let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new).freezed();
         let mut contains_infer = false;
