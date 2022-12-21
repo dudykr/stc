@@ -256,6 +256,7 @@ impl Analyzer<'_, '_> {
                 span,
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })));
         }
 
@@ -301,6 +302,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                         types.dedup_type();
                         return Ok(Cow::Owned(Type::union(types)));
@@ -435,6 +437,7 @@ impl Analyzer<'_, '_> {
                         span,
                         id: SymbolId::async_iterator(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 }),
                 None,
@@ -676,6 +679,7 @@ impl Analyzer<'_, '_> {
                         span: u.span,
                         types,
                         metadata: u.metadata,
+                        tracker: Default::default(),
                     });
                     return Ok(Cow::Owned(new));
                 }
@@ -690,6 +694,7 @@ impl Analyzer<'_, '_> {
                         span: i.span,
                         types,
                         metadata: i.metadata,
+                        tracker: Default::default(),
                     });
                     return Ok(Cow::Owned(new));
                 }
@@ -709,6 +714,7 @@ impl Analyzer<'_, '_> {
                         span,
                         id: SymbolId::iterator(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 }),
                 None,
@@ -764,6 +770,7 @@ impl Analyzer<'_, '_> {
                 span: iterator.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })));
         }
 

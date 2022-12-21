@@ -18,6 +18,7 @@
         "fastpath",
         "fxhash",
         "Hasher",
+        "iife",
         "impls",
         "indexmap",
         "inflector",

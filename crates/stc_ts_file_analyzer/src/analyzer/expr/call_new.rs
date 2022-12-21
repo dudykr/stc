@@ -948,7 +948,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Option<Type>> {
         let candidates = {
             // TODO(kdy1): Deduplicate.
-            // This is duplicated intentionally because of regresions.
+            // This is duplicated intentionally because of regressions.
 
             let mut candidates: Vec<CallCandidate> = vec![];
             for member in c.body.iter() {
@@ -1406,7 +1406,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to instantiate a class using constructor");
                     }
 
-                    // Check for consturctors decalred in the super class.
+                    // Check for constructors declared in the super class.
                     if let Some(super_class) = &cls.super_class {
                         //
 
