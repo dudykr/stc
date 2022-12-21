@@ -745,7 +745,15 @@ impl Analyzer<'_, '_> {
         let is_bool = normalize_types.iter().any(|ty| ty.is_bool());
         let is_null = normalize_types.iter().any(|ty| ty.is_null());
         let is_undefined = normalize_types.iter().any(|ty| ty.is_undefined());
-        if u32::from(is_symbol) + u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) + u32::from(is_null) + u32::from(is_undefined)
+        let is_object = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+
+        if u32::from(is_symbol)
+            + u32::from(is_str)
+            + u32::from(is_num)
+            + u32::from(is_bool)
+            + u32::from(is_null)
+            + u32::from(is_undefined)
+            + u32::from(is_object)
             >= 2
         {
             return never!();
@@ -985,8 +993,32 @@ impl Analyzer<'_, '_> {
                                 let i_normalize = i.normalize();
                                 if i_normalize.type_eq(other_normalize) {
                                     temp_ty = other_normalize.clone();
+                                    continue 'outer;
                                 }
                             }
+                            let mut res = u
+                                .types
+                                .into_iter()
+                                .map(|t| {
+                                    Type::Intersection(Intersection {
+                                        span,
+                                        types: vec![
+                                            t,
+                                            self.normalize(Some(span), Cow::Borrowed(&other), Default::default())
+                                                .unwrap()
+                                                .into_owned(),
+                                        ],
+                                        metadata: Default::default(),
+                                    })
+                                })
+                                .collect_vec();
+                            res.make_clone_cheap();
+                            let temp = Type::union(res);
+                            temp_ty = self
+                                .normalize(Some(span), Cow::Owned(temp), Default::default())
+                                .unwrap()
+                                .into_owned();
+
                             continue 'outer;
                         }
 

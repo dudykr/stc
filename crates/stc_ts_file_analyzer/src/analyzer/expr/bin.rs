@@ -373,11 +373,11 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if op == op!("===") || op == op!("==") {
+                        if is_eq {
                             self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                             self.add_deep_type_fact(span, name, r, true);
-                        } else if !is_eq {
+                        } else {
                             // Remove from union
                             self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
