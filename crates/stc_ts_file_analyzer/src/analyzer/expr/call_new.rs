@@ -81,8 +81,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult<Type> {
-        self.record(e);
-
         let RCallExpr {
             span,
             ref callee,
@@ -137,8 +135,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult<Type> {
-        self.record(e);
-
         let RNewExpr {
             span,
             ref callee,
@@ -410,6 +406,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(i.clone()),
                         type_args: Default::default(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                     // It's specified by user
                     analyzer.prevent_expansion(&mut ty);
@@ -601,6 +598,7 @@ impl Analyzer<'_, '_> {
                             params: vec![*obj.elem_type.clone()],
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                     return self.call_property(
                         span,
@@ -1460,7 +1458,7 @@ impl Analyzer<'_, '_> {
                             spread_arg_types,
                             type_ann,
                         )
-                        .context("tried to instantiate a class without any contructor with call");
+                        .context("tried to instantiate a class without any constructor with call");
                 }
 
                 Type::Constructor(c) => {
@@ -1864,7 +1862,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Type::Union(ty) => {
-            //     // TODO(kdy1): We should select best one based on the arugment type and count.
+            //     // TODO(kdy1): We should select best one based on the argument type and count.
             //     let mut types = ty
             //         .types
             //         .iter()
@@ -2187,7 +2185,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            // For iifes, not providing some arguemnts are allowed.
+            // For iife, not providing some arguments are allowed.
             if self.ctx.is_calling_iife {
                 if let Some(max) = max_param {
                     if args.len() <= max {
@@ -3168,7 +3166,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // TODO(kdy1): Use super class instread of
+                // TODO(kdy1): Use super class instead of
                 if !upcasted && new_types.is_empty() {
                     new_types.push(new_ty.clone().into_owned());
                 }

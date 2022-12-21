@@ -42,7 +42,8 @@
         "structopt",
         "subpat",
         "triomphe",
-        "Uncapitalize"
+        "Uncapitalize",
+        "varargs"
     ],
     "ignorePaths": [
         "target",

@@ -81,6 +81,7 @@ impl Analyzer<'_, '_> {
                         span,
                         elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                         metadata: array.metadata,
+                        tracker: Default::default(),
                     })
                     .freezed();
                     return Ok(Some(ty));
@@ -96,6 +97,7 @@ impl Analyzer<'_, '_> {
                             span,
                             elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                             metadata: array.metadata,
+                            tracker: Default::default(),
                         })
                         .freezed();
                         return Ok(Some(ty));

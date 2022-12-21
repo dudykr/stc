@@ -1110,7 +1110,7 @@ impl Analyzer<'_, '_> {
                             if let Some(ret_ty) = &c.ret_ty {
                                 return self
                                     .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
-                                    .context("tried to narrow consturctor return type");
+                                    .context("tried to narrow constructor return type");
                             }
                         }
                     }
@@ -1171,6 +1171,7 @@ impl Analyzer<'_, '_> {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
         Ok(ty.into_owned())
@@ -1531,6 +1532,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     &ty,
                 ) {
@@ -1662,6 +1664,7 @@ impl Analyzer<'_, '_> {
                     common: equals_to.metadata(),
                     ..Default::default()
                 },
+                tracker: Default::default(),
             })
             .fixed());
         }
@@ -1835,6 +1838,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsObjectKeyword,
                                 metadata: KeywordTypeMetadata::default(),
+                                tracker: Default::default(),
                             }),
                             rt,
                             AssignOpts {
