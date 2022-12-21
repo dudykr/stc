@@ -1586,6 +1586,7 @@ impl Analyzer<'_, '_> {
                                 span: arg.span,
                                 members: new_members,
                                 metadata: arg.metadata,
+                                tracker: Default::default(),
                             })),
                             opts,
                         )?;
@@ -1597,6 +1598,7 @@ impl Analyzer<'_, '_> {
                                 common: param.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         });
                         prevent_generalize(&mut keys);
 
@@ -2027,7 +2029,7 @@ impl Analyzer<'_, '_> {
         if params.len() > args.len() {
             for param in &params[args.len()..] {
                 if let Type::Param(param) = &*param.ty {
-                    // TOOD: Union
+                    // TODO: Union
                     inferred.defaults.insert(
                         param.name.clone(),
                         Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
@@ -2233,7 +2235,7 @@ pub(crate) fn calc_true_plus_minus_in_param(param: Option<TruePlusMinus>, previo
     }
 }
 
-/// Replaceds type parameters with name `from` to type `to`.
+/// Replaces type parameters with name `from` to type `to`.
 struct MappedKeyReplacer<'a> {
     /// The name of type parameter
     from: &'a Id,
@@ -2319,20 +2321,21 @@ impl Fold<Type> for MappedReverser {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::TypeLit(TypeLit { span, members, metadata })
-                if members.len() == 1
-                    && members.iter().any(|member| match member {
-                        TypeElement::Property(p) => {
-                            if let Some(ty) = &p.type_ann {
-                                ty.is_mapped()
-                            } else {
-                                false
-                            }
+            Type::TypeLit(TypeLit {
+                span, members, metadata, ..
+            }) if members.len() == 1
+                && members.iter().any(|member| match member {
+                    TypeElement::Property(p) => {
+                        if let Some(ty) = &p.type_ann {
+                            ty.is_mapped()
+                        } else {
+                            false
                         }
-                        TypeElement::Method(_) => unimplemented!(),
-                        TypeElement::Index(_) => unimplemented!(),
-                        _ => false,
-                    }) =>
+                    }
+                    TypeElement::Method(_) => unimplemented!(),
+                    TypeElement::Index(_) => unimplemented!(),
+                    _ => false,
+                }) =>
             {
                 self.did_work = true;
                 let member = members.into_iter().next().unwrap();

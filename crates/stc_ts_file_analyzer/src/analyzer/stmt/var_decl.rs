@@ -38,8 +38,6 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, var: &RVarDecl) {
-        self.record(var);
-
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             var_kind: var.kind,
@@ -237,6 +235,7 @@ impl Analyzer<'_, '_> {
                                 span: ty.span(),
                                 metadata: InstanceMetadata { common: ty.metadata() },
                                 ty: box ty,
+                                tracker: Default::default(),
                             })
                         })();
                         ty.assert_valid();
@@ -403,6 +402,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                                         metadata: KeywordTypeMetadata { common, .. },
+                                        ..
                                     })
                                     | Type::Operator(Operator {
                                         span,
