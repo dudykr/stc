@@ -227,6 +227,7 @@ impl Fold<Type> for Simplifier<'_> {
                             obj_type: box Type::Keyword(k),
                             index_type,
                             metadata,
+                            tracker: Default::default(),
                         })
                     }
                 };
@@ -255,6 +256,7 @@ impl Fold<Type> for Simplifier<'_> {
                     obj_type: box obj_type,
                     index_type,
                     metadata,
+                    tracker: Default::default(),
                 });
             }
 
@@ -320,10 +322,11 @@ impl Fold<Type> for Simplifier<'_> {
                     span,
                     members,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
             }
 
-            // TODO(kdy1): Handle optional and reaonly
+            // TODO(kdy1): Handle optional and readonly
             Type::Mapped(Mapped {
                 type_param:
                     TypeParam {
@@ -406,9 +409,11 @@ impl Fold<Type> for Simplifier<'_> {
                             inexact,
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     }),
                     index_type,
                     metadata,
+                    tracker: Default::default(),
                 })
                 .fold_with(self);
             }
