@@ -2347,6 +2347,7 @@ impl Analyzer<'_, '_> {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         rhs,
                         opts,
@@ -2442,6 +2443,7 @@ impl Analyzer<'_, '_> {
                             raw: None,
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }

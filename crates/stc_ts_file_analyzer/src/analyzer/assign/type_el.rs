@@ -198,12 +198,14 @@ impl Analyzer<'_, '_> {
                             dump_type_as_string(&Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
                                 members: lhs.to_vec(),
-                                metadata: Default::default()
+                                metadata: Default::default(),
+                                tracker: Default::default(),
                             })),
                             dump_type_as_string(&Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
                                 members: rhs_members.to_vec(),
-                                metadata: Default::default()
+                                metadata: Default::default(),
+                                tracker: Default::default(),
                             })),
                         )
                     })
@@ -259,6 +261,7 @@ impl Analyzer<'_, '_> {
                                     params: vec![*r_arr.elem_type.clone()],
                                 }),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
 
                             let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
@@ -289,6 +292,7 @@ impl Analyzer<'_, '_> {
                                         common: r_tuple.metadata.common,
                                         ..Default::default()
                                     },
+                                    tracker: Default::default(),
                                 })
                                 .fixed();
 
@@ -301,6 +305,7 @@ impl Analyzer<'_, '_> {
                                         params: vec![r_elem_type],
                                     }),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 });
 
                                 let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;

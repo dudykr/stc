@@ -2796,6 +2796,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
                                     let mut types = vec![undefined, ty];
                                     types.dedup_type();
