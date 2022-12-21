@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
 
                 match types[0].normalize() {
                     Type::Param(p) => {
-                        assert!(p.constraint.is_some(), "should store contraint");
+                        assert!(p.constraint.is_some(), "should store constraint");
                     }
                     _ => {
                         unreachable!()
