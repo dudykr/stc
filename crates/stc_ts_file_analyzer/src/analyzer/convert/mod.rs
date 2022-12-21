@@ -797,8 +797,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsInferType) -> VResult<InferType> {
-        self.record(t);
-
         Ok(InferType {
             span: t.span,
             type_param: t.type_param.validate_with(self)?,
@@ -817,8 +815,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsImportType) -> VResult<ImportType> {
-        self.record(t);
-
         Ok(ImportType {
             span: t.span,
             arg: t.arg.clone(),
@@ -832,8 +828,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQueryExpr) -> VResult<QueryExpr> {
-        self.record(t);
-
         let span = t.span();
 
         Ok(match t {
@@ -846,12 +840,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsRestType) -> VResult<RestType> {
-        self.record(t);
-
         Ok(RestType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -859,12 +852,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsOptionalType) -> VResult<OptionalType> {
-        self.record(t);
-
         Ok(OptionalType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -872,12 +864,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQuery) -> VResult<QueryType> {
-        self.record(t);
-
         Ok(QueryType {
             span: t.span,
             expr: box t.expr_name.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -885,7 +876,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypePredicate) -> VResult<Predicate> {
-        self.record(t);
         let mut ty = try_opt!(t.type_ann.validate_with(self)).map(Box::new);
         match &mut ty {
             Some(ty) => {
@@ -900,6 +890,7 @@ impl Analyzer<'_, '_> {
             asserts: t.asserts,
             ty,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -907,7 +898,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
-        self.record(t);
         let span = t.span;
 
         let obj_type = box t.obj_type.validate_with(self)?;
@@ -943,6 +933,7 @@ impl Analyzer<'_, '_> {
             obj_type,
             index_type,
             metadata: Default::default(),
+            tracker: Default::default(),
         }))
     }
 }
@@ -957,6 +948,7 @@ impl Analyzer<'_, '_> {
             quasis: t.quasis.clone(),
             types,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -964,8 +956,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
-        self.record(ty);
-
         let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
 
         let is_topmost_type = !self.ctx.is_not_topmost_type;
