@@ -244,6 +244,7 @@ impl Analyzer<'_, '_> {
                         types: key_types,
 
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -272,6 +273,7 @@ impl Analyzer<'_, '_> {
                                     raw: None,
                                 }),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }))
                         }
                     }

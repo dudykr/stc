@@ -169,6 +169,7 @@ impl Analyzer<'_, '_> {
                         span: m.span,
                         members,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })));
                 }
 

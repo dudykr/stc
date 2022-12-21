@@ -1534,6 +1534,7 @@ impl Analyzer<'_, '_> {
                                             .clone()
                                             .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
                                     arg_prop_ty.make_clone_cheap();
                                     let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
@@ -1650,6 +1651,7 @@ impl Analyzer<'_, '_> {
                                     )
                                 }),
                                 metadata: arg.metadata,
+                                tracker: Default::default(),
                             })),
                             opts,
                         )?;
@@ -1692,6 +1694,7 @@ impl Analyzer<'_, '_> {
                                         common: param.metadata.common,
                                         ..Default::default()
                                     },
+                                    tracker: Default::default(),
                                 })),
                                 _ => None,
                             }, // TODO(kdy1): Handle method element
@@ -1819,6 +1822,7 @@ impl Analyzer<'_, '_> {
                                     span: arg.span,
                                     members: type_elements.remove(&name).unwrap_or_default(),
                                     metadata: arg.metadata,
+                                    tracker: Default::default(),
                                 });
 
                                 self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
@@ -1896,6 +1900,7 @@ impl Analyzer<'_, '_> {
                                                 span: arg.span,
                                                 members,
                                                 metadata: arg.metadata,
+                                                tracker: Default::default(),
                                             });
 
                                             self.insert_inferred_raw(span, inferred, name, Cow::Owned(list_ty), opts)?;
@@ -2156,6 +2161,7 @@ impl Analyzer<'_, '_> {
         let decl = Some(TypeParamDecl {
             span: DUMMY_SP,
             params: usage_visitor.params,
+            tracker: Default::default(),
         });
 
         if let Some(ref mut f) = ty.as_fn_type_mut() {
