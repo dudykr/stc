@@ -1,3 +1,5 @@
+use std::panic::Location;
+
 use rnode::{FoldWith, VisitMutWith, VisitWith};
 use serde::{Deserialize, Serialize};
 use stc_visit::Visitable;
@@ -28,9 +30,13 @@ impl<const N: &'static str> TypeEq for Tracker<N> {
 impl<const N: &'static str> Default for Tracker<N> {
     #[cfg_attr(debug_assertions, inline(never))]
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[track_caller]
     fn default() -> Self {
         #[cfg(debug_assertions)]
-        info!("Creating `{}`", N);
+        {
+            let loc = Location::caller();
+            info!("Creating `{}` from {:?}", N, loc);
+        }
 
         Self { _priv: () }
     }
