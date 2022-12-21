@@ -1683,6 +1683,7 @@ impl Analyzer<'_, '_> {
                     span,
                     def: box def.clone(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }
                 .into())
             }
@@ -1953,6 +1954,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 })
                             }),
                         });
@@ -1973,6 +1975,7 @@ impl Analyzer<'_, '_> {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                     });
                 }
@@ -2166,6 +2169,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                         )
                         .is_ok()
@@ -2415,6 +2419,7 @@ impl Analyzer<'_, '_> {
                                     span: tp.span,
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             );
                         }
@@ -2691,6 +2696,7 @@ impl Analyzer<'_, '_> {
                                     common: tp.metadata.common,
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }),
                         );
                     }
@@ -2704,6 +2710,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         metadata: KeywordTypeMetadata { ..Default::default() },
+                        tracker: Default::default(),
                     }),
                 );
             }
@@ -3137,6 +3144,7 @@ impl Analyzer<'_, '_> {
                 span,
                 types: vec![orig_ty.into_owned(), new_ty.into_owned()],
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -3154,6 +3162,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         def: box def.clone(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }));
                                 }
                                 return Ok(orig_ty.into_owned());
