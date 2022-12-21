@@ -54,6 +54,7 @@ impl Analyzer<'_, '_> {
             Ok(TypeParamDecl {
                 span: decl.span,
                 params: decl.params.validate_with(self)?,
+                tracker: Default::default(),
             })
         } else {
             {
@@ -85,6 +86,7 @@ impl Analyzer<'_, '_> {
                         constraint: None,
                         default: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                     .freezed(),
                 );
@@ -108,7 +110,11 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
-            Ok(TypeParamDecl { span: decl.span, params })
+            Ok(TypeParamDecl {
+                span: decl.span,
+                params,
+                tracker: Default::default(),
+            })
         }
     }
 }
@@ -137,6 +143,7 @@ impl Analyzer<'_, '_> {
             constraint,
             default,
             metadata: Default::default(),
+            tracker: Default::default(),
         };
         self.register_type(param.name.clone(), param.clone().into());
 
@@ -216,6 +223,7 @@ impl Analyzer<'_, '_> {
                                         constraint: Default::default(),
                                         default: Default::default(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                 })
                                 .collect(),
@@ -246,6 +254,7 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .freezed();
                 Ok(alias)

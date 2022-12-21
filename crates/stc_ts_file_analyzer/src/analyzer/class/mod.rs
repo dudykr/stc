@@ -1565,6 +1565,7 @@ impl Analyzer<'_, '_> {
                                                                 common: c.metadata.common,
                                                                 ..Default::default()
                                                             },
+                                                            tracker: Default::default(),
                                                         })
                                                     })
                                                     .expect("Super class should be named");
@@ -1620,6 +1621,7 @@ impl Analyzer<'_, '_> {
                                     // TODO(kdy1): Handle type parameters
                                     type_args: None,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }))
                             }
                             _ => Some(box super_ty),
@@ -1921,6 +1923,7 @@ impl Analyzer<'_, '_> {
                 body,
                 implements,
                 metadata: Default::default(),
+                tracker: Default::default(),
             };
 
             child
@@ -2205,6 +2208,7 @@ impl Analyzer<'_, '_> {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
             _ => ty.clone(),
         })

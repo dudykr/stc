@@ -441,6 +441,7 @@ impl Analyzer<'_, '_> {
                         common: tuple.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .freezed();
             }
@@ -1075,6 +1076,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box ty.clone(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
                 self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts)
             }
@@ -1179,6 +1181,7 @@ impl Analyzer<'_, '_> {
                 span: ty.span(),
                 types: new_types,
                 metadata: ty.metadata,
+                tracker: Default::default(),
             }));
         }
 
