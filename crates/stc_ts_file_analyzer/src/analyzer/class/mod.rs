@@ -1867,7 +1867,7 @@ impl Analyzer<'_, '_> {
                 // This is to infer return types of methods
                 for member in &c.body {}
 
-                // Actaully check types of method / constructors.
+                // Actually check types of method / constructors.
 
                 let remaining = c
                     .body

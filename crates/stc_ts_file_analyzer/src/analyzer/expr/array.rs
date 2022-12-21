@@ -127,6 +127,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 label: None,
                                 ty: box element_type.clone(),
+                                tracker: Default::default(),
                             });
                         }
                         _ => {
@@ -140,6 +141,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 label: None,
                                 ty: box elem_type,
+                                tracker: Default::default(),
                             });
                         }
                     }

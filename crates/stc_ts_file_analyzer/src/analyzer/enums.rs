@@ -383,6 +383,7 @@ impl Analyzer<'_, '_> {
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 type_params: Default::default(),
                 metadata: Default::default(),
@@ -390,7 +391,6 @@ impl Analyzer<'_, '_> {
                     getter: true,
                     setter: false,
                 },
-                tracker: Default::default(),
             }))
         }
         {
@@ -456,6 +456,7 @@ impl Analyzer<'_, '_> {
             span: e.span,
             members,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 
@@ -594,6 +595,7 @@ impl Analyzer<'_, '_> {
                                             common: ev.metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     }));
                                 }
                             }
