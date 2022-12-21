@@ -24,7 +24,7 @@ use tracing::debug;
 use crate::{
     analyzer::{
         expr::{
-            call_new::{ExtractKind, ReevalMode},
+            call_new::{ExtractKind, ReEvalMode},
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
         types::NormalizeTypeOpts,
@@ -110,6 +110,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 label: None,
                                 ty: array.elem_type,
+                                tracker: Default::default(),
                             });
                         }
                         Type::Tuple(tuple) => {
@@ -449,7 +450,7 @@ impl Analyzer<'_, '_> {
                 .call_property(
                     span,
                     ExtractKind::Call,
-                    ReevalMode::NoReeval,
+                    ReEvalMode::NoReEval,
                     &async_iterator,
                     &async_iterator,
                     &Key::Normal { span, sym: "next".into() },

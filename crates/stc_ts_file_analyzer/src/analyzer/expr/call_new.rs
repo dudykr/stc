@@ -123,7 +123,7 @@ impl Analyzer<'_, '_> {
 
             analyzer.extract_call_new_expr_member(
                 span,
-                ReevalMode::Call(e),
+                ReEvalMode::Call(e),
                 callee,
                 ExtractKind::Call,
                 args,
@@ -155,7 +155,7 @@ impl Analyzer<'_, '_> {
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
-                ReevalMode::New(e),
+                ReEvalMode::New(e),
                 callee,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
@@ -195,7 +195,7 @@ impl Analyzer<'_, '_> {
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
-                ReevalMode::NoReeval,
+                ReEvalMode::NoReEval,
                 &e.tag,
                 ExtractKind::Call,
                 args.as_ref(),
@@ -220,7 +220,7 @@ impl Analyzer<'_, '_> {
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         callee: &RExpr,
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -539,7 +539,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         this: &Type,
         obj_type: &Type,
         prop: &Key,
@@ -933,7 +933,7 @@ impl Analyzer<'_, '_> {
     fn call_property_of_class(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         kind: ExtractKind,
         this: &Type,
         c: &ClassDef,
@@ -1124,7 +1124,7 @@ impl Analyzer<'_, '_> {
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         span: Span,
         obj: &Type,
         members: &[TypeElement],
@@ -1266,7 +1266,7 @@ impl Analyzer<'_, '_> {
     fn extract(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         ty: &Type,
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -1723,7 +1723,7 @@ impl Analyzer<'_, '_> {
     fn call_type_element(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         callee_ty: &Type,
         type_params_of_type: Option<&[TypeParam]>,
         members: &[TypeElement],
@@ -1803,7 +1803,7 @@ impl Analyzer<'_, '_> {
     fn check_method_call(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         c: &MethodSignature,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -1981,7 +1981,7 @@ impl Analyzer<'_, '_> {
     fn get_best_return_type(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         callee: Type,
         kind: ExtractKind,
         type_args: Option<&TypeParamInstantiation>,
@@ -2225,7 +2225,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         candidates: &[CallCandidate],
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -2351,7 +2351,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
         mut ret_ty: Type,
@@ -2590,10 +2590,10 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
                 match expr {
-                    ReevalMode::Call(e) => {
+                    ReEvalMode::Call(e) => {
                         return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
-                    ReevalMode::New(e) => {
+                    ReEvalMode::New(e) => {
                         return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
                     _ => {}
@@ -3399,15 +3399,15 @@ impl Analyzer<'_, '_> {
 
 /// Used for reevaluation.
 #[derive(Clone, Copy)]
-pub(crate) enum ReevalMode<'a> {
+pub(crate) enum ReEvalMode<'a> {
     Call(&'a RCallExpr),
     New(&'a RNewExpr),
-    NoReeval,
+    NoReEval,
 }
 
-impl Default for ReevalMode<'_> {
+impl Default for ReEvalMode<'_> {
     fn default() -> Self {
-        Self::NoReeval
+        Self::NoReEval
     }
 }
 

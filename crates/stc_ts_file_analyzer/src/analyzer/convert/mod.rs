@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                 map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
             }
 
-            // Resolve contraints
+            // Resolve constraints
             let mut params = self.expand_type_params(&map, params, Default::default())?;
             params.make_clone_cheap();
 
