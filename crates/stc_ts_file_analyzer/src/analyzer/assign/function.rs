@@ -226,6 +226,7 @@ impl Analyzer<'_, '_> {
                     params: l_params.to_vec(),
                     ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
                 let rf = Type::Function(Function {
                     span,
@@ -233,6 +234,7 @@ impl Analyzer<'_, '_> {
                     params: r_params.to_vec(),
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
 
                 let map = self.infer_type_with_types(span, &lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
@@ -269,6 +271,7 @@ impl Analyzer<'_, '_> {
                     params: l_params.to_vec(),
                     ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
                 let rf = Type::Function(Function {
                     span,
@@ -276,6 +279,7 @@ impl Analyzer<'_, '_> {
                     params: r_params.to_vec(),
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
 
                 let map = self.infer_type_with_types(
@@ -682,6 +686,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 opts,
                             ),
@@ -692,6 +697,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 opts,
                             ),
@@ -720,6 +726,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 r,
                                 opts,
@@ -730,6 +737,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 l,
                                 opts,
