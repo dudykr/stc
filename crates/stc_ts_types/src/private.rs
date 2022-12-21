@@ -24,7 +24,8 @@ impl<const N: &'static str> TypeEq for Private<N> {
 }
 
 impl<const N: &'static str> Default for Private<N> {
-    #[inline(always)]
+    #[cfg_attr(debug_assertions, inline(never))]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     fn default() -> Self {
         #[cfg(debug_assertions)]
         info!("Creating `{}`", N);
