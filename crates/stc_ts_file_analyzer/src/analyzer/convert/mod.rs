@@ -286,6 +286,7 @@ impl Analyzer<'_, '_> {
                 extends: d.extends.validate_with(child)?.freezed(),
                 body: d.body.validate_with(child)?,
                 metadata: Default::default(),
+                tracker: Default::default(),
             };
             child.prevent_expansion(&mut ty.body);
             ty.body.make_clone_cheap();
@@ -337,6 +338,7 @@ impl Analyzer<'_, '_> {
                 specified: true,
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 }
@@ -470,6 +472,7 @@ impl Analyzer<'_, '_> {
                                     span: DUMMY_SP,
                                     id: SymbolId::known(key),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 });
                             }
                         }
@@ -507,6 +510,7 @@ impl Analyzer<'_, '_> {
             span: e.span,
             expr: e.expr.clone(),
             type_args: try_opt!(e.type_args.validate_with(self)).map(Box::new),
+            tracker: Default::default(),
         })
     }
 }
@@ -543,6 +547,7 @@ impl Analyzer<'_, '_> {
                 },
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 }
@@ -554,6 +559,7 @@ impl Analyzer<'_, '_> {
             span: node.span,
             label: node.label.clone(),
             ty: box node.ty.validate_with(self)?,
+            tracker: Default::default(),
         })
     }
 }
@@ -574,6 +580,7 @@ impl Analyzer<'_, '_> {
             true_type,
             false_type,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -591,6 +598,7 @@ impl Analyzer<'_, '_> {
             type_param,
             ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -603,6 +611,7 @@ impl Analyzer<'_, '_> {
             op: ty.op,
             ty: box ty.type_ann.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -614,6 +623,7 @@ impl Analyzer<'_, '_> {
             span: node.span,
             elem_type: box node.elem_type.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -671,6 +681,7 @@ impl Analyzer<'_, '_> {
                 params,
                 ret_ty,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         })
     }
@@ -692,6 +703,7 @@ impl Analyzer<'_, '_> {
             type_ann: t.type_ann.validate_with(self).map(Box::new)?,
             is_abstract: t.is_abstract,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -785,6 +797,7 @@ impl Analyzer<'_, '_> {
                 },
                 ..Default::default()
             },
+            tracker: Default::default(),
         }))
     }
 }
