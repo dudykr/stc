@@ -23,7 +23,7 @@ use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use private::Private;
+use private::Tracker;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
@@ -550,7 +550,7 @@ pub struct Instance {
     pub ty: Box<Type>,
     pub metadata: InstanceMetadata,
 
-    _priv: Private<"Instance">,
+    pub tracker: Tracker<"Instance">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -563,7 +563,7 @@ pub struct LitType {
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
 
-    _priv: Private<"LitType">,
+    pub tracker: Tracker<"LitType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -577,7 +577,7 @@ pub struct KeywordType {
     pub kind: TsKeywordTypeKind,
     pub metadata: KeywordTypeMetadata,
 
-    _priv: Private<"KeywordType">,
+    pub tracker: Tracker<"KeywordType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -589,7 +589,7 @@ pub struct Symbol {
     pub id: SymbolId,
     pub metadata: SymbolMetadata,
 
-    _priv: Private<"Symbol">,
+    pub tracker: Tracker<"Symbol">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -605,7 +605,7 @@ pub struct RestType {
     pub ty: Box<Type>,
     pub metadata: RestTypeMetadata,
 
-    _priv: Private<"RestType">,
+    pub tracker: Tracker<"RestType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -617,7 +617,7 @@ pub struct OptionalType {
     pub ty: Box<Type>,
     pub metadata: OptionalTypeMetadata,
 
-    _priv: Private<"OptionalType">,
+    pub tracker: Tracker<"OptionalType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -631,7 +631,7 @@ pub struct IndexedAccessType {
     pub index_type: Box<Type>,
     pub metadata: IndexedAccessTypeMetadata,
 
-    _priv: Private<"IndexedAccessType">,
+    pub tracker: Tracker<"IndexedAccessType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -645,7 +645,7 @@ pub struct Ref {
     pub type_args: Option<Box<TypeParamInstantiation>>,
     pub metadata: RefMetadata,
 
-    _priv: Private<"Ref">,
+    pub tracker: Tracker<"Ref">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -667,7 +667,7 @@ pub struct InferType {
     pub type_param: TypeParam,
     pub metadata: InferTypeMetadata,
 
-    _priv: Private<"InferType">,
+    pub tracker: Tracker<"InferType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -685,7 +685,7 @@ pub struct QueryType {
     pub expr: Box<QueryExpr>,
     pub metadata: QueryTypeMetadata,
 
-    _priv: Private<"QueryType">,
+    pub tracker: Tracker<"QueryType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -706,7 +706,7 @@ pub struct ImportType {
     pub type_params: Option<Box<TypeParamInstantiation>>,
     pub metadata: ImportTypeMetadata,
 
-    _priv: Private<"ImportType">,
+    pub tracker: Tracker<"ImportType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -719,7 +719,7 @@ pub struct Namespace {
     pub exports: Box<ModuleTypeData>,
     pub metadata: NamespaceTypeMetadata,
 
-    _priv: Private<"Namespace">,
+    pub tracker: Tracker<"Namespace">,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -730,7 +730,7 @@ pub struct Module {
     pub exports: Box<ModuleTypeData>,
     pub metadata: ModuleTypeMetadata,
 
-    _priv: Private<"Module">,
+    pub tracker: Tracker<"Module">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -749,7 +749,7 @@ pub struct Enum {
 
     pub metadata: EnumMetadata,
 
-    _priv: Private<"Enum">,
+    pub tracker: Tracker<"Enum">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -770,7 +770,7 @@ pub struct Class {
     pub def: Box<ClassDef>,
     pub metadata: ClassMetadata,
 
-    _priv: Private<"Class">,
+    pub tracker: Tracker<"Class">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -787,7 +787,7 @@ pub struct ClassDef {
     pub implements: Box<Vec<TsExpr>>,
     pub metadata: ClassDefMetadata,
 
-    _priv: Private<"ClassDef">,
+    pub tracker: Tracker<"ClassDef">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -858,7 +858,7 @@ pub struct Mapped {
     pub ty: Option<Box<Type>>,
     pub metadata: MappedMetadata,
 
-    _priv: Private<"Mapped">,
+    pub tracker: Tracker<"Mapped">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -873,7 +873,7 @@ pub struct Conditional {
     pub false_type: Box<Type>,
     pub metadata: ConditionalMetadata,
 
-    _priv: Private<"Conditional">,
+    pub tracker: Tracker<"Conditional">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -898,7 +898,7 @@ pub struct Operator {
     pub ty: Box<Type>,
     pub metadata: OperatorMetadata,
 
-    _priv: Private<"Operator">,
+    pub tracker: Tracker<"Operator">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -924,7 +924,7 @@ pub struct Tuple {
     pub elems: Vec<TupleElement>,
     pub metadata: TupleMetadata,
 
-    _priv: Private<"Tuple">,
+    pub tracker: Tracker<"Tuple">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -937,7 +937,7 @@ pub struct TupleElement {
     pub label: Option<RPat>,
     pub ty: Box<Type>,
 
-    _priv: Private<"TupleElement">,
+    pub tracker: Tracker<"TupleElement">,
 }
 
 impl Debug for TupleElement {
@@ -953,7 +953,7 @@ pub struct Alias {
     pub ty: Box<Type>,
     pub metadata: AliasMetadata,
 
-    _priv: Private<"Alias">,
+    pub tracker: Tracker<"Alias">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -968,7 +968,7 @@ pub struct Interface {
     pub body: Vec<TypeElement>,
     pub metadata: InterfaceMetadata,
 
-    _priv: Private<"Interface">,
+    pub tracker: Tracker<"Interface">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -980,7 +980,7 @@ pub struct TypeLit {
     pub members: Vec<TypeElement>,
     pub metadata: TypeLitMetadata,
 
-    _priv: Private<"TypeLit">,
+    pub tracker: Tracker<"TypeLit">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -991,7 +991,7 @@ pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
 
-    _priv: Private<"TypeParamDecl">,
+    pub tracker: Tracker<"TypeParamDecl">,
 }
 
 /// Typescript expression with type arguments
@@ -1002,7 +1002,7 @@ pub struct TsExpr {
     pub expr: Box<RExpr>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
 
-    _priv: Private<"TsExpr">,
+    pub tracker: Tracker<"TsExpr">,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1129,7 +1129,7 @@ pub struct Array {
     pub elem_type: Box<Type>,
     pub metadata: ArrayMetadata,
 
-    _priv: Private<"Array">,
+    pub tracker: Tracker<"Array">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1142,7 +1142,7 @@ pub struct Union {
     pub types: Vec<Type>,
     pub metadata: UnionMetadata,
 
-    _priv: Private<"Union">,
+    pub tracker: Tracker<"Union">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1191,7 +1191,7 @@ pub struct Intersection {
     pub types: Vec<Type>,
     pub metadata: IntersectionMetadata,
 
-    _priv: Private<"Intersection">,
+    pub tracker: Tracker<"Intersection">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1233,7 +1233,7 @@ pub struct TypeParam {
     pub default: Option<Box<Type>>,
     pub metadata: TypeParamMetadata,
 
-    _priv: Private<"TypeParam">,
+    pub tracker: Tracker<"TypeParam">,
 }
 
 /// FooEnum.A
@@ -1245,7 +1245,7 @@ pub struct EnumVariant {
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
 
-    _priv: Private<"EnumVariant">,
+    pub tracker: Tracker<"EnumVariant">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1259,7 +1259,7 @@ pub struct Function {
     pub ret_ty: Box<Type>,
     pub metadata: FunctionMetadata,
 
-    _priv: Private<"Function">,
+    pub tracker: Tracker<"Function">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1275,7 +1275,7 @@ pub struct Constructor {
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
 
-    _priv: Private<"Constructor">,
+    pub tracker: Tracker<"Constructor">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1290,7 +1290,7 @@ pub struct Predicate {
     pub ty: Option<Box<Type>>,
     pub metadata: PredicateMetadata,
 
-    _priv: Private<"Predicate">,
+    pub tracker: Tracker<"Predicate">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2550,7 +2550,7 @@ pub struct StaticThis {
     pub span: Span,
     pub metadata: StaticThisMetadata,
 
-    _priv: Private<"StaticThis">,
+    pub tracker: Tracker<"StaticThis">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2561,7 +2561,7 @@ pub struct ThisType {
     pub span: Span,
     pub metadata: ThisTypeMetadata,
 
-    _priv: Private<"ThisType">,
+    pub tracker: Tracker<"ThisType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2577,7 +2577,7 @@ pub struct TplType {
 
     pub metadata: TplTypeMetadata,
 
-    _priv: Private<"TplType">,
+    pub tracker: Tracker<"TplType">,
 }
 
 #[cfg(target_pointer_width = "64")]
