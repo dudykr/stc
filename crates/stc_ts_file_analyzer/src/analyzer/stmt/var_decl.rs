@@ -82,8 +82,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, v: &RVarDeclarator) {
-        self.record(v);
-
         let marks = self.marks();
 
         let kind = self.ctx.var_kind;

@@ -294,6 +294,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -302,6 +303,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -310,6 +312,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 

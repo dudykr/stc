@@ -1909,6 +1909,7 @@ impl Analyzer<'_, '_> {
                                     params: mtd.params.clone(),
                                     ret_ty: mtd.ret_ty.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -1922,6 +1923,7 @@ impl Analyzer<'_, '_> {
                                     type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
                                     is_abstract: false,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -2022,16 +2024,19 @@ impl Analyzer<'_, '_> {
                             raw: None,
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Num(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::BigInt(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Private(..) => {
                         unreachable!()
@@ -2050,6 +2055,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     index_type: prop_ty,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
