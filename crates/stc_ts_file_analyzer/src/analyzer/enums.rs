@@ -551,11 +551,13 @@ impl Analyzer<'_, '_> {
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 _ => {
                     unimplemented!("Handle enum with value other than string literal or numeric literals")

@@ -1067,7 +1067,7 @@ impl Analyzer<'_, '_> {
                             // sequential`
                             if let Some((span, _)) = spans.last() {
                                 self.storage
-                                    .report(ErrorKind::AbstractClassMethodShouldBeSequntial { span: *span }.into())
+                                    .report(ErrorKind::AbstractClassMethodShouldBeSequential { span: *span }.into())
                             }
                         }
                     }

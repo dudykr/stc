@@ -252,7 +252,7 @@ pub enum ErrorKind {
     },
 
     /// TS2516
-    AbstractClassMethodShouldBeSequntial {
+    AbstractClassMethodShouldBeSequential {
         span: Span,
     },
 
@@ -1927,7 +1927,7 @@ impl ErrorKind {
 
             ErrorKind::AbstractAndConcreteIsMixed { .. } => 2512,
 
-            ErrorKind::AbstractClassMethodShouldBeSequntial { .. } => 2516,
+            ErrorKind::AbstractClassMethodShouldBeSequential { .. } => 2516,
 
             ErrorKind::OperatorCannotBeAppliedToTypes { .. } => 2365,
 
