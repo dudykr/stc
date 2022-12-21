@@ -1705,7 +1705,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, span, type_name, type_args))]
-    pub(crate) fn report_error_for_unresolve_type(
+    pub(crate) fn report_error_for_unresolved_type(
         &mut self,
         span: Span,
         type_name: &RExpr,

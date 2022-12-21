@@ -154,6 +154,7 @@ impl Analyzer<'_, '_> {
                 span,
                 label: None,
                 ty: box ty,
+                tracker: Default::default(),
             });
         }
 
@@ -162,6 +163,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elem_type: box Type::any(span, Default::default()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -203,6 +205,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box Type::union(types),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }
                 .fixed(),
             );
@@ -235,6 +238,7 @@ impl Analyzer<'_, '_> {
             span,
             elems: elements,
             metadata: Default::default(),
+            tracker: Default::default(),
         }))
     }
 }

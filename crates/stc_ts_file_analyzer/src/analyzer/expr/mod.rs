@@ -3585,7 +3585,7 @@ impl Analyzer<'_, '_> {
     fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
-            let res = self.report_error_for_unresolve_type(span, n, type_args);
+            let res = self.report_error_for_unresolved_type(span, n, type_args);
             match res {
                 Ok(()) => {}
                 Err(err) => {
