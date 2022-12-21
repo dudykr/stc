@@ -1,10 +1,9 @@
-use rnode::Visit;
 use serde::{Deserialize, Serialize};
 use swc_common::{EqIgnoreSpan, TypeEq};
 use tracing::info;
 
 /// A type used to make types private, so we can track all type creation.
-#[derive(Debug, Clone, Copy, PartialEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub(crate) struct Private<const N: &'static str> {
     _priv: (),
 }
