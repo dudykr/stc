@@ -188,7 +188,7 @@ pub enum ErrorKind {
     },
 
     /// TS2477
-    ConstEnumMemberHasInifinityAsInit {
+    ConstEnumMemberHasInfinityAsInit {
         span: Span,
     },
 
@@ -1274,7 +1274,7 @@ pub enum ErrorKind {
     },
 
     /// TS2369
-    ParamPropIsNotAllowedInAmbientConstructorx {
+    ParamPropIsNotAllowedInAmbientConstructor {
         span: Span,
     },
 
@@ -1635,7 +1635,7 @@ impl ErrorKind {
             ErrorKind::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             ErrorKind::InvalidTypeForComputedProperty { .. } => 2464,
 
-            ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
+            ErrorKind::ParamPropIsNotAllowedInAmbientConstructor { .. } => 2369,
             ErrorKind::TS2389 { .. } => 2389,
             ErrorKind::TS2447 { .. } => 2447,
             ErrorKind::ClassDoesNotImplementMember { .. } => 2515,
@@ -1967,7 +1967,7 @@ impl ErrorKind {
 
             ErrorKind::UnreachableCode { .. } => 7027,
 
-            ErrorKind::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
+            ErrorKind::ConstEnumMemberHasInfinityAsInit { .. } => 2477,
 
             ErrorKind::ConstEnumMemberHasNaNAsInit { .. } => 2478,
 

@@ -184,7 +184,7 @@ impl Evaluator<'_> {
                     match &v {
                         RTsLit::Number(n) => {
                             if n.value.is_infinite() && self.e.is_const {
-                                return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: bin.span }.into());
+                                return Err(ErrorKind::ConstEnumMemberHasInfinityAsInit { span: bin.span }.into());
                             } else if n.value.is_nan() && self.e.is_const {
                                 return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: bin.span }.into());
                             } else {
@@ -202,7 +202,7 @@ impl Evaluator<'_> {
                             return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: id.span }.into());
                         }
                         if id.sym == js_word!("Infinity") {
-                            return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: id.span }.into());
+                            return Err(ErrorKind::ConstEnumMemberHasInfinityAsInit { span: id.span }.into());
                         }
                     }
 

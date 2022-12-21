@@ -1660,7 +1660,7 @@ impl Analyzer<'_, '_> {
                                 if let RParamOrTsParamProp::TsParamProp(..) = *p {
                                     child
                                         .storage
-                                        .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }.into())
+                                        .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructor { span: p.span() }.into())
                                 }
                             }
                         }
