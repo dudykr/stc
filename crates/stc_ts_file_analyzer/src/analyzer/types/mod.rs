@@ -403,6 +403,7 @@ impl Analyzer<'_, '_> {
                                         span: actual_span.with_ctxt(SyntaxContext::empty()),
                                         types,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
 
                                     *check_type_constraint = box new;
@@ -431,6 +432,7 @@ impl Analyzer<'_, '_> {
                                                     span: actual_span,
                                                     expr: box QueryExpr::TsEntityName(e.clone()),
                                                     metadata: Default::default(),
+                                                    tracker: Default::default(),
                                                 })));
                                             } else {
                                                 print_backtrace()
@@ -667,6 +669,7 @@ impl Analyzer<'_, '_> {
                 true_type: box true_type.into_owned(),
                 false_type: box false_type.into_owned(),
                 metadata,
+                tracker: Default::default(),
             })))
         } else {
             Ok(None)
@@ -680,6 +683,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNeverKeyword,
                     metadata: KeywordTypeMetadata { ..Default::default() },
+                    tracker: Default::default(),
                 })))
             }};
         }

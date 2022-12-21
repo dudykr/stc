@@ -88,6 +88,7 @@ impl Analyzer<'_, '_> {
                                 metadata: KeywordTypeMetadata {
                                     common: ty.metadata.common,
                                 },
+                                tracker: Default::default(),
                             }),
                         )
                         .context("tried applying `keyof` to a literal by delegating to keyword type handler")
@@ -184,6 +185,7 @@ impl Analyzer<'_, '_> {
                                 }),
                             ],
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }))
                     }
                     TsKeywordTypeKind::TsIntrinsicKeyword => {}
