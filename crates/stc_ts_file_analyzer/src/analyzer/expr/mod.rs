@@ -882,6 +882,7 @@ impl Analyzer<'_, '_> {
                                 params: m.params.clone(),
                                 ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
 
                             if m.optional {
@@ -1024,6 +1025,7 @@ impl Analyzer<'_, '_> {
                     index_type: box prop.ty().into_owned(),
                     readonly: false,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
 
                 return Ok(Some(ty));
@@ -1439,6 +1441,7 @@ impl Analyzer<'_, '_> {
                                         params: member.params.clone(),
                                         ret_ty: member.ret_ty.clone(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }));
                                 }
 
@@ -1533,10 +1536,11 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::This(this.clone()),
                         index_type: prop_ty,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
-                Type::StaticThis(StaticThis { span, metadata }) => {
+                Type::StaticThis(StaticThis { span, metadata, .. }) => {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
@@ -1548,6 +1552,7 @@ impl Analyzer<'_, '_> {
                                         params: member.params.clone(),
                                         ret_ty: member.ret_ty.clone(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }));
                                 }
                             }
@@ -1678,6 +1683,7 @@ impl Analyzer<'_, '_> {
                                 common: obj.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,

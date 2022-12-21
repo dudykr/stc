@@ -519,6 +519,7 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
             span,
             kind: TsKeywordTypeKind::TsStringKeyword,
             metadata: Default::default(),
+            tracker: Default::default(),
         }));
     }
 
@@ -527,6 +528,7 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
             span,
             kind: TsKeywordTypeKind::TsNumberKeyword,
             metadata: Default::default(),
+            tracker: Default::default(),
         }));
     }
 
@@ -535,6 +537,7 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
             span,
             kind: TsKeywordTypeKind::TsBooleanKeyword,
             metadata: Default::default(),
+            tracker: Default::default(),
         }));
     }
 
