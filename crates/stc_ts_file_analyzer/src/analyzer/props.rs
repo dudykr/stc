@@ -39,8 +39,6 @@ pub(super) enum ComputedPropMode {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RPropName) -> VResult<Key> {
-        self.record(node);
-
         match node {
             RPropName::Computed(c) => c.validate_with(self),
             RPropName::Ident(i) => Ok(Key::Normal {

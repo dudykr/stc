@@ -300,6 +300,7 @@ impl Analyzer<'_, '_> {
                     span,
                     id: SymbolId::generate(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -339,6 +340,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -792,6 +794,7 @@ impl Analyzer<'_, '_> {
                                 )),
                                 type_args: None,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             prop,
                             type_args,
@@ -1305,6 +1308,7 @@ impl Analyzer<'_, '_> {
                         span,
                         def: box cls.clone(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
 
                     if cls.is_abstract {
@@ -1325,6 +1329,7 @@ impl Analyzer<'_, '_> {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -1394,6 +1399,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 type_args,
                                 args,
@@ -1451,6 +1457,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 def: box cls.clone(),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             type_args,
                             args,
@@ -1483,8 +1490,10 @@ impl Analyzer<'_, '_> {
                         ty: box Type::This(ThisType {
                             span,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
 
@@ -1608,6 +1617,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 elem_type: box type_args.params.first().cloned().unwrap(),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }));
                         }
                     }
@@ -3541,6 +3551,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
                 metadata,
+                ..
             }) if type_args.params.len() == 1 && type_args.params.iter().any(|ty| matches!(ty.normalize(), Type::Union(..))) => {
                 // TODO(kdy1): Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
