@@ -7,7 +7,7 @@ use tracing::info;
 /// A type used to track all type creations. You can construct this type using
 /// `Default::default()` and it will print a log message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub(crate) struct Tracker<const N: &'static str> {
+pub struct Tracker<const N: &'static str> {
     _priv: (),
 }
 
