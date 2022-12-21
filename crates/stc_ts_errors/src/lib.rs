@@ -516,7 +516,7 @@ pub enum ErrorKind {
     },
 
     /// TS2394
-    ImcompatibleFnOverload {
+    IncompatibleFnOverload {
         span: Span,
         cause: Box<Error>,
     },
@@ -1819,7 +1819,7 @@ impl ErrorKind {
 
             ErrorKind::InitializerDisallowedInAmbientContext { .. } => 2371,
 
-            ErrorKind::ImcompatibleFnOverload { .. } => 2394,
+            ErrorKind::IncompatibleFnOverload { .. } => 2394,
 
             ErrorKind::ImplicitReturnType { .. } => 7010,
 

@@ -476,6 +476,7 @@ impl Fold<Type> for Simplifier<'_> {
                         },
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 });
             }
 
@@ -499,6 +500,7 @@ impl Fold<Type> for Simplifier<'_> {
                         common: metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 });
             }
 
@@ -599,6 +601,7 @@ impl Fold<Type> for Simplifier<'_> {
                     span,
                     members: new_members,
                     metadata: obj_type_metadata,
+                    tracker: Default::default(),
                 });
             }
 

@@ -288,6 +288,7 @@ impl Analyzer<'_, '_> {
                                 type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                         )
                         .context("tried to get keys of Array (builtin)");
@@ -359,6 +360,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
 

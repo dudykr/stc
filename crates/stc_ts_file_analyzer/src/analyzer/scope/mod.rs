@@ -1137,7 +1137,7 @@ impl Analyzer<'_, '_> {
         if let Some(ty) = self.scope.find_type(name) {
             if self.ctx.in_module {
                 // In module mode, we should not merge user-defined types with builtin.
-                // As `src` contains builtin typds, we remove them.
+                // As `src` contains builtin types, we remove them.
                 src.clear();
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
@@ -1549,7 +1549,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
+                .convert_err(|err| ErrorKind::IncompatibleFnOverload {
                     span: orig.span(),
                     cause: box err.into(),
                 })

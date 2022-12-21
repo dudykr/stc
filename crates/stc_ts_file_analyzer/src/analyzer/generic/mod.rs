@@ -173,6 +173,7 @@ impl Analyzer<'_, '_> {
                                     common: p.ty.metadata(),
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }),
                             opts,
                         )?;
@@ -643,6 +644,7 @@ impl Analyzer<'_, '_> {
                                     common: arg.metadata(),
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }));
                         }
                     }
@@ -1121,6 +1123,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     opts,
                 );
