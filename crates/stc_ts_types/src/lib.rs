@@ -562,6 +562,8 @@ pub struct LitType {
 
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -574,6 +576,8 @@ pub struct KeywordType {
     #[use_eq_ignore_span]
     pub kind: TsKeywordTypeKind,
     pub metadata: KeywordTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -584,6 +588,8 @@ pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
     pub metadata: SymbolMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -598,6 +604,8 @@ pub struct RestType {
     pub span: Span,
     pub ty: Box<Type>,
     pub metadata: RestTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -608,6 +616,8 @@ pub struct OptionalType {
     pub span: Span,
     pub ty: Box<Type>,
     pub metadata: OptionalTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -620,6 +630,8 @@ pub struct IndexedAccessType {
     pub obj_type: Box<Type>,
     pub index_type: Box<Type>,
     pub metadata: IndexedAccessTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -632,6 +644,8 @@ pub struct Ref {
     pub type_name: RTsEntityName,
     pub type_args: Option<Box<TypeParamInstantiation>>,
     pub metadata: RefMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -652,6 +666,8 @@ pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
     pub metadata: InferTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -668,6 +684,8 @@ pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
     pub metadata: QueryTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -687,6 +705,8 @@ pub struct ImportType {
     pub qualifier: Option<RTsEntityName>,
     pub type_params: Option<Box<TypeParamInstantiation>>,
     pub metadata: ImportTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -698,6 +718,8 @@ pub struct Namespace {
     pub name: Id,
     pub exports: Box<ModuleTypeData>,
     pub metadata: NamespaceTypeMetadata,
+
+    _priv: Private,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -707,6 +729,8 @@ pub struct Module {
     pub name: RTsModuleName,
     pub exports: Box<ModuleTypeData>,
     pub metadata: ModuleTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -724,6 +748,8 @@ pub struct Enum {
     pub has_str: bool,
 
     pub metadata: EnumMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -743,6 +769,8 @@ pub struct Class {
     pub span: Span,
     pub def: Box<ClassDef>,
     pub metadata: ClassMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -758,6 +786,8 @@ pub struct ClassDef {
     pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
     pub metadata: ClassDefMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -827,6 +857,8 @@ pub struct Mapped {
     pub type_param: TypeParam,
     pub ty: Option<Box<Type>>,
     pub metadata: MappedMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -840,6 +872,8 @@ pub struct Conditional {
     pub true_type: Box<Type>,
     pub false_type: Box<Type>,
     pub metadata: ConditionalMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -863,6 +897,8 @@ pub struct Operator {
     pub op: TsTypeOperatorOp,
     pub ty: Box<Type>,
     pub metadata: OperatorMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -887,6 +923,8 @@ pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
     pub metadata: TupleMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -898,6 +936,8 @@ pub struct TupleElement {
     #[not_type]
     pub label: Option<RPat>,
     pub ty: Box<Type>,
+
+    _priv: Private,
 }
 
 impl Debug for TupleElement {
@@ -912,6 +952,8 @@ pub struct Alias {
     pub type_params: Option<Box<TypeParamDecl>>,
     pub ty: Box<Type>,
     pub metadata: AliasMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -925,6 +967,8 @@ pub struct Interface {
     pub extends: Vec<TsExpr>,
     pub body: Vec<TypeElement>,
     pub metadata: InterfaceMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -935,6 +979,8 @@ pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
     pub metadata: TypeLitMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -944,6 +990,8 @@ assert_eq_size!(TypeLit, [u8; 56]);
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
+
+    _priv: Private,
 }
 
 /// Typescript expression with type arguments
@@ -953,6 +1001,8 @@ pub struct TsExpr {
     #[use_eq_ignore_span]
     pub expr: Box<RExpr>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
+
+    _priv: Private,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1078,6 +1128,8 @@ pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
     pub metadata: ArrayMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1089,6 +1141,8 @@ pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
     pub metadata: UnionMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1136,6 +1190,8 @@ pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
     pub metadata: IntersectionMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1176,6 +1232,8 @@ pub struct TypeParam {
     pub constraint: Option<Box<Type>>,
     pub default: Option<Box<Type>>,
     pub metadata: TypeParamMetadata,
+
+    _priv: Private,
 }
 
 /// FooEnum.A
@@ -1186,6 +1244,8 @@ pub struct EnumVariant {
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1198,6 +1258,8 @@ pub struct Function {
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
     pub metadata: FunctionMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1212,6 +1274,8 @@ pub struct Constructor {
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1225,6 +1289,8 @@ pub struct Predicate {
     pub asserts: bool,
     pub ty: Option<Box<Type>>,
     pub metadata: PredicateMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2483,6 +2549,8 @@ impl Type {
 pub struct StaticThis {
     pub span: Span,
     pub metadata: StaticThisMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2492,6 +2560,8 @@ assert_eq_size!(StaticThis, [u8; 24]);
 pub struct ThisType {
     pub span: Span,
     pub metadata: ThisTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2506,6 +2576,8 @@ pub struct TplType {
     pub types: Vec<Type>,
 
     pub metadata: TplTypeMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
