@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        // TOOD: Optimize
+                        // TODO: Optimize
                         // If we can calculate type using constraints, do so.
 
                         // TODO(kdy1): PERF
@@ -759,12 +759,14 @@ impl Analyzer<'_, '_> {
                                                 enum_name: e.id.clone().into(),
                                                 name: Some(key.sym),
                                                 metadata: Default::default(),
+                                                tracker: Default::default(),
                                             })),
                                             RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
                                                 span: v.span,
                                                 enum_name: e.id.clone().into(),
                                                 name: Some(key.sym),
                                                 metadata: Default::default(),
+                                                tracker: Default::default(),
                                             })),
                                             _ => {}
                                         }
@@ -885,6 +887,7 @@ impl Analyzer<'_, '_> {
                     common: metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
 
             Type::ClassDef(def) => Type::Class(Class {
@@ -894,6 +897,7 @@ impl Analyzer<'_, '_> {
                     common: metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
 
             Type::StaticThis(ty) => Type::This(ThisType {
@@ -902,6 +906,7 @@ impl Analyzer<'_, '_> {
                     common: metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
 
             Type::Intersection(ty) if !opts.preserve_intersection => {
@@ -1097,6 +1102,7 @@ impl Analyzer<'_, '_> {
                 inexact: true,
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 
@@ -1238,6 +1244,7 @@ impl Analyzer<'_, '_> {
                     inexact: true,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             })));
         }
 
@@ -1263,6 +1270,7 @@ impl Analyzer<'_, '_> {
                                 common: ty.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         })),
                     )
                     .context("tried to convert a literal to type literal")?
@@ -1289,6 +1297,7 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })),
                     )?
                     .map(Cow::into_owned)

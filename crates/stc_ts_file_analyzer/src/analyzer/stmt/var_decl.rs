@@ -396,6 +396,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
 
                                     Type::Keyword(KeywordType {
@@ -660,6 +661,7 @@ impl Analyzer<'_, '_> {
                                 span: i.id.span,
                                 ty: box ty,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                         });
                         if let Some(ref mut ty) = ty {

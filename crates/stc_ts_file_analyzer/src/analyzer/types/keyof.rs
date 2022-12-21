@@ -128,6 +128,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsNeverKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword | TsKeywordTypeKind::TsStringKeyword => {
@@ -151,9 +152,10 @@ impl Analyzer<'_, '_> {
                                     type_name: RTsEntityName::Ident(RIdent::new(name, DUMMY_SP)),
                                     type_args: None,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             )
-                            .context("tried to get keys of builitin interface types");
+                            .context("tried to get keys of builtin interface types");
                     }
 
                     TsKeywordTypeKind::TsBigIntKeyword => {}
@@ -166,16 +168,19 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             ],
                             metadata: Default::default(),

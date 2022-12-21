@@ -237,6 +237,7 @@ impl Analyzer<'_, '_> {
                             span: m.span,
                             members: vec![index_signature],
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })));
                     }
 
@@ -274,6 +275,7 @@ impl Analyzer<'_, '_> {
                             span: m.span,
                             members,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })));
                     }
                 }

@@ -363,6 +363,7 @@ impl Analyzer<'_, '_> {
                                 params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
                             }),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         AssignOpts {
                             span: node.span,
@@ -411,6 +412,7 @@ impl Analyzer<'_, '_> {
                                 params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
                             }),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         AssignOpts {
                             span: node.span,
@@ -515,6 +517,7 @@ impl Analyzer<'_, '_> {
                 span: e.span,
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -587,8 +590,10 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     op: TsTypeOperatorOp::KeyOf,
                     ty: ref index_type,
                     metadata: op_metadata,
+                    ..
                 }),
             metadata,
+            ..
         }) = ty
         {
             let ctx = Ctx {
@@ -693,6 +698,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                             raw: None,
                                         }),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
 
                                     if types.iter().all(|previous| !previous.type_eq(&ty)) {
@@ -708,6 +714,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         obj_type: obj_type.clone(),
                         index_type: box Type::union(types),
                         metadata,
+                        tracker: Default::default(),
                     });
                 }
             }
