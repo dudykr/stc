@@ -113,6 +113,7 @@ impl Fold<Type> for LitGeneralizer {
                         common: metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             }
             _ => ty,
