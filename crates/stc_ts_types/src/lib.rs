@@ -14,6 +14,7 @@ use std::{
     fmt,
     fmt::{Debug, Formatter},
     iter::FusedIterator,
+    marker::PhantomData,
     mem::{replace, transmute},
     ops::AddAssign,
 };
@@ -22,6 +23,7 @@ use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
+use private::Private;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
@@ -65,6 +67,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+mod private;
 pub mod type_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -546,6 +549,8 @@ pub struct Instance {
     pub span: Span,
     pub ty: Box<Type>,
     pub metadata: InstanceMetadata,
+
+    _priv: Private,
 }
 
 #[cfg(target_pointer_width = "64")]
