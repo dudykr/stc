@@ -1315,6 +1315,7 @@ impl Analyzer<'_, '_> {
                     span: c.span,
                     members,
                     metadata: TypeLitMetadata { ..Default::default() },
+                    tracker: Default::default(),
                 })
             }
 
@@ -1335,6 +1336,7 @@ impl Analyzer<'_, '_> {
                     span: c.span,
                     members,
                     metadata: TypeLitMetadata { ..Default::default() },
+                    tracker: Default::default(),
                 })
             }
 
@@ -1354,6 +1356,7 @@ impl Analyzer<'_, '_> {
                         inexact: true,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             }
 
@@ -1370,6 +1373,7 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members: vec![el],
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
 
@@ -1382,6 +1386,7 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members: vec![el],
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
 
@@ -1439,6 +1444,7 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
 

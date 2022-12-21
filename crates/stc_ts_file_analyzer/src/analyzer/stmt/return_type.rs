@@ -238,6 +238,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                         ],
                     }),
@@ -245,6 +246,7 @@ impl Analyzer<'_, '_> {
                         common: metadata,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })));
             }
 
@@ -263,6 +265,7 @@ impl Analyzer<'_, '_> {
                         params: vec![ret_ty],
                     }),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })));
             }
 
@@ -339,6 +342,7 @@ impl Analyzer<'_, '_> {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);

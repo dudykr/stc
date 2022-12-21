@@ -318,6 +318,7 @@ impl Analyzer<'_, '_> {
                                                         span: p.span,
                                                         elems: vec![],
                                                         metadata: Default::default(),
+                                                        tracker: Default::default(),
                                                     }))
                                                 }
                                                 _ => Err(err),
@@ -583,6 +584,7 @@ impl Analyzer<'_, '_> {
                                                     span,
                                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                                     metadata: Default::default(),
+                                                    tracker: Default::default(),
                                                 }),
                                             ],
                                         )
@@ -765,6 +767,7 @@ impl Analyzer<'_, '_> {
                         span: lit.span,
                         members: new_members,
                         metadata: lit.metadata,
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -779,6 +782,7 @@ impl Analyzer<'_, '_> {
                         span: u.span,
                         types,
                         metadata: u.metadata,
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -797,6 +801,7 @@ impl Analyzer<'_, '_> {
                         span: ty.span(),
                         members: vec![],
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
 
@@ -809,11 +814,13 @@ impl Analyzer<'_, '_> {
                                 span: v.span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::BigInt(v.clone()),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })),
                             Key::Num(v) => Some(Type::Lit(LitType {
                                 span: v.span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::Number(v.clone()),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })),
                             Key::Normal { span, sym } => Some(Type::Lit(LitType {
                                 span: span.with_ctxt(SyntaxContext::empty()),
@@ -823,6 +830,7 @@ impl Analyzer<'_, '_> {
                                     raw: None,
                                 }),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })),
 
                             // TODO
@@ -915,6 +923,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elem_type: box ty,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
             .freezed())
         })

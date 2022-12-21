@@ -477,6 +477,7 @@ impl Analyzer<'_, '_> {
                                                             common: elem_metadata.common,
                                                             ..Default::default()
                                                         },
+                                                        tracker: Default::default(),
                                                     })
                                                 }
                                                 None => box Type::Keyword(KeywordType {
@@ -486,6 +487,7 @@ impl Analyzer<'_, '_> {
                                                         common: elem_metadata.common,
                                                         ..Default::default()
                                                     },
+                                                    tracker: Default::default(),
                                                 }),
                                             },
                                             metadata: *metadata,

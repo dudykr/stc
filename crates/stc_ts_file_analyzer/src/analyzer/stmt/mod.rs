@@ -105,6 +105,7 @@ impl Analyzer<'_, '_> {
                 value: true,
             }),
             metadata: Default::default(),
+            tracker: Default::default(),
         });
         self.check_for_inifinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 
