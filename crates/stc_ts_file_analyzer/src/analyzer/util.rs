@@ -242,7 +242,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
 }
 
 /// TODO(kdy1): Clarify why this visitor is used.
-/// I fotgot it.
+/// I forgot it.
 #[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,
@@ -418,6 +418,7 @@ pub(crate) fn opt_union(span: Span, opt1: Option<Type>, opt2: Option<Type>) -> O
                 span,
                 types: vec![t1, t2],
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
             .fixed(),
         ),

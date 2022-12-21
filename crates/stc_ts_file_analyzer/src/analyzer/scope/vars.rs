@@ -836,6 +836,7 @@ impl Analyzer<'_, '_> {
                         span,
                         types: key_types,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
 
                     return Ok(Type::Ref(Ref {
@@ -846,6 +847,7 @@ impl Analyzer<'_, '_> {
                             params: vec![ty.clone().into_owned(), keys],
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
                 _ => {}
