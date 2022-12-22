@@ -1471,38 +1471,8 @@ impl Analyzer<'_, '_> {
                 match to.normalize() {
                     Type::Union(..) => {}
                     Type::Mapped(m) => {
-                        // Try assign type param `T` has no constraint to mapped
-                        // type takes `T` as an arg.
-                        //
-                        // ex)
-                        // ```ts
-                        // function f10<T>(x: Readonly<T>, y: T) {
-                        //     x = y;
-                        // }
-                        // ```
-                        //
-                        // Error would occur if mapped type removes `?` modifiers.
-                        //
-                        // ex) type Required<T> = { [P in keyof T]-?: T[P]; }
-                        // ```ts
-                        // function error<T>(x: Required<T>, y: T) {
-                        //     x = y; // error TS2322
-                        // }
-                        // ```
-                        let remove_opt = matches!(m.optional, Some(Minus));
-                        if let Some(
-                            constraint @ Type::Operator(Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ty,
-                                ..
-                            }),
-                        ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                        {
-                            if rhs.type_eq(ty) && !remove_opt {
-                                return Ok(());
-                            } else {
-                                fail!()
-                            }
+                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
+                            fail!()
                         }
                     }
                     _ => {
@@ -2574,6 +2544,40 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Ok(());
+                }
+                Type::Param(ty) => {
+                    // Try assign type param `T` has no constraint to mapped
+                    // type takes `T` as an arg.
+                    //
+                    // ex)
+                    // ```ts
+                    // function f10<T>(x: Readonly<T>, y: T) {
+                    //     x = y;
+                    // }
+                    // ```
+                    //
+                    // Error will occur if mapped type removes `?`
+                    // modifiers.
+                    //
+                    // ex) type Required<T> = { [P in keyof T]-?: T[P]; }
+                    // ```ts
+                    // function error<T>(x: Required<T>, y: T) {
+                    //     x = y; // error TS2322
+                    // }
+                    // ```
+                    let remove_opt = matches!(l.optional, Some(Minus));
+                    if let Some(
+                        constraint @ Type::Operator(Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ty,
+                            ..
+                        }),
+                    ) = l.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                    {
+                        if r.type_eq(ty) && !remove_opt {
+                            return Ok(());
+                        }
+                    }
                 }
                 Type::Mapped(r) => {
                     if l.type_eq(r) {
