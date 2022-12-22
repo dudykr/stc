@@ -24,7 +24,7 @@ use tracing::debug;
 use crate::{
     analyzer::{
         expr::{
-            call_new::{ExtractKind, ReevalMode},
+            call_new::{ExtractKind, ReEvalMode},
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
         types::NormalizeTypeOpts,
@@ -110,6 +110,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 label: None,
                                 ty: array.elem_type,
+                                tracker: Default::default(),
                             });
                         }
                         Type::Tuple(tuple) => {
@@ -127,6 +128,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 label: None,
                                 ty: box element_type.clone(),
+                                tracker: Default::default(),
                             });
                         }
                         _ => {
@@ -140,6 +142,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 label: None,
                                 ty: box elem_type,
+                                tracker: Default::default(),
                             });
                         }
                     }
@@ -151,6 +154,7 @@ impl Analyzer<'_, '_> {
                 span,
                 label: None,
                 ty: box ty,
+                tracker: Default::default(),
             });
         }
 
@@ -159,6 +163,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elem_type: box Type::any(span, Default::default()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -200,6 +205,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box Type::union(types),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }
                 .fixed(),
             );
@@ -232,6 +238,7 @@ impl Analyzer<'_, '_> {
             span,
             elems: elements,
             metadata: Default::default(),
+            tracker: Default::default(),
         }))
     }
 }
@@ -249,6 +256,7 @@ impl Analyzer<'_, '_> {
                 span,
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })));
         }
 
@@ -294,6 +302,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                         types.dedup_type();
                         return Ok(Cow::Owned(Type::union(types)));
@@ -428,6 +437,7 @@ impl Analyzer<'_, '_> {
                         span,
                         id: SymbolId::async_iterator(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 }),
                 None,
@@ -447,7 +457,7 @@ impl Analyzer<'_, '_> {
                 .call_property(
                     span,
                     ExtractKind::Call,
-                    ReevalMode::NoReeval,
+                    ReEvalMode::NoReEval,
                     &async_iterator,
                     &async_iterator,
                     &Key::Normal { span, sym: "next".into() },
@@ -669,6 +679,7 @@ impl Analyzer<'_, '_> {
                         span: u.span,
                         types,
                         metadata: u.metadata,
+                        tracker: Default::default(),
                     });
                     return Ok(Cow::Owned(new));
                 }
@@ -683,6 +694,7 @@ impl Analyzer<'_, '_> {
                         span: i.span,
                         types,
                         metadata: i.metadata,
+                        tracker: Default::default(),
                     });
                     return Ok(Cow::Owned(new));
                 }
@@ -702,6 +714,7 @@ impl Analyzer<'_, '_> {
                         span,
                         id: SymbolId::iterator(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 }),
                 None,
@@ -757,6 +770,7 @@ impl Analyzer<'_, '_> {
                 span: iterator.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })));
         }
 
@@ -779,6 +793,7 @@ impl Analyzer<'_, '_> {
                         metadata: UnionMetadata {
                             common: tuple.metadata.common,
                         },
+                        tracker: Default::default(),
                     })
                     .fixed(),
                 ));
@@ -803,6 +818,7 @@ impl Analyzer<'_, '_> {
                         span: u.span,
                         types,
                         metadata: u.metadata,
+                        tracker: Default::default(),
                     })
                     .fixed(),
                 ));
@@ -823,6 +839,7 @@ impl Analyzer<'_, '_> {
                     span: i.span,
                     types,
                     metadata: i.metadata,
+                    tracker: Default::default(),
                 })));
             }
 

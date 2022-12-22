@@ -89,7 +89,7 @@ pub(crate) struct Scope<'a> {
     /// Used while validating super class and static class properties. Otherwise
     /// [None].
     ///
-    /// Required to handle static properies.
+    /// Required to handle static properties.
     pub(super) this_class_name: Option<Id>,
     /// Only contains instance members.
     ///
@@ -439,6 +439,7 @@ impl Scope<'_> {
                                         span: DUMMY_SP,
                                         types,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                     .fixed()
                                 }
@@ -588,6 +589,7 @@ impl Scope<'_> {
                         span: DUMMY_SP,
                         types: vec![prev_ty, ty],
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                     .fixed()
                     .freezed();
@@ -983,7 +985,7 @@ impl Analyzer<'_, '_> {
             }
 
             {
-                // Improted variables
+                // Imported variables
                 if let Some(info) = self.imports_by_id.get(name) {
                     match info.data.normalize() {
                         Type::Module(data) => {
@@ -1097,6 +1099,7 @@ impl Analyzer<'_, '_> {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         });
         #[allow(dead_code)]
@@ -1104,6 +1107,7 @@ impl Analyzer<'_, '_> {
             Type::StaticThis(StaticThis {
                 span: DUMMY_SP,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         });
 
@@ -1135,7 +1139,7 @@ impl Analyzer<'_, '_> {
         if let Some(ty) = self.scope.find_type(name) {
             if self.ctx.in_module {
                 // In module mode, we should not merge user-defined types with builtin.
-                // As `src` contains builtin typds, we remove them.
+                // As `src` contains builtin types, we remove them.
                 src.clear();
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
@@ -1547,7 +1551,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
+                .convert_err(|err| ErrorKind::IncompatibleFnOverload {
                     span: orig.span(),
                     cause: box err.into(),
                 })
@@ -1982,6 +1986,7 @@ impl Expander<'_, '_, '_> {
                                             span,
                                             members: vec![],
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         })),
                                         InferTypeOpts { ..Default::default() },
                                     )?;
@@ -2007,6 +2012,7 @@ impl Expander<'_, '_, '_> {
                                             span: self.span,
                                             def: box def,
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         });
                                     };
 
@@ -2044,6 +2050,7 @@ impl Expander<'_, '_, '_> {
                                         span: self.span,
                                         def: box def,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
                                 };
 
@@ -2128,6 +2135,7 @@ impl Expander<'_, '_, '_> {
                     enum_name: e.id.clone().into(),
                     name: None,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })));
             }
         }
@@ -2335,7 +2343,7 @@ impl Expander<'_, '_, '_> {
                             span: cond_span,
                             check_type:
                                 box Type::IndexedAccessType(IndexedAccessType {
-                                    span: checl_type_span,
+                                    span: check_type_span,
                                     ref obj_type,
                                     index_type: box Type::Param(ref index_type),
                                     ..
@@ -2412,8 +2420,18 @@ impl Expander<'_, '_, '_> {
                     return ty;
                 }
 
-                Type::Union(Union { span, types, metadata }) => {
-                    return Type::Union(Union { span, types, metadata });
+                Type::Union(Union {
+                    span,
+                    types,
+                    metadata,
+                    tracker,
+                }) => {
+                    return Type::Union(Union {
+                        span,
+                        types,
+                        metadata,
+                        tracker,
+                    });
                 }
 
                 Type::Function(ty::Function {
@@ -2422,6 +2440,7 @@ impl Expander<'_, '_, '_> {
                     params,
                     ret_ty,
                     metadata,
+                    ..
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
                     // TODO(kdy1): PERF
@@ -2433,6 +2452,7 @@ impl Expander<'_, '_, '_> {
                         params,
                         ret_ty,
                         metadata,
+                        tracker: Default::default(),
                     });
                 }
 
@@ -2495,6 +2515,7 @@ impl Expander<'_, '_, '_> {
                 true_type,
                 false_type,
                 metadata,
+                tracker: Default::default(),
             });
         }
 

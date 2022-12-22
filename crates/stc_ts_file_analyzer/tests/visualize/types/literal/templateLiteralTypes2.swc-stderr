@@ -924,8 +924,7 @@ Error:
     `----
 
 Error: 
-  > "foo.bar.baz" extends `foo.bar.${infer R}` ? {
-  | } : unknown
+  > "foo.bar.baz" extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
@@ -952,8 +951,7 @@ Error:
     `----
 
 Error: 
-  > "foo.bar.baz" extends `foo.bar.${infer R}` ? {
-  | } : unknown
+  > "foo.bar.baz" extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
@@ -989,8 +987,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
-  | } : unknown
+  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:95:1]
@@ -1035,8 +1032,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
-  | } : unknown
+  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
@@ -1072,8 +1068,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${('abc' | 'def' | 'ghi')}` extends `foo.bar.${infer R}` ? {
-  | } : unknown
+  > `foo.bar.${('abc' | 'def' | 'ghi')}` extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:107:1]

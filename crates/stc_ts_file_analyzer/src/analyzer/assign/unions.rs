@@ -102,6 +102,7 @@ impl Analyzer<'_, '_> {
                         span: ty.span,
                         types: to_types,
                         metadata: ty.metadata,
+                        tracker: Default::default(),
                     })
                     .fixed();
 
@@ -140,6 +141,7 @@ impl Analyzer<'_, '_> {
                         span: el.span,
                         label: el.label.clone(),
                         ty: box el_ty.clone(),
+                        tracker: Default::default(),
                     },
                 )?;
             }
@@ -148,6 +150,7 @@ impl Analyzer<'_, '_> {
                 span: el_ty.span,
                 types: to_types,
                 metadata: el_ty.metadata,
+                tracker: Default::default(),
             });
 
             return Ok(());
@@ -190,6 +193,7 @@ impl Analyzer<'_, '_> {
                             value: true,
                         }),
                         metadata: LitTypeMetadata::default(),
+                        tracker: Default::default(),
                     }),
                     Type::Lit(LitType {
                         span: DUMMY_SP,
@@ -198,12 +202,14 @@ impl Analyzer<'_, '_> {
                             value: false,
                         }),
                         metadata: LitTypeMetadata::default(),
+                        tracker: Default::default(),
                     }),
                 ],
                 metadata: UnionMetadata {
                     common: metadata.common,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
             Type::Union(ty) => Some(ty.clone()),
             _ => None,

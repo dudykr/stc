@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Enum> {
         for m in &e.members {
-            self.validate_with(|a| a.validate_enum_memeber_name(&m.id));
+            self.validate_with(|a| a.validate_enum_member_name(&m.id));
         }
 
         let mut default = 0.0;
@@ -119,6 +119,7 @@ impl Analyzer<'_, '_> {
                 id: e.id.clone(),
                 members,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }
         };
 
@@ -183,7 +184,7 @@ impl Evaluator<'_> {
                     match &v {
                         RTsLit::Number(n) => {
                             if n.value.is_infinite() && self.e.is_const {
-                                return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: bin.span }.into());
+                                return Err(ErrorKind::ConstEnumMemberHasInfinityAsInit { span: bin.span }.into());
                             } else if n.value.is_nan() && self.e.is_const {
                                 return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: bin.span }.into());
                             } else {
@@ -201,7 +202,7 @@ impl Evaluator<'_> {
                             return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: id.span }.into());
                         }
                         if id.sym == js_word!("Infinity") {
-                            return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: id.span }.into());
+                            return Err(ErrorKind::ConstEnumMemberHasInfinityAsInit { span: id.span }.into());
                         }
                     }
 
@@ -328,7 +329,7 @@ impl Evaluator<'_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_enum_memeber_name(&mut self, e: &RTsEnumMemberId) -> VResult<()> {
+    fn validate_enum_member_name(&mut self, e: &RTsEnumMemberId) -> VResult<()> {
         match e {
             RTsEnumMemberId::Ident(i) => {}
             RTsEnumMemberId::Str(s) => {
@@ -382,6 +383,7 @@ impl Analyzer<'_, '_> {
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 type_params: Default::default(),
                 metadata: Default::default(),
@@ -404,6 +406,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
@@ -414,6 +417,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -431,6 +435,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
@@ -441,6 +446,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -450,6 +456,7 @@ impl Analyzer<'_, '_> {
             span: e.span,
             members,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 
@@ -545,11 +552,13 @@ impl Analyzer<'_, '_> {
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 _ => {
                     unimplemented!("Handle enum with value other than string literal or numeric literals")
@@ -586,6 +595,7 @@ impl Analyzer<'_, '_> {
                                             common: ev.metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     }));
                                 }
                             }

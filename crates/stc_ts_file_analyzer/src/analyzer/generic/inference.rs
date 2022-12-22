@@ -235,6 +235,7 @@ impl Analyzer<'_, '_> {
                             common: ty.metadata(),
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -362,6 +363,7 @@ impl Analyzer<'_, '_> {
                         common: param.metadata(),
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 }),
                 arg,
                 InferTypeOpts {
@@ -539,6 +541,7 @@ impl Analyzer<'_, '_> {
                                         params: a.params.clone(),
                                         ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                     opts,
                                 )?;
@@ -561,6 +564,7 @@ impl Analyzer<'_, '_> {
                                         params: p.params.clone(),
                                         ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                     at,
                                     opts,

@@ -4,6 +4,7 @@
 #![deny(deprecated)]
 #![allow(incomplete_features)]
 #![allow(clippy::needless_update)]
+#![feature(adt_const_params)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
@@ -46,6 +47,7 @@ use swc_ecma_utils::{
     Value::{Known, Unknown},
 };
 use tracing::instrument;
+use tracker::Tracker;
 use triomphe::Arc;
 
 use self::type_id::SymbolId;
@@ -65,6 +67,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+mod tracker;
 pub mod type_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -470,16 +473,19 @@ impl Key {
                     raw: None,
                 }),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
             Key::Num(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::Number(n.clone()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
             Key::BigInt(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::BigInt(n.clone()),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
             Key::Private(..) => unimplemented!("access to type elements using private name"),
         }
@@ -546,6 +552,8 @@ pub struct Instance {
     pub span: Span,
     pub ty: Box<Type>,
     pub metadata: InstanceMetadata,
+
+    pub tracker: Tracker<"Instance">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -557,6 +565,8 @@ pub struct LitType {
 
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
+
+    pub tracker: Tracker<"LitType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -569,6 +579,8 @@ pub struct KeywordType {
     #[use_eq_ignore_span]
     pub kind: TsKeywordTypeKind,
     pub metadata: KeywordTypeMetadata,
+
+    pub tracker: Tracker<"KeywordType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -579,6 +591,8 @@ pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
     pub metadata: SymbolMetadata,
+
+    pub tracker: Tracker<"Symbol">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -593,6 +607,8 @@ pub struct RestType {
     pub span: Span,
     pub ty: Box<Type>,
     pub metadata: RestTypeMetadata,
+
+    pub tracker: Tracker<"RestType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -603,6 +619,8 @@ pub struct OptionalType {
     pub span: Span,
     pub ty: Box<Type>,
     pub metadata: OptionalTypeMetadata,
+
+    pub tracker: Tracker<"OptionalType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -615,6 +633,8 @@ pub struct IndexedAccessType {
     pub obj_type: Box<Type>,
     pub index_type: Box<Type>,
     pub metadata: IndexedAccessTypeMetadata,
+
+    pub tracker: Tracker<"IndexedAccessType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -627,6 +647,8 @@ pub struct Ref {
     pub type_name: RTsEntityName,
     pub type_args: Option<Box<TypeParamInstantiation>>,
     pub metadata: RefMetadata,
+
+    pub tracker: Tracker<"Ref">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -647,6 +669,8 @@ pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
     pub metadata: InferTypeMetadata,
+
+    pub tracker: Tracker<"InferType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -663,6 +687,8 @@ pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
     pub metadata: QueryTypeMetadata,
+
+    pub tracker: Tracker<"QueryType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -682,6 +708,8 @@ pub struct ImportType {
     pub qualifier: Option<RTsEntityName>,
     pub type_params: Option<Box<TypeParamInstantiation>>,
     pub metadata: ImportTypeMetadata,
+
+    pub tracker: Tracker<"ImportType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -693,6 +721,8 @@ pub struct Namespace {
     pub name: Id,
     pub exports: Box<ModuleTypeData>,
     pub metadata: NamespaceTypeMetadata,
+
+    pub tracker: Tracker<"Namespace">,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -702,6 +732,8 @@ pub struct Module {
     pub name: RTsModuleName,
     pub exports: Box<ModuleTypeData>,
     pub metadata: ModuleTypeMetadata,
+
+    pub tracker: Tracker<"Module">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -719,6 +751,8 @@ pub struct Enum {
     pub has_str: bool,
 
     pub metadata: EnumMetadata,
+
+    pub tracker: Tracker<"Enum">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -738,6 +772,8 @@ pub struct Class {
     pub span: Span,
     pub def: Box<ClassDef>,
     pub metadata: ClassMetadata,
+
+    pub tracker: Tracker<"Class">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -753,6 +789,8 @@ pub struct ClassDef {
     pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
     pub metadata: ClassDefMetadata,
+
+    pub tracker: Tracker<"ClassDef">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -822,6 +860,8 @@ pub struct Mapped {
     pub type_param: TypeParam,
     pub ty: Option<Box<Type>>,
     pub metadata: MappedMetadata,
+
+    pub tracker: Tracker<"Mapped">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -835,6 +875,8 @@ pub struct Conditional {
     pub true_type: Box<Type>,
     pub false_type: Box<Type>,
     pub metadata: ConditionalMetadata,
+
+    pub tracker: Tracker<"Conditional">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -858,6 +900,8 @@ pub struct Operator {
     pub op: TsTypeOperatorOp,
     pub ty: Box<Type>,
     pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Operator">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -882,6 +926,8 @@ pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
     pub metadata: TupleMetadata,
+
+    pub tracker: Tracker<"Tuple">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -893,6 +939,8 @@ pub struct TupleElement {
     #[not_type]
     pub label: Option<RPat>,
     pub ty: Box<Type>,
+
+    pub tracker: Tracker<"TupleElement">,
 }
 
 impl Debug for TupleElement {
@@ -907,6 +955,8 @@ pub struct Alias {
     pub type_params: Option<Box<TypeParamDecl>>,
     pub ty: Box<Type>,
     pub metadata: AliasMetadata,
+
+    pub tracker: Tracker<"Alias">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -920,6 +970,8 @@ pub struct Interface {
     pub extends: Vec<TsExpr>,
     pub body: Vec<TypeElement>,
     pub metadata: InterfaceMetadata,
+
+    pub tracker: Tracker<"Interface">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -930,6 +982,8 @@ pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
     pub metadata: TypeLitMetadata,
+
+    pub tracker: Tracker<"TypeLit">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -939,6 +993,8 @@ assert_eq_size!(TypeLit, [u8; 56]);
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
+
+    pub tracker: Tracker<"TypeParamDecl">,
 }
 
 /// Typescript expression with type arguments
@@ -948,6 +1004,8 @@ pub struct TsExpr {
     #[use_eq_ignore_span]
     pub expr: Box<RExpr>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
+
+    pub tracker: Tracker<"TsExpr">,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1073,6 +1131,8 @@ pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
     pub metadata: ArrayMetadata,
+
+    pub tracker: Tracker<"Array">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1084,6 +1144,8 @@ pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
     pub metadata: UnionMetadata,
+
+    pub tracker: Tracker<"Union">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1131,6 +1193,8 @@ pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
     pub metadata: IntersectionMetadata,
+
+    pub tracker: Tracker<"Intersection">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1171,6 +1235,8 @@ pub struct TypeParam {
     pub constraint: Option<Box<Type>>,
     pub default: Option<Box<Type>>,
     pub metadata: TypeParamMetadata,
+
+    pub tracker: Tracker<"TypeParam">,
 }
 
 /// FooEnum.A
@@ -1181,6 +1247,8 @@ pub struct EnumVariant {
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
+
+    pub tracker: Tracker<"EnumVariant">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1193,6 +1261,8 @@ pub struct Function {
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
     pub metadata: FunctionMetadata,
+
+    pub tracker: Tracker<"Function">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1207,6 +1277,8 @@ pub struct Constructor {
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
+
+    pub tracker: Tracker<"Constructor">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1220,6 +1292,8 @@ pub struct Predicate {
     pub asserts: bool,
     pub ty: Option<Box<Type>>,
     pub metadata: PredicateMetadata,
+
+    pub tracker: Tracker<"Predicate">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1293,6 +1367,7 @@ impl Type {
                 span,
                 types: tys,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
         }
     }
@@ -1312,6 +1387,7 @@ impl Type {
                                 span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
                         }
 
@@ -1328,6 +1404,7 @@ impl Type {
                         span,
                         types: elements,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                 }
 
@@ -1335,6 +1412,7 @@ impl Type {
                     span,
                     types,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
         };
@@ -1354,6 +1432,7 @@ impl Type {
                     span,
                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
             }
 
@@ -1425,6 +1504,7 @@ impl Type {
                 span,
                 types: elements,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
         };
         ty.assert_valid();
@@ -1449,6 +1529,7 @@ impl Type {
                     common: lit.metadata.common,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
             _ => self,
         }
@@ -1584,6 +1665,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1592,6 +1674,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1600,6 +1683,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1608,6 +1692,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 
@@ -1616,6 +1701,7 @@ impl Type {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
             metadata,
+            tracker: Default::default(),
         })
     }
 }
@@ -2435,6 +2521,7 @@ impl VisitMut<Type> for Freezer {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
         );
 
@@ -2478,6 +2565,8 @@ impl Type {
 pub struct StaticThis {
     pub span: Span,
     pub metadata: StaticThisMetadata,
+
+    pub tracker: Tracker<"StaticThis">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2487,6 +2576,8 @@ assert_eq_size!(StaticThis, [u8; 24]);
 pub struct ThisType {
     pub span: Span,
     pub metadata: ThisTypeMetadata,
+
+    pub tracker: Tracker<"ThisType">,
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2501,6 +2592,8 @@ pub struct TplType {
     pub types: Vec<Type>,
 
     pub metadata: TplTypeMetadata,
+
+    pub tracker: Tracker<"TplType">,
 }
 
 #[cfg(target_pointer_width = "64")]

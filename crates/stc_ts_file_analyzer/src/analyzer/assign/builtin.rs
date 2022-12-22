@@ -164,6 +164,7 @@ impl Analyzer<'_, '_> {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
                         metadata: ArrayMetadata { common: r.metadata() },
+                        tracker: Default::default(),
                     }),
                     opts,
                 ));

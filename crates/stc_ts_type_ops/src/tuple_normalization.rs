@@ -39,6 +39,7 @@ impl VisitMut<Type> for TupleNormalizer {
                     common: common_metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             });
         }
     }

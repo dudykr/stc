@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
+ 3 | return foo(obj);
+   :        ^^^
+   `----
+
+Error: 
+  > <T>(obj: T) => T extends () => infer P ? P : never
+
+  x Type
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
+ 3 | return foo(obj);
+   :            ^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
+ 3 | return foo(obj);
+   :        ^^^^^^^^
+   `----
+
+Error: 
+  > T extends () => infer P ? P : never

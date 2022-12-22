@@ -50,6 +50,7 @@ impl Fold<Type> for Widen {
                         common: tuple.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             }
 
