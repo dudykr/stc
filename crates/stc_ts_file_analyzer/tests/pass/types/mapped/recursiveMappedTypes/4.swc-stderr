@@ -1,7 +1,7 @@
 
   x Type
     ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/4.ts:15:1]
- 15 | a // { type: "list"; minimum_count: number; maximum_count: number; }
+ 15 | a // {}}
     : ^
     `----
 
