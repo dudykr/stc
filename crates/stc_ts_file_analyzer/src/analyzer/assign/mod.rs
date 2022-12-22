@@ -742,7 +742,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+        if to.is_symbol() {
+            fail!()
+        }
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if let Type::Param(TypeParam { constraint: Some(ty), .. }) = rhs {
+                if ty.is_never() {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 

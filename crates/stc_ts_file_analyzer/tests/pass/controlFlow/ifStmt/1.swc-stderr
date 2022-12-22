@@ -1,0 +1,54 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/1.ts:2:5]
+ 2 | if (typeof data === 'string') {
+   :            ^^^^
+   `----
+
+Error: 
+  > (string | T)
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/1.ts:2:5]
+ 2 | if (typeof data === 'string') {
+   :     ^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/1.ts:2:5]
+ 2 | if (typeof data === 'string') {
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/1.ts:3:9]
+ 3 | throw new Error('will always happen');
+   :           ^^^^^
+   `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/1.ts:3:9]
+ 3 | throw new Error('will always happen');
+   :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Error
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/1.ts:6:9]
+ 6 | return data;
+   :        ^^^^
+   `----
+
+Error: 
+  > T
