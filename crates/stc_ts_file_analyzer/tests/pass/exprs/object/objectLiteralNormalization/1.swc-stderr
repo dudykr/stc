@@ -300,7 +300,7 @@ Error:
    `----
 
 Error: 
-  > (number | undefined)
+  > number
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/objectLiteralNormalization/1.ts:7:1]
@@ -363,7 +363,7 @@ Error:
    `----
 
 Error: 
-  > (number | undefined)
+  > number
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/objectLiteralNormalization/1.ts:8:1]
@@ -426,7 +426,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > string
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/objectLiteralNormalization/1.ts:9:1]
@@ -489,4 +489,4 @@ Error:
    `----
 
 Error: 
-  > (undefined | number)
+  > number

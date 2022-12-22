@@ -6,9 +6,9 @@
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     b: string;
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1]
@@ -17,4 +17,4 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > string

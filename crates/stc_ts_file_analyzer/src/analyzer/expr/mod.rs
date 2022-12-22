@@ -2779,17 +2779,22 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
 
                 for ty in types {
-                    if let Type::Union(Union { types, .. }) = ty {
-                        union_vec.append(&mut types.clone());
+                    let normalize_ty = self
+                        .normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                        .unwrap()
+                        .into_owned();
+                    if let Type::Union(Union { mut types, .. }) = normalize_ty {
+                        union_vec.append(&mut types);
                         continue;
                     }
-                    match self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
+
+                    match self.access_property(span, &normalize_ty, prop, type_mode, id_ctx, opts) {
                         Ok(v) => {
                             if let Type::Intersection(Intersection { mut types, .. }) = v {
                                 new.append(&mut types);
                                 continue;
                             }
-                            new.push(v);
+                            new.push(self.normalize(Some(span), Cow::Owned(v), Default::default()).unwrap().into_owned());
                         }
                         Err(err) => {
                             errors.push(err);
@@ -2804,12 +2809,22 @@ impl Analyzer<'_, '_> {
                 if new.len() >= 2 {
                     new.retain(|prop_ty| match prop_ty.normalize() {
                         Type::IndexedAccessType(iat) => !matches!(iat.obj_type.normalize(), Type::Param(..)),
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                            ..
+                        }) => false,
                         _ => true,
                     });
+                    if new.is_empty() {
+                        return Ok(Type::Keyword(KeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                            metadata: Default::default(),
+                        }));
+                    }
                 }
 
                 new.dedup_type();
-
                 // print_backtrace();
                 if new.len() == 1 {
                     let mut ty = new.into_iter().next().unwrap();
@@ -2817,6 +2832,25 @@ impl Analyzer<'_, '_> {
                     return Ok(ty);
                 }
 
+                if !union_vec.is_empty() {
+                    let mut rescuve_vec = vec![];
+                    for i in union_vec {
+                        let temp_ty = self.normalize(Some(span), Cow::Owned(i), Default::default()).unwrap().into_owned();
+                        dbg!(&temp_ty);
+                        if let Ok(v) = self.access_property(span, &temp_ty, prop, type_mode, id_ctx, opts) {
+                            rescuve_vec.push(v);
+                        }
+                    }
+                    new.append(&mut rescuve_vec);
+                    let mut ty = Type::Intersection(Intersection {
+                        span,
+                        types: new,
+                        metadata: Default::default(),
+                    })
+                    .fixed();
+                    ty.make_clone_cheap();
+                    return Ok(ty);
+                }
                 let ty = Type::Intersection(Intersection {
                     span,
                     types: new,
@@ -2824,15 +2858,6 @@ impl Analyzer<'_, '_> {
                 })
                 .fixed();
 
-                if !union_vec.is_empty() {
-                    let mut rescuve_vec = vec![];
-                    for i in union_vec {
-                        if let Ok(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts) {
-                            rescuve_vec.push(v);
-                        }
-                    }
-                    return Ok(Type::union(rescuve_vec));
-                }
                 // ty.respan(span);
                 return Ok(ty);
             }

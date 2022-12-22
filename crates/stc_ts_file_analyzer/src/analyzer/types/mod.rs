@@ -245,7 +245,28 @@ impl Analyzer<'_, '_> {
 
                             types.dedup_type();
                             types.retain(|ty| !ty.is_never());
+                            dbg!(&types);
+                            if types.iter().any(|t| t.is_any()) {
+                                return Ok(Cow::Owned(Type::any(ty.span, Default::default())));
+                            } else if types.iter().any(|t| t.is_unknown()) {
+                                return Ok(Cow::Owned(Type::unknown(ty.span, Default::default())));
+                            } else if types.iter().any(|t| {
+                                t.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsBigIntKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsObjectKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsIntrinsicKeyword)
+                                    || t.is_type_lit()
+                            }) {
+                                if !self.rule().strict_null_checks {
+                                    types.retain(|ty| !ty.is_null() && !ty.is_undefined());
+                                }
+                            }
 
+                            dbg!(&types);
                             if types.is_empty() {
                                 return Ok(Cow::Owned(Type::never(
                                     ty.span,
@@ -970,13 +991,6 @@ impl Analyzer<'_, '_> {
                             temp_vec.dedup_type();
 
                             if temp_vec.is_empty() {
-                                let inter_vec = vec![temp_ty.clone(), elem.clone()];
-
-                                temp_ty = Type::Intersection(Intersection {
-                                    span,
-                                    types: inter_vec,
-                                    metadata: Default::default(),
-                                })
                             } else if temp_vec.len() == 1 {
                                 temp_ty = temp_vec[0].clone();
                             } else {
@@ -996,29 +1010,6 @@ impl Analyzer<'_, '_> {
                                     continue 'outer;
                                 }
                             }
-                            let mut res = u
-                                .types
-                                .into_iter()
-                                .map(|t| {
-                                    Type::Intersection(Intersection {
-                                        span,
-                                        types: vec![
-                                            t,
-                                            self.normalize(Some(span), Cow::Borrowed(&other), Default::default())
-                                                .unwrap()
-                                                .into_owned(),
-                                        ],
-                                        metadata: Default::default(),
-                                    })
-                                })
-                                .collect_vec();
-                            res.make_clone_cheap();
-                            let temp = Type::union(res);
-                            temp_ty = self
-                                .normalize(Some(span), Cow::Owned(temp), Default::default())
-                                .unwrap()
-                                .into_owned();
-
                             continue 'outer;
                         }
 

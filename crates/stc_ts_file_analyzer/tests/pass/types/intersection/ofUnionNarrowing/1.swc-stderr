@@ -6,13 +6,13 @@
     `----
 
 Error: 
-  > (({
+  > (X & ({
   |     a: object;
   |     b: undefined;
-  | } & X) | ({
+  | } | {
   |     a: undefined;
   |     b: object;
-  | } & X))
+  | }))
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:11:1]
@@ -21,9 +21,9 @@ Error:
     `----
 
 Error: 
-  > (({
+  > ({
   |     aProp: string;
-  | } & object) | undefined)
+  | } & object)
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:11:1]
@@ -50,10 +50,13 @@ Error:
     `----
 
 Error: 
-  > ({
+  > (X & ({
   |     a: object;
   |     b: undefined;
-  | } & X)
+  | } | {
+  |     a: undefined;
+  |     b: object;
+  | }))
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:12:5]
@@ -73,7 +76,7 @@ Error:
     `----
 
 Error: 
-  > any
+  > string
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:15:5]
@@ -82,10 +85,13 @@ Error:
     `----
 
 Error: 
-  > ({
+  > (X & ({
+  |     a: object;
+  |     b: undefined;
+  | } | {
   |     a: undefined;
   |     b: object;
-  | } & X)
+  | }))
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/ofUnionNarrowing/1.ts:15:5]
@@ -105,4 +111,4 @@ Error:
     `----
 
 Error: 
-  > any
+  > string

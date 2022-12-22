@@ -6,9 +6,9 @@
    `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
@@ -17,7 +17,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | (x: any) => x is number)
+  > (x: any) => x is number
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
@@ -140,9 +140,9 @@ Error:
     `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:5]
@@ -151,9 +151,9 @@ Error:
     `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:5]
@@ -162,7 +162,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | (x: any) => x is number)
+  > (x: any) => x is number
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:13:5]
@@ -171,9 +171,9 @@ Error:
     `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:13:5]
@@ -200,9 +200,9 @@ Error:
     `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1]
@@ -211,9 +211,9 @@ Error:
     `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1]
@@ -222,7 +222,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | (x: any) => x is number)
+  > (x: any) => x is number
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:18:1]
@@ -231,9 +231,9 @@ Error:
     `----
 
 Error: 
-  > ({
+  > {
   |     f(x: any): x is number;
-  | } | undefined)
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:18:1]

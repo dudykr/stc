@@ -30,4 +30,4 @@ Error:
    `----
 
 Error: 
-  > (string | null)
+  > string

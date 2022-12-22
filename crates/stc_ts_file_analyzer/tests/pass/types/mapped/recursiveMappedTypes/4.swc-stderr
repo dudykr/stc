@@ -10,4 +10,5 @@ Error:
   |     type: "list";
   |     minimum_count: number;
   |     maximum_count: number;
+  |     collapsable: boolean;
   | }

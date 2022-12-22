@@ -21,10 +21,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     type: string;
   |     coordinates: number[];
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:5]

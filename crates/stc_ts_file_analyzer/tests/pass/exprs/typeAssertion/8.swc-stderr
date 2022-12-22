@@ -6,7 +6,7 @@
    `----
 
 Error: 
-  > (string | undefined | null)
+  > string
 
   x Type
    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:7:5]

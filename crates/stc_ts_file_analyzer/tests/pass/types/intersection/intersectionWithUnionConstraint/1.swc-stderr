@@ -6,4 +6,4 @@
    `----
 
 Error: 
-  > (string | undefined)
+  > string

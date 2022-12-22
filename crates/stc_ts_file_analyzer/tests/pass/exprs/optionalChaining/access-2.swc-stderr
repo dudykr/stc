@@ -6,11 +6,11 @@
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     b: {
   |         c: string;
   |     };
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:3:1]
@@ -19,9 +19,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     c: string;
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:3:1]
@@ -39,11 +39,11 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     b: {
   |         c: string;
   |     };
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:4:1]
@@ -52,9 +52,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     c: string;
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:4:1]
