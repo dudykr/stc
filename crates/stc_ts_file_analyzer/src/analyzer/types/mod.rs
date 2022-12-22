@@ -763,6 +763,7 @@ impl Analyzer<'_, '_> {
                 span,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 metadata: KeywordTypeMetadata { ..Default::default() },
+                tracker: Default::default(),
             })));
         }
 
@@ -1035,6 +1036,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 types: temp,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
                             continue 'outer;
                         }
@@ -1049,6 +1051,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 types: temp,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
                             continue 'outer;
                         }
@@ -1077,6 +1080,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     types: types_vec,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                                 continue;
                             }
@@ -1086,6 +1090,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             metadata: KeywordTypeMetadata { ..Default::default() },
+                            tracker: Default::default(),
                         }));
                         temp_ty = Type::union(temp);
                     }
@@ -1109,6 +1114,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     types: types_vec,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                                 continue;
                             }
@@ -1118,6 +1124,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             metadata: KeywordTypeMetadata { ..Default::default() },
+                            tracker: Default::default(),
                         }));
                         temp_ty = Type::union(temp);
                     }
@@ -1143,6 +1150,7 @@ impl Analyzer<'_, '_> {
                                             span,
                                             types: types_vec,
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         }));
                                         continue;
                                     }
@@ -1152,11 +1160,13 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsNullKeyword,
                                     metadata: KeywordTypeMetadata { ..Default::default() },
+                                    tracker: Default::default(),
                                 }));
                                 temp.push(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: KeywordTypeMetadata { ..Default::default() },
+                                    tracker: Default::default(),
                                 }));
                                 temp_ty = Type::union(temp);
                             }
@@ -1169,6 +1179,7 @@ impl Analyzer<'_, '_> {
                         span,
                         types: normalize_types,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })));
                 }
 

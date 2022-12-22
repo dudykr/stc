@@ -1065,6 +1065,7 @@ impl Analyzer<'_, '_> {
                 span,
                 types: res_vec,
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
             TypeOfMode::RValue => Type::union(res_vec),
         };
@@ -2864,6 +2865,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -2890,6 +2892,7 @@ impl Analyzer<'_, '_> {
                         span,
                         types: new,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                     .fixed();
                     ty.make_clone_cheap();
