@@ -1230,28 +1230,43 @@ impl Analyzer<'_, '_> {
         }
 
         // Prevent logging
-        match (param, arg) {
-            (
-                _,
-                Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                })
-                | Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    ..
-                })
-                | Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                    ..
-                }),
-            ) => {
+        match arg {
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNullKeyword,
+                ..
+            })
+            | Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            })
+            | Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => {
                 return Ok(());
             }
 
-            (Type::Enum(..) | Type::EnumVariant(..), Type::Enum(..) | Type::EnumVariant(..)) => return Ok(()),
-
             _ => {}
+        }
+
+        // Prevent logging
+        let ignore = |ty: &Type| {
+            matches!(
+                ty,
+                Type::Enum(..)
+                    | Type::EnumVariant(..)
+                    | Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword
+                            | TsKeywordTypeKind::TsStringKeyword
+                            | TsKeywordTypeKind::TsBigIntKeyword
+                            | TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    })
+                    | Type::Lit(..)
+            )
+        };
+        if ignore(param) && ignore(arg) {
+            return Ok(());
         }
 
         if param.is_str_lit() || param.is_bool_lit() || param.is_num_lit() {
