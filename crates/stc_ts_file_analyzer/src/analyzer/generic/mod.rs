@@ -1229,22 +1229,28 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg {
-            Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsNullKeyword,
-                ..
-            })
-            | Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                ..
-            })
-            | Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsVoidKeyword,
-                ..
-            }) => {
-                // Prevent logging
+        // Prevent logging
+        match (param, arg) {
+            (
+                _,
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }),
+            ) => {
                 return Ok(());
             }
+
+            (Type::Enum(..) | Type::EnumVariant(..), Type::Enum(..) | Type::EnumVariant(..)) => return Ok(()),
+
             _ => {}
         }
 
