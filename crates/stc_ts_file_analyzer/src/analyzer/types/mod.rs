@@ -245,7 +245,7 @@ impl Analyzer<'_, '_> {
 
                             types.dedup_type();
                             types.retain(|ty| !ty.is_never());
-                            dbg!(&types);
+
                             if types.iter().any(|t| t.is_any()) {
                                 return Ok(Cow::Owned(Type::any(ty.span, Default::default())));
                             } else if types.iter().any(|t| t.is_unknown()) {
@@ -266,7 +266,6 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            dbg!(&types);
                             if types.is_empty() {
                                 return Ok(Cow::Owned(Type::never(
                                     ty.span,

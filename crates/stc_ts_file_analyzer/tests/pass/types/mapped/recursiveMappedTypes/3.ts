@@ -11,7 +11,7 @@ export interface ListWidget {
     "collapsable"?: boolean, //default to false, means all expanded
 }
 
-type A = NonOptionalKeys<ListWidget>; // "type" | "minimum_count" | "maximum_count" | undefined
-declare const a: A; // "type" | "minimum_count" | "maximum_count" | undefined
-a // "type" | "minimum_count" | "maximum_count" | undefined
+type A = NonOptionalKeys<ListWidget>; // never
+declare const a: A; // never
+a // never
 
