@@ -15,7 +15,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
-use swc_ecma_ast::*;
+use swc_ecma_ast::{TruePlusMinus::Minus, *};
 use tracing::{debug, error, info, span, Level};
 
 use crate::{
@@ -1471,6 +1471,25 @@ impl Analyzer<'_, '_> {
                 match to.normalize() {
                     Type::Union(..) => {}
                     Type::Mapped(m) => {
+                        // Try assign type param `T` has no constraint to mapped
+                        // type takes `T` as an arg.
+                        //
+                        // ex)
+                        // ```ts
+                        // function f10<T>(x: Readonly<T>, y: T) {
+                        //     x = y;
+                        // }
+                        // ```
+                        //
+                        // Error would occur if mapped type removes `?` modifiers.
+                        //
+                        // ex) type Required<T> = { [P in keyof T]-?: T[P]; }
+                        // ```ts
+                        // function error<T>(x: Required<T>, y: T) {
+                        //     x = y; // error TS2322
+                        // }
+                        // ```
+                        let remove_opt = matches!(m.optional, Some(Minus));
                         if let Some(
                             constraint @ Type::Operator(Operator {
                                 op: TsTypeOperatorOp::KeyOf,
@@ -1479,8 +1498,10 @@ impl Analyzer<'_, '_> {
                             }),
                         ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                         {
-                            if rhs.type_eq(ty) {
+                            if rhs.type_eq(ty) && !remove_opt {
                                 return Ok(());
+                            } else {
+                                fail!()
                             }
                         }
                     }
