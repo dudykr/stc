@@ -39,6 +39,7 @@ impl MapWithMut for Type {
                 value: false,
             }),
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }

@@ -4,6 +4,7 @@
         "bitflags",
         "bivariant",
         "canonicalize",
+        "Castable",
         "castablity",
         "codegen",
         "concat",
@@ -18,11 +19,14 @@
         "fastpath",
         "fxhash",
         "Hasher",
+        "iife",
         "impls",
         "indexmap",
         "inflector",
+        "instanceof",
         "itertools",
         "keyof",
+        "nonminimal",
         "opentelemetry",
         "pmutil",
         "qself",
@@ -31,6 +35,7 @@
         "renamer",
         "respan",
         "rnode",
+        "rposition",
         "rustc",
         "rustfmt",
         "rvalue",
@@ -38,10 +43,11 @@
         "structopt",
         "subpat",
         "triomphe",
-        "Uncapitalize"
+        "Uncapitalize",
+        "varargs"
     ],
     "ignorePaths": [
-        "target"
+        "target",
         "fxhash",
         "smallvec"
     ]

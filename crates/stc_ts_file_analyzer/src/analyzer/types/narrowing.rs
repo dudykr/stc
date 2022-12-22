@@ -50,6 +50,7 @@ impl Analyzer<'_, '_> {
                 span: actual.span,
                 types: new_types,
                 metadata: actual.metadata,
+                tracker: Default::default(),
             })
             .fixed());
         }
@@ -86,6 +87,7 @@ impl Analyzer<'_, '_> {
                         common: actual.metadata(),
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .fixed())
             }

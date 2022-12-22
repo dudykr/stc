@@ -188,7 +188,7 @@ pub enum ErrorKind {
     },
 
     /// TS2477
-    ConstEnumMemberHasInifinityAsInit {
+    ConstEnumMemberHasInfinityAsInit {
         span: Span,
     },
 
@@ -252,7 +252,7 @@ pub enum ErrorKind {
     },
 
     /// TS2516
-    AbstractClassMethodShouldBeSequntial {
+    AbstractClassMethodShouldBeSequential {
         span: Span,
     },
 
@@ -516,7 +516,7 @@ pub enum ErrorKind {
     },
 
     /// TS2394
-    ImcompatibleFnOverload {
+    IncompatibleFnOverload {
         span: Span,
         cause: Box<Error>,
     },
@@ -1274,7 +1274,7 @@ pub enum ErrorKind {
     },
 
     /// TS2369
-    ParamPropIsNotAllowedInAmbientConstructorx {
+    ParamPropIsNotAllowedInAmbientConstructor {
         span: Span,
     },
 
@@ -1287,7 +1287,7 @@ pub enum ErrorKind {
     },
 
     /// TS2515
-    ClassDoesNotImplementMemeber {
+    ClassDoesNotImplementMember {
         span: Span,
         key: Box<Key>,
     },
@@ -1635,10 +1635,10 @@ impl ErrorKind {
             ErrorKind::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             ErrorKind::InvalidTypeForComputedProperty { .. } => 2464,
 
-            ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
+            ErrorKind::ParamPropIsNotAllowedInAmbientConstructor { .. } => 2369,
             ErrorKind::TS2389 { .. } => 2389,
             ErrorKind::TS2447 { .. } => 2447,
-            ErrorKind::ClassDoesNotImplementMemeber { .. } => 2515,
+            ErrorKind::ClassDoesNotImplementMember { .. } => 2515,
             ErrorKind::TS2531 { .. } => 2531,
             ErrorKind::TS2567 { .. } => 2567,
             ErrorKind::TS2585 { .. } => 2585,
@@ -1819,7 +1819,7 @@ impl ErrorKind {
 
             ErrorKind::InitializerDisallowedInAmbientContext { .. } => 2371,
 
-            ErrorKind::ImcompatibleFnOverload { .. } => 2394,
+            ErrorKind::IncompatibleFnOverload { .. } => 2394,
 
             ErrorKind::ImplicitReturnType { .. } => 7010,
 
@@ -1927,7 +1927,7 @@ impl ErrorKind {
 
             ErrorKind::AbstractAndConcreteIsMixed { .. } => 2512,
 
-            ErrorKind::AbstractClassMethodShouldBeSequntial { .. } => 2516,
+            ErrorKind::AbstractClassMethodShouldBeSequential { .. } => 2516,
 
             ErrorKind::OperatorCannotBeAppliedToTypes { .. } => 2365,
 
@@ -1967,7 +1967,7 @@ impl ErrorKind {
 
             ErrorKind::UnreachableCode { .. } => 7027,
 
-            ErrorKind::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
+            ErrorKind::ConstEnumMemberHasInfinityAsInit { .. } => 2477,
 
             ErrorKind::ConstEnumMemberHasNaNAsInit { .. } => 2478,
 

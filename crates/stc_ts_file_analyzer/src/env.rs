@@ -142,6 +142,7 @@ pub trait BuiltInGen: Sized {
                                                 .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
                                             implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         }))
                                     })
                                     .unwrap();
@@ -186,6 +187,7 @@ pub trait BuiltInGen: Sized {
                                                     types: data.types,
                                                 },
                                                 metadata: Default::default(),
+                                                tracker: Default::default(),
                                             })
                                             .freezed(),
                                         );

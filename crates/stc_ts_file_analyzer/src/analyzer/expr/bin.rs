@@ -442,6 +442,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                     .fixed()
                                     .freezed(),
@@ -504,6 +505,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -520,6 +522,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -540,6 +543,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -570,6 +574,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
                 // At this point rhs cannot be string.
@@ -581,6 +586,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -599,6 +605,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -644,6 +651,7 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -651,6 +659,7 @@ impl Analyzer<'_, '_> {
                 span,
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })),
 
             op!("instanceof") => {
@@ -668,6 +677,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -693,6 +703,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -723,6 +734,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -891,7 +903,7 @@ impl Analyzer<'_, '_> {
     }
 
     ///
-    /// # Exmaple
+    /// # Example
     ///
     ///
     ///
@@ -1004,7 +1016,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    /// We have to check for inheritnace.
+    /// We have to check for inheritance.
     ///
     /// ```ts
     /// class C1 {
@@ -1028,7 +1040,7 @@ impl Analyzer<'_, '_> {
     ///
     /// # Related tests
     ///
-    /// ## narrowingConstrainedTypeVaraible.ts
+    /// ## narrowingConstrainedTypeVariable.ts
     ///
     /// In the test, there's `function f2<T extends C, U extends D>(v: T | U)
     /// {}`.
@@ -1063,6 +1075,7 @@ impl Analyzer<'_, '_> {
                 span: orig.span,
                 types: new_types,
                 metadata: orig.metadata,
+                tracker: Default::default(),
             })
             .fixed());
         }
@@ -1084,6 +1097,7 @@ impl Analyzer<'_, '_> {
                         span,
                         def: box ty.clone(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })),
                     &orig_ty,
                 )
@@ -1096,7 +1110,7 @@ impl Analyzer<'_, '_> {
                             if let Some(ret_ty) = &c.ret_ty {
                                 return self
                                     .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
-                                    .context("tried to narrow consturctor return type");
+                                    .context("tried to narrow constructor return type");
                             }
                         }
                     }
@@ -1120,6 +1134,7 @@ impl Analyzer<'_, '_> {
                         span,
                         def: box def.clone(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
                 return Ok(orig_ty.into_owned());
@@ -1156,6 +1171,7 @@ impl Analyzer<'_, '_> {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
         Ok(ty.into_owned())
@@ -1497,6 +1513,7 @@ impl Analyzer<'_, '_> {
                     span: u.span,
                     types,
                     metadata: u.metadata,
+                    tracker: Default::default(),
                 });
             }
 
@@ -1515,6 +1532,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     &ty,
                 ) {
@@ -1646,6 +1664,7 @@ impl Analyzer<'_, '_> {
                     common: equals_to.metadata(),
                     ..Default::default()
                 },
+                tracker: Default::default(),
             })
             .fixed());
         }
@@ -1765,19 +1784,23 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsStringKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }),
                                 ],
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .freezed(),
                             ty,
@@ -1815,6 +1838,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsObjectKeyword,
                                 metadata: KeywordTypeMetadata::default(),
+                                tracker: Default::default(),
                             }),
                             rt,
                             AssignOpts {
