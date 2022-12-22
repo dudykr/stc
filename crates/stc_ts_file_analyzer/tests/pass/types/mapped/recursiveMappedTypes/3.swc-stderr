@@ -6,4 +6,4 @@
     `----
 
 Error: 
-  > ("type" | "minimum_count" | "maximum_count" | "collapsable")
+  > never

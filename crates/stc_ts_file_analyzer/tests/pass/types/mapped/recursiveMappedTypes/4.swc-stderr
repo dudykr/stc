@@ -7,8 +7,5 @@
 
 Error: 
   > {
-  |     type: "list";
-  |     minimum_count: number;
-  |     maximum_count: number;
-  |     collapsable: boolean;
+  |     [P in NonOptionalKeys<ListWidget>]: ListWidget[P];
   | }

@@ -184,7 +184,14 @@ impl Analyzer<'_, '_> {
 
                 return prev;
             }
-
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            }) => {
+                if !self.rule().strict_null_checks {
+                    return Some(true);
+                }
+            }
             _ => {}
         }
 

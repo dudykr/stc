@@ -10,6 +10,6 @@ export interface ListWidget {
     "maximum_count": number,
     "collapsable"?: boolean, //default to false, means all expanded
 }
-type A = Child<ListWidget>; // { type: "list"; minimum_count: number; maximum_count: number; }
-declare const a: A; // { type: "list"; minimum_count: number; maximum_count: number; }
-a // { type: "list"; minimum_count: number; maximum_count: number; }
+type A = Child<ListWidget>; // {}
+declare const a: A; // {}
+a // {}}
