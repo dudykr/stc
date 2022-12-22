@@ -15,7 +15,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
-use swc_ecma_ast::*;
+use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info, span, Level};
 
 use crate::{
@@ -1470,6 +1470,11 @@ impl Analyzer<'_, '_> {
 
                 match to.normalize() {
                     Type::Union(..) => {}
+                    Type::Mapped(m) => {
+                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
+                            fail!()
+                        }
+                    }
                     _ => {
                         fail!()
                     }
@@ -1518,7 +1523,37 @@ impl Analyzer<'_, '_> {
                 if opts.allow_assignment_to_param {
                     return Ok(());
                 } else {
-                    fail!()
+                    match rhs {
+                        Type::Mapped(m) => {
+                            // Try assign mapped type takes `T` as an arg to type param `T` has no
+                            // constraint.
+                            // Error will occur if mapped type including `?` or `+?`
+                            // modifiers.
+                            //
+                            // ex) type Partial<T> = { [P in keyof T]?: T[P] | undefined; }
+                            // ```ts
+                            // function error<T>(x: T, y: Partial<T>) {
+                            //     x = y; // error TS2322
+                            // }
+                            // ```
+                            let add_opt = matches!(m.optional, Some(True) | Some(Plus));
+                            if let Some(
+                                constraint @ Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty,
+                                    ..
+                                }),
+                            ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                            {
+                                if to.type_eq(ty) && !add_opt {
+                                    return Ok(());
+                                } else {
+                                    fail!()
+                                }
+                            }
+                        }
+                        _ => fail!(),
+                    };
                 }
             }
 
@@ -2539,6 +2574,32 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Ok(());
+                }
+                Type::Param(ty) => {
+                    // Try assign type param `T` has no constraint to mapped
+                    // type takes `T` as an arg.
+                    // Error will occur if mapped type including `-?`
+                    // modifiers.
+                    //
+                    // ex) type Required<T> = { [P in keyof T]-?: T[P]; }
+                    // ```ts
+                    // function error<T>(x: Required<T>, y: T) {
+                    //     x = y; // error TS2322
+                    // }
+                    // ```
+                    let remove_opt = matches!(l.optional, Some(Minus));
+                    if let Some(
+                        constraint @ Type::Operator(Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ty,
+                            ..
+                        }),
+                    ) = l.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                    {
+                        if r.type_eq(ty) && !remove_opt {
+                            return Ok(());
+                        }
+                    }
                 }
                 Type::Mapped(r) => {
                     if l.type_eq(r) {
