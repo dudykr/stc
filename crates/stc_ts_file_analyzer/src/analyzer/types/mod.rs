@@ -751,7 +751,9 @@ impl Analyzer<'_, '_> {
         normalize_types.dedup_type();
 
         if normalize_types.len() == 1 {
-            return Ok(Some(normalize_types.into_iter().next().unwrap()));
+            if let Some(ty) = normalize_types.pop() {
+                return Ok(Some(ty));
+            }
         }
         // has never; return never
         if normalize_types.iter().any(|ty| ty.is_never()) {

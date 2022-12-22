@@ -950,10 +950,9 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::ReadOnly { span }.into());
         }
         if matching_elements.len() == 1 {
-            return Ok(Some(
-                self.normalize(Some(span), Cow::Owned(matching_elements.pop().unwrap()), Default::default())?
-                    .into_owned(),
-            ));
+            if let Some(ty) = matching_elements.pop() {
+                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
+            }
         }
 
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
@@ -1055,10 +1054,9 @@ impl Analyzer<'_, '_> {
         }
         res_vec.dedup_type();
         if res_vec.len() == 1 {
-            return Ok(Some(
-                self.normalize(Some(span), Cow::Owned(res_vec.pop().unwrap()), Default::default())?
-                    .into_owned(),
-            ));
+            if let Some(ty) = res_vec.pop() {
+                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
+            }
         }
         let result = match type_mode {
             TypeOfMode::LValue => Type::Intersection(Intersection {
@@ -2824,10 +2822,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
 
                 for ty in types {
-                    let normalize_ty = self
-                        .normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                        .unwrap()
-                        .into_owned();
+                    let normalize_ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
                     if let Type::Union(Union { mut types, .. }) = normalize_ty {
                         union_vec.append(&mut types);
                         continue;
@@ -2839,7 +2834,7 @@ impl Analyzer<'_, '_> {
                                 new.append(&mut types);
                                 continue;
                             }
-                            new.push(self.normalize(Some(span), Cow::Owned(v), Default::default()).unwrap().into_owned());
+                            new.push(self.normalize(Some(span), Cow::Owned(v), Default::default())?.into_owned());
                         }
                         Err(err) => {
                             errors.push(err);
@@ -2873,15 +2868,16 @@ impl Analyzer<'_, '_> {
                 new.dedup_type();
                 // print_backtrace();
                 if new.len() == 1 {
-                    let mut ty = new.into_iter().next().unwrap();
-                    ty.respan(span);
-                    return Ok(ty);
+                    if let Some(mut ty) = new.pop() {
+                        ty.respan(span);
+                        return Ok(ty);
+                    }
                 }
 
                 if !union_vec.is_empty() {
                     let mut rescuve_vec = vec![];
                     for i in union_vec {
-                        let temp_ty = self.normalize(Some(span), Cow::Owned(i), Default::default()).unwrap().into_owned();
+                        let temp_ty = self.normalize(Some(span), Cow::Owned(i), Default::default())?.into_owned();
                         dbg!(&temp_ty);
                         if let Ok(v) = self.access_property(span, &temp_ty, prop, type_mode, id_ctx, opts) {
                             rescuve_vec.push(v);
