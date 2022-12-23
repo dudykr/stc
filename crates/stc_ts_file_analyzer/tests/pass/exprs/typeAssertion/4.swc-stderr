@@ -15,7 +15,7 @@ Error:
    `----
 
 Error: 
-  > (string | number)
+  > (string | number | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
@@ -24,7 +24,7 @@ Error:
    `----
 
 Error: 
-  > (string | number)
+  > (string | number | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
@@ -60,4 +60,4 @@ Error:
     `----
 
 Error: 
-  > (string | number)
+  > (string | number | undefined)

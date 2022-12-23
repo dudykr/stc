@@ -55,7 +55,7 @@ Error:
     `----
 
 Error: 
-  > (string | number)
+  > (string | number | undefined)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:27:5]
@@ -64,7 +64,7 @@ Error:
     `----
 
 Error: 
-  > (string | number)
+  > (string | number | undefined)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:28:9]
@@ -82,4 +82,4 @@ Error:
     `----
 
 Error: 
-  > (string | number)
+  > (string | number | undefined)

@@ -46,7 +46,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (string | undefined | null)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5]
