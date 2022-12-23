@@ -572,8 +572,6 @@ impl Analyzer<'_, '_> {
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
     fn assign_without_wrapping(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
-        // println!("to: {:#?}", to);
-        // println!("rhs: {:#?}", rhs);
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
@@ -1245,7 +1243,6 @@ impl Analyzer<'_, '_> {
                     fail!()
                 }
                 Type::Intrinsic(rhs) => {
-                    // println!("{:#?}, {:#?}", lhs, rhs);
                     if rhs
                         .type_args
                         .params
@@ -1736,8 +1733,6 @@ impl Analyzer<'_, '_> {
                     .types
                     .iter()
                     .map(|to| {
-                        // println!("--> To: {:#?}", to);
-                        // println!("--> Rhs: {:#?}", rhs);
                         self.assign_with_opts(
                             data,
                             to,
