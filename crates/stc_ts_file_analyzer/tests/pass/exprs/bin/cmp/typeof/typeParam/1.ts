@@ -1,4 +1,4 @@
-// @strictNullChecks: true
+//@strict: true
 
 // Type guards involving type parameters produce intersection types
 

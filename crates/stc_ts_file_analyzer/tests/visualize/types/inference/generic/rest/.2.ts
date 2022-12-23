@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 // @declaration: true
 
 declare const t1: [number, string, ...boolean[]];

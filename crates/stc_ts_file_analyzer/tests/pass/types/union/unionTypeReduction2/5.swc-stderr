@@ -42,7 +42,7 @@ Error:
    `----
 
 Error: 
-  > ((x: (string | undefined)) => void | (x?: 'hello') => void)
+  > (x?: 'hello') => void
 
   x Type
    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/5.ts:5:5]
@@ -51,7 +51,7 @@ Error:
    `----
 
 Error: 
-  > ((x: (string | undefined)) => void | (x?: 'hello') => void)
+  > (x?: 'hello') => void
 
   x Type
    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/5.ts:5:5]
@@ -69,7 +69,7 @@ Error:
    `----
 
 Error: 
-  > ((x: (string | undefined)) => void | (x?: 'hello') => void)
+  > (x?: 'hello') => void
 
   x Type
    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/5.ts:6:5]

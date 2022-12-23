@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 
 type A = { a: string };
 type B = { b: string };

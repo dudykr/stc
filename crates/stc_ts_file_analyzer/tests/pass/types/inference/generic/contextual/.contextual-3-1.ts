@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 // @declaration: true
 
 type Box<T> = { value: T };

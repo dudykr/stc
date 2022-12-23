@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 // @declaration: true
 
 function ft1<T extends string>(s: string, n: number, u: 'foo' | 'bar' | 'baz', t: T) {

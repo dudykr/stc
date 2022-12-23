@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 // @declaration: true
 
 declare function zip<A, B>(a: A, b: B): [A, B];

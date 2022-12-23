@@ -2,7 +2,7 @@
 set -eu
 
 function sortFile {
-    cat $1 | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/tmp.txt
+    cat $1 | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | ./scripts/_/sort.py > tests/tmp.txt
     mv tests/tmp.txt $1
 }
 

@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 
 const enum Tag1 {
   a = "a",
