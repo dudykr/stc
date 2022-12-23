@@ -1,4 +1,4 @@
-// @strictNullChecks: true
+//@strict: true
 
 // Repro from #9016
 

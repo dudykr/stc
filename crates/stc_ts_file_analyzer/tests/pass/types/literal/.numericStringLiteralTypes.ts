@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 // @declaration: true
 
 type T0 = string & `${string}`;  // string

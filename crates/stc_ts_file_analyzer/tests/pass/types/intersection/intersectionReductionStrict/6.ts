@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 
 type Container<Type extends string> = {
   type: Type;
