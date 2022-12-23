@@ -23,13 +23,13 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     c: {
   |         d?: {
   |             e: string;
   |         };
   |     };
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1]
@@ -88,13 +88,13 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > {
   |     c: {
   |         d?: {
   |             e: string;
   |         };
   |     };
-  | })
+  | }
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1]

@@ -6,11 +6,11 @@
    `----
 
 Error: 
-  > ({
+  > {
   |     m?<T>(obj: {
   |         x: T;
   |     }): T;
-  | } | undefined)
+  | }
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
@@ -50,11 +50,11 @@ Error:
    `----
 
 Error: 
-  > ({
+  > {
   |     m?<T>(obj: {
   |         x: T;
   |     }): T;
-  | } | undefined)
+  | }
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
@@ -112,11 +112,11 @@ Error:
    `----
 
 Error: 
-  > ({
+  > {
   |     m?<T>(obj: {
   |         x: T;
   |     }): T;
-  | } | undefined)
+  | }
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
@@ -156,11 +156,11 @@ Error:
    `----
 
 Error: 
-  > ({
+  > {
   |     m?<T>(obj: {
   |         x: T;
   |     }): T;
-  | } | undefined)
+  | }
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]

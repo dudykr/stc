@@ -6,7 +6,7 @@
     `----
 
 Error: 
-  > ("a" | "c" | string | number | symbol)
+  > (string | number | symbol)
 
   x Type
     ,-[$DIR/tests/pass/types/keyof/3.ts:15:1]
@@ -15,7 +15,7 @@ Error:
     `----
 
 Error: 
-  > ("a" | "c" | string | number | symbol)
+  > (string | number | symbol)
 
   x Type
     ,-[$DIR/tests/pass/types/keyof/3.ts:16:1]
