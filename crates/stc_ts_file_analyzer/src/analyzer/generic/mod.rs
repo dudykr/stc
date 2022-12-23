@@ -42,9 +42,23 @@ mod inference;
 mod tests;
 mod type_form;
 
+/// # Inference rule
+///
+/// 1. We iterate over parameters and arguments in order.
+///
+/// 2. If newly inferred type is not compatible with the previous one, we don't
+/// store it. `compatible` here means the previous type is assignable to the
+/// newly inferred type.
+///
+/// 3. If there's `any` or `unknown`, those are used because all types are
+/// `compatible` with them.
+///
+/// If `any` and `unknown` co-exist, the first one is selected.
+///
+/// 4. Union has
 #[derive(Debug, Clone)]
 enum InferredType {
-    /// Unions have strange inference rules.
+    // AnyOrUnknown(KeywordType),
     Union(Type),
     Other(Vec<Type>),
 }
