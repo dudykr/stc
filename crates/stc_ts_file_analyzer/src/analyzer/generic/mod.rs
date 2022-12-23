@@ -55,7 +55,9 @@ mod type_form;
 ///
 /// If `any` and `unknown` co-exist, the first one is selected.
 ///
-/// 4. Union has
+/// 4. `{}` and an empty interface work just like `any` or `unknown`. It's
+/// because almost all types are `compatible` with it, so the same rule
+/// applies. But `any` or `unknown` is preferred over `{}`.
 #[derive(Debug, Clone)]
 enum InferredType {
     // AnyOrUnknown(KeywordType),
