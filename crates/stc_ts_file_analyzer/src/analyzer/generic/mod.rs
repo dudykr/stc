@@ -318,7 +318,11 @@ impl Analyzer<'_, '_> {
     /// because almost all types are `compatible` with it, so the same rule
     /// applies. But `any` or `unknown` is preferred over `{}`.
     ///
-    /// 5. If
+    /// 5. If a parameter of closures has an explicit type, the `compatibility`
+    /// rule applies.
+    ///
+    /// 6. The return type of closure does not have effect on the inference iff
+    /// the type parameter is already inferred.
     ///
     /// ---
     ///
