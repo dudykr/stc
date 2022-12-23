@@ -320,7 +320,8 @@ impl Analyzer<'_, '_> {
     ///
     /// 5. If a parameter of a closure has an explicit type, the `compatibility`
     /// rule applies. But some types like the built-in `Object`  are exceptions
-    /// and those are ignored.
+    /// and those are ignored. i.e. The inferred types are not changed to
+    /// `Object`.
     ///
     /// 6. The return type of a closure does not have effect on the inference,
     /// but if and only if
