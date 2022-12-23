@@ -1707,6 +1707,7 @@ impl Analyzer<'_, '_> {
                         span: constraint_span,
                         lit: RTsLit::Str(s),
                         metadata,
+                        tracker,
                     }) => self
                         .expand_intrinsic_types(
                             span,
@@ -1719,6 +1720,7 @@ impl Analyzer<'_, '_> {
                                         span: *constraint_span,
                                         lit: RTsLit::Str(s.clone()),
                                         metadata: *metadata,
+                                        tracker: *tracker,
                                     })],
                                 },
                                 metadata: ty.metadata,
@@ -1731,6 +1733,7 @@ impl Analyzer<'_, '_> {
                         types,
                         span: union_span,
                         metadata,
+                        tracker,
                     }) => Some(
                         box Type::Union(Union {
                             types: types
@@ -1755,6 +1758,7 @@ impl Analyzer<'_, '_> {
                                 .collect(),
                             span: *union_span,
                             metadata: *metadata,
+                            tracker: *tracker,
                         })
                         .freezed(),
                     ),

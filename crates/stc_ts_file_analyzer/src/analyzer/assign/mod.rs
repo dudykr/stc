@@ -1244,18 +1244,8 @@ impl Analyzer<'_, '_> {
 
                     fail!()
                 }
-                Type::Union(rhs) => {
-                    if rhs
-                        .types
-                        .iter()
-                        .find(|ty| self.assign_with_opts(data, to, ty, opts).is_ok())
-                        .is_some()
-                    {
-                        return Ok(());
-                    }
-                    fail!()
-                }
                 Type::Intrinsic(rhs) => {
+                    // println!("{:#?}, {:#?}", lhs, rhs);
                     if rhs
                         .type_args
                         .params
@@ -1701,6 +1691,18 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if let Type::Intrinsic(Intrinsic { type_args, .. }) = rhs {
+                    if let Type::Param(TypeParam { resolved_constraint, .. }) = &type_args.params[0] {
+                        if let Some(resolved_constraint) = resolved_constraint {
+                            if let Type::Union(..) = resolved_constraint.normalize() {
+                                if let Some(res) = self.assign_to_union(data, to, &resolved_constraint, opts) {
+                                    return res.context("tried to assign intrinsic union using `assign_to_union`");
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Same operation as above, but for enums.
                 if let Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) = rhs {
                     // If `types` contains all variant of the enum, the
@@ -1734,6 +1736,8 @@ impl Analyzer<'_, '_> {
                     .types
                     .iter()
                     .map(|to| {
+                        // println!("--> To: {:#?}", to);
+                        // println!("--> Rhs: {:#?}", rhs);
                         self.assign_with_opts(
                             data,
                             to,
