@@ -1242,18 +1242,6 @@ impl Analyzer<'_, '_> {
 
                     fail!()
                 }
-                Type::Intrinsic(rhs) => {
-                    if rhs
-                        .type_args
-                        .params
-                        .iter()
-                        .find(|param| self.assign_with_opts(data, to, param, opts).is_ok())
-                        .is_some()
-                    {
-                        return Ok(());
-                    }
-                    fail!()
-                }
                 _ => {
                     if let RTsLit::Str(lhs) = &lhs.lit {
                         if let Type::Tpl(rhs) = rhs {
@@ -1443,17 +1431,8 @@ impl Analyzer<'_, '_> {
             }) => return Ok(()),
 
             Type::Param(TypeParam {
-                ref name,
-                ref constraint,
-                ref resolved_constraint,
-                ..
+                ref name, ref constraint, ..
             }) => {
-                let constraint = if resolved_constraint.is_some() {
-                    resolved_constraint
-                } else {
-                    constraint
-                };
-
                 if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
                     if opts.allow_assignment_to_param {
                         return Ok(());
@@ -1689,14 +1668,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Type::Intrinsic(Intrinsic { type_args, .. }) = rhs {
-                    if let Type::Param(TypeParam { resolved_constraint, .. }) = &type_args.params[0] {
-                        if let Some(resolved_constraint) = resolved_constraint {
-                            if let Type::Union(..) = resolved_constraint.normalize() {
-                                if let Some(res) = self.assign_to_union(data, to, &resolved_constraint, opts) {
-                                    return res.context("tried to assign intrinsic union using `assign_to_union`");
+                    if let Some(res) = type_args.params.iter().find_map(|param| {
+                        if let Type::Param(TypeParam { resolved_constraint, .. }) = param {
+                            if let Some(resolved_constraint) = resolved_constraint {
+                                if let Type::Union(..) = resolved_constraint.normalize() {
+                                    if let Some(res) = self.assign_to_union(data, to, &resolved_constraint, opts) {
+                                        return Some(res.context("tried to assign intrinsic union using `assign_to_union`"));
+                                    }
                                 }
                             }
                         }
+                        None
+                    }) {
+                        return res;
                     }
                 }
 
