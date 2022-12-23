@@ -319,11 +319,18 @@ impl Analyzer<'_, '_> {
     /// applies. But `any` or `unknown` is preferred over `{}`.
     ///
     /// 5. If a parameter of a closure has an explicit type, the `compatibility`
-    /// rule applies.
+    /// rule applies. But some types like the built-in `Object`  are exceptions
+    /// and those are ignored.
     ///
-    /// 6. The return type of a closure does not have effect on the inference.
+    /// 6. The return type of a closure does not have effect on the inference,
+    /// but if and only if
     ///
     ///
+    /// # Priority
+    ///
+    /// 1. keywords
+    ///
+    /// 2. Non-empty interfaces and type literals
     ///
     /// # Postprocess
     ///
