@@ -287,6 +287,7 @@ impl Analyzer<'_, '_> {
                     left: &**left,
                     right: &**right,
                 };
+                dbg!(is_eq, &c);
 
                 self.add_type_facts_for_typeof(span, left, right, is_eq).report(&mut self.storage);
 
@@ -353,8 +354,9 @@ impl Analyzer<'_, '_> {
                     (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
                     if self.ctx.in_cond {
+                        dbg!(&l, &r_ty);
                         let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-
+                        dbg!(&name);
                         prevent_generalize(&mut r);
                         r.make_clone_cheap();
 

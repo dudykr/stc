@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 
 interface X {
     a?: { aProp: string };

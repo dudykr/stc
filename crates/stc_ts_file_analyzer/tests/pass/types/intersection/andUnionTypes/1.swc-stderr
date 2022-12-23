@@ -135,7 +135,7 @@ Error:
     `----
 
 Error: 
-  > ((A | B) & (C | D))
+  > ((A & C) | (A & D) | (B & C) | (B & D))
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:31:1]
@@ -144,7 +144,7 @@ Error:
     `----
 
 Error: 
-  > ((A | B) & (C | D))
+  > ((A & C) | (A & D) | (B & C) | (B & D))
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:32:1]
@@ -153,7 +153,7 @@ Error:
     `----
 
 Error: 
-  > ((A | B) & (C | D))
+  > ((A & C) | (A & D) | (B & C) | (B & D))
 
   x Type
     ,-[$DIR/tests/pass/types/intersection/andUnionTypes/1.ts:32:1]
@@ -162,4 +162,4 @@ Error:
     `----
 
 Error: 
-  > ((A | B) & (C | D))
+  > ((A & C) | (A & D) | (B & C) | (B & D))

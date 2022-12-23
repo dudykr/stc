@@ -776,6 +776,7 @@ impl Analyzer<'_, '_> {
         let is_null = normalize_types.iter().any(|ty| ty.is_null());
         let is_undefined = normalize_types.iter().any(|ty| ty.is_undefined());
         let is_object = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+        let is_type_lit = normalize_types.iter().any(|ty| ty.is_type_lit());
 
         if u32::from(is_symbol)
             + u32::from(is_str)
@@ -784,6 +785,7 @@ impl Analyzer<'_, '_> {
             + u32::from(is_null)
             + u32::from(is_undefined)
             + u32::from(is_object)
+            + u32::from(is_type_lit)
             >= 2
         {
             return never!();
@@ -985,23 +987,26 @@ impl Analyzer<'_, '_> {
                     match (temp_ty.clone(), elem.normalize().clone()) {
                         (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) => {
                             let mut temp_vec = vec![];
-                            'inner: for a in a_types.iter() {
+                            for a in a_types.iter() {
                                 for b in b_types.iter() {
-                                    if ((a.is_str_lit() && b.is_str_lit())
-                                        || (a.is_num_lit() && b.is_num_lit())
-                                        || (a.is_bool_lit() && b.is_bool_lit()))
-                                        && !a.type_eq(b)
-                                    {
-                                        return never!();
-                                    } else if a.type_eq(b) {
-                                        temp_vec.push(a.clone());
-                                        continue 'inner;
+                                    let temp_intersection =
+                                        self.normalize_intersection_types(span, &[a.clone(), b.clone()], Default::default())?;
+                                    if let Some(ty) = temp_intersection {
+                                        if !ty.is_never() {
+                                            temp_vec.push(ty);
+                                        }
                                     }
                                 }
                             }
                             temp_vec.dedup_type();
 
                             if temp_vec.is_empty() {
+                                temp_ty = Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNeverKeyword,
+                                    metadata: KeywordTypeMetadata { ..Default::default() },
+                                    tracker: Default::default(),
+                                });
                             } else if temp_vec.len() == 1 {
                                 temp_ty = temp_vec[0].clone();
                             } else {
@@ -1454,7 +1459,7 @@ impl Analyzer<'_, '_> {
         }
 
         types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(name).cloned().into_iter().flatten());
-
+        dbg!(&types_to_exclude);
         let before = dump_type_as_string(ty);
         self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(ty);

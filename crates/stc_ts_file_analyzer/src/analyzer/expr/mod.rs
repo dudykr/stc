@@ -2845,6 +2845,7 @@ impl Analyzer<'_, '_> {
                 if errors.len() == types.len() {
                     return Err(ErrorKind::Errors { span, errors }.into());
                 }
+                dbg!(&new);
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
                     new.retain(|prop_ty| match prop_ty.normalize() {
@@ -2878,7 +2879,7 @@ impl Analyzer<'_, '_> {
                     let mut rescuve_vec = vec![];
                     for i in union_vec {
                         let temp_ty = self.normalize(Some(span), Cow::Owned(i), Default::default())?.into_owned();
-                        dbg!(&temp_ty);
+
                         if let Ok(v) = self.access_property(span, &temp_ty, prop, type_mode, id_ctx, opts) {
                             rescuve_vec.push(v);
                         }
@@ -2901,9 +2902,10 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 })
                 .fixed();
+                let result_ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
                 // ty.respan(span);
-                return Ok(ty);
+                return Ok(result_ty);
             }
 
             Type::Mapped(m) => {

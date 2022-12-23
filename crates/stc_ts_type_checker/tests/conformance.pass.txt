@@ -364,6 +364,7 @@ es6/binaryAndOctalIntegerLiteral/octalIntegerLiteralES6.ts
 es6/binaryAndOctalIntegerLiteral/octalIntegerLiteral.ts
 es6/classDeclaration/classWithSemicolonClassElementES61.ts
 es6/classDeclaration/classWithSemicolonClassElementES62.ts
+es6/classDeclaration/emiSymbols/ES5SymbolProperty1.ts
 es6/classDeclaration/emitClassDeclarationOverloadInES6.ts
 es6/classDeclaration/emitClassDeclarationWithConstructorInES6.ts
 es6/classDeclaration/emitClassDeclarationWithExtensionAndTypeArgumentInES6.ts

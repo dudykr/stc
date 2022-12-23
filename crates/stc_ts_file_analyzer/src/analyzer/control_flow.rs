@@ -13,7 +13,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
+use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Intersection, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::Freeze,
@@ -1162,26 +1162,49 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if let Type::Union(ty) = src.normalize() {
-            let mut new_types = vec![];
-            for ty in &ty.types {
-                let ty = self.narrow_types_with_property(span, ty, property, type_facts)?;
-                new_types.push(ty);
-            }
-            new_types.retain(|ty| !ty.is_never());
-            new_types.dedup_type();
+        match src.normalize() {
+            Type::Intersection(ty) => {
+                let mut new_types = vec![];
+                for ty in &ty.types {
+                    let ty = self.narrow_types_with_property(span, ty, property, type_facts)?;
+                    new_types.push(ty);
+                }
+                new_types.retain(|ty| !ty.is_unknown());
+                new_types.dedup_type();
 
-            if new_types.len() == 1 {
-                return Ok(new_types.into_iter().next().unwrap());
-            }
+                if new_types.len() == 1 {
+                    return Ok(new_types.into_iter().next().unwrap());
+                }
 
-            return Ok(Type::Union(Union {
-                span: ty.span(),
-                types: new_types,
-                metadata: ty.metadata,
-                tracker: Default::default(),
-            }));
-        }
+                return Ok(Type::Intersection(Intersection {
+                    span: ty.span(),
+                    types: new_types,
+                    metadata: ty.metadata,
+                    tracker: Default::default(),
+                }));
+            }
+            Type::Union(ty) => {
+                let mut new_types = vec![];
+                for ty in &ty.types {
+                    let ty = self.narrow_types_with_property(span, ty, property, type_facts)?;
+                    new_types.push(ty);
+                }
+                new_types.retain(|ty| !ty.is_never());
+                new_types.dedup_type();
+
+                if new_types.len() == 1 {
+                    return Ok(new_types.into_iter().next().unwrap());
+                }
+
+                return Ok(Type::Union(Union {
+                    span: ty.span(),
+                    types: new_types,
+                    metadata: ty.metadata,
+                    tracker: Default::default(),
+                }));
+            }
+            _ => {}
+        };
 
         let prop_res = self
             .access_property(
