@@ -42,22 +42,6 @@ mod inference;
 mod tests;
 mod type_form;
 
-/// # Inference rule
-///
-/// 1. We iterate over parameters and arguments in order.
-///
-/// 2. If newly inferred type is not compatible with the previous one, we don't
-/// store it. `compatible` here means the previous type is assignable to the
-/// newly inferred type.
-///
-/// 3. If there's `any` or `unknown`, those are used because all types are
-/// `compatible` with them.
-///
-/// If `any` and `unknown` co-exist, the first one is selected.
-///
-/// 4. `{}` and an empty interface work just like `any` or `unknown`. It's
-/// because almost all types are `compatible` with it, so the same rule
-/// applies. But `any` or `unknown` is preferred over `{}`.
 #[derive(Debug, Clone)]
 enum InferredType {
     // AnyOrUnknown(KeywordType),
@@ -317,6 +301,26 @@ impl Analyzer<'_, '_> {
         Ok(map.types)
     }
 
+    /// # Inference rule
+    ///
+    /// 1. We iterate over parameters and arguments in order.
+    ///
+    /// 2. If newly inferred type is not compatible with the previous one, we
+    /// don't store it. `compatible` here means the previous type is
+    /// assignable to the newly inferred type.
+    ///
+    /// 3. If there's `any` or `unknown`, those are used because all types are
+    /// `compatible` with them.
+    ///
+    /// If `any` and `unknown` co-exist, the first one is selected.
+    ///
+    /// 4. `{}` and an empty interface work just like `any` or `unknown`. It's
+    /// because almost all types are `compatible` with it, so the same rule
+    /// applies. But `any` or `unknown` is preferred over `{}`.
+    ///
+    /// 5. If
+    ///
+    /// ---
     ///
     /// ```ts
     /// function foo<T>(x: { bar: T; baz: T }) {
