@@ -1669,12 +1669,14 @@ impl Analyzer<'_, '_> {
 
                 if let Type::Intrinsic(Intrinsic { type_args, .. }) = rhs {
                     if let Some(res) = type_args.params.iter().find_map(|param| {
-                        if let Type::Param(TypeParam { resolved_constraint, .. }) = param {
-                            if let Some(resolved_constraint) = resolved_constraint {
-                                if let Type::Union(..) = resolved_constraint.normalize() {
-                                    if let Some(res) = self.assign_to_union(data, to, &resolved_constraint, opts) {
-                                        return Some(res.context("tried to assign intrinsic union using `assign_to_union`"));
-                                    }
+                        if let Type::Param(TypeParam {
+                            resolved_constraint: Some(resolved_constraint),
+                            ..
+                        }) = param
+                        {
+                            if let Type::Union(..) = resolved_constraint.normalize() {
+                                if let Some(res) = self.assign_to_union(data, to, resolved_constraint, opts) {
+                                    return Some(res.context("tried to assign intrinsic union using `assign_to_union`"));
                                 }
                             }
                         }

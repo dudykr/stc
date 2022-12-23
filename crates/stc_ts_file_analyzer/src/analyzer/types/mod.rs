@@ -1753,8 +1753,7 @@ impl Analyzer<'_, '_> {
                                     )
                                 })
                                 .map(|val| val.ok())
-                                .map(|val| val.freezed())
-                                .flatten()
+                                .filter_map(|val| val.freezed())
                                 .collect(),
                             span: *union_span,
                             metadata: *metadata,
