@@ -318,11 +318,17 @@ impl Analyzer<'_, '_> {
     /// because almost all types are `compatible` with it, so the same rule
     /// applies. But `any` or `unknown` is preferred over `{}`.
     ///
-    /// 5. If a parameter of closures has an explicit type, the `compatibility`
+    /// 5. If a parameter of a closure has an explicit type, the `compatibility`
     /// rule applies.
     ///
-    /// 6. The return type of closure does not have effect on the inference iff
-    /// the type parameter is already inferred.
+    /// 6. The return type of a closure does not have effect on the inference.
+    ///
+    ///
+    ///
+    /// # Postprocess
+    ///
+    /// 1. If there was noe error and if there's no constraints like `extends
+    /// string` nor `extends number`, the inferred types are generalized.
     ///
     /// ---
     ///
