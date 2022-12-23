@@ -323,8 +323,7 @@ impl Analyzer<'_, '_> {
     /// and those are ignored. i.e. The inferred types are not changed to
     /// `Object`.
     ///
-    /// 6. The return type of a closure does not have effect on the inference,
-    /// but if and only if
+    /// 6. The return type of a closure does not have effect on the inference.
     ///
     ///
     /// # Priority
