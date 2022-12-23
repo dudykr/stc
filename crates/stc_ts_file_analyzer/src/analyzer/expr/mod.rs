@@ -372,6 +372,8 @@ impl Analyzer<'_, '_> {
         self.cur_facts.assert_clone_cheap();
 
         if !self.is_builtin {
+            dbg!(&ty);
+            dbg!(dump_type_as_string(&ty));
             debug_assert_ne!(
                 ty.span(),
                 DUMMY_SP,
@@ -859,12 +861,37 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
-                                if p.optional {
-                                    let mut types = vec![Type::undefined(span, Default::default()), *type_ann.clone()];
+                                let span = if type_ann.span().is_dummy() { span } else { type_ann.span() };
+
+                                let mut typ = self
+                                    .normalize(Some(span), Cow::Borrowed(&*type_ann), Default::default())
+                                    .context("tried to normalize an access_property")?
+                                    .into_owned();
+                                typ = if let Type::TypeLit(TypeLit {
+                                    members,
+                                    metadata,
+                                    tracker,
+                                    ..
+                                }) = typ.normalize()
+                                {
+                                    Type::TypeLit(TypeLit {
+                                        span,
+                                        members: members.clone(),
+                                        metadata: *metadata,
+                                        tracker: *tracker,
+                                    })
+                                } else {
+                                    typ
+                                };
+
+                                typ.make_clone_cheap();
+
+                                if p.optional && self.rule().strict_null_checks {
+                                    let mut types = vec![Type::undefined(span, Default::default()), typ];
                                     types.dedup_type();
                                     matching_elements.push(Type::union(types));
                                 } else {
-                                    matching_elements.push(*type_ann.clone());
+                                    matching_elements.push(typ);
                                 }
                                 continue;
                             }

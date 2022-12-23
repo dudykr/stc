@@ -1,0 +1,235 @@
+
+  x Type
+   ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:5:1]
+ 5 | let result = re.exec("2015-01-02");
+   :              ^^
+   `----
+
+Error: 
+  > RegExp
+
+  x Type
+   ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:5:1]
+ 5 | let result = re.exec("2015-01-02");
+   :              ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (RegExpExecArray | null)
+
+  x Type
+   ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:7:1]
+ 7 | let date = result[0];
+   :            ^^^^^^
+   `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+   ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:7:1]
+ 7 | let date = result[0];
+   :            ^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:9:1]
+ 9 | let year0 = result.groups;
+   :             ^^^^^^
+   `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+   ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:9:1]
+ 9 | let year0 = result.groups;
+   :             ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     [key: string]: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:10:1]
+ 10 | let year1 = result.groups.year;
+    :             ^^^^^^
+    `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:10:1]
+ 10 | let year1 = result.groups.year;
+    :             ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     [key: string]: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:10:1]
+ 10 | let year1 = result.groups.year;
+    :             ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:11:1]
+ 11 | let year2 = result[1];
+    :             ^^^^^^
+    `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:11:1]
+ 11 | let year2 = result[1];
+    :             ^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:13:1]
+ 13 | let month1 = result.groups.month;
+    :              ^^^^^^
+    `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:13:1]
+ 13 | let month1 = result.groups.month;
+    :              ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     [key: string]: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:13:1]
+ 13 | let month1 = result.groups.month;
+    :              ^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:14:1]
+ 14 | let month2 = result[2];
+    :              ^^^^^^
+    `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:14:1]
+ 14 | let month2 = result[2];
+    :              ^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:16:1]
+ 16 | let day1 = result.groups.day;
+    :            ^^^^^^
+    `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:16:1]
+ 16 | let day1 = result.groups.day;
+    :            ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     [key: string]: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:16:1]
+ 16 | let day1 = result.groups.day;
+    :            ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:17:1]
+ 17 | let day2 = result[3];
+    :            ^^^^^^
+    `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:17:1]
+ 17 | let day2 = result[3];
+    :            ^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:19:1]
+ 19 | let foo = "foo".match(/(?<bar>foo)/)!.groups.foo;
+    :           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (RegExpMatchArray | null)
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:19:1]
+ 19 | let foo = "foo".match(/(?<bar>foo)/)!.groups.foo;
+    :           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > RegExpMatchArray
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:19:1]
+ 19 | let foo = "foo".match(/(?<bar>foo)/)!.groups.foo;
+    :           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     [key: string]: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/es2018/useRegexpGroups.ts:19:1]
+ 19 | let foo = "foo".match(/(?<bar>foo)/)!.groups.foo;
+    :           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string

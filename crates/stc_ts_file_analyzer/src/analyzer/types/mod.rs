@@ -234,8 +234,8 @@ impl Analyzer<'_, '_> {
                                 let mut ty = self
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
-                                ty.make_clone_cheap();
-                                let mut ty = ty.into_owned();
+
+                                let mut ty = ty.normalize().clone();
 
                                 if let Some(u) = ty.as_union_type_mut() {
                                     types.append(&mut u.types);
@@ -261,12 +261,15 @@ impl Analyzer<'_, '_> {
                                     || t.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                                     || t.is_kwd(TsKeywordTypeKind::TsIntrinsicKeyword)
                                     || t.is_type_lit()
+                                    || t.is_instance()
+                                    || t.is_interface()
                             }) {
                                 if !self.rule().strict_null_checks {
                                     types.retain(|ty| !ty.is_null() && !ty.is_undefined());
                                 }
                             }
 
+                            types.make_clone_cheap();
                             if types.is_empty() {
                                 return Ok(Cow::Owned(Type::never(
                                     ty.span,
