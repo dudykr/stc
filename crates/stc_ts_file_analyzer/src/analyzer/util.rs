@@ -153,6 +153,7 @@ impl Analyzer<'_, '_> {
                     span,
                     def: box def.clone(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
 
@@ -171,7 +172,9 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
     let span = ty.span();
 
     match ty.normalize() {
-        Type::Tuple(Tuple { ref elems, span, metadata }) => Type::Tuple(Tuple {
+        Type::Tuple(Tuple {
+            ref elems, span, metadata, ..
+        }) => Type::Tuple(Tuple {
             span: *span,
             elems: elems
                 .iter()
@@ -183,6 +186,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
                 })
                 .collect(),
             metadata: *metadata,
+            tracker: Default::default(),
         }),
         Type::ClassDef(ref def) => Type::Class(Class {
             span,
@@ -191,6 +195,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
                 common: def.metadata.common,
                 ..Default::default()
             },
+            tracker: Default::default(),
         }),
 
         Type::Intersection(ref i) => {
@@ -200,6 +205,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
                 span: i.span,
                 types,
                 metadata: i.metadata,
+                tracker: Default::default(),
             })
         }
 
@@ -208,6 +214,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
             span,
             expr: box QueryExpr::TsEntityName(ref type_name),
             metadata,
+            ..
         }) => Type::Ref(Ref {
             span: *span,
             type_name: type_name.clone(),
@@ -216,6 +223,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
                 common: metadata.common,
                 ..Default::default()
             },
+            tracker: Default::default(),
         }),
 
         Type::Enum(Enum { id, metadata, .. }) => Type::EnumVariant(EnumVariant {
@@ -226,6 +234,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
                 common: metadata.common,
                 ..Default::default()
             },
+            tracker: Default::default(),
         }),
 
         _ => ty,
@@ -233,7 +242,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
 }
 
 /// TODO(kdy1): Clarify why this visitor is used.
-/// I fotgot it.
+/// I forgot it.
 #[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,
@@ -409,6 +418,7 @@ pub(crate) fn opt_union(span: Span, opt1: Option<Type>, opt2: Option<Type>) -> O
                 span,
                 types: vec![t1, t2],
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
             .fixed(),
         ),

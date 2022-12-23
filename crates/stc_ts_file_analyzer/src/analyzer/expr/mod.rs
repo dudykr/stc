@@ -104,8 +104,6 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        self.record(e);
-
         let _stack = stack::start(64);
         let _ctx = debug_ctx!(format!("validate\nExpr: {:?}", e));
 
@@ -165,6 +163,7 @@ impl Analyzer<'_, '_> {
                                 span.with_ctxt(SyntaxContext::empty()),
                             ))),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -198,11 +197,13 @@ impl Analyzer<'_, '_> {
                         Ok(Type::from(StaticThis {
                             span,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }))
                     } else {
                         Ok(Type::from(ThisType {
                             span,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }))
                     }
                 }
@@ -213,6 +214,7 @@ impl Analyzer<'_, '_> {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     let ty = self.type_of_var(i, mode, type_args)?;
@@ -231,21 +233,25 @@ impl Analyzer<'_, '_> {
                     span: v.span,
                     lit: RTsLit::Bool(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Str(ref v)) => Ok(Type::Lit(LitType {
                     span: v.span,
                     lit: RTsLit::Str(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Num(v)) => Ok(Type::Lit(LitType {
                     span: v.span,
                     lit: RTsLit::Number(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::BigInt(v)) => Ok(Type::Lit(LitType {
                     span: v.span,
                     lit: RTsLit::BigInt(v.clone()),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
@@ -254,6 +260,7 @@ impl Analyzer<'_, '_> {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -261,6 +268,7 @@ impl Analyzer<'_, '_> {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
                 RExpr::Lit(RLit::Regex(..)) => Ok(Type::Ref(Ref {
@@ -273,6 +281,7 @@ impl Analyzer<'_, '_> {
                     }),
                     type_args: None,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })),
 
                 RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
@@ -873,6 +882,7 @@ impl Analyzer<'_, '_> {
                                 params: m.params.clone(),
                                 ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             });
 
                             if m.optional {
@@ -941,7 +951,7 @@ impl Analyzer<'_, '_> {
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
 
         if is_callable {
-            // Handle funciton-like interfaces
+            // Handle function-like interfaces
             // Example of code handled by this block is `Error.call`
 
             let obj = self.env.get_global_type(span, &js_word!("Function"))?;
@@ -1015,6 +1025,7 @@ impl Analyzer<'_, '_> {
                     index_type: box prop.ty().into_owned(),
                     readonly: false,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
 
                 return Ok(Some(ty));
@@ -1108,8 +1119,8 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tired to access property using string as a key");
-                    // As some types has rules about computed propeties, we use the result only if
-                    // it sucesses.
+                    // As some types has rules about computed properties, we use the result only if
+                    // it successes.
                     if let Ok(ty) = res {
                         return Ok(ty);
                     }
@@ -1123,8 +1134,8 @@ impl Analyzer<'_, '_> {
                 Type::Lit(LitType {
                     lit: RTsLit::Number(n), ..
                 }) => {
-                    // As some types has rules about computed propeties, we use the result only if
-                    // it sucesses.
+                    // As some types has rules about computed properties, we use the result only if
+                    // it successes.
                     if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx, opts) {
                         return Ok(ty);
                     }
@@ -1299,7 +1310,7 @@ impl Analyzer<'_, '_> {
                             return self
                                 .env
                                 .get_global_type(span, sym)
-                                .context("tried to access a prperty of `globalThis`")
+                                .context("tried to access a property of `globalThis`")
                                 .convert_err(|err| match err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
                                         span,
@@ -1430,6 +1441,7 @@ impl Analyzer<'_, '_> {
                                         params: member.params.clone(),
                                         ret_ty: member.ret_ty.clone(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }));
                                 }
 
@@ -1524,10 +1536,11 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::This(this.clone()),
                         index_type: prop_ty,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
-                Type::StaticThis(StaticThis { span, metadata }) => {
+                Type::StaticThis(StaticThis { span, metadata, .. }) => {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
@@ -1539,6 +1552,7 @@ impl Analyzer<'_, '_> {
                                         params: member.params.clone(),
                                         ret_ty: member.ret_ty.clone(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }));
                                 }
                             }
@@ -1669,6 +1683,7 @@ impl Analyzer<'_, '_> {
                                 common: obj.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -1692,6 +1707,7 @@ impl Analyzer<'_, '_> {
                                 common: obj.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -1763,6 +1779,7 @@ impl Analyzer<'_, '_> {
                             enum_name: e.id.clone().into(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                     Key::Num(RNumber { value, .. }) => {
@@ -1778,6 +1795,7 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     },
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 });
                                 return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                             }
@@ -1786,6 +1804,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -1803,6 +1822,7 @@ impl Analyzer<'_, '_> {
                             span: prop.span().with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -1835,6 +1855,7 @@ impl Analyzer<'_, '_> {
                                             common: metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     });
                                     return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                                 }
@@ -1888,6 +1909,7 @@ impl Analyzer<'_, '_> {
                                     params: mtd.params.clone(),
                                     ret_ty: mtd.ret_ty.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -1901,6 +1923,7 @@ impl Analyzer<'_, '_> {
                                     type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
                                     is_abstract: false,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -2001,16 +2024,19 @@ impl Analyzer<'_, '_> {
                             raw: None,
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Num(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::BigInt(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Private(..) => {
                         unreachable!()
@@ -2029,6 +2055,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     index_type: prop_ty,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2043,16 +2070,19 @@ impl Analyzer<'_, '_> {
                             raw: None,
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Num(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::BigInt(n) => box Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     Key::Private(..) => {
                         unreachable!()
@@ -2069,6 +2099,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     index_type: prop_ty,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2080,6 +2111,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2250,6 +2282,7 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -2286,6 +2319,7 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -2319,6 +2353,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
 
@@ -2393,6 +2428,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }));
                             tys.dedup_type();
                             let ty = Type::union(tys);
@@ -2461,6 +2497,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
 
@@ -2477,6 +2514,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
 
@@ -2499,6 +2537,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }));
                         }
 
@@ -2510,6 +2549,7 @@ impl Analyzer<'_, '_> {
                                 raw: None,
                             }),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -2522,6 +2562,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box Type::union(types),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
 
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
@@ -2569,6 +2610,7 @@ impl Analyzer<'_, '_> {
                                     params: m.params.clone(),
                                     ret_ty: m.ret_ty.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -2627,6 +2669,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     prop,
                     type_mode,
@@ -2656,6 +2699,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     types,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }));
                             }
                         }
@@ -2758,6 +2802,7 @@ impl Analyzer<'_, '_> {
                     span,
                     types: new,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
                 .fixed();
                 // ty.respan(span);
@@ -2796,6 +2841,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
                                     let mut types = vec![undefined, ty];
                                     types.dedup_type();
@@ -2850,6 +2896,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     index_type: box prop.ty().into_owned(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -2867,6 +2914,7 @@ impl Analyzer<'_, '_> {
                             obj_type: box obj,
                             index_type,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 } else {
@@ -2880,6 +2928,7 @@ impl Analyzer<'_, '_> {
                                         &Type::StaticThis(StaticThis {
                                             span,
                                             metadata: Default::default(),
+                                            tracker: Default::default(),
                                         }),
                                         prop,
                                         type_mode,
@@ -2921,6 +2970,7 @@ impl Analyzer<'_, '_> {
                     readonly: false,
                     index_type,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
                 return Ok(ty);
             }
@@ -2946,6 +2996,7 @@ impl Analyzer<'_, '_> {
                         span,
                         members: Default::default(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -2967,6 +3018,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     prop,
                     type_mode,
@@ -3029,6 +3081,7 @@ impl Analyzer<'_, '_> {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                 }
                 ty
@@ -3037,7 +3090,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Expand type paramters using `type_args`.
+    /// Expand type parameters using `type_args`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
         match ty.normalize() {
@@ -3122,10 +3175,11 @@ impl Analyzer<'_, '_> {
             // We will expand this type query to proper type while calculating returns types
             // of a function.
             return Ok(Type::Query(QueryType {
-                // TODO(kdy1): This is a regession.
+                // TODO(kdy1): This is a regression.
                 span: span.with_ctxt(SyntaxContext::empty()),
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -3228,6 +3282,7 @@ impl Analyzer<'_, '_> {
                 span: i.span.with_ctxt(SyntaxContext::empty()),
                 types: modules,
                 metadata: Default::default(),
+                tracker: Default::default(),
             });
             ty.fix();
             ty.make_clone_cheap();
@@ -3273,6 +3328,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::StaticThis(StaticThis {
                     span,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
         }
@@ -3544,6 +3600,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         },
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -3581,7 +3638,7 @@ impl Analyzer<'_, '_> {
     fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
-            let res = self.report_error_for_unresolve_type(span, n, type_args);
+            let res = self.report_error_for_unresolved_type(span, n, type_args);
             match res {
                 Ok(()) => {}
                 Err(err) => {
@@ -3601,6 +3658,7 @@ impl Analyzer<'_, '_> {
                             // parser)
                             elem_type: box type_args.clone().params.into_iter().next().unwrap(),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -3712,6 +3770,7 @@ impl Analyzer<'_, '_> {
                     type_name: RTsEntityName::Ident(i.clone()),
                     type_args: type_args.cloned().map(Box::new),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }))
             }
             RExpr::Member(RMemberExpr {
@@ -3767,6 +3826,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                 ])
                 .freezed())
@@ -4064,7 +4124,7 @@ impl Analyzer<'_, '_> {
             .map(|scope| scope.kind())
         {
             Some(ScopeKind::Class) => {
-                // Using proerties of super class in class property names are not allowed.
+                // Using properties of super class in class property names are not allowed.
                 self.storage
                     .report(ErrorKind::CannotReferenceSuperInComputedPropName { span }.into())
             }
@@ -4124,6 +4184,7 @@ impl Analyzer<'_, '_> {
                     raw: None,
                 }),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -4192,6 +4253,7 @@ impl Analyzer<'_, '_> {
                 metadata: TplTypeMetadata {
                     common: CommonTypeMetadata { ..Default::default() },
                 },
+                tracker: Default::default(),
             }));
         }
 
@@ -4202,6 +4264,7 @@ impl Analyzer<'_, '_> {
             metadata: TplTypeMetadata {
                 common: CommonTypeMetadata { ..Default::default() },
             },
+            tracker: Default::default(),
         }))
     }
 }

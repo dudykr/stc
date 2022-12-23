@@ -81,8 +81,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult<Type> {
-        self.record(e);
-
         let RCallExpr {
             span,
             ref callee,
@@ -123,7 +121,7 @@ impl Analyzer<'_, '_> {
 
             analyzer.extract_call_new_expr_member(
                 span,
-                ReevalMode::Call(e),
+                ReEvalMode::Call(e),
                 callee,
                 ExtractKind::Call,
                 args,
@@ -137,8 +135,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult<Type> {
-        self.record(e);
-
         let RNewExpr {
             span,
             ref callee,
@@ -155,7 +151,7 @@ impl Analyzer<'_, '_> {
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
-                ReevalMode::New(e),
+                ReEvalMode::New(e),
                 callee,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
@@ -195,7 +191,7 @@ impl Analyzer<'_, '_> {
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
-                ReevalMode::NoReeval,
+                ReEvalMode::NoReEval,
                 &e.tag,
                 ExtractKind::Call,
                 args.as_ref(),
@@ -220,7 +216,7 @@ impl Analyzer<'_, '_> {
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         callee: &RExpr,
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -304,6 +300,7 @@ impl Analyzer<'_, '_> {
                     span,
                     id: SymbolId::generate(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }));
             }
 
@@ -343,6 +340,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
                 }
@@ -410,6 +408,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(i.clone()),
                         type_args: Default::default(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                     // It's specified by user
                     analyzer.prevent_expansion(&mut ty);
@@ -539,7 +538,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         this: &Type,
         obj_type: &Type,
         prop: &Key,
@@ -601,6 +600,7 @@ impl Analyzer<'_, '_> {
                             params: vec![*obj.elem_type.clone()],
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     });
                     return self.call_property(
                         span,
@@ -794,6 +794,7 @@ impl Analyzer<'_, '_> {
                                 )),
                                 type_args: None,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             prop,
                             type_args,
@@ -933,7 +934,7 @@ impl Analyzer<'_, '_> {
     fn call_property_of_class(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         kind: ExtractKind,
         this: &Type,
         c: &ClassDef,
@@ -948,7 +949,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Option<Type>> {
         let candidates = {
             // TODO(kdy1): Deduplicate.
-            // This is duplicated intentionally because of regresions.
+            // This is duplicated intentionally because of regressions.
 
             let mut candidates: Vec<CallCandidate> = vec![];
             for member in c.body.iter() {
@@ -1124,7 +1125,7 @@ impl Analyzer<'_, '_> {
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         span: Span,
         obj: &Type,
         members: &[TypeElement],
@@ -1266,7 +1267,7 @@ impl Analyzer<'_, '_> {
     fn extract(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         ty: &Type,
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -1307,6 +1308,7 @@ impl Analyzer<'_, '_> {
                         span,
                         def: box cls.clone(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
 
                     if cls.is_abstract {
@@ -1327,6 +1329,7 @@ impl Analyzer<'_, '_> {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }));
                     }
 
@@ -1396,6 +1399,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 type_args,
                                 args,
@@ -1406,7 +1410,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to instantiate a class using constructor");
                     }
 
-                    // Check for consturctors decalred in the super class.
+                    // Check for constructors declared in the super class.
                     if let Some(super_class) = &cls.super_class {
                         //
 
@@ -1453,6 +1457,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 def: box cls.clone(),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                             type_args,
                             args,
@@ -1460,7 +1465,7 @@ impl Analyzer<'_, '_> {
                             spread_arg_types,
                             type_ann,
                         )
-                        .context("tried to instantiate a class without any contructor with call");
+                        .context("tried to instantiate a class without any constructor with call");
                 }
 
                 Type::Constructor(c) => {
@@ -1485,8 +1490,10 @@ impl Analyzer<'_, '_> {
                         ty: box Type::This(ThisType {
                             span,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }))
                 }
 
@@ -1610,6 +1617,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 elem_type: box type_args.params.first().cloned().unwrap(),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }));
                         }
                     }
@@ -1675,6 +1683,7 @@ impl Analyzer<'_, '_> {
                     span,
                     def: box def.clone(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }
                 .into())
             }
@@ -1723,7 +1732,7 @@ impl Analyzer<'_, '_> {
     fn call_type_element(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         callee_ty: &Type,
         type_params_of_type: Option<&[TypeParam]>,
         members: &[TypeElement],
@@ -1803,7 +1812,7 @@ impl Analyzer<'_, '_> {
     fn check_method_call(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         c: &MethodSignature,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -1864,7 +1873,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Type::Union(ty) => {
-            //     // TODO(kdy1): We should select best one based on the arugment type and count.
+            //     // TODO(kdy1): We should select best one based on the argument type and count.
             //     let mut types = ty
             //         .types
             //         .iter()
@@ -1945,6 +1954,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 })
                             }),
                         });
@@ -1965,6 +1975,7 @@ impl Analyzer<'_, '_> {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         }),
                     });
                 }
@@ -1981,7 +1992,7 @@ impl Analyzer<'_, '_> {
     fn get_best_return_type(
         &mut self,
         span: Span,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         callee: Type,
         kind: ExtractKind,
         type_args: Option<&TypeParamInstantiation>,
@@ -2158,6 +2169,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
                         )
                         .is_ok()
@@ -2187,7 +2199,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            // For iifes, not providing some arguemnts are allowed.
+            // For iife, not providing some arguments are allowed.
             if self.ctx.is_calling_iife {
                 if let Some(max) = max_param {
                     if args.len() <= max {
@@ -2225,7 +2237,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         candidates: &[CallCandidate],
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -2351,7 +2363,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        expr: ReevalMode,
+        expr: ReEvalMode,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
         mut ret_ty: Type,
@@ -2407,6 +2419,7 @@ impl Analyzer<'_, '_> {
                                     span: tp.span,
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                             );
                         }
@@ -2590,10 +2603,10 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
                 match expr {
-                    ReevalMode::Call(e) => {
+                    ReEvalMode::Call(e) => {
                         return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
-                    ReevalMode::New(e) => {
+                    ReEvalMode::New(e) => {
                         return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
                     _ => {}
@@ -2683,6 +2696,7 @@ impl Analyzer<'_, '_> {
                                     common: tp.metadata.common,
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }),
                         );
                     }
@@ -2696,6 +2710,7 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         metadata: KeywordTypeMetadata { ..Default::default() },
+                        tracker: Default::default(),
                     }),
                 );
             }
@@ -2880,7 +2895,7 @@ impl Analyzer<'_, '_> {
                                     let arg = match args_iter.next() {
                                         Some(v) => v,
                                         None => {
-                                            // TODO(kdy1): Arugment count
+                                            // TODO(kdy1): Argument count
                                             break;
                                         }
                                     };
@@ -3129,6 +3144,7 @@ impl Analyzer<'_, '_> {
                 span,
                 types: vec![orig_ty.into_owned(), new_ty.into_owned()],
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -3146,6 +3162,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         def: box def.clone(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     }));
                                 }
                                 return Ok(orig_ty.into_owned());
@@ -3168,7 +3185,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // TODO(kdy1): Use super class instread of
+                // TODO(kdy1): Use super class instead of
                 if !upcasted && new_types.is_empty() {
                     new_types.push(new_ty.clone().into_owned());
                 }
@@ -3187,6 +3204,7 @@ impl Analyzer<'_, '_> {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }));
         }
 
@@ -3399,15 +3417,15 @@ impl Analyzer<'_, '_> {
 
 /// Used for reevaluation.
 #[derive(Clone, Copy)]
-pub(crate) enum ReevalMode<'a> {
+pub(crate) enum ReEvalMode<'a> {
     Call(&'a RCallExpr),
     New(&'a RNewExpr),
-    NoReeval,
+    NoReEval,
 }
 
-impl Default for ReevalMode<'_> {
+impl Default for ReEvalMode<'_> {
     fn default() -> Self {
-        Self::NoReeval
+        Self::NoReEval
     }
 }
 
@@ -3453,6 +3471,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         metadata,
+                        ..
                     }),
                 ..
             }) => {
@@ -3460,6 +3479,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     metadata: *metadata,
+                    tracker: Default::default(),
                 });
             }
 
@@ -3529,6 +3549,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         common: metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .fixed();
             }
@@ -3543,6 +3564,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
                 metadata,
+                ..
             }) if type_args.params.len() == 1 && type_args.params.iter().any(|ty| matches!(ty.normalize(), Type::Union(..))) => {
                 // TODO(kdy1): Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
@@ -3562,6 +3584,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                             params: vec![ty.clone()],
                                         }),
                                         metadata: *metadata,
+                                        tracker: Default::default(),
                                     }))
                                 }
                             } else {

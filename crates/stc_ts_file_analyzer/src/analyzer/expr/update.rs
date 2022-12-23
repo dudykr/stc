@@ -121,6 +121,7 @@ impl Analyzer<'_, '_> {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
             metadata: Default::default(),
+            tracker: Default::default(),
         }))
     }
 }

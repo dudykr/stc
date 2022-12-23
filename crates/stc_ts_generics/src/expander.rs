@@ -101,6 +101,7 @@ impl GenericExpander<'_> {
                             common: metadata.common,
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     });
                 }
 
@@ -209,6 +210,7 @@ impl GenericExpander<'_> {
                                                                 .clone()
                                                                 .unwrap_or_else(|| box Type::any(method.span, Default::default())),
                                                             metadata: Default::default(),
+                                                            tracker: Default::default(),
                                                         }),
                                                     }),
                                                     type_params: Default::default(),
@@ -228,6 +230,7 @@ impl GenericExpander<'_> {
                                             span: ty.span,
                                             members,
                                             metadata: ty.metadata,
+                                            tracker: Default::default(),
                                         });
                                     }
                                     _ => {}
@@ -273,6 +276,7 @@ impl GenericExpander<'_> {
                             span,
                             members,
                             metadata: lit.metadata,
+                            tracker: Default::default(),
                         });
                     }
 
@@ -297,6 +301,7 @@ impl GenericExpander<'_> {
                         mut obj_type,
                         index_type,
                         metadata,
+                        ..
                     })) => {
                         obj_type.normalize_mut();
                         // TODO(kdy1): PERF
@@ -325,6 +330,7 @@ impl GenericExpander<'_> {
                                     span,
                                     members: new_members,
                                     metadata,
+                                    tracker: Default::default(),
                                 });
                             }
 
@@ -334,6 +340,7 @@ impl GenericExpander<'_> {
                                 obj_type,
                                 index_type,
                                 metadata,
+                                tracker: Default::default(),
                             })),
                         }
                     }
@@ -396,6 +403,7 @@ impl GenericExpander<'_> {
                                     span: *span,
                                     members: new_members,
                                     metadata: *ty_metadata,
+                                    tracker: Default::default(),
                                 });
                             }
                             _ => {}

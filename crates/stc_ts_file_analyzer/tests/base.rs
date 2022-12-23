@@ -482,7 +482,10 @@ fn visualize(file_name: PathBuf) {
 fn pass(file_name: PathBuf) {
     let res = run_test(file_name.clone(), false).unwrap();
 
-    run_test(file_name.clone(), true);
+    {
+        let _guard = tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default());
+        run_test(file_name.clone(), true);
+    }
 
     res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
 

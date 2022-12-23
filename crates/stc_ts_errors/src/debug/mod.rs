@@ -116,6 +116,7 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
                                 span: DUMMY_SP,
                                 members: t.body.clone(),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .fold_with(&mut Visualizer::default()),
                         )

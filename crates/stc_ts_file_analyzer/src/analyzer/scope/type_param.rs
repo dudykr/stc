@@ -9,7 +9,7 @@ impl Analyzer<'_, '_> {
     /// Convert type parameters declared in dead scopes to `{}`.
     ///
     /// This does not touch type parameters declared in parent scopes and this
-    /// method should be callled when a type had escaped a scope.
+    /// method should be called when a type had escaped a scope.
     ///
     /// In this way, we can handle both of cases below.
     ///
@@ -140,6 +140,7 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
                     span: param.span,
                     members: vec![],
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
             }
         }

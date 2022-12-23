@@ -219,6 +219,7 @@ impl Analyzer<'_, '_> {
                             span: arr.span,
                             elem_type,
                             metadata: arr.metadata,
+                            tracker: Default::default(),
                         })));
                     }
 
@@ -347,6 +348,7 @@ impl Analyzer<'_, '_> {
                                     span: actual_span.with_ctxt(SyntaxContext::empty()),
                                     types,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 })
                                 .fixed();
 
@@ -356,7 +358,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        // TOOD: Optimize
+                        // TODO: Optimize
                         // If we can calculate type using constraints, do so.
 
                         // TODO(kdy1): PERF
@@ -401,6 +403,7 @@ impl Analyzer<'_, '_> {
                                         span: actual_span.with_ctxt(SyntaxContext::empty()),
                                         types,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
 
                                     *check_type_constraint = box new;
@@ -429,6 +432,7 @@ impl Analyzer<'_, '_> {
                                                     span: actual_span,
                                                     expr: box QueryExpr::TsEntityName(e.clone()),
                                                     metadata: Default::default(),
+                                                    tracker: Default::default(),
                                                 })));
                                             } else {
                                                 print_backtrace()
@@ -538,6 +542,7 @@ impl Analyzer<'_, '_> {
                             obj_type: obj_ty,
                             index_type: index_ty,
                             metadata: iat.metadata,
+                            tracker: Default::default(),
                         })));
                     }
 
@@ -664,6 +669,7 @@ impl Analyzer<'_, '_> {
                 true_type: box true_type.into_owned(),
                 false_type: box false_type.into_owned(),
                 metadata,
+                tracker: Default::default(),
             })))
         } else {
             Ok(None)
@@ -677,6 +683,7 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsNeverKeyword,
                     metadata: KeywordTypeMetadata { ..Default::default() },
+                    tracker: Default::default(),
                 })))
             }};
         }
@@ -756,12 +763,14 @@ impl Analyzer<'_, '_> {
                                                 enum_name: e.id.clone().into(),
                                                 name: Some(key.sym),
                                                 metadata: Default::default(),
+                                                tracker: Default::default(),
                                             })),
                                             RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
                                                 span: v.span,
                                                 enum_name: e.id.clone().into(),
                                                 name: Some(key.sym),
                                                 metadata: Default::default(),
+                                                tracker: Default::default(),
                                             })),
                                             _ => {}
                                         }
@@ -882,6 +891,7 @@ impl Analyzer<'_, '_> {
                     common: metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
 
             Type::ClassDef(def) => Type::Class(Class {
@@ -891,6 +901,7 @@ impl Analyzer<'_, '_> {
                     common: metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
 
             Type::StaticThis(ty) => Type::This(ThisType {
@@ -899,6 +910,7 @@ impl Analyzer<'_, '_> {
                     common: metadata,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }),
 
             Type::Intersection(ty) if !opts.preserve_intersection => {
@@ -1094,6 +1106,7 @@ impl Analyzer<'_, '_> {
                 inexact: true,
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 
@@ -1235,6 +1248,7 @@ impl Analyzer<'_, '_> {
                     inexact: true,
                     ..Default::default()
                 },
+                tracker: Default::default(),
             })));
         }
 
@@ -1260,6 +1274,7 @@ impl Analyzer<'_, '_> {
                                 common: ty.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         })),
                     )
                     .context("tried to convert a literal to type literal")?
@@ -1286,6 +1301,7 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
                             metadata: Default::default(),
+                            tracker: Default::default(),
                         })),
                     )?
                     .map(Cow::into_owned)
@@ -1312,6 +1328,7 @@ impl Analyzer<'_, '_> {
                     span: c.span,
                     members,
                     metadata: TypeLitMetadata { ..Default::default() },
+                    tracker: Default::default(),
                 })
             }
 
@@ -1332,6 +1349,7 @@ impl Analyzer<'_, '_> {
                     span: c.span,
                     members,
                     metadata: TypeLitMetadata { ..Default::default() },
+                    tracker: Default::default(),
                 })
             }
 
@@ -1351,6 +1369,7 @@ impl Analyzer<'_, '_> {
                         inexact: true,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             }
 
@@ -1367,6 +1386,7 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members: vec![el],
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
 
@@ -1379,6 +1399,7 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members: vec![el],
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
 
@@ -1422,6 +1443,7 @@ impl Analyzer<'_, '_> {
                             common: ty.metadata.common,
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     })),
                     type_params: Default::default(),
                     metadata: Default::default(),
@@ -1435,6 +1457,7 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             }
 
@@ -1521,6 +1544,7 @@ impl Analyzer<'_, '_> {
                                             common: to_type.metadata(),
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     })
                                     .freezed(),
                                 )
@@ -1531,6 +1555,7 @@ impl Analyzer<'_, '_> {
                                         span: to_type.span(),
                                         types: vec![*to_type.clone(), *from_type],
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                     .fixed()
                                     .freezed(),
@@ -1551,6 +1576,7 @@ impl Analyzer<'_, '_> {
                                 span: to_type.span(),
                                 types: vec![*to_type.clone(), *from_type],
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .fixed()
                             .freezed(),
@@ -1622,7 +1648,7 @@ impl Analyzer<'_, '_> {
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                let new_val = apply_intrinsics(&ty.kind, &s.value);
+                let new_val = apply_intrinsic(&ty.kind, &s.value);
 
                 return Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
@@ -1635,6 +1661,7 @@ impl Analyzer<'_, '_> {
                         common: arg.params[0].metadata(),
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 }));
             }
             Type::Tpl(TplType {
@@ -1642,12 +1669,13 @@ impl Analyzer<'_, '_> {
                 quasis,
                 types,
                 metadata,
+                ..
             }) => {
                 let quasis = quasis
                     .iter()
                     .map(|quasis| {
-                        let raw = apply_intrinsics(&ty.kind, &quasis.raw);
-                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsics(&ty.kind, cooked));
+                        let raw = apply_intrinsic(&ty.kind, &quasis.raw);
+                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsic(&ty.kind, cooked));
 
                         RTplElement {
                             raw,
@@ -1662,6 +1690,7 @@ impl Analyzer<'_, '_> {
                     quasis,
                     types: types.clone(),
                     metadata: *metadata,
+                    tracker: Default::default(),
                 }));
             }
 
@@ -1671,6 +1700,7 @@ impl Analyzer<'_, '_> {
                 constraint: Some(constraint),
                 default,
                 metadata,
+                ..
             }) => {
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
@@ -1685,6 +1715,7 @@ impl Analyzer<'_, '_> {
                     constraint: Some(box constraint),
                     default: default.clone(),
                     metadata: *metadata,
+                    tracker: Default::default(),
                 });
 
                 return Ok(Type::Intrinsic(Intrinsic {
@@ -1705,7 +1736,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, span, type_name, type_args))]
-    pub(crate) fn report_error_for_unresolve_type(
+    pub(crate) fn report_error_for_unresolved_type(
         &mut self,
         span: Span,
         type_name: &RExpr,
@@ -1967,7 +1998,7 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     }
 }
 
-fn apply_intrinsics<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
+fn apply_intrinsic<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
     let raw = raw.as_ref();
 
     match intrinsics {

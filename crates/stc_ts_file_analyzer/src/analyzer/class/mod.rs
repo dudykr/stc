@@ -81,6 +81,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }),
                                 AssignOpts {
                                     span,
@@ -125,8 +126,10 @@ impl Analyzer<'_, '_> {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
                 metadata: OperatorMetadata { common: ty.metadata() },
+                tracker: Default::default(),
             }),
             _ => ty,
         }))
@@ -137,7 +140,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RClassProp) -> VResult<ClassProperty> {
         let marks = self.marks();
-        self.record(p);
 
         if p.is_static {
             if let RPropName::Ident(i) = &p.key {
@@ -231,8 +233,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RConstructor, super_class: Option<&Type>) -> VResult<ConstructorSignature> {
-        self.record(c);
-
         let c_span = c.span();
 
         if !self.is_builtin
@@ -411,8 +411,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsFnParam) -> VResult<FnParam> {
-        self.record(p);
-
         let span = p.span();
 
         macro_rules! ty {
@@ -563,8 +561,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassMethod) -> VResult<ClassMember> {
-        self.record(c);
-
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
@@ -683,6 +679,7 @@ impl Analyzer<'_, '_> {
                         TsKeywordTypeKind::TsAnyKeyword
                     },
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             })
         });
@@ -1070,7 +1067,7 @@ impl Analyzer<'_, '_> {
                             // sequential`
                             if let Some((span, _)) = spans.last() {
                                 self.storage
-                                    .report(ErrorKind::AbstractClassMethodShouldBeSequntial { span: *span }.into())
+                                    .report(ErrorKind::AbstractClassMethodShouldBeSequential { span: *span }.into())
                             }
                         }
                     }
@@ -1255,7 +1252,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_confliicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
+    fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
     fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
@@ -1273,6 +1270,7 @@ impl Analyzer<'_, '_> {
                 common: class.metadata.common,
                 ..Default::default()
             },
+            tracker: Default::default(),
         });
 
         for parent in &*class.implements {
@@ -1416,7 +1414,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(key) = sm.key() {
                         errors.push(
-                            ErrorKind::ClassDoesNotImplementMemeber {
+                            ErrorKind::ClassDoesNotImplementMember {
                                 span,
                                 key: box key.into_owned(),
                             }
@@ -1453,8 +1451,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClass) -> VResult<ClassDef> {
-        self.record(c);
-
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -1560,6 +1556,7 @@ impl Analyzer<'_, '_> {
                                                                 common: c.metadata.common,
                                                                 ..Default::default()
                                                             },
+                                                            tracker: Default::default(),
                                                         })
                                                     })
                                                     .expect("Super class should be named");
@@ -1615,6 +1612,7 @@ impl Analyzer<'_, '_> {
                                     // TODO(kdy1): Handle type parameters
                                     type_args: None,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 }))
                             }
                             _ => Some(box super_ty),
@@ -1662,7 +1660,7 @@ impl Analyzer<'_, '_> {
                                 if let RParamOrTsParamProp::TsParamProp(..) = *p {
                                     child
                                         .storage
-                                        .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }.into())
+                                        .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructor { span: p.span() }.into())
                                 }
                             }
                         }
@@ -1869,7 +1867,7 @@ impl Analyzer<'_, '_> {
                 // This is to infer return types of methods
                 for member in &c.body {}
 
-                // Actaully check types of method / constructors.
+                // Actually check types of method / constructors.
 
                 let remaining = c
                     .body
@@ -1916,6 +1914,7 @@ impl Analyzer<'_, '_> {
                 body,
                 implements,
                 metadata: Default::default(),
+                tracker: Default::default(),
             };
 
             child
@@ -1924,7 +1923,7 @@ impl Analyzer<'_, '_> {
 
             child.validate_inherited_members_from_super_class(None, &class);
             child.report_errors_for_wrong_impls_of_class(None, &class);
-            child.report_errors_for_confliicting_interfaces(&class.implements);
+            child.report_errors_for_conflicting_interfaces(&class.implements);
 
             Ok(class)
         })?;
@@ -1991,8 +1990,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassDecl) -> VResult<()> {
-        self.record(c);
-
         let ctx = Ctx {
             in_declare: self.ctx.in_declare || c.declare,
             ..self.ctx
@@ -2200,6 +2197,7 @@ impl Analyzer<'_, '_> {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
+                tracker: Default::default(),
             }),
             _ => ty.clone(),
         })
