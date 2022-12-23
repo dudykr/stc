@@ -326,12 +326,6 @@ impl Analyzer<'_, '_> {
     /// 6. The return type of a closure does not have effect on the inference.
     ///
     ///
-    /// # Priority
-    ///
-    /// 1. keywords
-    ///
-    /// 2. Non-empty interfaces and type literals
-    ///
     /// # Postprocess
     ///
     /// 1. If there was noe error and if there's no constraints like `extends
