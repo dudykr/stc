@@ -246,6 +246,27 @@ impl Analyzer<'_, '_> {
                             types.dedup_type();
                             types.retain(|ty| !ty.is_never());
 
+
+                            if types.iter().any(|t| t.is_any()) {
+                                return Ok(Cow::Owned(Type::any(ty.span, Default::default())));
+                            } else if types.iter().any(|t| t.is_unknown()) {
+                                return Ok(Cow::Owned(Type::unknown(ty.span, Default::default())));
+                            } else if types.iter().any(|t| {
+                                t.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsBigIntKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsObjectKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                                    || t.is_kwd(TsKeywordTypeKind::TsIntrinsicKeyword)
+                                    || t.is_type_lit()
+                            }) {
+                                if !self.rule().strict_null_checks {
+                                    types.retain(|ty| !ty.is_null() && !ty.is_undefined());
+                                }
+                            }
+
                             if types.is_empty() {
                                 return Ok(Cow::Owned(Type::never(
                                     ty.span,
