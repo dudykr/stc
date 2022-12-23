@@ -1,4 +1,4 @@
-// @strictNullChecks: true
+//@strict: true
 // @declaration: true
 
 class A {

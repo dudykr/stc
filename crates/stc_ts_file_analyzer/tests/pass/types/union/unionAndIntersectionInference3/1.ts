@@ -1,4 +1,4 @@
-// @strict: true
+//@strict: true
 // @target: esnext
 
 // Repros from #32247
