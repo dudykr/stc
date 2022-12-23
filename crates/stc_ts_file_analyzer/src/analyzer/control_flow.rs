@@ -441,6 +441,7 @@ impl Analyzer<'_, '_> {
                         common: tuple.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .freezed();
             }
@@ -557,8 +558,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RSwitchStmt) -> VResult<()> {
-        self.record(stmt);
-
         let discriminant_ty = self.report_errors_for_incomparable_switch_cases(stmt).report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
@@ -1075,6 +1074,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box ty.clone(),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
                 self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts)
             }
@@ -1179,6 +1179,7 @@ impl Analyzer<'_, '_> {
                 span: ty.span(),
                 types: new_types,
                 metadata: ty.metadata,
+                tracker: Default::default(),
             }));
         }
 
@@ -1302,8 +1303,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
-        self.record(e);
-
         let RCondExpr {
             span,
             ref test,

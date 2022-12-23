@@ -39,8 +39,6 @@ pub(super) enum ComputedPropMode {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RPropName) -> VResult<Key> {
-        self.record(node);
-
         match node {
             RPropName::Computed(c) => c.validate_with(self),
             RPropName::Ident(i) => Ok(Key::Normal {
@@ -70,7 +68,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RComputedPropName) -> VResult<Key> {
-        self.record(node);
         let ctx = Ctx {
             in_computed_prop_name: true,
             ..self.ctx
@@ -208,8 +205,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, prop: &RProp, object_type: Option<&Type>) -> VResult<TypeElement> {
-        self.record(prop);
-
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Object,
             in_shorthand: matches!(prop, RProp::Shorthand(..)),
@@ -487,6 +482,7 @@ impl Analyzer<'_, '_> {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                 });
                             inferred_ret_ty.make_clone_cheap();
@@ -532,8 +528,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> VResult<TypeElement> {
-        self.record(n);
-
         let key = n.key.validate_with(self)?;
         let computed = key.is_computed();
 

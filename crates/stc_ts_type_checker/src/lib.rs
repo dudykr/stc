@@ -239,6 +239,7 @@ impl Checker {
                                     }),
                                     exports: box data,
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 })
                                 .freezed();
 
@@ -366,6 +367,7 @@ impl Checker {
                 }),
                 exports: box storage.info.exports,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
             .freezed();
 

@@ -203,6 +203,7 @@ impl Analyzer<'_, '_> {
                     common: rhs.metadata(),
                     ..Default::default()
                 },
+                tracker: Default::default(),
             }));
         }
 
@@ -211,7 +212,7 @@ impl Analyzer<'_, '_> {
             // =>
             // Extract<keyof K, string>
             if let Some(
-                contraint @ Type::Operator(Operator {
+                constraint @ Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ..
                 }),
@@ -224,7 +225,7 @@ impl Analyzer<'_, '_> {
                     type_args: Some(box TypeParamInstantiation {
                         span: DUMMY_SP,
                         params: vec![
-                            contraint.clone(),
+                            constraint.clone(),
                             Type::Keyword(KeywordType {
                                 span: rhs.span(),
                                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -232,6 +233,7 @@ impl Analyzer<'_, '_> {
                                     common: rhs.metadata(),
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }),
                         ],
                     }),
@@ -239,6 +241,7 @@ impl Analyzer<'_, '_> {
                         common: m.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 }));
             }
 
@@ -255,6 +258,7 @@ impl Analyzer<'_, '_> {
                 common: rhs.metadata(),
                 ..Default::default()
             },
+            tracker: Default::default(),
         });
         if rhs.is_type_lit() {
             return Ok(s);
@@ -266,6 +270,7 @@ impl Analyzer<'_, '_> {
                 common: rhs.metadata(),
                 ..Default::default()
             },
+            tracker: Default::default(),
         });
         Ok(Type::union(vec![s, n]))
     }

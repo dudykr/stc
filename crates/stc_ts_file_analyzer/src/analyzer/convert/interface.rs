@@ -46,6 +46,7 @@ impl Analyzer<'_, '_> {
                         span: DUMMY_SP,
                         members: body.to_vec(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     AssignOpts {
                         span,

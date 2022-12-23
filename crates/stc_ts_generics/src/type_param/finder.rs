@@ -1,8 +1,9 @@
 use fxhash::FxHashSet;
 use rnode::{Visit, VisitWith};
-use stc_ts_types::{Id, TypeParam, TypeParamDecl};
+use stc_ts_types::{Id, InferType, TypeParam, TypeParamDecl};
 use stc_utils::cache::ALLOW_DEEP_CLONE;
 
+/// This looks for type parameter declarations and infer type parameters.
 #[derive(Debug, Default)]
 pub struct TypeParamDeclFinder {
     pub params: FxHashSet<Id>,
@@ -14,6 +15,15 @@ impl Visit<TypeParamDecl> for TypeParamDeclFinder {
         decl.visit_children_with(self);
 
         self.params.extend(decl.params.iter().map(|v| v.name.clone()));
+    }
+}
+
+impl Visit<InferType> for TypeParamDeclFinder {
+    #[inline]
+    fn visit(&mut self, ty: &InferType) {
+        ty.visit_children_with(self);
+
+        self.params.insert(ty.type_param.name.clone());
     }
 }
 

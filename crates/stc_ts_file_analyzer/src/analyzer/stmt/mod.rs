@@ -105,6 +105,7 @@ impl Analyzer<'_, '_> {
                 value: true,
             }),
             metadata: Default::default(),
+            tracker: Default::default(),
         });
         self.check_for_inifinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 
@@ -153,7 +154,7 @@ impl Analyzer<'_, '_> {
                 let type_args = try_opt!(parent.type_args.validate_with(self));
                 let span = parent.span;
 
-                self.report_error_for_unresolve_type(span, &parent.expr, type_args.as_ref())
+                self.report_error_for_unresolved_type(span, &parent.expr, type_args.as_ref())
                     .convert_err(|err| match err {
                         ErrorKind::TypeNotFound {
                             name,

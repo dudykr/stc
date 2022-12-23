@@ -48,12 +48,11 @@ mod interface;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsTypeParamDecl) -> VResult<TypeParamDecl> {
-        self.record(decl);
-
         if self.is_builtin {
             Ok(TypeParamDecl {
                 span: decl.span,
                 params: decl.params.validate_with(self)?,
+                tracker: Default::default(),
             })
         } else {
             {
@@ -85,6 +84,7 @@ impl Analyzer<'_, '_> {
                         constraint: None,
                         default: None,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                     .freezed(),
                 );
@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                 map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
             }
 
-            // Resolve contraints
+            // Resolve constraints
             let mut params = self.expand_type_params(&map, params, Default::default())?;
             params.make_clone_cheap();
 
@@ -108,7 +108,11 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
-            Ok(TypeParamDecl { span: decl.span, params })
+            Ok(TypeParamDecl {
+                span: decl.span,
+                params,
+                tracker: Default::default(),
+            })
         }
     }
 }
@@ -116,8 +120,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsTypeParam) -> VResult<TypeParam> {
-        self.record(p);
-
         let ctx = Ctx {
             in_actual_type: true,
             ..self.ctx
@@ -137,6 +139,7 @@ impl Analyzer<'_, '_> {
             constraint,
             default,
             metadata: Default::default(),
+            tracker: Default::default(),
         };
         self.register_type(param.name.clone(), param.clone().into());
 
@@ -148,7 +151,7 @@ impl Analyzer<'_, '_> {
 
                 match types[0].normalize() {
                     Type::Param(p) => {
-                        assert!(p.constraint.is_some(), "should store contraint");
+                        assert!(p.constraint.is_some(), "should store constraint");
                     }
                     _ => {
                         unreachable!()
@@ -165,8 +168,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     #[inline]
     fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<Type> {
-        self.record(ann);
-
         let ctx = Ctx {
             in_actual_type: true,
             ..self.ctx
@@ -179,7 +180,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<Type> {
-        self.record(d);
         let span = d.span;
 
         let alias = {
@@ -216,6 +216,7 @@ impl Analyzer<'_, '_> {
                                         constraint: Default::default(),
                                         default: Default::default(),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     })
                                 })
                                 .collect(),
@@ -246,6 +247,7 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
                 .freezed();
                 Ok(alias)
@@ -277,6 +279,7 @@ impl Analyzer<'_, '_> {
                 extends: d.extends.validate_with(child)?.freezed(),
                 body: d.body.validate_with(child)?,
                 metadata: Default::default(),
+                tracker: Default::default(),
             };
             child.prevent_expansion(&mut ty.body);
             ty.body.make_clone_cheap();
@@ -328,6 +331,7 @@ impl Analyzer<'_, '_> {
                 specified: true,
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 }
@@ -461,6 +465,7 @@ impl Analyzer<'_, '_> {
                                     span: DUMMY_SP,
                                     id: SymbolId::known(key),
                                     metadata: Default::default(),
+                                    tracker: Default::default(),
                                 });
                             }
                         }
@@ -498,6 +503,7 @@ impl Analyzer<'_, '_> {
             span: e.span,
             expr: e.expr.clone(),
             type_args: try_opt!(e.type_args.validate_with(self)).map(Box::new),
+            tracker: Default::default(),
         })
     }
 }
@@ -534,6 +540,7 @@ impl Analyzer<'_, '_> {
                 },
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 }
@@ -545,6 +552,7 @@ impl Analyzer<'_, '_> {
             span: node.span,
             label: node.label.clone(),
             ty: box node.ty.validate_with(self)?,
+            tracker: Default::default(),
         })
     }
 }
@@ -565,6 +573,7 @@ impl Analyzer<'_, '_> {
             true_type,
             false_type,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -582,6 +591,7 @@ impl Analyzer<'_, '_> {
             type_param,
             ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -594,6 +604,7 @@ impl Analyzer<'_, '_> {
             op: ty.op,
             ty: box ty.type_ann.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -605,6 +616,7 @@ impl Analyzer<'_, '_> {
             span: node.span,
             elem_type: box node.elem_type.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -662,6 +674,7 @@ impl Analyzer<'_, '_> {
                 params,
                 ret_ty,
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         })
     }
@@ -683,6 +696,7 @@ impl Analyzer<'_, '_> {
             type_ann: t.type_ann.validate_with(self).map(Box::new)?,
             is_abstract: t.is_abstract,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -697,8 +711,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
-        self.record(t);
-
         let span = t.span;
         let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new).freezed();
         let mut contains_infer = false;
@@ -712,6 +724,7 @@ impl Analyzer<'_, '_> {
                         span: t.span,
                         elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }));
                 }
             }
@@ -760,7 +773,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !reported_type_not_found {
-                self.report_error_for_unresolve_type(t.span, &t.type_name.clone().into(), type_args.as_deref())
+                self.report_error_for_unresolved_type(t.span, &t.type_name.clone().into(), type_args.as_deref())
                     .report(&mut self.storage);
             }
         }
@@ -776,6 +789,7 @@ impl Analyzer<'_, '_> {
                 },
                 ..Default::default()
             },
+            tracker: Default::default(),
         }))
     }
 }
@@ -783,8 +797,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsInferType) -> VResult<InferType> {
-        self.record(t);
-
         Ok(InferType {
             span: t.span,
             type_param: t.type_param.validate_with(self)?,
@@ -795,6 +807,7 @@ impl Analyzer<'_, '_> {
                 },
                 ..Default::default()
             },
+            tracker: Default::default(),
         })
     }
 }
@@ -802,14 +815,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsImportType) -> VResult<ImportType> {
-        self.record(t);
-
         Ok(ImportType {
             span: t.span,
             arg: t.arg.clone(),
             qualifier: t.qualifier.clone(),
             type_params: try_opt!(t.type_args.validate_with(self)).map(Box::new),
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -817,8 +829,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQueryExpr) -> VResult<QueryExpr> {
-        self.record(t);
-
         let span = t.span();
 
         Ok(match t {
@@ -831,12 +841,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsRestType) -> VResult<RestType> {
-        self.record(t);
-
         Ok(RestType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -844,12 +853,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsOptionalType) -> VResult<OptionalType> {
-        self.record(t);
-
         Ok(OptionalType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -857,12 +865,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQuery) -> VResult<QueryType> {
-        self.record(t);
-
         Ok(QueryType {
             span: t.span,
             expr: box t.expr_name.validate_with(self)?,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -870,7 +877,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypePredicate) -> VResult<Predicate> {
-        self.record(t);
         let mut ty = try_opt!(t.type_ann.validate_with(self)).map(Box::new);
         match &mut ty {
             Some(ty) => {
@@ -885,6 +891,7 @@ impl Analyzer<'_, '_> {
             asserts: t.asserts,
             ty,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -892,7 +899,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
-        self.record(t);
         let span = t.span;
 
         let obj_type = box t.obj_type.validate_with(self)?;
@@ -928,6 +934,7 @@ impl Analyzer<'_, '_> {
             obj_type,
             index_type,
             metadata: Default::default(),
+            tracker: Default::default(),
         }))
     }
 }
@@ -942,6 +949,7 @@ impl Analyzer<'_, '_> {
             quasis: t.quasis.clone(),
             types,
             metadata: Default::default(),
+            tracker: Default::default(),
         })
     }
 }
@@ -949,8 +957,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
-        self.record(ty);
-
         let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
 
         let is_topmost_type = !self.ctx.is_not_topmost_type;
@@ -963,6 +969,7 @@ impl Analyzer<'_, '_> {
                 RTsType::TsThisType(this) => Type::This(ThisType {
                     span: this.span,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 }),
                 RTsType::TsLitType(ty) => {
                     if let RTsLit::Tpl(t) = &ty.lit {
@@ -979,6 +986,7 @@ impl Analyzer<'_, '_> {
                             },
                             ..Default::default()
                         },
+                        tracker: Default::default(),
                     })
                 }
                 RTsType::TsKeywordType(ty) => {
@@ -1000,6 +1008,7 @@ impl Analyzer<'_, '_> {
                         span: ty.span,
                         kind: ty.kind,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
@@ -1231,6 +1240,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 ty: box elem_ty,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                         }
 
@@ -1242,10 +1252,12 @@ impl Analyzer<'_, '_> {
                         // TODO?
                         label: None,
                         ty: box ty,
+                        tracker: Default::default(),
                     }
                 })
                 .collect(),
             metadata: Default::default(),
+            tracker: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
@@ -1328,6 +1340,7 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             });
         }

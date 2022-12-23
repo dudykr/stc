@@ -21,7 +21,7 @@ use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, panic_ctx, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
-use swc_common::{FileName, SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
+use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 
 use self::{
@@ -304,19 +304,6 @@ struct PerModuleData {
     exports_spans: FxHashMap<(JsWord, IdCtx), Vec<Span>>,
 }
 
-/// TODO
-const NO_DUP: bool = false;
-
-impl Analyzer<'_, '_> {
-    /// Mark node as visited. This method panics if Analyzer had visited node.
-    fn record<N>(&mut self, node: &N)
-    where
-        N: Debug + Spanned,
-    {
-        if cfg!(debug_assertions) && NO_DUP {}
-    }
-}
-
 // TODO(kdy1):
 //#[validator] #[validator]impl Analyzer<'_, '_> {
 //    type Output = ValidationResult<ty::Module>;
@@ -335,6 +322,7 @@ fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> t
         name,
         exports: box exports,
         metadata: Default::default(),
+        tracker: Default::default(),
     }
 }
 
@@ -855,8 +843,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsImportEqualsDecl) {
-        self.record(node);
-
         let ctxt = self.ctx.module_id;
 
         let ctx = Ctx {
@@ -979,6 +965,7 @@ impl Analyzer<'_, '_> {
                     span,
                     exports: box exports,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 };
                 let ty = Type::Namespace(ty).freezed();
 
@@ -1038,6 +1025,7 @@ impl Analyzer<'_, '_> {
                         span,
                         exports: box exports,
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     };
                     let ty = Type::Module(ty).freezed();
                     return Ok(Some(ty));

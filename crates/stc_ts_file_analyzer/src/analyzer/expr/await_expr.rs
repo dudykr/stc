@@ -50,6 +50,7 @@ impl Analyzer<'_, '_> {
                         params: vec![item.clone()],
                     }),
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 })
             });
 

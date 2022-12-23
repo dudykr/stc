@@ -36,6 +36,7 @@ impl Fold<Type> for TupleToArray {
                         common: tuple.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 })
             }
 

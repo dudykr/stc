@@ -57,7 +57,7 @@ pub(super) struct InferData {
     errored: FxHashSet<Id>,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
-    /// inferring type of funcation parametrs. We cannot know the type before
+    /// inferring type of function parameters. We cannot know the type before
     /// it. So we store the default type while it.
     ///
     /// ```ts
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // We allocate a new vertor only if required.
+        // We allocate a new vector only if required.
         let mut actual_args;
         let args = if args.iter().any(|arg| arg.spread.is_some()) {
             actual_args = vec![];
@@ -166,12 +166,14 @@ impl Analyzer<'_, '_> {
                                         span: DUMMY_SP,
                                         label: None,
                                         ty,
+                                        tracker: Default::default(),
                                     })
                                     .collect(),
                                 metadata: TupleMetadata {
                                     common: p.ty.metadata(),
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }),
                             opts,
                         )?;
@@ -642,6 +644,7 @@ impl Analyzer<'_, '_> {
                                     common: arg.metadata(),
                                     ..Default::default()
                                 },
+                                tracker: Default::default(),
                             }));
                         }
                     }
@@ -861,6 +864,7 @@ impl Analyzer<'_, '_> {
                                 span: arg_iat.span,
                                 members: vec![],
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             };
                             for member in &param.members {
                                 match member {
@@ -1119,6 +1123,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
                         metadata: Default::default(),
+                        tracker: Default::default(),
                     }),
                     opts,
                 );
@@ -1211,6 +1216,7 @@ impl Analyzer<'_, '_> {
                                 types,
                                 span,
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             })
                             .freezed()]),
                         );
@@ -1438,6 +1444,7 @@ impl Analyzer<'_, '_> {
                                             common: param.metadata.common,
                                             ..Default::default()
                                         },
+                                        tracker: Default::default(),
                                     })),
                                     Key::Num(n) => {
                                         key_types.push(Type::Lit(LitType {
@@ -1447,6 +1454,7 @@ impl Analyzer<'_, '_> {
                                                 common: param.metadata.common,
                                                 ..Default::default()
                                             },
+                                            tracker: Default::default(),
                                         }));
                                     }
                                     _ => {
@@ -1526,6 +1534,7 @@ impl Analyzer<'_, '_> {
                                             .clone()
                                             .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
                                         metadata: Default::default(),
+                                        tracker: Default::default(),
                                     });
                                     arg_prop_ty.make_clone_cheap();
                                     let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
@@ -1581,6 +1590,7 @@ impl Analyzer<'_, '_> {
                                 span: arg.span,
                                 members: new_members,
                                 metadata: arg.metadata,
+                                tracker: Default::default(),
                             })),
                             opts,
                         )?;
@@ -1592,6 +1602,7 @@ impl Analyzer<'_, '_> {
                                 common: param.metadata.common,
                                 ..Default::default()
                             },
+                            tracker: Default::default(),
                         });
                         prevent_generalize(&mut keys);
 
@@ -1640,6 +1651,7 @@ impl Analyzer<'_, '_> {
                                     )
                                 }),
                                 metadata: arg.metadata,
+                                tracker: Default::default(),
                             })),
                             opts,
                         )?;
@@ -1682,6 +1694,7 @@ impl Analyzer<'_, '_> {
                                         common: param.metadata.common,
                                         ..Default::default()
                                     },
+                                    tracker: Default::default(),
                                 })),
                                 _ => None,
                             }, // TODO(kdy1): Handle method element
@@ -1809,6 +1822,7 @@ impl Analyzer<'_, '_> {
                                     span: arg.span,
                                     members: type_elements.remove(&name).unwrap_or_default(),
                                     metadata: arg.metadata,
+                                    tracker: Default::default(),
                                 });
 
                                 self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
@@ -1886,6 +1900,7 @@ impl Analyzer<'_, '_> {
                                                 span: arg.span,
                                                 members,
                                                 metadata: arg.metadata,
+                                                tracker: Default::default(),
                                             });
 
                                             self.insert_inferred_raw(span, inferred, name, Cow::Owned(list_ty), opts)?;
@@ -2022,7 +2037,7 @@ impl Analyzer<'_, '_> {
         if params.len() > args.len() {
             for param in &params[args.len()..] {
                 if let Type::Param(param) = &*param.ty {
-                    // TOOD: Union
+                    // TODO: Union
                     inferred.defaults.insert(
                         param.name.clone(),
                         Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
@@ -2146,6 +2161,7 @@ impl Analyzer<'_, '_> {
         let decl = Some(TypeParamDecl {
             span: DUMMY_SP,
             params: usage_visitor.params,
+            tracker: Default::default(),
         });
 
         if let Some(ref mut f) = ty.as_fn_type_mut() {
@@ -2210,6 +2226,7 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
                         common: p.metadata.common,
                         ..Default::default()
                     },
+                    tracker: Default::default(),
                 });
             }
             _ => {}
@@ -2228,7 +2245,7 @@ pub(crate) fn calc_true_plus_minus_in_param(param: Option<TruePlusMinus>, previo
     }
 }
 
-/// Replaceds type parameters with name `from` to type `to`.
+/// Replaces type parameters with name `from` to type `to`.
 struct MappedKeyReplacer<'a> {
     /// The name of type parameter
     from: &'a Id,
@@ -2314,20 +2331,21 @@ impl Fold<Type> for MappedReverser {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::TypeLit(TypeLit { span, members, metadata })
-                if members.len() == 1
-                    && members.iter().any(|member| match member {
-                        TypeElement::Property(p) => {
-                            if let Some(ty) = &p.type_ann {
-                                ty.is_mapped()
-                            } else {
-                                false
-                            }
+            Type::TypeLit(TypeLit {
+                span, members, metadata, ..
+            }) if members.len() == 1
+                && members.iter().any(|member| match member {
+                    TypeElement::Property(p) => {
+                        if let Some(ty) = &p.type_ann {
+                            ty.is_mapped()
+                        } else {
+                            false
                         }
-                        TypeElement::Method(_) => unimplemented!(),
-                        TypeElement::Index(_) => unimplemented!(),
-                        _ => false,
-                    }) =>
+                    }
+                    TypeElement::Method(_) => unimplemented!(),
+                    TypeElement::Index(_) => unimplemented!(),
+                    _ => false,
+                }) =>
             {
                 self.did_work = true;
                 let member = members.into_iter().next().unwrap();
@@ -2339,6 +2357,7 @@ impl Fold<Type> for MappedReverser {
                             span,
                             members: vec![TypeElement::Property(PropertySignature { type_ann: mapped.ty, ..p })],
                             metadata,
+                            tracker: Default::default(),
                         });
 
                         return Type::Mapped(Mapped { ty: Some(ty), ..mapped });
@@ -2423,6 +2442,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
                     span: DUMMY_SP,
                     ty,
                     metadata: Default::default(),
+                    tracker: Default::default(),
                 });
             }
         },

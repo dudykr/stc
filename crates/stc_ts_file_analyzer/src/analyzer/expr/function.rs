@@ -19,8 +19,6 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RArrowExpr, type_ann: Option<&Type>) -> VResult<Function> {
-        self.record(f);
-
         let marks = self.marks();
 
         let type_ann = self.expand_type_ann(f.span, type_ann)?;
@@ -63,6 +61,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                             def: box def,
+                            tracker: Default::default(),
                         }),
                         _ => ty,
                     })
@@ -126,6 +125,7 @@ impl Analyzer<'_, '_> {
                 ret_ty: box declared_ret_ty
                     .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
                 metadata: Default::default(),
+                tracker: Default::default(),
             })
         })
     }
@@ -164,7 +164,9 @@ impl Analyzer<'_, '_> {
                                 span: param.span,
                                 ty: param.ty.clone(),
                                 metadata: Default::default(),
+                                tracker: Default::default(),
                             }),
+                            tracker: Default::default(),
                         });
                     }
                     _ => {
@@ -172,6 +174,7 @@ impl Analyzer<'_, '_> {
                             span: param.span,
                             label: None,
                             ty: param.ty.clone(),
+                            tracker: Default::default(),
                         });
                     }
                 }
@@ -181,6 +184,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elems: params_tuple_els,
                 metadata: Default::default(),
+                tracker: Default::default(),
             });
 
             for (idx, param) in params.enumerate() {
