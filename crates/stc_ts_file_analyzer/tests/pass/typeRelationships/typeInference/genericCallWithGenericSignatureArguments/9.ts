@@ -2,5 +2,5 @@
 // the corresponding inferred type arguments to become fixed and no further candidate inferences are made for them.
 
 declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T);
-var r4 = foo(1, (x) => '', (x) => ''); // any => any
+var r4 = foo(1, (x) => '', (x) => '');
 export { }
