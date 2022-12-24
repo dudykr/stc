@@ -1831,14 +1831,7 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            let ty = inferred
-                                                .type_params
-                                                .remove(name)
-                                                .map(|ty| match ty {
-                                                    InferredType::Union(v) => v,
-                                                    InferredType::Other(v) => Type::union(v).freezed(),
-                                                })
-                                                .map(Box::new);
+                                            let ty = inferred.type_params.remove(name).map(|ty| Type::new_union(span, ty)).map(Box::new);
 
                                             type_elements
                                                 .entry(name.clone())
@@ -2094,7 +2087,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn rename_inferred(&mut self, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
+    fn rename_inferred(&mut self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
         info!("rename_inferred");
         struct Renamer<'a> {
             fixed: &'a FxHashMap<Id, Type>,
@@ -2128,7 +2121,7 @@ impl Analyzer<'_, '_> {
                 return;
             }
 
-            let ty = Type::union(ty.clone()).freezed();
+            let ty = Type::new_union(span, ty.clone()).freezed();
             fixed.insert(param_name.clone(), ty);
         });
 
