@@ -234,7 +234,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = self
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
-
+                                ty.make_clone_cheap();
                                 let mut ty = ty.normalize().clone();
 
                                 if let Some(u) = ty.as_union_type_mut() {
@@ -549,6 +549,16 @@ impl Analyzer<'_, '_> {
                             }
 
                             let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&prop_ty)));
+
+                            if let Type::IndexedAccessType(prop_ty) = prop_ty.normalize() {
+                                match prop_ty.index_type.normalize() {
+                                    // if you want remove this, first you should overflow narrow any
+                                    Type::Param(..) => {}
+                                    _ => {
+                                        panic!("{:?}", prop_ty);
+                                    }
+                                }
+                            }
 
                             let ty = self
                                 .normalize(span, Cow::Owned(prop_ty), opts)
@@ -1492,6 +1502,11 @@ impl Analyzer<'_, '_> {
     }
 
     fn merge_type_elements(&mut self, span: Span, mut els: Vec<TypeElement>) -> VResult<Vec<TypeElement>> {
+        let _stack = match stack::track(span) {
+            Ok(v) => v,
+            Err(_) => return Ok(els),
+        };
+
         run(|| {
             // As merging is not common, we optimize it by creating a new vector only if
             // there's a conflict
