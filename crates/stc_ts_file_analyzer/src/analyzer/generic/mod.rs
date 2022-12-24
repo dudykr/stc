@@ -42,17 +42,10 @@ mod inference;
 mod tests;
 mod type_form;
 
-#[derive(Debug, Clone)]
-enum InferredType {
-    // AnyOrUnknown(KeywordType),
-    Union(Type),
-    Other(Vec<Type>),
-}
-
 #[derive(Debug, Default)]
 pub(super) struct InferData {
     /// Inferred type parameters
-    type_params: FxHashMap<Id, InferredType>,
+    type_params: FxHashMap<Id, Type>,
 
     errored: FxHashSet<Id>,
 

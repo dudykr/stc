@@ -22,7 +22,7 @@ use tracing::{error, info};
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        generic::{type_form::OldTypeForm, InferData, InferredType},
+        generic::{type_form::OldTypeForm, InferData},
         Analyzer,
     },
     ty::TypeExt,
