@@ -711,14 +711,11 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn finalize_inference(&self, inferred: InferData) -> InferTypeResult {
+    pub(super) fn finalize_inference(&self, span: Span, inferred: InferData) -> InferTypeResult {
         let mut map = HashMap::default();
 
-        for (k, v) in inferred.type_params {
-            let mut ty = match v {
-                InferredType::Union(ty) => ty,
-                InferredType::Other(types) => Type::union(types),
-            };
+        for (k, types) in inferred.type_params {
+            let mut ty = Type::new_union(span, types);
 
             self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
 
