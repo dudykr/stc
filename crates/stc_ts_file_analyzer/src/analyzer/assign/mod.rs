@@ -1433,7 +1433,6 @@ impl Analyzer<'_, '_> {
             Type::Param(TypeParam {
                 ref name, ref constraint, ..
             }) => {
-                //
                 if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
                     if opts.allow_assignment_to_param {
                         return Ok(());
@@ -1665,6 +1664,25 @@ impl Analyzer<'_, '_> {
                 if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
                     if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                         return res.context("tried to assign using `assign_to_union`");
+                    }
+                }
+
+                if let Type::Intrinsic(Intrinsic { type_args, .. }) = rhs {
+                    if let Some(res) = type_args.params.iter().find_map(|param| {
+                        if let Type::Param(TypeParam {
+                            constraint: Some(constraint),
+                            ..
+                        }) = param
+                        {
+                            if let Type::Union(..) = constraint.normalize() {
+                                if let Some(res) = self.assign_to_union(data, to, constraint, opts) {
+                                    return Some(res.context("tried to assign intrinsic union using `assign_to_union`"));
+                                }
+                            }
+                        }
+                        None
+                    }) {
+                        return res;
                     }
                 }
 

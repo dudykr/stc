@@ -1,0 +1,9 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/typeAliases/intrinsicTypes/1.ts:2:5]
+ 2 | let s: "FOO" | "BAR" = x;
+   :                        ^
+   `----
+
+Error: 
+  > intrinsic

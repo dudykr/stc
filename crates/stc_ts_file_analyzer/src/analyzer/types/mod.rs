@@ -1702,6 +1702,70 @@ impl Analyzer<'_, '_> {
                 metadata,
                 ..
             }) => {
+                let resolved_constraint = match constraint.normalize() {
+                    Type::Lit(LitType {
+                        span: constraint_span,
+                        lit: RTsLit::Str(s),
+                        metadata,
+                        tracker,
+                    }) => self
+                        .expand_intrinsic_types(
+                            span,
+                            &Intrinsic {
+                                span: ty.span,
+                                kind: ty.kind.clone(),
+                                type_args: TypeParamInstantiation {
+                                    span: *param_span,
+                                    params: vec![Type::Lit(LitType {
+                                        span: *constraint_span,
+                                        lit: RTsLit::Str(s.clone()),
+                                        metadata: *metadata,
+                                        tracker: *tracker,
+                                    })],
+                                },
+                                metadata: ty.metadata,
+                            },
+                        )
+                        .ok()
+                        .map(|value| value.freezed())
+                        .map(|value| box value),
+                    Type::Union(Union {
+                        types,
+                        span: union_span,
+                        metadata,
+                        tracker,
+                    }) => Some(
+                        box Type::Union(Union {
+                            types: types
+                                .iter()
+                                .map(|inner_ty| {
+                                    self.expand_intrinsic_types(
+                                        span,
+                                        &Intrinsic {
+                                            span: ty.span(),
+                                            kind: ty.kind.clone(),
+                                            type_args: TypeParamInstantiation {
+                                                span: inner_ty.span(),
+                                                params: vec![inner_ty.clone()],
+                                            },
+                                            metadata: ty.metadata,
+                                        },
+                                    )
+                                })
+                                .map(|val| val.ok())
+                                .filter_map(|val| val.freezed())
+                                .collect(),
+                            span: *union_span,
+                            metadata: *metadata,
+                            tracker: *tracker,
+                        })
+                        .freezed(),
+                    ),
+                    _ => None,
+                };
+
+                let constraint = resolved_constraint.as_ref().unwrap_or(constraint);
+
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
                     .context("failed to expand intrinsics in type parameters")?
