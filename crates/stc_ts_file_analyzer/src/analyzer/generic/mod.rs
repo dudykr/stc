@@ -45,7 +45,7 @@ mod type_form;
 #[derive(Debug, Default)]
 pub(super) struct InferData {
     /// Inferred type parameters
-    type_params: FxHashMap<Id, Vec<Type>>,
+    type_params: FxHashMap<Id, Type>,
 
     errored: FxHashSet<Id>,
 

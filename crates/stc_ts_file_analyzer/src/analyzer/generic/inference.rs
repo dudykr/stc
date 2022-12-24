@@ -219,6 +219,22 @@ impl Analyzer<'_, '_> {
 
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
+                if self
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        &ty,
+                        &Type::new_union_without_dedup(span, e.get().clone()),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                    )
+                    .is_ok()
+                {
+                    inferred.type_params.insert(name, ty.into_owned());
+                    return Ok(());
+                }
+
                 if let InferredType::Union(_) = e.get() {
                     return Ok(());
                 }
