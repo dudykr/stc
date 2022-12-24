@@ -790,16 +790,9 @@ impl Analyzer<'_, '_> {
                 _ => continue,
             }
 
-            if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
-                match ty {
-                    InferredType::Union(ty) => {
-                        prevent_generalize(ty);
-                    }
-                    InferredType::Other(types) => {
-                        for ty in types {
-                            prevent_generalize(ty);
-                        }
-                    }
+            if let Some(types) = inferred.type_params.get_mut(&type_param.name) {
+                for ty in types {
+                    prevent_generalize(ty);
                 }
             }
         }
