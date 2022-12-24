@@ -2128,21 +2128,13 @@ impl Analyzer<'_, '_> {
                 return;
             }
 
-            let ty = match ty.clone() {
-                InferredType::Union(v) => v,
-                InferredType::Other(types) => Type::union(types).freezed(),
-            };
+            let ty = Type::union(ty.clone()).freezed();
             fixed.insert(param_name.clone(), ty);
         });
 
         let mut v = Renamer { fixed: &fixed };
-        inferred.type_params.iter_mut().for_each(|(_, ty)| match ty {
-            InferredType::Union(ty) => {
-                ty.visit_mut_with(&mut v);
-            }
-            InferredType::Other(ty) => {
-                ty.visit_mut_with(&mut v);
-            }
+        inferred.type_params.iter_mut().for_each(|(_, ty)| {
+            ty.visit_mut_with(&mut v);
         });
 
         Ok(())
