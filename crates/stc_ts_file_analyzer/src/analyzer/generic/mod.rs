@@ -844,7 +844,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if let Some(arg_type_params) = &a.type_params {
-                        self.rename_inferred(inferred, arg_type_params)?;
+                        self.rename_inferred(span, inferred, arg_type_params)?;
                     }
                     return Ok(());
                 }
@@ -1030,7 +1030,7 @@ impl Analyzer<'_, '_> {
             Type::Alias(param) => {
                 self.infer_type(span, inferred, &param.ty, arg, opts)?;
                 if let Some(type_params) = &param.type_params {
-                    self.rename_inferred(inferred, type_params)?;
+                    self.rename_inferred(span, inferred, type_params)?;
                 }
                 return Ok(());
             }
@@ -1220,13 +1220,7 @@ impl Analyzer<'_, '_> {
                         inferred.type_params.insert(name, types.into_iter().next().unwrap());
                     } else {
                         // TODO(kdy1): Check inference logic of union mixed with intersection
-                        let types = types
-                            .into_iter()
-                            .map(|ty| match ty {
-                                InferredType::Union(v) => v,
-                                InferredType::Other(v) => Type::new_union_without_dedup(span, v),
-                            })
-                            .collect();
+                        let types = types.into_iter().map(|types| Type::new_union_without_dedup(span, types)).collect();
 
                         inferred.type_params.insert(
                             name,
@@ -1655,7 +1649,7 @@ impl Analyzer<'_, '_> {
 
                             let mut data = InferData::default();
                             self.infer_type(span, &mut data, param_ty, &arg.elem_type, opts)?;
-                            let mut map = self.finalize_inference(data);
+                            let mut map = self.finalize_inference(span, data);
                             let mut inferred_ty = map.types.remove(&name);
 
                             self.mapped_type_param_name = old;
