@@ -594,10 +594,7 @@ impl Analyzer<'_, '_> {
                             skip_identical_while_inferencing: true,
                             ..self.ctx
                         };
-                        let prev = match prev {
-                            InferredType::Union(prev) => prev,
-                            InferredType::Other(prev) => Type::new_union_without_dedup(span, prev).freezed(),
-                        };
+                        let prev = Type::new_union_without_dedup(span, prev).freezed();
 
                         self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
                         self.with_ctx(ctx).infer_type(span, inferred, arg, &prev, opts)?;
@@ -609,10 +606,7 @@ impl Analyzer<'_, '_> {
                 if constraint.is_some() && is_literals(constraint.as_ref().unwrap()) {
                     info!("infer from literal constraint: {} = {:?}", name, constraint);
                     if let Some(orig) = inferred.type_params.get(name) {
-                        let orig = match orig.clone() {
-                            InferredType::Union(ty) => ty,
-                            InferredType::Other(types) => Type::union(types),
-                        };
+                        let orig = Type::new_union(span, orig.clone());
 
                         if !orig.eq_ignore_span(constraint.as_ref().unwrap()) {
                             print_backtrace();
