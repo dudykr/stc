@@ -222,8 +222,8 @@ impl Analyzer<'_, '_> {
                 if self
                     .assign_with_opts(
                         &mut Default::default(),
-                        &ty,
-                        &Type::new_union_without_dedup(span, e.get().clone()),
+                        &ty.clone().into_owned().generalize_lit(),
+                        &e.get().clone().generalize_lit(),
                         AssignOpts {
                             span,
                             ..Default::default()
@@ -231,57 +231,17 @@ impl Analyzer<'_, '_> {
                     )
                     .is_ok()
                 {
-                    inferred.type_params.insert(name, ty.into_owned());
+                    *e.get_mut() = ty.freezed().into_owned().freezed();
                     return Ok(());
-                }
-
-                if let InferredType::Union(_) = e.get() {
-                    return Ok(());
-                }
-
-                if ty.is_union_type() {
-                    *e.get_mut() = InferredType::Union(ty.into_owned().freezed());
-                    return Ok(());
-                }
-
-                match e.get_mut() {
-                    InferredType::Union(e) => {
-                        unreachable!()
-                    }
-                    InferredType::Other(e) => {
-                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
-                            return Ok(());
-                        }
-
-                        if !e.is_empty() && !opts.append_type_as_union {
-                            inferred.errored.insert(name);
-                            return Ok(());
-                        }
-
-                        for prev in e.iter_mut() {
-                            if self
-                                .assign_with_opts(
-                                    &mut Default::default(),
-                                    &ty,
-                                    prev,
-                                    AssignOpts {
-                                        span,
-                                        ..Default::default()
-                                    },
-                                )
-                                .is_ok()
-                            {
-                                *prev = ty.into_owned().generalize_lit();
-                                return Ok(());
-                            }
-                        }
-
-                        e.push(ty.into_owned().generalize_lit());
+                } else {
+                    if !opts.append_type_as_union {
+                        inferred.errored.insert(name);
+                        return Ok(());
                     }
                 }
             }
             Entry::Vacant(e) => {
-                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit()]));
+                e.insert(ty.freezed().into_owned().freezed());
             }
         }
 
@@ -730,9 +690,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn finalize_inference(&self, span: Span, inferred: InferData) -> InferTypeResult {
         let mut map = HashMap::default();
 
-        for (k, types) in inferred.type_params {
-            let mut ty = Type::new_union(span, types);
-
+        for (k, mut ty) in inferred.type_params {
             self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
 
             ty.make_clone_cheap();
@@ -803,10 +761,8 @@ impl Analyzer<'_, '_> {
                 _ => continue,
             }
 
-            if let Some(types) = inferred.type_params.get_mut(&type_param.name) {
-                for ty in types {
-                    prevent_generalize(ty);
-                }
+            if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
+                prevent_generalize(ty);
             }
         }
     }

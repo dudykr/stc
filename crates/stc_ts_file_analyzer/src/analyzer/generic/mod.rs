@@ -90,9 +90,7 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
-                inferred
-                    .type_params
-                    .insert(type_param.name.clone(), InferredType::Other(vec![param.clone()]));
+                inferred.type_params.insert(type_param.name.clone(), param.clone());
             }
         }
 
@@ -594,7 +592,6 @@ impl Analyzer<'_, '_> {
                             skip_identical_while_inferencing: true,
                             ..self.ctx
                         };
-                        let prev = Type::new_union_without_dedup(span, prev).freezed();
 
                         self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
                         self.with_ctx(ctx).infer_type(span, inferred, arg, &prev, opts)?;
@@ -606,8 +603,6 @@ impl Analyzer<'_, '_> {
                 if constraint.is_some() && is_literals(constraint.as_ref().unwrap()) {
                     info!("infer from literal constraint: {} = {:?}", name, constraint);
                     if let Some(orig) = inferred.type_params.get(name) {
-                        let orig = Type::new_union(span, orig.clone());
-
                         if !orig.eq_ignore_span(constraint.as_ref().unwrap()) {
                             print_backtrace();
                             unreachable!(
@@ -675,74 +670,63 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
-                        match e.get_mut() {
-                            InferredType::Union(e) => {
-                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(e));
-                                return Ok(());
-                            }
-                            InferredType::Other(e) => {
-                                // If we inferred T as `number`, we don't need to add `1`.
-                                if let Some(prev) = e.iter().find(|prev| {
-                                    self.assign_with_opts(
-                                        &mut Default::default(),
-                                        prev,
-                                        arg,
-                                        AssignOpts {
-                                            span,
-                                            ..Default::default()
-                                        },
-                                    )
-                                    .is_ok()
-                                }) {
-                                    debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(prev));
+                        // If we inferred T as `number`, we don't need to add `1`.
+                        if let Some(prev) = e.get().iter_union().find(|prev| {
+                            self.assign_with_opts(
+                                &mut Default::default(),
+                                prev,
+                                arg,
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                            )
+                            .is_ok()
+                        }) {
+                            debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(prev));
 
-                                    return Ok(());
-                                }
+                            return Ok(());
+                        }
 
-                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) {
-                                    debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
+                        if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
+                            debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
 
-                                    inferred.errored.insert(name.clone());
-                                    return Ok(());
-                                }
+                            inferred.errored.insert(name.clone());
+                            return Ok(());
+                        }
 
-                                for prev in e.iter_mut() {
-                                    if self
-                                        .assign_with_opts(
-                                            &mut Default::default(),
-                                            arg,
-                                            prev,
-                                            AssignOpts {
-                                                span,
-                                                ..Default::default()
-                                            },
-                                        )
-                                        .is_ok()
-                                    {
-                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(arg));
+                        if self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                &arg.clone().generalize_lit(),
+                                &e.get().clone().generalize_lit(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                            )
+                            .is_ok()
+                        {
+                            debug!("Overriding `{}` with {}", name, dump_type_as_string(arg));
 
-                                        *prev = arg.clone().generalize_lit();
-                                        return Ok(());
-                                    }
-                                }
+                            *e.get_mut() = arg.clone();
+                            return Ok(());
+                        }
 
-                                let param_ty = Type::union(e.clone()).freezed();
-                                e.push(arg.clone());
+                        let param_ty = Type::new_union(span, vec![e.get().clone(), arg.clone()]).freezed();
 
-                                if let Type::Param(param) = param_ty.normalize() {
-                                    self.insert_inferred(span, inferred, param, Cow::Borrowed(arg), opts)?;
-                                }
+                        if let Type::Param(param) = param_ty.normalize() {
+                            self.insert_inferred(span, inferred, param, Cow::Borrowed(arg), opts)?;
+                        }
 
-                                if let Type::Param(param) = arg.normalize() {
-                                    self.insert_inferred(span, inferred, param, Cow::Owned(param_ty), opts)?;
-                                }
-                            }
+                        if let Type::Param(param) = arg.normalize() {
+                            self.insert_inferred(span, inferred, param, Cow::Owned(param_ty), opts)?;
                         }
                     }
                     Entry::Vacant(e) => {
                         let arg = arg.clone();
 
-                        e.insert(InferredType::Other(vec![arg]));
+                        e.insert(arg);
                     }
                 }
 
@@ -1220,17 +1204,16 @@ impl Analyzer<'_, '_> {
                         inferred.type_params.insert(name, types.into_iter().next().unwrap());
                     } else {
                         // TODO(kdy1): Check inference logic of union mixed with intersection
-                        let types = types.into_iter().map(|types| Type::new_union_without_dedup(span, types)).collect();
 
                         inferred.type_params.insert(
                             name,
-                            InferredType::Other(vec![Type::Intersection(Intersection {
+                            Type::Intersection(Intersection {
                                 types,
                                 span,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
-                            .freezed()]),
+                            .freezed(),
                         );
                     }
                 }
@@ -1509,8 +1492,7 @@ impl Analyzer<'_, '_> {
 
                                             let mut data = InferData::default();
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
-                                            let inferred_ty =
-                                                data.type_params.remove(&name).map(|types| Type::new_union(span, types).freezed());
+                                            let inferred_ty = data.type_params.remove(&name).freezed();
 
                                             self.mapped_type_param_name = old;
 
@@ -1817,7 +1799,7 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            let ty = inferred.type_params.remove(name).map(|ty| Type::new_union(span, ty)).map(Box::new);
+                                            let ty = inferred.type_params.remove(name).map(Box::new);
 
                                             type_elements
                                                 .entry(name.clone())
@@ -2107,8 +2089,7 @@ impl Analyzer<'_, '_> {
                 return;
             }
 
-            let ty = Type::new_union(span, ty.clone()).freezed();
-            fixed.insert(param_name.clone(), ty);
+            fixed.insert(param_name.clone(), ty.clone());
         });
 
         let mut v = Renamer { fixed: &fixed };
@@ -2466,8 +2447,8 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
     }
 }
 
-fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
-    for p in prev {
+fn is_ok_to_append(prev: &Type, arg: &Type) -> bool {
+    for p in prev.iter_union() {
         if p.is_num_lit() && arg.is_num_lit() {
             return true;
         }
