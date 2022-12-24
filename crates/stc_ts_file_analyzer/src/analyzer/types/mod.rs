@@ -1764,6 +1764,8 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 };
 
+                let constraint = resolved_constraint.as_ref().unwrap_or(constraint);
+
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
                     .context("failed to expand intrinsics in type parameters")?
@@ -1775,7 +1777,6 @@ impl Analyzer<'_, '_> {
                     span: *param_span,
                     name: name.clone(),
                     constraint: Some(box constraint),
-                    resolved_constraint,
                     default: default.clone(),
                     metadata: *metadata,
                     tracker: Default::default(),

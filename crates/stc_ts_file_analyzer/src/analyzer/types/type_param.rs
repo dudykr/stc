@@ -27,7 +27,6 @@ impl Analyzer<'_, '_> {
                 span: DUMMY_SP,
                 name,
                 constraint: None,
-                resolved_constraint: None,
                 default: None,
                 metadata: Default::default(),
                 tracker: Default::default(),
