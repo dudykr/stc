@@ -719,7 +719,9 @@ impl Analyzer<'_, '_> {
                         if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
                             debug!("Cannot append");
 
-                            inferred.errored.insert(name.clone());
+                            if opts.use_error {
+                                inferred.errored.insert(name.clone());
+                            }
                             return Ok(());
                         }
 

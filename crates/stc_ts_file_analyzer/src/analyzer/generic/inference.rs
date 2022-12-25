@@ -52,6 +52,9 @@ pub(crate) struct InferTypeOpts {
     /// This is `true` for array
     pub append_type_as_union: bool,
 
+    /// If true, inference result can be `unknown`.
+    pub use_error: bool,
+
     pub skip_union: bool,
 
     /// If we are inferring a type using another type, we should
