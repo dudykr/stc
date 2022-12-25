@@ -670,6 +670,15 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
+                        let _tracing = span!(
+                            Level::ERROR,
+                            "infer_type",
+                            name = name.as_str(),
+                            new = dump_type_as_string(arg),
+                            prev = dump_type_as_string(e.get())
+                        )
+                        .entered();
+
                         // If we inferred T as `number`, we don't need to add `1`.
                         if self
                             .assign_with_opts(
