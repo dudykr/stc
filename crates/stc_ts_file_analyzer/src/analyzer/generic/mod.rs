@@ -674,8 +674,8 @@ impl Analyzer<'_, '_> {
                         if let Some(prev) = e.get().iter_union().find(|prev| {
                             self.assign_with_opts(
                                 &mut Default::default(),
-                                prev,
-                                arg,
+                                &(**prev).clone().generalize_lit(),
+                                &arg.clone().generalize_lit(),
                                 AssignOpts {
                                     span,
                                     ..Default::default()
