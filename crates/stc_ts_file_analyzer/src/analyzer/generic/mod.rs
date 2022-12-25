@@ -670,24 +670,6 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
-                        // If we inferred T as `number`, we don't need to add `1`.
-                        if let Some(prev) = e.get().iter_union().find(|prev| {
-                            self.assign_with_opts(
-                                &mut Default::default(),
-                                &(**prev).clone().generalize_lit(),
-                                &arg.clone().generalize_lit(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
-                            )
-                            .is_ok()
-                        }) {
-                            debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(prev));
-
-                            return Ok(());
-                        }
-
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
@@ -703,6 +685,24 @@ impl Analyzer<'_, '_> {
                             debug!("Overriding `{}` with {}", name, dump_type_as_string(arg));
 
                             *e.get_mut() = arg.clone();
+                            return Ok(());
+                        }
+
+                        // If we inferred T as `number`, we don't need to add `1`.
+                        if self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                &e.get().clone().generalize_lit(),
+                                &arg.clone().generalize_lit(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                            )
+                            .is_ok()
+                        {
+                            debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(e.get()));
+
                             return Ok(());
                         }
 
