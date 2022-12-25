@@ -372,8 +372,6 @@ impl Analyzer<'_, '_> {
         self.cur_facts.assert_clone_cheap();
 
         if !self.is_builtin {
-            dbg!(&ty);
-            dbg!(dump_type_as_string(&ty));
             debug_assert_ne!(
                 ty.span(),
                 DUMMY_SP,
@@ -864,7 +862,7 @@ impl Analyzer<'_, '_> {
                                 let span = if type_ann.span().is_dummy() { span } else { type_ann.span() };
 
                                 let mut typ = self
-                                    .normalize(Some(span), Cow::Borrowed(&*type_ann), Default::default())
+                                    .normalize(Some(span), Cow::Borrowed(type_ann), Default::default())
                                     .context("tried to normalize an access_property")?
                                     .into_owned();
                                 typ = if let Type::TypeLit(TypeLit {
@@ -971,6 +969,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        matching_elements.make_clone_cheap();
         if matching_elements.len() == 1 {
             return Ok(matching_elements.pop());
         }
