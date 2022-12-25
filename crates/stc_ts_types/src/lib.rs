@@ -1379,29 +1379,6 @@ impl Type {
             0 => Type::never(span, Default::default()),
             1 => types.into_iter().next().unwrap(),
             _ => {
-                if let Some(ty) = types
-                    .iter()
-                    .flat_map(|ty| ty.iter_union())
-                    .find(|ty| ty.is_any() || ty.is_unknown())
-                {
-                    if ty.is_unknown() {
-                        return Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUnknownKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                    }
-                    if ty.is_any() {
-                        return Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                    }
-                }
-
                 if types.iter().any(|t| t.is_union_type()) {
                     let mut elements = vec![];
 
