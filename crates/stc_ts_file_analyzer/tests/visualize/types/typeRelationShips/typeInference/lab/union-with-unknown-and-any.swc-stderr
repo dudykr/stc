@@ -1,0 +1,126 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   :     ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   :                  ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   :                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | number | boolean)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   :                                                            ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   :                                                            ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > unknown
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:5:1]
+ 5 | foo(null as any, null as any as string | number | boolean, null as any as unknown) // unknown
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > unknown
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   :     ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   :     ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > unknown
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   :                             ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   :                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | number | boolean)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   :                                                                       ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown-and-any.ts:6:1]
+ 6 | foo(null as any as unknown, null as any as string | number | boolean, null as any) // any
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
