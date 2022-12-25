@@ -689,7 +689,12 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
-                            debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
+                            debug!(
+                                "Cannot append to `{}` (prev = {}, arg = {})",
+                                name,
+                                dump_type_as_string(e.get()),
+                                dump_type_as_string(arg)
+                            );
 
                             inferred.errored.insert(name.clone());
                             return Ok(());
