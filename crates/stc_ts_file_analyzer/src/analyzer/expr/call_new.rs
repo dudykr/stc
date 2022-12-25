@@ -1395,6 +1395,11 @@ impl Analyzer<'_, '_> {
                             };
                             self.storage.report(err.into());
 
+                        if matches!(
+                            constructor.accessibility,
+                            Some(Accessibility::Protected) | Some(Accessibility::Private)
+                        ) {
+                            // 2674
                             return Ok(Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 span,
@@ -1402,6 +1407,7 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             }));
                         };
+                        }
                         let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
 
