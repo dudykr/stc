@@ -688,18 +688,6 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
-                            debug!(
-                                "Cannot append to `{}` (prev = {}, arg = {})",
-                                name,
-                                dump_type_as_string(e.get()),
-                                dump_type_as_string(arg)
-                            );
-
-                            inferred.errored.insert(name.clone());
-                            return Ok(());
-                        }
-
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
@@ -715,6 +703,18 @@ impl Analyzer<'_, '_> {
                             debug!("Overriding `{}` with {}", name, dump_type_as_string(arg));
 
                             *e.get_mut() = arg.clone();
+                            return Ok(());
+                        }
+
+                        if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
+                            debug!(
+                                "Cannot append to `{}` (prev = {}, arg = {})",
+                                name,
+                                dump_type_as_string(e.get()),
+                                dump_type_as_string(arg)
+                            );
+
+                            inferred.errored.insert(name.clone());
                             return Ok(());
                         }
 
