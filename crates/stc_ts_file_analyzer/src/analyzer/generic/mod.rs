@@ -693,8 +693,12 @@ impl Analyzer<'_, '_> {
                         {
                             debug!("Overriding");
 
-                            let new = vec![e.remove(), arg.clone()];
-                            inferred.type_params.insert(name.clone(), Type::new_union(span, new).freezed());
+                            let new = if e.get().is_any() || e.get().is_unknown() {
+                                e.get().clone()
+                            } else {
+                                arg.clone()
+                            };
+                            inferred.type_params.insert(name.clone(), new);
                             return Ok(());
                         }
 
