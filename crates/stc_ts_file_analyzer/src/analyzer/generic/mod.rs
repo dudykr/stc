@@ -669,7 +669,7 @@ impl Analyzer<'_, '_> {
                 debug!("({}): Inferred `{}` as {}", self.scope.depth(), name, dump_type_as_string(arg));
 
                 match inferred.type_params.entry(name.clone()) {
-                    Entry::Occupied(mut e) => {
+                    Entry::Occupied(e) => {
                         let _tracing = span!(
                             Level::ERROR,
                             "infer_type",
@@ -678,6 +678,25 @@ impl Analyzer<'_, '_> {
                             prev = tracing::field::display(&dump_type_as_string(e.get()))
                         )
                         .entered();
+
+                        if self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                &arg.clone().generalize_lit(),
+                                &e.get().clone().generalize_lit(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                            )
+                            .is_ok()
+                        {
+                            debug!("Overriding");
+
+                            let new = vec![e.remove(), arg.clone()];
+                            inferred.type_params.insert(name.clone(), Type::new_union(span, new));
+                            return Ok(());
+                        }
 
                         // If we inferred T as `number`, we don't need to add `1`.
                         if self
@@ -694,24 +713,6 @@ impl Analyzer<'_, '_> {
                         {
                             debug!("Ignoring the new type");
 
-                            return Ok(());
-                        }
-
-                        if self
-                            .assign_with_opts(
-                                &mut Default::default(),
-                                &arg.clone().generalize_lit(),
-                                &e.get().clone().generalize_lit(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
-                            )
-                            .is_ok()
-                        {
-                            debug!("Overriding");
-
-                            *e.get_mut() = arg.clone();
                             return Ok(());
                         }
 
