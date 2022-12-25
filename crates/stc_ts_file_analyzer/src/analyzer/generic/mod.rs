@@ -692,7 +692,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(e.get()));
+                            debug!("Ignoring the new type");
 
                             return Ok(());
                         }
@@ -709,24 +709,14 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            debug!(
-                                "Overriding `{}` with {} (prev: {})",
-                                name,
-                                dump_type_as_string(arg),
-                                dump_type_as_string(e.get())
-                            );
+                            debug!("Overriding");
 
                             *e.get_mut() = arg.clone();
                             return Ok(());
                         }
 
                         if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
-                            debug!(
-                                "Cannot append to `{}` (prev = {}, arg = {})",
-                                name,
-                                dump_type_as_string(e.get()),
-                                dump_type_as_string(arg)
-                            );
+                            debug!("Cannot append");
 
                             inferred.errored.insert(name.clone());
                             return Ok(());
