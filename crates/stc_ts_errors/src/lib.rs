@@ -1449,6 +1449,16 @@ pub enum ErrorKind {
     RestPropertyNotLast {
         span: Span,
     },
+
+    /// TS2673
+    ClassConstructorPrivate {
+        span: Span,
+    },
+
+    /// TS2674
+    ClassConstructorProtected {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1992,6 +2002,10 @@ impl ErrorKind {
             ErrorKind::TargetLacksConstructSignature { .. } => 7009,
 
             ErrorKind::NotExtendableType { .. } => 2312,
+
+            ErrorKind::ClassConstructorPrivate { .. } => 2673,
+
+            ErrorKind::ClassConstructorProtected { .. } => 2674,
 
             _ => 0,
         }

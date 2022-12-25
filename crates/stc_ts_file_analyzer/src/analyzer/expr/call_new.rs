@@ -26,7 +26,7 @@ use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{Accessibility, TsKeywordTypeKind};
 use tracing::{debug, info, warn};
 use ty::TypeExt;
 
@@ -1385,6 +1385,18 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(constructor) = constructors.first() {
+                        if matches!(
+                            constructor.accessibility,
+                            Some(Accessibility::Protected) | Some(Accessibility::Private)
+                        ) {
+                            // 2674
+                            return Ok(Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsAnyKeyword,
+                                span,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }));
+                        }
                         let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
 
