@@ -682,7 +682,12 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            debug!("Overriding `{}` with {}", name, dump_type_as_string(arg));
+                            debug!(
+                                "Overriding `{}` with {} (prev: {})",
+                                name,
+                                dump_type_as_string(arg),
+                                dump_type_as_string(e.get())
+                            );
 
                             *e.get_mut() = arg.clone();
                             return Ok(());
