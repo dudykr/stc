@@ -1,7 +1,7 @@
 
   x Type
    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/literals.ts:5:1]
- 5 | foo(1, '', true) // number
+ 5 | foo(1, '', true) // 1
    : ^^^
    `----
 
@@ -10,9 +10,9 @@ Error:
 
   x Type
    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/literals.ts:5:1]
- 5 | foo(1, '', true) // number
+ 5 | foo(1, '', true) // 1
    : ^^^^^^^^^^^^^^^^
    `----
 
 Error: 
-  > number
+  > 1
