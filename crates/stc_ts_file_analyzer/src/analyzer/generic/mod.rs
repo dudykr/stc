@@ -674,8 +674,8 @@ impl Analyzer<'_, '_> {
                             Level::ERROR,
                             "infer_type",
                             name = name.as_str(),
-                            new = dump_type_as_string(arg),
-                            prev = dump_type_as_string(e.get())
+                            new = tracing::field::display(&dump_type_as_string(arg)),
+                            prev = tracing::field::display(&dump_type_as_string(e.get()))
                         )
                         .entered();
 
