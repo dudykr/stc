@@ -62,6 +62,8 @@ pub(super) struct InferData {
     defaults: FxHashMap<Id, Type>,
 
     dejavu: Vec<(Type, Type)>,
+
+    skip_generalization: bool,
 }
 
 /// Type inference for arguments.
@@ -722,6 +724,7 @@ impl Analyzer<'_, '_> {
 
                         if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
                             debug!("Cannot append");
+                            inferred.skip_generalization = true;
 
                             if opts.use_error {
                                 inferred.errored.insert(name.clone());

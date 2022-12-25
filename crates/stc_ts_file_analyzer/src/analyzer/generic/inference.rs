@@ -751,17 +751,19 @@ impl Analyzer<'_, '_> {
         is_from_type_ann: bool,
     ) {
         for type_param in type_params {
-            match type_param.constraint.as_deref() {
-                Some(Type::Lit(..)) => {}
+            if !inferred.skip_generalization {
+                match type_param.constraint.as_deref() {
+                    Some(Type::Lit(..)) => {}
 
-                _ if is_from_type_ann => {}
+                    _ if is_from_type_ann => {}
 
-                Some(ty) => {
-                    if !should_prevent_generalization(ty) {
-                        continue;
+                    Some(ty) => {
+                        if !should_prevent_generalization(ty) {
+                            continue;
+                        }
                     }
+                    _ => continue,
                 }
-                _ => continue,
             }
 
             if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
