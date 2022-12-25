@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/literals.ts:5:1]
+ 5 | foo(1, '', true) // number
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/literals.ts:5:1]
+ 5 | foo(1, '', true) // number
+   : ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
