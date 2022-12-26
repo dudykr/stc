@@ -674,7 +674,7 @@ impl Analyzer<'_, '_> {
                     Entry::Occupied(e) => {
                         let _tracing = span!(
                             Level::ERROR,
-                            "infer_type",
+                            "infer_type: type param",
                             name = name.as_str(),
                             new = tracing::field::display(&dump_type_as_string(arg)),
                             prev = tracing::field::display(&dump_type_as_string(e.get()))
