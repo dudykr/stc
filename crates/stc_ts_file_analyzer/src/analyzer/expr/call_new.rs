@@ -1385,18 +1385,23 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(constructor) = constructors.first() {
-                        if matches!(
-                            constructor.accessibility,
-                            Some(Accessibility::Protected) | Some(Accessibility::Private)
-                        ) {
-                            // 2674
+                        if matches!(constructor.accessibility, Some(Accessibility::Private))
+                            || (matches!(constructor.accessibility, Some(Accessibility::Protected)) && !self.ctx.in_class_with_super)
+                        {
+                            let err = match constructor.accessibility {
+                                Some(Accessibility::Private) => ErrorKind::ClassConstructorPrivate { span },
+                                Some(Accessibility::Protected) => ErrorKind::ClassConstructorProtected { span },
+                                _ => unreachable!(),
+                            };
+                            self.storage.report(err.into());
+
                             return Ok(Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 span,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }));
-                        }
+                        };
                         let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
 
