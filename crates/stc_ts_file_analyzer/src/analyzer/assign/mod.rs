@@ -1126,8 +1126,18 @@ impl Analyzer<'_, '_> {
                 let is_bool = li.types.iter().any(|ty| ty.is_bool());
 
                 // LHS is never.
-                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 && !rhs.is_never() {
+                    fail!()
+                }
+
+                // This is required to handle intersections of function-like types.
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
+                    if self
+                        .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
 
                 for ty in &li.types {

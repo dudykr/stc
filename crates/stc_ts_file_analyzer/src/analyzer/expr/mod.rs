@@ -945,7 +945,9 @@ impl Analyzer<'_, '_> {
         }
 
         if matching_elements.len() == 1 {
-            return Ok(matching_elements.pop());
+            if let Some(ty) = matching_elements.pop() {
+                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
+            }
         }
 
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
@@ -1038,7 +1040,32 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
-        Ok(Some(Type::union(matching_elements)))
+        let mut res_vec = vec![];
+
+        for el in matching_elements.into_iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
+                res_vec.push(res.into_owned());
+            }
+        }
+        res_vec.dedup_type();
+        if res_vec.len() == 1 {
+            if let Some(ty) = res_vec.pop() {
+                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
+            }
+        }
+        let result = match type_mode {
+            TypeOfMode::LValue => Type::Intersection(Intersection {
+                span,
+                types: res_vec,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }),
+            TypeOfMode::RValue => Type::union(res_vec),
+        };
+
+        Ok(Some(
+            self.normalize(Some(span), Cow::Owned(result), Default::default())?.into_owned(),
+        ))
     }
 
     pub(super) fn access_property(
