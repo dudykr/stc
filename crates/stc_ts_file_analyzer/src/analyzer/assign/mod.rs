@@ -1054,6 +1054,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
+                        if opts.disallow_assignment_of_enum_to_string_or_number {
+                            fail!()
+                        }
+
                         // validEnumAssignments.ts insists that this is valid.
                         // but if enum isn't has num, not assignable
                         let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
@@ -1128,6 +1132,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
+                        if opts.disallow_assignment_of_enum_to_string_or_number {
+                            fail!()
+                        }
+
                         let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
 
                         if let Some(items) = items {
