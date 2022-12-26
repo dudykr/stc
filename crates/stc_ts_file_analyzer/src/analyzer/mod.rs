@@ -180,6 +180,7 @@ pub(crate) struct Ctx {
 
     super_references_super_class: bool,
 
+    /// true if the `ClassDef` has the super class
     in_class_with_super: bool,
 
     /// `generatorReturnTypeFallback.3.ts` says
