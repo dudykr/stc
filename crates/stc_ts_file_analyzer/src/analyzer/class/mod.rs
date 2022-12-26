@@ -1507,7 +1507,6 @@ impl Analyzer<'_, '_> {
                     Some(box expr) => {
                         let need_base_class = !matches!(expr, RExpr::Ident(..));
                         let super_ty = expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
-
                         child.validate_with(|a| match super_ty.normalize() {
                             Type::Lit(..)
                             | Type::Keyword(KeywordType {
@@ -1615,6 +1614,19 @@ impl Analyzer<'_, '_> {
                                     tracker: Default::default(),
                                 }))
                             }
+                            Type::ClassDef(cls) => {
+                                // check if the constructor of the super class is private.
+                                for member in cls.body.iter() {
+                                    if let ClassMember::Constructor(cons) = member {
+                                        if matches!(cons.accessibility, Some(Accessibility::Private)) {
+                                            child
+                                                .storage
+                                                .report(ErrorKind::InvalidExtendDueToConstructorPrivate { span: cls.span }.into());
+                                        };
+                                    }
+                                }
+                                Some(box super_ty)
+                            }
                             _ => Some(box super_ty),
                         }
                     }
@@ -1627,7 +1639,6 @@ impl Analyzer<'_, '_> {
             let implements = c.implements.validate_with(child).map(Box::new)?;
 
             // TODO(kdy1): Check for implements
-
             child
                 .report_errors_for_wrong_ambient_methods_of_class(c, false)
                 .report(&mut child.storage);

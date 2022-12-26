@@ -1459,6 +1459,11 @@ pub enum ErrorKind {
     ClassConstructorProtected {
         span: Span,
     },
+
+    /// TS2675
+    InvalidExtendDueToConstructorPrivate {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2006,6 +2011,8 @@ impl ErrorKind {
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
             ErrorKind::ClassConstructorProtected { .. } => 2674,
+
+            ErrorKind::InvalidExtendDueToConstructorPrivate { .. } => 2675,
 
             _ => 0,
         }
