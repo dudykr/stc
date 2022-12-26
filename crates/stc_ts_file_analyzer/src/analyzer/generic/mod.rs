@@ -1131,6 +1131,12 @@ impl Analyzer<'_, '_> {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::ReadOnly,
+                ty: arg,
+                ..
+            }) => return self.infer_type(span, inferred, param, arg, opts),
+
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
 
