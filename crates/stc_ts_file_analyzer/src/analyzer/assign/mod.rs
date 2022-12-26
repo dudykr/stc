@@ -173,7 +173,7 @@ pub(crate) struct AssignOpts {
 
     pub treat_array_as_interfaces: bool,
 
-    pub disallow_assignment_of_enum_to_string_or_number: bool,
+    pub do_not_convert_enum_to_string_nor_number: bool,
 }
 
 #[derive(Default)]
@@ -662,7 +662,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                if opts.disallow_assignment_of_enum_to_string_or_number {
+                if opts.do_not_convert_enum_to_string_nor_number {
                     fail!()
                 }
 
@@ -1054,7 +1054,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
-                        if opts.disallow_assignment_of_enum_to_string_or_number {
+                        if opts.do_not_convert_enum_to_string_nor_number {
                             fail!()
                         }
 
@@ -1132,7 +1132,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
-                        if opts.disallow_assignment_of_enum_to_string_or_number {
+                        if opts.do_not_convert_enum_to_string_nor_number {
                             fail!()
                         }
 
@@ -1267,7 +1267,7 @@ impl Analyzer<'_, '_> {
                     // expression below.
                 }
                 Type::EnumVariant(e) => {
-                    if opts.disallow_assignment_of_enum_to_string_or_number {
+                    if opts.do_not_convert_enum_to_string_nor_number {
                         fail!()
                     }
 
@@ -1867,7 +1867,7 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(EnumVariant {
                             name: None, ref enum_name, ..
                         }) => {
-                            if opts.disallow_assignment_of_enum_to_string_or_number {
+                            if opts.do_not_convert_enum_to_string_nor_number {
                                 fail!()
                             }
 
@@ -1883,7 +1883,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
-                            if opts.disallow_assignment_of_enum_to_string_or_number {
+                            if opts.do_not_convert_enum_to_string_nor_number {
                                 fail!()
                             }
 
