@@ -688,6 +688,7 @@ impl Analyzer<'_, '_> {
                                 &e.get().clone().generalize_lit(),
                                 AssignOpts {
                                     span,
+                                    disallow_assignment_of_enum_to_string_or_number: true,
                                     ..Default::default()
                                 },
                             )
