@@ -693,11 +693,11 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            debug!("Overriding");
-
                             let new = if e.get().is_any() || e.get().is_unknown() {
-                                e.get().clone()
+                                e.remove()
                             } else {
+                                debug!("Overriding");
+
                                 arg.clone()
                             };
                             inferred.type_params.insert(name.clone(), new);
