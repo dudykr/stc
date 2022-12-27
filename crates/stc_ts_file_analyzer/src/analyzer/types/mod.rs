@@ -724,6 +724,31 @@ impl Analyzer<'_, '_> {
             {
                 return never!();
             }
+
+            if let (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) = (a, b) {
+                if a_types.iter().any(|ty| ty.is_undefined()) && b_types.iter().any(|ty| ty.is_undefined()) {
+                    let mut a_temp = vec![];
+                    a_temp.append(&mut a_types.to_owned());
+                    a_temp.retain(|ty| !ty.is_undefined());
+                    let mut b_temp = vec![];
+                    b_temp.append(&mut b_types.to_owned());
+                    b_temp.retain(|ty| !ty.is_undefined());
+
+                    let a_union = Type::union(a_temp).freezed();
+                    let b_union = Type::union(b_temp).freezed();
+                    let inner_intersection = Type::Intersection(Intersection {
+                        span,
+                        types: vec![a_union, b_union],
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .freezed();
+
+                    return Ok(Some(
+                        Type::union(vec![inner_intersection, Type::undefined(span, Default::default())]).freezed(),
+                    ));
+                }
+            }
         }
 
         let enum_variant_iter = types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
@@ -876,12 +901,10 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-
                     property_types.push(e.clone());
                 }
             }
         }
-
         Ok(None)
     }
 
