@@ -679,8 +679,8 @@ impl Analyzer<'_, '_> {
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                &arg.clone().generalize_lit(),
-                                &e.get().clone().generalize_lit(),
+                                &arg.clone().generalize_lit().drop_enum_variant_name(),
+                                &e.get().clone().generalize_lit().drop_enum_variant_name(),
                                 AssignOpts {
                                     span,
                                     do_not_convert_enum_to_string_nor_number: true,
@@ -713,7 +713,7 @@ impl Analyzer<'_, '_> {
                             {
                                 arg.clone()
                             } else {
-                                Type::new_union(span, vec![e.get().clone(), arg.clone()])
+                                Type::new_union(span, vec![e.get().clone(), arg.clone()].freezed())
                             };
                             *e.get_mut() = new;
                             return Ok(());
