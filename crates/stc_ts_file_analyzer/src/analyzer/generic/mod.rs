@@ -704,7 +704,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
 
-                            if opts.ignore_builtin_object_interface && arg.is_ref_to("Object") {
+                            if opts.ignore_builtin_object_interface && arg.is_ref_or_interface_named("Object") {
                                 return Ok(());
                             }
 
