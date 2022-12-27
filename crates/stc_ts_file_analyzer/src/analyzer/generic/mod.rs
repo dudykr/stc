@@ -552,17 +552,6 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            (_, Type::Union(arg)) => {
-                if opts.append_type_as_union {
-                    //
-                    for a in &arg.types {
-                        self.infer_type(span, inferred, param, a, opts)?;
-                    }
-
-                    return Ok(());
-                }
-            }
-
             _ => {}
         }
 
@@ -1172,6 +1161,17 @@ impl Analyzer<'_, '_> {
         }
 
         match arg {
+            Type::Union(arg) => {
+                if opts.append_type_as_union {
+                    //
+                    for a in &arg.types {
+                        self.infer_type(span, inferred, param, a, opts)?;
+                    }
+
+                    return Ok(());
+                }
+            }
+
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 
