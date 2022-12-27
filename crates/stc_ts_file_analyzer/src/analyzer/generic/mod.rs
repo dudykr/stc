@@ -305,7 +305,7 @@ impl Analyzer<'_, '_> {
     /// 3. If there's `any` or `unknown`, those are used because all types are
     /// `compatible` with them.
     ///
-    /// If `any` and `unknown` co-exist, the first one is selected.
+    /// If `any` and `unknown` co-exist, the last one is selected.
     ///
     /// 4. `{}` and an empty interface work just like `any` or `unknown`. It's
     /// because almost all types are `compatible` with it, so the same rule
@@ -694,7 +694,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            let new = if e.get().is_any() || e.get().is_unknown() {
+                            let new = if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
                                 return Ok(());
                             } else {
                                 debug!("Overriding");
