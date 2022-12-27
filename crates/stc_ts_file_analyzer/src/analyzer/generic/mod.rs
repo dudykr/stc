@@ -682,6 +682,11 @@ impl Analyzer<'_, '_> {
                         )
                         .entered();
 
+                        // Identical
+                        if e.get().type_eq(arg) {
+                            return Ok(());
+                        }
+
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
