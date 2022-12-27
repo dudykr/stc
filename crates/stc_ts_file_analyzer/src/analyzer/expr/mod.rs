@@ -1870,7 +1870,7 @@ impl Analyzer<'_, '_> {
                 for v in c.def.body.iter() {
                     match v {
                         ClassMember::Property(ref class_prop) => {
-                            if self.ctx.callee_is_super {
+                            if self.ctx.obj_is_super {
                                 if !class_prop.accessor.getter && !class_prop.accessor.setter {
                                     if class_prop.key.type_eq(prop) {
                                         return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
@@ -4032,7 +4032,7 @@ impl Analyzer<'_, '_> {
         prop.make_clone_cheap();
 
         let prop_access_ctx = Ctx {
-            callee_is_super: true,
+            obj_is_super: true,
             ..self.ctx
         };
 
