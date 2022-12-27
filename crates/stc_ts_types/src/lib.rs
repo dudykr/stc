@@ -2176,7 +2176,7 @@ impl Type {
     /// interface with `name` as the name.
     pub fn is_builtin_interface(&self, name: &str) -> bool {
     /// Return true if `self` is a [Type::Ref] pointing to `name`.
-    pub fn is_ref_or_interface_named(&self, name: &str) -> bool {
+    pub fn is_builtin_interface(&self, name: &str) -> bool {
         match self.normalize_instance() {
             Type::Ref(ref r) => {
                 if let RTsEntityName::Ident(ident) = &r.type_name {
