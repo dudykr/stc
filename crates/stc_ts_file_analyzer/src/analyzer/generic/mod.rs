@@ -704,10 +704,8 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
 
-                            let new = {
-                                debug!("Overriding");
-                                arg.clone()
-                            };
+                            debug!("Overriding");
+                            let new = arg.clone();
                             *e.get_mut() = new;
                             return Ok(());
                         }
