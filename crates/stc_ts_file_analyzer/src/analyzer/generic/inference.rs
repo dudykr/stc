@@ -63,6 +63,9 @@ pub(crate) struct InferTypeOpts {
     ///
     /// because literals are present in the another type.
     pub is_type_ann: bool,
+
+    /// Ignore `Object` builtin type.
+    pub ignore_builtin_object_interface: bool,
 }
 
 impl Analyzer<'_, '_> {

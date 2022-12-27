@@ -704,6 +704,10 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
 
+                            if opts.ignore_builtin_object_interface && arg.is_ref_to("Object") {
+                                return Ok(());
+                            }
+
                             debug!("Overriding");
                             let new = if self
                                 .assign_with_opts(
@@ -848,8 +852,26 @@ impl Analyzer<'_, '_> {
             // }
             Type::Function(p) => match arg {
                 Type::Function(a) => {
-                    self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
-                    self.infer_type(span, inferred, &p.ret_ty, &a.ret_ty, InferTypeOpts { ..opts })?;
+                    self.infer_type_of_fn_params(
+                        span,
+                        inferred,
+                        &p.params,
+                        &a.params,
+                        InferTypeOpts {
+                            ignore_builtin_object_interface: true,
+                            ..opts
+                        },
+                    )?;
+                    self.infer_type(
+                        span,
+                        inferred,
+                        &p.ret_ty,
+                        &a.ret_ty,
+                        InferTypeOpts {
+                            ignore_builtin_object_interface: true,
+                            ..opts
+                        },
+                    )?;
 
                     if !opts.for_fn_assignment {
                         if let Some(arg_type_params) = &a.type_params {
