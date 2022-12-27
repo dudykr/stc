@@ -854,7 +854,7 @@ impl Analyzer<'_, '_> {
                     if !opts.for_fn_assignment {
                         if let Some(arg_type_params) = &a.type_params {
                             let mut data = InferData::default();
-                            self.infer_type_of_fn_params(span, &mut data, &a.params, &p.params, InferTypeOpts { ..opts })?;
+                            self.infer_type_of_fn_params(span, &mut data, &a.params, &p.params, InferTypeOpts { use_error: true, ..opts })?;
 
                             for name in data.errored {
                                 if !inferred.type_params.contains_key(&name) {
