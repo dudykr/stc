@@ -705,7 +705,23 @@ impl Analyzer<'_, '_> {
                             }
 
                             debug!("Overriding");
-                            let new = arg.clone();
+                            let new = if self
+                                .assign_with_opts(
+                                    &mut Default::default(),
+                                    arg,
+                                    e.get(),
+                                    AssignOpts {
+                                        span,
+                                        do_not_convert_enum_to_string_nor_number: true,
+                                        ..Default::default()
+                                    },
+                                )
+                                .is_ok()
+                            {
+                                arg.clone()
+                            } else {
+                                Type::new_union(span, vec![e.get().clone(), arg.clone()])
+                            };
                             *e.get_mut() = new;
                             return Ok(());
                         }
