@@ -206,6 +206,8 @@ pub(crate) struct Ctx {
     in_module: bool,
 
     checking_switch_discriminant_as_bin: bool,
+
+    callee_is_super: bool,
 }
 
 impl Ctx {
@@ -523,6 +525,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_fn_param: false,
                 in_module: false,
                 checking_switch_discriminant_as_bin: false,
+                callee_is_super: false,
             },
             loader,
             is_builtin,

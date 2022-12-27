@@ -1869,7 +1869,14 @@ impl Analyzer<'_, '_> {
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {
                     match v {
-                        ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
+                        ClassMember::Property(ref class_prop) => {
+                            if self.ctx.callee_is_super {
+                                if !class_prop.accessor.getter && !class_prop.accessor.setter {
+                                    if class_prop.key.type_eq(prop) {
+                                        return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                    };
+                                }
+                            }
                             if class_prop.key.is_private() {
                                 self.storage
                                     .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
@@ -4026,7 +4033,10 @@ impl Analyzer<'_, '_> {
             });
         prop.make_clone_cheap();
 
-        let prop_access_ctx = Ctx { ..self.ctx };
+        let prop_access_ctx = Ctx {
+            callee_is_super: true,
+            ..self.ctx
+        };
 
         let ty = self
             .with_ctx(prop_access_ctx)
