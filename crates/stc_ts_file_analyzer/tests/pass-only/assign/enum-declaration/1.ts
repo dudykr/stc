@@ -10,3 +10,4 @@ a = E
 call(E)
 
 a = E
+call(E)
