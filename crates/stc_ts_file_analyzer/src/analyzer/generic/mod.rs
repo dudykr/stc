@@ -700,11 +700,12 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            let new = if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
+                            if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
                                 return Ok(());
-                            } else {
-                                debug!("Overriding");
+                            }
 
+                            let new = {
+                                debug!("Overriding");
                                 arg.clone()
                             };
                             *e.get_mut() = new;
