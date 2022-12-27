@@ -1897,7 +1897,7 @@ impl Analyzer<'_, '_> {
                                 });
                             }
                         }
-                        ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
+                        ClassMember::Method(ref mtd) => {
                             if mtd.key.is_private() {
                                 self.storage
                                     .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
@@ -1955,8 +1955,6 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-
-                        _ => {}
                     }
                 }
 
