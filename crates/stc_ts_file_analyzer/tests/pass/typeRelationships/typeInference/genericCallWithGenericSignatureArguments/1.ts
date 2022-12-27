@@ -6,4 +6,4 @@ function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T) {
     return r;
 }
 
-var r1 = foo('', (x: string) => '', (x: Object) => null); // any => any
+var r1 = foo('', (x: string) => '', (x: Object) => null); // string => string

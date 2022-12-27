@@ -5,5 +5,5 @@ function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T) {
     var r: (x: T) => T;
     return r;
 }
-var r4 = foo(null, (x) => '', (x) => ''); // any => any
+var r4 = foo(null, (x) => '', (x) => ''); // null => null
 export { }
