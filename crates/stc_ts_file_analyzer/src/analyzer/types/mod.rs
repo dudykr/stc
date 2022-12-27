@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
                                 ty.make_clone_cheap();
-                                let mut ty = ty.normalize().clone();
+                                let mut ty = ty.into_owned();
 
                                 if let Some(u) = ty.as_union_type_mut() {
                                     types.append(&mut u.types);
@@ -268,8 +268,6 @@ impl Analyzer<'_, '_> {
                                     types.retain(|ty| !ty.is_null() && !ty.is_undefined());
                                 }
                             }
-
-                            types.make_clone_cheap();
                             if types.is_empty() {
                                 return Ok(Cow::Owned(Type::never(
                                     ty.span,

@@ -882,14 +882,12 @@ impl Analyzer<'_, '_> {
                                     typ
                                 };
 
-                                typ.make_clone_cheap();
-
                                 if p.optional && self.rule().strict_null_checks {
                                     let mut types = vec![Type::undefined(span, Default::default()), typ];
                                     types.dedup_type();
-                                    matching_elements.push(Type::union(types));
+                                    matching_elements.push(Type::union(types).freezed());
                                 } else {
-                                    matching_elements.push(typ);
+                                    matching_elements.push(typ.freezed());
                                 }
                                 continue;
                             }
@@ -969,7 +967,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        matching_elements.make_clone_cheap();
         if matching_elements.len() == 1 {
             return Ok(matching_elements.pop());
         }
@@ -1064,7 +1061,7 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
-        Ok(Some(Type::union(matching_elements)))
+        Ok(Some(Type::union(matching_elements).freezed()))
     }
 
     pub(super) fn access_property(
