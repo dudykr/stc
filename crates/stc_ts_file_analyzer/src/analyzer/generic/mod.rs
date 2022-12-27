@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
                 debug!("({}): Inferred `{}` as {}", self.scope.depth(), name, dump_type_as_string(arg));
 
                 match inferred.type_params.entry(name.clone()) {
-                    Entry::Occupied(e) => {
+                    Entry::Occupied(mut e) => {
                         let _tracing = span!(
                             Level::ERROR,
                             "infer_type: type param",
@@ -695,13 +695,13 @@ impl Analyzer<'_, '_> {
                             .is_ok()
                         {
                             let new = if e.get().is_any() || e.get().is_unknown() {
-                                e.remove()
+                                return Ok(());
                             } else {
                                 debug!("Overriding");
 
                                 arg.clone()
                             };
-                            inferred.type_params.insert(name.clone(), new);
+                            *e.get_mut() = new;
                             return Ok(());
                         }
 
