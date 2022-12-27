@@ -870,11 +870,14 @@ impl Analyzer<'_, '_> {
                                     metadata,
                                     tracker,
                                     ..
-                                }) = typ.normalize()
+                                }) = typ.normalize_mut()
                                 {
+                                    let mut temp_vec = vec![];
+                                    temp_vec.append(members);
+
                                     Type::TypeLit(TypeLit {
                                         span,
-                                        members: members.clone(),
+                                        members: temp_vec,
                                         metadata: *metadata,
                                         tracker: *tracker,
                                     })
