@@ -734,8 +734,16 @@ impl Analyzer<'_, '_> {
                     b_temp.append(&mut b_types.to_owned());
                     b_temp.retain(|ty| !ty.is_undefined());
 
-                    let a_union = Type::union(a_temp).freezed();
-                    let b_union = Type::union(b_temp).freezed();
+                    let a_union = if a_temp.len() == 1 {
+                        a_temp.pop().unwrap()
+                    } else {
+                        Type::union(a_temp).freezed()
+                    };
+                    let b_union = if b_temp.len() == 1 {
+                        b_temp.pop().unwrap()
+                    } else {
+                        Type::union(b_temp).freezed()
+                    };
                     let inner_intersection = Type::Intersection(Intersection {
                         span,
                         types: vec![a_union, b_union],
