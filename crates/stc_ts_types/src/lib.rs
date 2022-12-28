@@ -2172,9 +2172,6 @@ impl<'a> Iterator for Iter<'a> {
 impl FusedIterator for Iter<'_> {}
 
 impl Type {
-    /// Returns true if `self` is a [Type::Ref] pointing to `name` or a builtin
-    /// interface with `name` as the name.
-    pub fn is_builtin_interface(&self, name: &str) -> bool {
     /// Return true if `self` is a [Type::Ref] pointing to `name`.
     pub fn is_builtin_interface(&self, name: &str) -> bool {
         match self.normalize_instance() {
