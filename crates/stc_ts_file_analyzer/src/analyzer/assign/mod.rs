@@ -172,6 +172,8 @@ pub(crate) struct AssignOpts {
     pub is_params_of_method_definition: bool,
 
     pub treat_array_as_interfaces: bool,
+
+    pub do_not_convert_enum_to_string_nor_number: bool,
 }
 
 #[derive(Default)]
@@ -527,6 +529,7 @@ impl Analyzer<'_, '_> {
                         Some(span),
                         Cow::Borrowed(ty),
                         NormalizeTypeOpts {
+                            expand_enum_def: true,
                             merge_union_elements: true,
                             ..Default::default()
                         },
@@ -660,6 +663,10 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
+                if opts.do_not_convert_enum_to_string_nor_number {
+                    fail!()
+                }
+
                 if !e.has_str && !e.has_num {
                     return self
                         .assign_inner(
@@ -781,24 +788,6 @@ impl Analyzer<'_, '_> {
 
         if opts.allow_assignment_of_param {
             if rhs.is_type_param() {
-                return Ok(());
-            }
-        }
-
-        if rhs.is_enum_type() {
-            let rhs = self
-                .normalize(
-                    Some(span),
-                    Cow::Borrowed(rhs),
-                    NormalizeTypeOpts {
-                        expand_enum_def: true,
-                        ..Default::default()
-                    },
-                )?
-                .freezed()
-                .into_owned()
-                .freezed();
-            if self.assign_inner(data, to, &rhs, opts).is_ok() {
                 return Ok(());
             }
         }
@@ -1048,6 +1037,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
                         // validEnumAssignments.ts insists that this is valid.
                         // but if enum isn't has num, not assignable
                         let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
@@ -1122,6 +1115,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
                         let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
 
                         if let Some(items) = items {
@@ -1253,6 +1250,10 @@ impl Analyzer<'_, '_> {
                     // expression below.
                 }
                 Type::EnumVariant(e) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
                     // Single-variant enums seem to be treated like a number.
                     //
                     // See typeArgumentInferenceWithObjectLiteral.ts
@@ -1849,6 +1850,10 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(EnumVariant {
                             name: None, ref enum_name, ..
                         }) => {
+                            if opts.do_not_convert_enum_to_string_nor_number {
+                                fail!()
+                            }
+
                             if let Some(types) = self.find_type(enum_name)? {
                                 for ty in types {
                                     if let Type::Enum(ref e) = *ty.normalize() {
@@ -1861,6 +1866,10 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
+                            if opts.do_not_convert_enum_to_string_nor_number {
+                                fail!()
+                            }
+
                             // Allow assigning enum with numeric values to
                             // number.
                             if let Ok(Type::Lit(LitType {
