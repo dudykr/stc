@@ -739,6 +739,7 @@ pub struct Module {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Module, [u8; 72]);
 
+/// Enum **definition**.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Enum {
     pub span: Span,
@@ -1105,11 +1106,12 @@ pub struct MethodSignature {
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct IndexSignature {
+    pub span: Span,
+
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
 
     pub readonly: bool,
-    pub span: Span,
 
     pub is_static: bool,
 }
@@ -2170,6 +2172,22 @@ impl<'a> Iterator for Iter<'a> {
 impl FusedIterator for Iter<'_> {}
 
 impl Type {
+    /// Returns true if `self` is a [Type::Ref] pointing to `name` or a builtin
+    /// interface with `name` as the name.
+    pub fn is_builtin_interface(&self, name: &str) -> bool {
+        match self.normalize_instance() {
+            Type::Ref(ref r) => {
+                if let RTsEntityName::Ident(ident) = &r.type_name {
+                    &*ident.sym == name
+                } else {
+                    false
+                }
+            }
+            Type::Interface(i) => i.name == name,
+            _ => false,
+        }
+    }
+
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
         matches!(
