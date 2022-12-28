@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/6.ts:5:1]
+ 5 | f2('a', (t: boolean) => null as any as string | number) // string | number
+   : ^^
+   `----
+
+Error: 
+  > <T>(a: T, b: (a: T) => T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/6.ts:5:1]
+ 5 | f2('a', (t: boolean) => null as any as string | number) // string | number
+   :                         ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/6.ts:5:1]
+ 5 | f2('a', (t: boolean) => null as any as string | number) // string | number
+   :                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | number)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/6.ts:5:1]
+ 5 | f2('a', (t: boolean) => null as any as string | number) // string | number
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: boolean) => (string | number)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/6.ts:5:1]
+ 5 | f2('a', (t: boolean) => null as any as string | number) // string | number
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | number)
