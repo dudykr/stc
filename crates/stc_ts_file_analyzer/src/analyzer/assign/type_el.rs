@@ -65,12 +65,12 @@ impl Analyzer<'_, '_> {
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
             match *rhs.normalize() {
-                Type::Array(Array { ref elem_type, .. }) => return self.assign_without_wrapping(data, numeric_keyed_ty, elem_type, opts),
+                Type::Array(Array { ref elem_type, .. }) => return self.assign_inner(data, numeric_keyed_ty, elem_type, opts),
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = Errors::default();
                     for el in elems {
-                        self.assign_without_wrapping(
+                        self.assign_inner(
                             data,
                             numeric_keyed_ty,
                             &el.ty,
@@ -1119,7 +1119,7 @@ impl Analyzer<'_, '_> {
                                                 }
                                             }
 
-                                            self.assign_without_wrapping(
+                                            self.assign_inner(
                                                 data,
                                                 lp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
                                                 rp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
