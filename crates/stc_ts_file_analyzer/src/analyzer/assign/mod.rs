@@ -529,6 +529,7 @@ impl Analyzer<'_, '_> {
                         Some(span),
                         Cow::Borrowed(ty),
                         NormalizeTypeOpts {
+                            expand_enum_def: true,
                             merge_union_elements: true,
                             ..Default::default()
                         },
@@ -787,24 +788,6 @@ impl Analyzer<'_, '_> {
 
         if opts.allow_assignment_of_param {
             if rhs.is_type_param() {
-                return Ok(());
-            }
-        }
-
-        if rhs.is_enum_type() {
-            let rhs = self
-                .normalize(
-                    Some(span),
-                    Cow::Borrowed(rhs),
-                    NormalizeTypeOpts {
-                        expand_enum_def: true,
-                        ..Default::default()
-                    },
-                )?
-                .freezed()
-                .into_owned()
-                .freezed();
-            if self.assign_inner(data, to, &rhs, opts).is_ok() {
                 return Ok(());
             }
         }
