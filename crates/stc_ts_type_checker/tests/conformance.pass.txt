@@ -377,6 +377,8 @@ classes/members/accessibility/protectedClassPropertyAccessibleWithinNestedClass.
 classes/members/accessibility/protectedClassPropertyAccessibleWithinSubclass.ts
 classes/members/accessibility/protectedClassPropertyAccessibleWithinSubclass.ts
 classes/members/accessibility/protectedClassPropertyAccessibleWithinSubclass3.ts
+classes/members/accessibility/protectedClassPropertyAccessibleWithinSubclass3.ts
+classes/members/accessibility/protectedStaticClassPropertyAccessibleWithinSubclass2.ts
 classes/members/accessibility/protectedStaticClassPropertyAccessibleWithinSubclass2.ts
 classes/members/classTypes/indexersInClassType.ts
 classes/members/classTypes/indexersInClassType.ts
@@ -2657,6 +2659,7 @@ expressions/superPropertyAccess/superSymbolIndexedAccess4.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess5.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess5.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
+expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/thisKeyword/typeOfThisInConstructorParamList.ts
 expressions/thisKeyword/typeOfThisInConstructorParamList.ts
 expressions/typeAssertions/duplicatePropertiesInTypeAssertions01.ts
@@ -2677,6 +2680,7 @@ expressions/typeGuards/typeGuardFunctionGenerics.ts
 expressions/typeGuards/typeGuardFunctionGenerics.ts
 expressions/typeGuards/typeGuardIntersectionTypes.ts
 expressions/typeGuards/typeGuardIntersectionTypes.ts
+expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
@@ -4063,7 +4067,6 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
-types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionThisTypes.ts
@@ -4304,6 +4307,7 @@ types/objectTypeLiteral/methodSignatures/functionLiterals.ts
 types/objectTypeLiteral/methodSignatures/functionLiterals.ts
 types/objectTypeLiteral/methodSignatures/methodSignaturesWithOverloads.ts
 types/objectTypeLiteral/methodSignatures/methodSignaturesWithOverloads.ts
+types/objectTypeLiteral/methodSignatures/methodSignaturesWithOverloads2.ts
 types/objectTypeLiteral/methodSignatures/methodSignaturesWithOverloads2.ts
 types/objectTypeLiteral/objectTypeLiteralSyntax.ts
 types/objectTypeLiteral/objectTypeLiteralSyntax.ts

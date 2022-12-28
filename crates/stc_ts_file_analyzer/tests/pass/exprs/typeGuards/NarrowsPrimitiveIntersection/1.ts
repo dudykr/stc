@@ -8,13 +8,3 @@ if (isNonBlank(value)) {
 } else {
   doThat(value);
 }
-
-const enum Tag2 {}
-declare function isNonBlank2(value: string): value is string & Tag2;
-declare function doThis2(value: string & Tag2): void;
-declare function doThat2(value: string): void;
-if (isNonBlank2(value)) {
-  doThis2(value);
-} else {
-  doThat2(value);
-}

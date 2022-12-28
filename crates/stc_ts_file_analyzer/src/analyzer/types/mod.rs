@@ -875,17 +875,81 @@ impl Analyzer<'_, '_> {
                 })))
             }};
         }
+        let mut normalize_types = vec![];
+        // set normalize all
+        for el in types.iter() {
+            if let Ok(res) = self.normalize(
+                Some(span),
+                Cow::Borrowed(el),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    ..opts
+                },
+            ) {
+                let result = res.into_owned();
 
-        let is_str = types.iter().any(|ty| ty.is_str());
-        let is_num = types.iter().any(|ty| ty.is_num());
-        let is_bool = types.iter().any(|ty| ty.is_bool());
+                match &result.normalize() {
+                    Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                        ..
+                    }) => {
+                        continue;
+                    }
+                    Type::Param(TypeParam { constraint: Some(ty), .. }) => {
+                        normalize_types.push(ty.normalize().clone());
+                        continue;
+                    }
+                    _ => {
+                        normalize_types.push(result);
+                        continue;
+                    }
+                }
+            }
+        }
 
-        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+        normalize_types.dedup_type();
+
+        if normalize_types.len() == 1 {
+            if let Some(ty) = normalize_types.pop() {
+                return Ok(Some(ty));
+            }
+        }
+        // has never; return never
+        if normalize_types.iter().any(|ty| ty.is_never()) {
+            return never!();
+        }
+        // has any, return any
+        if normalize_types.iter().any(|ty| ty.is_any()) {
+            return Ok(Some(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: KeywordTypeMetadata { ..Default::default() },
+                tracker: Default::default(),
+            })));
+        }
+
+        let is_symbol = normalize_types.iter().any(|ty| ty.is_symbol());
+        let is_str = normalize_types.iter().any(|ty| ty.is_str());
+        let is_num = normalize_types.iter().any(|ty| ty.is_num());
+        let is_bool = normalize_types.iter().any(|ty| ty.is_bool());
+        let is_null = normalize_types.iter().any(|ty| ty.is_null());
+        let is_undefined = normalize_types.iter().any(|ty| ty.is_undefined());
+        let is_object = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+
+        if u32::from(is_symbol)
+            + u32::from(is_str)
+            + u32::from(is_num)
+            + u32::from(is_bool)
+            + u32::from(is_null)
+            + u32::from(is_undefined)
+            + u32::from(is_object)
+            >= 2
+        {
             return never!();
         }
 
-        if types.len() == 2 {
-            let (a, b) = (&types[0], &types[1]);
+        if normalize_types.len() == 2 {
+            let (a, b) = (&normalize_types[0], &normalize_types[1]);
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
@@ -926,7 +990,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let enum_variant_iter = types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
+        let enum_variant_iter = normalize_types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
         let enum_variant_len = enum_variant_iter.len();
 
         if enum_variant_len > 0 {
@@ -954,7 +1018,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            for elem in types.iter() {
+            for elem in normalize_types.iter() {
                 if let Type::EnumVariant(ref ev) = elem.normalize() {
                     if let Some(variant_name) = &ev.name {
                         // enumVariant is enumMemeber
