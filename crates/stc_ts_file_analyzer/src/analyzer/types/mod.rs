@@ -725,7 +725,7 @@ impl Analyzer<'_, '_> {
                 return never!();
             }
 
-            if let (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) = (a, b) {
+            if let (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) = (a.normalize(), b.normalize()) {
                 if a_types.iter().any(|ty| ty.is_undefined()) && b_types.iter().any(|ty| ty.is_undefined()) {
                     let mut a_temp = vec![];
                     a_temp.append(&mut a_types.to_owned());
