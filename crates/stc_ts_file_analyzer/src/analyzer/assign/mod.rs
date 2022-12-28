@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> VResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let _ctx = ctx!("tried to normalize a type for assignment");
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
         if let Type::Instance(Instance { ty, .. }) = ty {
             // Normalize further
             if ty.is_ref_type() {
-                let normalized = self.normalize_for_assign(span, ty)?;
+                let normalized = self.normalize_for_assign(span, ty, opts)?;
 
                 if normalized.is_keyword() {
                     return Ok(normalized);
@@ -482,7 +482,7 @@ impl Analyzer<'_, '_> {
             }
 
             if ty.is_mapped() {
-                let ty = self.normalize_for_assign(span, ty)?;
+                let ty = self.normalize_for_assign(span, ty, opts)?;
 
                 return Ok(ty);
             }
@@ -529,9 +529,8 @@ impl Analyzer<'_, '_> {
                         Some(span),
                         Cow::Borrowed(ty),
                         NormalizeTypeOpts {
-                            expand_enum_def: true,
                             merge_union_elements: true,
-                            ..Default::default()
+                            ..opts
                         },
                     )?
                     .into_owned();
@@ -615,9 +614,20 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        let mut to = self
+            .normalize_for_assign(span, to, NormalizeTypeOpts { ..Default::default() })
+            .context("tried to normalize lhs")?;
         to.make_clone_cheap();
-        let mut rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
+        let mut rhs = self
+            .normalize_for_assign(
+                span,
+                rhs,
+                NormalizeTypeOpts {
+                    expand_enum_def: true,
+                    ..Default::default()
+                },
+            )
+            .context("tried to normalize rhs")?;
         rhs.make_clone_cheap();
 
         let to = to.normalize();
