@@ -572,6 +572,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
+    /// Expands an enum variant as a literal.
     pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         if let Type::EnumVariant(ref ev) = ty.normalize() {
             if let Some(variant_name) = &ev.name {

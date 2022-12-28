@@ -2,8 +2,10 @@ use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use rnode::{VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RLit, RNumber, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit};
+use rnode::{NodeId, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit,
+};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
@@ -13,9 +15,10 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
-    ConstructorSignature, EnumVariant, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind,
-    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType,
-    Ref, ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
+    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator,
+    PropertySignature, QueryExpr, QueryType, Ref, ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
+    TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -59,8 +62,16 @@ pub(crate) struct NormalizeTypeOpts {
     /// Should we preserve [Type::Union]?
     pub preserve_union: bool,
 
+    /// If `true`, `true | false` becomes `boolean` and `E.**` of enum will be
+    /// merged as `E` if E and all variants are selected.
+    pub merge_union_elements: bool,
+
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
+
+    /// If `true`, [Type::Enum] will be expanded as a union of `string` and
+    /// [Type::EnumVariant].
+    pub expand_enum_def: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -103,7 +114,6 @@ impl Analyzer<'_, '_> {
             | Type::Function(..)
             | Type::Constructor(..)
             | Type::EnumVariant(..)
-            | Type::Enum(..)
             | Type::Param(_)
             | Type::Module(_)
             | Type::Tpl(..) => return Ok(ty),
@@ -125,7 +135,7 @@ impl Analyzer<'_, '_> {
 
             if matches!(
                 ty.normalize(),
-                Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..)
+                Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..) | Type::Union(..)
             ) {
                 ty.make_clone_cheap();
             }
@@ -227,6 +237,108 @@ impl Analyzer<'_, '_> {
                     Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
                     Type::Union(ty) => {
+                        if opts.merge_union_elements {
+                            let mut enum_counts = FxHashMap::<_, i32>::default();
+                            let mut new_types = vec![];
+
+                            for elem in ty.types.iter() {
+                                // TODO(kdy1): Cache the result of normalize
+
+                                let elem = self
+                                    .normalize(
+                                        span,
+                                        Cow::Borrowed(elem),
+                                        NormalizeTypeOpts {
+                                            preserve_mapped: true,
+                                            preserve_typeof: false,
+                                            normalize_keywords: false,
+                                            preserve_global_this: true,
+                                            preserve_intersection: true,
+                                            preserve_union: true,
+                                            merge_union_elements: false,
+                                            process_only_key: false,
+                                            expand_enum_def: false,
+                                        },
+                                    )?
+                                    .into_owned();
+
+                                if let Type::EnumVariant(EnumVariant {
+                                    name: Some(..), enum_name, ..
+                                }) = elem.normalize()
+                                {
+                                    *enum_counts.entry(enum_name.clone()).or_insert(0) += 1;
+                                }
+                            }
+
+                            for (enum_name, cnt) in enum_counts.iter_mut() {
+                                if let Some(types) = self.find_type(enum_name)? {
+                                    for ty in types {
+                                        if let Type::Enum(e) = ty.normalize() {
+                                            *cnt -= e.members.len() as i32;
+
+                                            if *cnt == 0 {
+                                                new_types.push(Type::EnumVariant(EnumVariant {
+                                                    span: e.span,
+                                                    enum_name: e.id.clone().into(),
+                                                    name: None,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // If the count is 0, it means all variants exist in
+                            // the union.
+                            if enum_counts.values().any(|count| *count == 0) {
+                                for elem in ty.types.iter() {
+                                    let elem = self
+                                        .normalize(
+                                            span,
+                                            Cow::Borrowed(elem),
+                                            NormalizeTypeOpts {
+                                                preserve_mapped: true,
+                                                preserve_typeof: false,
+                                                normalize_keywords: false,
+                                                preserve_global_this: true,
+                                                preserve_intersection: true,
+                                                preserve_union: true,
+                                                merge_union_elements: false,
+                                                process_only_key: false,
+                                                expand_enum_def: false,
+                                            },
+                                        )?
+                                        .into_owned();
+
+                                    if let Type::EnumVariant(EnumVariant {
+                                        span,
+                                        name: Some(..),
+                                        enum_name,
+                                        ..
+                                    }) = elem.normalize()
+                                    {
+                                        if let Some(0) = enum_counts.get(enum_name) {
+                                            // This enum is going to be added to union directly, so we skip the variants.
+                                            continue;
+                                        }
+                                    }
+
+                                    new_types.push(elem);
+                                }
+
+                                return self.normalize(
+                                    span,
+                                    Cow::Owned(Type::new_union(actual_span, new_types)),
+                                    NormalizeTypeOpts {
+                                        merge_union_elements: false,
+                                        ..opts
+                                    },
+                                );
+                            }
+                        }
+
                         if !opts.preserve_union {
                             let mut types = vec![];
 
@@ -577,6 +689,61 @@ impl Analyzer<'_, '_> {
                             .context("tried to get keys of a type as a part of normalization")?;
                         keys_ty.assert_valid();
                         return Ok(Cow::Owned(keys_ty));
+                    }
+
+                    Type::Enum(e) => {
+                        // E => { [k: string]: string | E }
+                        if opts.expand_enum_def {
+                            let actual_span = actual_span.with_ctxt(SyntaxContext::empty());
+                            let string = Type::Keyword(KeywordType {
+                                span: e.span,
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            });
+
+                            let variant = Type::EnumVariant(EnumVariant {
+                                span: e.span,
+                                enum_name: e.id.clone().into(),
+                                name: None,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            });
+
+                            let index_param = FnParam {
+                                span: actual_span,
+                                required: true,
+                                pat: RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: RIdent {
+                                        node_id: NodeId::invalid(),
+                                        span: actual_span,
+                                        sym: "__v".into(),
+                                        optional: false,
+                                    },
+                                    type_ann: None,
+                                }),
+                                ty: box Type::Keyword(KeywordType {
+                                    span: e.span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            };
+                            let index = TypeElement::Index(IndexSignature {
+                                span: actual_span,
+                                params: vec![index_param],
+                                type_ann: Some(box Type::new_union(actual_span, vec![string, variant])),
+                                readonly: false,
+                                is_static: false,
+                            });
+                            return Ok(Cow::Owned(Type::TypeLit(TypeLit {
+                                span: actual_span,
+                                members: vec![index],
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })));
+                        }
                     }
 
                     Type::Operator(_) => {

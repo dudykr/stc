@@ -1896,7 +1896,14 @@ impl Analyzer<'_, '_> {
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {
                     match v {
-                        ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
+                        ClassMember::Property(ref class_prop) => {
+                            if self.ctx.obj_is_super {
+                                if !class_prop.accessor.getter && !class_prop.accessor.setter {
+                                    if class_prop.key.type_eq(prop) {
+                                        return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                    };
+                                }
+                            }
                             if class_prop.key.is_private() {
                                 self.storage
                                     .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
@@ -1917,7 +1924,7 @@ impl Analyzer<'_, '_> {
                                 });
                             }
                         }
-                        ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
+                        ClassMember::Method(ref mtd) => {
                             if mtd.key.is_private() {
                                 self.storage
                                     .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
@@ -1975,8 +1982,6 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-
-                        _ => {}
                     }
                 }
 
@@ -1984,8 +1989,13 @@ impl Analyzer<'_, '_> {
                 if let Some(super_ty) = &c.def.super_class {
                     let super_ty = self.instantiate_class(span, super_ty)?;
 
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
-                        return Ok(v);
+                    match self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
+                        Ok(v) => return Ok(v),
+                        Err(err) => {
+                            if let ErrorKind::SuperCanOnlyAccessMethod { .. } = &*err {
+                                return Err(err);
+                            }
+                        }
                     }
                 }
 
@@ -4053,7 +4063,10 @@ impl Analyzer<'_, '_> {
             });
         prop.make_clone_cheap();
 
-        let prop_access_ctx = Ctx { ..self.ctx };
+        let prop_access_ctx = Ctx {
+            obj_is_super: true,
+            ..self.ctx
+        };
 
         let ty = self
             .with_ctx(prop_access_ctx)

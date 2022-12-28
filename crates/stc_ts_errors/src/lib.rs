@@ -1435,6 +1435,11 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2340
+    SuperCanOnlyAccessMethod {
+        span: Span,
+    },
+
     /// TS2387
     ShouldBeStaticMethod {
         span: Span,
@@ -2013,6 +2018,8 @@ impl ErrorKind {
             ErrorKind::ClassConstructorProtected { .. } => 2674,
 
             ErrorKind::InvalidExtendDueToConstructorPrivate { .. } => 2675,
+
+            ErrorKind::SuperCanOnlyAccessMethod { .. } => 2340,
 
             _ => 0,
         }
