@@ -1962,8 +1962,13 @@ impl Analyzer<'_, '_> {
                 if let Some(super_ty) = &c.def.super_class {
                     let super_ty = self.instantiate_class(span, super_ty)?;
 
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
-                        return Ok(v);
+                    match self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
+                        Ok(v) => return Ok(v),
+                        Err(err) => {
+                            if let ErrorKind::SuperCanOnlyAccessMethod { .. } = &*err {
+                                return Err(err);
+                            }
+                        }
                     }
                 }
 
