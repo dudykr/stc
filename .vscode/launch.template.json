@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug type checker",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--example",
+                    "file",
+                    "-p",
+                    "stc_ts_file_analyzer",
+                ],
+            },
+            // "args": ["path/to/.ts file"],
+            "cwd": "${workspaceFolder}"
+        },
+
+    ]
+}
