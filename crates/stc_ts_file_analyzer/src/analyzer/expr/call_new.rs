@@ -2250,6 +2250,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [None] if nothing matched.
+    #[cfg_attr(not(debug_assertions), tracing::instrument(skip_all))]
     fn select_and_invoke(
         &mut self,
         span: Span,
