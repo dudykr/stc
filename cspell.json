@@ -29,6 +29,7 @@
         "nonminimal",
         "opentelemetry",
         "pmutil",
+        "Postprocess",
         "qself",
         "quasis",
         "Redeclared",
@@ -44,6 +45,7 @@
         "subpat",
         "triomphe",
         "Uncapitalize",
+        "upcasted",
         "varargs"
     ],
     "ignorePaths": [
