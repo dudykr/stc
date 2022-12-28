@@ -516,11 +516,23 @@ impl Analyzer<'_, '_> {
             | Type::Instance(..)
             | Type::Intrinsic(..)
             | Type::Mapped(..)
+            | Type::Enum(..)
+            | Type::Union(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             }) => {
-                let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
+                let ty = self
+                    .normalize(
+                        Some(span),
+                        Cow::Borrowed(ty),
+                        NormalizeTypeOpts {
+                            expand_enum_def: true,
+                            merge_union_elements: true,
+                            ..Default::default()
+                        },
+                    )?
+                    .into_owned();
 
                 return Ok(Cow::Owned(ty));
             }
@@ -1686,35 +1698,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // Same operation as above, but for enums.
-                if let Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) = rhs {
-                    // If `types` contains all variant of the enum, the
-                    // assignment is valid.
-                    let patched_types = lu
-                        .types
-                        .iter()
-                        .map(|ty| {
-                            self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                                .map(Cow::into_owned)
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-
-                    if patched_types.iter().all(|ty| match ty.normalize() {
-                        Type::EnumVariant(ev) => ev.enum_name == *enum_name,
-                        _ => false,
-                    }) {
-                        if let Ok(Some(lhs)) = self.find_type(enum_name) {
-                            for ty in lhs {
-                                if let Type::Enum(e) = ty.normalize() {
-                                    if e.members.len() == lu.types.len() {
-                                        return Ok(());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 let results = lu
                     .types
                     .iter()
@@ -1957,7 +1940,16 @@ impl Analyzer<'_, '_> {
                                 },
                             )?;
                             return self
-                                .assign_inner(data, &left, rhs, opts)
+                                .assign_inner(
+                                    data,
+                                    &left,
+                                    rhs,
+                                    AssignOpts {
+                                        allow_unknown_rhs: Some(false),
+                                        allow_missing_fields: false,
+                                        ..opts
+                                    },
+                                )
                                 .convert_err(|err| ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
                                     cause: Some(box err.into()),
@@ -2663,7 +2655,7 @@ impl Analyzer<'_, '_> {
         res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&r)))
     }
 
-    /// Returns true for `A | B | | C = A | B` and simillar cases.
+    /// Returns true for `A | B | | C = A | B` and similar cases.
     ///
     /// Should be called iff lhs is a union type.
     fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> VResult<bool> {
