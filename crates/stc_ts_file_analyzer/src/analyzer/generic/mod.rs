@@ -694,20 +694,21 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        if self
-                            .assign_with_opts(
-                                &mut Default::default(),
-                                &arg.clone().generalize_lit(),
-                                &e.get().clone().generalize_lit(),
-                                AssignOpts {
-                                    span,
-                                    do_not_convert_enum_to_string_nor_number: true,
-                                    ignore_enum_variant_name: true,
-                                    ignore_tuple_length_difference: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .is_ok()
+                        if opts.append_type_as_union
+                            || self
+                                .assign_with_opts(
+                                    &mut Default::default(),
+                                    &arg.clone().generalize_lit(),
+                                    &e.get().clone().generalize_lit(),
+                                    AssignOpts {
+                                        span,
+                                        do_not_convert_enum_to_string_nor_number: true,
+                                        ignore_enum_variant_name: true,
+                                        ignore_tuple_length_difference: true,
+                                        ..Default::default()
+                                    },
+                                )
+                                .is_ok()
                         {
                             if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
                                 return Ok(());
@@ -757,7 +758,7 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        if !opts.append_type_as_union && !is_ok_to_append(e.get(), arg) {
+                        if !opts.append_type_as_union {
                             debug!("Cannot append");
                             inferred.skip_generalization = true;
 
@@ -2535,24 +2536,4 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
         },
         TruePlusMinus::Minus => {}
     }
-}
-
-fn is_ok_to_append(prev: &Type, arg: &Type) -> bool {
-    for p in prev.iter_union() {
-        if p.is_num_lit() && arg.is_num_lit() {
-            return true;
-        }
-        if p.is_str_lit() && arg.is_str_lit() {
-            return true;
-        }
-        if p.is_bool_lit() && arg.is_bool_lit() {
-            return true;
-        }
-
-        if p.clone().generalize_lit().type_eq(&arg.clone().generalize_lit()) {
-            return true;
-        }
-    }
-
-    false
 }
