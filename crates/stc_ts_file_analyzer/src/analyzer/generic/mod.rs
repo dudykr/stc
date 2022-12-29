@@ -30,7 +30,7 @@ use tracing::{debug, error, info, span, trace, warn, Level};
 
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
-    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     ty::TypeExt,
     util::{unwrap_ref_with_single_arg, RemoveTypes},
     VResult,
@@ -573,6 +573,24 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if let Type::Enum(..) = arg.normalize() {
+            let arg = self
+                .normalize(
+                    Some(arg.span()),
+                    Cow::Borrowed(arg),
+                    NormalizeTypeOpts {
+                        expand_enum_def: true,
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to normalize enum")?
+                .freezed()
+                .into_owned()
+                .freezed();
+            return self.infer_type_inner(span, inferred, param, &arg, opts);
+        }
+
         match param.normalize() {
             Type::Param(TypeParam {
                 ref name, ref constraint, ..
@@ -945,7 +963,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Interface(..) | Type::Enum(..) | Type::Alias(..) => {
+                Type::Interface(..) | Type::Alias(..) => {
                     if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
