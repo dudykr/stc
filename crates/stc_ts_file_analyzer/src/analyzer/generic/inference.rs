@@ -318,7 +318,7 @@ impl Analyzer<'_, '_> {
                 inferred.skip_generalization = true;
 
                 if opts.use_error {
-                    inferred.errored.insert(name.clone());
+                    inferred.errored.insert(name);
                 }
             }
             Entry::Vacant(e) => {
