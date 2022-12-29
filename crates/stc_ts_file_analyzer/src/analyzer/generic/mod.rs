@@ -573,7 +573,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::Enum(..) = arg.normalize() {
+        if arg.is_enum_type() {
             let arg = self
                 .normalize(
                     Some(arg.span()),
