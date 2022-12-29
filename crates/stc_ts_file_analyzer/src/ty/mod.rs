@@ -15,17 +15,6 @@ pub trait TypeExt: Into<Type> {
     fn generalize_tuple(self) -> Type {
         self.into().fold_with(&mut TupleToArray)
     }
-
-    fn drop_enum_variant_name(self) -> Type {
-        let ty: Type = self.into();
-
-        if ty.is_enum_variant() {
-            let e = ty.expect_enum_variant();
-            Type::EnumVariant(EnumVariant { name: None, ..e })
-        } else {
-            ty
-        }
-    }
 }
 
 impl<T> TypeExt for T where T: Into<Type> {}

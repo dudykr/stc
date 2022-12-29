@@ -174,6 +174,8 @@ pub(crate) struct AssignOpts {
     pub treat_array_as_interfaces: bool,
 
     pub do_not_convert_enum_to_string_nor_number: bool,
+
+    pub ignore_enum_variant_name: bool,
 }
 
 #[derive(Default)]

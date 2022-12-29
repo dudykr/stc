@@ -697,11 +697,12 @@ impl Analyzer<'_, '_> {
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                &arg.clone().generalize_lit().drop_enum_variant_name(),
-                                &e.get().clone().generalize_lit().drop_enum_variant_name(),
+                                &arg.clone().generalize_lit(),
+                                &e.get().clone().generalize_lit(),
                                 AssignOpts {
                                     span,
                                     do_not_convert_enum_to_string_nor_number: true,
+                                    ignore_enum_variant_name: true,
                                     ..Default::default()
                                 },
                             )
