@@ -2322,7 +2322,17 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) | Type::Keyword(..) | Type::Class(..) | Type::ClassDef(..)
+
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::ReadOnly,
+                        ..
+                    })
+                    | Type::Lit(..)
+                    | Type::Interface(..)
+                    | Type::TypeLit(..)
+                    | Type::Keyword(..)
+                    | Type::Class(..)
+                    | Type::ClassDef(..)
                         if !opts.allow_iterable_on_rhs =>
                     {
                         fail!()
