@@ -1603,18 +1603,21 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Array(Array { ref elem_type, .. }) => match rhs {
+            Type::Array(Array {
+                elem_type: ref lhs_elem_type,
+                ..
+            }) => match rhs {
                 Type::Array(Array {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    return self.assign_inner(data, elem_type, rhs_elem_type, opts);
+                    return self.assign_inner(data, lhs_elem_type, rhs_elem_type, opts);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = vec![];
                     for el in elems {
-                        errors.extend(self.assign_inner(data, elem_type, &el.ty, opts).err());
+                        errors.extend(self.assign_inner(data, lhs_elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
                         Err(ErrorKind::Errors { span, errors })?;
@@ -1639,7 +1642,7 @@ impl Analyzer<'_, '_> {
                                 }) = m.params[0].ty.normalize()
                                 {
                                     if let Some(type_ann) = &m.type_ann {
-                                        return self.assign_with_opts(data, elem_type, type_ann, opts);
+                                        return self.assign_with_opts(data, lhs_elem_type, type_ann, opts);
                                     }
                                 }
                             }
@@ -1659,7 +1662,7 @@ impl Analyzer<'_, '_> {
 
                             self.assign_with_opts(
                                 data,
-                                elem_type,
+                                lhs_elem_type,
                                 &rhs_el,
                                 AssignOpts {
                                     allow_iterable_on_rhs: false,
