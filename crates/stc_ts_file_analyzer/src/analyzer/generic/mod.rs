@@ -1814,7 +1814,8 @@ impl Analyzer<'_, '_> {
                                     members: type_elements.remove(&name).unwrap_or_default(),
                                     metadata: arg.metadata,
                                     tracker: Default::default(),
-                                });
+                                })
+                                .freezed();
 
                                 self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
                             }
