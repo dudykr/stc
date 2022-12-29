@@ -1,5 +1,4 @@
-// @strictNullChecks: true
-// @declaration: true
+//@strict: true
 
 declare function assign<T>(obj: T, props: Partial<T>): void;
 
