@@ -176,6 +176,7 @@ pub(crate) struct AssignOpts {
     pub do_not_convert_enum_to_string_nor_number: bool,
 
     pub ignore_enum_variant_name: bool,
+    pub ignore_tuple_length_difference: bool,
 }
 
 #[derive(Default)]
@@ -467,7 +468,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> VResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let _ctx = ctx!("tried to normalize a type for assignment");
@@ -476,7 +477,7 @@ impl Analyzer<'_, '_> {
         if let Type::Instance(Instance { ty, .. }) = ty {
             // Normalize further
             if ty.is_ref_type() {
-                let normalized = self.normalize_for_assign(span, ty)?;
+                let normalized = self.normalize_for_assign(span, ty, opts)?;
 
                 if normalized.is_keyword() {
                     return Ok(normalized);
@@ -484,7 +485,7 @@ impl Analyzer<'_, '_> {
             }
 
             if ty.is_mapped() {
-                let ty = self.normalize_for_assign(span, ty)?;
+                let ty = self.normalize_for_assign(span, ty, opts)?;
 
                 return Ok(ty);
             }
@@ -513,6 +514,11 @@ impl Analyzer<'_, '_> {
                     },
                     tracker: Default::default(),
                 })));
+            }
+            Type::EnumVariant(e @ EnumVariant { name: Some(..), .. }) => {
+                if opts.ignore_enum_variant_name {
+                    return Ok(Cow::Owned(Type::EnumVariant(EnumVariant { name: None, ..e.clone() })));
+                }
             }
             Type::Conditional(..)
             | Type::IndexedAccessType(..)
@@ -616,9 +622,9 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        let mut to = self.normalize_for_assign(span, to, opts).context("tried to normalize lhs")?;
         to.make_clone_cheap();
-        let mut rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
+        let mut rhs = self.normalize_for_assign(span, rhs, opts).context("tried to normalize rhs")?;
         rhs.make_clone_cheap();
 
         let to = to.normalize();
@@ -2243,7 +2249,7 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
-                        if elems.len() < rhs_elems.len() {
+                        if !opts.ignore_tuple_length_difference && elems.len() < rhs_elems.len() {
                             if elems.iter().any(|elem| elem.ty.is_rest()) {
                                 // Type::Rest eats many elements
                             } else {
@@ -2251,7 +2257,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if elems.len() > rhs_elems.len() {
+                        if !opts.ignore_tuple_length_difference && elems.len() > rhs_elems.len() {
                             let is_len_fine = elems.iter().skip(rhs_elems.len()).all(|l| {
                                 matches!(
                                     l.ty.normalize_instance(),

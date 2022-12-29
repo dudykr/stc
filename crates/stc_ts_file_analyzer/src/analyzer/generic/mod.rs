@@ -703,6 +703,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     do_not_convert_enum_to_string_nor_number: true,
                                     ignore_enum_variant_name: true,
+                                    ignore_tuple_length_difference: true,
                                     ..Default::default()
                                 },
                             )
