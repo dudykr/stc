@@ -17,7 +17,7 @@ use stc_ts_types::{
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, info};
+use tracing::{debug, error, info, Level};
 
 use crate::{
     analyzer::{
@@ -248,6 +248,111 @@ impl Analyzer<'_, '_> {
             }
             Entry::Vacant(e) => {
                 e.insert(ty.freezed().into_owned().freezed());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub(super) fn upsert_inferred(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        name: Id,
+        arg: &Type,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
+        match inferred.type_params.entry(name.clone()) {
+            Entry::Occupied(mut e) => {
+                let _tracing = tracing::span!(
+                    Level::ERROR,
+                    "infer_type: type param",
+                    name = name.as_str(),
+                    new = tracing::field::display(&dump_type_as_string(arg)),
+                    prev = tracing::field::display(&dump_type_as_string(e.get()))
+                )
+                .entered();
+
+                // Identical
+                if e.get().type_eq(arg) {
+                    return Ok(());
+                }
+
+                if opts.append_type_as_union
+                    || self
+                        .assign_with_opts(
+                            &mut Default::default(),
+                            &arg.clone().generalize_lit(),
+                            &e.get().clone().generalize_lit(),
+                            AssignOpts {
+                                span,
+                                do_not_convert_enum_to_string_nor_number: true,
+                                ignore_enum_variant_name: true,
+                                ignore_tuple_length_difference: true,
+                                ..Default::default()
+                            },
+                        )
+                        .is_ok()
+                {
+                    if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
+                        return Ok(());
+                    }
+
+                    if opts.ignore_builtin_object_interface && arg.is_builtin_interface("Object") {
+                        return Ok(());
+                    }
+
+                    debug!("Overriding");
+                    let new = if self
+                        .assign_with_opts(
+                            &mut Default::default(),
+                            arg,
+                            e.get(),
+                            AssignOpts {
+                                span,
+                                do_not_convert_enum_to_string_nor_number: true,
+                                ..Default::default()
+                            },
+                        )
+                        .is_ok()
+                    {
+                        arg.clone()
+                    } else {
+                        Type::new_union(span, vec![e.get().clone(), arg.clone()].freezed())
+                    };
+                    *e.get_mut() = new;
+                    return Ok(());
+                }
+
+                // If we inferred T as `number`, we don't need to add `1`.
+                if self
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        &e.get().clone().generalize_lit(),
+                        &arg.clone().generalize_lit(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                    )
+                    .is_ok()
+                {
+                    debug!("Ignoring the new type");
+
+                    return Ok(());
+                }
+
+                debug!("Cannot append");
+                inferred.skip_generalization = true;
+
+                if opts.use_error {
+                    inferred.errored.insert(name.clone());
+                }
+            }
+            Entry::Vacant(e) => {
+                let arg = arg.clone();
+
+                e.insert(arg);
             }
         }
 
