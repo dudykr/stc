@@ -1705,7 +1705,8 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                             tracker: Default::default(),
-                        });
+                        })
+                        .fixed();
                         prevent_generalize(&mut keys);
 
                         self.insert_inferred_raw(span, inferred, key_name, Cow::Owned(keys), opts)?;
