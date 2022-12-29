@@ -758,25 +758,13 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        if !opts.append_type_as_union {
-                            debug!("Cannot append");
-                            inferred.skip_generalization = true;
+                        debug!("Cannot append");
+                        inferred.skip_generalization = true;
 
-                            if opts.use_error {
-                                inferred.errored.insert(name.clone());
-                            }
-                            return Ok(());
+                        if opts.use_error {
+                            inferred.errored.insert(name.clone());
                         }
-
-                        let param_ty = Type::new_union(span, vec![e.get().clone(), arg.clone()]).freezed();
-
-                        if let Type::Param(param) = param_ty.normalize() {
-                            self.insert_inferred(span, inferred, param, Cow::Borrowed(arg), opts)?;
-                        }
-
-                        if let Type::Param(param) = arg.normalize() {
-                            self.insert_inferred(span, inferred, param, Cow::Owned(param_ty), opts)?;
-                        }
+                        return Ok(());
                     }
                     Entry::Vacant(e) => {
                         let arg = arg.clone();
