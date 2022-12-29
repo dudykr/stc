@@ -45,6 +45,15 @@ You can use filename, too and with it you can run single test.
 
 See [the readme of the file analyzer](./crates/stc_ts_file_analyzer/) for more details.
 
+### Debugging with VScode Debugger
+
+Please copy `.vscode/launch.template.json` and rename it to
+`.vscode/launch.json`.
+
+In `launch.json`, you can pass the path of the `.ts` file you want to check to the
+`args` field. Then, you can run the typechecker with debugger from the
+debugger panel.
+
 ### Debugging tips
 
 #### `print_backtrace()`
