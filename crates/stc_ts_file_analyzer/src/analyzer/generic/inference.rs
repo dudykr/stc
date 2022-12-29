@@ -223,35 +223,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(mut e) => {
-                if self
-                    .assign_with_opts(
-                        &mut Default::default(),
-                        &ty.clone().into_owned().generalize_lit(),
-                        &e.get().clone().generalize_lit(),
-                        AssignOpts {
-                            span,
-                            ..Default::default()
-                        },
-                    )
-                    .is_ok()
-                {
-                    *e.get_mut() = ty.freezed().into_owned().freezed();
-                    return Ok(());
-                } else {
-                    if !opts.append_type_as_union {
-                        inferred.errored.insert(name);
-                        return Ok(());
-                    }
-                }
-            }
-            Entry::Vacant(e) => {
-                e.insert(ty.freezed().into_owned().freezed());
-            }
-        }
-
-        Ok(())
+        self.upsert_inferred(span, inferred, name, &ty, opts)
     }
 
     pub(super) fn upsert_inferred(
