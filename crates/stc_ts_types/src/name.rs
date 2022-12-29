@@ -16,7 +16,7 @@ use crate::Id;
 type Inner = SmallVec<[Id; 4]>;
 
 /// Efficient alternative for names with variable length like `foo.bar.baz.qux`.
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Name(Inner);
 
 impl Name {
