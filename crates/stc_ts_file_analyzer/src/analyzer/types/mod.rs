@@ -663,21 +663,10 @@ impl Analyzer<'_, '_> {
                             if let Type::IndexedAccessType(prop_ty) = prop_ty.normalize() {
                                 match prop_ty.index_type.normalize() {
                                     // if you want remove this, first you should overflow narrow any
-                                    Type::Param(..)
-                                    | Type::Keyword(KeywordType {
-                                        kind:
-                                            TsKeywordTypeKind::TsNumberKeyword
-                                            | TsKeywordTypeKind::TsStringKeyword
-                                            | TsKeywordTypeKind::TsSymbolKeyword,
-                                        ..
-                                    })
-                                    | Type::Lit(LitType {
-                                        lit: RTsLit::Str(..) | RTsLit::Number(..),
-                                        ..
-                                    }) => {}
-                                    _ => {
+                                    Type::Union(..) => {
                                         panic!("{:?}", prop_ty);
                                     }
+                                    _ => {}
                                 }
                             }
 
