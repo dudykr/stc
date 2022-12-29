@@ -6,7 +6,6 @@ interface Shape {
     name: string;
     width: number;
     height: number;
-    location: Point;
 }
 
 export function f0(s1: Shape, s2: Shape) {
