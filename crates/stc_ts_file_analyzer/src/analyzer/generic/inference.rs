@@ -3,6 +3,7 @@ use std::{
     collections::{hash_map::Entry, HashMap},
 };
 
+use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
@@ -70,38 +71,48 @@ pub(crate) struct InferTypeOpts {
     pub ignore_builtin_object_interface: bool,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub(crate) enum InferencePriority {
-    #[default]
-    None = 0,
-    /// Naked type variable in union or intersection type
-    NakedTypeVariable = 1 << 0,
-    /// Speculative tuple inference
-    SpeculativeTuple = 1 << 1,
-    /// Source of inference originated within a substitution type's substitute
-    SubstituteSource = 1 << 2,
-    /// Reverse inference for homomorphic mapped type
-    HomomorphicMappedType = 1 << 3,
-    /// Partial reverse inference for homomorphic mapped type
-    PartialHomomorphicMappedType = 1 << 4,
-    /// Reverse inference for mapped type
-    MappedTypeConstraint = 1 << 5,
-    /// Conditional type in contravariant position
-    ContravariantConditional = 1 << 6,
-    /// Inference made from return type of generic function
-    ReturnType = 1 << 7,
-    /// Inference made from a string literal to a keyof T
-    LiteralKeyof = 1 << 8,
-    /// Don't infer from constraints of instantiable types
-    NoConstraints = 1 << 9,
-    /// Always use strict rules for contravariant inferences
-    AlwaysStrict = 1 << 10,
-    /// Seed for inference priority tracking
-    MaxValue = 1 << 11,
+bitflags! {
+    pub struct InferencePriority: i32 {
+        const None = 0;
+        /// Naked type variable in union or intersection type
+        const NakedTypeVariable = 1 << 0;
+        /// Speculative tuple inference
+        const SpeculativeTuple = 1 << 1;
+        /// Source of inference originated within a substitution type's substitute
+        const SubstituteSource = 1 << 2;
+        /// Reverse inference for homomorphic mapped type
+        const HomomorphicMappedType = 1 << 3;
+        /// Partial reverse inference for homomorphic mapped type
+        const PartialHomomorphicMappedType = 1 << 4;
+        /// Reverse inference for mapped type
+        const MappedTypeConstraint = 1 << 5;
+        /// Conditional type in contravariant position
+        const ContravariantConditional = 1 << 6;
+        /// Inference made from return type of generic function
+        const ReturnType = 1 << 7;
+        /// Inference made from a string literal to a keyof T
+        const LiteralKeyof = 1 << 8;
+        /// Don't infer from constraints of instantiable types
+        const NoConstraints = 1 << 9;
+        /// Always use strict rules for contravariant inferences
+        const AlwaysStrict = 1 << 10;
+        /// Seed for inference priority tracking
+        const MaxValue = 1 << 11;
 
-    PriorityImpliesCombination = ReturnType | MappedTypeConstraint | LiteralKeyof, /* These priorities imply that the resulting type
-                                                                                    * should be a combination of all candidates */
-    Circularity = -1, // Inference circularity (value less than all other priorities)
+        /// Inference circularity (value less than all other priorities)
+        const Circularity = -1;
+
+        /// These priorities imply that the resulting type should be a combination
+        /// of all candidates
+        const PriorityImpliesCombination =
+            Self::ReturnType.bits | Self::MappedTypeConstraint.bits | Self::LiteralKeyof.bits;
+    }
+}
+
+impl Default for InferencePriority {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 impl Analyzer<'_, '_> {
