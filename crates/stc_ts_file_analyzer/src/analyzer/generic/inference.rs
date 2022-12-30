@@ -1,3 +1,5 @@
+#![allow(non_upper_case_globals)]
+
 use std::{
     borrow::Cow,
     collections::{hash_map::Entry, HashMap},
