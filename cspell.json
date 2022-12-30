@@ -19,6 +19,7 @@
         "fastpath",
         "fxhash",
         "Hasher",
+        "Homomorphic",
         "iife",
         "impls",
         "indexmap",
