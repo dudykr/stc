@@ -35,6 +35,8 @@ use crate::{
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
+    pub priority: InferencePriority,
+
     pub for_fn_assignment: bool,
     /// Defaults to false because
     ///
@@ -66,6 +68,40 @@ pub(crate) struct InferTypeOpts {
 
     /// Ignore `Object` builtin type.
     pub ignore_builtin_object_interface: bool,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) enum InferencePriority {
+    #[default]
+    None = 0,
+    /// Naked type variable in union or intersection type
+    NakedTypeVariable = 1 << 0,
+    /// Speculative tuple inference
+    SpeculativeTuple = 1 << 1,
+    /// Source of inference originated within a substitution type's substitute
+    SubstituteSource = 1 << 2,
+    /// Reverse inference for homomorphic mapped type
+    HomomorphicMappedType = 1 << 3,
+    /// Partial reverse inference for homomorphic mapped type
+    PartialHomomorphicMappedType = 1 << 4,
+    /// Reverse inference for mapped type
+    MappedTypeConstraint = 1 << 5,
+    /// Conditional type in contravariant position
+    ContravariantConditional = 1 << 6,
+    /// Inference made from return type of generic function
+    ReturnType = 1 << 7,
+    /// Inference made from a string literal to a keyof T
+    LiteralKeyof = 1 << 8,
+    /// Don't infer from constraints of instantiable types
+    NoConstraints = 1 << 9,
+    /// Always use strict rules for contravariant inferences
+    AlwaysStrict = 1 << 10,
+    /// Seed for inference priority tracking
+    MaxValue = 1 << 11,
+
+    PriorityImpliesCombination = ReturnType | MappedTypeConstraint | LiteralKeyof, /* These priorities imply that the resulting type
+                                                                                    * should be a combination of all candidates */
+    Circularity = -1, // Inference circularity (value less than all other priorities)
 }
 
 impl Analyzer<'_, '_> {
