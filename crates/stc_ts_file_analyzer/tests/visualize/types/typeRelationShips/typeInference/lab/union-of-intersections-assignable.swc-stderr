@@ -61,4 +61,4 @@ Error:
   |     c: bigint;
   | } & {
   |     d: boolean;
-  | }))
+  | }) | boolean)

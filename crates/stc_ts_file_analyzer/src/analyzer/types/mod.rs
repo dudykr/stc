@@ -854,12 +854,84 @@ impl Analyzer<'_, '_> {
                 })))
             }};
         }
+        let mut normalize_types = vec![];
+        // set normalize all
+        for el in types.iter() {
+            if let Ok(res) = self.normalize(
+                Some(span),
+                Cow::Borrowed(el),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    ..opts
+                },
+            ) {
+                let result = res.into_owned();
 
-        let is_str = types.iter().any(|ty| ty.is_str());
-        let is_num = types.iter().any(|ty| ty.is_num());
-        let is_bool = types.iter().any(|ty| ty.is_bool());
+                match &result.normalize() {
+                    Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                        ..
+                    }) => {}
+                    Type::Intersection(Intersection { types, .. }) => {
+                        for ty in types {
+                            normalize_types.push(ty.to_owned());
+                        }
+                    }
+                    _ => {
+                        normalize_types.push(result);
+                    }
+                }
+            }
+        }
 
-        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+        normalize_types.dedup_type();
+
+        if normalize_types.len() == 1 {
+            if let Some(ty) = normalize_types.pop() {
+                return Ok(Some(ty));
+            }
+        }
+        // has never; return never
+        if normalize_types.iter().any(|ty| ty.is_never()) {
+            return never!();
+        }
+        // has any, return any
+        if normalize_types.iter().any(|ty| ty.is_any()) {
+            return Ok(Some(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: KeywordTypeMetadata { ..Default::default() },
+                tracker: Default::default(),
+            })));
+        }
+
+        let is_symbol = normalize_types.iter().any(|ty| ty.is_symbol());
+        let is_str = normalize_types.iter().any(|ty| ty.is_str());
+        let is_num = normalize_types.iter().any(|ty| ty.is_num());
+        let is_bool = normalize_types.iter().any(|ty| ty.is_bool());
+        let is_null = normalize_types.iter().any(|ty| ty.is_null());
+        let is_undefined = normalize_types.iter().any(|ty| ty.is_undefined());
+        let is_void = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let is_object = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+
+        let sum = u32::from(is_symbol)
+            + u32::from(is_str)
+            + u32::from(is_num)
+            + u32::from(is_bool)
+            + u32::from(is_null)
+            + u32::from(is_undefined)
+            + u32::from(is_void)
+            + u32::from(is_object);
+
+        if sum >= 2 {
+            if sum == 2 && is_undefined && is_void {
+                return Ok(Some(Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    metadata: KeywordTypeMetadata { ..Default::default() },
+                    tracker: Default::default(),
+                })));
+            }
             return never!();
         }
 
@@ -907,10 +979,10 @@ impl Analyzer<'_, '_> {
                         if enum_variant_len > 1 {
                             let mut en = ev.clone();
                             en.name = None;
-                            return Ok(Some(Type::EnumVariant(en)));
+                            return Ok(Some(Type::EnumVariant(en).freezed()));
                         }
                         if let Ok(Type::Lit(LitType { .. })) = self.expand_enum_variant(elem.clone()) {
-                            return Ok(Some(elem.clone()));
+                            return Ok(Some(elem.clone().freezed()));
                         }
                     } else {
                         // enumVariant is Enum
@@ -949,11 +1021,8 @@ impl Analyzer<'_, '_> {
                                     if num_lits.is_empty() && is_num {
                                         return never!();
                                     }
-                                    if str_lits.is_empty() && is_num {
-                                        return Ok(Some(elem.clone()));
-                                    }
-                                    if num_lits.is_empty() && is_str {
-                                        return Ok(Some(elem.clone()));
+                                    if str_lits.is_empty() && is_num || num_lits.is_empty() && is_str {
+                                        return Ok(Some(elem.clone().freezed()));
                                     }
 
                                     let mut ty = Type::union(if is_str {
@@ -965,7 +1034,7 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     ty.reposition(e.span);
-                                    return Ok(Some(ty));
+                                    return Ok(Some(ty).freezed());
                                 }
                             }
                         }
@@ -1028,7 +1097,133 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(None)
+        {
+            let normalize_len = normalize_types.len();
+            normalize_types.make_clone_cheap();
+            let mut type_iter = normalize_types.clone().into_iter();
+            let mut acc_type = type_iter
+                .next()
+                .unwrap_or(Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsNeverKeyword,
+                    metadata: KeywordTypeMetadata { ..Default::default() },
+                    tracker: Default::default(),
+                }))
+                .freezed();
+
+            for elem in type_iter {
+                let mut ty_vec = vec![];
+                match (acc_type.normalize(), elem.normalize()) {
+                    (
+                        Type::Param(TypeParam {
+                            constraint: Some(other), ..
+                        }),
+                        Type::Param(TypeParam {
+                            constraint: Some(another), ..
+                        }),
+                    ) => {
+                        let other = other.normalize();
+                        let another = another.normalize();
+                        let result =
+                            self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
+                        if let Some(tp) = result {
+                            ty_vec.push(tp);
+                        }
+                    }
+                    (
+                        Type::Param(TypeParam {
+                            constraint: Some(another), ..
+                        }),
+                        other,
+                    )
+                    | (
+                        other,
+                        Type::Param(TypeParam {
+                            constraint: Some(another), ..
+                        }),
+                    ) => {
+                        let other = other.normalize();
+                        let another = another.normalize();
+                        let result =
+                            self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
+                        if let Some(tp) = result {
+                            ty_vec.push(tp);
+                        }
+                    }
+                    (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) => {
+                        for a_ty in a_types {
+                            for b_ty in b_types {
+                                let result =
+                                    self.normalize_intersection_types(span, &vec![a_ty.to_owned(), b_ty.to_owned()], Default::default())?;
+                                if let Some(tp) = result {
+                                    ty_vec.push(tp);
+                                }
+                            }
+                        }
+                    }
+                    (Type::Union(Union { types, .. }), other) | (other, Type::Union(Union { types, .. })) => {
+                        for ty in types {
+                            let result =
+                                self.normalize_intersection_types(span, &vec![ty.to_owned(), other.to_owned()], Default::default())?;
+                            if let Some(tp) = result {
+                                ty_vec.push(tp);
+                            }
+                        }
+                    }
+                    (Type::Intersection(Intersection { types, .. }), other) | (other, Type::Intersection(Intersection { types, .. })) => {
+                        let mut temp_vec = vec![];
+                        temp_vec.append(&mut types.to_owned());
+                        temp_vec.push(other.to_owned());
+
+                        acc_type = Type::Intersection(Intersection {
+                            span,
+                            types: temp_vec,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })
+                        .freezed();
+                        continue;
+                    }
+                    (other, another) => {
+                        acc_type = Type::Intersection(Intersection {
+                            span,
+                            types: vec![other.to_owned(), another.to_owned()],
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })
+                        .freezed();
+                        continue;
+                    }
+                };
+
+                ty_vec.retain(|ty| !ty.is_never());
+                acc_type = if ty_vec.is_empty() {
+                    return never!();
+                } else if ty_vec.len() == 1 {
+                    if let Some(ty) = ty_vec.pop() {
+                        ty
+                    } else {
+                        return never!();
+                    }
+                } else {
+                    Type::union(ty_vec).freezed()
+                }
+            }
+            if let Type::Union(Union { types: u_types, .. }) = acc_type.normalize() {
+                if normalize_len < u_types.len() {
+                    return Ok(Some(
+                        Type::Intersection(Intersection {
+                            span,
+                            types: normalize_types,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })
+                        .freezed(),
+                    ));
+                }
+            }
+            return Ok(Some(acc_type));
+        }
     }
 
     // This is part of normalization.
