@@ -126,13 +126,13 @@ async fn main() -> Result<(), Error> {
 
             {
                 let start = Instant::now();
-                for err in errors {
+                for err in &errors {
                     err.emit(&handler);
                 }
 
                 let end = Instant::now();
 
-                log::info("Found {} errors", errors.len());
+                log::info!("Found {} errors", errors.len());
 
                 log::info!("Error reporting took {:?}", end - start);
             }
