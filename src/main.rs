@@ -132,6 +132,8 @@ async fn main() -> Result<(), Error> {
 
                 let end = Instant::now();
 
+                log::info("Found {} errors", errors.len());
+
                 log::info!("Error reporting took {:?}", end - start);
             }
         }

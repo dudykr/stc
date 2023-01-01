@@ -352,11 +352,11 @@ impl Analyzer<'_, '_> {
             match data.normalize() {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
-                        self.storage.reexport_var(span, dep, id.clone(), ty.clone());
+                        self.storage.reexport_var(span, ctxt, id.clone(), ty.clone());
                     }
                     for (id, types) in data.exports.types.iter() {
                         for ty in types {
-                            self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+                            self.storage.reexport_type(span, ctxt, id.clone(), ty.clone());
                         }
                     }
                 }
