@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
             span,
             inferred,
             &param.types,
-            &*once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
+            &once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
             |this, t, s| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
