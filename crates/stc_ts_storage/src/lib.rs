@@ -173,15 +173,13 @@ impl TypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        debug_assert_eq!(ctxt, self.id);
+    fn reexport_type(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: Type) {
         ty.assert_clone_cheap();
 
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        debug_assert_eq!(ctxt, self.id);
+    fn reexport_var(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: Type) {
         ty.assert_clone_cheap();
 
         // TODO(kdy1): error reporting for duplicate
