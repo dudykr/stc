@@ -127,7 +127,7 @@ impl Analyzer<'_, '_> {
         let mut matched_targets: Vec<Type> = vec![];
 
         for t in targets {
-            for s in targets {
+            for s in sources {
                 if matches(self, t, s) {
                     self.infer_type(span, inferred, t, s, opts)?;
 
