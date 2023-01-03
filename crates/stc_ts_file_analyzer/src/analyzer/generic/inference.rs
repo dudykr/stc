@@ -38,6 +38,7 @@ use crate::{
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
+    #[allow(unused)]
     pub priority: InferencePriority,
 
     pub for_fn_assignment: bool,
@@ -118,6 +119,7 @@ impl Default for InferencePriority {
 }
 
 impl Analyzer<'_, '_> {
+    #[allow(unused)]
     pub(super) fn infer_from_matching_types(
         &mut self,
         span: Span,

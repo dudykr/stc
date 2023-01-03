@@ -1937,7 +1937,7 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            // We handle all other maped types at here.
+            // We handle all other mapped types at here.
             //
             //
             // In the code below,
