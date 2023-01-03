@@ -143,7 +143,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let sources = if sources.is_empty() {
+        let sources = if matched_sources.is_empty() {
             sources.to_vec()
         } else {
             sources
@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
                 .collect()
         };
 
-        let targets = if targets.is_empty() {
+        let targets = if matched_targets.is_empty() {
             targets.to_vec()
         } else {
             targets
@@ -193,9 +193,8 @@ impl Analyzer<'_, '_> {
             opts,
         )?;
 
-        if targets.is_empty() {
-            return Ok(());
-        }
+        dbg!(&sources, &temp_targets);
+
         let target = Type::new_union(span, targets);
 
         if sources.is_empty() {
