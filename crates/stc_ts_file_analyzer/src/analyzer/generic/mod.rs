@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
     ///     s: string
     /// }
     ///
-    /// declare const usymbol: unique symbol
+    /// declare const us: unique symbol
     /// declare var i1: I1
     ///
     /// declare var c1: C1
@@ -359,7 +359,7 @@ impl Analyzer<'_, '_> {
     /// foo({ bar: '', baz: 1 }); // Error on baz (string is selected)
     /// foo({ bar: '', baz: n }); // Error on baz (string is selected)
     /// foo({ bar: Symbol.iterator, baz: 5 }) // Error on baz (symbol is selected)
-    /// foo({ bar: usymbol, baz: 5 }) // Error on baz (unique symbol is selected)
+    /// foo({ bar: us, baz: 5 }) // Error on baz (unique symbol is selected)
     ///
     ///
     /// foo({ bar: [], baz: '' }); // Error on bar (string is selected)
@@ -390,7 +390,7 @@ impl Analyzer<'_, '_> {
     /// arr([1, '']); // Ok
     /// arr(['', 1]); // Ok
     /// arr([Symbol.iterator, 5]) // Ok
-    /// arr([usymbol, 5]) // Ok
+    /// arr([us, 5]) // Ok
     ///
     ///
     /// arr([[], '']); // Ok
@@ -1335,7 +1335,7 @@ impl Analyzer<'_, '_> {
                 optional: Option<TruePlusMinus>,
             }
             /// Matches with normalized types.
-            /// type Boxified<R> = {
+            /// type Boxed<R> = {
             ///     [P in keyof R]: Box<R[P]>;
             /// }
             fn matches(param: &Mapped) -> Option<Res> {
@@ -1420,16 +1420,16 @@ impl Analyzer<'_, '_> {
                         // In the code below, we are given Box<R[P]> and keys of R.
                         // We have to deduce T is { a: Box<string> } from given facts.
                         //
-                        // type Boxified<R> = {
+                        // type Boxed<R> = {
                         //     [P in keyof R]: Box<R[P]>;
                         // }
                         //
-                        // declare function unboxify<T>(obj: Boxified<T>): T;
+                        // declare function unbox<T>(obj: Boxed<T>): T;
                         //
                         // declare let b: {
                         //     a: Box<string>,
                         // };
-                        // let v = unboxify(b);
+                        // let v = unbox(b);
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
@@ -1757,10 +1757,10 @@ impl Analyzer<'_, '_> {
                     self.mapped_type_param_name = names.clone();
                     {
                         let mut v = MappedReverser::default();
-                        let revesed_param_ty = param_ty.clone().fold_with(&mut v);
+                        let reversed_param_ty = param_ty.clone().fold_with(&mut v);
 
                         if v.did_work {
-                            self.infer_type(span, inferred, &revesed_param_ty, arg, opts)?;
+                            self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
                             self.mapped_type_param_name = old;
 
                             return Ok(true);
@@ -1942,8 +1942,8 @@ impl Analyzer<'_, '_> {
             //
             // In the code below,
             //
-            // declare type Boxified<Pick<P, T>> = {
-            //     [BoxifiedP in keyof Pick<P, K>[BoxifiedT]]: Box<Pick<P, K>[BoxifiedP]>;
+            // declare type Boxed<Pick<P, T>> = {
+            //     [BoxedP in keyof Pick<P, K>[BoxedT]]: Box<Pick<P, K>[BoxedP]>;
             // };
             if let Some(constraint) = &param.type_param.constraint {
                 if let Type::Operator(Operator {
