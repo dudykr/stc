@@ -118,6 +118,56 @@ impl Default for InferencePriority {
 }
 
 impl Analyzer<'_, '_> {
+    pub(super) fn infer_from_matching_types(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        sources: &[Type],
+        targets: &[Type],
+        matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
+        opts: InferTypeOpts,
+    ) -> VResult<(Vec<Type>, Vec<Type>)> {
+        let mut matched_sources: Vec<Type> = vec![];
+        let mut matched_targets: Vec<Type> = vec![];
+
+        for t in targets {
+            for s in targets {
+                if matches(self, t, s) {
+                    self.infer_type(span, inferred, t, s, opts)?;
+
+                    if matched_sources.iter().all(|ty| !ty.type_eq(s)) {
+                        matched_sources.push(s.clone());
+                    }
+                    if matched_targets.iter().all(|ty| !ty.type_eq(t)) {
+                        matched_targets.push(t.clone());
+                    }
+                }
+            }
+        }
+
+        let sources = if sources.is_empty() {
+            sources.to_vec()
+        } else {
+            sources
+                .iter()
+                .filter(|s| !matched_sources.iter().any(|ty| ty.type_eq(s)))
+                .cloned()
+                .collect()
+        };
+
+        let targets = if targets.is_empty() {
+            targets.to_vec()
+        } else {
+            targets
+                .iter()
+                .filter(|t| !matched_targets.iter().any(|ty| ty.type_eq(t)))
+                .cloned()
+                .collect()
+        };
+
+        Ok((sources, targets))
+    }
+
     /// Union-union inference is special, because
     ///
     /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
