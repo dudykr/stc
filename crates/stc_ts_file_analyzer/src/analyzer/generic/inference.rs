@@ -1,8 +1,11 @@
+#![allow(non_upper_case_globals)]
+
 use std::{
     borrow::Cow,
     collections::{hash_map::Entry, HashMap},
 };
 
+use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
@@ -17,12 +20,12 @@ use stc_ts_types::{
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, info};
+use tracing::{debug, error, info, Level};
 
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        generic::{type_form::OldTypeForm, InferData, InferredType},
+        generic::{type_form::OldTypeForm, InferData},
         Analyzer,
     },
     ty::TypeExt,
@@ -35,6 +38,9 @@ use crate::{
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
+    #[allow(unused)]
+    pub priority: InferencePriority,
+
     pub for_fn_assignment: bool,
     /// Defaults to false because
     ///
@@ -52,6 +58,9 @@ pub(crate) struct InferTypeOpts {
     /// This is `true` for array
     pub append_type_as_union: bool,
 
+    /// If true, inference result can be `unknown`.
+    pub use_error: bool,
+
     pub skip_union: bool,
 
     /// If we are inferring a type using another type, we should
@@ -60,9 +69,107 @@ pub(crate) struct InferTypeOpts {
     ///
     /// because literals are present in the another type.
     pub is_type_ann: bool,
+
+    /// Ignore `Object` builtin type.
+    pub ignore_builtin_object_interface: bool,
+}
+
+bitflags! {
+    pub struct InferencePriority: i32 {
+        const None = 0;
+        /// Naked type variable in union or intersection type
+        const NakedTypeVariable = 1 << 0;
+        /// Speculative tuple inference
+        const SpeculativeTuple = 1 << 1;
+        /// Source of inference originated within a substitution type's substitute
+        const SubstituteSource = 1 << 2;
+        /// Reverse inference for homomorphic mapped type
+        const HomomorphicMappedType = 1 << 3;
+        /// Partial reverse inference for homomorphic mapped type
+        const PartialHomomorphicMappedType = 1 << 4;
+        /// Reverse inference for mapped type
+        const MappedTypeConstraint = 1 << 5;
+        /// Conditional type in contravariant position
+        const ContravariantConditional = 1 << 6;
+        /// Inference made from return type of generic function
+        const ReturnType = 1 << 7;
+        /// Inference made from a string literal to a keyof T
+        const LiteralKeyof = 1 << 8;
+        /// Don't infer from constraints of instantiable types
+        const NoConstraints = 1 << 9;
+        /// Always use strict rules for contravariant inferences
+        const AlwaysStrict = 1 << 10;
+        /// Seed for inference priority tracking
+        const MaxValue = 1 << 11;
+
+        /// Inference circularity (value less than all other priorities)
+        const Circularity = -1;
+
+        /// These priorities imply that the resulting type should be a combination
+        /// of all candidates
+        const PriorityImpliesCombination =
+            Self::ReturnType.bits | Self::MappedTypeConstraint.bits | Self::LiteralKeyof.bits;
+    }
+}
+
+impl Default for InferencePriority {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 impl Analyzer<'_, '_> {
+    #[allow(unused)]
+    pub(super) fn infer_from_matching_types(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        sources: &[Type],
+        targets: &[Type],
+        matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
+        opts: InferTypeOpts,
+    ) -> VResult<(Vec<Type>, Vec<Type>)> {
+        let mut matched_sources: Vec<Type> = vec![];
+        let mut matched_targets: Vec<Type> = vec![];
+
+        for t in targets {
+            for s in targets {
+                if matches(self, t, s) {
+                    self.infer_type(span, inferred, t, s, opts)?;
+
+                    if matched_sources.iter().all(|ty| !ty.type_eq(s)) {
+                        matched_sources.push(s.clone());
+                    }
+                    if matched_targets.iter().all(|ty| !ty.type_eq(t)) {
+                        matched_targets.push(t.clone());
+                    }
+                }
+            }
+        }
+
+        let sources = if sources.is_empty() {
+            sources.to_vec()
+        } else {
+            sources
+                .iter()
+                .filter(|s| !matched_sources.iter().any(|ty| ty.type_eq(s)))
+                .cloned()
+                .collect()
+        };
+
+        let targets = if targets.is_empty() {
+            targets.to_vec()
+        } else {
+            targets
+                .iter()
+                .filter(|t| !matched_targets.iter().any(|ty| ty.type_eq(t)))
+                .cloned()
+                .collect()
+        };
+
+        Ok((sources, targets))
+    }
+
     /// Union-union inference is special, because
     ///
     /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
@@ -217,55 +324,108 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        self.upsert_inferred(span, inferred, name, &ty, opts)
+    }
+
+    pub(super) fn upsert_inferred(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        name: Id,
+        arg: &Type,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
-                if let InferredType::Union(_) = e.get() {
+                let _tracing = tracing::span!(
+                    Level::ERROR,
+                    "infer_type: type param",
+                    name = name.as_str(),
+                    new = tracing::field::display(&dump_type_as_string(arg)),
+                    prev = tracing::field::display(&dump_type_as_string(e.get()))
+                )
+                .entered();
+
+                // Identical
+                if e.get().type_eq(arg) {
                     return Ok(());
                 }
 
-                if ty.is_union_type() {
-                    *e.get_mut() = InferredType::Union(ty.into_owned().freezed());
+                if opts.append_type_as_union
+                    || self
+                        .assign_with_opts(
+                            &mut Default::default(),
+                            &arg.clone().generalize_lit(),
+                            &e.get().clone().generalize_lit(),
+                            AssignOpts {
+                                span,
+                                do_not_convert_enum_to_string_nor_number: true,
+                                ignore_enum_variant_name: true,
+                                ignore_tuple_length_difference: true,
+                                ..Default::default()
+                            },
+                        )
+                        .is_ok()
+                {
+                    if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
+                        return Ok(());
+                    }
+
+                    if opts.ignore_builtin_object_interface && arg.is_builtin_interface("Object") {
+                        return Ok(());
+                    }
+
+                    debug!("Overriding");
+                    let new = if self
+                        .assign_with_opts(
+                            &mut Default::default(),
+                            arg,
+                            e.get(),
+                            AssignOpts {
+                                span,
+                                do_not_convert_enum_to_string_nor_number: true,
+                                ..Default::default()
+                            },
+                        )
+                        .is_ok()
+                    {
+                        arg.clone()
+                    } else {
+                        Type::new_union(span, vec![e.get().clone(), arg.clone()].freezed())
+                    };
+                    *e.get_mut() = new;
                     return Ok(());
                 }
 
-                match e.get_mut() {
-                    InferredType::Union(e) => {
-                        unreachable!()
-                    }
-                    InferredType::Other(e) => {
-                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
-                            return Ok(());
-                        }
+                // If we inferred T as `number`, we don't need to add `1`.
+                if self
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        &e.get().clone().generalize_lit(),
+                        &arg.clone().generalize_lit(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                    )
+                    .is_ok()
+                {
+                    debug!("Ignoring the new type");
 
-                        if !e.is_empty() && !opts.append_type_as_union {
-                            inferred.errored.insert(name);
-                            return Ok(());
-                        }
+                    return Ok(());
+                }
 
-                        for prev in e.iter_mut() {
-                            if self
-                                .assign_with_opts(
-                                    &mut Default::default(),
-                                    &ty,
-                                    prev,
-                                    AssignOpts {
-                                        span,
-                                        ..Default::default()
-                                    },
-                                )
-                                .is_ok()
-                            {
-                                *prev = ty.into_owned().generalize_lit();
-                                return Ok(());
-                            }
-                        }
+                debug!("Cannot append");
+                inferred.skip_generalization = true;
 
-                        e.push(ty.into_owned().generalize_lit());
-                    }
+                if opts.use_error {
+                    inferred.errored.insert(name);
                 }
             }
             Entry::Vacant(e) => {
-                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit()]));
+                let arg = arg.clone();
+
+                e.insert(arg);
             }
         }
 
@@ -293,7 +453,7 @@ impl Analyzer<'_, '_> {
         self.infer_type(span, &mut inferred, param, arg, InferTypeOpts { skip_union: true, ..opts })
             .context("tried to infer type using two type")?;
 
-        let map = self.finalize_inference(inferred);
+        let map = self.finalize_inference(span, inferred);
 
         Ok(map.types)
     }
@@ -711,15 +871,10 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn finalize_inference(&self, inferred: InferData) -> InferTypeResult {
+    pub(super) fn finalize_inference(&self, span: Span, inferred: InferData) -> InferTypeResult {
         let mut map = HashMap::default();
 
-        for (k, v) in inferred.type_params {
-            let mut ty = match v {
-                InferredType::Union(ty) => ty,
-                InferredType::Other(types) => Type::union(types),
-            };
-
+        for (k, mut ty) in inferred.type_params {
             self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
 
             ty.make_clone_cheap();
@@ -777,30 +932,23 @@ impl Analyzer<'_, '_> {
         is_from_type_ann: bool,
     ) {
         for type_param in type_params {
-            match type_param.constraint.as_deref() {
-                Some(Type::Lit(..)) => {}
+            if !inferred.skip_generalization {
+                match type_param.constraint.as_deref() {
+                    Some(Type::Lit(..)) => {}
 
-                _ if is_from_type_ann => {}
+                    _ if is_from_type_ann => {}
 
-                Some(ty) => {
-                    if !should_prevent_generalization(ty) {
-                        continue;
+                    Some(ty) => {
+                        if !should_prevent_generalization(ty) {
+                            continue;
+                        }
                     }
+                    _ => continue,
                 }
-                _ => continue,
             }
 
             if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
-                match ty {
-                    InferredType::Union(ty) => {
-                        prevent_generalize(ty);
-                    }
-                    InferredType::Other(types) => {
-                        for ty in types {
-                            prevent_generalize(ty);
-                        }
-                    }
-                }
+                prevent_generalize(ty);
             }
         }
     }

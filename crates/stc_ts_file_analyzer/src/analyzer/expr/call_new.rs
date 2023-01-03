@@ -2250,6 +2250,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [None] if nothing matched.
+    #[cfg_attr(not(debug_assertions), tracing::instrument(skip_all))]
     fn select_and_invoke(
         &mut self,
         span: Span,
@@ -3270,6 +3271,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
         if arg.type_eq(param) {
             return true;
@@ -3294,6 +3296,7 @@ impl Analyzer<'_, '_> {
     /// `anyAssignabilityInInheritance.ts` says `any, not a subtype of number so
     /// it skips that overload, is a subtype of itself so it picks second (if
     /// truly ambiguous it would pick first overload)`
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn check_call_args(
         &mut self,
         span: Span,

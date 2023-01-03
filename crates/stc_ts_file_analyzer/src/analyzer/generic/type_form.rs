@@ -4,7 +4,7 @@ use stc_ts_types::{name::Name, Type};
 ///
 /// For example, `T | PromiseLike<T>` has identical `form` with `void |
 /// PrmomiseLike<void>`
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum OldTypeForm {
     Ref(Name),
     Other,
