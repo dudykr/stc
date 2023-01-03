@@ -69,6 +69,7 @@ mod scope;
 mod stmt;
 #[cfg(test)]
 mod tests;
+mod tsc_helper;
 mod types;
 mod util;
 mod visit_mut;
