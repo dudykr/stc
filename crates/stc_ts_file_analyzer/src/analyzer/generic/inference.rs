@@ -3,10 +3,12 @@
 use std::{
     borrow::Cow,
     collections::{hash_map::Entry, HashMap},
+    iter::once,
 };
 
 use bitflags::bitflags;
 use fxhash::FxHashMap;
+use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
@@ -177,7 +179,7 @@ impl Analyzer<'_, '_> {
             span,
             inferred,
             &param.types,
-            &[arg.clone()],
+            &*once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
             |this, t, s| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
