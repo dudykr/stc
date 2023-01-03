@@ -193,8 +193,6 @@ impl Analyzer<'_, '_> {
             opts,
         )?;
 
-        dbg!(&sources, &temp_targets);
-
         let target = Type::new_union(span, targets);
 
         if sources.is_empty() {
