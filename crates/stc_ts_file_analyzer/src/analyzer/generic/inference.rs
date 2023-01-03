@@ -7,11 +7,9 @@ use std::{
 
 use bitflags::bitflags;
 use fxhash::FxHashMap;
-use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
-use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
@@ -23,11 +21,7 @@ use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
 use crate::{
-    analyzer::{
-        assign::AssignOpts,
-        generic::{type_form::OldTypeForm, InferData},
-        Analyzer,
-    },
+    analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
     ty::TypeExt,
     util::unwrap_ref_with_single_arg,
     VResult,
@@ -38,7 +32,6 @@ use crate::{
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
-    #[allow(unused)]
     pub priority: InferencePriority,
 
     pub for_fn_assignment: bool,
@@ -72,6 +65,8 @@ pub(crate) struct InferTypeOpts {
 
     /// Ignore `Object` builtin type.
     pub ignore_builtin_object_interface: bool,
+
+    pub skip_initial_union_check: bool,
 }
 
 bitflags! {
@@ -119,7 +114,6 @@ impl Default for InferencePriority {
 }
 
 impl Analyzer<'_, '_> {
-    #[allow(unused)]
     pub(super) fn infer_from_matching_types(
         &mut self,
         span: Span,
@@ -170,47 +164,6 @@ impl Analyzer<'_, '_> {
         Ok((sources, targets))
     }
 
-    /// Union-union inference is special, because
-    ///
-    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
-    ///
-    /// should result in `T = void`, not `T = void | PromiseLike<void>`
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn infer_type_using_union_and_union(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        param: &Union,
-        arg_ty: &Type,
-        arg: &Union,
-        opts: InferTypeOpts,
-    ) -> VResult<()> {
-        // Check 'form's of type.
-        //
-        // `Promise<T> | T` and `Promise<void> | void` have same 'form'.
-        if param.types.len() == arg.types.len() {
-            // TODO(kdy1): Sort types so `T | PromiseLike<T>` has same form as
-            // `PromiseLike<void> | void`.
-
-            let param_type_form = param.types.iter().map(OldTypeForm::from).collect_vec();
-            let arg_type_form = arg.types.iter().map(OldTypeForm::from).collect_vec();
-
-            if param_type_form == arg_type_form {
-                for (p, a) in param.types.iter().zip(arg.types.iter()) {
-                    self.infer_type(span, inferred, p, a, opts)?;
-                }
-
-                return Ok(());
-            }
-        }
-
-        for p in &param.types {
-            self.infer_type(span, inferred, p, arg_ty, opts)?;
-        }
-
-        Ok(())
-    }
-
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_type_using_union(
         &mut self,
@@ -220,30 +173,56 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
-        let arg_form = TypeForm::from(arg);
+        let (temp_sources, temp_targets) = self.infer_from_matching_types(
+            span,
+            inferred,
+            &param.types,
+            &[arg.clone()],
+            |this, t, s| this.is_type_or_base_identical_to(s, t),
+            opts,
+        )?;
 
-        let matched_paths = type_forms.iter().map(|param| compare_type_forms(param, &arg_form)).collect_vec();
-        let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
+        let (sources, targets) = self.infer_from_matching_types(
+            span,
+            inferred,
+            &temp_sources,
+            &temp_targets,
+            |this, t, s| this.is_type_closely_matched_by(s, t),
+            opts,
+        )?;
 
-        if let Some(max) = max {
-            for (idx, (param, type_path)) in param.types.iter().zip(matched_paths.iter()).enumerate() {
-                if type_path == max {
-                    self.infer_type(span, inferred, param, arg, opts)?;
-                }
-            }
-
+        if targets.is_empty() {
             return Ok(());
         }
+        let target = Type::new_union(span, targets);
 
-        //
-        if !opts.skip_union {
-            for p in &param.types {
-                self.infer_type(span, inferred, p, arg, opts)?;
-            }
+        if sources.is_empty() {
+            return self.infer_type(
+                span,
+                inferred,
+                &target,
+                arg,
+                InferTypeOpts {
+                    // Prevent infinite recursion
+                    skip_initial_union_check: true,
+                    ..opts
+                },
+            );
         }
 
-        Ok(())
+        let source = Type::new_union(span, sources);
+
+        self.infer_type(
+            span,
+            inferred,
+            &target,
+            &source,
+            InferTypeOpts {
+                // Prevent infinite recursion
+                skip_initial_union_check: true,
+                ..opts
+            },
+        )
     }
 
     pub(super) fn insert_inferred(
