@@ -774,11 +774,12 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )?;
-                    self.infer_type(
+                    self.infer_with_priority(
                         span,
                         inferred,
-                        &p.ret_ty,
                         &a.ret_ty,
+                        &p.ret_ty,
+                        InferencePriority::ReturnType,
                         InferTypeOpts {
                             ignore_builtin_object_interface: true,
                             ..opts

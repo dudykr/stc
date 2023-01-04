@@ -371,7 +371,7 @@ impl Analyzer<'_, '_> {
         self.infer_type(span, inferred, target, source, opts)
     }
 
-    fn infer_with_priority(
+    pub(super) fn infer_with_priority(
         &mut self,
         span: Span,
         inferred: &mut InferData,
