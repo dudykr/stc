@@ -129,7 +129,7 @@ bitflags! {
 
 impl Default for InferencePriority {
     fn default() -> Self {
-        Self::MaxValue
+        Self::None
     }
 }
 
@@ -305,7 +305,14 @@ impl Analyzer<'_, '_> {
                 let intersection_type_var = getSingleTypeVariableFromIntersectionTypes(targets);
 
                 if let Some(intersection_type_var) = intersection_type_var {
-                    self.infer_with_priority(span, inferred, intersection_type_var, InferencePriority::NakedTypeVariable, opts)?;
+                    self.infer_with_priority(
+                        span,
+                        inferred,
+                        source,
+                        intersection_type_var,
+                        InferencePriority::NakedTypeVariable,
+                        opts,
+                    )?;
                 }
                 return Ok(());
             }
@@ -324,7 +331,7 @@ impl Analyzer<'_, '_> {
                     .map(|(_, t)| t.clone())
                     .collect_vec();
                 if !unmatched.is_empty() {
-                    return self.infer_from_types(span, inferred, Type::new_union(span, unmatched), &naked_type_var.unwrap(), opts);
+                    return self.infer_from_types(span, inferred, &Type::new_union(span, unmatched), &naked_type_var.unwrap(), opts);
                 }
             }
         } else {
@@ -368,9 +375,14 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         source: &Type,
         target: &Type,
-        priority: InferencePriority,
-        opts: InferTypeOpts,
+        new_priority: InferencePriority,
+        mut opts: InferTypeOpts,
     ) -> VResult<()> {
+        let mut saved_priority = opts.priority;
+        opts.priority |= new_priority;
+        self.infer_from_types(span, inferred, source, target, opts)?;
+
+        Ok(())
     }
 
     fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {}

@@ -42,7 +42,7 @@ mod inference;
 mod tests;
 mod type_form;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, Type>,
@@ -66,6 +66,19 @@ pub(super) struct InferData {
     skip_generalization: bool,
 
     priority: InferencePriority,
+}
+
+impl Default for InferData {
+    fn default() -> Self {
+        Self {
+            type_params: Default::default(),
+            defaults: Default::default(),
+            errored: Default::default(),
+            dejavu: Default::default(),
+            skip_generalization: Default::default(),
+            priority: InferencePriority::MaxValue,
+        }
+    }
 }
 
 /// Type inference for arguments.
