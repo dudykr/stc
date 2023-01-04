@@ -446,14 +446,16 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(arg)
         ));
 
-        if inferred
-            .dejavu
-            .iter()
-            .any(|(prev_param, prev_arg)| prev_param.type_eq(param) && prev_arg.type_eq(arg))
-        {
-            return Ok(());
+        if !opts.skip_initial_union_check {
+            if inferred
+                .dejavu
+                .iter()
+                .any(|(prev_param, prev_arg)| prev_param.type_eq(param) && prev_arg.type_eq(arg))
+            {
+                return Ok(());
+            }
+            inferred.dejavu.push((param.clone(), arg.clone()));
         }
-        inferred.dejavu.push((param.clone(), arg.clone()));
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
