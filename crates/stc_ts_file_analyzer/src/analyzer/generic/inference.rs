@@ -392,6 +392,23 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Ported from `inferFromContravariantTypes` of `tsc`.
+    pub(super) fn infer_from_contravariant_types(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &Type,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
+        let old = inferred.contravariant;
+        inferred.contravariant = true;
+        let res = self.infer_from_types(span, inferred, source, target, opts);
+        inferred.contravariant = old;
+
+        res
+    }
+
     /// Ported from `getInferenceInfoForType` of `tsc`.
     fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
         if let Type::Param(param) = ty {

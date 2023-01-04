@@ -66,6 +66,8 @@ pub(super) struct InferData {
     skip_generalization: bool,
 
     priority: InferencePriority,
+
+    contravariant: bool,
 }
 
 impl Default for InferData {
@@ -77,6 +79,7 @@ impl Default for InferData {
             dejavu: Default::default(),
             skip_generalization: Default::default(),
             priority: InferencePriority::MaxValue,
+            contravariant: Default::default(),
         }
     }
 }
@@ -594,22 +597,39 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if arg.is_enum_type() {
-            let arg = self
-                .normalize(
-                    Some(arg.span()),
-                    Cow::Borrowed(arg),
-                    NormalizeTypeOpts {
-                        expand_enum_def: true,
-                        preserve_global_this: true,
-                        ..Default::default()
-                    },
-                )
-                .context("tried to normalize enum")?
-                .freezed()
-                .into_owned()
-                .freezed();
-            return self.infer_type_inner(span, inferred, param, &arg, opts);
+        match (param.normalize(), arg.normalize()) {
+            (_, Type::Enum(..)) => {
+                let arg = self
+                    .normalize(
+                        Some(arg.span()),
+                        Cow::Borrowed(arg),
+                        NormalizeTypeOpts {
+                            expand_enum_def: true,
+                            preserve_global_this: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to normalize enum")?
+                    .freezed()
+                    .into_owned()
+                    .freezed();
+                return self.infer_type_inner(span, inferred, param, &arg, opts);
+            }
+
+            (
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty: param,
+                    ..
+                }),
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty: arg,
+                    ..
+                }),
+            ) => return self.infer_from_contravariant_types(span, inferred, arg, param, opts),
+
+            _ => {}
         }
 
         match param.normalize() {
