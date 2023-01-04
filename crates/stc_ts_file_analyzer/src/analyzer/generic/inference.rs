@@ -239,6 +239,11 @@ impl Analyzer<'_, '_> {
         is_target_union: bool,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        error!(
+            "unimplemented: infer_from_multiple_types: source={:?}, targets={:?}, is_target_union={:?}",
+            source, targets, is_target_union
+        );
+
         Ok(())
     }
 
