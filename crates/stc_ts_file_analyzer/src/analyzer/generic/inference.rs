@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
 
             for t in targets {
                 if self.get_inference_info_for_type(inferred, t).is_some() {
-                    type_var_count == 1;
+                    type_var_count += 1;
                 } else {
                     self.infer_from_types(span, inferred, source, t, opts)?;
                 }
