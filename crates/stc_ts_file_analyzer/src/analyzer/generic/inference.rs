@@ -249,7 +249,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferToMultipleTypes` of `tsc`.
-    pub(super) fn infer_from_multiple_types(
+    pub(super) fn infer_to_multiple_types(
         &mut self,
         span: Span,
         inferred: &mut InferData,
