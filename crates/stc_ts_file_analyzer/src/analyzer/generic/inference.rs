@@ -29,6 +29,26 @@ use crate::{
     VResult,
 };
 
+#[derive(Debug, Clone, Default)]
+pub(super) struct InferenceInfo {
+    /// Candidates in covariant positions (or undefined)
+    candidates: Vec<Type>,
+
+    /// Candidates in contravariant positions (or undefined)
+    contra_candidates: Vec<Type>,
+
+    /// Cache for resolved inferred type
+    inferred_type: Option<Type>,
+
+    /// Priority of current inference set
+    priority: InferencePriority,
+    /// True if all inferences are to top level occurrences
+    top_level: bool,
+    /// True if inferences are fixed
+    is_fixed: bool,
+    implied_arity: Option<isize>,
+}
+
 /// # Default
 ///
 /// All fields default to `false`.
@@ -239,6 +259,29 @@ impl Analyzer<'_, '_> {
         is_target_union: bool,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let mut type_var_count = 0;
+
+        if is_target_union {
+            let mut naked_type_var = None;
+
+            let sources = if let Type::Union(source) = source.normalize() {
+                Cow::Borrowed(&source.types)
+            } else {
+                Cow::Owned(vec![source.clone()])
+            };
+            let mut matched = vec![false; sources.len()];
+            let mut inference_circularity = false;
+
+            // First infer to types that are not naked type variables. For each
+            // source type we track whether inferences were made from that
+            // particular type to some target with equal priority (i.e. of equal
+            // quality) to what we would infer for a naked type parameter.
+
+            for t in targets {
+                if let Some(..) = self.get_inference_info_for_type(inferred, t) {}
+            }
+        }
+
         error!(
             "unimplemented: infer_from_multiple_types: source={:?}, targets={:?}, is_target_union={:?}",
             source, targets, is_target_union
@@ -246,6 +289,8 @@ impl Analyzer<'_, '_> {
 
         Ok(())
     }
+
+    fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {}
 
     pub(super) fn insert_inferred(
         &mut self,
