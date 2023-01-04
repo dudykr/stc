@@ -392,11 +392,7 @@ impl Analyzer<'_, '_> {
     /// Ported from `getInferenceInfoForType` of `tsc`.
     fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
         if let Type::Param(param) = ty {
-            for inference in &mut inferred.inferences {
-                if inference.type_param.name == param.name {
-                    return Some(inference);
-                }
-            }
+            return inferred.type_params.get_mut(&param.name);
         }
 
         None
@@ -522,12 +518,12 @@ impl Analyzer<'_, '_> {
                     "infer_type: type param",
                     name = name.as_str(),
                     new = tracing::field::display(&dump_type_as_string(arg)),
-                    prev = tracing::field::display(&dump_type_as_string(e.get()))
+                    prev = tracing::field::display(&dump_type_as_string(&e.get().inferred_type))
                 )
                 .entered();
 
                 // Identical
-                if e.get().type_eq(arg) {
+                if e.get().inferred_type.type_eq(arg) {
                     return Ok(());
                 }
 
@@ -536,7 +532,7 @@ impl Analyzer<'_, '_> {
                         .assign_with_opts(
                             &mut Default::default(),
                             &arg.clone().generalize_lit(),
-                            &e.get().clone().generalize_lit(),
+                            &e.get().inferred_type.clone().generalize_lit(),
                             AssignOpts {
                                 span,
                                 do_not_convert_enum_to_string_nor_number: true,
@@ -547,7 +543,7 @@ impl Analyzer<'_, '_> {
                         )
                         .is_ok()
                 {
-                    if (e.get().is_any() || e.get().is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
+                    if (e.get().inferred_type.is_any() || e.get().inferred_type.is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
                         return Ok(());
                     }
 
@@ -560,7 +556,7 @@ impl Analyzer<'_, '_> {
                         .assign_with_opts(
                             &mut Default::default(),
                             arg,
-                            e.get(),
+                            &e.get().inferred_type,
                             AssignOpts {
                                 span,
                                 do_not_convert_enum_to_string_nor_number: true,
@@ -571,7 +567,7 @@ impl Analyzer<'_, '_> {
                     {
                         arg.clone()
                     } else {
-                        Type::new_union(span, vec![e.get().clone(), arg.clone()].freezed())
+                        Type::new_union(span, vec![e.get().inferred_type.clone(), arg.clone()].freezed())
                     };
                     *e.get_mut() = new;
                     return Ok(());
@@ -581,7 +577,7 @@ impl Analyzer<'_, '_> {
                 if self
                     .assign_with_opts(
                         &mut Default::default(),
-                        &e.get().clone().generalize_lit(),
+                        &e.get().inferred_type.clone().generalize_lit(),
                         &arg.clone().generalize_lit(),
                         AssignOpts {
                             span,
