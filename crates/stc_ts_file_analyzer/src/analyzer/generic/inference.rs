@@ -192,6 +192,10 @@ impl Analyzer<'_, '_> {
             opts,
         )?;
 
+        if targets.is_empty() {
+            return Ok(());
+        }
+
         let target = Type::new_union(span, targets);
 
         if sources.is_empty() {
