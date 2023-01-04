@@ -148,6 +148,9 @@ impl Analyzer<'_, '_> {
         matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
         opts: InferTypeOpts,
     ) -> VResult<(Vec<Type>, Vec<Type>)> {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::span!(Level::ERROR, "infer_from_matching_types").entered();
+
         let mut matched_sources: Vec<Type> = vec![];
         let mut matched_targets: Vec<Type> = vec![];
 
