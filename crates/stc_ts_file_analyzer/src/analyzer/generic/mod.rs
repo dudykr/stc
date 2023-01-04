@@ -107,7 +107,19 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
-                inferred.type_params.insert(type_param.name.clone(), param.clone());
+                inferred.type_params.insert(
+                    type_param.name.clone(),
+                    InferenceInfo {
+                        type_param: type_param.name.clone(),
+                        candidates: Default::default(),
+                        contra_candidates: Default::default(),
+                        inferred_type: param.clone(),
+                        priority: Default::default(),
+                        top_level: Default::default(),
+                        is_fixed: true,
+                        implied_arity: Default::default(),
+                    },
+                );
             }
         }
 
@@ -772,12 +784,11 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )?;
-                    self.infer_with_priority(
+                    self.infer_type(
                         span,
                         inferred,
-                        &a.ret_ty,
                         &p.ret_ty,
-                        InferencePriority::ReturnType,
+                        &a.ret_ty,
                         InferTypeOpts {
                             ignore_builtin_object_interface: true,
                             ..opts

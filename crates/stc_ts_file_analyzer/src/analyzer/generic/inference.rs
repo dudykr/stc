@@ -31,7 +31,7 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub(super) struct InferenceInfo {
-    pub type_param: TypeParam,
+    pub type_param: Id,
 
     /// Candidates in covariant positions (or undefined)
     pub candidates: Vec<Type>,
@@ -513,6 +513,10 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
+                if e.get().is_fixed {
+                    return Ok(());
+                }
+
                 let _tracing = tracing::span!(
                     Level::ERROR,
                     "infer_type: type param",
@@ -522,86 +526,104 @@ impl Analyzer<'_, '_> {
                 )
                 .entered();
 
-                // Identical
-                if e.get().inferred_type.type_eq(arg) {
-                    return Ok(());
+                if opts.priority < e.get().priority {
+                    e.get_mut().candidates = Default::default();
+                    e.get_mut().contra_candidates = Default::default();
+                    e.get_mut().top_level = true;
+                    e.get_mut().priority = opts.priority;
                 }
 
-                if opts.append_type_as_union
-                    || self
+                if opts.priority == e.get().priority {
+                    // Identical
+                    if e.get().inferred_type.type_eq(arg) {
+                        return Ok(());
+                    }
+
+                    if opts.append_type_as_union
+                        || self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                &arg.clone().generalize_lit(),
+                                &e.get().inferred_type.clone().generalize_lit(),
+                                AssignOpts {
+                                    span,
+                                    do_not_convert_enum_to_string_nor_number: true,
+                                    ignore_enum_variant_name: true,
+                                    ignore_tuple_length_difference: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .is_ok()
+                    {
+                        if (e.get().inferred_type.is_any() || e.get().inferred_type.is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
+                            return Ok(());
+                        }
+
+                        if opts.ignore_builtin_object_interface && arg.is_builtin_interface("Object") {
+                            return Ok(());
+                        }
+
+                        debug!("Overriding");
+                        let new = if self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                arg,
+                                &e.get().inferred_type,
+                                AssignOpts {
+                                    span,
+                                    do_not_convert_enum_to_string_nor_number: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .is_ok()
+                        {
+                            arg.clone()
+                        } else {
+                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.clone()].freezed())
+                        };
+                        e.get_mut().inferred_type = new;
+                        return Ok(());
+                    }
+
+                    // If we inferred T as `number`, we don't need to add `1`.
+                    if self
                         .assign_with_opts(
                             &mut Default::default(),
-                            &arg.clone().generalize_lit(),
                             &e.get().inferred_type.clone().generalize_lit(),
+                            &arg.clone().generalize_lit(),
                             AssignOpts {
                                 span,
-                                do_not_convert_enum_to_string_nor_number: true,
-                                ignore_enum_variant_name: true,
-                                ignore_tuple_length_difference: true,
-                                ..Default::default()
-                            },
-                        )
-                        .is_ok()
-                {
-                    if (e.get().inferred_type.is_any() || e.get().inferred_type.is_unknown()) && !(arg.is_any() || arg.is_unknown()) {
-                        return Ok(());
-                    }
-
-                    if opts.ignore_builtin_object_interface && arg.is_builtin_interface("Object") {
-                        return Ok(());
-                    }
-
-                    debug!("Overriding");
-                    let new = if self
-                        .assign_with_opts(
-                            &mut Default::default(),
-                            arg,
-                            &e.get().inferred_type,
-                            AssignOpts {
-                                span,
-                                do_not_convert_enum_to_string_nor_number: true,
                                 ..Default::default()
                             },
                         )
                         .is_ok()
                     {
-                        arg.clone()
-                    } else {
-                        Type::new_union(span, vec![e.get().inferred_type.clone(), arg.clone()].freezed())
-                    };
-                    *e.get_mut() = new;
-                    return Ok(());
-                }
+                        debug!("Ignoring the new type");
 
-                // If we inferred T as `number`, we don't need to add `1`.
-                if self
-                    .assign_with_opts(
-                        &mut Default::default(),
-                        &e.get().inferred_type.clone().generalize_lit(),
-                        &arg.clone().generalize_lit(),
-                        AssignOpts {
-                            span,
-                            ..Default::default()
-                        },
-                    )
-                    .is_ok()
-                {
-                    debug!("Ignoring the new type");
+                        return Ok(());
+                    }
 
-                    return Ok(());
-                }
+                    debug!("Cannot append");
+                    inferred.skip_generalization = true;
 
-                debug!("Cannot append");
-                inferred.skip_generalization = true;
-
-                if opts.use_error {
-                    inferred.errored.insert(name);
+                    if opts.use_error {
+                        inferred.errored.insert(name);
+                    }
                 }
             }
             Entry::Vacant(e) => {
                 let arg = arg.clone();
 
-                e.insert(arg);
+                e.insert(InferenceInfo {
+                    type_param: name.clone(),
+                    candidates: Default::default(),
+                    contra_candidates: Default::default(),
+                    inferred_type: arg,
+                    priority: opts.priority,
+                    top_level: Default::default(),
+                    is_fixed: false,
+                    implied_arity: Default::default(),
+                });
             }
         }
 
