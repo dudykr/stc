@@ -115,6 +115,7 @@ impl Default for InferencePriority {
 }
 
 impl Analyzer<'_, '_> {
+    /// Ported from `inferFromMatchingTypes` of `tsc`.
     pub(super) fn infer_from_matching_types(
         &mut self,
         span: Span,
@@ -165,6 +166,7 @@ impl Analyzer<'_, '_> {
         Ok((sources, targets))
     }
 
+    /// Ported from `tsc`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_type_using_union(
         &mut self,
@@ -227,6 +229,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
+    /// Ported from `inferToMultipleTypes` of `tsc`.
     pub(super) fn infer_from_multiple_types(
         &mut self,
         span: Span,
