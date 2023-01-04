@@ -31,26 +31,26 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub(super) struct InferenceInfo {
-    type_param: TypeParam,
+    pub type_param: TypeParam,
 
     /// Candidates in covariant positions (or undefined)
-    candidates: Vec<Type>,
+    pub candidates: Vec<Type>,
 
     /// Candidates in contravariant positions (or undefined)
-    contra_candidates: Vec<Type>,
+    pub contra_candidates: Vec<Type>,
 
     /// Cache for resolved inferred type
     ///
     /// TODO(kdy1): Make this `Option<Type>`, to match `tsc`.
-    inferred_type: Type,
+    pub inferred_type: Type,
 
     /// Priority of current inference set
-    priority: InferencePriority,
+    pub priority: InferencePriority,
     /// True if all inferences are to top level occurrences
-    top_level: bool,
+    pub top_level: bool,
     /// True if inferences are fixed
-    is_fixed: bool,
-    implied_arity: Option<isize>,
+    pub is_fixed: bool,
+    pub implied_arity: Option<isize>,
 }
 
 /// # Default
@@ -1051,11 +1051,11 @@ impl Analyzer<'_, '_> {
         let mut map = HashMap::default();
 
         for (k, mut ty) in inferred.type_params {
-            self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
+            self.replace_null_or_undefined_while_defaulting_to_any(&mut ty.inferred_type);
 
-            ty.make_clone_cheap();
+            ty.inferred_type.make_clone_cheap();
 
-            map.insert(k, ty);
+            map.insert(k, ty.inferred_type);
         }
 
         InferTypeResult {
@@ -1124,7 +1124,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
-                prevent_generalize(ty);
+                prevent_generalize(&mut ty.inferred_type);
             }
         }
     }

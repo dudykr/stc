@@ -77,7 +77,6 @@ impl Default for InferData {
             dejavu: Default::default(),
             skip_generalization: Default::default(),
             priority: InferencePriority::MaxValue,
-            inferences: Default::default(),
         }
     }
 }
@@ -1800,7 +1799,7 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            let ty = inferred.type_params.remove(name).map(Box::new);
+                                            let ty = inferred.type_params.remove(name).map(|v| box v.inferred_type);
 
                                             type_elements
                                                 .entry(name.clone())
@@ -2091,7 +2090,7 @@ impl Analyzer<'_, '_> {
                 return;
             }
 
-            fixed.insert(param_name.clone(), ty.clone());
+            fixed.insert(param_name.clone(), ty.inferred_type.clone());
         });
 
         let mut v = Renamer { fixed: &fixed };
