@@ -54,7 +54,6 @@ pub(super) struct InferenceInfo {
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
-    #[allow(unused)]
     pub priority: InferencePriority,
 
     pub for_fn_assignment: bool,
@@ -130,7 +129,7 @@ bitflags! {
 
 impl Default for InferencePriority {
     fn default() -> Self {
-        Self::None
+        Self::MaxValue
     }
 }
 
@@ -278,7 +277,22 @@ impl Analyzer<'_, '_> {
             // quality) to what we would infer for a naked type parameter.
 
             for t in targets {
-                if let Some(..) = self.get_inference_info_for_type(inferred, t) {}
+                if let Some(..) = self.get_inference_info_for_type(inferred, t) {
+                    naked_type_var = Some(t.clone());
+                    type_var_count += 1;
+                } else {
+                    for (i, source) in sources.iter().enumerate() {
+                        let saved_inference_priority = inferred.priority;
+                        inferred.priority = InferencePriority::MaxValue;
+                        self.infer_type(span, inferred, t, source, opts)?;
+                        if inferred.priority == opts.priority {
+                            matched[i] = true;
+                        }
+
+                        inference_circularity |= inferred.priority == InferencePriority::Circularity;
+                        inferred.priority = InferencePriority::min(inferred.priority, saved_inference_priority);
+                    }
+                }
             }
         }
 

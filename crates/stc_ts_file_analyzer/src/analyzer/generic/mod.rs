@@ -28,6 +28,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, span, trace, warn, Level};
 
+use self::inference::InferencePriority;
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
@@ -63,6 +64,8 @@ pub(super) struct InferData {
     dejavu: Vec<(Type, Type)>,
 
     skip_generalization: bool,
+
+    priority: InferencePriority,
 }
 
 /// Type inference for arguments.
