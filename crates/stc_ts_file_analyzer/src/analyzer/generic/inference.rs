@@ -10,7 +10,10 @@ use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt,
+};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
@@ -177,11 +180,18 @@ impl Analyzer<'_, '_> {
         let (temp_sources, temp_targets) = self.infer_from_matching_types(
             span,
             inferred,
-            &param.types,
             &once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
+            &param.types,
             |this, t, s| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
+
+        for t in &temp_targets {
+            dbg!(force_dump_type_as_string(t));
+        }
+        for t in &temp_sources {
+            dbg!(force_dump_type_as_string(t));
+        }
 
         let (sources, targets) = self.infer_from_matching_types(
             span,
