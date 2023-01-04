@@ -1194,27 +1194,12 @@ impl Analyzer<'_, '_> {
                 let mut map = FxHashMap::<_, Vec<_>>::default();
                 for item in data {
                     for (name, ty) in item.type_params {
-                        map.entry(name).or_default().push(ty);
+                        map.entry(name).or_default().push(ty.inferred_type);
                     }
                 }
 
                 for (name, types) in map {
-                    if types.len() == 1 {
-                        inferred.type_params.insert(name, types.into_iter().next().unwrap().inferred_type);
-                    } else {
-                        // TODO(kdy1): Check inference logic of union mixed with intersection
-
-                        inferred.type_params.insert(
-                            name,
-                            Type::Intersection(Intersection {
-                                types,
-                                span,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed(),
-                        );
-                    }
+                    self.upsert_inferred(span, inferred, name, &Type::new_intersection(span, types).freezed(), opts)?;
                 }
 
                 return Ok(());
@@ -2095,7 +2080,7 @@ impl Analyzer<'_, '_> {
 
         let mut v = Renamer { fixed: &fixed };
         inferred.type_params.iter_mut().for_each(|(_, ty)| {
-            ty.visit_mut_with(&mut v);
+            ty.inferred_type.visit_mut_with(&mut v);
         });
 
         Ok(())
