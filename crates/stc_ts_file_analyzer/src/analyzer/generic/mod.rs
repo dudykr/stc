@@ -1063,18 +1063,23 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg {
-            Type::Union(arg) => {
-                if opts.append_type_as_union {
-                    //
-                    for a in &arg.types {
-                        self.infer_type(span, inferred, param, a, opts)?;
-                    }
-
-                    return Ok(());
-                }
+        match (param, arg) {
+            (Type::Union(Union { types: param_types, .. }) | Type::Intersection(Intersection { types: param_types, .. }), _) => {
+                return self.infer_from_multiple_types(span, inferred, arg, param_types, opts);
             }
 
+            (_, Type::Union(arg_union)) => {
+                // Source is a union or intersection type, infer from each constituent type
+                for source_type in arg_union.types.iter() {
+                    self.infer_type(span, inferred, param, source_type, opts)?;
+                }
+                return Ok(());
+            }
+
+            _ => {}
+        }
+
+        match arg {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 

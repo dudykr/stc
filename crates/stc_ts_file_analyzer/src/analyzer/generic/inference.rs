@@ -227,6 +227,17 @@ impl Analyzer<'_, '_> {
         )
     }
 
+    pub(super) fn infer_from_multiple_types(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        targets: &[Type],
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
+        Ok(())
+    }
+
     pub(super) fn insert_inferred(
         &mut self,
         span: Span,
