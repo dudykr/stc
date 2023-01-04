@@ -327,18 +327,39 @@ impl Analyzer<'_, '_> {
                     return self.infer_from_types(span, inferred, Type::new_union(span, unmatched), &naked_type_var.unwrap(), opts);
                 }
             }
+        } else {
+            // We infer from types that are not naked type variables first so
+            // that inferences we make from nested naked type
+            // variables and given slightly higher priority by virtue
+            // of being first in the candidates array.
+
+            for t in targets {
+                if self.get_inference_info_for_type(inferred, t).is_some() {
+                    type_var_count == 1;
+                } else {
+                    self.infer_from_types(span, inferred, source, t, opts)?;
+                }
+            }
         }
 
-        error!(
-            "unimplemented: infer_from_multiple_types: source={:?}, targets={:?}, is_target_union={:?}",
-            source, targets, is_target_union
-        );
+        if if !is_target_union {
+            type_var_count == 1
+        } else {
+            type_var_count > 0
+        } {
+            for t in targets {
+                if let Some(..) = self.get_inference_info_for_type(inferred, t) {
+                    self.infer_with_priority(span, inferred, source, t, InferencePriority::NakedTypeVariable, opts)?;
+                }
+            }
+        }
 
         Ok(())
     }
 
-    fn infer_from_types(&mut self, span: Span, inferred: &mut InferData, source: Type, target: &Type, opts: InferTypeOpts) -> VResult<()> {
-        self.infer_type(span, inferred, target, &source, opts)
+    /// Ported from `inferFromTypes` of `tsc`.
+    fn infer_from_types(&mut self, span: Span, inferred: &mut InferData, source: &Type, target: &Type, opts: InferTypeOpts) -> VResult<()> {
+        self.infer_type(span, inferred, target, source, opts)
     }
 
     fn infer_with_priority(
