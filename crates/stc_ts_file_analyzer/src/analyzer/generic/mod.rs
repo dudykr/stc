@@ -583,10 +583,10 @@ impl Analyzer<'_, '_> {
                 ref name, ref constraint, ..
             }) => {
                 let constraint = constraint.as_ref().map(|ty| ty.normalize());
-                if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inferencing {
+                if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inference {
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
-                            skip_identical_while_inferencing: true,
+                            skip_identical_while_inference: true,
                             ..self.ctx
                         };
 
@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
                     // }
                 }
 
-                if self.ctx.skip_identical_while_inferencing {
+                if self.ctx.skip_identical_while_inference {
                     if let Type::Param(arg) = arg {
                         if *name == arg.name {
                             return Ok(());

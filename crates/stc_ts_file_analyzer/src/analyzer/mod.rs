@@ -178,7 +178,7 @@ pub(crate) struct Ctx {
     /// parameters.
     preserve_ret_ty: bool,
 
-    skip_identical_while_inferencing: bool,
+    skip_identical_while_inference: bool,
 
     super_references_super_class: bool,
 
@@ -517,7 +517,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 ignore_expand_prevention_for_all: false,
                 preserve_params: true,
                 preserve_ret_ty: true,
-                skip_identical_while_inferencing: false,
+                skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
                 cannot_fallback_to_iterable_iterator: false,
