@@ -304,14 +304,14 @@ impl Analyzer<'_, '_> {
                 // inferring from 'A | B' to 'T & (X | Y)' where
                 // we want to infer 'A | B' for T.
 
-                let intersection_type_var = getSingleTypeVariableFromIntersectionTypes(targets);
+                let intersection_type_var = self.get_single_type_variable_from_intersection_types(span, inferred, targets);
 
                 if let Some(intersection_type_var) = intersection_type_var {
                     self.infer_with_priority(
                         span,
                         inferred,
                         source,
-                        intersection_type_var,
+                        &intersection_type_var,
                         InferencePriority::NakedTypeVariable,
                         opts,
                     )?;
@@ -398,6 +398,30 @@ impl Analyzer<'_, '_> {
         }
 
         None
+    }
+
+    /// Ported from `getSingleTypeVariableFromIntersectionTypes` of `tsc`.
+    fn get_single_type_variable_from_intersection_types(&mut self, span: Span, inferred: &mut InferData, types: &[Type]) -> Option<Type> {
+        let mut type_var: Option<Type> = None;
+
+        for ty in types {
+            if let Type::Intersection(t) = ty.normalize() {
+                if let Some(t) = t.types.iter().find(|t| self.get_inference_info_for_type(inferred, ty).is_some()) {
+                    if let Some(type_var) = type_var {
+                        if !type_var.type_eq(t) {
+                            return None;
+                        }
+                    }
+                    type_var = Some(t.clone());
+                } else {
+                    return None;
+                }
+            } else {
+                return None;
+            }
+        }
+
+        type_var
     }
 
     pub(super) fn insert_inferred(
