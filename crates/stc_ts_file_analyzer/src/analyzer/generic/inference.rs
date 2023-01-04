@@ -236,6 +236,7 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         source: &Type,
         targets: &[Type],
+        is_target_union: bool,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         Ok(())

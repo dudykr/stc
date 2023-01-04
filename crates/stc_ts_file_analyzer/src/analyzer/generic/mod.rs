@@ -1064,8 +1064,11 @@ impl Analyzer<'_, '_> {
         }
 
         match (param, arg) {
-            (Type::Union(Union { types: param_types, .. }) | Type::Intersection(Intersection { types: param_types, .. }), _) => {
-                return self.infer_from_multiple_types(span, inferred, arg, param_types, opts);
+            (Type::Union(Union { types: param_types, .. }), _) => {
+                return self.infer_from_multiple_types(span, inferred, arg, param_types, true, opts);
+            }
+            (Type::Intersection(Intersection { types: param_types, .. }), _) => {
+                return self.infer_from_multiple_types(span, inferred, arg, param_types, false, opts);
             }
 
             (_, Type::Union(arg_union)) => {
