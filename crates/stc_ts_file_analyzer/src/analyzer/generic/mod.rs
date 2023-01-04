@@ -608,8 +608,8 @@ impl Analyzer<'_, '_> {
                             ..self.ctx
                         };
 
-                        self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
-                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, &prev.inferred_type, arg, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev.inferred_type, opts)?;
                     }
                 }
 
@@ -618,7 +618,7 @@ impl Analyzer<'_, '_> {
                 if constraint.is_some() && is_literals(constraint.as_ref().unwrap()) {
                     info!("infer from literal constraint: {} = {:?}", name, constraint);
                     if let Some(orig) = inferred.type_params.get(name) {
-                        if !orig.eq_ignore_span(constraint.as_ref().unwrap()) {
+                        if !orig.inferred_type.eq_ignore_span(constraint.as_ref().unwrap()) {
                             print_backtrace();
                             unreachable!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -1200,7 +1200,7 @@ impl Analyzer<'_, '_> {
 
                 for (name, types) in map {
                     if types.len() == 1 {
-                        inferred.type_params.insert(name, types.into_iter().next().unwrap());
+                        inferred.type_params.insert(name, types.into_iter().next().unwrap().inferred_type);
                     } else {
                         // TODO(kdy1): Check inference logic of union mixed with intersection
 
@@ -1491,7 +1491,7 @@ impl Analyzer<'_, '_> {
 
                                             let mut data = InferData::default();
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
-                                            let inferred_ty = data.type_params.remove(&name).freezed();
+                                            let inferred_ty = data.type_params.remove(&name).map(|v| v.inferred_type).freezed();
 
                                             self.mapped_type_param_name = old;
 
