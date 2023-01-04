@@ -515,18 +515,20 @@ impl Analyzer<'_, '_> {
 
         match (param.normalize(), arg.normalize()) {
             (Type::Union(p), _) => {
-                self.infer_type_using_union(
-                    span,
-                    inferred,
-                    p,
-                    arg,
-                    InferTypeOpts {
-                        append_type_as_union: true,
-                        ..opts
-                    },
-                )?;
+                if !opts.skip_initial_union_check {
+                    self.infer_type_using_union(
+                        span,
+                        inferred,
+                        p,
+                        arg,
+                        InferTypeOpts {
+                            append_type_as_union: true,
+                            ..opts
+                        },
+                    )?;
 
-                return Ok(());
+                    return Ok(());
+                }
             }
 
             (Type::Intersection(param), _) => {

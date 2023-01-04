@@ -34,6 +34,7 @@ use crate::{
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
+    #[allow(unused)]
     pub priority: InferencePriority,
 
     pub for_fn_assignment: bool,
@@ -55,8 +56,6 @@ pub(crate) struct InferTypeOpts {
 
     /// If true, inference result can be `unknown`.
     pub use_error: bool,
-
-    pub skip_union: bool,
 
     /// If we are inferring a type using another type, we should
     ///
@@ -428,7 +427,7 @@ impl Analyzer<'_, '_> {
 
         let mut inferred = InferData::default();
 
-        self.infer_type(span, &mut inferred, param, arg, InferTypeOpts { skip_union: true, ..opts })
+        self.infer_type(span, &mut inferred, param, arg, InferTypeOpts { ..opts })
             .context("tried to infer type using two type")?;
 
         let map = self.finalize_inference(span, inferred);
