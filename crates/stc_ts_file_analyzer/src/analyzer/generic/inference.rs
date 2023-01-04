@@ -227,11 +227,11 @@ impl Analyzer<'_, '_> {
         let target = Type::new_union(span, targets);
 
         if sources.is_empty() {
-            return self.infer_type(
+            return self.infer_from_types(
                 span,
                 inferred,
-                &target,
                 arg,
+                &target,
                 InferTypeOpts {
                     // Prevent infinite recursion
                     skip_initial_union_check: true,
@@ -242,11 +242,11 @@ impl Analyzer<'_, '_> {
 
         let source = Type::new_union(span, sources);
 
-        self.infer_type(
+        self.infer_from_types(
             span,
             inferred,
-            &target,
             &source,
+            &target,
             InferTypeOpts {
                 // Prevent infinite recursion
                 skip_initial_union_check: true,
@@ -385,7 +385,7 @@ impl Analyzer<'_, '_> {
         new_priority: InferencePriority,
         mut opts: InferTypeOpts,
     ) -> VResult<()> {
-        let mut saved_priority = opts.priority;
+        let saved_priority = opts.priority;
         opts.priority |= new_priority;
         self.infer_from_types(span, inferred, source, target, opts)?;
 
