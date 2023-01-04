@@ -629,6 +629,30 @@ impl Analyzer<'_, '_> {
                 }),
             ) => return self.infer_from_contravariant_types(span, inferred, arg, param, opts),
 
+            (Type::Conditional(target), Type::Conditional(source)) => {
+                self.infer_from_types(span, inferred, &source.check_type, &target.check_type, opts)?;
+                self.infer_from_types(span, inferred, &source.extends_type, &target.extends_type, opts)?;
+                self.infer_from_types(span, inferred, &source.true_type, &target.true_type, opts)?;
+                self.infer_from_types(span, inferred, &source.false_type, &target.false_type, opts)?;
+
+                return Ok(());
+            }
+            (Type::Conditional(target), ..) => {
+                return self.infer_to_multiple_types_with_priority(
+                    span,
+                    inferred,
+                    arg,
+                    &[*target.true_type.clone(), *target.false_type.clone()],
+                    if inferred.contravariant {
+                        InferencePriority::ContravariantConditional
+                    } else {
+                        InferencePriority::None
+                    },
+                    false,
+                    opts,
+                )
+            }
+
             _ => {}
         }
 

@@ -372,7 +372,14 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferFromTypes` of `tsc`.
-    fn infer_from_types(&mut self, span: Span, inferred: &mut InferData, source: &Type, target: &Type, opts: InferTypeOpts) -> VResult<()> {
+    pub(super) fn infer_from_types(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &Type,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
         self.infer_type(span, inferred, target, source, opts)
     }
 
@@ -388,6 +395,24 @@ impl Analyzer<'_, '_> {
         let saved_priority = opts.priority;
         opts.priority |= new_priority;
         self.infer_from_types(span, inferred, source, target, opts)?;
+
+        Ok(())
+    }
+
+    /// `inferToMultipleTypesWithPriority`
+    pub(super) fn infer_to_multiple_types_with_priority(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        targets: &[Type],
+        new_priority: InferencePriority,
+        is_target_union: bool,
+        mut opts: InferTypeOpts,
+    ) -> VResult<()> {
+        let saved_priority = opts.priority;
+        opts.priority |= new_priority;
+        self.infer_to_multiple_types(span, inferred, source, targets, is_target_union, opts)?;
 
         Ok(())
     }
