@@ -456,7 +456,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Optimize
-    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -558,6 +558,8 @@ impl Analyzer<'_, '_> {
                     )?;
 
                     return Ok(());
+                } else {
+                    opts.skip_initial_union_check = false;
                 }
             }
 
