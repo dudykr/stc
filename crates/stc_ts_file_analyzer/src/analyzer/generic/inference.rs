@@ -294,6 +294,39 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+
+            if type_var_count == 0 {
+                // If every target is an intersection of types containing a
+                // single naked type variable, make a lower
+                // priority inference to that type variable. This handles
+                // inferring from 'A | B' to 'T & (X | Y)' where
+                // we want to infer 'A | B' for T.
+
+                let intersection_type_var = getSingleTypeVariableFromIntersectionTypes(targets);
+
+                if let Some(intersection_type_var) = intersection_type_var {
+                    self.infer_with_priority(span, inferred, intersection_type_var, InferencePriority::NakedTypeVariable, opts)?;
+                }
+                return Ok(());
+            }
+
+            // If the target has a single naked type variable and no inference
+            // circularities were encountered above (meaning we
+            // explored the types fully), create a union of the source
+            // types from which no inferences have been made so far and infer
+            // from that union to the naked type variable.
+
+            if type_var_count == 0 && !inference_circularity {
+                let unmatched = sources
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| !matched[*i])
+                    .map(|(_, t)| t.clone())
+                    .collect_vec();
+                if !unmatched.is_empty() {
+                    return self.infer_from_types(span, inferred, Type::new_union(span, unmatched), &naked_type_var.unwrap(), opts);
+                }
+            }
         }
 
         error!(
@@ -302,6 +335,21 @@ impl Analyzer<'_, '_> {
         );
 
         Ok(())
+    }
+
+    fn infer_from_types(&mut self, span: Span, inferred: &mut InferData, source: Type, target: &Type, opts: InferTypeOpts) -> VResult<()> {
+        self.infer_type(span, inferred, target, &source, opts)
+    }
+
+    fn infer_with_priority(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &Type,
+        priority: InferencePriority,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
     }
 
     fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {}
