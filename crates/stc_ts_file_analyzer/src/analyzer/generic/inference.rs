@@ -29,8 +29,10 @@ use crate::{
     VResult,
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(super) struct InferenceInfo {
+    type_param: TypeParam,
+
     /// Candidates in covariant positions (or undefined)
     candidates: Vec<Type>,
 
@@ -385,7 +387,18 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {}
+    /// Ported from `getInferenceInfoForType` of `tsc`.
+    fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
+        if let Type::Param(param) = ty {
+            for inference in &mut inferred.inferences {
+                if inference.type_param.name == param.name {
+                    return Some(inference);
+                }
+            }
+        }
+
+        None
+    }
 
     pub(super) fn insert_inferred(
         &mut self,

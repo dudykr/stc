@@ -28,7 +28,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, span, trace, warn, Level};
 
-use self::inference::InferencePriority;
+use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
@@ -46,6 +46,7 @@ mod type_form;
 pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, Type>,
+    inferences: Vec<InferenceInfo>,
 
     errored: FxHashSet<Id>,
 
@@ -77,6 +78,7 @@ impl Default for InferData {
             dejavu: Default::default(),
             skip_generalization: Default::default(),
             priority: InferencePriority::MaxValue,
+            inferences: Default::default(),
         }
     }
 }
