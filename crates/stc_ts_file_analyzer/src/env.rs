@@ -1,4 +1,4 @@
-use std::{collections::hash_map::Entry, path::Path, sync::Arc, time::Instant};
+use std::{collections::hash_map::Entry, error::Error, path::Path, sync::Arc, time::Instant};
 
 use dashmap::DashMap;
 use once_cell::sync::{Lazy, OnceCell};
@@ -15,7 +15,7 @@ use stc_utils::{cache::Freeze, stack};
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{
     analyzer::{Analyzer, ScopeKind},
@@ -42,11 +42,22 @@ pub trait BuiltInGen: Sized {
         let cache_path = Path::new(".stc").join(".builtin-cache").join(&format!("{}.rmp", key));
 
         if cache_path.is_file() {
-            let data =
-                std::fs::read(&cache_path).unwrap_or_else(|err| panic!("failed to read builtin cache at {:?}: {:?}", cache_path, err));
-            let builtin = rmp_serde::decode::from_slice(&data)
-                .unwrap_or_else(|err| panic!("failed to deserialize builtin cache at {:?}: {:?}", cache_path, err));
-            return builtin;
+            let res = || -> Result<BuiltIn, Box<dyn Error>> {
+                let data = std::fs::read(&cache_path)?;
+
+                let builtin = rmp_serde::decode::from_slice(&data)?;
+
+                Ok(builtin)
+            }();
+
+            match res {
+                Ok(builtin) => {
+                    return builtin;
+                }
+                Err(err) => {
+                    warn!("Failed to load builtin from cache: {:?}", err);
+                }
+            }
         }
 
         let _stack = stack::start(300);
