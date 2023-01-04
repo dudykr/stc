@@ -40,7 +40,9 @@ pub(super) struct InferenceInfo {
     contra_candidates: Vec<Type>,
 
     /// Cache for resolved inferred type
-    inferred_type: Option<Type>,
+    ///
+    /// TODO(kdy1): Make this `Option<Type>`, to match `tsc`.
+    inferred_type: Type,
 
     /// Priority of current inference set
     priority: InferencePriority,
