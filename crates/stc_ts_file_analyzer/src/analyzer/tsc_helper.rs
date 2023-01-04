@@ -2,7 +2,10 @@ use stc_ts_types::Type;
 use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
-use super::Analyzer;
+use super::{
+    relation::{IsRelatedOpts, Relation},
+    Analyzer,
+};
 
 /// These methods are ported from `tsc`.
 impl Analyzer<'_, '_> {
@@ -23,7 +26,13 @@ impl Analyzer<'_, '_> {
 
     /// `isTypeIdenticalTo` of `tsc`.
     pub(crate) fn is_type_identical_to(&mut self, source: &Type, target: &Type) -> bool {
-        // TODO: Implement
-        source.type_eq(target)
+        self.is_related_to(
+            source,
+            target,
+            IsRelatedOpts {
+                kind: Relation::Identical,
+                ..Default::default()
+            },
+        )
     }
 }

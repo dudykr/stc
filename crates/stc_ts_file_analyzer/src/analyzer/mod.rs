@@ -65,6 +65,7 @@ mod hoisting;
 mod import;
 mod pat;
 mod props;
+mod relation;
 mod scope;
 mod stmt;
 #[cfg(test)]
