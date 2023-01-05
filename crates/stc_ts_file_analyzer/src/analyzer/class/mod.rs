@@ -1194,7 +1194,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
         if self.is_builtin {
-            // We don't need to validate builtins
+            // We don't need to validate builtin
             return Ok(());
         }
 
@@ -2199,7 +2199,7 @@ impl Analyzer<'_, '_> {
         res.report(&mut self.storage);
     }
 
-    /// TODO(kdy1): Instantate fully
+    /// TODO(kdy1): Instantiate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 

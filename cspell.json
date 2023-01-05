@@ -59,6 +59,7 @@
         "Swatinem",
         "tikv",
         "triomphe",
+        "Uncapitalize",
         "usize",
         "wasi",
         "Zunstable"
@@ -72,6 +73,7 @@
         "**/tests/**/*.json",
         "**/*.rust-debug",
         "**/*.swc-stderr",
+        "**/*.txt",
         // These files are not managed by us.
         "**/stc_ts_builtin_types/lib/*",
         "**/stc_ts_builtin_types/src/lib.rs",
