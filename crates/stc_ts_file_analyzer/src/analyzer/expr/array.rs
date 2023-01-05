@@ -513,7 +513,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
-            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
+            .convert_err(|err| ErrorKind::NextOfIteratorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if let Some(u) = elem_ty.as_union_type_mut() {

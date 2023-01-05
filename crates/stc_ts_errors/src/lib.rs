@@ -100,7 +100,7 @@ impl Debug for Error {
 }
 
 impl Errors {
-    /// This is used for debugging (by calling [pacic]).
+    /// This is used for debugging (by calling [panic]).
     #[allow(clippy::only_used_in_recursion)]
     fn validate(&self, err: &Error) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
@@ -282,7 +282,7 @@ pub enum ErrorKind {
     },
 
     /// TS2490
-    NextOfItertorShouldReturnTypeWithPropertyValue {
+    NextOfIteratorShouldReturnTypeWithPropertyValue {
         span: Span,
     },
 
@@ -1935,7 +1935,7 @@ impl ErrorKind {
 
             ErrorKind::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
-            ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
+            ErrorKind::NextOfIteratorShouldReturnTypeWithPropertyValue { .. } => 2490,
 
             ErrorKind::InvalidUsageOfNewTarget { .. } => 17013,
 
