@@ -10,6 +10,7 @@
         "fxhash",
         "indexmap",
         "inflector",
+        "instanceof",
         "isize",
         "itertools",
         "keyof",
@@ -23,6 +24,7 @@
         "rustc",
         "rvalue",
         "serde",
+        "smallvec",
         "triomphe",
         "usize"
     ],
