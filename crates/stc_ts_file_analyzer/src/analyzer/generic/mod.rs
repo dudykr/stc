@@ -118,7 +118,7 @@ impl Analyzer<'_, '_> {
                         contra_candidates: Default::default(),
                         inferred_type: param.clone(),
                         priority: Default::default(),
-                        top_level: Default::default(),
+                        top_level: true,
                         is_fixed: true,
                         implied_arity: Default::default(),
                     },
