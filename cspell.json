@@ -2,9 +2,12 @@
     "words": [
         "ahash",
         "ctxt",
+        "dashmap",
+        "fxhash",
         "isize",
         "pmutil",
         "rnode",
+        "rustc",
         "serde",
         "usize"
     ],
