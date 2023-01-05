@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
                             } else if en.enum_name != el.enum_name {
                                 return never!();
                             } else {
-                                // eq two arguemnt enum_name
+                                // eq two argument enum_name
                                 if let Ok(el_lit) = self.expand_enum_variant(elem.clone()) {
                                     if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
                                         if !etl.type_eq(&el_lit) {
