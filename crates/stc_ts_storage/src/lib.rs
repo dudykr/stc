@@ -42,7 +42,7 @@ pub trait TypeStore: Send + Sync {
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData;
 }
 
-/// Metadata for the input provided to the analyser.
+/// Metadata for the input provided to the analyzer.
 ///
 /// The analyzer can work on multiple module at once, in case of circular
 /// imports.
