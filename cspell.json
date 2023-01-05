@@ -12,6 +12,7 @@
         "**/tests/**/*.ts",
         "**/tests/**/*.tsx",
         "**/tests/**/*.json",
-        "**/tests/**/*.rust-debug"
+        "**/*.rust-debug",
+        "**/*.swc-stderr"
     ]
 }
