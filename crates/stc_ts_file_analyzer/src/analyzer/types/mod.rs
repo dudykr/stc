@@ -854,7 +854,7 @@ impl Analyzer<'_, '_> {
                 })))
             }};
         }
-        let mut normalize_types = vec![];
+        let mut normalized_types = vec![];
         // set normalize all
         for el in types.iter() {
             if let Ok(res) = self.normalize(
@@ -874,29 +874,29 @@ impl Analyzer<'_, '_> {
                     }) => {}
                     Type::Intersection(Intersection { types, .. }) => {
                         for ty in types {
-                            normalize_types.push(ty.to_owned());
+                            normalized_types.push(ty.to_owned());
                         }
                     }
                     _ => {
-                        normalize_types.push(result);
+                        normalized_types.push(result);
                     }
                 }
             }
         }
 
-        normalize_types.dedup_type();
+        normalized_types.dedup_type();
 
-        if normalize_types.len() == 1 {
-            if let Some(ty) = normalize_types.pop() {
+        if normalized_types.len() == 1 {
+            if let Some(ty) = normalized_types.pop() {
                 return Ok(Some(ty));
             }
         }
         // has never; return never
-        if normalize_types.iter().any(|ty| ty.is_never()) {
+        if normalized_types.iter().any(|ty| ty.is_never()) {
             return never!();
         }
         // has any, return any
-        if normalize_types.iter().any(|ty| ty.is_any()) {
+        if normalized_types.iter().any(|ty| ty.is_any()) {
             return Ok(Some(Type::Keyword(KeywordType {
                 span,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -905,14 +905,14 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        let is_symbol = normalize_types.iter().any(|ty| ty.is_symbol());
-        let is_str = normalize_types.iter().any(|ty| ty.is_str());
-        let is_num = normalize_types.iter().any(|ty| ty.is_num());
-        let is_bool = normalize_types.iter().any(|ty| ty.is_bool());
-        let is_null = normalize_types.iter().any(|ty| ty.is_null());
-        let is_undefined = normalize_types.iter().any(|ty| ty.is_undefined());
-        let is_void = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
-        let is_object = normalize_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+        let is_symbol = normalized_types.iter().any(|ty| ty.is_symbol());
+        let is_str = normalized_types.iter().any(|ty| ty.is_str());
+        let is_num = normalized_types.iter().any(|ty| ty.is_num());
+        let is_bool = normalized_types.iter().any(|ty| ty.is_bool());
+        let is_null = normalized_types.iter().any(|ty| ty.is_null());
+        let is_undefined = normalized_types.iter().any(|ty| ty.is_undefined());
+        let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
 
         let sum = u32::from(is_symbol)
             + u32::from(is_str)
@@ -1098,9 +1098,9 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            let normalize_len = normalize_types.len();
-            normalize_types.make_clone_cheap();
-            let mut type_iter = normalize_types.clone().into_iter();
+            let normalize_len = normalized_types.len();
+            normalized_types.make_clone_cheap();
+            let mut type_iter = normalized_types.clone().into_iter();
             let mut acc_type = type_iter
                 .next()
                 .unwrap_or_else(|| {
@@ -1216,7 +1216,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(
                         Type::Intersection(Intersection {
                             span,
-                            types: normalize_types,
+                            types: normalized_types,
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })
