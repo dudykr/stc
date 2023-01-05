@@ -84,7 +84,7 @@ fn is_all_test_enabled() -> bool {
 }
 
 fn print_matched_errors() -> bool {
-    !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
+    !env::var("DO_NOT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
 }
 
 fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
