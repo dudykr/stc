@@ -211,8 +211,7 @@ impl ObjectUnionNormalizer {
                                 }
                             }
 
-                            // Parameters are intersectioned, and return
-                            // types are unioned.
+                            // Parameters are intersected, and return types are unified.
 
                             for (idx, param) in params.into_iter().enumerate() {
                                 let new_params = new_params.entry(i).or_default();
