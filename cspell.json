@@ -60,6 +60,8 @@
         "respan",
         "respanning",
         "rnode",
+        "rpos",
+        "rposition",
         "rprop",
         "rustc",
         "rustfmt",

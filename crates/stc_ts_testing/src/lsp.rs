@@ -120,7 +120,7 @@ impl LspStdoutReader {
     pub fn read_message<R>(&mut self, mut get_match: impl FnMut(&LspMessage) -> Option<R>) -> R {
         trace!("read_message");
 
-        let (msg_queue, cvar) = &*self.pending_messages;
+        let (msg_queue, cond_var) = &*self.pending_messages;
         let mut msg_queue = msg_queue.lock();
         loop {
             for i in 0..msg_queue.len() {
@@ -134,7 +134,7 @@ impl LspStdoutReader {
                     return result;
                 }
             }
-            cvar.wait(&mut msg_queue);
+            cond_var.wait(&mut msg_queue);
         }
     }
 }
