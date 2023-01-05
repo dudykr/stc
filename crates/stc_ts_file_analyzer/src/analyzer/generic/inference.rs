@@ -9,13 +9,14 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
+use rnode::FoldWith;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
 };
 use stc_ts_generics::expander::InferTypeResult;
-use stc_ts_type_ops::generalization::prevent_generalize;
+use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
@@ -673,12 +674,12 @@ impl Analyzer<'_, '_> {
                 let arg = arg.clone();
 
                 e.insert(InferenceInfo {
-                    type_param: name.clone(),
+                    type_param: name,
                     candidates: Default::default(),
                     contra_candidates: Default::default(),
                     inferred_type: arg,
                     priority: opts.priority,
-                    top_level: Default::default(),
+                    top_level: true,
                     is_fixed: false,
                     implied_arity: Default::default(),
                 });
@@ -709,7 +710,7 @@ impl Analyzer<'_, '_> {
         self.infer_type(span, &mut inferred, param, arg, InferTypeOpts { ..opts })
             .context("tried to infer type using two type")?;
 
-        let map = self.finalize_inference(span, inferred);
+        let map = self.finalize_inference(span, type_params, inferred);
 
         Ok(map.types)
     }
@@ -1127,11 +1128,21 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn finalize_inference(&self, span: Span, inferred: InferData) -> InferTypeResult {
+    pub(super) fn finalize_inference(&self, span: Span, type_params: &[TypeParam], inferred: InferData) -> InferTypeResult {
         let mut map = HashMap::default();
 
         for (k, mut ty) in inferred.type_params {
+            let tp = type_params.iter().find(|tp| tp.name == k);
+
             self.replace_null_or_undefined_while_defaulting_to_any(&mut ty.inferred_type);
+
+            if !ty.top_level {
+                if let Some(tp) = &tp {
+                    if tp.constraint.is_none() {
+                        ty.inferred_type = ty.inferred_type.foldable().fold_with(&mut LitGeneralizer);
+                    }
+                }
+            }
 
             ty.inferred_type.make_clone_cheap();
 

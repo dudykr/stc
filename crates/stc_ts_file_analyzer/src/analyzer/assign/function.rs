@@ -452,7 +452,7 @@ impl Analyzer<'_, '_> {
                                     ..opts
                                 },
                             )
-                            .context("tried to assign TypeElemeny::Call to a function");
+                            .context("tried to assign TypeElement::Call to a function");
                     }
                 }
             }

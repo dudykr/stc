@@ -118,7 +118,7 @@ impl Analyzer<'_, '_> {
                         contra_candidates: Default::default(),
                         inferred_type: param.clone(),
                         priority: Default::default(),
-                        top_level: true,
+                        top_level: Default::default(),
                         is_fixed: true,
                         implied_arity: Default::default(),
                     },
@@ -299,7 +299,7 @@ impl Analyzer<'_, '_> {
 
         self.prevent_generalization_of_inferred_types(type_params, &mut inferred, opts.is_type_ann);
 
-        let map = self.finalize_inference(span, inferred);
+        let map = self.finalize_inference(span, type_params, inferred);
 
         let end = Instant::now();
 
@@ -319,7 +319,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
-        let map = self.finalize_inference(span, inferred);
+        let map = self.finalize_inference(span, &[], inferred);
 
         Ok(map.types)
     }
@@ -1604,7 +1604,7 @@ impl Analyzer<'_, '_> {
                                         let mut data = InferData::default();
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
                                         let mut defaults = take(&mut data.defaults);
-                                        let mut map = self.finalize_inference(span, data);
+                                        let mut map = self.finalize_inference(span, &[], data);
                                         let inferred_ty = map.types.remove(&name);
 
                                         self.mapped_type_param_name = old;
@@ -1675,7 +1675,7 @@ impl Analyzer<'_, '_> {
 
                             let mut data = InferData::default();
                             self.infer_type(span, &mut data, param_ty, &arg.elem_type, opts)?;
-                            let mut map = self.finalize_inference(span, data);
+                            let mut map = self.finalize_inference(span, &[], data);
                             let mut inferred_ty = map.types.remove(&name);
 
                             self.mapped_type_param_name = old;
@@ -2188,7 +2188,7 @@ impl Analyzer<'_, '_> {
                 type_ann
             );
 
-            let map = self.finalize_inference(span, inferred);
+            let map = self.finalize_inference(span, &usage_visitor.params, inferred);
 
             // TODO(kdy1): PERF
             return Ok(ty
