@@ -384,18 +384,19 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let span = program.span();
         let comments = comments.leading.get(&span.lo());
-        if let Some(ref cmts) = comments {
-            let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
+        if let Some(ref comments) = comments {
+            let directive_start = comments.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
             let cmt_start_line = if directive_start == 0 {
                 0
             } else {
-                cmts.iter()
+                comments
+                    .iter()
                     .find(|cmt| cmt.text.trim().starts_with('@'))
                     .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
                     .unwrap_or(0)
             };
 
-            for cmt in cmts.iter().skip(directive_start) {
+            for cmt in comments.iter().skip(directive_start) {
                 let s = cmt.text.trim();
                 if !s.starts_with('@') {
                     if had_comment {

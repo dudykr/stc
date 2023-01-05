@@ -11,6 +11,7 @@
         "clippy",
         "codegen",
         "Csplit",
+        "csstype",
         "ctxt",
         "dashmap",
         "debuginfo",

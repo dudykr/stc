@@ -929,7 +929,7 @@ impl Analyzer<'_, '_> {
                             // Rest element is special.
                             let type_for_rest_arg = self
                                 .get_rest_elements(None, ty, i)
-                                .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
+                                .context("tried to get left elements of an iterator to assign using a rest pattern")?;
 
                             self.try_assign_pat_with_opts(
                                 span,
@@ -943,7 +943,7 @@ impl Analyzer<'_, '_> {
                                     ..opts
                                 },
                             )
-                            .context("tried to assign lefting elements to the arugment of a rest pattern")?;
+                            .context("tried to assign left elements to the argument of a rest pattern")?;
                             break;
                         }
 
