@@ -383,8 +383,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         let mut had_comment = false;
 
         let span = program.span();
-        let cmts = comments.leading.get(&span.lo());
-        if let Some(ref cmts) = cmts {
+        let comments = comments.leading.get(&span.lo());
+        if let Some(ref cmts) = comments {
             let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
             let cmt_start_line = if directive_start == 0 {
                 0
