@@ -1152,7 +1152,7 @@ impl Analyzer<'_, '_> {
             (_, Type::Union(arg_union)) => {
                 // Source is a union or intersection type, infer from each constituent type
                 for source_type in arg_union.types.iter() {
-                    self.infer_type(span, inferred, param, source_type, opts)?;
+                    self.infer_from_types(span, inferred, source_type, param, opts)?;
                 }
                 return Ok(());
             }
