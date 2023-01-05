@@ -177,6 +177,9 @@ pub(crate) struct AssignOpts {
 
     pub ignore_enum_variant_name: bool,
     pub ignore_tuple_length_difference: bool,
+
+    /// Used to prevent recursion
+    pub do_not_normalize_intersection_on_rhs: bool,
 }
 
 #[derive(Default)]
@@ -1380,11 +1383,21 @@ impl Analyzer<'_, '_> {
             }) => fail!(),
 
             Type::Intersection(Intersection { types, .. }) => {
-                // Filter out `never` types
-                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
-                    return self
-                        .assign_inner(data, to, &new, opts)
-                        .context("tried to assign a normalized intersection type to another type");
+                if !opts.do_not_normalize_intersection_on_rhs {
+                    // Filter out `never` types
+                    if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                        return self
+                            .assign_inner(
+                                data,
+                                to,
+                                &new,
+                                AssignOpts {
+                                    do_not_normalize_intersection_on_rhs: true,
+                                    ..opts
+                                },
+                            )
+                            .context("tried to assign a normalized intersection type to another type");
+                    }
                 }
 
                 let errors = types
