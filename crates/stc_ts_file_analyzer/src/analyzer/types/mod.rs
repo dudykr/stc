@@ -1098,7 +1098,7 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            let normalize_len = normalized_types.len();
+            let normalized_len = normalized_types.len();
             normalized_types.make_clone_cheap();
             let mut type_iter = normalized_types.clone().into_iter();
             let mut acc_type = type_iter
@@ -1114,7 +1114,7 @@ impl Analyzer<'_, '_> {
                 .freezed();
 
             for elem in type_iter {
-                let mut ty_vec = vec![];
+                let mut new_types = vec![];
                 match (acc_type.normalize(), elem.normalize()) {
                     (
                         Type::Param(TypeParam {
@@ -1129,7 +1129,7 @@ impl Analyzer<'_, '_> {
                         let result =
                             self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
-                            ty_vec.push(tp);
+                            new_types.push(tp);
                         }
                     }
                     (
@@ -1149,7 +1149,7 @@ impl Analyzer<'_, '_> {
                         let result =
                             self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
-                            ty_vec.push(tp);
+                            new_types.push(tp);
                         }
                     }
                     (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) => {
@@ -1158,7 +1158,7 @@ impl Analyzer<'_, '_> {
                                 let result =
                                     self.normalize_intersection_types(span, &vec![a_ty.to_owned(), b_ty.to_owned()], Default::default())?;
                                 if let Some(tp) = result {
-                                    ty_vec.push(tp);
+                                    new_types.push(tp);
                                 }
                             }
                         }
@@ -1168,7 +1168,7 @@ impl Analyzer<'_, '_> {
                             let result =
                                 self.normalize_intersection_types(span, &vec![ty.to_owned(), other.to_owned()], Default::default())?;
                             if let Some(tp) = result {
-                                ty_vec.push(tp);
+                                new_types.push(tp);
                             }
                         }
                     }
@@ -1198,21 +1198,21 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                ty_vec.retain(|ty| !ty.is_never());
-                acc_type = if ty_vec.is_empty() {
+                new_types.retain(|ty| !ty.is_never());
+                acc_type = if new_types.is_empty() {
                     return never!();
-                } else if ty_vec.len() == 1 {
-                    if let Some(ty) = ty_vec.pop() {
+                } else if new_types.len() == 1 {
+                    if let Some(ty) = new_types.pop() {
                         ty
                     } else {
                         return never!();
                     }
                 } else {
-                    Type::union(ty_vec).freezed()
+                    Type::union(new_types).freezed()
                 }
             }
             if let Type::Union(Union { types: u_types, .. }) = acc_type.normalize() {
-                if normalize_len < u_types.len() {
+                if normalized_len < u_types.len() {
                     return Ok(Some(
                         Type::Intersection(Intersection {
                             span,
