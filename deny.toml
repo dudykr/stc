@@ -66,7 +66,7 @@ ignore = [
 [licenses]
 # The lint level for crates which do not have a detectable license
 unlicensed = "deny"
-# List of explictly allowed licenses
+# List of explicitly allowed licenses
 # See https://spdx.org/licenses/ for list of possible licenses
 # [possible values: any SPDX 3.11 short identifier (+ optional exception)].
 allow = [
@@ -77,7 +77,7 @@ allow = [
   "CC0-1.0",
   "ISC",
 ]
-# List of explictly disallowed licenses
+# List of explicitly disallowed licenses
 # See https://spdx.org/licenses/ for list of possible licenses
 # [possible values: any SPDX 3.11 short identifier (+ optional exception)].
 deny = [
@@ -149,7 +149,7 @@ registries = [
 multiple-versions = "allow"
 # Lint level for when a crate version requirement is `*`
 wildcards = "allow"
-# The graph highlighting used when creating dotgraphs for crates
+# The graph highlighting used when creating dot graphs for crates
 # with multiple versions
 # * lowest-version - The path to the lowest versioned duplicate is highlighted
 # * simplest-path - The path to the version with the fewest edges is highlighted
