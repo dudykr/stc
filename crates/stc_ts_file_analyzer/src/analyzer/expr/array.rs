@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
     pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
-        debug!("Caculating element type of an iterator ({})", dump_type_as_string(&iterator));
+        debug!("Calculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
             return Ok(iterator);

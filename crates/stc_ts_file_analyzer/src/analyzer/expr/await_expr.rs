@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 ty
             })
             .map(|item| {
-                let spane = span.with_ctxt(SyntaxContext::empty());
+                let span = span.with_ctxt(SyntaxContext::empty());
 
                 Type::Ref(Ref {
                     span,
