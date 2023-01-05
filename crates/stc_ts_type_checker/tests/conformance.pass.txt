@@ -1540,6 +1540,7 @@ jsdoc/jsdocTwoLineTypedef.ts
 jsdoc/parseLinkTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
+jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
 parser/ecmascript2021/numericSeparators/parser.numericSeparators.binary.ts
 parser/ecmascript2021/numericSeparators/parser.numericSeparators.decimal.ts
 parser/ecmascript2021/numericSeparators/parser.numericSeparators.hex.ts
