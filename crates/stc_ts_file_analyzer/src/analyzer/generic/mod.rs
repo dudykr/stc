@@ -28,6 +28,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, span, trace, warn, Level};
 
+use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
@@ -41,10 +42,10 @@ mod inference;
 mod tests;
 mod type_form;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct InferData {
     /// Inferred type parameters
-    type_params: FxHashMap<Id, Type>,
+    type_params: FxHashMap<Id, InferenceInfo>,
 
     errored: FxHashSet<Id>,
 
@@ -63,6 +64,24 @@ pub(super) struct InferData {
     dejavu: Vec<(Type, Type)>,
 
     skip_generalization: bool,
+
+    priority: InferencePriority,
+
+    contravariant: bool,
+}
+
+impl Default for InferData {
+    fn default() -> Self {
+        Self {
+            type_params: Default::default(),
+            defaults: Default::default(),
+            errored: Default::default(),
+            dejavu: Default::default(),
+            skip_generalization: Default::default(),
+            priority: InferencePriority::MaxValue,
+            contravariant: Default::default(),
+        }
+    }
 }
 
 /// Type inference for arguments.
@@ -91,7 +110,19 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
-                inferred.type_params.insert(type_param.name.clone(), param.clone());
+                inferred.type_params.insert(
+                    type_param.name.clone(),
+                    InferenceInfo {
+                        type_param: type_param.name.clone(),
+                        candidates: Default::default(),
+                        contra_candidates: Default::default(),
+                        inferred_type: param.clone(),
+                        priority: Default::default(),
+                        top_level: Default::default(),
+                        is_fixed: true,
+                        implied_arity: Default::default(),
+                    },
+                );
             }
         }
 
@@ -268,7 +299,7 @@ impl Analyzer<'_, '_> {
 
         self.prevent_generalization_of_inferred_types(type_params, &mut inferred, opts.is_type_ann);
 
-        let map = self.finalize_inference(span, inferred);
+        let map = self.finalize_inference(span, type_params, inferred);
 
         let end = Instant::now();
 
@@ -288,7 +319,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
-        let map = self.finalize_inference(span, inferred);
+        let map = self.finalize_inference(span, &[], inferred);
 
         Ok(map.types)
     }
@@ -428,7 +459,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Optimize
-    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -446,14 +477,16 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(arg)
         ));
 
-        if inferred
-            .dejavu
-            .iter()
-            .any(|(prev_param, prev_arg)| prev_param.type_eq(param) && prev_arg.type_eq(arg))
-        {
-            return Ok(());
+        if !opts.skip_initial_union_check {
+            if inferred
+                .dejavu
+                .iter()
+                .any(|(prev_param, prev_arg)| prev_param.type_eq(param) && prev_arg.type_eq(arg))
+            {
+                return Ok(());
+            }
+            inferred.dejavu.push((param.clone(), arg.clone()));
         }
-        inferred.dejavu.push((param.clone(), arg.clone()));
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
@@ -514,33 +547,23 @@ impl Analyzer<'_, '_> {
         }
 
         match (param.normalize(), arg.normalize()) {
-            (Type::Union(p), Type::Union(a)) => {
-                self.infer_type_using_union_and_union(
-                    span,
-                    inferred,
-                    p,
-                    arg,
-                    a,
-                    InferTypeOpts {
-                        append_type_as_union: true,
-                        ..opts
-                    },
-                )?;
+            (Type::Union(p), _) => {
+                if !opts.skip_initial_union_check {
+                    self.infer_type_using_union(
+                        span,
+                        inferred,
+                        p,
+                        arg,
+                        InferTypeOpts {
+                            append_type_as_union: true,
+                            ..opts
+                        },
+                    )?;
 
-                return Ok(());
-            }
-
-            (Type::Union(param), _) => {
-                return self.infer_type_using_union(
-                    span,
-                    inferred,
-                    param,
-                    arg,
-                    InferTypeOpts {
-                        append_type_as_union: true,
-                        ..opts
-                    },
-                );
+                    return Ok(());
+                } else {
+                    opts.skip_initial_union_check = false;
+                }
             }
 
             (Type::Intersection(param), _) => {
@@ -565,29 +588,72 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Type::Param(arg) = arg.normalize() {
-            if !param.is_type_param() {
-                self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
-                return Ok(());
+        if opts.for_fn_assignment {
+            if let Type::Param(arg) = arg.normalize() {
+                if !param.is_type_param() {
+                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
+                    return Ok(());
+                }
             }
         }
 
-        if arg.is_enum_type() {
-            let arg = self
-                .normalize(
-                    Some(arg.span()),
-                    Cow::Borrowed(arg),
-                    NormalizeTypeOpts {
-                        expand_enum_def: true,
-                        preserve_global_this: true,
-                        ..Default::default()
+        match (param.normalize(), arg.normalize()) {
+            (_, Type::Enum(..)) => {
+                let arg = self
+                    .normalize(
+                        Some(arg.span()),
+                        Cow::Borrowed(arg),
+                        NormalizeTypeOpts {
+                            expand_enum_def: true,
+                            preserve_global_this: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to normalize enum")?
+                    .freezed()
+                    .into_owned()
+                    .freezed();
+                return self.infer_type_inner(span, inferred, param, &arg, opts);
+            }
+
+            (
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty: param,
+                    ..
+                }),
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty: arg,
+                    ..
+                }),
+            ) => return self.infer_from_contravariant_types(span, inferred, arg, param, opts),
+
+            (Type::Conditional(target), Type::Conditional(source)) => {
+                self.infer_from_types(span, inferred, &source.check_type, &target.check_type, opts)?;
+                self.infer_from_types(span, inferred, &source.extends_type, &target.extends_type, opts)?;
+                self.infer_from_types(span, inferred, &source.true_type, &target.true_type, opts)?;
+                self.infer_from_types(span, inferred, &source.false_type, &target.false_type, opts)?;
+
+                return Ok(());
+            }
+            (Type::Conditional(target), ..) => {
+                return self.infer_to_multiple_types_with_priority(
+                    span,
+                    inferred,
+                    arg,
+                    &[*target.true_type.clone(), *target.false_type.clone()],
+                    if inferred.contravariant {
+                        InferencePriority::ContravariantConditional
+                    } else {
+                        InferencePriority::None
                     },
+                    false,
+                    opts,
                 )
-                .context("tried to normalize enum")?
-                .freezed()
-                .into_owned()
-                .freezed();
-            return self.infer_type_inner(span, inferred, param, &arg, opts);
+            }
+
+            _ => {}
         }
 
         match param.normalize() {
@@ -595,15 +661,15 @@ impl Analyzer<'_, '_> {
                 ref name, ref constraint, ..
             }) => {
                 let constraint = constraint.as_ref().map(|ty| ty.normalize());
-                if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inferencing {
+                if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inference {
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
-                            skip_identical_while_inferencing: true,
+                            skip_identical_while_inference: true,
                             ..self.ctx
                         };
 
-                        self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
-                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, &prev.inferred_type, arg, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev.inferred_type, opts)?;
                     }
                 }
 
@@ -612,7 +678,7 @@ impl Analyzer<'_, '_> {
                 if constraint.is_some() && is_literals(constraint.as_ref().unwrap()) {
                     info!("infer from literal constraint: {} = {:?}", name, constraint);
                     if let Some(orig) = inferred.type_params.get(name) {
-                        if !orig.eq_ignore_span(constraint.as_ref().unwrap()) {
+                        if !orig.inferred_type.eq_ignore_span(constraint.as_ref().unwrap()) {
                             print_backtrace();
                             unreachable!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -641,7 +707,7 @@ impl Analyzer<'_, '_> {
                     // }
                 }
 
-                if self.ctx.skip_identical_while_inferencing {
+                if self.ctx.skip_identical_while_inference {
                     if let Type::Param(arg) = arg {
                         if *name == arg.name {
                             return Ok(());
@@ -1075,18 +1141,26 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg {
-            Type::Union(arg) => {
-                if opts.append_type_as_union {
-                    //
-                    for a in &arg.types {
-                        self.infer_type(span, inferred, param, a, opts)?;
-                    }
-
-                    return Ok(());
-                }
+        match (param, arg) {
+            (Type::Union(Union { types: param_types, .. }), _) => {
+                return self.infer_to_multiple_types(span, inferred, arg, param_types, true, opts);
+            }
+            (Type::Intersection(Intersection { types: param_types, .. }), _) => {
+                return self.infer_to_multiple_types(span, inferred, arg, param_types, false, opts);
             }
 
+            (_, Type::Union(arg_union)) => {
+                // Source is a union or intersection type, infer from each constituent type
+                for source_type in arg_union.types.iter() {
+                    self.infer_from_types(span, inferred, source_type, param, opts)?;
+                }
+                return Ok(());
+            }
+
+            _ => {}
+        }
+
+        match arg {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 
@@ -1179,27 +1253,12 @@ impl Analyzer<'_, '_> {
                 let mut map = FxHashMap::<_, Vec<_>>::default();
                 for item in data {
                     for (name, ty) in item.type_params {
-                        map.entry(name).or_default().push(ty);
+                        map.entry(name).or_default().push(ty.inferred_type);
                     }
                 }
 
                 for (name, types) in map {
-                    if types.len() == 1 {
-                        inferred.type_params.insert(name, types.into_iter().next().unwrap());
-                    } else {
-                        // TODO(kdy1): Check inference logic of union mixed with intersection
-
-                        inferred.type_params.insert(
-                            name,
-                            Type::Intersection(Intersection {
-                                types,
-                                span,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed(),
-                        );
-                    }
+                    self.upsert_inferred(span, inferred, name, &Type::new_intersection(span, types).freezed(), opts)?;
                 }
 
                 return Ok(());
@@ -1476,7 +1535,7 @@ impl Analyzer<'_, '_> {
 
                                             let mut data = InferData::default();
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
-                                            let inferred_ty = data.type_params.remove(&name).freezed();
+                                            let inferred_ty = data.type_params.remove(&name).map(|v| v.inferred_type).freezed();
 
                                             self.mapped_type_param_name = old;
 
@@ -1545,7 +1604,7 @@ impl Analyzer<'_, '_> {
                                         let mut data = InferData::default();
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
                                         let mut defaults = take(&mut data.defaults);
-                                        let mut map = self.finalize_inference(span, data);
+                                        let mut map = self.finalize_inference(span, &[], data);
                                         let inferred_ty = map.types.remove(&name);
 
                                         self.mapped_type_param_name = old;
@@ -1616,7 +1675,7 @@ impl Analyzer<'_, '_> {
 
                             let mut data = InferData::default();
                             self.infer_type(span, &mut data, param_ty, &arg.elem_type, opts)?;
-                            let mut map = self.finalize_inference(span, data);
+                            let mut map = self.finalize_inference(span, &[], data);
                             let mut inferred_ty = map.types.remove(&name);
 
                             self.mapped_type_param_name = old;
@@ -1784,7 +1843,7 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            let ty = inferred.type_params.remove(name).map(Box::new);
+                                            let ty = inferred.type_params.remove(name).map(|v| box v.inferred_type);
 
                                             type_elements
                                                 .entry(name.clone())
@@ -2075,12 +2134,12 @@ impl Analyzer<'_, '_> {
                 return;
             }
 
-            fixed.insert(param_name.clone(), ty.clone());
+            fixed.insert(param_name.clone(), ty.inferred_type.clone());
         });
 
         let mut v = Renamer { fixed: &fixed };
         inferred.type_params.iter_mut().for_each(|(_, ty)| {
-            ty.visit_mut_with(&mut v);
+            ty.inferred_type.visit_mut_with(&mut v);
         });
 
         Ok(())
@@ -2129,7 +2188,7 @@ impl Analyzer<'_, '_> {
                 type_ann
             );
 
-            let map = self.finalize_inference(span, inferred);
+            let map = self.finalize_inference(span, &usage_visitor.params, inferred);
 
             // TODO(kdy1): PERF
             return Ok(ty
