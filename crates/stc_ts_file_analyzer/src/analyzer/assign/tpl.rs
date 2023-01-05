@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
                     dump_type_as_string(r_ty)
                 ));
 
-                // Fisrt
+                // First
                 if let (Some(l), Some(r)) = (&l.quasis.first().unwrap().cooked, &r.quasis.first().unwrap().cooked) {
                     if !r.starts_with(&**l) {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("starts_with"));
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // TOOD(kdy1): We should iterator over two types, and check if each element is
+                // TODO(kdy1): We should iterator over two types, and check if each element is
                 // assignable.
 
                 let mut li = 0;
