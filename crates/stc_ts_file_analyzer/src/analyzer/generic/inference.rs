@@ -210,7 +210,7 @@ impl Analyzer<'_, '_> {
             inferred,
             &once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
             &param.types,
-            |this, t, s| this.is_type_or_base_identical_to(s, t),
+            |this, s, t| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
 
@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
             inferred,
             &temp_sources,
             &temp_targets,
-            |this, t, s| this.is_type_closely_matched_by(s, t),
+            |this, s, t| this.is_type_closely_matched_by(s, t),
             opts,
         )?;
 
