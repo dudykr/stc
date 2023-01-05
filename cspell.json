@@ -52,7 +52,7 @@
     ],
     "ignorePaths": [
         "target",
-        "fxhash",
-        "smallvec"
+        "**/stc_ts_type_checker/tests/compiler",
+        "**/stc_ts_type_checker/tests/conformance"
     ]
 }
