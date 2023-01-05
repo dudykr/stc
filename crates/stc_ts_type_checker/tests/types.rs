@@ -104,9 +104,9 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
             let ts_config = TsConfig::default();
 
             let span = module.span;
-            let cmts = comments.leading.get(&span.lo());
-            if let Some(ref cmts) = cmts {
-                for cmt in cmts.iter() {
+            let comments = comments.leading.get(&span.lo());
+            if let Some(ref comments) = comments {
+                for cmt in comments.iter() {
                     let s = cmt.text.trim();
                     if !s.starts_with('@') {
                         continue;

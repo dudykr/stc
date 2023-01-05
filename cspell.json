@@ -23,6 +23,7 @@
         "fxhash",
         "graphmap",
         "Hasher",
+        "iife",
         "indexmap",
         "indexset",
         "inflector",
@@ -87,6 +88,7 @@
         "**/stc_ts_builtin_types/src/lib.rs",
         // Useless
         "config.toml",
-        "scripts/npm"
+        "scripts/npm",
+        "**/stc_ts_type_checker/tests/tsc.rs"
     ]
 }
