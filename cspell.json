@@ -1,16 +1,23 @@
 {
     "words": [
         "ahash",
+        "canonicalize",
+        "codegen",
         "ctxt",
         "dashmap",
         "fxhash",
+        "inflector",
         "isize",
+        "opentelemetry",
         "pmutil",
+        "RAII",
         "rnode",
         "rustc",
         "serde",
+        "triomphe",
         "usize"
     ],
+    "caseSensitive": true,
     "ignorePaths": [
         "target",
         "**/node_modules",
@@ -23,6 +30,7 @@
         // These files are not managed by us.
         "**/stc_ts_builtin_types/lib/*.d.ts",
         // Useless
+        "config.toml",
         "scripts/npm"
     ]
 }
