@@ -38,7 +38,7 @@ mod unions;
 /// Context used for `=` assignments.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct AssignOpts {
-    /// This field should be overrided by caller.
+    /// This field should be overriden by caller.
     pub span: Span,
     pub right_ident_span: Option<Span>,
 

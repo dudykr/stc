@@ -40,6 +40,7 @@
         "MIMALLOC",
         "opentelemetry",
         "osascript",
+        "overriden",
         "partialeq",
         "petgraph",
         "pmutil",

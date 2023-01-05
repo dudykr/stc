@@ -1,6 +1,6 @@
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
-description = "Splited to reduce compile time"
+description = "Extracted to reduce compile time"
 edition = "2021"
 name = "stc_ts_generics"
 publish = false

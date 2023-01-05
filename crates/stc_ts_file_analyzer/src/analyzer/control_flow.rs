@@ -910,7 +910,7 @@ impl Analyzer<'_, '_> {
 
                 // Variable is defined on parent scope.
                 //
-                // We copy varinfo with enhanced type.
+                // We copy var info with enhanced type.
                 self.scope.insert_var(i.id.clone().into(), var_info);
 
                 Ok(())
