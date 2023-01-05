@@ -178,6 +178,7 @@ pub(crate) struct AssignOpts {
     pub ignore_enum_variant_name: bool,
     pub ignore_tuple_length_difference: bool,
 
+    /// Used to prevent recursion
     pub do_not_normalize_intersection_on_rhs: bool,
 }
 
