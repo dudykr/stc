@@ -2041,7 +2041,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssingToThis { span: *span }.into()),
+            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssignToThis { span: *span }.into()),
 
             Type::Interface(Interface {
                 name,

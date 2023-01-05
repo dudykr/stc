@@ -1097,7 +1097,7 @@ pub enum ErrorKind {
         error: Box<Error>,
     },
 
-    CannotAssingToThis {
+    CannotAssignToThis {
         span: Span,
     },
 
@@ -1517,7 +1517,7 @@ impl ErrorKind {
             // TS2304: Type not found.
             // TS2318: Type not found and name is global.
             // TS2552: Type not found with recommendation.
-            // TS2580: Type not found with recommendation for package to instsall.
+            // TS2580: Type not found with recommendation for package to install.
             // TS2581: Type not found with recommendation for jQuery.
             // TS2582: Type not found with recommendation for jest or mocha.
             // TS2583: Type not found with recommendation to change target library.

@@ -1,12 +1,14 @@
 {
     "words": [
         "ahash",
+        "autocrlf",
         "bitflags",
         "bitor",
         "bivariant",
         "canonicalize",
         "castable",
         "castablity",
+        "clippy",
         "codegen",
         "Csplit",
         "ctxt",
@@ -45,15 +47,18 @@
         "respan",
         "rnode",
         "rustc",
+        "rustfmt",
         "RUSTSEC",
         "rvalue",
         "serde",
         "smallvec",
         "subclassing",
         "subpat",
+        "Swatinem",
         "tikv",
         "triomphe",
         "usize",
+        "wasi",
         "Zunstable"
     ],
     "ignorePaths": [
