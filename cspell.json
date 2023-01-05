@@ -5,6 +5,7 @@
         "**/node_modules",
         "**/tests/**/*.ts",
         "**/tests/**/*.tsx",
-        "**/tests/**/*.json"
+        "**/tests/**/*.json",
+        "**/tests/**/*.rust-debug"
     ]
 }
