@@ -2229,10 +2229,10 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     }
 }
 
-fn apply_intrinsic<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
+fn apply_intrinsic<T: AsRef<str>>(intrinsic: &IntrinsicKind, raw: T) -> Atom {
     let raw = raw.as_ref();
 
-    match intrinsics {
+    match intrinsic {
         IntrinsicKind::Uppercase => raw.to_ascii_uppercase(),
         IntrinsicKind::Lowercase => raw.to_ascii_lowercase(),
         IntrinsicKind::Capitalize => {
