@@ -2,6 +2,7 @@
     "words": [
         "ahash",
         "bitflags",
+        "bitor",
         "canonicalize",
         "castable",
         "codegen",
