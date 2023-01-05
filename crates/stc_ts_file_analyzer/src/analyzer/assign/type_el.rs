@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 TypeElement::Property(PropertySignature { optional: true, .. })
                                 | TypeElement::Method(MethodSignature { optional: true, .. }) => {
-                                    // TODO: Skip this while not creaitng
+                                    // TODO: Skip this while not creating
                                     // `MissingProperties`
                                 }
                                 _ => {}
@@ -485,7 +485,7 @@ impl Analyzer<'_, '_> {
                 Type::Function(..) | Type::Constructor(..) => {
                     let mut rhs = self
                         .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
-                        .context("tried to convert a function to a type literal for asssignment")?
+                        .context("tried to convert a function to a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                         .unwrap();
@@ -813,7 +813,7 @@ impl Analyzer<'_, '_> {
                             unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
                         }
                     }
-                    // TOOD: missing fields
+                    // TODO: missing fields
                 }
 
                 Type::Tuple(..)

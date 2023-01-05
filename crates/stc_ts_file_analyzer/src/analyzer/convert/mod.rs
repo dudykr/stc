@@ -255,7 +255,7 @@ impl Analyzer<'_, '_> {
         };
         self.register_type(d.id.clone().into(), alias.clone());
 
-        self.store_unmergeable_type_span(d.id.clone().into(), d.id.span);
+        self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 
         Ok(alias)
     }

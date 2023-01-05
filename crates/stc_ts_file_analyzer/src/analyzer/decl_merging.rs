@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
 
         match (a.normalize(), b.normalize()) {
             (Type::ClassDef(a), Type::Interface(bi)) => {
-                // TOOD: Handle the number of type parameters.
+                // TODO: Handle the number of type parameters.
                 let mut type_params = FxHashMap::default();
                 if let Some(b_tps) = &bi.type_params {
                     if let Some(a_tp) = &a.type_params {
@@ -96,7 +96,7 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Interface(a), Type::Interface(bi)) => {
-                // TOOD: Handle the number of type parameters.
+                // TODO: Handle the number of type parameters.
                 let mut type_params = FxHashMap::default();
                 if let Some(b_tps) = &bi.type_params {
                     if let Some(a_tp) = &a.type_params {

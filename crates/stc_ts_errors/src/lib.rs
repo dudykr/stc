@@ -100,7 +100,7 @@ impl Debug for Error {
 }
 
 impl Errors {
-    /// This is used for debugging (by calling [pacic]).
+    /// This is used for debugging (by calling [panic]).
     #[allow(clippy::only_used_in_recursion)]
     fn validate(&self, err: &Error) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
@@ -282,7 +282,7 @@ pub enum ErrorKind {
     },
 
     /// TS2490
-    NextOfItertorShouldReturnTypeWithPropertyValue {
+    NextOfIteratorShouldReturnTypeWithPropertyValue {
         span: Span,
     },
 
@@ -493,7 +493,7 @@ pub enum ErrorKind {
     },
 
     /// TS2503
-    NamspaceNotFound {
+    NamespaceNotFound {
         name: Box<Name>,
         ctxt: ModuleId,
         type_args: Option<Box<TypeParamInstantiation>>,
@@ -962,7 +962,7 @@ pub enum ErrorKind {
         span: Span,
     },
 
-    NoSuchPropertyWhileDeclWithBidningPat {
+    NoSuchPropertyWhileDeclWithBindingPat {
         span: Span,
     },
 
@@ -1097,7 +1097,7 @@ pub enum ErrorKind {
         error: Box<Error>,
     },
 
-    CannotAssingToThis {
+    CannotAssignToThis {
         span: Span,
     },
 
@@ -1517,7 +1517,7 @@ impl ErrorKind {
             // TS2304: Type not found.
             // TS2318: Type not found and name is global.
             // TS2552: Type not found with recommendation.
-            // TS2580: Type not found with recommendation for package to instsall.
+            // TS2580: Type not found with recommendation for package to install.
             // TS2581: Type not found with recommendation for jQuery.
             // TS2582: Type not found with recommendation for jest or mocha.
             // TS2583: Type not found with recommendation to change target library.
@@ -1587,7 +1587,7 @@ impl ErrorKind {
 
             // TS2739: Missing properties with a type name
             // TS2740: Missing properties with type names
-            // TS2741: Mssing properties with comparison-like error message
+            // TS2741: Missing properties with comparison-like error message
             2739 | 2740 | 2741 => 2741,
 
             _ => code,
@@ -1789,7 +1789,7 @@ impl ErrorKind {
 
             ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
-            ErrorKind::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
+            ErrorKind::NoSuchPropertyWhileDeclWithBindingPat { .. } => 2525,
 
             ErrorKind::NoNewSignature { .. } => 2351,
 
@@ -1847,7 +1847,7 @@ impl ErrorKind {
 
             ErrorKind::EnumMemberIdCannotBeNumber { .. } => 2452,
 
-            ErrorKind::NamspaceNotFound { .. } => 2503,
+            ErrorKind::NamespaceNotFound { .. } => 2503,
 
             ErrorKind::WithStmtNotSupported { .. } => 2410,
 
@@ -1935,7 +1935,7 @@ impl ErrorKind {
 
             ErrorKind::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
-            ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
+            ErrorKind::NextOfIteratorShouldReturnTypeWithPropertyValue { .. } => 2490,
 
             ErrorKind::InvalidUsageOfNewTarget { .. } => 17013,
 

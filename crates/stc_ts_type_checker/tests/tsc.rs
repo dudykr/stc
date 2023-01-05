@@ -84,7 +84,7 @@ fn is_all_test_enabled() -> bool {
 }
 
 fn print_matched_errors() -> bool {
-    !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
+    !env::var("DO_NOT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
 }
 
 fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
@@ -275,7 +275,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
         println!("errors file does not exists: {}", errors_file.display());
         Ok(vec![])
     } else {
-        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(errors_file).expect("failed to open error sfile"))
+        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
@@ -383,19 +383,20 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         let mut had_comment = false;
 
         let span = program.span();
-        let cmts = comments.leading.get(&span.lo());
-        if let Some(ref cmts) = cmts {
-            let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
+        let comments = comments.leading.get(&span.lo());
+        if let Some(ref comments) = comments {
+            let directive_start = comments.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
             let cmt_start_line = if directive_start == 0 {
                 0
             } else {
-                cmts.iter()
+                comments
+                    .iter()
                     .find(|cmt| cmt.text.trim().starts_with('@'))
                     .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
                     .unwrap_or(0)
             };
 
-            for cmt in cmts.iter().skip(directive_start) {
+            for cmt in comments.iter().skip(directive_start) {
                 let s = cmt.text.trim();
                 if !s.starts_with('@') {
                     if had_comment {

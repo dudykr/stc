@@ -3,7 +3,7 @@ use rnode::NodeId;
 use stc_ts_ast_rnode::{RClassMember, RExpr, RStmt};
 use stc_ts_types::Type;
 
-/// Stores ast mutation informations.
+/// Stores ast mutation information.
 ///
 /// This includes every information required to generate correct `.d.ts` files.
 ///

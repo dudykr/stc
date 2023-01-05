@@ -56,7 +56,7 @@ where
     }
 }
 
-pub fn _assert_trait_impls() {
+pub fn _assert_trait_impl() {
     fn _assert<P>()
     where
         P: Default + std::fmt::Debug + Clone + std::hash::Hash + PartialEq + Eq + Ord,

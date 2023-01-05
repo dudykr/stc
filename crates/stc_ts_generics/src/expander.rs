@@ -24,7 +24,7 @@ pub struct InferTypeResult {
     pub errored: FxHashSet<Id>,
 }
 
-/// This struct does not expands ref to other thpe. See Analyzer.expand to do
+/// This struct does not expands ref to other type. See Analyzer.expand to do
 /// such operation.
 pub struct GenericExpander<'a> {
     pub cm: Arc<SourceMap>,

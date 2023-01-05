@@ -8,5 +8,5 @@
 #![allow(incomplete_features)]
 
 pub mod ambient_fn;
-pub mod consturctor;
+pub mod constructor;
 pub mod yield_check;

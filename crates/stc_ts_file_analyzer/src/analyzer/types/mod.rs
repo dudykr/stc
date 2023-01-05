@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
                             } else if en.enum_name != el.enum_name {
                                 return never!();
                             } else {
-                                // eq two arguemnt enum_name
+                                // eq two argument enum_name
                                 if let Ok(el_lit) = self.expand_enum_variant(elem.clone()) {
                                     if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
                                         if !etl.type_eq(&el_lit) {
@@ -903,7 +903,7 @@ impl Analyzer<'_, '_> {
             for elem in types.iter() {
                 if let Type::EnumVariant(ref ev) = elem.normalize() {
                     if let Some(variant_name) = &ev.name {
-                        // enumVariant is enumMemeber
+                        // enumVariant is enumMember
                         if enum_variant_len > 1 {
                             let mut en = ev.clone();
                             en.name = None;
@@ -1935,7 +1935,7 @@ impl Analyzer<'_, '_> {
 
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
-                    .context("failed to expand intrinsics in type parameters")?
+                    .context("failed to expand intrinsic in type parameters")?
                     .freezed()
                     .into_owned()
                     .freezed();
@@ -2008,7 +2008,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Err(ErrorKind::NamspaceNotFound {
+                Err(ErrorKind::NamespaceNotFound {
                     span,
                     name: box name,
                     ctxt: self.ctx.module_id,
@@ -2204,7 +2204,7 @@ impl Analyzer<'_, '_> {
         ty.fix();
     }
 
-    /// We precomputes all type declarations in the scope, using this method.
+    /// We precompute all type declarations in the scope, using this method.
     pub(crate) fn fill_known_type_names<N>(&mut self, node: &N)
     where
         N: Send + Sync + for<'aa> VisitWith<BindingCollector<'aa>> + VisitWith<KnownTypeVisitor>,
@@ -2229,10 +2229,10 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     }
 }
 
-fn apply_intrinsic<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
+fn apply_intrinsic<T: AsRef<str>>(intrinsic: &IntrinsicKind, raw: T) -> Atom {
     let raw = raw.as_ref();
 
-    match intrinsics {
+    match intrinsic {
         IntrinsicKind::Uppercase => raw.to_ascii_uppercase(),
         IntrinsicKind::Lowercase => raw.to_ascii_lowercase(),
         IntrinsicKind::Capitalize => {

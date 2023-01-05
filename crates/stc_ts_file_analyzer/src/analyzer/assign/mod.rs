@@ -38,7 +38,7 @@ mod unions;
 /// Context used for `=` assignments.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct AssignOpts {
-    /// This field should be overrided by caller.
+    /// This field should be overriden by caller.
     pub span: Span,
     pub right_ident_span: Option<Span>,
 
@@ -48,10 +48,10 @@ pub(crate) struct AssignOpts {
 
     /// # Values
     ///
-    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetaadata] are
+    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetadata] are
     ///   ignored.
     /// - `Some(true)`: extra properties are allowed.
-    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetaadata]
+    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetadata]
     ///
     /// # Usages
     ///
@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
             }
 
             if rhs.is_enum_variant() {
-                // TODO(kdy1): Check if actual value is numberx.
+                // TODO(kdy1): Check if actual value is number.
                 return Ok(());
             }
 
@@ -2041,7 +2041,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssingToThis { span: *span }.into()),
+            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssignToThis { span: *span }.into()),
 
             Type::Interface(Interface {
                 name,
@@ -2120,7 +2120,7 @@ impl Analyzer<'_, '_> {
                 //                 }),
                 //                 opts,
                 //             )
-                //             .context("tried to assign by converting rhs to builtin inferface
+                //             .context("tried to assign by converting rhs to builtin interface
                 // 'String'")     }
                 //     _ => {}
                 // }
@@ -2742,12 +2742,12 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
-        let convariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+        let covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
         let contravariant =
             self.is_contravariant(&ty.check_type, &ty.true_type)? || self.is_contravariant(&ty.check_type, &ty.false_type)?;
 
-        match (convariant, contravariant) {
+        match (covariant, contravariant) {
             (true, true) | (false, false) => Ok(Variance::Invariant),
             (true, false) => Ok(Variance::Covariant),
             (false, true) => Ok(Variance::Contravariant),

@@ -745,7 +745,7 @@ impl Analyzer<'_, '_> {
 
     /// This should be called after calling `register_type`.
 
-    pub(crate) fn store_unmergeable_type_span(&mut self, id: Id, span: Span) {
+    pub(crate) fn store_unmergable_type_span(&mut self, id: Id, span: Span) {
         if self.is_builtin {
             return;
         }
@@ -1451,7 +1451,7 @@ impl Analyzer<'_, '_> {
                                                     ..Default::default()
                                                 },
                                             )
-                                            .context("tried to validate a varaible declared multiple times")
+                                            .context("tried to validate a var declared multiple times")
                                             .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                                                 span: err.span(),
                                                 cause: box err.into(),

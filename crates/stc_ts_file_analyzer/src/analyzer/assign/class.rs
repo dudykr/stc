@@ -313,7 +313,7 @@ impl Analyzer<'_, '_> {
                             if lp.is_static == rp.is_static && self.key_matches(span, &lp.key, &rp.key, false) {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        let _ctx = ctx!("tried to assign a class proeprty to another");
+                                        let _ctx = ctx!("tried to assign a class property to another");
                                         self.assign_inner(data, lt, rt, opts)?;
                                     }
                                 }

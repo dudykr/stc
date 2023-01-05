@@ -125,7 +125,7 @@ pub(crate) struct Ctx {
 
     in_ts_fn_type: bool,
 
-    /// `true` if unresolved references should be rerpoted.
+    /// `true` if unresolved references should be reported.
     ///
     /// For example, while validating type parameter instantiation, unresolved
     /// references are error.
@@ -241,10 +241,10 @@ pub struct Analyzer<'scope, 'b> {
 
     /// Value should [Type::Arc] of [Type::Module]
     imports: FxHashMap<(ModuleId, ModuleId), Type>,
-    /// See docs of ModuleitemMut for documentation.
+    /// See docs of ModuleItemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
-    /// See docs of ModuleitemMut for documentation.
+    /// See docs of ModuleItemMut for documentation.
     append_stmts: Vec<RStmt>,
 
     scope: Scope<'scope>,
@@ -257,7 +257,7 @@ pub struct Analyzer<'scope, 'b> {
 
     cur_facts: Facts,
 
-    /// Used while inferencing types.
+    /// Used while inferring types.
     mapped_type_param_name: Vec<Id>,
 
     debugger: Option<Debugger>,
@@ -866,7 +866,7 @@ impl Analyzer<'_, '_> {
                             name,
                             ctxt,
                             type_args,
-                        } => ErrorKind::NamspaceNotFound {
+                        } => ErrorKind::NamespaceNotFound {
                             span,
                             name,
                             ctxt,

@@ -115,7 +115,7 @@ impl From<&Type> for TypeForm {
             Type::Operator(_) | Type::Rest(_) => TypeForm::Element,
 
             Type::Union(_) | Type::Intersection(_) => {
-                // Actually unreahable.
+                // Actually unreachable.
                 Self::Element
             }
 
@@ -221,29 +221,29 @@ impl Ctx {
 
             (
                 TypeForm::Fn {
-                    params: a_parmas,
-                    return_type: a_return_yype,
+                    params: a_params,
+                    return_type: a_return_type,
                 },
                 TypeForm::Fn {
-                    params: b_parmas,
-                    return_type: b_return_yype,
+                    params: b_params,
+                    return_type: b_return_type,
                 },
             )
             | (
                 TypeForm::Constructor {
-                    params: a_parmas,
-                    return_type: a_return_yype,
+                    params: a_params,
+                    return_type: a_return_type,
                 },
                 TypeForm::Constructor {
-                    params: b_parmas,
-                    return_type: b_return_yype,
+                    params: b_params,
+                    return_type: b_return_type,
                 },
             ) => {
-                let ret_path = self.compare_with_path(TypePath::ReturnType, a_return_yype, b_return_yype);
+                let ret_path = self.compare_with_path(TypePath::ReturnType, a_return_type, b_return_type);
 
-                let params_path = a_parmas
+                let params_path = a_params
                     .iter()
-                    .zip_longest(b_parmas.iter())
+                    .zip_longest(b_params.iter())
                     .filter_map(|pair| match pair {
                         EitherOrBoth::Both(a, b) => Some(self.compare_with_path(TypePath::TypeName, a, b)),
                         _ => None,

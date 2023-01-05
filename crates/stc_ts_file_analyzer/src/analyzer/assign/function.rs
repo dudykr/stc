@@ -898,7 +898,7 @@ impl Analyzer<'_, '_> {
                         force_dump_type_as_string(&l.ty)
                     ));
 
-                    // TODO(kdy1): Implement correcr logic
+                    // TODO(kdy1): Implement correct logic
 
                     return Ok(());
                 }
