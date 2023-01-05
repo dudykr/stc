@@ -866,7 +866,7 @@ impl Analyzer<'_, '_> {
                             name,
                             ctxt,
                             type_args,
-                        } => ErrorKind::NamspaceNotFound {
+                        } => ErrorKind::NamespaceNotFound {
                             span,
                             name,
                             ctxt,

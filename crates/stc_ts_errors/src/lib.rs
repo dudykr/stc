@@ -493,7 +493,7 @@ pub enum ErrorKind {
     },
 
     /// TS2503
-    NamspaceNotFound {
+    NamespaceNotFound {
         name: Box<Name>,
         ctxt: ModuleId,
         type_args: Option<Box<TypeParamInstantiation>>,
@@ -1847,7 +1847,7 @@ impl ErrorKind {
 
             ErrorKind::EnumMemberIdCannotBeNumber { .. } => 2452,
 
-            ErrorKind::NamspaceNotFound { .. } => 2503,
+            ErrorKind::NamespaceNotFound { .. } => 2503,
 
             ErrorKind::WithStmtNotSupported { .. } => 2410,
 

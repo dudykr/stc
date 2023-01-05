@@ -903,7 +903,7 @@ impl Analyzer<'_, '_> {
             for elem in types.iter() {
                 if let Type::EnumVariant(ref ev) = elem.normalize() {
                     if let Some(variant_name) = &ev.name {
-                        // enumVariant is enumMemeber
+                        // enumVariant is enumMember
                         if enum_variant_len > 1 {
                             let mut en = ev.clone();
                             en.name = None;
@@ -1935,7 +1935,7 @@ impl Analyzer<'_, '_> {
 
                 let constraint = self
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
-                    .context("failed to expand intrinsics in type parameters")?
+                    .context("failed to expand intrinsic in type parameters")?
                     .freezed()
                     .into_owned()
                     .freezed();
@@ -2008,7 +2008,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Err(ErrorKind::NamspaceNotFound {
+                Err(ErrorKind::NamespaceNotFound {
                     span,
                     name: box name,
                     ctxt: self.ctx.module_id,
@@ -2204,7 +2204,7 @@ impl Analyzer<'_, '_> {
         ty.fix();
     }
 
-    /// We precomputes all type declarations in the scope, using this method.
+    /// We precompute all type declarations in the scope, using this method.
     pub(crate) fn fill_known_type_names<N>(&mut self, node: &N)
     where
         N: Send + Sync + for<'aa> VisitWith<BindingCollector<'aa>> + VisitWith<KnownTypeVisitor>,
