@@ -1,5 +1,9 @@
 {
-    "words": [],
+    "words": [
+        "isize",
+        "rnode",
+        "usize"
+    ],
     "ignorePaths": [
         "target",
         "**/node_modules",
