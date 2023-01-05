@@ -54,6 +54,7 @@
         "target",
         "**/node_modules",
         "**/tests/**/*.ts",
-        "**/tests/**/*.tsx"
+        "**/tests/**/*.tsx",
+        "**/tests/**/*.json"
     ]
 }
