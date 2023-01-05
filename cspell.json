@@ -41,6 +41,7 @@
         "rvalue",
         "serde",
         "smallvec",
+        "subclassing",
         "triomphe",
         "usize"
     ],
