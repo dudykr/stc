@@ -1,6 +1,7 @@
 {
     "words": [
         "ahash",
+        "bitflags",
         "canonicalize",
         "codegen",
         "ctxt",
@@ -8,8 +9,11 @@
         "fxhash",
         "inflector",
         "isize",
+        "itertools",
+        "keyof",
         "opentelemetry",
         "pmutil",
+        "quasis",
         "RAII",
         "rnode",
         "rustc",
