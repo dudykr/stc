@@ -1208,7 +1208,7 @@ impl Analyzer<'_, '_> {
                         return never!();
                     }
                 } else {
-                    Type::union(new_types).freezed()
+                    Type::new_union(span, new_types).freezed()
                 }
             }
             if let Type::Union(Union { types: u_types, .. }) = acc_type.normalize() {
