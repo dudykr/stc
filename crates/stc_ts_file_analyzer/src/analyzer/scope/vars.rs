@@ -257,7 +257,7 @@ impl Analyzer<'_, '_> {
                                 let type_for_rest_arg = match ty {
                                     Some(ty) => self
                                         .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
-                                        .context("tried to get lefting elements of an iterator to declare variables using a rest pattern")
+                                        .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                         .map(Cow::into_owned)
                                         .report(&mut self.storage),
                                     None => None,
@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
                                 let default = match default {
                                     Some(ty) => self
                                         .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
-                                        .context("tried to get lefting elements of an iterator to declare variables using a rest pattern")
+                                        .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                         .map(Cow::into_owned)
                                         .report(&mut self.storage),
                                     None => None,
@@ -275,7 +275,7 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                                 self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
-                                    .context("tried to declare lefting elements to the arugment of a rest pattern")
+                                    .context("tried to declare left elements to the arugment of a rest pattern")
                                     .report(&mut self.storage);
                                 break;
                             }

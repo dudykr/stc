@@ -1451,7 +1451,7 @@ impl Analyzer<'_, '_> {
                                                     ..Default::default()
                                                 },
                                             )
-                                            .context("tried to validate a varaible declared multiple times")
+                                            .context("tried to validate a var declared multiple times")
                                             .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                                                 span: err.span(),
                                                 cause: box err.into(),
