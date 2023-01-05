@@ -241,10 +241,10 @@ pub struct Analyzer<'scope, 'b> {
 
     /// Value should [Type::Arc] of [Type::Module]
     imports: FxHashMap<(ModuleId, ModuleId), Type>,
-    /// See docs of ModuleitemMut for documentation.
+    /// See docs of ModuleItemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
-    /// See docs of ModuleitemMut for documentation.
+    /// See docs of ModuleItemMut for documentation.
     append_stmts: Vec<RStmt>,
 
     scope: Scope<'scope>,
