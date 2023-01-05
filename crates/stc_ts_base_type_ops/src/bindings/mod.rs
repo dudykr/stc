@@ -1,4 +1,4 @@
-//! Module to precomput known bindings.
+//! Module to precompute known bindings.
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::*;
@@ -18,7 +18,7 @@ pub enum BindingKind {
     TypeAlias,
     /// Modules declared using `module` keyword.
     TsModule,
-    Inteface,
+    Interface,
     Namespace,
     Module,
     Var(#[use_eq_ignore_span] VarDeclKind),
@@ -70,7 +70,7 @@ impl Visit<RTsNamespaceDecl> for BindingCollector<'_> {
 
 impl Visit<RTsInterfaceDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RTsInterfaceDecl) {
-        self.data.entry(decl.id.clone().into()).or_default().push(BindingKind::Inteface);
+        self.data.entry(decl.id.clone().into()).or_default().push(BindingKind::Interface);
 
         decl.visit_children_with(self);
     }
