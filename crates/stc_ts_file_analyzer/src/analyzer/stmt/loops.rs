@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
         match *e {
             RVarDeclOrPat::VarDecl(ref v) => {
-                // It is a parsing error if there are multiple variable declarators.
+                // It is a parsing error if there are multiple variable declarator
                 // So we only handle the case where there's only one variable declarator.
                 if v.decls.len() == 1 {
                     if let Some(m) = &mut self.mutations {
