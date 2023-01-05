@@ -48,10 +48,10 @@ pub(crate) struct AssignOpts {
 
     /// # Values
     ///
-    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetaadata] are
+    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetadata] are
     ///   ignored.
     /// - `Some(true)`: extra properties are allowed.
-    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetaadata]
+    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetadata]
     ///
     /// # Usages
     ///
