@@ -40,6 +40,7 @@
         "qself",
         "quasis",
         "RAII",
+        "Redeclared",
         "refcell",
         "respan",
         "rnode",

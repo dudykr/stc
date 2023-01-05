@@ -962,7 +962,7 @@ pub enum ErrorKind {
         span: Span,
     },
 
-    NoSuchPropertyWhileDeclWithBidningPat {
+    NoSuchPropertyWhileDeclWithBindingPat {
         span: Span,
     },
 
@@ -1587,7 +1587,7 @@ impl ErrorKind {
 
             // TS2739: Missing properties with a type name
             // TS2740: Missing properties with type names
-            // TS2741: Mssing properties with comparison-like error message
+            // TS2741: Missing properties with comparison-like error message
             2739 | 2740 | 2741 => 2741,
 
             _ => code,
@@ -1789,7 +1789,7 @@ impl ErrorKind {
 
             ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
-            ErrorKind::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
+            ErrorKind::NoSuchPropertyWhileDeclWithBindingPat { .. } => 2525,
 
             ErrorKind::NoNewSignature { .. } => 2351,
 
