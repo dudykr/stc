@@ -10,6 +10,7 @@
         "castablity",
         "clippy",
         "codegen",
+        "Condvar",
         "Csplit",
         "csstype",
         "ctxt",
