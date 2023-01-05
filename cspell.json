@@ -52,7 +52,8 @@
     ],
     "ignorePaths": [
         "target",
-        "**/stc_ts_type_checker/tests/compiler",
-        "**/stc_ts_type_checker/tests/conformance"
+        "**/node_modules",
+        "tests/**.ts",
+        "tests/**.tsx"
     ]
 }
