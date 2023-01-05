@@ -271,7 +271,6 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
 }
 
 /// Creates `(from_orig_arm, to_orig_arm)`
-/// Cretes `(from_orig_arm, to_orig_arm)`
 fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Ident>, variant_name: &Ident, f: &Fields) -> (Arm, Arm) {
     let mut from_orig_body: Vec<Stmt> = vec![];
     let mut to_orig_body: Vec<Stmt> = vec![];
@@ -424,7 +423,6 @@ fn skip_node_id(attrs: &[Attribute]) -> bool {
 }
 
 /// Creates `(from_orig_arm, to_orig_arm)`
-/// Cretes `(from_orig_arm, to_orig_arm)`
 fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct_name: &Ident, f: &Fields) -> (Arm, Arm) {
     let skip_node_id = skip_node_id(attrs);
 

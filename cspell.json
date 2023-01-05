@@ -1,5 +1,7 @@
 {
     "words": [
+        "ahash",
+        "ctxt",
         "isize",
         "pmutil",
         "rnode",
@@ -16,6 +18,8 @@
         "**/*.rust-debug",
         "**/*.swc-stderr",
         // These files are not managed by us.
-        "**/stc_ts_builtin_types/lib/*.d.ts"
+        "**/stc_ts_builtin_types/lib/*.d.ts",
+        // Useless
+        "scripts/npm"
     ]
 }
