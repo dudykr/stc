@@ -34,6 +34,7 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub(super) struct InferenceInfo {
+    #[allow(unused)]
     pub type_param: Id,
 
     /// Candidates in covariant positions (or undefined)
@@ -53,6 +54,7 @@ pub(super) struct InferenceInfo {
     pub top_level: bool,
     /// True if inferences are fixed
     pub is_fixed: bool,
+    #[allow(unused)]
     pub implied_arity: Option<isize>,
 }
 
