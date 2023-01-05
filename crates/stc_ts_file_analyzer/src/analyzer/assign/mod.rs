@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
             }
 
             if rhs.is_enum_variant() {
-                // TODO(kdy1): Check if actual value is numberx.
+                // TODO(kdy1): Check if actual value is number.
                 return Ok(());
             }
 
@@ -2120,7 +2120,7 @@ impl Analyzer<'_, '_> {
                 //                 }),
                 //                 opts,
                 //             )
-                //             .context("tried to assign by converting rhs to builtin inferface
+                //             .context("tried to assign by converting rhs to builtin interface
                 // 'String'")     }
                 //     _ => {}
                 // }
