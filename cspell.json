@@ -53,7 +53,7 @@
     "ignorePaths": [
         "target",
         "**/node_modules",
-        "tests/**.ts",
-        "tests/**.tsx"
+        "**/tests/**/*.ts",
+        "**/tests/**/*.tsx"
     ]
 }
