@@ -237,7 +237,16 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 });
 
-                let map = self.infer_type_with_types(span, &lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let map = self.infer_type_with_types(
+                    span,
+                    &lt.params,
+                    &lf,
+                    &rf,
+                    InferTypeOpts {
+                        for_fn_assignment: true,
+                        ..Default::default()
+                    },
+                )?;
                 let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of lhs as a step of function assignment")?;
