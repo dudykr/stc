@@ -9,7 +9,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
-use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
+use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
