@@ -6,8 +6,10 @@
         "canonicalize",
         "castable",
         "codegen",
+        "Csplit",
         "ctxt",
         "dashmap",
+        "debuginfo",
         "dejavu",
         "doctest",
         "elems",
@@ -26,6 +28,7 @@
         "libstd",
         "libtest",
         "lvalue",
+        "MIMALLOC",
         "opentelemetry",
         "partialeq",
         "petgraph",
@@ -34,6 +37,7 @@
         "qself",
         "quasis",
         "RAII",
+        "refcell",
         "respan",
         "rnode",
         "rustc",
@@ -43,7 +47,8 @@
         "smallvec",
         "subclassing",
         "triomphe",
-        "usize"
+        "usize",
+        "Zunstable"
     ],
     "ignorePaths": [
         "target",

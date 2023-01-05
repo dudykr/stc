@@ -618,7 +618,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     let ref_cell = false;
 
     if arc && ref_cell {
-        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<Refell<T>>")
+        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<RefCell<T>>")
     }
 
     // If type can be converted to RNode, do it.
