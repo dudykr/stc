@@ -16,6 +16,16 @@ env:
   CARGO_PROFILE_RELEASE_LTO: false
 
 jobs:
+  check-spelling:
+    name: Check spelling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: yarn
+
+      - run: npx cspell
+
   cargo-fmt:
     name: Cargo fmt
     runs-on: ubuntu-latest
