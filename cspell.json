@@ -1,6 +1,7 @@
 {
     "words": [
         "ahash",
+        "arity",
         "autocrlf",
         "bitflags",
         "bitor",
@@ -24,6 +25,7 @@
         "fxhash",
         "graphmap",
         "Hasher",
+        "homomorphic",
         "iife",
         "indexmap",
         "indexset",
