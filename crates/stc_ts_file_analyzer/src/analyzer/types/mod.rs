@@ -1103,12 +1103,14 @@ impl Analyzer<'_, '_> {
             let mut type_iter = normalize_types.clone().into_iter();
             let mut acc_type = type_iter
                 .next()
-                .unwrap_or(Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsNeverKeyword,
-                    metadata: KeywordTypeMetadata { ..Default::default() },
-                    tracker: Default::default(),
-                }))
+                .unwrap_or_else(|| {
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: KeywordTypeMetadata { ..Default::default() },
+                        tracker: Default::default(),
+                    })
+                })
                 .freezed();
 
             for elem in type_iter {
@@ -1222,7 +1224,7 @@ impl Analyzer<'_, '_> {
                     ));
                 }
             }
-            return Ok(Some(acc_type));
+            Ok(Some(acc_type))
         }
     }
 
