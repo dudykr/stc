@@ -16,7 +16,10 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::expander::InferTypeResult;
-use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
+use stc_ts_type_ops::{
+    generalization::{prevent_generalize, LitGeneralizer},
+    Fix,
+};
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
@@ -1139,7 +1142,7 @@ impl Analyzer<'_, '_> {
             if !ty.top_level {
                 if let Some(tp) = &tp {
                     if tp.constraint.is_none() {
-                        ty.inferred_type = ty.inferred_type.foldable().fold_with(&mut LitGeneralizer);
+                        ty.inferred_type = ty.inferred_type.foldable().fold_with(&mut LitGeneralizer).fixed();
                     }
                 }
             }
