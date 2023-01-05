@@ -1,7 +1,9 @@
 {
     "words": [
         "isize",
+        "pmutil",
         "rnode",
+        "serde",
         "usize"
     ],
     "ignorePaths": [
