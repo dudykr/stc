@@ -588,12 +588,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if opts.for_fn_assignment {
-            if let Type::Param(arg) = arg.normalize() {
-                if !param.is_type_param() {
-                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
-                    return Ok(());
-                }
+        if let Type::Param(arg) = arg.normalize() {
+            if !param.is_type_param() {
+                self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
+                return Ok(());
             }
         }
 
