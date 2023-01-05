@@ -275,7 +275,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
         println!("errors file does not exists: {}", errors_file.display());
         Ok(vec![])
     } else {
-        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(errors_file).expect("failed to open error sfile"))
+        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
