@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
 
                                 ty.assert_valid();
 
-                                // TODO(kdy1): Skip this logic if the `this` is binded
+                                // TODO(kdy1): Skip this logic if the `this` is bound
                                 ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, ty);
 
                                 ty.assert_valid();
