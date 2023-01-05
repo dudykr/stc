@@ -9,10 +9,13 @@
     "ignorePaths": [
         "target",
         "**/node_modules",
+        // Test files are not managed by us.
         "**/tests/**/*.ts",
         "**/tests/**/*.tsx",
         "**/tests/**/*.json",
         "**/*.rust-debug",
-        "**/*.swc-stderr"
+        "**/*.swc-stderr",
+        // These files are not managed by us.
+        "**/stc_ts_builtin_types/lib/*.d.ts"
     ]
 }
