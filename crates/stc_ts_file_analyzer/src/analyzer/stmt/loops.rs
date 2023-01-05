@@ -355,7 +355,7 @@ impl Analyzer<'_, '_> {
 
                 ForHeadKind::Of { is_awaited: true } => child
                     .get_async_iterator_element_type(rhs.span(), Cow::Owned(rty))
-                    .context("tried to get element type of an async iteratror")
+                    .context("tried to get element type of an async iterator")
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 

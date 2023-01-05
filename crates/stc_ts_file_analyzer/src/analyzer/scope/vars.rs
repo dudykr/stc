@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
-                                    .context("tried to access poprerty to declare variables")
+                                    .context("tried to access property to declare variables")
                             });
 
                             let default_prop_ty = default
@@ -548,7 +548,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
-                                    .context("tried to access poprerty to declare variables")
+                                    .context("tried to access property to declare variables")
                             });
 
                             let default_prop_ty = default
