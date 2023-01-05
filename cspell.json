@@ -17,7 +17,6 @@
         "triomphe",
         "usize"
     ],
-    "caseSensitive": true,
     "ignorePaths": [
         "target",
         "**/node_modules",
