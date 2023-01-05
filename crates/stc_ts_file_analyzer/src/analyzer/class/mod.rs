@@ -919,10 +919,10 @@ impl Analyzer<'_, '_> {
                         if has_static && has_instance {
                             let report_error_for_static = !spans_for_error.first().unwrap().1;
 
-                            for (span, is_staitc) in spans_for_error {
-                                if report_error_for_static && is_staitc {
+                            for (span, is_static) in spans_for_error {
+                                if report_error_for_static && is_static {
                                     self.storage.report(ErrorKind::ShouldBeInstanceMethod { span }.into())
-                                } else if !report_error_for_static && !is_staitc {
+                                } else if !report_error_for_static && !is_static {
                                     self.storage.report(ErrorKind::ShouldBeStaticMethod { span }.into())
                                 }
                             }
