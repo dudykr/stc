@@ -849,13 +849,14 @@ impl Analyzer<'_, '_> {
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
+        let mut read_only_flag = false;
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(ErrorKind::ReadOnly { span }.into());
+                                read_only_flag = true;
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -945,6 +946,9 @@ impl Analyzer<'_, '_> {
         }
 
         if matching_elements.len() == 1 {
+            if read_only_flag {
+                return Err(ErrorKind::ReadOnly { span }.into());
+            }
             return Ok(matching_elements.pop());
         }
 

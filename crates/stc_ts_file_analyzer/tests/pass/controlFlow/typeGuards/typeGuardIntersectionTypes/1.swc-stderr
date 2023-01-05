@@ -78,7 +78,7 @@ Error:
     `----
 
 Error: 
-  > ((undefined | number) & number)
+  > number
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]
@@ -87,7 +87,7 @@ Error:
     `----
 
 Error: 
-  > `manbearpig - ${((undefined | number) & number)} legs, no wings`
+  > `manbearpig - ${number} legs, no wings`
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]

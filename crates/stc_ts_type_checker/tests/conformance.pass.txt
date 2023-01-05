@@ -2030,7 +2030,6 @@ types/forAwait/types.forAwait.es2018.3.ts
 types/intersection/contextualIntersectionType.ts
 types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
-types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionThisTypes.ts
 types/intersection/intersectionTypeAssignment.ts
@@ -2039,6 +2038,7 @@ types/intersection/intersectionTypeInference.ts
 types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
 types/intersection/intersectionTypeMembers.ts
+types/intersection/intersectionWithUnionConstraint.ts
 types/intersection/operatorsAndIntersectionTypes.ts
 types/intersection/recursiveIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts

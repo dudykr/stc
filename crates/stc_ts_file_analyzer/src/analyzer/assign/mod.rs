@@ -1189,6 +1189,7 @@ impl Analyzer<'_, '_> {
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
+                                allow_assignment_to_param_constraint: true,
                                 ..opts
                             },
                         )
