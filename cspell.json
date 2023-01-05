@@ -24,6 +24,7 @@
         "instanceof",
         "isize",
         "itertools",
+        "jemalloc",
         "keyof",
         "libcore",
         "libpanic",
@@ -48,6 +49,8 @@
         "serde",
         "smallvec",
         "subclassing",
+        "subpat",
+        "tikv",
         "triomphe",
         "usize",
         "Zunstable"
@@ -62,7 +65,7 @@
         "**/*.rust-debug",
         "**/*.swc-stderr",
         // These files are not managed by us.
-        "**/stc_ts_builtin_types/lib/*.d.ts",
+        "**/stc_ts_builtin_types/lib/*",
         "**/stc_ts_builtin_types/src/lib.rs",
         // Useless
         "config.toml",

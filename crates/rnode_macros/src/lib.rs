@@ -556,12 +556,12 @@ fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct
         }),
         comma: Some(struct_name.span().as_token()),
     };
-    let new_strudct_name = struct_name.new_ident_with(|s| format!("R{}", s));
+    let new_struct_name = struct_name.new_ident_with(|s| format!("R{}", s));
     let to_orig_arm = Arm {
         attrs: Default::default(),
         pat: q!(
             Vars {
-                Type: &new_strudct_name,
+                Type: &new_struct_name,
                 bindings: &to_orig_bindings,
             },
             (Type { bindings })
