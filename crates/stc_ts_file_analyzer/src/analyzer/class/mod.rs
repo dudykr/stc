@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
         if !self.ctx.in_declare && self.rule().no_implicit_any {
             if value.is_none() {
                 self.storage
-                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class proerty"))
+                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class property"))
             }
         }
 
