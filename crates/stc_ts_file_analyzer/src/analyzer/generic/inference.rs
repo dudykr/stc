@@ -634,10 +634,10 @@ impl Analyzer<'_, '_> {
 
             if delim.len() > 0 {
                 let mut s = seg;
-                let mut p = pos;
+                let mut p = pos as isize;
 
                 loop {
-                    p = get_source_text(s).index_of(delim, p);
+                    p += get_source_text(s)[p as usize..].find(&**delim).map(|v| v as isize).unwrap_or(-1);
                     if p >= 0 {
                         break;
                     }
@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
                     p = 0;
                 }
 
-                add_match!(s, p);
+                add_match!(s, p as usize);
                 pos += delim.len();
             } else if pos < get_source_text(seg).len() {
                 add_match!(seg, pos + 1)
