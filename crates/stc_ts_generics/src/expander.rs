@@ -7,8 +7,8 @@ use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
     Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
-    Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type, TypeElement,
-    TypeLit, TypeParam,
+    InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
+    TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use swc_atoms::js_word;
@@ -53,7 +53,7 @@ impl GenericExpander<'_> {
         match ty.normalize() {
             Type::StaticThis(..) | Type::Symbol(..) => return ty,
 
-            Type::Param(param) => {
+            Type::Param(param) | Type::Infer(InferType { type_param: param, .. }) => {
                 if !self.dejavu.contains(&param.name) {
                     if let Some(ty) = self.params.get(&param.name) {
                         info!(
@@ -596,13 +596,11 @@ struct GenericChecker<'a> {
     found: bool,
 }
 
-impl Visit<Type> for GenericChecker<'_> {
-    fn visit(&mut self, ty: &Type) {
-        if let Type::Param(p) = ty.normalize() {
-            if self.params.contains_key(&p.name) {
-                self.found = true;
-                return;
-            }
+impl Visit<TypeParam> for GenericChecker<'_> {
+    fn visit(&mut self, ty: &TypeParam) {
+        if self.params.contains_key(&ty.name) {
+            self.found = true;
+            return;
         }
 
         ty.visit_children_with(self);
