@@ -502,7 +502,24 @@ impl Analyzer<'_, '_> {
         // upon instantiation, would collapse all the placeholders to just 'string', and
         // an assignment check might succeed. That would be a pointless and
         // confusing outcome.
-        if matches.is_some() || target.quasis.iter().all(|v| v.cooked.as_ref().unwrap().len() == 0) {}
+        if matches.is_some() || target.quasis.iter().all(|v| v.cooked.as_ref().unwrap().len() == 0) {
+            for (i, target) in target.types.iter().enumerate() {
+                let source = matches
+                    .as_ref()
+                    .map(|matches| matches[i])
+                    .unwrap_or_else(|| Type::never(span, Default::default()));
+
+                // If we are inferring from a string literal type to a type
+                // variable whose constraint includes one of the
+                // allowed template literal placeholder types, infer from a
+                // literal type corresponding to the constraint.
+                if source.is_str_lit() && target.is_type_param() {}
+
+                self.infer_from_types(span, inferred, &source, target, opts)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
