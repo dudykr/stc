@@ -3,4 +3,7 @@
 
 export declare function takesLiteral<T extends string>(literal: T): T extends `foo.bar.${infer R}` ? R : unknown;
 
-export const t1 = takesLiteral("foo.bar.baz"); // "baz"
+declare const someString: string;
+export const t3 = takesLiteral(`foo.bar.${someString}`);  // string
+
+
