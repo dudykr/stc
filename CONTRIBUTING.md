@@ -51,7 +51,7 @@ Please copy `.vscode/launch.template.json` and rename it to
 `.vscode/launch.json`.
 
 In `launch.json`, you can pass the path of the `.ts` file you want to check to the
-`args` field. Then, you can run the typechecker with debugger from the
+`args` field. Then, you can run the type checker with debugger from the
 debugger panel.
 
 ### Debugging tips
