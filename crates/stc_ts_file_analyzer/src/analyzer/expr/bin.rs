@@ -8,7 +8,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
 };
-use stc_ts_errors::{DebugExt, ErrorKind, Errors};
+use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -353,7 +353,10 @@ impl Analyzer<'_, '_> {
                     (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
                     if self.ctx.in_cond {
+                        dbg!(&r_ty);
                         let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+
+                        dbg!(&r);
 
                         prevent_generalize(&mut r);
                         r.make_clone_cheap();
@@ -1586,8 +1589,14 @@ impl Analyzer<'_, '_> {
             sym: ids[ids.len() - 1].sym().clone(),
         };
 
+        dbg!(&name);
+
         let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
+        dbg!(force_dump_type_as_string(&ty));
+
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
+
+        dbg!(force_dump_type_as_string(&ty));
 
         if let Type::Union(u) = ty.normalize() {
             let mut candidates = vec![];
@@ -1596,6 +1605,8 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(prop_ty) = prop_res {
                     let prop_ty = self.normalize(Some(prop_ty.span()), Cow::Owned(prop_ty), Default::default())?;
+                    dbg!(force_dump_type_as_string(equals_to));
+                    dbg!(force_dump_type_as_string(&prop_ty));
                     let possible = match prop_ty.normalize() {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
