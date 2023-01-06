@@ -39,17 +39,6 @@ impl GenericExpander<'_> {
     fn fold_type(&mut self, mut ty: Type) -> Type {
         let span = ty.span();
 
-        {
-            let mut checker = GenericChecker {
-                params: self.params,
-                found: false,
-            };
-            ty.visit_with(&mut checker);
-            if !checker.found {
-                return ty;
-            }
-        }
-
         match ty.normalize() {
             Type::StaticThis(..) | Type::Symbol(..) => return ty,
 
@@ -491,6 +480,17 @@ impl Fold<Type> for GenericExpander<'_> {
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
+
+        {
+            let mut checker = GenericChecker {
+                params: self.params,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+            if !checker.found {
+                return ty;
+            }
+        }
 
         let start = dump_type_as_string(&ty);
         let ty = self.fold_type(ty).fixed();
