@@ -391,6 +391,11 @@ impl Analyzer<'_, '_> {
                     Type::Conditional(c) => {
                         let mut c = c.clone();
 
+                        c = match self.expand_conditional_type(actual_span, Type::Conditional(c)).foldable() {
+                            Type::Conditional(c) => c,
+                            ty => return Ok(Cow::Owned(ty)),
+                        };
+
                         c.check_type = box self
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
