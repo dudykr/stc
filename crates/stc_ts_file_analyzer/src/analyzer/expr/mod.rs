@@ -1740,6 +1740,16 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
+                            if self.ctx.ignore_enum_variant_not_found {
+                                return Ok(Type::EnumVariant(EnumVariant {
+                                    span,
+                                    enum_name: e.id.clone().into(),
+                                    name: None,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }));
+                            }
+
                             return Err(ErrorKind::NoSuchEnumVariant { span, name: sym.clone() }.into());
                         }
 
@@ -3933,6 +3943,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
+        let ctx = self.ctx;
         let mut ty = self
             .with_ctx(prop_access_ctx)
             .access_property(

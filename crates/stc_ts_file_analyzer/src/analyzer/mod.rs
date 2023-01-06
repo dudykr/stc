@@ -211,6 +211,8 @@ pub(crate) struct Ctx {
 
     /// If true, obj of the expression statement is `super` keyword.
     obj_is_super: bool,
+
+    ignore_enum_variant_not_found: bool,
 }
 
 impl Ctx {
@@ -529,6 +531,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_module: false,
                 checking_switch_discriminant_as_bin: false,
                 obj_is_super: false,
+                ignore_enum_variant_not_found: false,
             },
             loader,
             is_builtin,
