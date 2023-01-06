@@ -9,7 +9,7 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RTplElement, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RTpl, RTplElement, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
@@ -485,7 +485,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         source: &Type,
-        target: &Tpl,
+        target: &RTpl,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
@@ -496,15 +496,15 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         source: &Type,
-        target: &Tpl,
+        target: &RTpl,
         opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
         match source.normalize() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
-            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, source.value, &[], target, opts),
+            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value], &[], target, opts),
             Type::Tpl(source) => {
-                if (*source.quasis).eq_ignore_span(&target.quasis) {
+                if (*source.quasis).eq_ignore_span(&*target.quasis) {
                     Ok(source.types.iter().map(|ty| self.get_string_like_type_for_type(ty)).collect())
                 } else {
                     self.infer_from_lit_parts_to_tpl_lit(span, inferred, &source.quasis, &source.types, target, opts)
