@@ -391,6 +391,7 @@ impl Analyzer<'_, '_> {
                     Type::Conditional(c) => {
                         let mut c = c.clone();
 
+                        // TODO(kdy1): Cleanup
                         c = match self.expand_conditional_type(actual_span, Type::Conditional(c)).foldable() {
                             Type::Conditional(c) => c,
                             ty => return Ok(Cow::Owned(ty)),
