@@ -22,7 +22,7 @@ use stc_ts_types::{
 };
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Tpl, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
 use crate::{
@@ -478,6 +478,16 @@ impl Analyzer<'_, '_> {
         }
 
         type_var
+    }
+
+    pub(super) fn infer_to_tpl_lit_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &Tpl,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
     }
 
     pub(super) fn insert_inferred(

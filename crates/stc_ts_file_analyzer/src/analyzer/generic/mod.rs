@@ -653,6 +653,10 @@ impl Analyzer<'_, '_> {
                 )
             }
 
+            (Type::Tpl(target), _) => {
+                return self.infer_to_tpl_lit_type(span, inferred, arg, target, opts);
+            }
+
             _ => {}
         }
 
