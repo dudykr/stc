@@ -9,7 +9,7 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RTplElement, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
@@ -21,8 +21,9 @@ use stc_ts_types::{
     TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
+use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{Tpl, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
 use crate::{
@@ -503,12 +504,19 @@ impl Analyzer<'_, '_> {
         match source.normalize() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
-            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value], &[], target, opts),
+            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value.clone().into()], &[], target, opts),
             Type::Tpl(source) => {
                 if (*source.quasis).eq_ignore_span(&*target.quasis) {
                     Ok(source.types.iter().map(|ty| self.get_string_like_type_for_type(ty)).collect())
                 } else {
-                    self.infer_from_lit_parts_to_tpl_lit(span, inferred, &source.quasis, &source.types, target, opts)
+                    self.infer_from_lit_parts_to_tpl_lit(
+                        span,
+                        inferred,
+                        &source.quasis.iter().map(|v| v.cooked.clone().unwrap()).collect_vec(),
+                        &source.types,
+                        target,
+                        opts,
+                    )
                 }
             }
             _ => Ok(None),
@@ -520,9 +528,9 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        source_texts: &[RTplElement],
+        source_texts: &[Atom],
         source_types: &[Type],
-        target: &Tpl,
+        target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
     }
