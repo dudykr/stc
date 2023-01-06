@@ -1754,7 +1754,7 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
-                            if self.ctx.ignore_enum_variant_not_found && !opts.is_key_computed {
+                            if !opts.is_key_computed {
                                 return Ok(Type::EnumVariant(EnumVariant {
                                     span,
                                     enum_name: e.id.clone().into(),

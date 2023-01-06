@@ -8,7 +8,7 @@ use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
-    analyzer::{expr::TypeOfMode, util::ResultExt, Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, util::ResultExt, Analyzer},
     validator,
     validator::ValidateWith,
     VResult,
@@ -25,13 +25,7 @@ impl Analyzer<'_, '_> {
 
         let res = e
             .arg
-            .validate_with_args(
-                &mut *self.with_ctx(Ctx {
-                    ignore_enum_variant_not_found: true,
-                    ..self.ctx
-                }),
-                (TypeOfMode::LValue, None, None),
-            )
+            .validate_with_args(self, (TypeOfMode::LValue, None, None))
             .map(Freeze::freezed);
         let mut errored = false;
 
