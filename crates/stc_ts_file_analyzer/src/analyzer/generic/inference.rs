@@ -482,6 +482,7 @@ impl Analyzer<'_, '_> {
         type_var
     }
 
+    /// Ported from `inferToTemplateLiteralType` of `tsc`.
     pub(super) fn infer_to_tpl_lit_type(
         &mut self,
         span: Span,
@@ -491,6 +492,17 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
+
+        // When the target template literal contains only placeholders (meaning that
+        // inference is intended to extract single characters and remainder
+        // strings) and inference fails to produce matches, we want to infer 'never' for
+        // each placeholder such that instantiation with the inferred value(s) produces
+        // 'never', a type for which an assignment check will fail. If we make
+        // no inferences, we'll likely end up with the constraint 'string' which,
+        // upon instantiation, would collapse all the placeholders to just 'string', and
+        // an assignment check might succeed. That would be a pointless and
+        // confusing outcome.
+        if matches.is_some() || target.quasis.iter().all(|v| v.cooked.as_ref().unwrap().len() == 0) {}
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
