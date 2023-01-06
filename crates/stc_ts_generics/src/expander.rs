@@ -4,7 +4,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
-use stc_ts_errors::debug::{dump_type_as_string, print_backtrace};
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
     Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
     InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
@@ -50,7 +50,6 @@ impl GenericExpander<'_> {
                             param.name,
                             dump_type_as_string(ty)
                         );
-                        print_backtrace();
 
                         // If it's not self-referential, we fold it again.
 
