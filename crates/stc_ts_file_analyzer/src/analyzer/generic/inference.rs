@@ -491,6 +491,7 @@ impl Analyzer<'_, '_> {
         let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
     }
 
+    /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
     fn infer_types_from_tpl_lit_type(
         &mut self,
         span: Span,
@@ -514,6 +515,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// Ported from `inferFromLiteralPartsToTemplateLiteral` of `tsc`.
     fn infer_from_lit_parts_to_tpl_lit(
         &mut self,
         span: Span,
