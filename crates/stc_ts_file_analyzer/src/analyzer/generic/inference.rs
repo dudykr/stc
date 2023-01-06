@@ -603,10 +603,16 @@ impl Analyzer<'_, '_> {
                     get_string_literal_type(&source_texts[seg][pos..$p])
                 } else {
                     Type::Tpl(TplType {
-                        span: DUMMY_SP,
+                        span,
                         quasis: std::iter::once(source_texts[seg][pos..].into())
-                            .chain(source_texts[seg + 1..$s])
-                            .chain(std::iter::once(get_source_text($s)[0..$p]))
+                            .chain(source_texts[seg + 1..$s].iter().cloned())
+                            .chain(std::iter::once(get_source_text($s)[0..$p].into()))
+                            .map(|v: Atom| RTplElement {
+                                span,
+                                raw: v.clone(),
+                                cooked: Some(v),
+                                tail: false,
+                            })
                             .collect(),
                         types: source_types[seg..$s].iter().map(|v| v.clone()).collect(),
                         metadata: Default::default(),
