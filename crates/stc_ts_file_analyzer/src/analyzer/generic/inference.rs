@@ -569,6 +569,34 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
+        let last_source_index = source_texts.len() - 1;
+        let source_start_text = &source_texts[0];
+        let source_end_text = &source_texts[last_source_index];
+        let target_texts = &target.quasis;
+        let last_target_index = target_texts.len() - 1;
+        let target_start_text = target_texts[0].cooked.as_ref().unwrap();
+        let target_end_text = target_texts[last_target_index].cooked.as_ref().unwrap();
+
+        if last_source_index == 0 && source_start_text.len() < target_start_text.len() + target_end_text.len()
+            || !source_start_text.starts_with(target_start_text)
+            || !source_end_text.ends_with(target_end_text)
+        {
+            return Ok(None);
+        }
+
+        let remaining_end_text = &source_end_text[0..source_end_text.len() - target_end_text.len()];
+        let mut matches = Vec::<Type>::new();
+        let mut seg = 0;
+        let mut pos = target_start_text.len();
+
+        for i in 1..last_target_index {
+            let delim = target_texts[i].cooked.as_ref().unwrap();
+
+            if delim.len() > 0 {
+                let mut s = seg;
+                let mut p = pos;
+            }
+        }
     }
 
     pub(super) fn insert_inferred(
