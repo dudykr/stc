@@ -9,7 +9,7 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RTplElement, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
@@ -21,7 +21,7 @@ use stc_ts_types::{
     Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{Tpl, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
@@ -503,6 +503,14 @@ impl Analyzer<'_, '_> {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
             }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, source.value, &[], target, opts),
+            Type::Tpl(source) => {
+                if (*source.quasis).eq_ignore_span(&target.quasis) {
+                    Ok(source.types.iter().map(|ty| self.get_string_like_type_for_type(ty)).collect())
+                } else {
+                    self.infer_from_lit_parts_to_tpl_lit(span, inferred, &source.quasis, &source.types, target, opts)
+                }
+            }
+            _ => Ok(None),
         }
     }
 
@@ -510,7 +518,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        source: &Type,
+        source_texts: &[RTplElement],
+        source_types: &[Type],
         target: &Tpl,
         opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
