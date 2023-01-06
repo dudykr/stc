@@ -589,6 +589,8 @@ impl Analyzer<'_, '_> {
     /// index 1, and thus the first inference is the template literal type
     /// `<${string}>`. The remainder of the source makes up the second
     /// inference, the template literal type `<${number}-${number}>`.
+    #[allow(unused_assignments)]
+    #[allow(clippy::needless_range_loop)]
     fn infer_from_lit_parts_to_tpl_lit(
         &mut self,
         span: Span,
