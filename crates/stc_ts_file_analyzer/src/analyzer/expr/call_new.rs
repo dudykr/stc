@@ -2739,8 +2739,10 @@ impl Analyzer<'_, '_> {
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-            if let Ok(new) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
-                ty = new.into_owned();
+            if ty.is_conditional() {
+                if let Ok(new) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
+                    ty = new.into_owned();
+                }
             }
 
             print_type("Return, simplified", &ty);
