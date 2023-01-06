@@ -9,7 +9,7 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RTpl, RTplElement, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RTplElement, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
@@ -18,7 +18,7 @@ use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
-    Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
@@ -485,7 +485,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         source: &Type,
-        target: &RTpl,
+        target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
@@ -496,7 +496,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         source: &Type,
-        target: &RTpl,
+        target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
         match source.normalize() {
