@@ -389,19 +389,23 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Conditional(c) => {
-                        let mut check_type = self
+                        let mut c = c.clone();
+
+                        c.check_type = box self
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
-                            .into_owned();
-                        check_type.make_clone_cheap();
+                            .freezed()
+                            .into_owned()
+                            .freezed();
 
-                        let mut extends_type = self
+                        c.extends_type = box self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
-                            .context("tried to normalize the `extends` type of a conditional type")?;
+                            .context("tried to normalize the `extends` type of a conditional type")?
+                            .freezed()
+                            .into_owned()
+                            .freezed();
 
-                        extends_type.make_clone_cheap();
-
-                        if let Some(v) = self.extends(ty.span(), &check_type, &extends_type, Default::default()) {
+                        if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type, Default::default()) {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
                             let ty = self
@@ -415,14 +419,14 @@ impl Analyzer<'_, '_> {
                             name,
                             constraint: Some(check_type_constraint),
                             ..
-                        }) = check_type.normalize()
+                        }) = c.check_type.normalize()
                         {
                             let new_type = self
                                 .reduce_conditional_type(
                                     c.span,
-                                    &check_type,
+                                    &c.check_type,
                                     check_type_constraint,
-                                    &extends_type,
+                                    &c.extends_type,
                                     &c.true_type,
                                     &c.false_type,
                                     c.metadata,
@@ -434,11 +438,11 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if let Type::Union(check_type_union) = check_type.normalize() {
+                        if let Type::Union(check_type_union) = c.check_type.normalize() {
                             let mut all = true;
                             let mut types = vec![];
                             for check_type in &check_type_union.types {
-                                let res = self.extends(ty.span(), check_type, &extends_type, Default::default());
+                                let res = self.extends(ty.span(), check_type, &c.extends_type, Default::default());
                                 if let Some(v) = res {
                                     if v {
                                         if !c.true_type.is_never() {
@@ -478,7 +482,7 @@ impl Analyzer<'_, '_> {
                             name,
                             constraint: Some(check_type_constraint),
                             ..
-                        }) = check_type.normalize_mut()
+                        }) = c.check_type.normalize_mut()
                         {
                             // We removes unmatchable constraints.
                             // It means, for
@@ -492,7 +496,7 @@ impl Analyzer<'_, '_> {
                                 let mut all = true;
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
-                                    let res = self.extends(ty.span(), check_type, &extends_type, Default::default());
+                                    let res = self.extends(ty.span(), check_type, &c.extends_type, Default::default());
                                     if let Some(v) = res {
                                         if v {
                                             if !c.true_type.is_never() {
@@ -521,8 +525,8 @@ impl Analyzer<'_, '_> {
                                     *check_type_constraint = box new;
 
                                     let mut params = HashMap::default();
-                                    params.insert(name.clone(), ALLOW_DEEP_CLONE.set(&(), || check_type.clone().fixed().freezed()));
-                                    let c = self.expand_type_params(&params, c.clone(), Default::default())?;
+                                    params.insert(name.clone(), ALLOW_DEEP_CLONE.set(&(), || *c.check_type.clone().fixed().freezed()));
+                                    let c = self.expand_type_params(&params, c, Default::default())?;
                                     let c = Type::Conditional(c);
                                     c.assert_valid();
 
