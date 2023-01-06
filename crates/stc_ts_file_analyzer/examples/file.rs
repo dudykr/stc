@@ -25,7 +25,7 @@ use swc_ecma_visit::FoldWith;
 use tracing::Level;
 
 fn profile_file(path: &Path) {
-    testing::run_test2(false, |cm, _handler| {
+    testing::run_test2(false, |cm, handler| {
         let fm = cm.load_file(path).unwrap();
 
         let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &[Lib::Es5]);
@@ -59,9 +59,20 @@ fn profile_file(path: &Path) {
         };
 
         {
-            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
+        let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
+        if errors.is_empty() {
+            println!("No errors detected");
+            return Ok(());
+        }
+
+        GLOBALS.set(env.shared().swc_globals(), || {
+            for e in errors {
+                e.emit(&handler);
+            }
+        });
 
         Ok(())
     })
@@ -69,6 +80,8 @@ fn profile_file(path: &Path) {
 }
 
 fn main() {
-    let input = env::args().nth(1).expect("failed to analyze first file");
-    profile_file(Path::new(&input));
+    match env::args().nth(1) {
+        Some(input) => profile_file(Path::new(&input)),
+        None => println!("Input file not found.\nPlease input the file path."),
+    };
 }
