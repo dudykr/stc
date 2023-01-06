@@ -2470,7 +2470,7 @@ impl Expander<'_, '_, '_> {
 
         let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
 
-        self.analyzer.expand_conditional_type(span, ty)
+        self.analyzer.expand_conditional_type(self.span, ty)
     }
 }
 
