@@ -1245,7 +1245,6 @@ impl Analyzer<'_, '_> {
 
         let ty = ty.foldable();
         if let Type::Conditional(Conditional {
-            span,
             mut check_type,
             mut extends_type,
             mut true_type,
