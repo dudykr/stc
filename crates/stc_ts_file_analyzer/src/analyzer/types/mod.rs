@@ -1228,6 +1228,58 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {
+        if !ty.is_conditional() {
+            return ty;
+        }
+
+        let ty = ty.foldable();
+        if let Type::Conditional(Conditional {
+            span,
+            mut check_type,
+            mut extends_type,
+            mut true_type,
+            mut false_type,
+            metadata,
+            ..
+        }) = ty
+        {
+            extends_type.make_clone_cheap();
+            check_type.make_clone_cheap();
+
+            // We need to handle infer type.
+            let type_params = self.infer_ts_infer_types(span, &extends_type, &check_type, Default::default()).ok();
+
+            if let Some(type_params) = type_params {
+                check_type = box self.expand_type_params(&type_params, *check_type, Default::default()).unwrap();
+                extends_type = box self.expand_type_params(&type_params, *extends_type, Default::default()).unwrap();
+
+                true_type = box self.expand_type_params(&type_params, *true_type, Default::default()).unwrap();
+                false_type = box self.expand_type_params(&type_params, *false_type, Default::default()).unwrap();
+            }
+
+            if check_type.is_class() {
+                if let Type::Class(check_type) = check_type.normalize_mut() {
+                    if let Type::Constructor(..) = extends_type.normalize() {
+                        return *true_type;
+                    }
+                }
+            }
+
+            return Type::Conditional(Conditional {
+                span,
+                check_type,
+                extends_type,
+                true_type,
+                false_type,
+                metadata,
+                tracker: Default::default(),
+            });
+        }
+
+        ty
+    }
+
     // This is part of normalization.
     fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
         let mut ty = self.normalize(
