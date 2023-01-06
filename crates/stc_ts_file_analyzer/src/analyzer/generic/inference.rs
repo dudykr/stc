@@ -488,6 +488,17 @@ impl Analyzer<'_, '_> {
         target: &Tpl,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
+    }
+
+    fn infer_types_from_tpl_lit_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &Tpl,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
     }
 
     pub(super) fn insert_inferred(
