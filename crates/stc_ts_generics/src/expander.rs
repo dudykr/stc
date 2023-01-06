@@ -4,7 +4,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
-use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_errors::debug::{dump_type_as_string, print_backtrace};
 use stc_ts_types::{
     Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
     InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
@@ -16,7 +16,7 @@ use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, warn};
 
-use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
+use crate::ExpandGenericOpts;
 
 #[derive(Debug)]
 pub struct InferTypeResult {
@@ -61,6 +61,7 @@ impl GenericExpander<'_> {
                             param.name,
                             dump_type_as_string(ty)
                         );
+                        print_backtrace();
 
                         // If it's not self-referential, we fold it again.
 
@@ -490,15 +491,6 @@ impl Fold<Type> for GenericExpander<'_> {
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
-
-        {
-            let mut v = TypeParamNameUsageFinder::default();
-            ty.visit_with(&mut v);
-            let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
-            if !will_expand {
-                return ty;
-            }
-        }
 
         let start = dump_type_as_string(&ty);
         let ty = self.fold_type(ty).fixed();
