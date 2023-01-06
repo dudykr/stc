@@ -10,7 +10,7 @@ use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::NodeId;
-use stc_ts_ast_rnode::{RTplElement, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RStr, RTplElement, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
@@ -578,8 +578,8 @@ impl Analyzer<'_, '_> {
         let target_end_text = target_texts[last_target_index].cooked.as_ref().unwrap();
 
         if last_source_index == 0 && source_start_text.len() < target_start_text.len() + target_end_text.len()
-            || !source_start_text.starts_with(target_start_text)
-            || !source_end_text.ends_with(target_end_text)
+            || !source_start_text.starts_with(&**target_start_text)
+            || !source_end_text.ends_with(&**target_end_text)
         {
             return Ok(None);
         }
@@ -600,7 +600,13 @@ impl Analyzer<'_, '_> {
         macro_rules! add_match {
             ($s:expr, $p:expr) => {{
                 let match_type = if $s == seg {
-                    get_string_literal_type(&source_texts[seg][pos..$p])
+                    let value = source_texts[seg][pos..$p].into();
+                    Type::Lit(LitType {
+                        span,
+                        lit: RTsLit::Str(RStr { span, raw: None, value }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
                 } else {
                     Type::Tpl(TplType {
                         span,
@@ -609,6 +615,7 @@ impl Analyzer<'_, '_> {
                             .chain(std::iter::once(get_source_text($s)[0..$p].into()))
                             .map(|v: Atom| RTplElement {
                                 span,
+                                node_id: NodeId::invalid(),
                                 raw: v.clone(),
                                 cooked: Some(v),
                                 tail: false,
