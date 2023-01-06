@@ -9,7 +9,8 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
+use rnode::NodeId;
+use stc_ts_ast_rnode::{RTplElement, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
@@ -22,7 +23,7 @@ use stc_ts_types::{
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::Atom;
-use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
@@ -507,7 +508,13 @@ impl Analyzer<'_, '_> {
             }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value.clone().into()], &[], target, opts),
             Type::Tpl(source) => {
                 if (*source.quasis).eq_ignore_span(&*target.quasis) {
-                    Ok(source.types.iter().map(|ty| self.get_string_like_type_for_type(ty)).collect())
+                    Ok(Some(
+                        source
+                            .types
+                            .iter()
+                            .map(|ty| self.get_string_like_type_for_type(ty).into_owned())
+                            .collect(),
+                    ))
                 } else {
                     self.infer_from_lit_parts_to_tpl_lit(
                         span,
@@ -544,6 +551,35 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<()> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
+    }
+
+    fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+        if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
+            Cow::Borrowed(ty)
+        } else {
+            Cow::Owned(Type::Tpl(TplType {
+                span: ty.span(),
+                quasis: vec![
+                    RTplElement {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        tail: false,
+                        cooked: None,
+                        raw: Atom::default(),
+                    },
+                    RTplElement {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        tail: false,
+                        cooked: None,
+                        raw: Atom::default(),
+                    },
+                ],
+                types: vec![ty.clone()],
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }))
+        }
     }
 
     /// # Rules
