@@ -513,7 +513,9 @@ impl Analyzer<'_, '_> {
                 // variable whose constraint includes one of the
                 // allowed template literal placeholder types, infer from a
                 // literal type corresponding to the constraint.
-                if source.is_str_lit() && target.is_type_param() {}
+                if source.is_str_lit() && target.is_type_param() {
+                    // TODO: Implement logic
+                }
 
                 self.infer_from_types(span, inferred, &source, target, opts)?;
             }
