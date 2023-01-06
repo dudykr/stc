@@ -506,7 +506,7 @@ impl Analyzer<'_, '_> {
             for (i, target) in target.types.iter().enumerate() {
                 let source = matches
                     .as_ref()
-                    .map(|matches| matches[i])
+                    .map(|matches| matches[i].clone())
                     .unwrap_or_else(|| Type::never(span, Default::default()));
 
                 // If we are inferring from a string literal type to a type
@@ -655,6 +655,10 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     })
                 };
+
+                matches.push(match_type);
+                seg = $s;
+                pos = $p;
             }};
         }
 
