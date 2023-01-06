@@ -498,7 +498,22 @@ impl Analyzer<'_, '_> {
         source: &Type,
         target: &Tpl,
         opts: InferTypeOpts,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Vec<Type>>> {
+        match source.normalize() {
+            Type::Lit(LitType {
+                lit: RTsLit::Str(source), ..
+            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, source.value, &[], target, opts),
+        }
+    }
+
+    fn infer_from_lit_parts_to_tpl_lit(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &Tpl,
+        opts: InferTypeOpts,
+    ) -> VResult<Option<Vec<Type>>> {
     }
 
     pub(super) fn insert_inferred(
