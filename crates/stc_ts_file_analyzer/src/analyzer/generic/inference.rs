@@ -589,14 +589,58 @@ impl Analyzer<'_, '_> {
         let mut seg = 0;
         let mut pos = target_start_text.len();
 
+        macro_rules! add_match {
+            ($s:expr, $p:expr) => {{
+                let match_type = if $s == seg {
+                    get_string_literal_type(&source_texts[seg][pos..$p])
+                } else {
+                    Type::Tpl(TplType {
+                        span: DUMMY_SP,
+                        quasis: std::iter::once(source_texts[seg][pos..])
+                            .chain(source_texts[seg + 1..$s])
+                            .chain(std::iter::once(get_source_text($s)[0..$p]))
+                            .collect(),
+                        types: source_types[seg..$s].iter().map(|v| v.clone()).collect(),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                };
+            }};
+        }
+
         for i in 1..last_target_index {
             let delim = target_texts[i].cooked.as_ref().unwrap();
 
             if delim.len() > 0 {
                 let mut s = seg;
                 let mut p = pos;
+
+                loop {
+                    p = get_source_text(s).index_of(delim, p);
+                    if p >= 0 {
+                        break;
+                    }
+                    s += 1;
+                    if s == source_texts.len() {
+                        return Ok(None);
+                    }
+                    p = 0;
+                }
+
+                add_match!(s, p);
+                pos += delim.len();
+            } else if pos < get_source_text(seg).len() {
+                add_match!(seg, pos + 1)
+            } else if seg < last_source_index {
+                add_match!(seg + 1, 0)
+            } else {
+                return Ok(None);
             }
         }
+
+        add_match!(last_source_index, get_source_text(last_source_index).len());
+
+        Ok(Some(matches))
     }
 
     pub(super) fn insert_inferred(
