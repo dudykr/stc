@@ -2490,6 +2490,15 @@ impl Expander<'_, '_, '_> {
                 .ok();
 
             if let Some(type_params) = type_params {
+                check_type = box self
+                    .analyzer
+                    .expand_type_params(&type_params, *check_type, Default::default())
+                    .unwrap();
+                extends_type = box self
+                    .analyzer
+                    .expand_type_params(&type_params, *extends_type, Default::default())
+                    .unwrap();
+
                 true_type = box self
                     .analyzer
                     .expand_type_params(&type_params, *true_type, Default::default())
