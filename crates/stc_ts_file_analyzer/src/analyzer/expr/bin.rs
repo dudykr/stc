@@ -1587,6 +1587,7 @@ impl Analyzer<'_, '_> {
         };
 
         let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
+
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
         if let Type::Union(u) = ty.normalize() {
@@ -1600,14 +1601,14 @@ impl Analyzer<'_, '_> {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
                         _ => {
-                            if prop_ty.is_null_or_undefined() || equals_to.is_null_or_undefined() {
-                                prop_ty.type_eq(equals_to)
-                            } else {
-                                self.has_overlap(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?
-                            }
+                            (equals_to.is_undefined() && prop_ty.contains_undefined())
+                                || (if equals_to.is_null_or_undefined() {
+                                    prop_ty.type_eq(equals_to)
+                                } else {
+                                    self.has_overlap(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?
+                                })
                         }
                     };
-                    dbg!(possible);
                     if possible {
                         candidates.push(ty.clone())
                     }
