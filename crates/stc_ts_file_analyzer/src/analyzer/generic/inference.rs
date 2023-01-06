@@ -589,6 +589,14 @@ impl Analyzer<'_, '_> {
         let mut seg = 0;
         let mut pos = target_start_text.len();
 
+        let get_source_text = |index: usize| {
+            if index < last_source_index {
+                &*source_texts[index]
+            } else {
+                remaining_end_text
+            }
+        };
+
         macro_rules! add_match {
             ($s:expr, $p:expr) => {{
                 let match_type = if $s == seg {
@@ -596,7 +604,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     Type::Tpl(TplType {
                         span: DUMMY_SP,
-                        quasis: std::iter::once(source_texts[seg][pos..])
+                        quasis: std::iter::once(source_texts[seg][pos..].into())
                             .chain(source_texts[seg + 1..$s])
                             .chain(std::iter::once(get_source_text($s)[0..$p]))
                             .collect(),
