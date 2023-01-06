@@ -96,6 +96,10 @@ impl Analyzer<'_, '_> {
 
                 _ => Ok(ty),
             })
+            .or_else(|err| match &*err {
+                ErrorKind::NoSuchEnumVariant { .. } => Ok(Type::any(span, Default::default())),
+                _ => Err(err),
+            })
             .report(&mut self.storage);
 
         if let Some(ty) = ty {

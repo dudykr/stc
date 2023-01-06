@@ -578,6 +578,9 @@ pub(crate) struct AccessPropertyOpts {
 
     /// Check if `obj` is undefined or null
     pub check_for_undefined_or_null: bool,
+
+    /// `true` means that the provided [Key] is crated from a computed key.
+    pub is_key_computed: bool,
 }
 
 #[validator]
@@ -1119,6 +1122,7 @@ impl Analyzer<'_, '_> {
                             AccessPropertyOpts {
                                 disallow_indexing_array_with_string: true,
                                 disallow_creating_indexed_type_from_ty_els: true,
+                                is_key_computed: true,
                                 ..opts
                             },
                         )
@@ -1140,7 +1144,17 @@ impl Analyzer<'_, '_> {
                 }) => {
                     // As some types has rules about computed properties, we use the result only if
                     // it successes.
-                    if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx, opts) {
+                    if let Ok(ty) = self.access_property(
+                        span,
+                        obj,
+                        &Key::Num(n.clone()),
+                        type_mode,
+                        id_ctx,
+                        AccessPropertyOpts {
+                            is_key_computed: true,
+                            ..opts
+                        },
+                    ) {
                         return Ok(ty);
                     }
                 }
@@ -1740,6 +1754,16 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
+                            if !opts.is_key_computed {
+                                return Ok(Type::EnumVariant(EnumVariant {
+                                    span,
+                                    enum_name: e.id.clone().into(),
+                                    name: None,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }));
+                            }
+
                             return Err(ErrorKind::NoSuchEnumVariant { span, name: sym.clone() }.into());
                         }
 
@@ -3933,6 +3957,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
+        let ctx = self.ctx;
         let mut ty = self
             .with_ctx(prop_access_ctx)
             .access_property(
