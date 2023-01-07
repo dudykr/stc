@@ -939,6 +939,7 @@ impl Analyzer<'_, '_> {
         let is_undefined = normalized_types.iter().any(|ty| ty.is_undefined());
         let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+        let is_function = normalized_types.iter().any(|ty| ty.is_fn_type());
 
         let sum = u32::from(is_symbol)
             + u32::from(is_str)
@@ -948,7 +949,8 @@ impl Analyzer<'_, '_> {
             + u32::from(is_undefined)
             + u32::from(is_object)
             + u32::from(is_void)
-            + u32::from(is_object);
+            + u32::from(is_object)
+            + u32::from(is_function);
 
         if sum >= 2 {
             if sum == 2 && is_undefined && is_void {
@@ -1237,6 +1239,7 @@ impl Analyzer<'_, '_> {
                     Type::new_union(span, new_types).freezed()
                 }
             }
+
             if let Type::Union(Union { types: u_types, .. }) = acc_type.normalize() {
                 if normalized_len < u_types.len() {
                     return Ok(Some(
