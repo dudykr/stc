@@ -353,7 +353,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Get keys of `ty` as a proerty name.
+    /// Get keys of `ty` as a property name.
     fn get_property_names_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(

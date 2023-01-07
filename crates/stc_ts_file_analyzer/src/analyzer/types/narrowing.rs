@@ -18,12 +18,12 @@ impl Analyzer<'_, '_> {
 
         let mut declared = self
             .normalize(Some(span), Cow::Owned(declared), Default::default())
-            .context("tried to normalize decalred type")?;
+            .context("tried to normalize declared type")?;
         declared.make_clone_cheap();
 
         let mut actual = self
             .normalize(Some(span), Cow::Borrowed(actual), Default::default())
-            .context("tried to normalize decalred type")?;
+            .context("tried to normalize declared type")?;
         actual.make_clone_cheap();
 
         if let Type::Union(actual) = actual.normalize() {

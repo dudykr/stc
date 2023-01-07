@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn check_for_inifinite_loop(&mut self, test: &Type, body: &RStmt) {
+    fn check_for_infinite_loop(&mut self, test: &Type, body: &RStmt) {
         trace!("Checking for infinite loop");
 
         // Of `s` is always executed and we enter infinite loop, return type should be
@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
             tracker: Default::default(),
         });
-        self.check_for_inifinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
+        self.check_for_infinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 
         node.update.visit_with(self);
         node.body.validate_with(self)?;

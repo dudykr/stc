@@ -8,3 +8,6 @@ export declare function call(t: { [s: string]: string | E });
 
 a = E
 call(E)
+
+a = E
+call(E)

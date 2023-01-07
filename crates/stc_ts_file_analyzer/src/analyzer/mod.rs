@@ -65,10 +65,12 @@ mod hoisting;
 mod import;
 mod pat;
 mod props;
+mod relation;
 mod scope;
 mod stmt;
 #[cfg(test)]
 mod tests;
+mod tsc_helper;
 mod types;
 mod util;
 mod visit_mut;
@@ -123,7 +125,7 @@ pub(crate) struct Ctx {
 
     in_ts_fn_type: bool,
 
-    /// `true` if unresolved references should be rerpoted.
+    /// `true` if unresolved references should be reported.
     ///
     /// For example, while validating type parameter instantiation, unresolved
     /// references are error.
@@ -176,7 +178,7 @@ pub(crate) struct Ctx {
     /// parameters.
     preserve_ret_ty: bool,
 
-    skip_identical_while_inferencing: bool,
+    skip_identical_while_inference: bool,
 
     super_references_super_class: bool,
 
@@ -239,10 +241,10 @@ pub struct Analyzer<'scope, 'b> {
 
     /// Value should [Type::Arc] of [Type::Module]
     imports: FxHashMap<(ModuleId, ModuleId), Type>,
-    /// See docs of ModuleitemMut for documentation.
+    /// See docs of ModuleItemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
-    /// See docs of ModuleitemMut for documentation.
+    /// See docs of ModuleItemMut for documentation.
     append_stmts: Vec<RStmt>,
 
     scope: Scope<'scope>,
@@ -255,7 +257,7 @@ pub struct Analyzer<'scope, 'b> {
 
     cur_facts: Facts,
 
-    /// Used while inferencing types.
+    /// Used while inferring types.
     mapped_type_param_name: Vec<Id>,
 
     debugger: Option<Debugger>,
@@ -515,7 +517,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 ignore_expand_prevention_for_all: false,
                 preserve_params: true,
                 preserve_ret_ty: true,
-                skip_identical_while_inferencing: false,
+                skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
                 cannot_fallback_to_iterable_iterator: false,
@@ -864,7 +866,7 @@ impl Analyzer<'_, '_> {
                             name,
                             ctxt,
                             type_args,
-                        } => ErrorKind::NamspaceNotFound {
+                        } => ErrorKind::NamespaceNotFound {
                             span,
                             name,
                             ctxt,

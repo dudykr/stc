@@ -2250,6 +2250,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [None] if nothing matched.
+    #[cfg_attr(not(debug_assertions), tracing::instrument(skip_all))]
     fn select_and_invoke(
         &mut self,
         span: Span,
@@ -3192,10 +3193,10 @@ impl Analyzer<'_, '_> {
 
                 let mut new_types = vec![];
 
-                let mut upcasted = false;
+                let mut did_upcast = false;
                 for ty in orig_ty.iter_union() {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
-                        upcasted = true;
+                        did_upcast = true;
                         new_types.push(new_ty.clone().into_owned());
                     } else if let Some(true) = self.extends(span, ty, &new_ty, Default::default()) {
                         new_types.push(ty.clone());
@@ -3203,13 +3204,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO(kdy1): Use super class instead of
-                if !upcasted && new_types.is_empty() {
+                if !did_upcast && new_types.is_empty() {
                     new_types.push(new_ty.clone().into_owned());
                 }
 
                 new_types.dedup_type();
                 let mut new_ty = Type::new_union_without_dedup(span, new_types);
-                if upcasted {
+                if did_upcast {
                     new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
                 return Ok(new_ty);
@@ -3270,6 +3271,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
         if arg.type_eq(param) {
             return true;
@@ -3294,6 +3296,7 @@ impl Analyzer<'_, '_> {
     /// `anyAssignabilityInInheritance.ts` says `any, not a subtype of number so
     /// it skips that overload, is a subtype of itself so it picks second (if
     /// truly ambiguous it would pick first overload)`
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn check_call_args(
         &mut self,
         span: Span,
@@ -3575,7 +3578,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 prevent_generalize(ty);
             }
 
-            // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
+            // Boxed<A | B | C> => Boxed<A> | Boxed<B> | Boxed<C>
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(i),

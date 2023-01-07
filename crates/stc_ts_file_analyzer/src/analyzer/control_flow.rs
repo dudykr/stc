@@ -910,7 +910,7 @@ impl Analyzer<'_, '_> {
 
                 // Variable is defined on parent scope.
                 //
-                // We copy varinfo with enhanced type.
+                // We copy var info with enhanced type.
                 self.scope.insert_var(i.id.clone().into(), var_info);
 
                 Ok(())
@@ -929,7 +929,7 @@ impl Analyzer<'_, '_> {
                             // Rest element is special.
                             let type_for_rest_arg = self
                                 .get_rest_elements(None, ty, i)
-                                .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
+                                .context("tried to get left elements of an iterator to assign using a rest pattern")?;
 
                             self.try_assign_pat_with_opts(
                                 span,
@@ -943,7 +943,7 @@ impl Analyzer<'_, '_> {
                                     ..opts
                                 },
                             )
-                            .context("tried to assign lefting elements to the arugment of a rest pattern")?;
+                            .context("tried to assign left elements to the argument of a rest pattern")?;
                             break;
                         }
 

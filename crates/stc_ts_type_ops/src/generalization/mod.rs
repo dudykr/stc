@@ -2,8 +2,8 @@ use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
 use stc_ts_base_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassProperty, Function, IndexedAccessType, Interface, KeywordType, KeywordTypeMetadata, LitType, Ref, RestType, Tuple,
-    Type, TypeLit, Union,
+    Array, Class, ClassProperty, Conditional, Function, IndexedAccessType, Interface, KeywordType, KeywordTypeMetadata, LitType, Ref,
+    RestType, Tuple, Type, TypeLit, Union,
 };
 use stc_utils::ext::TypeVecExt;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -154,6 +154,12 @@ impl Fold<TypeLit> for LitGeneralizer {
             return node;
         }
         node.fold_children_with(self)
+    }
+}
+
+impl Fold<Conditional> for LitGeneralizer {
+    fn fold(&mut self, n: Conditional) -> Conditional {
+        n
     }
 }
 

@@ -1,0 +1,55 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/unknown-with-empty-object.ts:5:1]
+ 5 | foo(1, null as any as unknown, null as any as {}) // unknown
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/unknown-with-empty-object.ts:5:1]
+ 5 | foo(1, null as any as unknown, null as any as {}) // unknown
+   :        ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/unknown-with-empty-object.ts:5:1]
+ 5 | foo(1, null as any as unknown, null as any as {}) // unknown
+   :        ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > unknown
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/unknown-with-empty-object.ts:5:1]
+ 5 | foo(1, null as any as unknown, null as any as {}) // unknown
+   :                                ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/unknown-with-empty-object.ts:5:1]
+ 5 | foo(1, null as any as unknown, null as any as {}) // unknown
+   :                                ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/unknown-with-empty-object.ts:5:1]
+ 5 | foo(1, null as any as unknown, null as any as {}) // unknown
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > unknown

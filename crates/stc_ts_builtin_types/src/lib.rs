@@ -54,7 +54,7 @@ impl Lib {
         v
     }
 
-    fn prec(&self) -> usize {
+    fn precedence(&self) -> usize {
         match self {
             Self::Es5 => 1,
             Self::Es2015Core => 2,
@@ -127,7 +127,7 @@ impl PartialOrd for Lib {
 
 impl Ord for Lib {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.prec().cmp(&other.prec())
+        self.precedence().cmp(&other.precedence())
     }
 }
 

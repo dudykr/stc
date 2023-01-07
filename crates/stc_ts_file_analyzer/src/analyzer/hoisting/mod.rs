@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
     /// Returns (the order of evaluation, skipped index). This methods is used
     /// to handle hoisting properly.
     ///
-    /// # Exmaple
+    /// # Example
     ///
     /// The method will return `[1, 0]` for the code below.
     ///
@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
     ///
     /// # Note
     ///
-    /// This function prioritze types in order of
+    /// This function prioritize types in order of
     /// - no deps
     /// - resolvable (non-circular)
     /// - others

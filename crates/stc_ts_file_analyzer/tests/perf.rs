@@ -68,6 +68,6 @@ fn profile_file(name: &str, path: &Path) {
 
 #[test]
 #[ignore = "Currently broken"]
-fn profile_csstypes() {
+fn profile_csstype() {
     profile_file("csstype", &PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"));
 }

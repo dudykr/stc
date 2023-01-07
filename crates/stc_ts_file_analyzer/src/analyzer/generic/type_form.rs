@@ -3,8 +3,8 @@ use stc_ts_types::{name::Name, Type};
 /// Used to detect `form` of union types.
 ///
 /// For example, `T | PromiseLike<T>` has identical `form` with `void |
-/// PrmomiseLike<void>`
-#[derive(Debug, PartialEq, Eq)]
+/// PromiseLike<void>`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum OldTypeForm {
     Ref(Name),
     Other,

@@ -5,4 +5,6 @@ function f2<
   U extends string | null | undefined,
 >(x: T & U) {
   x; // Error
+  x; // (T & U
+  let _: string | undefined | number = x; // stirng | undefined
 }

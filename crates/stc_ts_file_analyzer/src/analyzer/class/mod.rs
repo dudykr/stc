@@ -9,7 +9,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
-use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
+use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
         if !self.ctx.in_declare && self.rule().no_implicit_any {
             if value.is_none() {
                 self.storage
-                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class proerty"))
+                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class property"))
             }
         }
 
@@ -919,10 +919,10 @@ impl Analyzer<'_, '_> {
                         if has_static && has_instance {
                             let report_error_for_static = !spans_for_error.first().unwrap().1;
 
-                            for (span, is_staitc) in spans_for_error {
-                                if report_error_for_static && is_staitc {
+                            for (span, is_static) in spans_for_error {
+                                if report_error_for_static && is_static {
                                     self.storage.report(ErrorKind::ShouldBeInstanceMethod { span }.into())
-                                } else if !report_error_for_static && !is_staitc {
+                                } else if !report_error_for_static && !is_static {
                                     self.storage.report(ErrorKind::ShouldBeStaticMethod { span }.into())
                                 }
                             }
@@ -1194,7 +1194,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
         if self.is_builtin {
-            // We don't need to validate builtins
+            // We don't need to validate builtin
             return Ok(());
         }
 
@@ -1254,7 +1254,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Implement this.
     fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
-    fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
             return;
         }
@@ -1933,7 +1933,7 @@ impl Analyzer<'_, '_> {
                 .report(&mut child.storage);
 
             child.validate_inherited_members_from_super_class(None, &class);
-            child.report_errors_for_wrong_impls_of_class(None, &class);
+            child.report_errors_for_wrong_implementations_of_class(None, &class);
             child.report_errors_for_conflicting_interfaces(&class.implements);
 
             Ok(class)
@@ -2199,7 +2199,7 @@ impl Analyzer<'_, '_> {
         res.report(&mut self.storage);
     }
 
-    /// TODO(kdy1): Instantate fully
+    /// TODO(kdy1): Instantiate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 

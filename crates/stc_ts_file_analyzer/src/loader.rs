@@ -29,7 +29,7 @@ pub trait Load: 'static + Send + Sync {
     ///
     /// Also note that this method is called within a single thread.
     ///
-    /// `partial` denotes the types and variables which the [Analyzer] successed
+    /// `partial` denotes the types and variables which the [Analyzer] succeed
     /// processing, with resolved imports.
     ///
     ///

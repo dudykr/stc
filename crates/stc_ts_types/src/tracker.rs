@@ -4,7 +4,7 @@ use rnode::{FoldWith, VisitMutWith, VisitWith};
 use serde::{Deserialize, Serialize};
 use stc_visit::Visitable;
 use swc_common::{EqIgnoreSpan, TypeEq};
-use tracing::info;
+use tracing::trace;
 
 /// A type used to track all type creations. You can construct this type using
 /// `Default::default()` and it will print a log message.
@@ -35,7 +35,7 @@ impl<const N: &'static str> Default for Tracker<N> {
         #[cfg(debug_assertions)]
         {
             let loc = Location::caller();
-            info!("Creating `{}` from {}", N, loc);
+            trace!("Creating `{}` from {}", N, loc);
         }
 
         Self { _priv: () }

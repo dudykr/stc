@@ -6,4 +6,22 @@
    `----
 
 Error: 
-  > (((string | number) & (string | null)) | undefined)
+  > (string | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:8:3]
+ 8 | x; // (T & U
+   : ^
+   `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:9:3]
+ 9 | let _: string | undefined | number = x; // stirng | undefined
+   :                                      ^
+   `----
+
+Error: 
+  > (string | undefined)

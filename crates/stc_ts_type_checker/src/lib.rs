@@ -38,7 +38,7 @@ pub struct Checker {
 
     declared_modules: RwLock<Vec<(ModuleId, Type)>>,
 
-    /// Informatnion required to generate `.d.ts` files.
+    /// Information required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
     module_graph: Arc<ModuleGraph<StcComments, Arc<dyn Resolve>>>,
@@ -91,7 +91,7 @@ impl Checker {
 }
 
 impl Checker {
-    /// Get type informations of a module.
+    /// Get type information of a module.
     pub fn get_types(&self, id: ModuleId) -> Option<Type> {
         let lock = self.module_types.read();
         lock.get(&id).and_then(|v| v.get().cloned())
