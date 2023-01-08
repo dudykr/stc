@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
     /// method. Otherwise the span of the original type is used.
     pub(crate) fn normalize<'a>(&mut self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
-            let ty_str = dump_type_as_string(&ty);
+            let ty_str = force_dump_type_as_string(&ty);
 
             Some(span!(Level::ERROR, "normalize", ty = &*ty_str).entered())
         } else {
