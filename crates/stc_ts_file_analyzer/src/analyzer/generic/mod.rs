@@ -441,10 +441,10 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let param_str = dump_type_as_string(param);
-        let arg_str = dump_type_as_string(arg);
-
         let _tracing = if cfg!(debug_assertions) {
+            let param_str = force_dump_type_as_string(param);
+            let arg_str = force_dump_type_as_string(arg);
+
             Some(span!(Level::ERROR, "infer_type", param = &*param_str, arg = &*arg_str).entered())
         } else {
             None
