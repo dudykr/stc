@@ -645,7 +645,14 @@ impl Analyzer<'_, '_> {
                 let mut p = pos as isize;
 
                 loop {
-                    p += get_source_text(s)[p as usize..].find(&**delim).map(|v| v as isize).unwrap_or(-1);
+                    match get_source_text(s)[p as usize..].find(&**delim).map(|v| v as isize) {
+                        Some(v) => {
+                            p += v;
+                        }
+                        None => {
+                            p = -1;
+                        }
+                    };
                     if p >= 0 {
                         break;
                     }
