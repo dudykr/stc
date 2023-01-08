@@ -4259,15 +4259,12 @@ impl Analyzer<'_, '_> {
                 if !cur_str.is_empty() {
                     cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
 
-                    nq.push(RTplElement {
+                    nq.push(TplElem {
                         span: e.span,
-                        node_id: NodeId::invalid(),
-                        raw: cur_str.clone().into(),
-                        cooked: Some(take(&mut cur_str).into()),
-                        tail: false,
+                        value: cur_str.clone().into(),
                     });
                 } else {
-                    nq.push(quasis.next().unwrap());
+                    nq.push(quasis.next().unwrap().into());
                 }
                 nt.push(ty);
             }
@@ -4275,12 +4272,9 @@ impl Analyzer<'_, '_> {
             if !cur_str.is_empty() {
                 cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
 
-                nq.push(RTplElement {
+                nq.push(TplElem {
                     span: e.span,
-                    node_id: NodeId::invalid(),
-                    raw: cur_str.clone().into(),
-                    cooked: Some(take(&mut cur_str).into()),
-                    tail: false,
+                    value: cur_str.clone().into(),
                 });
             } else {
                 nq.push(quasis.next().unwrap());

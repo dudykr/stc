@@ -2628,6 +2628,15 @@ impl From<&'_ RTplElement> for TplElem {
     }
 }
 
+impl From<RTplElement> for TplElem {
+    fn from(v: RTplElement) -> Self {
+        TplElem {
+            span: v.span,
+            value: v.cooked.unwrap(),
+        }
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
