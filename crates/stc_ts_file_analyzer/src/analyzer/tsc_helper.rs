@@ -43,11 +43,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `isValidNumberString` of `tsc`.
-    pub(crate) fn isValidNumberString(&mut self, value: &str, round_trip_only: bool) -> bool {}
+    pub(crate) fn is_valid_num_str(&mut self, value: &str, round_trip_only: bool) -> bool {}
 
     /// Ported from `isValidBigIntString` of `tsc`.
-    pub(crate) fn isValidBigIntString(&mut self, value: &str, round_trip_only: bool) -> bool {}
+    pub(crate) fn is_valid_big_int_str(&mut self, value: &str, round_trip_only: bool) -> bool {}
 
     /// Ported from `isMemberOfStringMapping` of `tsc`.
-    pub(crate) fn isMemberOfStringMapping(&mut self, source: &Type, target: &Type) -> VResult<bool> {}
+    pub(crate) fn is_member_of_string_mapping(&mut self, source: &Type, target: &Type) -> VResult<bool> {}
 }
