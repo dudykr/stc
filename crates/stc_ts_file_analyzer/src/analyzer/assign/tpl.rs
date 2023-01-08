@@ -1,7 +1,7 @@
 #![allow(clippy::if_same_then_else)]
 
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
 use stc_ts_types::{Intrinsic, IntrinsicKind, LitType, TplType, Type};
 use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -39,7 +39,11 @@ impl Analyzer<'_, '_> {
 
         for (i, ty) in types.iter().enumerate() {
             if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i])? {
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("verified types"));
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
+                    "verified types:{}\n{}",
+                    force_dump_type_as_string(ty),
+                    force_dump_type_as_string(&l.types[i])
+                )));
             }
         }
 
