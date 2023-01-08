@@ -79,14 +79,12 @@ impl Analyzer<'_, '_> {
             return Ok(self.is_type_assignable_to(span, source, target));
         }
 
-        match target.normalize() {
-            Type::Intrinsic(Intrinsic {
-                kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
-                ..
-            }) => {
-                // TODO: Port https://github.com/microsoft/TypeScript/blob/eb5419fc8d980859b98553586dfb5f40d811a745/src/compiler/checker.ts#L22574-L22589
-            }
-            _ => {}
+        if let Type::Intrinsic(Intrinsic {
+            kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
+            ..
+        }) = target.normalize()
+        {
+            // TODO: Port https://github.com/microsoft/TypeScript/blob/eb5419fc8d980859b98553586dfb5f40d811a745/src/compiler/checker.ts#L22574-L22589
         }
 
         Ok(false)
