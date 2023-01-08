@@ -29,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
-    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
+    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -2617,6 +2617,15 @@ pub struct TplElem {
     pub span: Span,
 
     pub value: Atom,
+}
+
+impl From<&'_ RTplElement> for TplElem {
+    fn from(v: &RTplElement) -> Self {
+        TplElem {
+            span: v.span,
+            value: v.cooked.clone().unwrap(),
+        }
+    }
 }
 
 #[cfg(target_pointer_width = "64")]

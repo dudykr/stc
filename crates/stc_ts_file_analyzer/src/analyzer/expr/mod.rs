@@ -24,7 +24,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
+    QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -4236,12 +4236,12 @@ impl Analyzer<'_, '_> {
             .map(|e| e.validate_with_default(self).map(|v| v.freezed()))
             .collect::<VResult<Vec<_>>>()?;
 
-        let quasis = e.quasis.clone();
-
-        if types.iter().any(|ty| ty.is_str_lit()) && quasis.iter().all(|q| q.cooked.is_some()) {
+        if types.iter().any(|ty| ty.is_str_lit()) && e.quasis.iter().all(|q| q.cooked.is_some()) {
             // We have to concat string literals
             //
             // https://github.com/dudykr/stc/issues/334
+
+            let quasis = e.quasis.clone();
 
             let mut nq = Vec::with_capacity(quasis.len());
             let mut nt = Vec::with_capacity(types.len());
@@ -4301,7 +4301,7 @@ impl Analyzer<'_, '_> {
 
         Ok(Type::Tpl(TplType {
             span: e.span,
-            quasis,
+            quasis: e.quasis.iter().map(TplElem::from).collect(),
             types,
             metadata: TplTypeMetadata {
                 common: CommonTypeMetadata { ..Default::default() },

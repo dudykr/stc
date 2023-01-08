@@ -3,9 +3,7 @@ use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{NodeId, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{
-    RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit,
-};
+use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
     is_str_lit_or_union,
@@ -20,8 +18,8 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
     Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator,
-    PropertySignature, QueryExpr, QueryType, Ref, ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParam, TypeParamInstantiation, Union,
+    PropertySignature, QueryExpr, QueryType, Ref, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -2112,14 +2110,9 @@ impl Analyzer<'_, '_> {
                 let quasis = quasis
                     .iter()
                     .map(|quasis| {
-                        let raw = apply_intrinsic(&ty.kind, &quasis.raw);
-                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsic(&ty.kind, cooked));
+                        let value = apply_intrinsic(&ty.kind, &quasis.value);
 
-                        RTplElement {
-                            raw,
-                            cooked,
-                            ..quasis.clone()
-                        }
+                        TplElem { value, ..quasis.clone() }
                     })
                     .collect();
 

@@ -491,7 +491,7 @@ impl Analyzer<'_, '_> {
         // upon instantiation, would collapse all the placeholders to just 'string', and
         // an assignment check might succeed. That would be a pointless and
         // confusing outcome.
-        if matches.is_some() || target.quasis.iter().all(|v| v.cooked.as_ref().unwrap().len() == 0) {
+        if matches.is_some() || target.quasis.iter().all(|v| v.value.len() == 0) {
             for (i, target) in target.types.iter().enumerate() {
                 let source = matches
                     .as_ref()
@@ -539,7 +539,7 @@ impl Analyzer<'_, '_> {
                     self.infer_from_lit_parts_to_tpl_lit(
                         span,
                         inferred,
-                        &source.quasis.iter().map(|v| v.cooked.clone().unwrap()).collect_vec(),
+                        &source.quasis.iter().map(|v| v.value.clone()).collect_vec(),
                         &source.types,
                         target,
                         opts,
@@ -596,8 +596,8 @@ impl Analyzer<'_, '_> {
         let source_end_text = &source_texts[last_source_index];
         let target_texts = &target.quasis;
         let last_target_index = target_texts.len() - 1;
-        let target_start_text = target_texts[0].cooked.as_ref().unwrap();
-        let target_end_text = target_texts[last_target_index].cooked.as_ref().unwrap();
+        let target_start_text = &target_texts[0].value;
+        let target_end_text = &target_texts[last_target_index].value;
 
         if last_source_index == 0 && source_start_text.len() < target_start_text.len() + target_end_text.len()
             || !source_start_text.starts_with(&**target_start_text)
