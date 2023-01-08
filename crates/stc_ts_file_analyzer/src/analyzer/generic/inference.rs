@@ -11,10 +11,7 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RStr, RTplElement, RTsEntityName, RTsLit};
-use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt,
-};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
