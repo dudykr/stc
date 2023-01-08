@@ -16,6 +16,6 @@ export RUST_LOG=debug
 # (cd stc-lab/ant-design-mobile && stc check src/index.ts)
 
 
-cargo profile instruments --release -t time --features tracing/release_max_level_off -- iterate $@
+cargo profile instruments --release -t time --features tracing/release_max_level_off -- test $@
 # cargo instruments --release -t time --features tracing/release_max_level_off -- check $@
 # 
