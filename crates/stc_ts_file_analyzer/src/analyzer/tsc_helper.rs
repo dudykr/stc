@@ -43,10 +43,24 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `isValidNumberString` of `tsc`.
-    pub(crate) fn is_valid_num_str(&mut self, value: &str, round_trip_only: bool) -> bool {}
+    pub(crate) fn is_valid_num_str(&mut self, s: &str, round_trip_only: bool) -> bool {
+        if s == "" {
+            return false;
+        }
+
+        if let Ok(v) = s.parse::<f64>() {
+            v.is_finite() && (!round_trip_only || v.to_string() == s)
+        } else {
+            false
+        }
+    }
 
     /// Ported from `isValidBigIntString` of `tsc`.
-    pub(crate) fn is_valid_big_int_str(&mut self, value: &str, round_trip_only: bool) -> bool {}
+    pub(crate) fn is_valid_big_int_str(&mut self, s: &str, round_trip_only: bool) -> bool {
+        if s == "" {
+            return false;
+        }
+    }
 
     /// Ported from `isMemberOfStringMapping` of `tsc`.
     pub(crate) fn is_member_of_string_mapping(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
