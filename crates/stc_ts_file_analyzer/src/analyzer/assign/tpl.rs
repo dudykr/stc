@@ -62,11 +62,11 @@ impl Analyzer<'_, '_> {
                     return Ok(true);
                 }
 
-                // TODO: Return true if
-
-                // target.flags & (TypeFlags.BooleanLiteral |
-                // TypeFlags.Nullable) && value === (target as
-                // IntrinsicType).intrinsicName
+                if target.is_bool_lit() || target.is_null_or_undefined() {
+                    // TODO: Return true if
+                    // value === (target as IntrinsicType).intrinsicName
+                    return Ok(true);
+                }
 
                 return match target.normalize() {
                     Type::Intrinsic(Intrinsic {
