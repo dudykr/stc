@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
+        let matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
@@ -513,18 +513,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
-    fn infer_types_from_tpl_lit_type(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        source: &Type,
-        target: &TplType,
-        opts: InferTypeOpts,
-    ) -> VResult<Option<Vec<Type>>> {
+    pub(crate) fn infer_types_from_tpl_lit_type(&mut self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
         match source.normalize() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
-            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value.clone().into()], &[], target, opts),
+            }) => self.infer_from_lit_parts_to_tpl_lit(span, &[source.value.clone().into()], &[], target),
             Type::Tpl(source) => {
                 if (*source.quasis).eq_ignore_span(&*target.quasis) {
                     Ok(Some(
@@ -537,11 +530,9 @@ impl Analyzer<'_, '_> {
                 } else {
                     self.infer_from_lit_parts_to_tpl_lit(
                         span,
-                        inferred,
                         &source.quasis.iter().map(|v| v.value.clone()).collect_vec(),
                         &source.types,
                         target,
-                        opts,
                     )
                 }
             }
@@ -584,11 +575,9 @@ impl Analyzer<'_, '_> {
     fn infer_from_lit_parts_to_tpl_lit(
         &mut self,
         span: Span,
-        inferred: &mut InferData,
         source_texts: &[Atom],
         source_types: &[Type],
         target: &TplType,
-        opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
         let last_source_index = source_texts.len() - 1;
         let source_start_text = &source_texts[0];
