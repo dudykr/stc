@@ -1305,10 +1305,8 @@ impl Analyzer<'_, '_> {
                     if let RTsLit::Str(lhs) = &lhs.lit {
                         if let Type::Tpl(rhs) = rhs {
                             if rhs.types.is_empty() {
-                                if let Some(cooked) = &rhs.quasis[0].cooked {
-                                    if *lhs.value == **cooked {
-                                        return Ok(());
-                                    }
+                                if *lhs.value == *rhs.quasis[0].value {
+                                    return Ok(());
                                 }
                             }
                         }
