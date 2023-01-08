@@ -1791,6 +1791,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_ref_type()
                             || ty.is_query()
                             || ty.is_fn_type()
+                            || ty.is_tpl()
                             || ty.is_intersection()
                     });
 
