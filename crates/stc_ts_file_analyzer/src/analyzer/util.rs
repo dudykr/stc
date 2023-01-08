@@ -279,23 +279,6 @@ impl Fold<Type> for Generalizer {
     }
 }
 
-impl Analyzer<'_, '_> {
-    //    /// Validates and store errors if required.
-    //    pub fn check<T, O>(&mut self, node: &T) -> Option<O>
-    //    where
-    //        Self: Validate<T, Output = Result<O, Error>>,
-    //    {
-    //        let res: Result<O, _> = self.validate_with(node);
-    //        match res {
-    //            Ok(v) => Some(v),
-    //            Err(err) => {
-    //                self.storage.report(err);
-    //                None
-    //            }
-    //        }
-    //    }
-}
-
 pub trait ResultExt<T>: Into<Result<T, Error>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
