@@ -115,8 +115,7 @@ impl Analyzer<'_, '_> {
             | Type::Constructor(..)
             | Type::EnumVariant(..)
             | Type::Param(_)
-            | Type::Module(_)
-            | Type::Tpl(..) => return Ok(ty),
+            | Type::Module(_) => return Ok(ty),
             _ => {}
         }
 
@@ -737,6 +736,16 @@ impl Analyzer<'_, '_> {
 
                     Type::Operator(_) => {
                         // TODO(kdy1):
+                    }
+
+                    Type::Tpl(tpl) => {
+                        if tpl.quasis.len() == 2
+                            && tpl.types.len() == 1
+                            && tpl.quasis[0].cooked.as_deref().unwrap().is_empty()
+                            && tpl.quasis[1].cooked.as_deref().unwrap().is_empty()
+                        {
+                            return Ok(Cow::Owned(tpl.types[0].clone()));
+                        }
                     }
 
                     _ => {}
