@@ -1,3 +1,4 @@
+use num_bigint::BigInt;
 use stc_ts_types::{Intrinsic, IntrinsicKind, Type};
 use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -44,7 +45,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `isValidNumberString` of `tsc`.
     pub(crate) fn is_valid_num_str(&mut self, s: &str, round_trip_only: bool) -> bool {
-        if s == "" {
+        if s.is_empty() {
             return false;
         }
 
@@ -57,8 +58,14 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `isValidBigIntString` of `tsc`.
     pub(crate) fn is_valid_big_int_str(&mut self, s: &str, round_trip_only: bool) -> bool {
-        if s == "" {
+        if s.is_empty() {
             return false;
+        }
+
+        if let Ok(v) = s.parse::<BigInt>() {
+            !round_trip_only || v.to_string() == s
+        } else {
+            false
         }
     }
 
