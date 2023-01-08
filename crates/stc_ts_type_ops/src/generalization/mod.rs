@@ -178,7 +178,19 @@ struct LitChecker {
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
+        if self.found {
+            return;
+        }
+
         if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
+            if metadata.common.prevent_generalization {
+                return;
+            }
+
+            self.found = true;
+            return;
+        }
+        if let Type::Tpl(TplType { metadata, .. }) = ty.normalize() {
             if metadata.common.prevent_generalization {
                 return;
             }
