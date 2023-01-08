@@ -1070,7 +1070,7 @@ impl Analyzer<'_, '_> {
             }),
             TypeOfMode::RValue => Type::union(res_vec),
         };
-
+        dbg!(dump_type_as_string(&result));
         Ok(Some(
             self.normalize(Some(span), Cow::Owned(result), Default::default())?.into_owned(),
         ))

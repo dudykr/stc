@@ -1,0 +1,23 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/1.ts:19:1]
+ 19 | x.type;
+    : ^
+    `----
+
+Error: 
+  > {
+  |     type: ListWidget["type"];
+  |     minimum_count: ListWidget["minimum_count"];
+  |     maximum_count: ListWidget["maximum_count"];
+  |     each: ListWidget["each"];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/1.ts:19:1]
+ 19 | x.type;
+    : ^^^^^^
+    `----
+
+Error: 
+  > "list"
