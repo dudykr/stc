@@ -739,11 +739,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Tpl(tpl) => {
-                        if tpl.quasis.len() == 2
-                            && tpl.types.len() == 1
-                            && tpl.quasis[0].cooked.as_deref().unwrap().is_empty()
-                            && tpl.quasis[1].cooked.as_deref().unwrap().is_empty()
-                        {
+                        if tpl.quasis.len() == 2 && tpl.types.len() == 1 && tpl.quasis[0].raw.is_empty() && tpl.quasis[1].raw.is_empty() {
                             return Ok(Cow::Owned(tpl.types[0].clone()));
                         }
                     }
