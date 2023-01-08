@@ -6,7 +6,10 @@ use rnode::{NodeId, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit,
 };
-use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
+use stc_ts_base_type_ops::{
+    bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
+    is_str_lit_or_union,
+};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
@@ -739,7 +742,12 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Tpl(tpl) => {
-                        if tpl.quasis.len() == 2 && tpl.types.len() == 1 && tpl.quasis[0].raw.is_empty() && tpl.quasis[1].raw.is_empty() {
+                        if tpl.quasis.len() == 2
+                            && tpl.types.len() == 1
+                            && tpl.quasis[0].raw.is_empty()
+                            && tpl.quasis[1].raw.is_empty()
+                            && is_str_lit_or_union(&tpl.types[0])
+                        {
                             return Ok(Cow::Owned(tpl.types[0].clone()));
                         }
                     }
