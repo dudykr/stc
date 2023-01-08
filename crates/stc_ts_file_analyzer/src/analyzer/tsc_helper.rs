@@ -1,11 +1,12 @@
 use stc_ts_types::Type;
-use swc_common::TypeEq;
+use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{
     relation::{IsRelatedOpts, Relation},
     Analyzer,
 };
+use crate::VResult;
 
 /// These methods are ported from `tsc`.
 impl Analyzer<'_, '_> {
@@ -35,4 +36,18 @@ impl Analyzer<'_, '_> {
             },
         )
     }
+
+    /// Ported from `isTypeAssignableTo` of `tsc`.
+    pub(crate) fn is_type_assignable_to(&mut self, span: Span, source: &Type, target: &Type) -> bool {
+        self.assign(span, &mut Default::default(), target, source).is_ok()
+    }
+
+    /// Ported from `isValidNumberString` of `tsc`.
+    pub(crate) fn isValidNumberString(&mut self, value: &str, round_trip_only: bool) -> bool {}
+
+    /// Ported from `isValidBigIntString` of `tsc`.
+    pub(crate) fn isValidBigIntString(&mut self, value: &str, round_trip_only: bool) -> bool {}
+
+    /// Ported from `isMemberOfStringMapping` of `tsc`.
+    pub(crate) fn isMemberOfStringMapping(&mut self, source: &Type, target: &Type) -> VResult<bool> {}
 }
