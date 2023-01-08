@@ -534,7 +534,8 @@ impl Analyzer<'_, '_> {
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
-            }) => {
+            })
+            | Type::Tpl(..) => {
                 let ty = self
                     .normalize(
                         Some(span),
