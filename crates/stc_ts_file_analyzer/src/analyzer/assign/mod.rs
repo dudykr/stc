@@ -280,9 +280,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into()),
+                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into()),
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into())
+                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into())
                     }
                     _ => {}
                 }
@@ -1791,6 +1791,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_ref_type()
                             || ty.is_query()
                             || ty.is_fn_type()
+                            || ty.is_tpl()
                             || ty.is_intersection()
                     });
 

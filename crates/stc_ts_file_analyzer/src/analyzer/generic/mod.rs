@@ -319,7 +319,11 @@ impl Analyzer<'_, '_> {
     ) -> VResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
-        let map = self.finalize_inference(span, &[], inferred);
+        let mut map = self.finalize_inference(span, &[], inferred);
+
+        for ty in map.types.values_mut() {
+            prevent_generalize(ty);
+        }
 
         Ok(map.types)
     }
@@ -651,6 +655,10 @@ impl Analyzer<'_, '_> {
                     false,
                     opts,
                 )
+            }
+
+            (Type::Tpl(target), _) => {
+                return self.infer_to_tpl_lit_type(span, inferred, arg, target, opts);
             }
 
             _ => {}

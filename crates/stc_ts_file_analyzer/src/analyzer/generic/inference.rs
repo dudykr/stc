@@ -9,19 +9,18 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
-use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt,
-};
+use rnode::NodeId;
+use stc_ts_ast_rnode::{RStr, RTplElement, RTsEntityName, RTsLit};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
-    Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_atoms::Atom;
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
@@ -215,14 +214,6 @@ impl Analyzer<'_, '_> {
             |this, s, t| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
-
-        for t in &temp_targets {
-            dbg!(force_dump_type_as_string(t));
-        }
-
-        for t in &temp_sources {
-            dbg!(force_dump_type_as_string(t));
-        }
 
         let (sources, targets) = self.infer_from_matching_types(
             span,
@@ -480,6 +471,225 @@ impl Analyzer<'_, '_> {
         type_var
     }
 
+    /// Ported from `inferToTemplateLiteralType` of `tsc`.
+    pub(super) fn infer_to_tpl_lit_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &TplType,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
+        let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
+
+        // When the target template literal contains only placeholders (meaning that
+        // inference is intended to extract single characters and remainder
+        // strings) and inference fails to produce matches, we want to infer 'never' for
+        // each placeholder such that instantiation with the inferred value(s) produces
+        // 'never', a type for which an assignment check will fail. If we make
+        // no inferences, we'll likely end up with the constraint 'string' which,
+        // upon instantiation, would collapse all the placeholders to just 'string', and
+        // an assignment check might succeed. That would be a pointless and
+        // confusing outcome.
+        if matches.is_some() || target.quasis.iter().all(|v| v.cooked.as_ref().unwrap().len() == 0) {
+            for (i, target) in target.types.iter().enumerate() {
+                let source = matches
+                    .as_ref()
+                    .map(|matches| matches[i].clone())
+                    .unwrap_or_else(|| Type::never(span, Default::default()));
+
+                // If we are inferring from a string literal type to a type
+                // variable whose constraint includes one of the
+                // allowed template literal placeholder types, infer from a
+                // literal type corresponding to the constraint.
+                if source.is_str_lit() && target.is_type_param() {
+                    // TODO: Implement logic
+                }
+
+                self.infer_from_types(span, inferred, &source, target, opts)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
+    fn infer_types_from_tpl_lit_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source: &Type,
+        target: &TplType,
+        opts: InferTypeOpts,
+    ) -> VResult<Option<Vec<Type>>> {
+        match source.normalize() {
+            Type::Lit(LitType {
+                lit: RTsLit::Str(source), ..
+            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value.clone().into()], &[], target, opts),
+            Type::Tpl(source) => {
+                if (*source.quasis).eq_ignore_span(&*target.quasis) {
+                    Ok(Some(
+                        source
+                            .types
+                            .iter()
+                            .map(|ty| self.get_string_like_type_for_type(ty).into_owned())
+                            .collect(),
+                    ))
+                } else {
+                    self.infer_from_lit_parts_to_tpl_lit(
+                        span,
+                        inferred,
+                        &source.quasis.iter().map(|v| v.cooked.clone().unwrap()).collect_vec(),
+                        &source.types,
+                        target,
+                        opts,
+                    )
+                }
+            }
+            _ => Ok(None),
+        }
+    }
+
+    /// Ported from `inferFromLiteralPartsToTemplateLiteral` of `tsc`.
+    ///
+    /// This function infers from the text parts and type parts of a source
+    /// literal to a target template literal. The number of text parts is
+    /// always one more than the number of type parts, and a source string
+    /// literal is treated as a source with one text part and zero type
+    /// parts. The function returns an array of inferred string or template
+    /// literal types corresponding to the placeholders in the target
+    /// template literal, or undefined if the source doesn't match the target.
+    ///
+    /// We first check that the starting source text part matches the starting
+    /// target text part, and that the ending source text part ends matches
+    /// the ending target text part. We then iterate through the remaining
+    /// target text parts, finding a match for each in the source and
+    /// inferring string or template literal types created from the segments of
+    /// the source that occur between the matches. During this iteration,
+    /// seg holds the index of the current text part in the sourceTexts
+    /// array and pos holds the current character position in the current text
+    /// part.
+    //
+    /// Consider inference from type `<<${string}>.<${number}-${number}>>` to
+    /// type `<${string}.${string}>`, i.e.   sourceTexts = ['<<', '>.<',
+    /// '-', '>>']   sourceTypes = [string, number, number]
+    ///   target.texts = ['<', '.', '>']
+    /// We first match '<' in the target to the start of '<<' in the source and
+    /// '>' in the target to the end of '>>' in the source. The first match
+    /// for the '.' in target occurs at character 1 in the source text part at
+    /// index 1, and thus the first inference is the template literal type
+    /// `<${string}>`. The remainder of the source makes up the second
+    /// inference, the template literal type `<${number}-${number}>`.
+    #[allow(unused_assignments)]
+    #[allow(clippy::needless_range_loop)]
+    fn infer_from_lit_parts_to_tpl_lit(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        source_texts: &[Atom],
+        source_types: &[Type],
+        target: &TplType,
+        opts: InferTypeOpts,
+    ) -> VResult<Option<Vec<Type>>> {
+        let last_source_index = source_texts.len() - 1;
+        let source_start_text = &source_texts[0];
+        let source_end_text = &source_texts[last_source_index];
+        let target_texts = &target.quasis;
+        let last_target_index = target_texts.len() - 1;
+        let target_start_text = target_texts[0].cooked.as_ref().unwrap();
+        let target_end_text = target_texts[last_target_index].cooked.as_ref().unwrap();
+
+        if last_source_index == 0 && source_start_text.len() < target_start_text.len() + target_end_text.len()
+            || !source_start_text.starts_with(&**target_start_text)
+            || !source_end_text.ends_with(&**target_end_text)
+        {
+            return Ok(None);
+        }
+
+        let remaining_end_text = &source_end_text[0..source_end_text.len() - target_end_text.len()];
+        let mut matches = Vec::<Type>::new();
+        let mut seg = 0;
+        let mut pos = target_start_text.len();
+
+        let get_source_text = |index: usize| {
+            if index < last_source_index {
+                &*source_texts[index]
+            } else {
+                remaining_end_text
+            }
+        };
+
+        macro_rules! add_match {
+            ($s:expr, $p:expr) => {{
+                let match_type = if $s == seg {
+                    let value = source_texts[seg][pos..$p].into();
+                    Type::Lit(LitType {
+                        span,
+                        lit: RTsLit::Str(RStr { span, raw: None, value }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                } else {
+                    Type::Tpl(TplType {
+                        span,
+                        quasis: std::iter::once(source_texts[seg][pos..].into())
+                            .chain(source_texts[seg + 1..$s].iter().cloned())
+                            .chain(std::iter::once(get_source_text($s)[0..$p].into()))
+                            .map(|v: Atom| RTplElement {
+                                span,
+                                node_id: NodeId::invalid(),
+                                raw: v.clone(),
+                                cooked: Some(v),
+                                tail: false,
+                            })
+                            .collect(),
+                        types: source_types[seg..$s].iter().map(|v| v.clone()).collect(),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                };
+
+                matches.push(match_type);
+                seg = $s;
+                pos = $p;
+            }};
+        }
+
+        for i in 1..last_target_index {
+            let delim = target_texts[i].cooked.as_ref().unwrap();
+
+            if delim.len() > 0 {
+                let mut s = seg;
+                let mut p = pos as isize;
+
+                loop {
+                    p += get_source_text(s)[p as usize..].find(&**delim).map(|v| v as isize).unwrap_or(-1);
+                    if p >= 0 {
+                        break;
+                    }
+                    s += 1;
+                    if s == source_texts.len() {
+                        return Ok(None);
+                    }
+                    p = 0;
+                }
+
+                add_match!(s, p as usize);
+                pos += delim.len();
+            } else if pos < get_source_text(seg).len() {
+                add_match!(seg, pos + 1)
+            } else if seg < last_source_index {
+                add_match!(seg + 1, 0)
+            } else {
+                return Ok(None);
+            }
+        }
+
+        add_match!(last_source_index, get_source_text(last_source_index).len());
+
+        Ok(Some(matches))
+    }
+
     pub(super) fn insert_inferred(
         &mut self,
         span: Span,
@@ -489,6 +699,35 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<()> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
+    }
+
+    fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+        if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
+            Cow::Borrowed(ty)
+        } else {
+            Cow::Owned(Type::Tpl(TplType {
+                span: ty.span(),
+                quasis: vec![
+                    RTplElement {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        tail: false,
+                        cooked: None,
+                        raw: Atom::default(),
+                    },
+                    RTplElement {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        tail: false,
+                        cooked: None,
+                        raw: Atom::default(),
+                    },
+                ],
+                types: vec![ty.clone()],
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }))
+        }
     }
 
     /// # Rules

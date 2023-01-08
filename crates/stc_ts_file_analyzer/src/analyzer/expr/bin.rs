@@ -643,7 +643,8 @@ impl Analyzer<'_, '_> {
                         || rt.is_interface()
                         || rt.is_tpl()
                     {
-                        self.storage.report(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into());
+                        self.storage
+                            .report(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rt.clone() }.into());
                     }
                 }
 
@@ -1731,7 +1732,11 @@ impl Analyzer<'_, '_> {
                         _ => errors.push(if is_left {
                             ErrorKind::WrongTypeForLhsOfNumericOperation { span: ty.span() }.into()
                         } else {
-                            ErrorKind::WrongTypeForRhsOfNumericOperation { span: ty.span() }.into()
+                            ErrorKind::WrongTypeForRhsOfNumericOperation {
+                                span: ty.span(),
+                                ty: box ty.clone(),
+                            }
+                            .into()
                         }),
                     }
                 };

@@ -117,6 +117,9 @@ impl Analyzer<'_, '_> {
 
                 for item in &l.quasis {
                     let q = &item.cooked.as_ref().unwrap();
+                    if r.value.len() < start {
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                    }
                     match r.value[start..].find(&***q) {
                         Some(pos) => {
                             positions.push(pos);

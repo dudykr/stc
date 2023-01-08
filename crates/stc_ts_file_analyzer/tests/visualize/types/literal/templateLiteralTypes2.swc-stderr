@@ -186,7 +186,7 @@ Error:
     `----
 
 Error: 
-  > `abc${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:22:5]
@@ -195,7 +195,7 @@ Error:
     `----
 
 Error: 
-  > `abc${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:23:5]
@@ -204,7 +204,7 @@ Error:
     `----
 
 Error: 
-  > `abc${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:24:5]
@@ -240,7 +240,7 @@ Error:
     `----
 
 Error: 
-  > `abc${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:27:5]
@@ -312,7 +312,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
@@ -330,7 +330,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
@@ -348,7 +348,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -366,7 +366,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -393,7 +393,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:35:5]
@@ -402,7 +402,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:36:5]
@@ -411,7 +411,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:37:5]
@@ -429,7 +429,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:39:5]
@@ -438,7 +438,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:40:5]
@@ -447,7 +447,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > (`foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:44:5]
@@ -474,7 +474,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:46:5]
@@ -537,7 +537,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
@@ -573,7 +573,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:52:5]
@@ -609,7 +609,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
@@ -645,7 +645,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
@@ -699,7 +699,7 @@ Error:
     `----
 
 Error: 
-  > (string | `foo${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
@@ -735,7 +735,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
@@ -789,7 +789,7 @@ Error:
     `----
 
 Error: 
-  > (string | `foo${string}`)
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:69:5]
@@ -870,7 +870,7 @@ Error:
     `----
 
 Error: 
-  > `xyz-${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
@@ -906,7 +906,7 @@ Error:
     `----
 
 Error: 
-  > `xyz-${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:88:1]
@@ -924,7 +924,7 @@ Error:
     `----
 
 Error: 
-  > "foo.bar.baz" extends `foo.bar.${infer R}` ? R : unknown
+  > "baz"
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
@@ -951,7 +951,7 @@ Error:
     `----
 
 Error: 
-  > "foo.bar.baz" extends `foo.bar.${infer R}` ? R : unknown
+  > "baz"
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
@@ -987,7 +987,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? R : unknown
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:95:1]
@@ -1023,7 +1023,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${string}`
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
@@ -1032,7 +1032,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? R : unknown
+  > unknown
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
@@ -1068,7 +1068,7 @@ Error:
     `----
 
 Error: 
-  > `foo.bar.${('abc' | 'def' | 'ghi')}` extends `foo.bar.${infer R}` ? R : unknown
+  > ('abc' | 'def' | 'ghi')
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:107:1]
