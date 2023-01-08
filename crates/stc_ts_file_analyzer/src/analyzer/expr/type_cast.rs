@@ -404,7 +404,13 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        // TODO: Port `templateLiteralTypesDefinitelyUnrelated` from `tsc`
+        if let (Type::Tpl(from), Type::Tpl(to)) = (from.normalize(), to.normalize()) {
+            if self.tpl_lit_type_definitely_unrelated(span, from, to)? {
+                return Ok(false);
+            } else {
+                return Ok(true);
+            }
+        }
 
         // class A {}
         // class B extends A {}

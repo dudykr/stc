@@ -90,4 +90,7 @@ impl Analyzer<'_, '_> {
 
         Ok(self.is_type_assignable_to(span, source, target))
     }
+
+    /// Ported from `templateLiteralTypesDefinitelyUnrelated` of `tsc`.
+    pub(crate) fn tpl_lit_type_definitely_unrelated(&mut self, span: Span, source: &TplType, target: &TplType) -> VResult<bool> {}
 }
