@@ -1230,6 +1230,7 @@ pub enum ErrorKind {
     /// TS2363
     WrongTypeForRhsOfNumericOperation {
         span: Span,
+        ty: Box<Type>,
     },
 
     TS2365 {
