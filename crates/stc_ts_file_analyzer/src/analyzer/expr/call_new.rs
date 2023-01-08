@@ -3114,6 +3114,10 @@ impl Analyzer<'_, '_> {
     /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
     /// I (kdy1) don't know why.
     fn add_call_facts(&mut self, params: &[FnParam], args: &[RExprOrSpread], ret_ty: &mut Type) {
+        if !self.ctx.in_cond {
+            return;
+        }
+
         if let Type::Predicate(p) = ret_ty.normalize() {
             let ty = match &p.ty {
                 Some(v) => v.normalize(),
