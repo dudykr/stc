@@ -29,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
-    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
+    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -39,7 +39,7 @@ use stc_utils::{
     panic_ctx,
 };
 use stc_visit::{Visit, Visitable};
-use swc_atoms::{js_word, JsWord};
+use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
@@ -2604,13 +2604,19 @@ assert_eq_size!(ThisType, [u8; 24]);
 pub struct TplType {
     pub span: Span,
 
-    #[use_eq_ignore_span]
-    pub quasis: Vec<RTplElement>,
+    pub quasis: Vec<TplElem>,
     pub types: Vec<Type>,
 
     pub metadata: TplTypeMetadata,
 
     pub tracker: Tracker<"TplType">,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct TplElem {
+    pub span: Span,
+
+    pub value: Atom,
 }
 
 #[cfg(target_pointer_width = "64")]
