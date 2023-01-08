@@ -85,6 +85,7 @@ impl Analyzer<'_, '_> {
         }) = target.normalize()
         {
             // TODO: Port https://github.com/microsoft/TypeScript/blob/eb5419fc8d980859b98553586dfb5f40d811a745/src/compiler/checker.ts#L22574-L22589
+            return Ok(true);
         }
 
         Ok(false)
