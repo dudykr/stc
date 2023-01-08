@@ -503,6 +503,7 @@ impl Analyzer<'_, '_> {
                 // literal type corresponding to the constraint.
                 if source.is_str_lit() && target.is_type_param() {
                     // TODO: Implement logic
+                    error!("unimplemented: infer_to_tpl_lit_type");
                 }
 
                 self.infer_from_types(span, inferred, &source, target, opts)?;
