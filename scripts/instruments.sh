@@ -4,8 +4,8 @@ set -eu
 # cargo install --offline --path .
 
 # export RUST_LOG=debug,swc_common=off
-export RUST_BACKTRACE=1
-export RUST_LOG=debug
+# export RUST_BACKTRACE=1
+# export RUST_LOG=debug
 
 # The type checker is buggy.
 #
