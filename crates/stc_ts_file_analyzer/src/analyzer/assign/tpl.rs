@@ -72,14 +72,14 @@ impl Analyzer<'_, '_> {
                     Type::Intrinsic(Intrinsic {
                         kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
                         ..
-                    }) => self.is_member_of_string_mapping(source, target),
+                    }) => self.is_member_of_string_mapping(span, source, target),
                     _ => Ok(false),
                 };
             }
 
             Type::Tpl(source) => {
                 if source.quasis.len() == 2 && source.quasis[0].value == "" && source.quasis[1].value == "" {
-                    return self.is_type_assignable_to(span, &source.types[0], target);
+                    return Ok(self.is_type_assignable_to(span, &source.types[0], target));
                 } else {
                     return Ok(false);
                 }

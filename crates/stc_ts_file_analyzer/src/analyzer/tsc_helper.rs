@@ -1,4 +1,4 @@
-use stc_ts_types::Type;
+use stc_ts_types::{Intrinsic, IntrinsicKind, Type};
 use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -49,5 +49,25 @@ impl Analyzer<'_, '_> {
     pub(crate) fn is_valid_big_int_str(&mut self, value: &str, round_trip_only: bool) -> bool {}
 
     /// Ported from `isMemberOfStringMapping` of `tsc`.
-    pub(crate) fn is_member_of_string_mapping(&mut self, source: &Type, target: &Type) -> VResult<bool> {}
+    pub(crate) fn is_member_of_string_mapping(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+        if target.is_any() || target.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+            return Ok(true);
+        }
+
+        if target.is_tpl() {
+            return Ok(self.is_type_assignable_to(span, source, target));
+        }
+
+        match target.normalize() {
+            Type::Intrinsic(Intrinsic {
+                kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
+                ..
+            }) => {
+                // TODO: Port https://github.com/microsoft/TypeScript/blob/eb5419fc8d980859b98553586dfb5f40d811a745/src/compiler/checker.ts#L22574-L22589
+            }
+            _ => {}
+        }
+
+        Ok(false)
+    }
 }
