@@ -742,8 +742,8 @@ impl Analyzer<'_, '_> {
                     Type::Tpl(tpl) => {
                         if tpl.quasis.len() == 2
                             && tpl.types.len() == 1
-                            && tpl.quasis[0].raw.is_empty()
-                            && tpl.quasis[1].raw.is_empty()
+                            && tpl.quasis[0].value.is_empty()
+                            && tpl.quasis[1].value.is_empty()
                             && is_str_lit_or_union(&tpl.types[0])
                         {
                             return Ok(Cow::Owned(tpl.types[0].clone()));

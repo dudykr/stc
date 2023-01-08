@@ -9,14 +9,13 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use rnode::NodeId;
-use stc_ts_ast_rnode::{RStr, RTplElement, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
-    TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::Atom;
@@ -635,13 +634,7 @@ impl Analyzer<'_, '_> {
                         quasis: std::iter::once(source_texts[seg][pos..].into())
                             .chain(source_texts[seg + 1..$s].iter().cloned())
                             .chain(std::iter::once(get_source_text($s)[0..$p].into()))
-                            .map(|v: Atom| RTplElement {
-                                span,
-                                node_id: NodeId::invalid(),
-                                raw: v.clone(),
-                                cooked: Some(v),
-                                tail: false,
-                            })
+                            .map(|value: Atom| TplElem { span, value })
                             .collect(),
                         types: source_types[seg..$s].iter().map(|v| v.clone()).collect(),
                         metadata: Default::default(),
@@ -656,7 +649,7 @@ impl Analyzer<'_, '_> {
         }
 
         for i in 1..last_target_index {
-            let delim = target_texts[i].cooked.as_ref().unwrap();
+            let delim = &target_texts[i].value;
 
             if delim.len() > 0 {
                 let mut s = seg;
@@ -708,19 +701,13 @@ impl Analyzer<'_, '_> {
             Cow::Owned(Type::Tpl(TplType {
                 span: ty.span(),
                 quasis: vec![
-                    RTplElement {
-                        node_id: NodeId::invalid(),
+                    TplElem {
                         span: DUMMY_SP,
-                        tail: false,
-                        cooked: None,
-                        raw: Atom::default(),
+                        value: Atom::default(),
                     },
-                    RTplElement {
-                        node_id: NodeId::invalid(),
+                    TplElem {
                         span: DUMMY_SP,
-                        tail: false,
-                        cooked: None,
-                        raw: Atom::default(),
+                        value: Atom::default(),
                     },
                 ],
                 types: vec![ty.clone()],
