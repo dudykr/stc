@@ -92,5 +92,18 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `templateLiteralTypesDefinitelyUnrelated` of `tsc`.
-    pub(crate) fn tpl_lit_type_definitely_unrelated(&mut self, span: Span, source: &TplType, target: &TplType) -> VResult<bool> {}
+    pub(crate) fn tpl_lit_type_definitely_unrelated(&mut self, span: Span, source: &TplType, target: &TplType) -> VResult<bool> {
+        // Two template literal types with diffences in their starting or ending text
+        // spans are definitely unrelated.
+
+        let source_start = &source.quasis[0].value;
+        let target_start = &target.quasis[0].value;
+        let source_end = &source.quasis[source.quasis.len() - 1].value;
+        let target_end = &target.quasis[target.quasis.len() - 1].value;
+        let start_len = source_start.len().min(target_start.len());
+        let end_len = source_end.len().min(target_end.len());
+
+        Ok(source_start[0..start_len] != target_start[0..start_len]
+            || source_end[(source_end.len() - end_len)..] != target_end[(target_end.len() - end_len)..])
+    }
 }
