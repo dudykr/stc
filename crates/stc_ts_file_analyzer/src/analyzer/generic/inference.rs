@@ -218,14 +218,6 @@ impl Analyzer<'_, '_> {
             opts,
         )?;
 
-        for t in &temp_targets {
-            dbg!(force_dump_type_as_string(t));
-        }
-
-        for t in &temp_sources {
-            dbg!(force_dump_type_as_string(t));
-        }
-
         let (sources, targets) = self.infer_from_matching_types(
             span,
             inferred,
