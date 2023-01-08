@@ -1,6 +1,20 @@
 Stats {
+<<<<<<< HEAD
     required_error: 4233,
     matched_error: 5651,
     extra_error: 736,
     panic: 69,
+=======
+<<<<<<< HEAD
+    required_error: 4234,
+    matched_error: 5650,
+    extra_error: 732,
+    panic: 71,
+=======
+    required_error: 4243,
+    matched_error: 5641,
+    extra_error: 735,
+    panic: 72,
+>>>>>>> a7ae05c7 (fix(ts/analyzer): Report error when assigning null/undefined to never)
+>>>>>>> 99327fb6 (fix(ts/analyzer): Report error when assigning null/undefined to never)
 }
