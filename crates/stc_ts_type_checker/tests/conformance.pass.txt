@@ -4069,6 +4069,7 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
+types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionThisTypes.ts
@@ -4093,6 +4094,7 @@ types/intersection/recursiveIntersectionTypes.ts
 types/intersection/recursiveIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofAndForIn.ts
+types/keyof/keyofIntersection.ts
 types/keyof/keyofIntersection.ts
 types/literal/booleanLiteralTypes1.ts
 types/literal/booleanLiteralTypes1.ts
@@ -4237,6 +4239,7 @@ types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAccessProperty.ts
 types/nonPrimitive/nonPrimitiveAccessProperty.ts
 types/nonPrimitive/nonPrimitiveAndEmptyObject.ts
+types/nonPrimitive/nonPrimitiveAndEmptyObject.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveAssignError.ts
@@ -4252,6 +4255,7 @@ types/nonPrimitive/nonPrimitiveIndexingWithForInSupressError.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/nonPrimitive/nonPrimitiveUnionIntersection.ts
+types/nonPrimitive/nonPrimitiveUnionIntersection.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutReturnTypeAnnotationInference.ts
@@ -4260,6 +4264,7 @@ types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType.
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType3.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType3.ts
+types/objectTypeLiteral/callSignatures/callSignaturesWithDuplicateParameters.ts
 types/objectTypeLiteral/callSignatures/callSignaturesWithDuplicateParameters.ts
 types/objectTypeLiteral/callSignatures/callSignaturesWithOptionalParameters.ts
 types/objectTypeLiteral/callSignatures/callSignaturesWithOptionalParameters.ts
@@ -4600,6 +4605,7 @@ types/typeAliases/typeAliasesForObjectTypes.ts
 types/typeParameters/recurringTypeParamForContainerOfBase01.ts
 types/typeParameters/recurringTypeParamForContainerOfBase01.ts
 types/typeParameters/typeArgumentLists/callGenericFunctionWithZeroTypeArguments.ts
+types/typeParameters/typeArgumentLists/callGenericFunctionWithZeroTypeArguments.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny2.ts
@@ -4640,6 +4646,7 @@ types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithConstra
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithConstraints3.ts
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithoutConstraints.ts
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithoutConstraints.ts
+types/typeParameters/typeParameterLists/staticMembersUsingClassTypeParameter.ts
 types/typeParameters/typeParameterLists/staticMembersUsingClassTypeParameter.ts
 types/typeParameters/typeParameterLists/typeParameterUsedAsConstraint.ts
 types/typeParameters/typeParameterLists/typeParameterUsedAsConstraint.ts
