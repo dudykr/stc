@@ -36,15 +36,17 @@ impl Analyzer<'_, '_> {
                     dump_type_as_string(r_ty)
                 ));
 
-                // First
-                if let (Some(l), Some(r)) = (&l.quasis.first().unwrap().cooked, &r.quasis.first().unwrap().cooked) {
+                {
+                    // First
+                    let (l, r) = (&l.quasis.first().unwrap().value, &r.quasis.first().unwrap().value);
                     if !r.starts_with(&**l) {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("starts_with"));
                     }
                 }
 
-                // Last
-                if let (Some(l), Some(r)) = (&l.quasis.last().unwrap().cooked, &r.quasis.last().unwrap().cooked) {
+                {
+                    // Last
+                    let (l, r) = (&l.quasis.last().unwrap().value, &r.quasis.last().unwrap().value);
                     if !r.ends_with(&**l) {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("ends_with"));
                     }
@@ -63,7 +65,7 @@ impl Analyzer<'_, '_> {
                         // LHS is literal
                         if ri % 2 == 0 {
                             // RHS is literal
-                            if l.quasis[li / 2].cooked != r.quasis[ri / 2].cooked {
+                            if l.quasis[li / 2].value != r.quasis[ri / 2].value {
                                 // TODO: Restore this after implementing correct
                                 // logic
 
@@ -116,11 +118,11 @@ impl Analyzer<'_, '_> {
                 let mut positions = vec![];
 
                 for item in &l.quasis {
-                    let q = &item.cooked.as_ref().unwrap();
+                    let q = &item.value;
                     if r.value.len() < start {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
-                    match r.value[start..].find(&***q) {
+                    match r.value[start..].find(&**q) {
                         Some(pos) => {
                             positions.push(pos);
                             start += pos + 1;

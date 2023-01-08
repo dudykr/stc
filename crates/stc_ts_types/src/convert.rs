@@ -1,12 +1,12 @@
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
-    RArrayPat, RBindingIdent, RExpr, RIdent, RLit, RObjectPat, RPat, RPrivateName, RPropName, RRestPat, RTsArrayType, RTsCallSignatureDecl,
-    RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType, RTsEntityName, RTsFnOrConstructorType, RTsFnParam, RTsFnType,
-    RTsImportType, RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsIntersectionType, RTsKeywordType, RTsLit, RTsLitType,
-    RTsMappedType, RTsMethodSignature, RTsModuleName, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature, RTsQualifiedName,
-    RTsRestType, RTsThisType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAnn, RTsTypeElement, RTsTypeLit,
-    RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr,
-    RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RArrayPat, RBindingIdent, RExpr, RIdent, RLit, RObjectPat, RPat, RPrivateName, RPropName, RRestPat, RTplElement, RTsArrayType,
+    RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType, RTsEntityName, RTsFnOrConstructorType,
+    RTsFnParam, RTsFnType, RTsImportType, RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsIntersectionType, RTsKeywordType,
+    RTsLit, RTsLitType, RTsMappedType, RTsMethodSignature, RTsModuleName, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature,
+    RTsQualifiedName, RTsRestType, RTsThisType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAnn, RTsTypeElement,
+    RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery,
+    RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -14,7 +14,8 @@ use swc_ecma_ast::*;
 use crate::{
     Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType, InferType, Interface,
     Intersection, Intrinsic, Key, KeywordType, LitType, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType, StaticThis,
-    Symbol, ThisType, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    Symbol, ThisType, TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    Union,
 };
 
 impl From<Box<Type>> for RTsType {
@@ -766,8 +767,20 @@ impl From<TplType> for RTsTplLitType {
         RTsTplLitType {
             node_id: NodeId::invalid(),
             span: t.span,
-            quasis: t.quasis,
+            quasis: t.quasis.into_iter().map(From::from).collect(),
             types: t.types.into_iter().map(From::from).collect(),
+        }
+    }
+}
+
+impl From<TplElem> for RTplElement {
+    fn from(e: TplElem) -> Self {
+        RTplElement {
+            node_id: NodeId::invalid(),
+            span: e.span,
+            raw: e.value.clone(),
+            cooked: Some(e.value),
+            tail: false,
         }
     }
 }

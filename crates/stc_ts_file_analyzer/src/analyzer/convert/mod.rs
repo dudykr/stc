@@ -17,8 +17,9 @@ use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
     ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
     Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator,
-    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple,
-    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplElem, TplType,
+    TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
+    TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
@@ -946,7 +947,14 @@ impl Analyzer<'_, '_> {
 
         Ok(TplType {
             span: t.span,
-            quasis: t.quasis.clone(),
+            quasis: t
+                .quasis
+                .iter()
+                .map(|v| TplElem {
+                    span: v.span,
+                    value: v.cooked.clone().unwrap(),
+                })
+                .collect(),
             types,
             metadata: Default::default(),
             tracker: Default::default(),
