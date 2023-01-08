@@ -404,6 +404,8 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
+        // TODO: Port `templateLiteralTypesDefinitelyUnrelated` from `tsc`
+
         // class A {}
         // class B extends A {}
         //
