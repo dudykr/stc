@@ -16,7 +16,7 @@ use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, warn};
 
-use crate::ExpandGenericOpts;
+use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
 
 #[derive(Debug)]
 pub struct InferTypeResult {
@@ -479,6 +479,16 @@ impl Fold<Type> for GenericExpander<'_> {
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
+
+        {
+            // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
+            let mut v = TypeParamNameUsageFinder::default();
+            ty.visit_with(&mut v);
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
+            if !will_expand {
+                return ty;
+            }
+        }
 
         {
             let mut checker = GenericChecker {
