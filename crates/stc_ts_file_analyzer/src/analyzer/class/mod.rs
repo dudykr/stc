@@ -1271,11 +1271,14 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
             tracker: Default::default(),
-        });
+        })
+        .freezed();
 
         for parent in &*class.implements {
             let res: VResult<_> = try {
-                let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
+                let parent = self
+                    .type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?
+                    .freezed();
 
                 self.assign_with_opts(
                     &mut Default::default(),
