@@ -18,7 +18,7 @@ use stc_utils::{
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{EsVersion, TsKeywordTypeKind};
 use tracing::debug;
 
 use crate::{
@@ -869,7 +869,13 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             )
             .convert_err(|err| match err {
-                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span },
+                ErrorKind::NoCallablePropertyWithName { span, .. } => {
+                    if self.env.target() <= EsVersion::Es2015 {
+                        ErrorKind::MustBeArray { span }
+                    } else {
+                        ErrorKind::NoMethodNamedNext { span }
+                    }
+                }
                 _ => err,
             })
             .context("tried calling `next()` to get element type of iterator")?;

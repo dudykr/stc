@@ -1230,6 +1230,7 @@ pub enum ErrorKind {
     /// TS2363
     WrongTypeForRhsOfNumericOperation {
         span: Span,
+        ty: Box<Type>,
     },
 
     TS2365 {
@@ -1406,10 +1407,16 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2489
     NoCallablePropertyWithName {
         span: Span,
         obj: Box<Type>,
         key: Box<Key>,
+    },
+
+    /// TS2461
+    MustBeArray {
+        span: Span,
     },
 
     /// TS2548
@@ -1897,6 +1904,8 @@ impl ErrorKind {
             ErrorKind::NoConstructablePropertyWithName { .. } => 2348,
 
             ErrorKind::NoCallablePropertyWithName { .. } => 2349,
+
+            ErrorKind::MustBeArray { .. } => 2461,
 
             ErrorKind::NoMethodNamedNext { .. } => 2489,
 

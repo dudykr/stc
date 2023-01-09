@@ -2,7 +2,6 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
-    mem::take,
     time::{Duration, Instant},
 };
 
@@ -10,8 +9,8 @@ use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, ROptChainBase,
-    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTplElement,
-    RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName,
+    RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -24,7 +23,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
+    QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -3078,6 +3077,10 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     }));
                 }
+
+                if let Key::Computed(key) = prop {
+                    return Ok(*key.ty.clone());
+                }
             }
 
             Type::Rest(rest) => {
@@ -4277,12 +4280,12 @@ impl Analyzer<'_, '_> {
             .map(|e| e.validate_with_default(self).map(|v| v.freezed()))
             .collect::<VResult<Vec<_>>>()?;
 
-        let quasis = e.quasis.clone();
-
-        if types.iter().any(|ty| ty.is_str_lit()) && quasis.iter().all(|q| q.cooked.is_some()) {
+        if types.iter().any(|ty| ty.is_str_lit()) && e.quasis.iter().all(|q| q.cooked.is_some()) {
             // We have to concat string literals
             //
             // https://github.com/dudykr/stc/issues/334
+
+            let quasis = e.quasis.clone();
 
             let mut nq = Vec::with_capacity(quasis.len());
             let mut nt = Vec::with_capacity(types.len());
@@ -4300,15 +4303,12 @@ impl Analyzer<'_, '_> {
                 if !cur_str.is_empty() {
                     cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
 
-                    nq.push(RTplElement {
+                    nq.push(TplElem {
                         span: e.span,
-                        node_id: NodeId::invalid(),
-                        raw: cur_str.clone().into(),
-                        cooked: Some(take(&mut cur_str).into()),
-                        tail: false,
+                        value: cur_str.clone().into(),
                     });
                 } else {
-                    nq.push(quasis.next().unwrap());
+                    nq.push(quasis.next().unwrap().into());
                 }
                 nt.push(ty);
             }
@@ -4316,15 +4316,12 @@ impl Analyzer<'_, '_> {
             if !cur_str.is_empty() {
                 cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
 
-                nq.push(RTplElement {
+                nq.push(TplElem {
                     span: e.span,
-                    node_id: NodeId::invalid(),
-                    raw: cur_str.clone().into(),
-                    cooked: Some(take(&mut cur_str).into()),
-                    tail: false,
+                    value: cur_str.clone().into(),
                 });
             } else {
-                nq.push(quasis.next().unwrap());
+                nq.push(quasis.next().unwrap().into());
             }
 
             debug_assert_eq!(nq.len(), nt.len() + 1);
@@ -4342,7 +4339,7 @@ impl Analyzer<'_, '_> {
 
         Ok(Type::Tpl(TplType {
             span: e.span,
-            quasis,
+            quasis: e.quasis.iter().map(TplElem::from).collect(),
             types,
             metadata: TplTypeMetadata {
                 common: CommonTypeMetadata { ..Default::default() },

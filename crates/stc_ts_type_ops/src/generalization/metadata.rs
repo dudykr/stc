@@ -17,6 +17,10 @@ pub(crate) struct GeneralizableLiteralFinder {
 
 impl Visit<Type> for GeneralizableLiteralFinder {
     fn visit(&mut self, ty: &Type) {
+        if self.found {
+            return;
+        }
+
         if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
             if metadata.common.prevent_generalization {
                 return;

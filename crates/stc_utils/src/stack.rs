@@ -39,6 +39,7 @@ impl Drop for TrackGuard {
 pub fn track(span: Span) -> Result<TrackGuard, StackOverflowError> {
     with_ctx(|v| {
         if *v == 0 {
+            tracing::error!("Stack overflow: {:?}", span);
             return Err(StackOverflowError { span });
         }
 

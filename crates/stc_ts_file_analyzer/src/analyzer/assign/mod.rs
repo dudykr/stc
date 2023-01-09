@@ -280,9 +280,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into()),
+                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into()),
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into())
+                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into())
                     }
                     _ => {}
                 }
@@ -1315,10 +1315,8 @@ impl Analyzer<'_, '_> {
                     if let RTsLit::Str(lhs) = &lhs.lit {
                         if let Type::Tpl(rhs) = rhs {
                             if rhs.types.is_empty() {
-                                if let Some(cooked) = &rhs.quasis[0].cooked {
-                                    if *lhs.value == **cooked {
-                                        return Ok(());
-                                    }
+                                if *lhs.value == *rhs.quasis[0].value {
+                                    return Ok(());
                                 }
                             }
                         }
@@ -1743,6 +1741,36 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if rhs.is_unknown() {
+                    //  In TypeScript, type `{}` means "any non-nullish value".
+                    //  So, `unknown` is assignable to `{} | null | undefined`.
+
+                    let empty_member: Vec<TypeElement> = Vec::new();
+                    if lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                                ..
+                            })
+                        )
+                    }) && lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                ..
+                            })
+                        )
+                    }) && lu
+                        .types
+                        .iter()
+                        .any(|ty| matches!(ty.normalize(), Type::TypeLit(TypeLit { members: empty_member, .. })))
+                    {
+                        return Ok(());
+                    }
+                }
+
                 if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
                     if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                         return res.context("tried to assign using `assign_to_union`");
@@ -1801,6 +1829,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_ref_type()
                             || ty.is_query()
                             || ty.is_fn_type()
+                            || ty.is_tpl()
                             || ty.is_intersection()
                     });
 
