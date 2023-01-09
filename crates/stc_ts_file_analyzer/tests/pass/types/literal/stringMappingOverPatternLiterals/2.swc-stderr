@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:8:5]
+ 8 | x2 = x1;
+   :      ^^
+   `----
+
+Error: 
+  > `AA${number}${bigint}${boolean}`
+
+  x Type
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:8:5]
+ 8 | x2 = x1;
+   : ^^^^^^^
+   `----
+
+Error: 
+  > `AA${number}${bigint}${boolean}`

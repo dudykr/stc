@@ -1,8 +1,10 @@
 #![allow(clippy::if_same_then_else)]
 
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::{ctx, debug::dump_type_as_string, ErrorKind};
-use stc_ts_types::{LitType, TplType, Type};
+use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
+use stc_ts_types::{Intrinsic, IntrinsicKind, LitType, TplType, Type};
+use swc_common::{Span, TypeEq};
+use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
     analyzer::{
@@ -28,113 +30,103 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         let r_ty = r_ty.normalize();
 
-        match r_ty {
-            Type::Tpl(r) => {
-                let _ctx = ctx!(format!(
-                    "lhs = {}\nrhs = {}",
-                    dump_type_as_string(&Type::Tpl(l.clone())),
-                    dump_type_as_string(r_ty)
-                ));
+        let inference = self.infer_types_from_tpl_lit_type(span, r_ty, l)?;
 
-                {
-                    // First
-                    let (l, r) = (&l.quasis.first().unwrap().value, &r.quasis.first().unwrap().value);
-                    if !r.starts_with(&**l) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("starts_with"));
-                    }
-                }
+        let inference = match inference {
+            Some(inference) => inference,
+            None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("tried to infer")),
+        };
 
-                {
-                    // Last
-                    let (l, r) = (&l.quasis.last().unwrap().value, &r.quasis.last().unwrap().value);
-                    if !r.ends_with(&**l) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("ends_with"));
-                    }
-                }
-
-                // TODO(kdy1): We should iterator over two types, and check if each element is
-                // assignable.
-
-                let mut li = 0;
-                let mut ri = 0;
-
-                while li < l.quasis.len() + l.types.len() && ri < r.quasis.len() + r.types.len() {
-                    // 0: quasi, 1: type
-
-                    if li % 2 == 0 {
-                        // LHS is literal
-                        if ri % 2 == 0 {
-                            // RHS is literal
-                            if l.quasis[li / 2].value != r.quasis[ri / 2].value {
-                                // TODO: Restore this after implementing correct
-                                // logic
-
-                                // return Err(
-                                //     Error::SimpleAssignFailed { span, cause:
-                                // None }.context("failed to assign a literal to
-                                // literal") );
-                            }
-                        } else {
-                            // TODO: Restore this after implementing correct
-                            // logic
-
-                            // RHS is type
-
-                            // return Err(Error::SimpleAssignFailed { span,
-                            // cause: None }.context("cannot assign expression
-                            // to literal"));
-                        }
-                    } else {
-                        // LHS is type
-
-                        // We should eat as much text as possible.
-
-                        if ri % 2 == 0 {
-                            // RHS is literal
-                        } else {
-                            // RHS is type
-
-                            // TODO: Restore this after implementing correct
-                            // logic
-
-                            // let l = &l.types[li / 2];
-                            // let r = &r.types[ri / 2];
-
-                            // self.assign_inner(data, l, r, opts)
-                            //     .context("tried to assign a type to a type
-                            // for a template literal")?;
-                        }
-                    }
-
-                    // Bump
-                    li += 1;
-                    ri += 1;
-                }
-
-                Ok(())
+        for (i, ty) in inference.iter().enumerate() {
+            if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i])? {
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
+                    "verified types:\nsource = {}\ntarget = {}",
+                    force_dump_type_as_string(ty),
+                    force_dump_type_as_string(&l.types[i])
+                )));
             }
-            Type::Lit(LitType { lit: RTsLit::Str(r), .. }) => {
-                let mut start = 0;
-                let mut positions = vec![];
-
-                for item in &l.quasis {
-                    let q = &item.value;
-                    if r.value.len() < start {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
-                    }
-                    match r.value[start..].find(&**q) {
-                        Some(pos) => {
-                            positions.push(pos);
-                            start += pos + 1;
-                        }
-                        None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
-                    }
-                }
-
-                Ok(())
-            }
-
-            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
+
+        Ok(())
+    }
+
+    /// Ported from `isValidTypeForTemplateLiteralPlaceholder` of `tsc`
+    pub(crate) fn is_valid_type_for_tpl_lit_placeholder(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+        #[cfg(debug_assertions)]
+        let _tracing = {
+            let source = force_dump_type_as_string(source);
+            let target = force_dump_type_as_string(target);
+            tracing::span!(
+                tracing::Level::ERROR,
+                "is_valid_type_for_tpl_lit_placeholder",
+                source = tracing::field::display(&source),
+                target = tracing::field::display(&target),
+            )
+            .entered()
+        };
+
+        if source.type_eq(target) || target.is_any() || target.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+            return Ok(true);
+        }
+
+        match source.normalize() {
+            Type::Lit(LitType {
+                lit: RTsLit::Str(value), ..
+            }) => {
+                if target.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && self.is_valid_num_str(&value.value, false)
+                    || target.is_kwd(TsKeywordTypeKind::TsBigIntKeyword) && self.is_valid_big_int_str(&value.value, false)
+                {
+                    return Ok(true);
+                }
+
+                // TODO: Check for `source`
+                match &*value.value {
+                    "true" | "false" | "null" | "undefined" => return Ok(true),
+                    _ => {}
+                }
+
+                if let Type::Intrinsic(Intrinsic {
+                    kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
+                    ..
+                }) = target.normalize()
+                {
+                    return self.is_member_of_string_mapping(span, source, target);
+                }
+
+                // TODO(kdy1): Return `Ok(false)` instead
+            }
+
+            Type::Tpl(source) => {
+                if source.quasis.len() == 2 && source.quasis[0].value == "" && source.quasis[1].value == "" {
+                    // TODO(kdy1): Return `Ok(self.is_type_assignable_to(span, &source.types[0],
+                    // target))` instead
+                    if self.is_type_assignable_to(span, &source.types[0], target) {
+                        return Ok(true);
+                    }
+                } else {
+                    return Ok(false);
+                }
+            }
+
+            _ => {}
+        }
+
+        Ok(self.is_type_assignable_to(span, source, target))
+    }
+
+    /// Ported from `templateLiteralTypesDefinitelyUnrelated` of `tsc`.
+    pub(crate) fn tpl_lit_type_definitely_unrelated(&mut self, span: Span, source: &TplType, target: &TplType) -> VResult<bool> {
+        // Two template literal types with differences in their starting or ending text
+        // spans are definitely unrelated.
+
+        let source_start = &source.quasis[0].value;
+        let target_start = &target.quasis[0].value;
+        let source_end = &source.quasis[source.quasis.len() - 1].value;
+        let target_end = &target.quasis[target.quasis.len() - 1].value;
+        let start_len = source_start.len().min(target_start.len());
+        let end_len = source_end.len().min(target_end.len());
+
+        Ok(source_start[0..start_len] != target_start[0..start_len]
+            || source_end[(source_end.len() - end_len)..] != target_end[(target_end.len() - end_len)..])
     }
 }
