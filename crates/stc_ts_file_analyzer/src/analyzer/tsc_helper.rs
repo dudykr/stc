@@ -52,7 +52,15 @@ impl Analyzer<'_, '_> {
             return false;
         }
 
-        if let Ok(v) = s.parse::<f64>() {
+        let v = if s.starts_with("0x") || s.starts_with("0X") {
+            usize::from_str_radix(&s[2..], 16).ok().map(|v| v as f64)
+        } else if s.starts_with("0b") || s.starts_with("0B") {
+            usize::from_str_radix(&s[2..], 2).ok().map(|v| v as f64)
+        } else {
+            s.parse::<f64>().ok()
+        };
+
+        if let Some(v) = v {
             v.is_finite() && (!round_trip_only || v.to_string() == s)
         } else {
             false
