@@ -1407,7 +1407,11 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign a normalized intersection type to another type");
                     }
                 }
-
+                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                    if new.is_never() && to.is_never() {
+                        return Ok(());
+                    }
+                }
                 let errors = types
                     .iter()
                     .map(|rhs| {
