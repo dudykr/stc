@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         for (i, ty) in inference.iter().enumerate() {
             if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i])? {
                 return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
-                    "verified types:{}\n{}",
+                    "verified types:\nsource = {}\ntarget = {}",
                     force_dump_type_as_string(ty),
                     force_dump_type_as_string(&l.types[i])
                 )));
