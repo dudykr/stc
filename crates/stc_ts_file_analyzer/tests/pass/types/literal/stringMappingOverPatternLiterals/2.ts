@@ -5,5 +5,5 @@ type EquivalentNonStringPat = `AA${Uppercase<`${number}`>}${Uppercase<`${bigint}
 
 export function f4(x1: NonStringPat, x2: EquivalentNonStringPat) {
     // Should both work
-    x1 = x2;
+    x2 = x1;
 }
