@@ -263,7 +263,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
+        Err(ErrorKind::Unimplemented {
+            span: to.span(),
+            msg: format!("append_type:\n{:?}\n{:?}", to, rhs),
+        }
+        .into())
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
@@ -304,9 +308,11 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
             .fixed()),
-            _ => {
-                unimplemented!("append_type_element\n{:?}\n{:?}", to, rhs)
+            _ => Err(ErrorKind::Unimplemented {
+                span: to.span(),
+                msg: format!("append_type_element\n{:?}\n{:?}", to, rhs),
             }
+            .into()),
         }
     }
 }

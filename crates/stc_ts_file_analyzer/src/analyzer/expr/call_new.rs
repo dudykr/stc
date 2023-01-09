@@ -3538,36 +3538,24 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         ..self.analyzer.ctx
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
-                    let obj = a
-                        .expand(
+
+                    if let Some(actual_ty) = a
+                        .access_property(
                             *span,
-                            *obj_ty.clone(),
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                ..Default::default()
+                            obj_ty,
+                            &Key::Normal {
+                                span: lit_span,
+                                sym: value.clone(),
                             },
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                            Default::default(),
                         )
-                        .report(&mut a.storage);
-                    if let Some(obj) = &obj {
-                        if let Some(actual_ty) = a
-                            .access_property(
-                                *span,
-                                obj,
-                                &Key::Normal {
-                                    span: lit_span,
-                                    sym: value.clone(),
-                                },
-                                TypeOfMode::RValue,
-                                IdCtx::Type,
-                                Default::default(),
-                            )
-                            .context("tried to access property to simplify return type")
-                            .report(&mut a.storage)
-                        {
-                            if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
-                                types.push(actual_ty);
-                            }
+                        .context("tried to access property to simplify return type")
+                        .report(&mut a.storage)
+                    {
+                        if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
+                            types.push(actual_ty);
                         }
                     }
                 }
