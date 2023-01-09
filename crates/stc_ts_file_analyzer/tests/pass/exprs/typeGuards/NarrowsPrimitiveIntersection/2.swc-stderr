@@ -42,7 +42,7 @@ Error:
    `----
 
 Error: 
-  > never
+  > string
 
   x Type
    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:8:1]
@@ -63,13 +63,40 @@ Error:
   > never
 
   x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:10:3]
+ 10 | doThis2(value);
+    : ^^^^^^^
+    `----
+
+Error: 
+  > (value: (string & Tag2)) => void
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:10:3]
+ 10 | doThis2(value);
+    :         ^^^^^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:10:3]
+ 10 | doThis2(value);
+    : ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
     ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:12:3]
  12 | value;
     : ^^^^^
     `----
 
 Error: 
-  > never
+  > string
 
   x Type
     ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:13:3]
@@ -87,7 +114,7 @@ Error:
     `----
 
 Error: 
-  > never
+  > string
 
   x Type
     ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/2.ts:13:3]

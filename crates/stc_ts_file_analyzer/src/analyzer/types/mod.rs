@@ -952,12 +952,6 @@ impl Analyzer<'_, '_> {
             + u32::from(is_function);
 
         if sum >= 2 {
-            dbg!(dump_type_as_string(&Type::Intersection(Intersection {
-                span,
-                types: types.clone().to_vec(),
-                metadata: Default::default(),
-                tracker: Default::default(),
-            })));
             if sum == 2 && is_undefined && is_void {
                 return Ok(Some(Type::Keyword(KeywordType {
                     span,
