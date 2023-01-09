@@ -96,7 +96,13 @@ impl Analyzer<'_, '_> {
 
             Type::Tpl(source) => {
                 if source.quasis.len() == 2 && source.quasis[0].value == "" && source.quasis[1].value == "" {
-                    return Ok(self.is_type_assignable_to(span, &source.types[0], target));
+                    // TODO(kdy1): We should uncomment line below. But I don't know why tsc is not
+                    // creating a string-like type for source
+
+                    // return Ok(self.is_type_assignable_to(span, &source.types[0], target));
+
+                    let source = self.get_string_like_type_for_type(&source.types[0]);
+                    return Ok(self.is_type_assignable_to(span, &source, target));
                 } else {
                     return Ok(false);
                 }

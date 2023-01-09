@@ -691,7 +691,7 @@ impl Analyzer<'_, '_> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
     }
 
-    fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+    pub(crate) fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
         if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
             Cow::Borrowed(ty)
         } else {
