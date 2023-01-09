@@ -182,10 +182,10 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult<Type> {
+    fn get_element_type_of_for_in(&mut self, span: Span, rhs: &Type) -> VResult<Type> {
         let rhs = self
             .normalize(
-                None,
+                Some(span),
                 Cow::Borrowed(rhs),
                 NormalizeTypeOpts {
                     preserve_mapped: true,
@@ -361,7 +361,7 @@ impl Analyzer<'_, '_> {
 
                 ForHeadKind::In => Cow::Owned(
                     child
-                        .get_element_type_of_for_in(&rty)
+                        .get_element_type_of_for_in(span, &rty)
                         .context("tried to calculate the element type for a for-in loop")
                         .report(&mut child.storage)
                         .unwrap_or_else(|| Type::any(span, Default::default())),

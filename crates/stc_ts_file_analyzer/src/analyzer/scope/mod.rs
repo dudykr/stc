@@ -1420,9 +1420,6 @@ impl Analyzer<'_, '_> {
                                 // function
                             }
                             Type::Query(..) | Type::Function(..) => {}
-                            Type::Module(..) => {
-                                unreachable!("module is not a variable")
-                            }
                             _ => {
                                 let generalized_var_ty = var_ty.clone().generalize_lit();
 

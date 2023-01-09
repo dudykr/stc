@@ -195,7 +195,8 @@ impl Analyzer<'_, '_> {
                     type_ann
                 } else {
                     opt_union(span, type_ann, Some(right))
-                };
+                }
+                .freezed();
 
                 self.add_vars(
                     &p.left,

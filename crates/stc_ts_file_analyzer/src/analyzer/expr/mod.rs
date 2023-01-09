@@ -338,7 +338,11 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
-                _ => unimplemented!("typeof ({:?})", e),
+                _ => Err(ErrorKind::Unimplemented {
+                    span,
+                    msg: format!("validation of ({:?})", e),
+                }
+                .into()),
             }
         })()?;
 
@@ -3152,12 +3156,16 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        unimplemented!(
-            "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
-            obj,
-            prop,
-            self.storage.path(self.ctx.module_id)
-        );
+        Err(ErrorKind::Unimplemented {
+            span,
+            msg: format!(
+                "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
+                obj,
+                prop,
+                self.storage.path(self.ctx.module_id)
+            ),
+        }
+        .into())
     }
 
     /// TODO(kdy1): Clarify this.
