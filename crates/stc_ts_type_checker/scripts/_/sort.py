@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-lines = sorted(set(sys.stdin.readlines()))
+lines = sorted(set([i.strip() for i in sys.stdin.readlines()]))
 
 for line in lines:
-    print(line,end='')
+    print(line,end='\n')
