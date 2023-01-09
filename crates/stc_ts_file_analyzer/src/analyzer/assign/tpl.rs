@@ -79,19 +79,23 @@ impl Analyzer<'_, '_> {
                     return Ok(true);
                 }
 
-                if target.is_bool_lit() || target.is_null_or_undefined() {
+                if target.is_bool() || target.is_null_or_undefined() {
+                    // TODO(kdy1): Check for `true`, `false`, `null` and `undefined`.
+
                     // TODO: Return true if
                     // value === (target as IntrinsicType).intrinsicName
                     return Ok(true);
                 }
 
-                return match target.normalize() {
-                    Type::Intrinsic(Intrinsic {
-                        kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
-                        ..
-                    }) => self.is_member_of_string_mapping(span, source, target),
-                    _ => Ok(false),
-                };
+                if let Type::Intrinsic(Intrinsic {
+                    kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
+                    ..
+                }) = target.normalize()
+                {
+                    return self.is_member_of_string_mapping(span, source, target);
+                }
+
+                // TODO(kdy1): Return `Ok(false)` instead
             }
 
             Type::Tpl(source) => {
