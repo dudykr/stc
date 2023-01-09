@@ -313,7 +313,9 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
         "es2018" => return vec![EsVersion::Es2018],
         "es2019" => return vec![EsVersion::Es2019],
         "es2020" => return vec![EsVersion::Es2020],
-        "esnext" => return vec![EsVersion::Es2020],
+        "es2021" => return vec![EsVersion::Es2021],
+        "es2022" => return vec![EsVersion::Es2022],
+        "esnext" => return vec![EsVersion::latest()],
         _ => {}
     }
     if !s.contains(',') {
