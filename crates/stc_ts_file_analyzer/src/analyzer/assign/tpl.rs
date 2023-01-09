@@ -79,12 +79,10 @@ impl Analyzer<'_, '_> {
                     return Ok(true);
                 }
 
-                if target.is_bool() || target.is_null_or_undefined() {
-                    // TODO(kdy1): Check for `true`, `false`, `null` and `undefined`.
-
-                    // TODO: Return true if
-                    // value === (target as IntrinsicType).intrinsicName
-                    return Ok(true);
+                // TODO: Check for `source`
+                match &*value.value {
+                    "true" | "false" | "null" | "undefined" => return Ok(true),
+                    _ => {}
                 }
 
                 if let Type::Intrinsic(Intrinsic {
