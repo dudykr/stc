@@ -1,6 +1,9 @@
+use std::borrow::Cow;
+
 use num_bigint::BigInt;
-use stc_ts_types::{Intrinsic, IntrinsicKind, Type};
-use swc_common::{Span, TypeEq};
+use stc_ts_types::{Intrinsic, IntrinsicKind, TplElem, TplType, Type};
+use swc_atoms::Atom;
+use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{
@@ -89,5 +92,28 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(false)
+    }
+
+    pub(crate) fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+        if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
+            Cow::Borrowed(ty)
+        } else {
+            Cow::Owned(Type::Tpl(TplType {
+                span: ty.span(),
+                quasis: vec![
+                    TplElem {
+                        span: DUMMY_SP,
+                        value: Atom::default(),
+                    },
+                    TplElem {
+                        span: DUMMY_SP,
+                        value: Atom::default(),
+                    },
+                ],
+                types: vec![ty.clone()],
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }))
+        }
     }
 }

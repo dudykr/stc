@@ -19,7 +19,7 @@ use stc_ts_types::{
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::Atom;
-use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
@@ -689,29 +689,6 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<()> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
-    }
-
-    pub(crate) fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
-        if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
-            Cow::Borrowed(ty)
-        } else {
-            Cow::Owned(Type::Tpl(TplType {
-                span: ty.span(),
-                quasis: vec![
-                    TplElem {
-                        span: DUMMY_SP,
-                        value: Atom::default(),
-                    },
-                    TplElem {
-                        span: DUMMY_SP,
-                        value: Atom::default(),
-                    },
-                ],
-                types: vec![ty.clone()],
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }))
-        }
     }
 
     /// # Rules
