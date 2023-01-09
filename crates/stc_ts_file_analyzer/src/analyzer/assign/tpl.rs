@@ -52,6 +52,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `isValidTypeForTemplateLiteralPlaceholder` of `tsc`
     pub(crate) fn is_valid_type_for_tpl_lit_placeholder(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+        #[cfg(debug_assertions)]
         let _tracing = {
             let source = force_dump_type_as_string(source);
             let target = force_dump_type_as_string(target);
