@@ -1066,12 +1066,13 @@ impl Analyzer<'_, '_> {
                 for elem in res_vec {
                     if let Type::Intersection(ty) = elem.normalize() {
                         for item in ty.types.iter() {
-                            temp_vec.push(item.clone());
+                            temp_vec.push(item.normalize().clone());
                         }
                     } else {
-                        temp_vec.push(elem);
+                        temp_vec.push(elem.normalize().clone());
                     }
                 }
+                temp_vec.dedup_type();
                 Type::Intersection(Intersection {
                     span,
                     types: temp_vec,
