@@ -54,6 +54,8 @@ impl Analyzer<'_, '_> {
 
         let v = if s.starts_with("0x") || s.starts_with("0X") {
             usize::from_str_radix(&s[2..], 16).ok().map(|v| v as f64)
+        } else if s.starts_with("0o") || s.starts_with("0O") {
+            usize::from_str_radix(&s[2..], 8).ok().map(|v| v as f64)
         } else if s.starts_with("0b") || s.starts_with("0B") {
             usize::from_str_radix(&s[2..], 2).ok().map(|v| v as f64)
         } else {
@@ -73,7 +75,16 @@ impl Analyzer<'_, '_> {
             return false;
         }
 
-        if let Ok(v) = s.parse::<BigInt>() {
+        let v = if s.starts_with("0x") || s.starts_with("0X") {
+            BigInt::parse_bytes(s[2..].as_bytes(), 16)
+        } else if s.starts_with("0o") || s.starts_with("0O") {
+            BigInt::parse_bytes(s[2..].as_bytes(), 8)
+        } else if s.starts_with("0b") || s.starts_with("0B") {
+            BigInt::parse_bytes(s[2..].as_bytes(), 2)
+        } else {
+            s.parse::<BigInt>().ok()
+        };
+        if let Some(v) = v {
             !round_trip_only || v.to_string() == s
         } else {
             false
