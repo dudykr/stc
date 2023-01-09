@@ -755,7 +755,13 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
-            RClassMember::StaticBlock(..) => todo!("static block"),
+            RClassMember::StaticBlock(m) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: m.span,
+                    msg: "static blocks".to_string(),
+                }
+                .into())
+            }
 
             RClassMember::Constructor(v) => {
                 if self.is_builtin {
