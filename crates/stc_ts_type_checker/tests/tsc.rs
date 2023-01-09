@@ -313,7 +313,9 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
         "es2018" => return vec![EsVersion::Es2018],
         "es2019" => return vec![EsVersion::Es2019],
         "es2020" => return vec![EsVersion::Es2020],
-        "esnext" => return vec![EsVersion::Es2020],
+        "es2021" => return vec![EsVersion::Es2021],
+        "es2022" => return vec![EsVersion::Es2022],
+        "esnext" => return vec![EsVersion::latest()],
         _ => {}
     }
     if !s.contains(',') {
@@ -509,9 +511,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2017 => Lib::load("es2017.full"),
                         EsVersion::Es2018 => Lib::load("es2018.full"),
                         EsVersion::Es2019 => Lib::load("es2019.full"),
-                        EsVersion::Es2020 => Lib::load("es2020.full"),
-                        EsVersion::Es2021 => Lib::load("es2021.full"),
-                        EsVersion::Es2022 => Lib::load("es2022.full"),
+                        _ => Lib::load("es2020.full"),
+                        // TODO(kdy1): Enable when we support es2021
+                        // EsVersion::Es2021 => Lib::load("es2021.full"),
+                        // EsVersion::Es2022 => Lib::load("es2022.full"),
                     }
                 } else if specified {
                     libs_with_deps(&libs)
