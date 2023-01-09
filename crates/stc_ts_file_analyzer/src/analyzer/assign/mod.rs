@@ -534,7 +534,8 @@ impl Analyzer<'_, '_> {
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
-            }) => {
+            })
+            | Type::Tpl(..) => {
                 let ty = self
                     .normalize(
                         Some(span),
@@ -2536,7 +2537,11 @@ impl Analyzer<'_, '_> {
         }
 
         match (to, rhs) {
-            (Type::Tpl(l), r) => return self.assign_to_tpl(data, l, r, opts).context("tried to assign to a template type"),
+            (Type::Tpl(l), r) => {
+                return self
+                    .assign_to_tpl(data, l, r, opts)
+                    .with_context(|| format!("tried to assign to a template type: {}", force_dump_type_as_string(to)))
+            }
             (
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,

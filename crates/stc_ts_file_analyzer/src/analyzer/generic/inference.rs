@@ -19,7 +19,7 @@ use stc_ts_types::{
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::Atom;
-use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, Level};
 
@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let matches = self.infer_types_from_tpl_lit_type(span, inferred, source, target, opts)?;
+        let matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
@@ -503,6 +503,7 @@ impl Analyzer<'_, '_> {
                 // literal type corresponding to the constraint.
                 if source.is_str_lit() && target.is_type_param() {
                     // TODO: Implement logic
+                    error!("unimplemented: infer_to_tpl_lit_type");
                 }
 
                 self.infer_from_types(span, inferred, &source, target, opts)?;
@@ -513,18 +514,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
-    fn infer_types_from_tpl_lit_type(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        source: &Type,
-        target: &TplType,
-        opts: InferTypeOpts,
-    ) -> VResult<Option<Vec<Type>>> {
+    pub(crate) fn infer_types_from_tpl_lit_type(&mut self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
         match source.normalize() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
-            }) => self.infer_from_lit_parts_to_tpl_lit(span, inferred, &[source.value.clone().into()], &[], target, opts),
+            }) => self.infer_from_lit_parts_to_tpl_lit(span, &[source.value.clone().into()], &[], target),
             Type::Tpl(source) => {
                 if (*source.quasis).eq_ignore_span(&*target.quasis) {
                     Ok(Some(
@@ -537,11 +531,9 @@ impl Analyzer<'_, '_> {
                 } else {
                     self.infer_from_lit_parts_to_tpl_lit(
                         span,
-                        inferred,
                         &source.quasis.iter().map(|v| v.value.clone()).collect_vec(),
                         &source.types,
                         target,
-                        opts,
                     )
                 }
             }
@@ -584,11 +576,9 @@ impl Analyzer<'_, '_> {
     fn infer_from_lit_parts_to_tpl_lit(
         &mut self,
         span: Span,
-        inferred: &mut InferData,
         source_texts: &[Atom],
         source_types: &[Type],
         target: &TplType,
-        opts: InferTypeOpts,
     ) -> VResult<Option<Vec<Type>>> {
         let last_source_index = source_texts.len() - 1;
         let source_start_text = &source_texts[0];
@@ -656,7 +646,14 @@ impl Analyzer<'_, '_> {
                 let mut p = pos as isize;
 
                 loop {
-                    p += get_source_text(s)[p as usize..].find(&**delim).map(|v| v as isize).unwrap_or(-1);
+                    match get_source_text(s)[p as usize..].find(&**delim).map(|v| v as isize) {
+                        Some(v) => {
+                            p += v;
+                        }
+                        None => {
+                            p = -1;
+                        }
+                    };
                     if p >= 0 {
                         break;
                     }
@@ -692,29 +689,6 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<()> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
-    }
-
-    fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
-        if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
-            Cow::Borrowed(ty)
-        } else {
-            Cow::Owned(Type::Tpl(TplType {
-                span: ty.span(),
-                quasis: vec![
-                    TplElem {
-                        span: DUMMY_SP,
-                        value: Atom::default(),
-                    },
-                    TplElem {
-                        span: DUMMY_SP,
-                        value: Atom::default(),
-                    },
-                ],
-                types: vec![ty.clone()],
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }))
-        }
     }
 
     /// # Rules

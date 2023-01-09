@@ -2134,6 +2134,7 @@ dependencies = [
  "indexmap",
  "itertools",
  "lexical 5.2.2",
+ "num-bigint",
  "once_cell",
  "petgraph",
  "rayon",
