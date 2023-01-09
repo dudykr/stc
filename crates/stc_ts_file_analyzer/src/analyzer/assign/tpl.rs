@@ -30,14 +30,14 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         let r_ty = r_ty.normalize();
 
-        let types = self.infer_types_from_tpl_lit_type(span, r_ty, l)?;
+        let inference = self.infer_types_from_tpl_lit_type(span, r_ty, l)?;
 
-        let types = match types {
-            Some(types) => types,
+        let inference = match inference {
+            Some(inference) => inference,
             None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("tried to infer")),
         };
 
-        for (i, ty) in types.iter().enumerate() {
+        for (i, ty) in inference.iter().enumerate() {
             if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i])? {
                 return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
                     "verified types:{}\n{}",
