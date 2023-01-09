@@ -1731,6 +1731,36 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if rhs.is_unknown() {
+                    //  In TypeScript, type `{}` means "any non-nullish value".
+                    //  So, `unknown` is assignable to `{} | null | undefined`.
+
+                    let empty_member: Vec<TypeElement> = Vec::new();
+                    if lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                                ..
+                            })
+                        )
+                    }) && lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                ..
+                            })
+                        )
+                    }) && lu
+                        .types
+                        .iter()
+                        .any(|ty| matches!(ty.normalize(), Type::TypeLit(TypeLit { members: empty_member, .. })))
+                    {
+                        return Ok(());
+                    }
+                }
+
                 if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
                     if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                         return res.context("tried to assign using `assign_to_union`");
