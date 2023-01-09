@@ -948,11 +948,11 @@ impl Analyzer<'_, '_> {
         }
 
         if matching_elements.len() == 1 {
-            if let Some(ty) = matching_elements.pop() {
-                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
-            }
             if read_only_flag {
                 return Err(ErrorKind::ReadOnly { span }.into());
+            }
+            if let Some(ty) = matching_elements.pop() {
+                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
             }
             return Ok(matching_elements.pop());
         }
@@ -2333,7 +2333,8 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(Interface { ref body, extends, .. }) => {
-                if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
+                let result = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts)?;
+                if let Some(v) = result {
                     return Ok(v);
                 }
 
@@ -2490,12 +2491,24 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     ) {
-                        Ok(ty) => tys.push(ty),
+                        Ok(ty) => {
+                            if let Type::Union(ty::Union { mut types, .. }) = ty {
+                                tys.append(&mut types);
+                                continue;
+                            }
+                            tys.push(ty)
+                        }
                         Err(err) => errors.push(err),
                     }
                 }
 
                 if type_mode == TypeOfMode::LValue {
+                    if errors.iter().any(|err| err.is_var_not_found()) {
+                        return Err(ErrorKind::UnionError { span, errors }.into());
+                    }
+                    if errors.iter().any(|err| err.is_readonly_error()) {
+                        return Err(ErrorKind::ReadOnly { span }.into());
+                    }
                     if !errors.is_empty() {
                         assert_ne!(errors.len(), 0);
                         return Err(ErrorKind::UnionError { span, errors }.into());
