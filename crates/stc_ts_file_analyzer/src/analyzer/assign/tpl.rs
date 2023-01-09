@@ -52,6 +52,18 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `isValidTypeForTemplateLiteralPlaceholder` of `tsc`
     pub(crate) fn is_valid_type_for_tpl_lit_placeholder(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+        let _tracing = {
+            let source = force_dump_type_as_string(source);
+            let target = force_dump_type_as_string(target);
+            tracing::span!(
+                tracing::Level::ERROR,
+                "is_valid_type_for_tpl_lit_placeholder",
+                source = tracing::field::display(&source),
+                target = tracing::field::display(&target),
+            )
+            .entered()
+        };
+
         if source.type_eq(target) || target.is_any() || target.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
             return Ok(true);
         }
