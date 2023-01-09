@@ -1,27 +1,6 @@
 Stats {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    required_error: 4233,
-    matched_error: 5651,
-    extra_error: 736,
+    required_error: 4231,
+    matched_error: 5653,
+    extra_error: 738,
     panic: 69,
-=======
-<<<<<<< HEAD
-    required_error: 4234,
-    matched_error: 5650,
-    extra_error: 732,
-    panic: 71,
-=======
-    required_error: 4243,
-    matched_error: 5641,
-    extra_error: 735,
-    panic: 72,
->>>>>>> a7ae05c7 (fix(ts/analyzer): Report error when assigning null/undefined to never)
->>>>>>> 99327fb6 (fix(ts/analyzer): Report error when assigning null/undefined to never)
-=======
-    required_error: 4232,
-    matched_error: 5652,
-    extra_error: 733,
-    panic: 71,
->>>>>>> c68eed87 (update stats)
 }
