@@ -1062,17 +1062,30 @@ impl Analyzer<'_, '_> {
             }
         }
         let result = match type_mode {
-            TypeOfMode::LValue => Type::Intersection(Intersection {
-                span,
-                types: res_vec,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
+            TypeOfMode::LValue => {
+                let mut temp_vec = vec![];
+                for elem in res_vec {
+                    if let Type::Intersection(ty) = elem.normalize() {
+                        for item in ty.types.iter() {
+                            temp_vec.push(item.clone());
+                        }
+                    } else {
+                        temp_vec.push(elem);
+                    }
+                }
+                Type::Intersection(Intersection {
+                    span,
+                    types: temp_vec,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                })
+            }
             TypeOfMode::RValue => Type::union(res_vec),
         };
-        dbg!(dump_type_as_string(&result));
+
         Ok(Some(
-            self.normalize(Some(span), Cow::Owned(result), Default::default())?.into_owned(),
+            self.normalize(Some(span), Cow::Owned(result.freezed()), Default::default())?
+                .into_owned(),
         ))
     }
 
