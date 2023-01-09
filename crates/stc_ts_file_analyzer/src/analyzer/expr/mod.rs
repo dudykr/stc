@@ -3036,6 +3036,10 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     }));
                 }
+
+                if let Key::Computed(key) = prop {
+                    return Ok(*key.ty.clone());
+                }
             }
 
             Type::Rest(rest) => {
