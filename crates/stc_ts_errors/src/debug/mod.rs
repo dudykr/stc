@@ -82,6 +82,10 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
         return String::new();
     }
 
+    if let Type::Intrinsic(t) = t.normalize() {
+        return format!("{:?}<{:?}>", t.kind, t.type_args);
+    }
+
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
