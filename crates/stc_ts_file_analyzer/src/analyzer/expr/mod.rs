@@ -1908,11 +1908,6 @@ impl Analyzer<'_, '_> {
                                     };
                                 }
                             }
-                            if class_prop.key.is_private() {
-                                self.storage
-                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                return Ok(Type::any(span, Default::default()));
-                            }
 
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
@@ -1922,6 +1917,12 @@ impl Analyzer<'_, '_> {
 
                             //
                             if self.key_matches(span, &class_prop.key, prop, false) {
+                                if class_prop.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
                                     None => Type::any(span, Default::default()),
