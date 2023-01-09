@@ -1339,7 +1339,7 @@ impl Analyzer<'_, '_> {
         });
 
         if let Some(super_ty) = &class.super_class {
-            self.validate_super_class(super_ty);
+            self.validate_super_class(span, super_ty);
 
             self.report_error_for_wrong_super_class_inheritance(span, &class.body, super_ty)
         }
@@ -2174,7 +2174,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn validate_super_class(&mut self, ty: &Type) {
+    fn validate_super_class(&mut self, span: Span, ty: &Type) {
         if self.is_builtin {
             return;
         }
@@ -2192,7 +2192,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+            let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
             if let Type::Function(..) = ty.normalize() {
                 Err(ErrorKind::NotConstructorType { span: ty.span() })?
