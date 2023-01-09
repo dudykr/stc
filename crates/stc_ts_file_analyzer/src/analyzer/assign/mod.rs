@@ -888,6 +888,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        // never -> never is ok, but T -> never is not.
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if !rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+                fail!()
+            }
+        }
+
         // Allow v = null and v = undefined if strict null check is false
         if !self.rule().strict_null_checks {
             match rhs {
