@@ -1114,8 +1114,7 @@ impl Analyzer<'_, '_> {
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                         ..
-                    })
-                    | Type::Tpl(..) => fail!(),
+                    }) => fail!(),
 
                     _ => {}
                 }
@@ -1927,7 +1926,6 @@ impl Analyzer<'_, '_> {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
                         }) => return Ok(()),
-                        Type::Tpl(..) => fail!(),
                         Type::EnumVariant(EnumVariant {
                             name: None, ref enum_name, ..
                         }) => {
@@ -2011,8 +2009,7 @@ impl Analyzer<'_, '_> {
                                 ..
                             })
                             | Type::Lit(..)
-                            | Type::Param(..)
-                            | Type::Tpl(..) => {
+                            | Type::Param(..) => {
                                 fail!()
                             }
 
@@ -2089,8 +2086,7 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
-                })
-                | Type::Tpl(..) => {
+                }) => {
                     fail!()
                 }
                 _ => {}
@@ -2284,8 +2280,7 @@ impl Analyzer<'_, '_> {
                 })
                 | Type::Constructor(..)
                 | Type::Array(..)
-                | Type::Tuple(..)
-                | Type::Tpl(..) => {
+                | Type::Tuple(..) => {
                     fail!()
                 }
                 _ => {}
