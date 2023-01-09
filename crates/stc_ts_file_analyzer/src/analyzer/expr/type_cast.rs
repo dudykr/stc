@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
             Type::Array(ref lt) => {
                 //
                 if let Type::Tuple(ref rt) = orig.normalize() {
-                    if rt.elems[0].ty.type_eq(&lt.elem_type) {
+                    if !rt.elems.is_empty() && rt.elems[0].ty.type_eq(&lt.elem_type) {
                         return Ok(());
                     }
                 }
