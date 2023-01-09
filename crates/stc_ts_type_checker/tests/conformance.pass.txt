@@ -317,6 +317,7 @@ enums/enumConstantMemberWithStringEmitDeclaration.ts
 enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
 enums/enumConstantMembers.ts
 enums/enumExportMergingES6.ts
+enums/enumMerging.ts
 es2017/useObjectValuesAndEntries1.ts
 es2017/useObjectValuesAndEntries2.ts
 es2017/useObjectValuesAndEntries3.ts
@@ -1142,6 +1143,7 @@ es6/yieldExpressions/generatorTypeCheck60.ts
 es6/yieldExpressions/generatorTypeCheck62.ts
 es6/yieldExpressions/generatorTypeCheck7.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
+es6ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSCanBeAssigned1.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS1.ts
