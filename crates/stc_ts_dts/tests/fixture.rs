@@ -30,7 +30,7 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use swc_common::{input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, SyntaxContext};
 use swc_ecma_ast::{EsVersion, Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -108,16 +108,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         );
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
-        let module = GLOBALS.set(stable_env.swc_globals(), || {
-            module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
-        });
+        let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mut mutations;
         {
             let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
-            GLOBALS.set(stable_env.swc_globals(), || {
-                module.validate_with(&mut analyzer).unwrap();
-            });
+            module.validate_with(&mut analyzer).unwrap();
 
             mutations = analyzer.mutations.unwrap()
         }

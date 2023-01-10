@@ -77,17 +77,6 @@ impl Checker {
             declared_modules: Default::default(),
         }
     }
-
-    pub fn run<F, R>(&self, op: F) -> R
-    where
-        F: FnOnce() -> R,
-    {
-        ::swc_common::GLOBALS.set(self.globals(), op)
-    }
-
-    pub fn globals(&self) -> &swc_common::Globals {
-        self.env.shared().swc_globals()
-    }
 }
 
 impl Checker {
@@ -172,7 +161,13 @@ impl Checker {
                                     .map(|id| {
                                         let path = self.module_graph.path(id);
                                         let stmt_count = self.module_graph.stmt_count_of(id);
-                                        File { id, path, stmt_count }
+                                        let top_level_mark = self.module_graph.top_level_mark(id);
+                                        File {
+                                            id,
+                                            path,
+                                            stmt_count,
+                                            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
+                                        }
                                     })
                                     .collect(),
                             ),
