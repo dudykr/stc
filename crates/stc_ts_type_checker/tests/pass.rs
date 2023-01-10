@@ -68,11 +68,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
-        checker.run(|| {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         if handler.has_errors() {
             return Err(());

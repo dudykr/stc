@@ -155,11 +155,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             return Ok(());
         }
 
-        checker.run(|| {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         let expected_dts = parse_dts(&expected);
         let generated_dts = parse_dts(&generated);
