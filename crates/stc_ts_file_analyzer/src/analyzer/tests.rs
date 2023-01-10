@@ -41,9 +41,13 @@ where
     F: FnOnce(&mut Tester) -> Ret,
 {
     ::testing::run_test2(false, |cm, handler| {
+        let top_level_mark = Mark::new();
+        let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
+
         let mut storage = Single {
             parent: None,
             id: ModuleId::builtin(),
+            top_level_ctxt,
             path: Arc::new(FileName::Real(PathBuf::new())),
             is_dts: false,
             info: Default::default(),
@@ -56,7 +60,7 @@ where
                 cm: cm.clone(),
                 analyzer,
                 node_id_gen: Default::default(),
-                top_level_mark: Mark::new(),
+                top_level_mark,
             };
             let ret = op(&mut tester);
 

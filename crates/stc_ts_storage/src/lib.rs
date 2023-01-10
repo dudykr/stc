@@ -491,12 +491,14 @@ mod tests {
             let path1 = Arc::new(FileName::Real(PathBuf::from("1")));
             let file1 = File {
                 id: gen.generate(&path1).0,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(gen.generate(&path1).1),
                 path: path1.clone(),
                 stmt_count: 4,
             };
             let path2 = Arc::new(FileName::Real(PathBuf::from("2")));
             let file2 = File {
                 id: gen.generate(&path2).0,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(gen.generate(&path2).1),
                 path: path2.clone(),
                 stmt_count: 5,
             };
