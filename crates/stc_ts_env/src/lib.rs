@@ -10,7 +10,7 @@ use stc_ts_types::{Id, Type};
 use stc_utils::cache::Freeze;
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
-use swc_common::{Globals, Span, Spanned, DUMMY_SP};
+use swc_common::{Globals, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::EsVersion;
 
 pub use self::marks::{MarkExt, Marks};
@@ -155,6 +155,13 @@ impl StableEnv {
 
     pub fn swc_globals(&self) -> &Arc<Globals> {
         &self.globals
+    }
+
+    pub fn with<F, Ret>(&self, op: F) -> Ret
+    where
+        F: FnOnce() -> Ret,
+    {
+        GLOBALS.set(&self.globals, op)
     }
 }
 
