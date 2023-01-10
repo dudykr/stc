@@ -1209,6 +1209,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                 }
+
                 for ty in &li.types {
                     match self
                         .assign_with_opts(
