@@ -1,0 +1,36 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/any-in-closure-param.ts:6:1]
+ 6 | foo('a', (t: any) => t, 'a') // any
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: (t: T) => T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/any-in-closure-param.ts:6:1]
+ 6 | foo('a', (t: any) => t, 'a') // any
+   :                      ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/any-in-closure-param.ts:6:1]
+ 6 | foo('a', (t: any) => t, 'a') // any
+   :          ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: any) => any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/any-in-closure-param.ts:6:1]
+ 6 | foo('a', (t: any) => t, 'a') // any
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > any

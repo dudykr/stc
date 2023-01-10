@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
             Type::Array(ref lt) => {
                 //
                 if let Type::Tuple(ref rt) = orig.normalize() {
-                    if rt.elems[0].ty.type_eq(&lt.elem_type) {
+                    if !rt.elems.is_empty() && rt.elems[0].ty.type_eq(&lt.elem_type) {
                         return Ok(());
                     }
                 }
@@ -402,6 +402,14 @@ impl Analyzer<'_, '_> {
 
         if from.is_class() && (to.is_interface() || to.is_type_lit()) {
             return Ok(false);
+        }
+
+        if let (Type::Tpl(from), Type::Tpl(to)) = (from.normalize(), to.normalize()) {
+            if self.tpl_lit_type_definitely_unrelated(span, from, to)? {
+                return Ok(false);
+            } else {
+                return Ok(true);
+            }
         }
 
         // class A {}

@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
         match *e {
             RVarDeclOrPat::VarDecl(ref v) => {
-                // It is a parsing error if there are multiple variable declarators.
+                // It is a parsing error if there are multiple variable declarator
                 // So we only handle the case where there's only one variable declarator.
                 if v.decls.len() == 1 {
                     if let Some(m) = &mut self.mutations {
@@ -182,10 +182,10 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult<Type> {
+    fn get_element_type_of_for_in(&mut self, span: Span, rhs: &Type) -> VResult<Type> {
         let rhs = self
             .normalize(
-                None,
+                Some(span),
                 Cow::Borrowed(rhs),
                 NormalizeTypeOpts {
                     preserve_mapped: true,
@@ -355,13 +355,13 @@ impl Analyzer<'_, '_> {
 
                 ForHeadKind::Of { is_awaited: true } => child
                     .get_async_iterator_element_type(rhs.span(), Cow::Owned(rty))
-                    .context("tried to get element type of an async iteratror")
+                    .context("tried to get element type of an async iterator")
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 
                 ForHeadKind::In => Cow::Owned(
                     child
-                        .get_element_type_of_for_in(&rty)
+                        .get_element_type_of_for_in(span, &rty)
                         .context("tried to calculate the element type for a for-in loop")
                         .report(&mut child.storage)
                         .unwrap_or_else(|| Type::any(span, Default::default())),

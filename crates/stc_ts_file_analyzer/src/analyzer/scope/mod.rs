@@ -745,7 +745,7 @@ impl Analyzer<'_, '_> {
 
     /// This should be called after calling `register_type`.
 
-    pub(crate) fn store_unmergeable_type_span(&mut self, id: Id, span: Span) {
+    pub(crate) fn store_unmergable_type_span(&mut self, id: Id, span: Span) {
         if self.is_builtin {
             return;
         }
@@ -1420,9 +1420,6 @@ impl Analyzer<'_, '_> {
                                 // function
                             }
                             Type::Query(..) | Type::Function(..) => {}
-                            Type::Module(..) => {
-                                unreachable!("module is not a variable")
-                            }
                             _ => {
                                 let generalized_var_ty = var_ty.clone().generalize_lit();
 
@@ -1451,7 +1448,7 @@ impl Analyzer<'_, '_> {
                                                     ..Default::default()
                                                 },
                                             )
-                                            .context("tried to validate a varaible declared multiple times")
+                                            .context("tried to validate a var declared multiple times")
                                             .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                                                 span: err.span(),
                                                 cause: box err.into(),
@@ -2470,56 +2467,7 @@ impl Expander<'_, '_, '_> {
 
         let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
 
-        if let Type::Conditional(Conditional {
-            span,
-            mut check_type,
-            mut extends_type,
-            mut true_type,
-            mut false_type,
-            metadata,
-            ..
-        }) = ty
-        {
-            extends_type.make_clone_cheap();
-            check_type.make_clone_cheap();
-
-            // We need to handle infer type.
-            let type_params = self
-                .analyzer
-                .infer_ts_infer_types(self.span, &extends_type, &check_type, Default::default())
-                .ok();
-
-            if let Some(type_params) = type_params {
-                true_type = box self
-                    .analyzer
-                    .expand_type_params(&type_params, *true_type, Default::default())
-                    .unwrap();
-                false_type = box self
-                    .analyzer
-                    .expand_type_params(&type_params, *false_type, Default::default())
-                    .unwrap();
-            }
-
-            if check_type.is_class() {
-                if let Type::Class(check_type) = check_type.normalize_mut() {
-                    if let Type::Constructor(..) = extends_type.normalize() {
-                        return *true_type;
-                    }
-                }
-            }
-
-            return Type::Conditional(Conditional {
-                span,
-                check_type,
-                extends_type,
-                true_type,
-                false_type,
-                metadata,
-                tracker: Default::default(),
-            });
-        }
-
-        ty
+        self.analyzer.expand_conditional_type(self.span, ty)
     }
 }
 

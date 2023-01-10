@@ -48,7 +48,7 @@ fn vite_js() {
         .unwrap();
 
     tsc(&dir.join("index.ts"), &["--p", "tsconfig.base.json"]).unwrap();
-    test_project("vitejs", &dir, vec![dir.join("index.ts")]);
+    test_project("vite", &dir, vec![dir.join("index.ts")]);
 }
 
 #[test]

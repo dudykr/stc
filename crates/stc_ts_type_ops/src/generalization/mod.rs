@@ -3,7 +3,7 @@ use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
 use stc_ts_base_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Array, Class, ClassProperty, Conditional, Function, IndexedAccessType, Interface, KeywordType, KeywordTypeMetadata, LitType, Ref,
-    RestType, Tuple, Type, TypeLit, Union,
+    RestType, TplType, Tuple, Type, TypeLit, Union,
 };
 use stc_utils::ext::TypeVecExt;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -122,6 +122,15 @@ impl Fold<Type> for LitGeneralizer {
                     tracker: Default::default(),
                 })
             }
+            Type::Tpl(TplType { span, metadata, .. }) => Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: KeywordTypeMetadata {
+                    common: metadata.common,
+                    ..Default::default()
+                },
+                tracker: Default::default(),
+            }),
             _ => ty,
         }
     }
@@ -163,13 +172,31 @@ impl Fold<TypeLit> for LitGeneralizer {
     }
 }
 
+impl Fold<Conditional> for LitGeneralizer {
+    fn fold(&mut self, n: Conditional) -> Conditional {
+        n
+    }
+}
+
 struct LitChecker {
     found: bool,
 }
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
+        if self.found {
+            return;
+        }
+
         if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
+            if metadata.common.prevent_generalization {
+                return;
+            }
+
+            self.found = true;
+            return;
+        }
+        if let Type::Tpl(TplType { metadata, .. }) = ty.normalize() {
             if metadata.common.prevent_generalization {
                 return;
             }

@@ -2,7 +2,6 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
-    mem::take,
     time::{Duration, Instant},
 };
 
@@ -10,8 +9,8 @@ use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, ROptChainBase,
-    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTplElement,
-    RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName,
+    RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -24,7 +23,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
+    QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -182,7 +181,7 @@ impl Analyzer<'_, '_> {
 
                                 ty.assert_valid();
 
-                                // TODO(kdy1): Skip this logic if the `this` is binded
+                                // TODO(kdy1): Skip this logic if the `this` is bound
                                 ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, ty);
 
                                 ty.assert_valid();
@@ -339,7 +338,11 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
-                _ => unimplemented!("typeof ({:?})", e),
+                _ => Err(ErrorKind::Unimplemented {
+                    span,
+                    msg: format!("validation of ({:?})", e),
+                }
+                .into()),
             }
         })()?;
 
@@ -578,6 +581,9 @@ pub(crate) struct AccessPropertyOpts {
 
     /// Check if `obj` is undefined or null
     pub check_for_undefined_or_null: bool,
+
+    /// `true` means that the provided [Key] is crated from a computed key.
+    pub is_key_computed: bool,
 }
 
 #[validator]
@@ -849,13 +855,14 @@ impl Analyzer<'_, '_> {
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
+        let mut read_only_flag = false;
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if self.key_matches(span, key, prop, true) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(ErrorKind::ReadOnly { span }.into());
+                                read_only_flag = true;
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -971,6 +978,9 @@ impl Analyzer<'_, '_> {
         }
 
         if matching_elements.len() == 1 {
+            if read_only_flag {
+                return Err(ErrorKind::ReadOnly { span }.into());
+            }
             return Ok(matching_elements.pop());
         }
 
@@ -1141,6 +1151,7 @@ impl Analyzer<'_, '_> {
                             AccessPropertyOpts {
                                 disallow_indexing_array_with_string: true,
                                 disallow_creating_indexed_type_from_ty_els: true,
+                                is_key_computed: true,
                                 ..opts
                             },
                         )
@@ -1162,7 +1173,17 @@ impl Analyzer<'_, '_> {
                 }) => {
                     // As some types has rules about computed properties, we use the result only if
                     // it successes.
-                    if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx, opts) {
+                    if let Ok(ty) = self.access_property(
+                        span,
+                        obj,
+                        &Key::Num(n.clone()),
+                        type_mode,
+                        id_ctx,
+                        AccessPropertyOpts {
+                            is_key_computed: true,
+                            ..opts
+                        },
+                    ) {
                         return Ok(ty);
                     }
                 }
@@ -1762,6 +1783,16 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
+                            if !opts.is_key_computed {
+                                return Ok(Type::EnumVariant(EnumVariant {
+                                    span,
+                                    enum_name: e.id.clone().into(),
+                                    name: None,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }));
+                            }
+
                             return Err(ErrorKind::NoSuchEnumVariant { span, name: sym.clone() }.into());
                         }
 
@@ -3035,6 +3066,10 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     }));
                 }
+
+                if let Key::Computed(key) = prop {
+                    return Ok(*key.ty.clone());
+                }
             }
 
             Type::Rest(rest) => {
@@ -3092,12 +3127,16 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        unimplemented!(
-            "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
-            obj,
-            prop,
-            self.storage.path(self.ctx.module_id)
-        );
+        Err(ErrorKind::Unimplemented {
+            span,
+            msg: format!(
+                "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
+                obj,
+                prop,
+                self.storage.path(self.ctx.module_id)
+            ),
+        }
+        .into())
     }
 
     /// TODO(kdy1): Clarify this.
@@ -3955,6 +3994,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
+        let ctx = self.ctx;
         let mut ty = self
             .with_ctx(prop_access_ctx)
             .access_property(
@@ -4233,12 +4273,12 @@ impl Analyzer<'_, '_> {
             .map(|e| e.validate_with_default(self).map(|v| v.freezed()))
             .collect::<VResult<Vec<_>>>()?;
 
-        let quasis = e.quasis.clone();
-
-        if types.iter().any(|ty| ty.is_str_lit()) && quasis.iter().all(|q| q.cooked.is_some()) {
+        if types.iter().any(|ty| ty.is_str_lit()) && e.quasis.iter().all(|q| q.cooked.is_some()) {
             // We have to concat string literals
             //
             // https://github.com/dudykr/stc/issues/334
+
+            let quasis = e.quasis.clone();
 
             let mut nq = Vec::with_capacity(quasis.len());
             let mut nt = Vec::with_capacity(types.len());
@@ -4256,15 +4296,12 @@ impl Analyzer<'_, '_> {
                 if !cur_str.is_empty() {
                     cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
 
-                    nq.push(RTplElement {
+                    nq.push(TplElem {
                         span: e.span,
-                        node_id: NodeId::invalid(),
-                        raw: cur_str.clone().into(),
-                        cooked: Some(take(&mut cur_str).into()),
-                        tail: false,
+                        value: cur_str.clone().into(),
                     });
                 } else {
-                    nq.push(quasis.next().unwrap());
+                    nq.push(quasis.next().unwrap().into());
                 }
                 nt.push(ty);
             }
@@ -4272,15 +4309,12 @@ impl Analyzer<'_, '_> {
             if !cur_str.is_empty() {
                 cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
 
-                nq.push(RTplElement {
+                nq.push(TplElem {
                     span: e.span,
-                    node_id: NodeId::invalid(),
-                    raw: cur_str.clone().into(),
-                    cooked: Some(take(&mut cur_str).into()),
-                    tail: false,
+                    value: cur_str.clone().into(),
                 });
             } else {
-                nq.push(quasis.next().unwrap());
+                nq.push(quasis.next().unwrap().into());
             }
 
             debug_assert_eq!(nq.len(), nt.len() + 1);
@@ -4298,7 +4332,7 @@ impl Analyzer<'_, '_> {
 
         Ok(Type::Tpl(TplType {
             span: e.span,
-            quasis,
+            quasis: e.quasis.iter().map(TplElem::from).collect(),
             types,
             metadata: TplTypeMetadata {
                 common: CommonTypeMetadata { ..Default::default() },

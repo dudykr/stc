@@ -1,9 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:4:5]
- 4 | let y2: string | null = x;       // Error
-   :                         ^
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:7:3]
+ 7 | x; // (T & U
+   : ^
    `----
 
 Error: 
-  > (T & U)
+  > (string | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:8:3]
+ 8 | let _: string | undefined | number = x; // stirng | undefined
+   :                                      ^
+   `----
+
+Error: 
+  > (string | undefined)

@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
     /// So the length of returned vector can be smaller than length of
     /// `members`.
     ///
-    /// Note that the boey constructor is analyzed.
+    /// Note that the body constructor is analyzed.
     pub(super) fn calc_eval_order_of_class_methods(&mut self, mut remaining_indexes: Vec<usize>, members: &[RClassMember]) -> Vec<usize> {
         let mut keys = Inliner::<Key>::default();
         let mut graph = DiGraphMap::<NodeId<Key>, ()>::default();
@@ -103,7 +103,7 @@ pub enum Key {
     Id(Id),
     Private(Id),
 }
-/// Analzyed information of a class member.
+/// Analyzed information of a class member.
 #[derive(Default)]
 struct AnalysisResult {
     /// `this.#foo` or `this.foo`.

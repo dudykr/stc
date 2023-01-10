@@ -39,7 +39,7 @@ use stc_utils::{
     panic_ctx,
 };
 use stc_visit::{Visit, Visitable};
-use swc_atoms::{js_word, JsWord};
+use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
@@ -319,6 +319,7 @@ impl TypeEq for Type {
             (Type::Optional(l), Type::Optional(r)) => l.type_eq(r),
             (Type::Symbol(l), Type::Symbol(r)) => l.type_eq(r),
             (Type::Intrinsic(l), Type::Intrinsic(r)) => l.type_eq(r),
+            (Type::Tpl(l), Type::Tpl(r)) => l.type_eq(r),
             _ => false,
         }
     }
@@ -2172,8 +2173,7 @@ impl<'a> Iterator for Iter<'a> {
 impl FusedIterator for Iter<'_> {}
 
 impl Type {
-    /// Returns true if `self` is a [Type::Ref] pointing to `name` or a builtin
-    /// interface with `name` as the name.
+    /// Return true if `self` is a [Type::Ref] pointing to `name`.
     pub fn is_builtin_interface(&self, name: &str) -> bool {
         match self.normalize_instance() {
             Type::Ref(ref r) => {
@@ -2605,13 +2605,37 @@ assert_eq_size!(ThisType, [u8; 24]);
 pub struct TplType {
     pub span: Span,
 
-    #[use_eq_ignore_span]
-    pub quasis: Vec<RTplElement>,
+    pub quasis: Vec<TplElem>,
     pub types: Vec<Type>,
 
     pub metadata: TplTypeMetadata,
 
     pub tracker: Tracker<"TplType">,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct TplElem {
+    pub span: Span,
+
+    pub value: Atom,
+}
+
+impl From<&'_ RTplElement> for TplElem {
+    fn from(v: &RTplElement) -> Self {
+        TplElem {
+            span: v.span,
+            value: v.cooked.clone().unwrap(),
+        }
+    }
+}
+
+impl From<RTplElement> for TplElem {
+    fn from(v: RTplElement) -> Self {
+        TplElem {
+            span: v.span,
+            value: v.cooked.unwrap(),
+        }
+    }
 }
 
 #[cfg(target_pointer_width = "64")]

@@ -32,7 +32,6 @@ use crate::{
     util::{should_instantiate_type_ann, RemoveTypes},
     validator,
     validator::ValidateWith,
-    VResult,
 };
 
 #[validator]
@@ -611,17 +610,10 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        let var_ty = (|| -> VResult<_> {
-                            match ty.normalize() {
-                                Type::EnumVariant(ref v) => {
-                                    if let Some(..) = self.find_type(&v.enum_name)? {
-                                        return Ok(Type::EnumVariant(EnumVariant { name: None, ..v.clone() }));
-                                    }
-                                    unreachable!("Failed to found enum named `{}`", v.enum_name)
-                                }
-                                _ => Ok(ty),
-                            }
-                        })()?
+                        let var_ty = match ty.normalize() {
+                            Type::EnumVariant(ref v) => Type::EnumVariant(EnumVariant { name: None, ..v.clone() }),
+                            _ => ty,
+                        }
                         .freezed();
 
                         self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty, None, None)

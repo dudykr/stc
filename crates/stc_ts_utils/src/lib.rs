@@ -121,7 +121,7 @@ impl HasNodeId for RModuleDecl {
     }
 }
 
-/// Finds all idents of variable
+/// Finds all identifiers of variable
 pub struct DestructuringFinder<'a, I: From<RIdent>> {
     pub found: &'a mut Vec<I>,
 }

@@ -9,7 +9,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
-use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
+use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
         if !self.ctx.in_declare && self.rule().no_implicit_any {
             if value.is_none() {
                 self.storage
-                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class proerty"))
+                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class property"))
             }
         }
 
@@ -755,7 +755,13 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
-            RClassMember::StaticBlock(..) => todo!("static block"),
+            RClassMember::StaticBlock(m) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: m.span,
+                    msg: "static blocks".to_string(),
+                }
+                .into())
+            }
 
             RClassMember::Constructor(v) => {
                 if self.is_builtin {
@@ -919,10 +925,10 @@ impl Analyzer<'_, '_> {
                         if has_static && has_instance {
                             let report_error_for_static = !spans_for_error.first().unwrap().1;
 
-                            for (span, is_staitc) in spans_for_error {
-                                if report_error_for_static && is_staitc {
+                            for (span, is_static) in spans_for_error {
+                                if report_error_for_static && is_static {
                                     self.storage.report(ErrorKind::ShouldBeInstanceMethod { span }.into())
-                                } else if !report_error_for_static && !is_staitc {
+                                } else if !report_error_for_static && !is_static {
                                     self.storage.report(ErrorKind::ShouldBeStaticMethod { span }.into())
                                 }
                             }
@@ -1194,7 +1200,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
         if self.is_builtin {
-            // We don't need to validate builtins
+            // We don't need to validate builtin
             return Ok(());
         }
 
@@ -1254,7 +1260,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Implement this.
     fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
-    fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
             return;
         }
@@ -1271,11 +1277,14 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
             tracker: Default::default(),
-        });
+        })
+        .freezed();
 
         for parent in &*class.implements {
             let res: VResult<_> = try {
-                let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
+                let parent = self
+                    .type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?
+                    .freezed();
 
                 self.assign_with_opts(
                     &mut Default::default(),
@@ -1336,7 +1345,7 @@ impl Analyzer<'_, '_> {
         });
 
         if let Some(super_ty) = &class.super_class {
-            self.validate_super_class(super_ty);
+            self.validate_super_class(span, super_ty);
 
             self.report_error_for_wrong_super_class_inheritance(span, &class.body, super_ty)
         }
@@ -1933,7 +1942,7 @@ impl Analyzer<'_, '_> {
                 .report(&mut child.storage);
 
             child.validate_inherited_members_from_super_class(None, &class);
-            child.report_errors_for_wrong_impls_of_class(None, &class);
+            child.report_errors_for_wrong_implementations_of_class(None, &class);
             child.report_errors_for_conflicting_interfaces(&class.implements);
 
             Ok(class)
@@ -2171,7 +2180,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn validate_super_class(&mut self, ty: &Type) {
+    fn validate_super_class(&mut self, span: Span, ty: &Type) {
         if self.is_builtin {
             return;
         }
@@ -2189,7 +2198,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+            let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
             if let Type::Function(..) = ty.normalize() {
                 Err(ErrorKind::NotConstructorType { span: ty.span() })?
@@ -2199,7 +2208,7 @@ impl Analyzer<'_, '_> {
         res.report(&mut self.storage);
     }
 
-    /// TODO(kdy1): Instantate fully
+    /// TODO(kdy1): Instantiate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 

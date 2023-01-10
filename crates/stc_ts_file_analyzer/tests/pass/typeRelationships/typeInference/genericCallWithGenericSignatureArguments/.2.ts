@@ -9,4 +9,4 @@ function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T) {
 enum E { A }
 enum F { A }
 
-var r6 = foo(E.A, (x: number) => E.A, (x: F) => F.A); // number => number 
+var r6 = foo(E.A, (x: number) => E.A, (x: F) => F.A); // E => E 

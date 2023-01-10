@@ -38,7 +38,7 @@ mod unions;
 /// Context used for `=` assignments.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct AssignOpts {
-    /// This field should be overrided by caller.
+    /// This field should be overriden by caller.
     pub span: Span,
     pub right_ident_span: Option<Span>,
 
@@ -48,10 +48,10 @@ pub(crate) struct AssignOpts {
 
     /// # Values
     ///
-    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetaadata] are
+    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetadata] are
     ///   ignored.
     /// - `Some(true)`: extra properties are allowed.
-    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetaadata]
+    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetadata]
     ///
     /// # Usages
     ///
@@ -172,6 +172,14 @@ pub(crate) struct AssignOpts {
     pub is_params_of_method_definition: bool,
 
     pub treat_array_as_interfaces: bool,
+
+    pub do_not_convert_enum_to_string_nor_number: bool,
+
+    pub ignore_enum_variant_name: bool,
+    pub ignore_tuple_length_difference: bool,
+
+    /// Used to prevent recursion
+    pub do_not_normalize_intersection_on_rhs: bool,
 }
 
 #[derive(Default)]
@@ -272,9 +280,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into()),
+                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into()),
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into())
+                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into())
                     }
                     _ => {}
                 }
@@ -317,7 +325,7 @@ impl Analyzer<'_, '_> {
             }
 
             if rhs.is_enum_variant() {
-                // TODO(kdy1): Check if actual value is numberx.
+                // TODO(kdy1): Check if actual value is number.
                 return Ok(());
             }
 
@@ -463,7 +471,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> VResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let _ctx = ctx!("tried to normalize a type for assignment");
@@ -472,7 +480,7 @@ impl Analyzer<'_, '_> {
         if let Type::Instance(Instance { ty, .. }) = ty {
             // Normalize further
             if ty.is_ref_type() {
-                let normalized = self.normalize_for_assign(span, ty)?;
+                let normalized = self.normalize_for_assign(span, ty, opts)?;
 
                 if normalized.is_keyword() {
                     return Ok(normalized);
@@ -480,7 +488,7 @@ impl Analyzer<'_, '_> {
             }
 
             if ty.is_mapped() {
-                let ty = self.normalize_for_assign(span, ty)?;
+                let ty = self.normalize_for_assign(span, ty, opts)?;
 
                 return Ok(ty);
             }
@@ -510,6 +518,11 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 })));
             }
+            Type::EnumVariant(e @ EnumVariant { name: Some(..), .. }) => {
+                if opts.ignore_enum_variant_name {
+                    return Ok(Cow::Owned(Type::EnumVariant(EnumVariant { name: None, ..e.clone() })));
+                }
+            }
             Type::Conditional(..)
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
@@ -521,7 +534,8 @@ impl Analyzer<'_, '_> {
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
-            }) => {
+            })
+            | Type::Tpl(..) => {
                 let ty = self
                     .normalize(
                         Some(span),
@@ -612,9 +626,9 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        let mut to = self.normalize_for_assign(span, to, opts).context("tried to normalize lhs")?;
         to.make_clone_cheap();
-        let mut rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
+        let mut rhs = self.normalize_for_assign(span, rhs, opts).context("tried to normalize rhs")?;
         rhs.make_clone_cheap();
 
         let to = to.normalize();
@@ -658,6 +672,10 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
                     _ => {}
+                }
+
+                if opts.do_not_convert_enum_to_string_nor_number {
+                    fail!()
                 }
 
                 if !e.has_str && !e.has_num {
@@ -746,8 +764,16 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
-
         if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+            fail!()
+        }
+
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if let Type::Param(TypeParam { constraint: Some(ty), .. }) = rhs {
+                if ty.is_never() {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
@@ -867,6 +893,13 @@ impl Analyzer<'_, '_> {
 
         if to.is_str_lit() || to.is_num_lit() || to.is_bool_lit() {
             if rhs.is_type_lit() {
+                fail!()
+            }
+        }
+
+        // never -> never is ok, but T -> never is not.
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if !rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
                 fail!()
             }
         }
@@ -1048,6 +1081,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
                         // validEnumAssignments.ts insists that this is valid.
                         // but if enum isn't has num, not assignable
                         let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
@@ -1122,6 +1159,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
                         let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
 
                         if let Some(items) = items {
@@ -1156,7 +1197,7 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
                 }
 
                 for ty in &li.types {
@@ -1167,6 +1208,7 @@ impl Analyzer<'_, '_> {
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
+                                allow_assignment_to_param_constraint: true,
                                 ..opts
                             },
                         )
@@ -1253,6 +1295,10 @@ impl Analyzer<'_, '_> {
                     // expression below.
                 }
                 Type::EnumVariant(e) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
                     // Single-variant enums seem to be treated like a number.
                     //
                     // See typeArgumentInferenceWithObjectLiteral.ts
@@ -1275,10 +1321,8 @@ impl Analyzer<'_, '_> {
                     if let RTsLit::Str(lhs) = &lhs.lit {
                         if let Type::Tpl(rhs) = rhs {
                             if rhs.types.is_empty() {
-                                if let Some(cooked) = &rhs.quasis[0].cooked {
-                                    if *lhs.value == **cooked {
-                                        return Ok(());
-                                    }
+                                if *lhs.value == *rhs.quasis[0].value {
+                                    return Ok(());
                                 }
                             }
                         }
@@ -1353,11 +1397,21 @@ impl Analyzer<'_, '_> {
             }) => fail!(),
 
             Type::Intersection(Intersection { types, .. }) => {
-                // Filter out `never` types
-                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
-                    return self
-                        .assign_inner(data, to, &new, opts)
-                        .context("tried to assign a normalized intersection type to another type");
+                if !opts.do_not_normalize_intersection_on_rhs {
+                    // Filter out `never` types
+                    if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                        return self
+                            .assign_inner(
+                                data,
+                                to,
+                                &new,
+                                AssignOpts {
+                                    do_not_normalize_intersection_on_rhs: true,
+                                    ..opts
+                                },
+                            )
+                            .context("tried to assign a normalized intersection type to another type");
+                    }
                 }
 
                 let errors = types
@@ -1585,18 +1639,21 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Array(Array { ref elem_type, .. }) => match rhs {
+            Type::Array(Array {
+                elem_type: ref lhs_elem_type,
+                ..
+            }) => match rhs {
                 Type::Array(Array {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    return self.assign_inner(data, elem_type, rhs_elem_type, opts);
+                    return self.assign_inner(data, lhs_elem_type, rhs_elem_type, opts);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = vec![];
                     for el in elems {
-                        errors.extend(self.assign_inner(data, elem_type, &el.ty, opts).err());
+                        errors.extend(self.assign_inner(data, lhs_elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
                         Err(ErrorKind::Errors { span, errors })?;
@@ -1621,7 +1678,7 @@ impl Analyzer<'_, '_> {
                                 }) = m.params[0].ty.normalize()
                                 {
                                     if let Some(type_ann) = &m.type_ann {
-                                        return self.assign_with_opts(data, elem_type, type_ann, opts);
+                                        return self.assign_with_opts(data, lhs_elem_type, type_ann, opts);
                                     }
                                 }
                             }
@@ -1641,7 +1698,7 @@ impl Analyzer<'_, '_> {
 
                             self.assign_with_opts(
                                 data,
-                                elem_type,
+                                lhs_elem_type,
                                 &rhs_el,
                                 AssignOpts {
                                     allow_iterable_on_rhs: false,
@@ -1686,6 +1743,36 @@ impl Analyzer<'_, '_> {
                             })
                         )
                     }) {
+                        return Ok(());
+                    }
+                }
+
+                if rhs.is_unknown() {
+                    //  In TypeScript, type `{}` means "any non-nullish value".
+                    //  So, `unknown` is assignable to `{} | null | undefined`.
+
+                    let empty_member: Vec<TypeElement> = Vec::new();
+                    if lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                                ..
+                            })
+                        )
+                    }) && lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                ..
+                            })
+                        )
+                    }) && lu
+                        .types
+                        .iter()
+                        .any(|ty| matches!(ty.normalize(), Type::TypeLit(TypeLit { members: empty_member, .. })))
+                    {
                         return Ok(());
                     }
                 }
@@ -1748,6 +1835,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_ref_type()
                             || ty.is_query()
                             || ty.is_fn_type()
+                            || ty.is_tpl()
                             || ty.is_intersection()
                     });
 
@@ -1849,6 +1937,10 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(EnumVariant {
                             name: None, ref enum_name, ..
                         }) => {
+                            if opts.do_not_convert_enum_to_string_nor_number {
+                                fail!()
+                            }
+
                             if let Some(types) = self.find_type(enum_name)? {
                                 for ty in types {
                                     if let Type::Enum(ref e) = *ty.normalize() {
@@ -1861,6 +1953,10 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
+                            if opts.do_not_convert_enum_to_string_nor_number {
+                                fail!()
+                            }
+
                             // Allow assigning enum with numeric values to
                             // number.
                             if let Ok(Type::Lit(LitType {
@@ -2004,7 +2100,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssingToThis { span: *span }.into()),
+            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssignToThis { span: *span }.into()),
 
             Type::Interface(Interface {
                 name,
@@ -2083,7 +2179,7 @@ impl Analyzer<'_, '_> {
                 //                 }),
                 //                 opts,
                 //             )
-                //             .context("tried to assign by converting rhs to builtin inferface
+                //             .context("tried to assign by converting rhs to builtin interface
                 // 'String'")     }
                 //     _ => {}
                 // }
@@ -2212,7 +2308,7 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
-                        if elems.len() < rhs_elems.len() {
+                        if !opts.ignore_tuple_length_difference && elems.len() < rhs_elems.len() {
                             if elems.iter().any(|elem| elem.ty.is_rest()) {
                                 // Type::Rest eats many elements
                             } else {
@@ -2220,7 +2316,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if elems.len() > rhs_elems.len() {
+                        if !opts.ignore_tuple_length_difference && elems.len() > rhs_elems.len() {
                             let is_len_fine = elems.iter().skip(rhs_elems.len()).all(|l| {
                                 matches!(
                                     l.ty.normalize_instance(),
@@ -2293,7 +2389,17 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) | Type::Keyword(..) | Type::Class(..) | Type::ClassDef(..)
+
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::ReadOnly,
+                        ..
+                    })
+                    | Type::Lit(..)
+                    | Type::Interface(..)
+                    | Type::TypeLit(..)
+                    | Type::Keyword(..)
+                    | Type::Class(..)
+                    | Type::ClassDef(..)
                         if !opts.allow_iterable_on_rhs =>
                     {
                         fail!()
@@ -2425,7 +2531,11 @@ impl Analyzer<'_, '_> {
         }
 
         match (to, rhs) {
-            (Type::Tpl(l), r) => return self.assign_to_tpl(data, l, r, opts).context("tried to assign to a template type"),
+            (Type::Tpl(l), r) => {
+                return self
+                    .assign_to_tpl(data, l, r, opts)
+                    .with_context(|| format!("tried to assign to a template type: {}", force_dump_type_as_string(to)))
+            }
             (
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -2695,12 +2805,12 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
-        let convariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+        let covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
         let contravariant =
             self.is_contravariant(&ty.check_type, &ty.true_type)? || self.is_contravariant(&ty.check_type, &ty.false_type)?;
 
-        match (convariant, contravariant) {
+        match (covariant, contravariant) {
             (true, true) | (false, false) => Ok(Variance::Invariant),
             (true, false) => Ok(Variance::Covariant),
             (false, true) => Ok(Variance::Contravariant),

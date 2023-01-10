@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt,
 };
-use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
     TypeElement, Union,
@@ -213,7 +213,8 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         Ok(Type::new_union(span, types))
-                    }));
+                    })
+                    .fixed());
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -242,17 +243,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if key_types.is_empty() {
-                        return Ok(Type::never(span, Default::default()));
-                    }
-
-                    return Ok(Type::Union(Union {
-                        span,
-                        types: key_types,
-
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
+                    return Ok(Type::new_union(span, key_types));
                 }
 
                 Type::Tuple(ty) => {

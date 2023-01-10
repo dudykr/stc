@@ -157,10 +157,10 @@ impl Resolve for NodeResolver {
             let path = base_dir.join(target);
             return self
                 .resolve_as_file(&path)
-                .with_context(|| format!("failed to resolve `{}` as a file dependancy from `{}`", target, base.display()))
+                .with_context(|| format!("failed to resolve `{}` as a file dependency from `{}`", target, base.display()))
                 .or_else(|_| {
                     self.resolve_as_directory(&path)
-                        .with_context(|| format!("failed to resolve `{}` as a directory dependancy from `{}`", target, base.display()))
+                        .with_context(|| format!("failed to resolve `{}` as a directory dependency from `{}`", target, base.display()))
                 })
                 .and_then(|p| self.wrap(p));
         }

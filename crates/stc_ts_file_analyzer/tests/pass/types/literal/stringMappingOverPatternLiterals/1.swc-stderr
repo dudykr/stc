@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:8:5]
+ 8 | x1 = x2;
+   :      ^^
+   `----
+
+Error: 
+  > `AA${intrinsic}${intrinsic}${intrinsic}`
+
+  x Type
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:8:5]
+ 8 | x1 = x2;
+   : ^^^^^^^
+   `----
+
+Error: 
+  > `AA${intrinsic}${intrinsic}${intrinsic}`

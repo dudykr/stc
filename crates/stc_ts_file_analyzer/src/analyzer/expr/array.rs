@@ -18,7 +18,7 @@ use stc_utils::{
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{EsVersion, TsKeywordTypeKind};
 use tracing::debug;
 
 use crate::{
@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
     pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
-        debug!("Caculating element type of an iterator ({})", dump_type_as_string(&iterator));
+        debug!("Calculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
             return Ok(iterator);
@@ -513,7 +513,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
-            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
+            .convert_err(|err| ErrorKind::NextOfIteratorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if let Some(u) = elem_ty.as_union_type_mut() {
@@ -869,7 +869,13 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             )
             .convert_err(|err| match err {
-                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span },
+                ErrorKind::NoCallablePropertyWithName { span, .. } => {
+                    if self.env.target() <= EsVersion::Es2015 {
+                        ErrorKind::MustBeArray { span }
+                    } else {
+                        ErrorKind::NoMethodNamedNext { span }
+                    }
+                }
                 _ => err,
             })
             .context("tried calling `next()` to get element type of iterator")?;

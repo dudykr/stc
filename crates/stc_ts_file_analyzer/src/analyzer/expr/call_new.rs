@@ -2250,6 +2250,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [None] if nothing matched.
+    #[cfg_attr(not(debug_assertions), tracing::instrument(skip_all))]
     fn select_and_invoke(
         &mut self,
         span: Span,
@@ -2738,6 +2739,12 @@ impl Analyzer<'_, '_> {
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
+            if ty.is_conditional() {
+                if let Ok(new) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
+                    ty = new.into_owned();
+                }
+            }
+
             print_type("Return, simplified", &ty);
 
             ty = self.simplify(ty);
@@ -3107,6 +3114,10 @@ impl Analyzer<'_, '_> {
     /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
     /// I (kdy1) don't know why.
     fn add_call_facts(&mut self, params: &[FnParam], args: &[RExprOrSpread], ret_ty: &mut Type) {
+        if !self.ctx.in_cond {
+            return;
+        }
+
         if let Type::Predicate(p) = ret_ty.normalize() {
             let ty = match &p.ty {
                 Some(v) => v.normalize(),
@@ -3192,10 +3203,10 @@ impl Analyzer<'_, '_> {
 
                 let mut new_types = vec![];
 
-                let mut upcasted = false;
+                let mut did_upcast = false;
                 for ty in orig_ty.iter_union() {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
-                        upcasted = true;
+                        did_upcast = true;
                         new_types.push(new_ty.clone().into_owned());
                     } else if let Some(true) = self.extends(span, ty, &new_ty, Default::default()) {
                         new_types.push(ty.clone());
@@ -3203,13 +3214,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO(kdy1): Use super class instead of
-                if !upcasted && new_types.is_empty() {
+                if !did_upcast && new_types.is_empty() {
                     new_types.push(new_ty.clone().into_owned());
                 }
 
                 new_types.dedup_type();
                 let mut new_ty = Type::new_union_without_dedup(span, new_types);
-                if upcasted {
+                if did_upcast {
                     new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
                 return Ok(new_ty);
@@ -3270,6 +3281,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
         if arg.type_eq(param) {
             return true;
@@ -3294,6 +3306,7 @@ impl Analyzer<'_, '_> {
     /// `anyAssignabilityInInheritance.ts` says `any, not a subtype of number so
     /// it skips that overload, is a subtype of itself so it picks second (if
     /// truly ambiguous it would pick first overload)`
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn check_call_args(
         &mut self,
         span: Span,
@@ -3525,36 +3538,24 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         ..self.analyzer.ctx
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
-                    let obj = a
-                        .expand(
+
+                    if let Some(actual_ty) = a
+                        .access_property(
                             *span,
-                            *obj_ty.clone(),
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                ..Default::default()
+                            obj_ty,
+                            &Key::Normal {
+                                span: lit_span,
+                                sym: value.clone(),
                             },
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                            Default::default(),
                         )
-                        .report(&mut a.storage);
-                    if let Some(obj) = &obj {
-                        if let Some(actual_ty) = a
-                            .access_property(
-                                *span,
-                                obj,
-                                &Key::Normal {
-                                    span: lit_span,
-                                    sym: value.clone(),
-                                },
-                                TypeOfMode::RValue,
-                                IdCtx::Type,
-                                Default::default(),
-                            )
-                            .context("tried to access property to simplify return type")
-                            .report(&mut a.storage)
-                        {
-                            if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
-                                types.push(actual_ty);
-                            }
+                        .context("tried to access property to simplify return type")
+                        .report(&mut a.storage)
+                    {
+                        if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
+                            types.push(actual_ty);
                         }
                     }
                 }
@@ -3575,7 +3576,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 prevent_generalize(ty);
             }
 
-            // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
+            // Boxed<A | B | C> => Boxed<A> | Boxed<B> | Boxed<C>
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(i),
