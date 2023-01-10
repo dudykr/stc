@@ -1,6 +1,6 @@
 use stc_ts_ast_rnode::{RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject};
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{Type, TypeParamInstantiation};
+use stc_ts_types::{Id, Type, TypeParamInstantiation};
 
 use super::TypeOfMode;
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
@@ -8,6 +8,16 @@ use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 impl Analyzer<'_, '_> {
     fn get_jsx_namespace(&mut self) -> Option<Type> {
         let top_level_ctxt = self.storage.top_level_ctxt(self.ctx.module_id);
+
+        let types = self.find_type(&Id::new("JSX".into(), top_level_ctxt)).ok().flatten()?;
+
+        for ty in types {
+            if ty.is_namespace() {
+                return Some(ty.into_owned());
+            }
+        }
+
+        None
     }
 }
 
