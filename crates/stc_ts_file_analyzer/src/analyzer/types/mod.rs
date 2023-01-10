@@ -932,7 +932,7 @@ impl Analyzer<'_, '_> {
         }
 
         let is_symbol = normalized_types.iter().any(|ty| ty.is_symbol());
-        let is_str = normalized_types.iter().any(|ty| ty.is_str() || ty.is_str_lit());
+        let is_str = normalized_types.iter().any(|ty| ty.is_str());
         let is_num = normalized_types.iter().any(|ty| ty.is_num());
         let is_bool = normalized_types.iter().any(|ty| ty.is_bool());
         let is_null = normalized_types.iter().any(|ty| ty.is_null());
