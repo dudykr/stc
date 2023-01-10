@@ -1070,14 +1070,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 temp_vec.dedup_type();
-                Type::Intersection(Intersection {
-                    span,
-                    types: temp_vec,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })
+                Type::new_intersection(span, temp_vec)
             }
-            TypeOfMode::RValue => Type::union(res_vec),
+            TypeOfMode::RValue => Type::new_union(span, res_vec),
         };
         Ok(Some(result.freezed()))
     }
@@ -2485,11 +2480,11 @@ impl Analyzer<'_, '_> {
                         },
                     ) {
                         Ok(ty) => {
-                            if let Type::Union(ty::Union { mut types, .. }) = ty {
-                                tys.append(&mut types);
-                                continue;
+                            if ty.is_union_type() {
+                                tys.extend(ty.expect_union_type().types);
+                            } else {
+                                tys.push(ty);
                             }
-                            tys.push(ty)
                         }
                         Err(err) => errors.push(err),
                     }
