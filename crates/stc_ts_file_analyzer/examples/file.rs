@@ -42,7 +42,8 @@ fn profile_file(path: &Path) {
 
             parser.parse_module().unwrap()
         };
-        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), Mark::new(), true));
+        let top_level_mark = Mark::new();
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         // Don't print logs from builtin modules.
@@ -67,11 +68,9 @@ fn profile_file(path: &Path) {
             return Ok(());
         }
 
-        GLOBALS.set(env.shared().swc_globals(), || {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         Ok(())
     })
