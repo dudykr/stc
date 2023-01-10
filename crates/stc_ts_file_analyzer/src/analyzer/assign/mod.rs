@@ -757,6 +757,23 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if rhs.is_any() {
+            if to.normalize().is_never() {
+                fail!()
+            }
+            return Ok(());
+        }
+
+        if opts.allow_unknown_type && rhs.is_unknown() {
+            return Ok(());
+        }
+        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(());
+        }
+        if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+            fail!()
+        }
+
         if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
             return res;
         }
@@ -764,8 +781,15 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
-
-        if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+        if to.is_symbol() {
+            fail!()
+        }
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if let Type::Param(TypeParam { constraint: Some(ty), .. }) = rhs {
+                if ty.is_never() {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
@@ -1189,7 +1213,7 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
                 }
 
                 for ty in &li.types {
@@ -2517,8 +2541,12 @@ impl Analyzer<'_, '_> {
 
             _ => {}
         }
-
-        if to.is_symbol() || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+        if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            if let Some(flag) = opts.allow_assignment_of_void {
+                if flag {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
