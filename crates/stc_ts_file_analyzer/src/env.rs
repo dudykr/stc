@@ -296,13 +296,13 @@ pub trait EnvFactory {
 
         let cell = CACHE.entry(libs.clone()).or_default().clone();
 
-        let builtin = swc_common::GLOBALS.set(STABLE_ENV.swc_globals(), || {
+        let builtin = {
             let builtin = cell.get_or_init(|| {
                 let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
                 Arc::new(builtin)
             });
             (*builtin).clone()
-        });
+        };
 
         Self::new(STABLE_ENV.clone(), rule, target, module, builtin)
     }

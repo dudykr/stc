@@ -19,7 +19,7 @@ use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, early_error, panic_ctx};
 use swc_atoms::JsWord;
-use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
+use swc_common::{errors::Handler, FileName, SourceMap, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
@@ -318,9 +318,10 @@ impl Checker {
             let mut storage = Single {
                 parent: None,
                 id: module_id,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                 path: path.clone(),
-                info: Default::default(),
                 is_dts,
+                info: Default::default(),
             };
             let mut mutations;
             {

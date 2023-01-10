@@ -17,7 +17,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;
-use swc_common::{input::SourceFileInput, FileName, Mark, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, Mark, SyntaxContext, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
@@ -53,6 +53,7 @@ fn profile_file(path: &Path) {
         let mut storage = Single {
             parent: None,
             id: ModuleId::builtin(),
+            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
             path: Arc::new(FileName::Real(PathBuf::from(path))),
             is_dts: false,
             info: Default::default(),

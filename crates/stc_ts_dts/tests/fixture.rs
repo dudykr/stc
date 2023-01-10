@@ -87,9 +87,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut storage = Single {
             parent: None,
             id: module_id,
+            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
             path,
-            info: Default::default(),
             is_dts: false,
+            info: Default::default(),
         };
 
         let mut node_id_gen = NodeIdGenerator::default();

@@ -762,65 +762,63 @@ impl Analyzer<'_, '_> {
         self.ctx.in_module = true;
         let is_dts = self.ctx.is_dts;
 
-        let globals = self.env.shared().swc_globals().clone();
+        debug_assert!(GLOBALS.is_set(), "Analyzer requires swc_common::GLOBALS");
 
-        GLOBALS.set(&globals, || {
-            let ctxt = self.storage.module_id(0);
-            let path = self.storage.path(ctxt);
+        let ctxt = self.storage.module_id(0);
+        let path = self.storage.path(ctxt);
 
-            let _panic = panic_ctx!(format!("Validate({}, module_id = {:?})", path, ctxt));
+        let _panic = panic_ctx!(format!("Validate({}, module_id = {:?})", path, ctxt));
 
-            let items_ref = m.body.iter().collect::<Vec<_>>();
-            self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
+        let items_ref = m.body.iter().collect::<Vec<_>>();
+        self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
 
-            self.fill_known_type_names(&m.body);
+        self.fill_known_type_names(&m.body);
 
-            let mut has_normal_export = false;
-            m.body.iter().for_each(|item| match item {
-                RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
-                    if self.export_equals_span.is_dummy() {
-                        self.export_equals_span = decl.span;
-                    }
-                    if !is_dts && has_normal_export {
-                        self.storage
-                            .report(ErrorKind::ExportEqualsMixedWithOtherExports { span: decl.span }.into());
-                    }
-
-                    //
+        let mut has_normal_export = false;
+        m.body.iter().for_each(|item| match item {
+            RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
+                if self.export_equals_span.is_dummy() {
+                    self.export_equals_span = decl.span;
                 }
-                RModuleItem::ModuleDecl(item) => match item {
-                    RModuleDecl::ExportDecl(..)
-                    | RModuleDecl::ExportAll(..)
-                    | RModuleDecl::ExportDefaultDecl(..)
-                    | RModuleDecl::ExportDefaultExpr(..)
-                    | RModuleDecl::TsNamespaceExport(..) => {
-                        has_normal_export = true;
-                        if !is_dts && !self.export_equals_span.is_dummy() {
-                            self.storage.report(
-                                ErrorKind::ExportEqualsMixedWithOtherExports {
-                                    span: self.export_equals_span,
-                                }
-                                .into(),
-                            );
-                        }
+                if !is_dts && has_normal_export {
+                    self.storage
+                        .report(ErrorKind::ExportEqualsMixedWithOtherExports { span: decl.span }.into());
+                }
+
+                //
+            }
+            RModuleItem::ModuleDecl(item) => match item {
+                RModuleDecl::ExportDecl(..)
+                | RModuleDecl::ExportAll(..)
+                | RModuleDecl::ExportDefaultDecl(..)
+                | RModuleDecl::ExportDefaultExpr(..)
+                | RModuleDecl::TsNamespaceExport(..) => {
+                    has_normal_export = true;
+                    if !is_dts && !self.export_equals_span.is_dummy() {
+                        self.storage.report(
+                            ErrorKind::ExportEqualsMixedWithOtherExports {
+                                span: self.export_equals_span,
+                            }
+                            .into(),
+                        );
                     }
-                    _ => {}
-                },
+                }
                 _ => {}
-            });
+            },
+            _ => {}
+        });
 
-            if !self.ctx.in_declare {
-                self.report_error_for_wrong_top_level_ambient_fns(&m.body);
-            }
+        if !self.ctx.in_declare {
+            self.report_error_for_wrong_top_level_ambient_fns(&m.body);
+        }
 
-            if self.is_builtin {
-                m.body.visit_children_with(self);
-            } else {
-                self.validate_stmts_and_collect(&items_ref);
-            }
+        if self.is_builtin {
+            m.body.visit_children_with(self);
+        } else {
+            self.validate_stmts_and_collect(&items_ref);
+        }
 
-            Ok(())
-        })
+        Ok(())
     }
 }
 
