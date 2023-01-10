@@ -1931,7 +1931,7 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
                                     return Ok(Type::any(span, Default::default()));
                                 }
-    
+
                                 if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                     if class_prop.key == *declaring.sym() {
                                         return Err(ErrorKind::ReferencedInInit { span }.into());
