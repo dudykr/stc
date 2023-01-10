@@ -171,13 +171,6 @@ impl Fold<TypeLit> for LitGeneralizer {
         node.fold_children_with(self)
     }
 }
-
-impl Fold<Conditional> for LitGeneralizer {
-    fn fold(&mut self, n: Conditional) -> Conditional {
-        n
-    }
-}
-
 struct LitChecker {
     found: bool,
 }

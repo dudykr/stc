@@ -10,6 +10,7 @@ Error:
   |     type: ListWidget["type"];
   |     minimum_count: ListWidget["minimum_count"];
   |     maximum_count: ListWidget["maximum_count"];
+  |     collapsable: ListWidget["collapsable"];
   |     each: ListWidget["each"];
   | }
 

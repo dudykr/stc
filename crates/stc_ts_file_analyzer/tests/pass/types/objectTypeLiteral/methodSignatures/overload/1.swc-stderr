@@ -22,7 +22,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | ((x: number) => number & (s: string) => string))
+  > (undefined | (x: number) => number | (s: string) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
@@ -47,10 +47,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     (x: number) : number;
   |     (s: string) : string;
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
@@ -59,10 +59,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     (x: number) : number;
   |     (s: string) : string;
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
@@ -87,10 +87,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     (x: number) : number;
   |     (s: string) : string;
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
@@ -149,7 +149,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | (<T>(x: T) => number & <T>(s: T) => string))
+  > (undefined | <T>(x: T) => number | <T>(s: T) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
@@ -174,10 +174,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     <T>(x: T) : number;
   |     <T>(s: T) : string;
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
@@ -186,10 +186,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     <T>(x: T) : number;
   |     <T>(s: T) : string;
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
@@ -214,10 +214,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > {
   |     <T>(x: T) : number;
   |     <T>(s: T) : string;
-  | })
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
