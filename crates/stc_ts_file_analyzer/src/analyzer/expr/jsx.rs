@@ -5,6 +5,12 @@ use stc_ts_types::{Type, TypeParamInstantiation};
 use super::TypeOfMode;
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 
+impl Analyzer<'_, '_> {
+    fn get_jsx_namespace(&mut self) -> Option<Type> {
+        let top_level_ctxt = self.storage.top_level_ctxt(self.ctx.module_id);
+    }
+}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(
@@ -29,8 +35,6 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let children = e.children.validate_with(self)?;
-
-        Ok(())
     }
 }
 
@@ -49,6 +53,7 @@ impl Analyzer<'_, '_> {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
                     ident.validate_with_default(self)
                 } else {
+                    self.get_jsx_namespace()
                 }
             }
             RJSXElementName::JSXMemberExpr(e) => e.validate_with(self),
