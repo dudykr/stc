@@ -1196,8 +1196,18 @@ impl Analyzer<'_, '_> {
                 let is_bool = li.types.iter().any(|ty| ty.is_bool());
 
                 // LHS is never.
-                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 && !rhs.is_never() {
                     fail!()
+                }
+
+                // This is required to handle intersections of function-like types.
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
+                    if self
+                        .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
 
                 for ty in &li.types {
@@ -1413,7 +1423,11 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign a normalized intersection type to another type");
                     }
                 }
-
+                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                    if new.is_never() && to.is_never() {
+                        return Ok(());
+                    }
+                }
                 let errors = types
                     .iter()
                     .map(|rhs| {

@@ -99,7 +99,7 @@ jobs:
 
       - name: Run cargo test
         run: |
-          cargo test --all --features tracing/max_level_off
+          RUST_MIN_STACK=16777216 cargo test --all --features tracing/max_level_off
 
   # check-spelling:
   #   name: Cargo test

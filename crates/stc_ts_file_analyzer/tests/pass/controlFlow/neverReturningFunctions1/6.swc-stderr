@@ -1,0 +1,326 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+ 46 | const Component = registerComponent("test-component", {
+    :                   ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends object>(name: string, component: ComponentDefinition<T>) => ComponentConstructor<T>
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:49:7]
+ 49 | default: [],
+    :          ^^
+    `----
+
+Error: 
+  > any[]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:51:9]
+ 51 | return [true];
+    :        ^^^^^^
+    `----
+
+Error: 
+  > [true]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:48:5]
+ 48 | ,-> myProperty: {
+ 49 | |         default: [],
+ 50 | |         parse() {
+ 51 | |           return [true];
+ 52 | |         },
+ 53 | `->     },
+    `----
+
+Error: 
+  > {
+  |     default: any[];
+  |     parse(): [true];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:54:5]
+ 54 | string: { type: "string" },
+    :         ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     type: "string";
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:47:3]
+ 47 | ,-> schema: {
+ 48 | |       myProperty: {
+ 49 | |         default: [],
+ 50 | |         parse() {
+ 51 | |           return [true];
+ 52 | |         },
+ 53 | |       },
+ 54 | |       string: { type: "string" },
+ 55 | |       num: 0,
+ 56 | `->   },
+    `----
+
+Error: 
+  > {
+  |     myProperty: {
+  |         default: any[];
+  |         parse(): [true];
+  |     };
+  |     string: {
+  |         type: "string";
+  |     };
+  |     num: 0;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
+ 58 | this.data.num = 0;
+    : ^^^^
+    `----
+
+Error: 
+  > this
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
+ 58 | this.data.num = 0;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
+ 58 | this.data.num = 0;
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
+ 58 | this.data.num = 0;
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 0
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:59:5]
+ 59 | this.el.setAttribute("custom-attribute", "custom-value");
+    : ^^^^
+    `----
+
+Error: 
+  > this
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:59:5]
+ 59 | this.el.setAttribute("custom-attribute", "custom-value");
+    : ^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:59:5]
+ 59 | this.el.setAttribute("custom-attribute", "custom-value");
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :        ^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :            ^^^^
+    `----
+
+Error: 
+  > this
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :            ^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :            ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :        ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :                            ^^^^
+    `----
+
+Error: 
+  > this
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :                            ^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :                            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :                            ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
+ 69 | return f * this.data.num * this.system!.data.counter;
+    :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+ 46 | ,-> const Component = registerComponent("test-component", {
+ 47 | |     schema: {
+ 48 | |       myProperty: {
+ 49 | |         default: [],
+ 50 | |         parse() {
+ 51 | |           return [true];
+ 52 | |         },
+ 53 | |       },
+ 54 | |       string: { type: "string" },
+ 55 | |       num: 0,
+ 56 | |     },
+ 57 | |     init() {
+ 58 | |       this.data.num = 0;
+ 59 | |       this.el.setAttribute("custom-attribute", "custom-value");
+ 60 | |     },
+ 61 | |     update() {},
+ 62 | |     tick() {},
+ 63 | |     remove() {},
+ 64 | |     pause() {},
+ 65 | |     play() {},
+ 66 | |   
+ 67 | |     multiply(f: number) {
+ 68 | |       // Reference to system because both were registered with the same name.
+ 69 | |       return f * this.data.num * this.system!.data.counter;
+ 70 | |     },
+ 71 | `-> });
+    `----
+
+Error: 
+  > {
+  |     schema: {
+  |         myProperty: {
+  |             default: any[];
+  |             parse(): [true];
+  |         };
+  |         string: {
+  |             type: "string";
+  |         };
+  |         num: 0;
+  |     };
+  |     init(): void;
+  |     update(): void;
+  |     tick(): void;
+  |     remove(): void;
+  |     pause(): void;
+  |     play(): void;
+  |     multiply(f: number): number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+ 46 | ,-> const Component = registerComponent("test-component", {
+ 47 | |     schema: {
+ 48 | |       myProperty: {
+ 49 | |         default: [],
+ 50 | |         parse() {
+ 51 | |           return [true];
+ 52 | |         },
+ 53 | |       },
+ 54 | |       string: { type: "string" },
+ 55 | |       num: 0,
+ 56 | |     },
+ 57 | |     init() {
+ 58 | |       this.data.num = 0;
+ 59 | |       this.el.setAttribute("custom-attribute", "custom-value");
+ 60 | |     },
+ 61 | |     update() {},
+ 62 | |     tick() {},
+ 63 | |     remove() {},
+ 64 | |     pause() {},
+ 65 | |     play() {},
+ 66 | |   
+ 67 | |     multiply(f: number) {
+ 68 | |       // Reference to system because both were registered with the same name.
+ 69 | |       return f * this.data.num * this.system!.data.counter;
+ 70 | |     },
+ 71 | `-> });
+    `----
+
+Error: 
+  > ComponentConstructor<object>

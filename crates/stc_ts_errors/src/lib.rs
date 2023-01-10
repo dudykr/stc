@@ -2051,6 +2051,10 @@ impl ErrorKind {
         )
     }
 
+    pub fn is_readonly_error(&self) -> bool {
+        self.code() == 2540
+    }
+
     pub fn is_assign_failure(&self) -> bool {
         self.code() == 2322
     }
