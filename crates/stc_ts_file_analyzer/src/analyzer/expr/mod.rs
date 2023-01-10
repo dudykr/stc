@@ -729,11 +729,7 @@ impl Analyzer<'_, '_> {
 
         match (declared, cur) {
             (Key::Private(d), Key::Private(cur)) => {
-                if *d.id.sym() == *cur.id.sym() {
-                    return true;
-                } else {
-                    return false;
-                }
+                return *d.id.sym() == *cur.id.sym();
             }
             (Key::Private(..), _) | (_, Key::Private(..)) => return false,
             _ => {}
