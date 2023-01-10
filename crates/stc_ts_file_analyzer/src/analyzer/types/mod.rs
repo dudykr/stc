@@ -875,7 +875,6 @@ impl Analyzer<'_, '_> {
                 })))
             }};
         }
-
         let mut normalized_types = vec![];
         // set normalize all
         for el in types.iter() {
@@ -917,7 +916,6 @@ impl Analyzer<'_, '_> {
         if normalized_types.iter().any(|ty| ty.is_never()) {
             return never!();
         }
-
         // has any, return any
         if normalized_types.iter().any(|ty| ty.is_any()) {
             return Ok(Some(Type::Keyword(KeywordType {
@@ -1116,6 +1114,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
+
                     property_types.push(e.clone());
                 }
             }
@@ -1235,7 +1234,6 @@ impl Analyzer<'_, '_> {
                     Type::new_union(span, new_types).freezed()
                 }
             }
-
             if let Type::Union(Union { types: u_types, .. }) = acc_type.normalize() {
                 if normalized_len < u_types.len() {
                     return Ok(Some(
@@ -2488,6 +2486,7 @@ impl Analyzer<'_, '_> {
         self.data.bindings = collect_bindings(node);
     }
 }
+
 pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     match t {
         RExpr::Member(t) => left_of_expr(&t.obj),

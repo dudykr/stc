@@ -955,10 +955,7 @@ impl Analyzer<'_, '_> {
             if read_only_flag {
                 return Err(ErrorKind::ReadOnly { span }.into());
             }
-            if let Some(ty) = matching_elements.pop() {
-                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
-            }
-            unreachable!();
+            return Ok(matching_elements.pop());
         }
 
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
@@ -1060,18 +1057,14 @@ impl Analyzer<'_, '_> {
         }
         res_vec.dedup_type();
         if res_vec.len() == 1 {
-            if let Some(ty) = res_vec.pop() {
-                return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
-            }
+            return Ok(res_vec.pop());
         }
         let result = match type_mode {
             TypeOfMode::LValue => {
                 let mut temp_vec = vec![];
                 for elem in res_vec {
                     if let Type::Intersection(ty) = elem.normalize() {
-                        for item in ty.types.iter() {
-                            temp_vec.push(item.clone());
-                        }
+                        temp_vec.extend(ty.types.iter().cloned());
                     } else {
                         temp_vec.push(elem);
                     }
@@ -1086,11 +1079,7 @@ impl Analyzer<'_, '_> {
             }
             TypeOfMode::RValue => Type::union(res_vec),
         };
-
-        Ok(Some(
-            self.normalize(Some(span), Cow::Owned(result.freezed()), Default::default())?
-                .into_owned(),
-        ))
+        Ok(Some(result.freezed()))
     }
 
     pub(super) fn access_property(

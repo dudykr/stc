@@ -10,7 +10,7 @@ export interface ListWidget {
   minimum_count: number;
   maximum_count: number;
   collapsable?: boolean; //default to false, means all expanded
-  each: Child<ListWidget>;
+  each: Child<ListWidget>; // error
 }
 
 type ListChild = Child<ListWidget>;
