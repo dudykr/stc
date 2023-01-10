@@ -1074,7 +1074,22 @@ impl Analyzer<'_, '_> {
 
         matching_elements.dedup_type();
 
-        Ok(Some(Type::union(matching_elements).freezed()))
+        let mut res_vec = vec![];
+
+        for el in matching_elements.into_iter() {
+            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
+                res_vec.push(res.into_owned());
+            }
+        }
+        res_vec.dedup_type();
+        if res_vec.len() == 1 {
+            return Ok(res_vec.pop());
+        }
+        let result = match type_mode {
+            TypeOfMode::LValue => Type::new_intersection(span, res_vec),
+            TypeOfMode::RValue => Type::new_union(span, res_vec),
+        };
+        Ok(Some(result.freezed()))
     }
 
     pub(super) fn access_property(
