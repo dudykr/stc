@@ -2507,8 +2507,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_mode == TypeOfMode::LValue {
-                    if errors.iter().any(|err| err.is_var_not_found()) {
-                        return Err(ErrorKind::UnionError { span, errors }.into());
+                    if errors.iter().any(|err| err.is_property_not_found()) {
+                        return Err(ErrorKind::NoSuchProperty {
+                            span,
+                            obj: Some(box obj.clone()),
+                            prop: Some(box prop.clone()),
+                        }
+                        .into());
                     }
                     if errors.iter().any(|err| err.is_readonly_error()) {
                         return Err(ErrorKind::ReadOnly { span }.into());
