@@ -24,7 +24,7 @@ use stc_ts_storage::{ErrorStore, Single};
 use stc_ts_testing::tsc::TscError;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, GLOBALS};
+use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
@@ -85,14 +85,13 @@ fn validate(input: &Path) -> Vec<StcError> {
 
                 parser.parse_module().unwrap()
             };
-            module = GLOBALS.set(env.shared().swc_globals(), || {
-                module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
-            });
+            module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
             let module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
                 parent: None,
                 id: module_id,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                 path,
                 is_dts: false,
                 info: Default::default(),
@@ -102,17 +101,15 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 
             let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
 
-            GLOBALS.set(env.shared().swc_globals(), || {
-                for e in errors {
-                    e.emit(&handler);
-                }
-            });
+            for e in errors {
+                e.emit(&handler);
+            }
 
             if false {
                 return Ok(());
@@ -174,24 +171,23 @@ fn errors(input: PathBuf) {
 
             parser.parse_module().unwrap()
         };
-        module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
-        });
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let mut storage = Single {
             parent: None,
             id: module_id,
+            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
             path,
-            info: Default::default(),
             is_dts: false,
+            info: Default::default(),
         };
 
         {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
@@ -201,11 +197,9 @@ fn errors(input: PathBuf) {
             panic!("Should emit at least one error")
         }
 
-        GLOBALS.set(env.shared().swc_globals(), || {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         if false {
             return Ok(());
@@ -242,35 +236,32 @@ fn pass_only(input: PathBuf) {
 
             parser.parse_module().unwrap()
         };
-        module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
-        });
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let mut storage = Single {
             parent: None,
             id: module_id,
+            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
             path,
-            info: Default::default(),
             is_dts: false,
+            info: Default::default(),
         };
 
         {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
         let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
         let ok = errors.is_empty();
 
-        GLOBALS.set(env.shared().swc_globals(), || {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         if !ok {
             return Err(());
@@ -396,9 +387,10 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let mut storage = Single {
                 parent: None,
                 id: module_id,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                 path,
-                info: Default::default(),
                 is_dts: false,
+                info: Default::default(),
             };
 
             let mut node_id_gen = NodeIdGenerator::default();
@@ -416,34 +408,30 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             );
             let mut parser = Parser::new_from(lexer);
             let module = parser.parse_module().unwrap();
-            let module = GLOBALS.set(stable_env.swc_globals(), || {
-                module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
-            });
+            let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
-                GLOBALS.set(stable_env.swc_globals(), || {
-                    let mut analyzer = Analyzer::root(
-                        env,
-                        cm.clone(),
-                        Default::default(),
-                        box &mut storage,
-                        &NoopLoader,
-                        if for_error {
-                            None
-                        } else {
-                            Some(Debugger {
-                                cm: cm.clone(),
-                                handler: handler.clone(),
-                            })
-                        },
-                    );
+                let mut analyzer = Analyzer::root(
+                    env,
+                    cm.clone(),
+                    Default::default(),
+                    box &mut storage,
+                    &NoopLoader,
+                    if for_error {
+                        None
+                    } else {
+                        Some(Debugger {
+                            cm,
+                            handler: handler.clone(),
+                        })
+                    },
+                );
 
-                    let log_sub = logger(Level::DEBUG);
+                let log_sub = logger(Level::DEBUG);
 
-                    let _guard = tracing::subscriber::set_default(log_sub);
+                let _guard = tracing::subscriber::set_default(log_sub);
 
-                    module.validate_with(&mut analyzer).unwrap();
-                });
+                module.validate_with(&mut analyzer).unwrap();
             }
 
             if for_error {

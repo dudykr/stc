@@ -8,7 +8,7 @@ use stc_ts_errors::{Error, ErrorKind, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
-use swc_common::{iter::IdentifyLast, FileName, Span, TypeEq, DUMMY_SP};
+use swc_common::{iter::IdentifyLast, FileName, Span, SyntaxContext, TypeEq, DUMMY_SP};
 
 #[derive(Debug, Default)]
 pub struct Info {
@@ -51,6 +51,8 @@ pub trait Mode: TypeStore + ErrorStore {
     /// Returns the id of the module where statement #`stmt_index` came from.
     fn module_id(&self, stmt_index: usize) -> ModuleId;
 
+    fn top_level_ctxt(&self, stmt_index: usize) -> SyntaxContext;
+
     fn is_dts(&self) -> bool;
 
     fn path(&self, id: ModuleId) -> Arc<FileName>;
@@ -68,6 +70,7 @@ pub trait Mode: TypeStore + ErrorStore {
 pub struct Single<'a> {
     pub parent: Option<&'a Single<'a>>,
     pub id: ModuleId,
+    pub top_level_ctxt: SyntaxContext,
     pub path: Arc<FileName>,
     pub is_dts: bool,
     pub info: Info,
@@ -192,6 +195,10 @@ impl<'a> Mode for Single<'a> {
         self.id
     }
 
+    fn top_level_ctxt(&self, _: usize) -> SyntaxContext {
+        self.top_level_ctxt
+    }
+
     fn is_dts(&self) -> bool {
         self.is_dts
     }
@@ -204,9 +211,10 @@ impl<'a> Mode for Single<'a> {
     fn subscope(&self) -> Storage {
         box Single {
             parent: Some(self),
-            is_dts: self.is_dts,
             id: self.id,
+            top_level_ctxt: self.top_level_ctxt,
             path: self.path.clone(),
+            is_dts: self.is_dts,
             info: Default::default(),
         }
     }
@@ -215,6 +223,7 @@ impl<'a> Mode for Single<'a> {
 #[derive(Debug, Clone)]
 pub struct File {
     pub id: ModuleId,
+    pub top_level_ctxt: SyntaxContext,
     pub path: Arc<FileName>,
     pub stmt_count: usize,
 }
@@ -325,22 +334,32 @@ impl TypeStore for Group<'_> {
     }
 }
 
-impl Mode for Group<'_> {
-    fn module_id(&self, stmt_index: usize) -> ModuleId {
+impl Group<'_> {
+    fn file(&self, stmt_index: usize) -> &File {
         let mut cur = 0;
         for (last, file) in self.files.iter().identify_last() {
             if cur <= stmt_index && stmt_index < cur + file.stmt_count {
-                return file.id;
+                return file;
             }
 
             if last {
-                return file.id;
+                return file;
             }
 
             cur += file.stmt_count;
         }
 
         unreachable!("failed to get module id")
+    }
+}
+
+impl Mode for Group<'_> {
+    fn module_id(&self, stmt_index: usize) -> ModuleId {
+        self.file(stmt_index).id
+    }
+
+    fn top_level_ctxt(&self, stmt_index: usize) -> SyntaxContext {
+        self.file(stmt_index).top_level_ctxt
     }
 
     fn is_dts(&self) -> bool {
@@ -439,6 +458,10 @@ impl Mode for Builtin {
         ModuleId::builtin()
     }
 
+    fn top_level_ctxt(&self, _: usize) -> SyntaxContext {
+        SyntaxContext::empty()
+    }
+
     fn is_dts(&self) -> bool {
         true
     }
@@ -468,12 +491,14 @@ mod tests {
             let path1 = Arc::new(FileName::Real(PathBuf::from("1")));
             let file1 = File {
                 id: gen.generate(&path1).0,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(gen.generate(&path1).1),
                 path: path1.clone(),
                 stmt_count: 4,
             };
             let path2 = Arc::new(FileName::Real(PathBuf::from("2")));
             let file2 = File {
                 id: gen.generate(&path2).0,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(gen.generate(&path2).1),
                 path: path2.clone(),
                 stmt_count: 5,
             };

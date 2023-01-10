@@ -41,9 +41,13 @@ where
     F: FnOnce(&mut Tester) -> Ret,
 {
     ::testing::run_test2(false, |cm, handler| {
+        let top_level_mark = Mark::new();
+        let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
+
         let mut storage = Single {
             parent: None,
             id: ModuleId::builtin(),
+            top_level_ctxt,
             path: Arc::new(FileName::Real(PathBuf::new())),
             is_dts: false,
             info: Default::default(),
@@ -56,7 +60,7 @@ where
                 cm: cm.clone(),
                 analyzer,
                 node_id_gen: Default::default(),
-                top_level_mark: Mark::new(),
+                top_level_mark,
             };
             let ret = op(&mut tester);
 
@@ -124,18 +128,17 @@ where
 
             parser.parse_module().unwrap()
         };
-        module = swc_common::GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
-        });
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
         let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let mut storage = Single {
             parent: None,
             id: module_id,
+            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
             path,
-            info: Default::default(),
             is_dts: false,
+            info: Default::default(),
         };
 
         {

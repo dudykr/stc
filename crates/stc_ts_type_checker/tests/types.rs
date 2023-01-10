@@ -228,11 +228,9 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
 
             let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
-            checker.run(|| {
-                for e in errors {
-                    e.emit(&handler_for_errors);
-                }
-            });
+            for e in errors {
+                e.emit(&handler_for_errors);
+            }
 
             eprintln!("{}", NormalizedOutput::from(error_text));
 

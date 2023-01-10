@@ -24,7 +24,7 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use swc_common::{input::SourceFileInput, FileName, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
@@ -190,26 +190,23 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
         let mut node_id_gen = NodeIdGenerator::default();
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
-        let module = GLOBALS.set(stable_env.swc_globals(), || {
-            module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
-        });
+        let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         b.iter(|| {
             let mut storage = Single {
                 parent: None,
                 id: module_id,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                 path: path.clone(),
-                info: Default::default(),
                 is_dts: false,
+                info: Default::default(),
             };
 
             let mut module = module.clone();
             {
                 let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
-                GLOBALS.set(stable_env.swc_globals(), || {
-                    module.validate_with(&mut analyzer).unwrap();
-                });
+                module.validate_with(&mut analyzer).unwrap();
             }
 
             {
