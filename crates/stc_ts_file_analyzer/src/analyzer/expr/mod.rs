@@ -1060,18 +1060,7 @@ impl Analyzer<'_, '_> {
             return Ok(res_vec.pop());
         }
         let result = match type_mode {
-            TypeOfMode::LValue => {
-                let mut temp_vec = vec![];
-                for elem in res_vec {
-                    if let Type::Intersection(ty) = elem.normalize() {
-                        temp_vec.extend(ty.types.iter().cloned());
-                    } else {
-                        temp_vec.push(elem);
-                    }
-                }
-                temp_vec.dedup_type();
-                Type::new_intersection(span, temp_vec)
-            }
+            TypeOfMode::LValue => Type::new_intersection(span, res_vec),
             TypeOfMode::RValue => Type::new_union(span, res_vec),
         };
         Ok(Some(result.freezed()))
