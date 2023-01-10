@@ -287,6 +287,7 @@ controlFlow/controlFlowElementAccess.ts
 controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
 controlFlow/controlFlowForInStatement2.ts
+controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInOperator.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceofExtendsFunction.ts
@@ -2375,6 +2376,7 @@ types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInhe
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance4.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance5.ts
+types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilitySymbols/ES5SymbolType1.ts
 types/typeRelationships/assignmentCompatibility/enumAssignability.ts
 types/typeRelationships/assignmentCompatibility/everyTypeAssignableToAny.ts
 types/typeRelationships/assignmentCompatibility/genericCallWithObjectTypeArgsAndInitializers.ts
@@ -2519,6 +2521,7 @@ types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeIndexSignature.ts
+types/union/unionTypeReadonly.ts
 types/union/unionTypeReduction.ts
 types/uniqueSymbol/uniqueSymbols.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts
