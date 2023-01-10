@@ -17,7 +17,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;
-use swc_common::{input::SourceFileInput, FileName, Mark, SyntaxContext, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, Mark, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;

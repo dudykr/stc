@@ -298,11 +298,8 @@ impl Checker {
                 .module_graph
                 .clone_module(module_id)
                 .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", module_id, path));
-            module = module.fold_with(&mut resolver(
-                self.env.shared().marks().unresolved_mark(),
-                self.module_graph.top_level_mark(module_id),
-                true,
-            ));
+            let top_level_mark = self.module_graph.top_level_mark(module_id);
+            module = module.fold_with(&mut resolver(self.env.shared().marks().unresolved_mark(), top_level_mark, true));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
