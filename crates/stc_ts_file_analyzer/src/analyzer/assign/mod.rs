@@ -764,8 +764,16 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
-
         if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+            fail!()
+        }
+
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if let Type::Param(TypeParam { constraint: Some(ty), .. }) = rhs {
+                if ty.is_never() {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
@@ -1189,7 +1197,7 @@ impl Analyzer<'_, '_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Ok(());
+                    fail!()
                 }
 
                 for ty in &li.types {
