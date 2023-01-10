@@ -202,9 +202,7 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                     fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> Self::Output {
                         let (context_pats) = ctxt;
 
-                        let ret = { (|| body)() };
-
-                        ret
+                        body
                     }
                 }
             }
