@@ -934,6 +934,7 @@ impl Analyzer<'_, '_> {
         let is_undefined = normalized_types.iter().any(|ty| ty.is_undefined());
         let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+        let is_function = normalized_types.iter().any(|ty| ty.is_fn_type());
 
         let sum = u32::from(is_symbol)
             + u32::from(is_str)
@@ -942,7 +943,8 @@ impl Analyzer<'_, '_> {
             + u32::from(is_null)
             + u32::from(is_undefined)
             + u32::from(is_void)
-            + u32::from(is_object);
+            + u32::from(is_object)
+            + u32::from(is_function);
 
         if sum >= 2 {
             if sum == 2 && is_undefined && is_void {
@@ -956,8 +958,8 @@ impl Analyzer<'_, '_> {
             return never!();
         }
 
-        if types.len() == 2 {
-            let (a, b) = (&types[0], &types[1]);
+        if normalized_types.len() == 2 {
+            let (a, b) = (&normalized_types[0], &normalized_types[1]);
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
@@ -965,7 +967,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let enum_variant_iter = types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
+        let enum_variant_iter = normalized_types.iter().filter(|&t| t.is_enum_variant()).collect::<Vec<&Type>>();
         let enum_variant_len = enum_variant_iter.len();
 
         if enum_variant_len > 0 {
@@ -993,7 +995,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            for elem in types.iter() {
+            for elem in normalized_types.iter() {
                 if let Type::EnumVariant(ref ev) = elem.normalize() {
                     if let Some(variant_name) = &ev.name {
                         // enumVariant is enumMember
@@ -1546,8 +1548,8 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    /// Exclude types from `ty` using type facts with key `name`, for the
-    /// current scope.
+    /// Exclude types from `ty` using type facts with key `name`, for
+    /// the current scope.
     #[instrument(skip(self, span, name, ty))]
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
@@ -1636,8 +1638,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Note: `span` is only used while expanding type (to prevent panic) in the
-    /// case of [Type::Ref].
+    /// Note: `span` is only used while expanding type (to prevent
+    /// panic) in the case of [Type::Ref].
     pub(crate) fn convert_type_to_type_lit<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -2062,8 +2064,8 @@ impl Analyzer<'_, '_> {
         ty.fix();
     }
 
-    /// This is used to determine `form` of `els`. Each type has a value. e.g.
-    /// `1` for [TypeElement::Call].
+    /// This is used to determine `form` of `els`. Each type has a
+    /// value. e.g. `1` for [TypeElement::Call].
     pub(crate) fn kinds_of_type_elements(&mut self, els: &[TypeElement]) -> Vec<u8> {
         let mut v = els
             .iter()
@@ -2294,8 +2296,8 @@ impl Analyzer<'_, '_> {
 
     /// Utility method to convert a class member to a type element.
     ///
-    /// This method is used while inferring types and while assigning type
-    /// element to class member or vice versa.
+    /// This method is used while inferring types and while assigning
+    /// type element to class member or vice versa.
     #[inline]
     pub(super) fn make_type_el_from_class_member(&self, member: &ClassMember, static_mode: bool) -> VResult<Option<TypeElement>> {
         Ok(Some(match member {
@@ -2468,7 +2470,8 @@ impl Analyzer<'_, '_> {
         ty.fix();
     }
 
-    /// We precompute all type declarations in the scope, using this method.
+    /// We precompute all type declarations in the scope, using this
+    /// method.
     pub(crate) fn fill_known_type_names<N>(&mut self, node: &N)
     where
         N: Send + Sync + for<'aa> VisitWith<BindingCollector<'aa>> + VisitWith<KnownTypeVisitor>,

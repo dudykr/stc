@@ -268,6 +268,15 @@ impl Analyzer<'_, '_> {
         }
 
         match child {
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            }) => {
+                if self.rule().strict_null_checks {
+                    return Some(true);
+                }
+                return Some(false);
+            }
             Type::Function(..) => match parent {
                 Type::Class(..) | Type::Enum(..) => return Some(false),
                 _ => {}
@@ -340,7 +349,6 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
-        // dbg!(child, parent);
 
         let res = self.assign_with_opts(
             &mut Default::default(),

@@ -1,0 +1,35 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/2.ts:18:1]
+ 18 | x;
+    : ^
+    `----
+
+Error: 
+  > {
+  |     type: ListWidget["type"];
+  |     minimum_count: ListWidget["minimum_count"];
+  |     maximum_count: ListWidget["maximum_count"];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/2.ts:19:1]
+ 19 | x.type;
+    : ^
+    `----
+
+Error: 
+  > {
+  |     type: ListWidget["type"];
+  |     minimum_count: ListWidget["minimum_count"];
+  |     maximum_count: ListWidget["maximum_count"];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/2.ts:19:1]
+ 19 | x.type;
+    : ^^^^^^
+    `----
+
+Error: 
+  > "list"
