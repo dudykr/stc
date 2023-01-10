@@ -97,23 +97,21 @@ impl Checker {
 
     /// After calling this method, you can get errors using `.take_errors()`
     pub fn check(&self, entry: Arc<FileName>) -> ModuleId {
-        self.run(|| {
-            let start = Instant::now();
+        let start = Instant::now();
 
-            let id = self.module_graph.load_all(&entry);
+        let id = self.module_graph.load_all(&entry);
 
-            let end = Instant::now();
-            log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
+        let end = Instant::now();
+        log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
 
-            let start = Instant::now();
+        let start = Instant::now();
 
-            self.analyze_module(None, entry.clone());
+        self.analyze_module(None, entry.clone());
 
-            let end = Instant::now();
-            log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
+        let end = Instant::now();
+        log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
-            id.unwrap_or_else(|(id, _)| id)
-        })
+        id.unwrap_or_else(|(id, _)| id)
     }
 
     pub fn take_errors(&mut self) -> Vec<Error> {

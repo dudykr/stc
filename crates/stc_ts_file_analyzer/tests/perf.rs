@@ -16,7 +16,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;
-use swc_common::{input::SourceFileInput, FileName, Mark, SyntaxContext, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, Mark, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
@@ -40,7 +40,8 @@ fn profile_file(name: &str, path: &Path) {
 
             parser.parse_module().unwrap()
         };
-        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), Mark::new(), true));
+        let top_level_mark = Mark::new();
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         // Don't print logs from builtin modules.

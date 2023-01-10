@@ -24,7 +24,7 @@ use stc_ts_storage::{ErrorStore, Single};
 use stc_ts_testing::tsc::TscError;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
+use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
