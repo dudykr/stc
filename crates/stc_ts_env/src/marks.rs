@@ -16,21 +16,19 @@ impl Marks {
         self.unresolved_ctxt
     }
 
-    pub fn new(globals: &Globals) -> Self {
+    pub fn new() -> Self {
         fn m(name: &str) -> Mark {
             let m = Mark::fresh(Mark::root());
             info!("Mark ({}): {:?}", name, SyntaxContext::empty().apply_mark(m));
             m
         }
 
-        swc_common::GLOBALS.set(globals, || {
-            let unresolved_mark = m("unresolved");
+        let unresolved_mark = m("unresolved");
 
-            Self {
-                unresolved_mark,
-                unresolved_ctxt: SyntaxContext::empty().apply_mark(unresolved_mark),
-            }
-        })
+        Self {
+            unresolved_mark,
+            unresolved_ctxt: SyntaxContext::empty().apply_mark(unresolved_mark),
+        }
     }
 }
 

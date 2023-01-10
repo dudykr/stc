@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -10,7 +9,7 @@ use stc_ts_types::{Id, Type};
 use stc_utils::cache::Freeze;
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
-use swc_common::{Globals, Span, Spanned, DUMMY_SP, GLOBALS};
+use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::EsVersion;
 
 pub use self::marks::{MarkExt, Marks};
@@ -133,18 +132,15 @@ impl Env {
 }
 
 /// Stuffs which are not changed regardless
-#[derive(Clone, Derivative)]
-#[derivative(Debug)]
+#[derive(Clone, Debug)]
 pub struct StableEnv {
-    #[derivative(Debug = "ignore")]
-    globals: Arc<Globals>,
     marks: Marks,
 }
 
 impl StableEnv {
-    pub fn new(globals: Arc<Globals>) -> Self {
-        let marks = Marks::new(&globals);
-        Self { globals, marks }
+    pub fn new() -> Self {
+        let marks = Marks::new();
+        Self { marks }
     }
 
     /// Note: The return marks should not be modified as it will not has any
@@ -152,22 +148,11 @@ impl StableEnv {
     pub const fn marks(&self) -> Marks {
         self.marks
     }
-
-    pub fn swc_globals(&self) -> &Arc<Globals> {
-        &self.globals
-    }
-
-    pub fn with<F, Ret>(&self, op: F) -> Ret
-    where
-        F: FnOnce() -> Ret,
-    {
-        GLOBALS.set(&self.globals, op)
-    }
 }
 
 impl Default for StableEnv {
     fn default() -> Self {
-        Self::new(Default::default())
+        Self::new()
     }
 }
 
