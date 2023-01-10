@@ -338,6 +338,10 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
+                RExpr::JSXElement(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
+                RExpr::JSXFragment(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
                 _ => Err(ErrorKind::Unimplemented {
                     span,
                     msg: format!("validation of ({:?})", e),
