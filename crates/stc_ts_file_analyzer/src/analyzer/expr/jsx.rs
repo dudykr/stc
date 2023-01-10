@@ -1,9 +1,10 @@
 use stc_ts_ast_rnode::{RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject};
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{CommonTypeMetadata, Id, KeywordTypeMetadata, Type, TypeParamInstantiation};
+use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordTypeMetadata, Type, TypeParamInstantiation};
+use swc_common::Spanned;
 
-use super::TypeOfMode;
+use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 
 impl Analyzer<'_, '_> {
@@ -92,7 +93,22 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXMemberExpr) -> VResult<Type> {}
+    fn validate(&mut self, e: &RJSXMemberExpr) -> VResult<Type> {
+        let obj = e.obj.validate_with(self)?;
+
+        self.access_property(
+            e.span(),
+            &obj,
+            &Key::Normal {
+                span: e.prop.span,
+                sym: e.prop.sym.clone(),
+            },
+            TypeOfMode::RValue,
+            IdCtx::Var,
+            AccessPropertyOpts { ..Default::default() },
+        )
+        .context("tried to get type of a jsx member expr")
+    }
 }
 
 #[validator]
@@ -107,5 +123,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXNamespacedName) -> VResult<Type> {}
+    fn validate(&mut self, e: &RJSXNamespacedName) -> VResult<Type> {
+        Err(ErrorKind::Unimplemented {
+            span: e.span(),
+            msg: "jsx namespaced name".to_string(),
+        }
+        .into())
+    }
 }
