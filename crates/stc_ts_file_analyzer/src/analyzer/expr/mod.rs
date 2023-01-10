@@ -958,7 +958,7 @@ impl Analyzer<'_, '_> {
             if let Some(ty) = matching_elements.pop() {
                 return Ok(Some(self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned()));
             }
-            return Ok(matching_elements.pop());
+            unreachable!();
         }
 
         let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
@@ -1070,10 +1070,10 @@ impl Analyzer<'_, '_> {
                 for elem in res_vec {
                     if let Type::Intersection(ty) = elem.normalize() {
                         for item in ty.types.iter() {
-                            temp_vec.push(item.normalize().clone());
+                            temp_vec.push(item.clone());
                         }
                     } else {
-                        temp_vec.push(elem.normalize().clone());
+                        temp_vec.push(elem);
                     }
                 }
                 temp_vec.dedup_type();

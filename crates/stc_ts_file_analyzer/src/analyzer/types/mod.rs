@@ -894,9 +894,6 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {}
-                    Type::Param(TypeParam { constraint: Some(ty), .. }) => {
-                        normalized_types.push(ty.normalize().clone());
-                    }
                     Type::Intersection(Intersection { types, .. }) => {
                         for ty in types {
                             normalized_types.push(ty.to_owned());
