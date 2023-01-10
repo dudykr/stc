@@ -139,7 +139,7 @@ pub struct StableEnv {
 
 impl StableEnv {
     pub fn new() -> Self {
-        let marks = Marks::new();
+        let marks = Marks::default();
         Self { marks }
     }
 
