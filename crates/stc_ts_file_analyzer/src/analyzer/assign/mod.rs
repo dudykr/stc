@@ -764,8 +764,16 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
-
         if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+            fail!()
+        }
+
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            if let Type::Param(TypeParam { constraint: Some(ty), .. }) = rhs {
+                if ty.is_never() {
+                    return Ok(());
+                }
+            }
             fail!()
         }
 
@@ -1201,7 +1209,6 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                 }
-
                 for ty in &li.types {
                     match self
                         .assign_with_opts(
