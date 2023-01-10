@@ -33,10 +33,18 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Type> {}
+    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Type> {
+        match e {}
+    }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementName) -> VResult<Type> {}
+    fn validate(&mut self, e: &RJSXElementName) -> VResult<Type> {
+        match e {
+            RJSXElementName::Ident(ident) => ident.validate_with_default(self),
+            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self),
+            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self),
+        }
+    }
 }
