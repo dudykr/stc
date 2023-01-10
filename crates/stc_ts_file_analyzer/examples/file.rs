@@ -59,7 +59,7 @@ fn profile_file(path: &Path) {
         };
 
         {
-            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
         let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());

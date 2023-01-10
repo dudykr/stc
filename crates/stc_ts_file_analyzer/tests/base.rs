@@ -197,11 +197,9 @@ fn errors(input: PathBuf) {
             panic!("Should emit at least one error")
         }
 
-        GLOBALS.set(env.shared().swc_globals(), || {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         if false {
             return Ok(());
@@ -238,17 +236,16 @@ fn pass_only(input: PathBuf) {
 
             parser.parse_module().unwrap()
         };
-        module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
-        });
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let mut storage = Single {
             parent: None,
             id: module_id,
+            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
             path,
-            info: Default::default(),
             is_dts: false,
+            info: Default::default(),
         };
 
         {
@@ -262,11 +259,9 @@ fn pass_only(input: PathBuf) {
         let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
         let ok = errors.is_empty();
 
-        GLOBALS.set(env.shared().swc_globals(), || {
-            for e in errors {
-                e.emit(&handler);
-            }
-        });
+        for e in errors {
+            e.emit(&handler);
+        }
 
         if !ok {
             return Err(());
@@ -413,9 +408,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             );
             let mut parser = Parser::new_from(lexer);
             let module = parser.parse_module().unwrap();
-            let module = GLOBALS.set(stable_env.swc_globals(), || {
-                module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
-            });
+            let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
                 GLOBALS.set(stable_env.swc_globals(), || {
