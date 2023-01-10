@@ -411,29 +411,27 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
-                GLOBALS.set(stable_env.swc_globals(), || {
-                    let mut analyzer = Analyzer::root(
-                        env,
-                        cm.clone(),
-                        Default::default(),
-                        box &mut storage,
-                        &NoopLoader,
-                        if for_error {
-                            None
-                        } else {
-                            Some(Debugger {
-                                cm: cm.clone(),
-                                handler: handler.clone(),
-                            })
-                        },
-                    );
+                let mut analyzer = Analyzer::root(
+                    env,
+                    cm.clone(),
+                    Default::default(),
+                    box &mut storage,
+                    &NoopLoader,
+                    if for_error {
+                        None
+                    } else {
+                        Some(Debugger {
+                            cm: cm.clone(),
+                            handler: handler.clone(),
+                        })
+                    },
+                );
 
-                    let log_sub = logger(Level::DEBUG);
+                let log_sub = logger(Level::DEBUG);
 
-                    let _guard = tracing::subscriber::set_default(log_sub);
+                let _guard = tracing::subscriber::set_default(log_sub);
 
-                    module.validate_with(&mut analyzer).unwrap();
-                });
+                module.validate_with(&mut analyzer).unwrap();
             }
 
             if for_error {
