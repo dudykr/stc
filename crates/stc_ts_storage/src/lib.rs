@@ -51,7 +51,7 @@ pub trait Mode: TypeStore + ErrorStore {
     /// Returns the id of the module where statement #`stmt_index` came from.
     fn module_id(&self, stmt_index: usize) -> ModuleId;
 
-    fn top_level_ctxt(&self, stmt_index: usize) -> SyntaxContext;
+    fn top_level_ctxt(&self, module_id: ModuleId) -> SyntaxContext;
 
     fn is_dts(&self) -> bool;
 
@@ -195,7 +195,7 @@ impl<'a> Mode for Single<'a> {
         self.id
     }
 
-    fn top_level_ctxt(&self, _: usize) -> SyntaxContext {
+    fn top_level_ctxt(&self, _: ModuleId) -> SyntaxContext {
         self.top_level_ctxt
     }
 
@@ -334,16 +334,16 @@ impl TypeStore for Group<'_> {
     }
 }
 
-impl Group<'_> {
-    fn file(&self, stmt_index: usize) -> &File {
+impl Mode for Group<'_> {
+    fn module_id(&self, stmt_index: usize) -> ModuleId {
         let mut cur = 0;
         for (last, file) in self.files.iter().identify_last() {
             if cur <= stmt_index && stmt_index < cur + file.stmt_count {
-                return file;
+                return file.id;
             }
 
             if last {
-                return file;
+                return file.id;
             }
 
             cur += file.stmt_count;
@@ -351,15 +351,15 @@ impl Group<'_> {
 
         unreachable!("failed to get module id")
     }
-}
 
-impl Mode for Group<'_> {
-    fn module_id(&self, stmt_index: usize) -> ModuleId {
-        self.file(stmt_index).id
-    }
+    fn top_level_ctxt(&self, stmt_index: ModuleId) -> SyntaxContext {
+        for file in self.files.iter() {
+            if file.id == stmt_index {
+                return file.top_level_ctxt;
+            }
+        }
 
-    fn top_level_ctxt(&self, stmt_index: usize) -> SyntaxContext {
-        self.file(stmt_index).top_level_ctxt
+        unreachable!("failed to get top level ctxt")
     }
 
     fn is_dts(&self) -> bool {
@@ -458,7 +458,7 @@ impl Mode for Builtin {
         ModuleId::builtin()
     }
 
-    fn top_level_ctxt(&self, _: usize) -> SyntaxContext {
+    fn top_level_ctxt(&self, _: ModuleId) -> SyntaxContext {
         SyntaxContext::empty()
     }
 
