@@ -42,9 +42,7 @@ fn profile_file(path: &Path) {
 
             parser.parse_module().unwrap()
         };
-        module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), Mark::new(), true))
-        });
+        module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), Mark::new(), true));
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         // Don't print logs from builtin modules.

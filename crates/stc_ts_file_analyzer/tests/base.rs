@@ -24,7 +24,7 @@ use stc_ts_storage::{ErrorStore, Single};
 use stc_ts_testing::tsc::TscError;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, GLOBALS};
+use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
@@ -85,14 +85,13 @@ fn validate(input: &Path) -> Vec<StcError> {
 
                 parser.parse_module().unwrap()
             };
-            module = GLOBALS.set(env.shared().swc_globals(), || {
-                module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
-            });
+            module = module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true));
             let module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
                 parent: None,
                 id: module_id,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                 path,
                 is_dts: false,
                 info: Default::default(),
@@ -396,9 +395,10 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let mut storage = Single {
                 parent: None,
                 id: module_id,
+                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                 path,
-                info: Default::default(),
                 is_dts: false,
+                info: Default::default(),
             };
 
             let mut node_id_gen = NodeIdGenerator::default();
