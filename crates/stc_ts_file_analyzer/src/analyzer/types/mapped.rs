@@ -367,6 +367,31 @@ impl Analyzer<'_, '_> {
                             keys.extend(items.into_iter().flatten());
                         }
                     }
+                    keys.push(match &v.id {
+                        RTsEnumMemberId::Ident(i) => Key::Normal {
+                            span: i.span,
+                            sym: i.sym.clone(),
+                        },
+                        RTsEnumMemberId::Str(i) => Key::Normal {
+                            span: i.span,
+                            sym: i.value.clone(),
+                        },
+                    });
+                }
+
+                Ok(Some(keys))
+            }
+
+            Type::EnumVariant(e) => {
+                let mut keys = vec![];
+
+                if let Some(types) = self.find_type(&e.enum_name)? {
+                    for ty in types.into_iter().map(Cow::into_owned).collect_vec() {
+                        if ty.is_enum_type() {
+                            let items = self.convert_type_to_keys(span, &ty)?;
+                            keys.extend(items.into_iter().flatten());
+                        }
+                    }
                 }
 
                 Ok(Some(keys))
