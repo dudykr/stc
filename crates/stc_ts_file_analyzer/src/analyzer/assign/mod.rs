@@ -2805,7 +2805,7 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&r)))
+        res.with_context(|| format!("tried to assign {} to a mapped type", force_dump_type_as_string(&r)))
     }
 
     /// Returns true for `A | B | | C = A | B` and similar cases.
