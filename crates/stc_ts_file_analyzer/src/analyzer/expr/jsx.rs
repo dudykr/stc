@@ -1,4 +1,6 @@
-use stc_ts_ast_rnode::{RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject};
+use stc_ts_ast_rnode::{
+    RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject,
+};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordTypeMetadata, Type, TypeParamInstantiation};
@@ -93,7 +95,10 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let name = e.opening.name.validate_with(self)?;
+        let attrs = e.opening.attrs.validate_with(self)?;
         let children = e.children.validate_with(self)?;
+
+        Ok(name)
     }
 }
 
@@ -107,12 +112,21 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let children = e.children.validate_with(self)?;
+
+        self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElementChild) -> VResult<Type> {
+        match e {}
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RJSXAttrOrSpread) -> VResult<Type> {
         match e {}
     }
 }
