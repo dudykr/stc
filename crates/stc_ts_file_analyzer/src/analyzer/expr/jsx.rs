@@ -2,12 +2,46 @@ use stc_ts_ast_rnode::{RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragm
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordTypeMetadata, Type, TypeParamInstantiation};
+use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 
 use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 
 impl Analyzer<'_, '_> {
+    fn get_jsx_intrinsic_element(&mut self, span: Span, sym: &JsWord) -> VResult<Type> {
+        if let Some(jsx) = self.get_jsx_intrinsic_element_list(span)? {
+            self.access_property(
+                span,
+                &jsx,
+                &Key::Normal { span, sym: sym.clone() },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            )
+            .context("tried to get type of an intrinsic jsx element")
+        } else {
+            if !self.ctx.in_declare && self.rule().no_implicit_any {
+                self.storage
+                    .report(ErrorKind::ImplicitAny { span }.context("jsx namespace not found"))
+            }
+
+            Ok(Type::any(
+                span,
+                KeywordTypeMetadata {
+                    common: CommonTypeMetadata {
+                        implicit: true,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+            ))
+        }
+    }
+
     fn get_jsx_intrinsic_element_list(&mut self, span: Span) -> VResult<Option<Type>> {
         let jsx = self.get_jsx_namespace();
         let jsx = match jsx {
@@ -91,39 +125,7 @@ impl Analyzer<'_, '_> {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
                     ident.validate_with_default(self)
                 } else {
-                    if let Some(jsx) = self.get_jsx_intrinsic_element_list(ident.span)? {
-                        self.access_property(
-                            ident.span,
-                            &jsx,
-                            &Key::Normal {
-                                span: ident.span,
-                                sym: ident.sym.clone(),
-                            },
-                            TypeOfMode::RValue,
-                            IdCtx::Var,
-                            AccessPropertyOpts {
-                                disallow_creating_indexed_type_from_ty_els: true,
-                                ..Default::default()
-                            },
-                        )
-                        .context("tried to get type of an intrinsic jsx element")
-                    } else {
-                        if !self.ctx.in_declare && self.rule().no_implicit_any {
-                            self.storage
-                                .report(ErrorKind::ImplicitAny { span: ident.span }.context("jsx namespace not found"))
-                        }
-
-                        Ok(Type::any(
-                            ident.span,
-                            KeywordTypeMetadata {
-                                common: CommonTypeMetadata {
-                                    implicit: true,
-                                    ..Default::default()
-                                },
-                                ..Default::default()
-                            },
-                        ))
-                    }
+                    self.get_jsx_intrinsic_element(ident.span, &ident.sym)
                 }
             }
             RJSXElementName::JSXMemberExpr(e) => e.validate_with(self),
