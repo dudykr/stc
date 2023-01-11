@@ -7,13 +7,14 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
     CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, LitType, PropertySignature, Type, TypeElement, TypeLit,
 };
+use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{
-    analyzer::{util::ResultExt, Analyzer},
+    analyzer::{assign::AssignOpts, util::ResultExt, Analyzer},
     validator::ValidateWith,
     VResult,
 };
@@ -162,6 +163,24 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        object.make_clone_cheap();
+
+        match name {
+            ResolvedJsxName::Intrinsic(name) => {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    name,
+                    &object,
+                    AssignOpts {
+                        span: jsx_element_span,
+                        ..Default::default()
+                    },
+                )
+                .report(&mut self.storage);
+            }
+            ResolvedJsxName::Value(name) => {}
+        }
+
         Ok(())
     }
 }
@@ -169,8 +188,17 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<Type> {
-        let name = e.opening.name.validate_with(self)?;
+        let mut name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
+
+        match &mut name {
+            ResolvedJsxName::Intrinsic(name) => {
+                name.make_clone_cheap();
+            }
+            ResolvedJsxName::Value(name) => {
+                name.make_clone_cheap();
+            }
+        }
 
         self.validate_jsx_attrs(e.span, &name, &e.opening.attrs).report(&mut self.storage);
 
