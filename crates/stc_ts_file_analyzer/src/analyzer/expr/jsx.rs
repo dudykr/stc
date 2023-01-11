@@ -1,6 +1,6 @@
 use stc_ts_ast_rnode::{
-    RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName,
-    RJSXObject, RJSXSpreadChild, RJSXText,
+    RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr,
+    RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
@@ -10,7 +10,11 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{AccessPropertyOpts, TypeOfMode};
-use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
+use crate::{
+    analyzer::{util::ResultExt, Analyzer},
+    validator::ValidateWith,
+    VResult,
+};
 
 #[derive(Debug)]
 pub enum ResolvedJsxName {
@@ -92,6 +96,10 @@ impl Analyzer<'_, '_> {
 
         None
     }
+
+    fn validate_jsx_attrs(&mut self, name: &ResolvedJsxName, attrs: &[RJSXAttrOrSpread]) -> VResult<()> {
+        Ok(())
+    }
 }
 
 #[validator]
@@ -105,6 +113,8 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         let name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
+
+        self.validate_jsx_attrs(&name, &e.opening.attrs).report(&mut self.storage);
 
         match name {
             ResolvedJsxName::Intrinsic(name) => Ok(name),
