@@ -1,6 +1,6 @@
 use stc_ts_ast_rnode::{
     RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr,
-    RJSXNamespacedName, RJSXObject, RJSXText,
+    RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
@@ -121,13 +121,13 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Option<Type>> {
         match e {
-            RJSXElementChild::JSXText(e) => e.validate_with(self),
+            RJSXElementChild::JSXText(e) => e.validate_with(self).map(Some),
             RJSXElementChild::JSXExprContainer(e) => e.validate_with(self),
-            RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self),
-            RJSXElementChild::JSXElement(e) => e.validate_with(self),
-            RJSXElementChild::JSXFragment(e) => e.validate_with(self),
+            RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self).map(Some),
+            RJSXElementChild::JSXElement(e) => e.validate_with_default(self).map(Some),
+            RJSXElementChild::JSXFragment(e) => e.validate_with_default(self).map(Some),
         }
     }
 }
@@ -141,6 +141,7 @@ impl Analyzer<'_, '_> {
         }
     }
 }
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXText) -> VResult<Type> {
@@ -155,8 +156,15 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXExprContainer) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXExprContainer) -> VResult<Option<Type>> {
         e.expr.validate_with(self)
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RJSXSpreadChild) -> VResult<Type> {
+        e.expr.validate_with_default(self)
     }
 }
 
@@ -165,7 +173,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXExpr) -> VResult<Option<Type>> {
         match e {
             RJSXExpr::Expr(e) => e.validate_with_args(self, (TypeOfMode::RValue, None, None)).map(Some),
-            RJSXExpr::Empty => Ok(None),
+            RJSXExpr::JSXEmptyExpr(..) => Ok(None),
         }
     }
 }
