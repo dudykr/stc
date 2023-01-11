@@ -1165,10 +1165,7 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
                     Type::Lit(LitType {
-                        lit: RTsLit::Number(..), ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        lit: RTsLit::Number(r_num),
                         ..
                     }) => {
                         if opts.do_not_convert_enum_to_string_nor_number {
@@ -1184,9 +1181,37 @@ impl Analyzer<'_, '_> {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
                                     }) {
-                                        match &*v.val {
-                                            RExpr::Lit(RLit::Num(..)) => return Ok(()),
-                                            _ => fail!(),
+                                        if let RExpr::Lit(RLit::Num(l_num)) = &*v.val {
+                                            if l_num.value == r_num.value {
+                                                return Ok(());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        fail!()
+                    }
+                    Type::Lit(LitType {
+                        lit: RTsLit::Str(r_str), ..
+                    }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
+                        let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
+
+                        if let Some(items) = items {
+                            for t in items {
+                                if let Type::Enum(en) = t.normalize() {
+                                    if let Some(v) = en.members.iter().find(|m| match m.id {
+                                        RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                                        | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
+                                    }) {
+                                        if let RExpr::Lit(RLit::Str(l_str)) = &*v.val {
+                                            if l_str.value == r_str.value {
+                                                return Ok(());
+                                            }
                                         }
                                     }
                                 }
