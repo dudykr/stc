@@ -51,4 +51,4 @@ Error:
    `----
 
 Error: 
-  > (number | boolean)
+  > (string | number)
