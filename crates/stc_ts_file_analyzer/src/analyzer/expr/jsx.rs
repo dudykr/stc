@@ -76,7 +76,10 @@ impl Analyzer<'_, '_> {
                                 },
                                 TypeOfMode::RValue,
                                 IdCtx::Var,
-                                AccessPropertyOpts { ..Default::default() },
+                                AccessPropertyOpts {
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    ..Default::default()
+                                },
                             )
                             .context("tried to get JSX.IntrinsicElements")?;
 
@@ -89,7 +92,10 @@ impl Analyzer<'_, '_> {
                             },
                             TypeOfMode::RValue,
                             IdCtx::Var,
-                            AccessPropertyOpts { ..Default::default() },
+                            AccessPropertyOpts {
+                                disallow_creating_indexed_type_from_ty_els: true,
+                                ..Default::default()
+                            },
                         )
                         .context("tried to get type of an intrinsic jsx element")
                     } else {
@@ -131,7 +137,10 @@ impl Analyzer<'_, '_> {
             },
             TypeOfMode::RValue,
             IdCtx::Var,
-            AccessPropertyOpts { ..Default::default() },
+            AccessPropertyOpts {
+                disallow_creating_indexed_type_from_ty_els: true,
+                ..Default::default()
+            },
         )
         .context("tried to get type of a jsx member expr")
     }
