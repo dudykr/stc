@@ -301,6 +301,7 @@ controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBinaryOrExpression.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
+controlFlow/controlFlowDeleteOperator.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
@@ -1864,6 +1865,7 @@ parser/ecmascript5/SuperExpressions/parserSuperExpression1.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression4.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty7.ts
+parser/ecmascript5/TupleTypes/TupleTypSymbols/ES5SymbolType1.ts
 parser/ecmascript5/TupleTypes/TupleType1.ts
 parser/ecmascript5/TupleTypes/TupleType2.ts
 parser/ecmascript5/TupleTypes/TupleType3.ts
