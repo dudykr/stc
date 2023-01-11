@@ -344,6 +344,25 @@ impl Analyzer<'_, '_> {
                 Ok(Some(keys))
             }
 
+            Type::Enum(e) => {
+                let mut keys = vec![];
+
+                for v in &e.members {
+                    keys.push(match &v.id {
+                        RTsEnumMemberId::Ident(i) => Key::Normal {
+                            span: i.span,
+                            sym: i.sym.clone(),
+                        },
+                        RTsEnumMemberId::Str(i) => Key::Normal {
+                            span: i.span,
+                            sym: i.value.clone(),
+                        },
+                    });
+                }
+
+                Ok(Some(keys))
+            }
+
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => Ok(None),
 
             _ => {
