@@ -1,12 +1,13 @@
 use stc_ts_ast_rnode::{
     RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr,
-    RJSXNamespacedName, RJSXObject,
+    RJSXNamespacedName, RJSXObject, RJSXText,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordTypeMetadata, Type, TypeParamInstantiation};
+use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, Type, TypeParamInstantiation};
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
+use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
@@ -140,11 +141,22 @@ impl Analyzer<'_, '_> {
         }
     }
 }
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RJSXText) -> VResult<Type> {
+        Ok(Type::Keyword(KeywordType {
+            span: e.span,
+            kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        }))
+    }
+}
 
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXExprContainer) -> VResult<Type> {
-        e.expr.validate_with_args(self, (TypeOfMode::RValue, None, None))
+        e.expr.validate_with(self)
     }
 }
 
