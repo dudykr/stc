@@ -1483,6 +1483,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(r) => {
+                if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
+                    return res.context("tried to assign a union using `assign_to_union`");
+                }
+
                 if self.should_use_special_union_assignment(span, rhs)? {
                     // TODO(kdy1): We should assign rhs as full.
                     //
