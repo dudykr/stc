@@ -1,10 +1,12 @@
 use stc_ts_ast_rnode::{
-    RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
-    RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText,
+    RBool, RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
+    RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText, RTsLit,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, Type};
+use stc_ts_types::{
+    CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, LitType, PropertySignature, Type, TypeElement, TypeLit,
+};
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -97,13 +99,53 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    fn validate_jsx_attrs(&mut self, name: &ResolvedJsxName, attrs: &[RJSXAttrOrSpread]) -> VResult<()> {
+    fn validate_jsx_attrs(&mut self, jsx_element_span: Span, name: &ResolvedJsxName, attrs: &[RJSXAttrOrSpread]) -> VResult<()> {
+        let mut object = Type::TypeLit(TypeLit {
+            span: jsx_element_span,
+            members: vec![],
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
         for attr in attrs {
             match attr {
                 RJSXAttrOrSpread::JSXAttr(attr) => match &attr.name {
                     RJSXAttrName::Ident(attr_name) => {
-                        // TODO(kdy1): Pass down type annotation
-                        let value = attr.value.validate_with_args(self, None);
+                        let value = match &attr.value {
+                            Some(v) => {
+                                // TODO(kdy1): Pass down type annotation
+                                v.validate_with_args(self, None)?
+                            }
+                            None => Some(Type::Lit(LitType {
+                                span: attr_name.span,
+                                lit: RTsLit::Bool(RBool {
+                                    span: attr_name.span,
+                                    value: true,
+                                }),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })),
+                        };
+
+                        if let Some(value) = value {
+                            object = self.append_type_element(
+                                object,
+                                TypeElement::Property(PropertySignature {
+                                    span: attr.span,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key: Key::Normal {
+                                        span: attr_name.span,
+                                        sym: attr_name.sym.clone(),
+                                    },
+                                    optional: false,
+                                    params: Default::default(),
+                                    type_ann: Some(box value),
+                                    type_params: None,
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }),
+                            )?;
+                        }
                     }
                     RJSXAttrName::JSXNamespacedName(attr_name) => {
                         return Err(ErrorKind::Unimplemented {
@@ -114,7 +156,8 @@ impl Analyzer<'_, '_> {
                     }
                 },
                 RJSXAttrOrSpread::SpreadElement(attr) => {
-                    attr.expr.validate_with_default(self)?;
+                    let attr = attr.expr.validate_with_default(self)?;
+                    object = self.append_type(object, attr)?;
                 }
             }
         }
@@ -129,7 +172,7 @@ impl Analyzer<'_, '_> {
         let name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
 
-        self.validate_jsx_attrs(&name, &e.opening.attrs).report(&mut self.storage);
+        self.validate_jsx_attrs(e.span, &name, &e.opening.attrs).report(&mut self.storage);
 
         match name {
             ResolvedJsxName::Intrinsic(name) => Ok(name),
