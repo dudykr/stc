@@ -769,12 +769,19 @@ impl Analyzer<'_, '_> {
         }
 
         if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
-            if let Type::Param(TypeParam { constraint: Some(ty), .. }) = rhs {
-                if ty.is_never() {
-                    return Ok(());
+            match rhs.normalize() {
+                Type::Param(TypeParam { constraint: Some(ty), .. }) if ty.is_never() => return Ok(()),
+                Type::Intersection(Intersection { types, .. }) => {
+                    let result_ty = self.normalize_intersection_types(span, types, Default::default())?;
+                    if let Some(rhs) = result_ty {
+                        if rhs.is_never() {
+                            return Ok(());
+                        }
+                        fail!()
+                    }
                 }
-            }
-            fail!()
+                _ => fail!(),
+            };
         }
 
         let opts = AssignOpts {
