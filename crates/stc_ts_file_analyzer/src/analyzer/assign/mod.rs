@@ -805,6 +805,11 @@ impl Analyzer<'_, '_> {
             (Type::Tuple(..) | Type::Array(..), Type::Function(..) | Type::Constructor(..)) => {
                 fail!()
             }
+            (Type::TypeLit(TypeLit { members, .. }), Type::TypeLit(..)) => {
+                if members.is_empty() && !opts.for_overload {
+                    return Ok(());
+                }
+            }
             _ => {}
         }
 
