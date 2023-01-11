@@ -98,6 +98,22 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_jsx_attrs(&mut self, name: &ResolvedJsxName, attrs: &[RJSXAttrOrSpread]) -> VResult<()> {
+        for attr in attrs {
+            match attr {
+                RJSXAttrOrSpread::JSXAttr(attr) => match &attr.name {
+                    stc_ts_ast_rnode::RJSXAttrName::Ident(attr_name) => {}
+                    stc_ts_ast_rnode::RJSXAttrName::JSXNamespacedName(attr_name) => {
+                        return Err(ErrorKind::Unimplemented {
+                            span: attr.span,
+                            msg: "namespaced name for an attribute".to_string(),
+                        }
+                        .into())
+                    }
+                },
+                RJSXAttrOrSpread::SpreadElement(attr) => {}
+            }
+        }
+
         Ok(())
     }
 }
