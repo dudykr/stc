@@ -1,6 +1,13 @@
 Stats {
+<<<<<<< HEAD
     required_error: 4329,
     matched_error: 5776,
     extra_error: 1057,
     panic: 85,
+=======
+    required_error: 4154,
+    matched_error: 5743,
+    extra_error: 893,
+    panic: 26,
+>>>>>>> d678bb21 (fix(ts/analyzer): Fix checking of optional properties for delete operand)
 }
