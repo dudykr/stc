@@ -207,81 +207,11 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                RExpr::Ident(ref i) => {
-                    if i.sym == js_word!("undefined") {
-                        return Ok(Type::Keyword(KeywordType {
-                            span: i.span.with_ctxt(SyntaxContext::empty()),
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
-                    }
-                    let ty = self.type_of_var(i, mode, type_args)?;
-                    if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
-                        // `i` is truthy
-                        self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
-                        self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
-                    }
-
-                    Ok(ty)
-                }
+                RExpr::Ident(ref i) => i.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Array(arr) => arr.validate_with_args(self, (mode, type_args, type_ann)),
 
-                RExpr::Lit(RLit::Bool(v)) => Ok(Type::Lit(LitType {
-                    span: v.span,
-                    lit: RTsLit::Bool(v.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::Str(ref v)) => Ok(Type::Lit(LitType {
-                    span: v.span,
-                    lit: RTsLit::Str(v.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::Num(v)) => Ok(Type::Lit(LitType {
-                    span: v.span,
-                    lit: RTsLit::Number(v.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::BigInt(v)) => Ok(Type::Lit(LitType {
-                    span: v.span,
-                    lit: RTsLit::BigInt(v.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::Null(RNull { span })) => {
-                    if self.ctx.in_export_default_expr {
-                        // TODO(kdy1): strict mode
-                        return Ok(Type::Keyword(KeywordType {
-                            span: *span,
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
-                    }
-
-                    Ok(Type::Keyword(KeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }))
-                }
-                RExpr::Lit(RLit::Regex(..)) => Ok(Type::Ref(Ref {
-                    span,
-                    type_name: RTsEntityName::Ident(RIdent {
-                        node_id: NodeId::invalid(),
-                        span,
-                        sym: js_word!("RegExp"),
-                        optional: false,
-                    }),
-                    type_args: None,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
+                RExpr::Lit(lit) => lit.validate_with(self),
 
                 RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
 
@@ -337,6 +267,10 @@ impl Analyzer<'_, '_> {
                 RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
                 RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
+                RExpr::JSXElement(expr) => expr.validate_with_args(self, type_ann),
+
+                RExpr::JSXFragment(expr) => expr.validate_with_args(self, type_ann),
 
                 _ => Err(ErrorKind::Unimplemented {
                     span,
@@ -4365,5 +4299,96 @@ fn is_valid_lhs(l: &RPatOrExpr) -> VResult<()> {
             _ => Ok(()),
         },
         RPatOrExpr::Expr(e) => is_valid_lhs_expr(e),
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        i: &RIdent,
+        mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
+    ) -> VResult<Type> {
+        if i.sym == js_word!("undefined") {
+            return Ok(Type::Keyword(KeywordType {
+                span: i.span.with_ctxt(SyntaxContext::empty()),
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }));
+        }
+        let ty = self.type_of_var(i, mode, type_args)?;
+        if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
+            // `i` is truthy
+            self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
+            self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
+        }
+
+        Ok(ty)
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RLit) -> VResult<Type> {
+        match e {
+            RLit::Bool(v) => Ok(Type::Lit(LitType {
+                span: v.span,
+                lit: RTsLit::Bool(v.clone()),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            RLit::Str(ref v) => Ok(Type::Lit(LitType {
+                span: v.span,
+                lit: RTsLit::Str(v.clone()),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            RLit::Num(v) => Ok(Type::Lit(LitType {
+                span: v.span,
+                lit: RTsLit::Number(v.clone()),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            RLit::BigInt(v) => Ok(Type::Lit(LitType {
+                span: v.span,
+                lit: RTsLit::BigInt(v.clone()),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            RLit::Null(RNull { span }) => {
+                if self.ctx.in_export_default_expr {
+                    // TODO(kdy1): strict mode
+                    return Ok(Type::Keyword(KeywordType {
+                        span: *span,
+                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                }
+
+                Ok(Type::Keyword(KeywordType {
+                    span: *span,
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }))
+            }
+            RLit::Regex(v) => Ok(Type::Ref(Ref {
+                span: v.span,
+                type_name: RTsEntityName::Ident(RIdent {
+                    node_id: NodeId::invalid(),
+                    span: v.span,
+                    sym: js_word!("RegExp"),
+                    optional: false,
+                }),
+                type_args: None,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            RLit::JSXText(v) => v.validate_with(self),
+        }
     }
 }

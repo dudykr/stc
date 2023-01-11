@@ -1,6 +1,7 @@
 use rnode::RNode;
 use stc_ts_ast_rnode::{
-    RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType, RTsTypeElement, RTsTypeParam,
+    RClassMember, RJSXAttrOrSpread, RJSXElementChild, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType,
+    RTsTypeElement, RTsTypeParam,
 };
 
 /// Visit with output
@@ -61,6 +62,10 @@ impl ValidateInDeclOrder for RTsExprWithTypeArgs {}
 impl ValidateInDeclOrder for RTsTupleElement {}
 
 impl ValidateInDeclOrder for RTsTypeElement {}
+
+impl ValidateInDeclOrder for RJSXElementChild {}
+
+impl ValidateInDeclOrder for RJSXAttrOrSpread {}
 
 /// TODO(kdy1): Remove this
 impl ValidateInDeclOrder for RClassMember {}
