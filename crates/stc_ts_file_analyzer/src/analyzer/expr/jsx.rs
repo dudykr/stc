@@ -1,6 +1,6 @@
 use stc_ts_ast_rnode::{
-    RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr,
-    RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText,
+    RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName,
+    RJSXObject, RJSXSpreadChild, RJSXText,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
@@ -97,7 +97,6 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let name = e.opening.name.validate_with(self)?;
-        let attrs = e.opening.attrs.validate_with(self)?;
         let children = e.children.validate_with(self)?;
 
         Ok(name)
@@ -128,16 +127,6 @@ impl Analyzer<'_, '_> {
             RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self).map(Some),
             RJSXElementChild::JSXElement(e) => e.validate_with_default(self).map(Some),
             RJSXElementChild::JSXFragment(e) => e.validate_with_default(self).map(Some),
-        }
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXAttrOrSpread) -> VResult<Type> {
-        match e {
-            RJSXAttrOrSpread::JSXAttr(e) => e.validate_with(self),
-            RJSXAttrOrSpread::SpreadElement(e) => e.validate_with(self),
         }
     }
 }
