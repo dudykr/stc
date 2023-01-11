@@ -1,5 +1,6 @@
 use stc_ts_ast_rnode::{
-    RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject,
+    RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr,
+    RJSXNamespacedName, RJSXObject,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
@@ -120,14 +121,40 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElementChild) -> VResult<Type> {
-        match e {}
+        match e {
+            RJSXElementChild::JSXText(e) => e.validate_with(self),
+            RJSXElementChild::JSXExprContainer(e) => e.validate_with(self),
+            RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self),
+            RJSXElementChild::JSXElement(e) => e.validate_with(self),
+            RJSXElementChild::JSXFragment(e) => e.validate_with(self),
+        }
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXAttrOrSpread) -> VResult<Type> {
-        match e {}
+        match e {
+            RJSXAttrOrSpread::JSXAttr(e) => e.validate_with(self),
+            RJSXAttrOrSpread::SpreadElement(e) => e.validate_with(self),
+        }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RJSXExprContainer) -> VResult<Type> {
+        e.expr.validate_with_args(self, (TypeOfMode::RValue, None, None))
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RJSXExpr) -> VResult<Option<Type>> {
+        match e {
+            RJSXExpr::Expr(e) => e.validate_with_args(self, (TypeOfMode::RValue, None, None)).map(Some),
+            RJSXExpr::Empty => Ok(None),
+        }
     }
 }
 
