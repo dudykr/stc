@@ -268,9 +268,9 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
-                RExpr::JSXElement(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::JSXElement(expr) => expr.validate_with_args(self, type_ann),
 
-                RExpr::JSXFragment(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::JSXFragment(expr) => expr.validate_with_args(self, type_ann),
 
                 _ => Err(ErrorKind::Unimplemented {
                     span,
@@ -4388,6 +4388,7 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
                 tracker: Default::default(),
             })),
+            RLit::JSXText(v) => v.validate_with(self),
         }
     }
 }

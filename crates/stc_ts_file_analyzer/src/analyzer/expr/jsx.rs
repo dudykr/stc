@@ -1,10 +1,10 @@
 use stc_ts_ast_rnode::{
-    RJSXAttrOrSpread, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer, RJSXFragment, RJSXMemberExpr,
-    RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText,
+    RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
+    RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, Type, TypeParamInstantiation};
+use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, Type};
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -101,8 +101,11 @@ impl Analyzer<'_, '_> {
         for attr in attrs {
             match attr {
                 RJSXAttrOrSpread::JSXAttr(attr) => match &attr.name {
-                    stc_ts_ast_rnode::RJSXAttrName::Ident(attr_name) => {}
-                    stc_ts_ast_rnode::RJSXAttrName::JSXNamespacedName(attr_name) => {
+                    RJSXAttrName::Ident(attr_name) => {
+                        // TODO(kdy1): Pass down type annotation
+                        let value = attr.value.validate_with_args(self, None);
+                    }
+                    RJSXAttrName::JSXNamespacedName(attr_name) => {
                         return Err(ErrorKind::Unimplemented {
                             span: attr.span,
                             msg: "namespaced name for an attribute".to_string(),
@@ -110,7 +113,9 @@ impl Analyzer<'_, '_> {
                         .into())
                     }
                 },
-                RJSXAttrOrSpread::SpreadElement(attr) => {}
+                RJSXAttrOrSpread::SpreadElement(attr) => {
+                    attr.expr.validate_with_default(self)?;
+                }
             }
         }
 
@@ -120,13 +125,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RJSXElement,
-        mode: TypeOfMode,
-        type_args: Option<&TypeParamInstantiation>,
-        type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<Type> {
         let name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
 
@@ -141,13 +140,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RJSXFragment,
-        mode: TypeOfMode,
-        type_args: Option<&TypeParamInstantiation>,
-        type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<Type> {
         let children = e.children.validate_with(self)?;
 
         self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
@@ -159,7 +152,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElementChild) -> VResult<Option<Type>> {
         match e {
             RJSXElementChild::JSXText(e) => e.validate_with(self).map(Some),
-            RJSXElementChild::JSXExprContainer(e) => e.validate_with(self),
+            RJSXElementChild::JSXExprContainer(e) => e.validate_with_default(self),
             RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self).map(Some),
             RJSXElementChild::JSXElement(e) => e.validate_with_default(self).map(Some),
             RJSXElementChild::JSXFragment(e) => e.validate_with_default(self).map(Some),
@@ -181,8 +174,8 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXExprContainer) -> VResult<Option<Type>> {
-        e.expr.validate_with(self)
+    fn validate(&mut self, e: &RJSXExprContainer, type_ann: Option<&Type>) -> VResult<Option<Type>> {
+        e.expr.validate_with_args(self, type_ann)
     }
 }
 
@@ -195,9 +188,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXExpr) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXExpr, type_ann: Option<&Type>) -> VResult<Option<Type>> {
         match e {
-            RJSXExpr::Expr(e) => e.validate_with_args(self, (TypeOfMode::RValue, None, None)).map(Some),
+            RJSXExpr::Expr(e) => e.validate_with_args(self, (TypeOfMode::RValue, None, type_ann)).map(Some),
             RJSXExpr::JSXEmptyExpr(..) => Ok(None),
         }
     }
@@ -262,5 +255,17 @@ impl Analyzer<'_, '_> {
             msg: "jsx namespaced name".to_string(),
         }
         .into())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RJSXAttrValue, type_ann: Option<&Type>) -> VResult<Option<Type>> {
+        match e {
+            RJSXAttrValue::Lit(v) => v.validate_with(self).map(Some),
+            RJSXAttrValue::JSXElement(v) => v.validate_with_args(self, type_ann).map(Some),
+            RJSXAttrValue::JSXFragment(v) => v.validate_with_args(self, type_ann).map(Some),
+            RJSXAttrValue::JSXExprContainer(v) => v.validate_with_args(self, type_ann),
+        }
     }
 }
