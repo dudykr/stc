@@ -385,7 +385,6 @@ impl Analyzer<'_, '_> {
                         }
 
                         if op == op!("===") || op == op!("==") {
-                            dbg!(123);
                             self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                             self.add_deep_type_fact(span, name, r, true);
