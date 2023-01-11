@@ -8,7 +8,7 @@ use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 
 impl Analyzer<'_, '_> {
-    fn get_jsx_intrinsic_element(&mut self, span: Span) -> VResult<Option<Type>> {
+    fn get_jsx_intrinsic_element_list(&mut self, span: Span) -> VResult<Option<Type>> {
         let jsx = self.get_jsx_namespace();
         let jsx = match jsx {
             Some(v) => v,
@@ -91,7 +91,7 @@ impl Analyzer<'_, '_> {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
                     ident.validate_with_default(self)
                 } else {
-                    if let Some(jsx) = self.get_jsx_intrinsic_element(ident.span)? {
+                    if let Some(jsx) = self.get_jsx_intrinsic_element_list(ident.span)? {
                         self.access_property(
                             ident.span,
                             &jsx,
