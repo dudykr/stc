@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
         let types = self.find_type(&Id::new("JSX".into(), top_level_ctxt)).ok().flatten()?;
 
         for ty in types {
-            if ty.is_namespace() {
+            if ty.is_module() {
                 return Some(ty.into_owned());
             }
         }
