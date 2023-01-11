@@ -2,12 +2,38 @@ use stc_ts_ast_rnode::{RJSXElement, RJSXElementChild, RJSXElementName, RJSXFragm
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{CommonTypeMetadata, Id, IdCtx, Key, KeywordTypeMetadata, Type, TypeParamInstantiation};
-use swc_common::Spanned;
+use swc_common::{Span, Spanned};
 
 use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 
 impl Analyzer<'_, '_> {
+    fn get_jsx_intrinsic_element(&mut self, span: Span) -> VResult<Option<Type>> {
+        let jsx = self.get_jsx_namespace();
+        let jsx = match jsx {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+
+        Ok(Some(
+            self.access_property(
+                span,
+                &jsx,
+                &Key::Normal {
+                    span,
+                    sym: "IntrinsicElements".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            )
+            .context("tried to get JSX.IntrinsicElements")?,
+        ))
+    }
+
     fn get_jsx_namespace(&mut self) -> Option<Type> {
         let top_level_ctxt = self.storage.top_level_ctxt(self.ctx.module_id);
 
@@ -65,27 +91,10 @@ impl Analyzer<'_, '_> {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
                     ident.validate_with_default(self)
                 } else {
-                    if let Some(jsx) = self.get_jsx_namespace() {
-                        let jsx_intrinsic = self
-                            .access_property(
-                                ident.span,
-                                &jsx,
-                                &Key::Normal {
-                                    span: ident.span,
-                                    sym: "IntrinsicElements".into(),
-                                },
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                                AccessPropertyOpts {
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .context("tried to get JSX.IntrinsicElements")?;
-
+                    if let Some(jsx) = self.get_jsx_intrinsic_element(ident.span)? {
                         self.access_property(
                             ident.span,
-                            &jsx_intrinsic,
+                            &jsx,
                             &Key::Normal {
                                 span: ident.span,
                                 sym: ident.sym.clone(),
