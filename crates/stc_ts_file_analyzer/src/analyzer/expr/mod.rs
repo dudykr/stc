@@ -729,9 +729,7 @@ impl Analyzer<'_, '_> {
 
         match (declared, cur) {
             (Key::Private(d), Key::Private(cur)) => {
-                if *d.id.sym() == *cur.id.sym() {
-                    return true;
-                }
+                return *d.id.sym() == *cur.id.sym();
             }
             (Key::Private(..), _) | (_, Key::Private(..)) => return false,
             _ => {}
@@ -1916,27 +1914,26 @@ impl Analyzer<'_, '_> {
                 for v in c.def.body.iter() {
                     match v {
                         ClassMember::Property(ref class_prop) => {
-                            if self.ctx.obj_is_super {
-                                if !class_prop.accessor.getter && !class_prop.accessor.setter {
-                                    if class_prop.key.type_eq(prop) {
-                                        return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
-                                    };
-                                }
-                            }
-                            if class_prop.key.is_private() {
-                                self.storage
-                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                return Ok(Type::any(span, Default::default()));
-                            }
-
-                            if let Some(declaring) = self.scope.declaring_prop.as_ref() {
-                                if class_prop.key == *declaring.sym() {
-                                    return Err(ErrorKind::ReferencedInInit { span }.into());
-                                }
-                            }
-
-                            //
                             if self.key_matches(span, &class_prop.key, prop, false) {
+                                if self.ctx.obj_is_super {
+                                    if !class_prop.accessor.getter && !class_prop.accessor.setter {
+                                        if class_prop.key.type_eq(prop) {
+                                            return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                        };
+                                    }
+                                }
+                                if class_prop.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
+                                if let Some(declaring) = self.scope.declaring_prop.as_ref() {
+                                    if class_prop.key == *declaring.sym() {
+                                        return Err(ErrorKind::ReferencedInInit { span }.into());
+                                    }
+                                }
+
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
                                     None => Type::any(span, Default::default()),
@@ -1944,13 +1941,13 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ClassMember::Method(ref mtd) => {
-                            if mtd.key.is_private() {
-                                self.storage
-                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                return Ok(Type::any(span, Default::default()));
-                            }
-
                             if self.key_matches(span, &mtd.key, prop, false) {
+                                if mtd.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
                                 if mtd.is_abstract {
                                     self.storage.report(ErrorKind::CannotAccessAbstractMember { span }.into());
                                     return Ok(Type::any(span, Default::default()));
