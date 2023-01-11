@@ -296,8 +296,10 @@ impl Analyzer<'_, '_> {
                     right: (&**right, rt.normalize()),
                 };
 
+                let mut has_switch_case_test_not_compatible = false;
                 if !self.can_compare_with_eq(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
+                        has_switch_case_test_not_compatible = true;
                         self.storage.report(
                             ErrorKind::SwitchCaseTestNotCompatible {
                                 span,
@@ -354,9 +356,18 @@ impl Analyzer<'_, '_> {
                 }) {
                     if self.ctx.in_cond {
                         let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-
-                        prevent_generalize(&mut r);
-                        r.make_clone_cheap();
+                        let r = if has_switch_case_test_not_compatible {
+                            Type::Keyword(KeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNeverKeyword,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                        } else {
+                            prevent_generalize(&mut r);
+                            r.make_clone_cheap();
+                            r
+                        };
 
                         if let op!("==") | op!("!=") = op {
                             if r.is_null() || r.is_undefined() {
@@ -374,6 +385,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if op == op!("===") || op == op!("==") {
+                            dbg!(123);
                             self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                             self.add_deep_type_fact(span, name, r, true);
