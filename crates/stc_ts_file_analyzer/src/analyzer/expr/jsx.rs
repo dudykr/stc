@@ -66,6 +66,32 @@ impl Analyzer<'_, '_> {
                     ident.validate_with_default(self)
                 } else {
                     if let Some(jsx) = self.get_jsx_namespace() {
+                        let jsx_intrinsic = self
+                            .access_property(
+                                ident.span,
+                                &jsx,
+                                &Key::Normal {
+                                    span: ident.span,
+                                    sym: "IntrinsicElements".into(),
+                                },
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts { ..Default::default() },
+                            )
+                            .context("tried to get JSX.IntrinsicElements")?;
+
+                        self.access_property(
+                            ident.span,
+                            &jsx_intrinsic,
+                            &Key::Normal {
+                                span: ident.span,
+                                sym: ident.sym.clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Var,
+                            AccessPropertyOpts { ..Default::default() },
+                        )
+                        .context("tried to get type of an intrinsic jsx element")
                     } else {
                         if !self.ctx.in_declare && self.rule().no_implicit_any {
                             self.storage
