@@ -12,6 +12,13 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{analyzer::Analyzer, validator::ValidateWith, VResult};
 
+#[derive(Debug)]
+pub enum ResolvedJsxName {
+    /// [Type] is the object.
+    Intrinsic(Type),
+    Value(Type),
+}
+
 impl Analyzer<'_, '_> {
     fn get_jsx_intrinsic_element(&mut self, span: Span, sym: &JsWord) -> VResult<Type> {
         if let Some(jsx) = self.get_jsx_intrinsic_element_list(span)? {
@@ -99,7 +106,10 @@ impl Analyzer<'_, '_> {
         let name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
 
-        Ok(name)
+        match name {
+            ResolvedJsxName::Intrinsic(name) => Ok(name),
+            ResolvedJsxName::Value(name) => Ok(name),
+        }
     }
 }
 
@@ -169,17 +179,18 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementName) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXElementName) -> VResult<ResolvedJsxName> {
         match e {
             RJSXElementName::Ident(ident) => {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
-                    ident.validate_with_default(self)
+                    ident.validate_with_default(self).map(ResolvedJsxName::Value)
                 } else {
                     self.get_jsx_intrinsic_element(ident.span, &ident.sym)
+                        .map(ResolvedJsxName::Intrinsic)
                 }
             }
-            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self),
-            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self),
+            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self).map(ResolvedJsxName::Value),
+            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self).map(ResolvedJsxName::Value),
         }
     }
 }
