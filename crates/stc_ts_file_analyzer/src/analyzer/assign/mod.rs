@@ -1097,6 +1097,8 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
+                        // TODO(kdy1): Check for value and disallow `number` (keyword type)
+
                         // validEnumAssignments.ts insists that this is valid.
                         // but if enum isn't has num, not assignable
                         let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
@@ -1105,6 +1107,34 @@ impl Analyzer<'_, '_> {
                             for t in items {
                                 if let Type::Enum(en) = t.normalize() {
                                     if en.has_num {
+                                        return Ok(());
+                                    }
+                                }
+                            }
+                        }
+
+                        fail!()
+                    }
+
+                    Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                    | Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
+                        // TODO(kdy1): Check for value and disallow `string` (keyword type)
+
+                        // validEnumAssignments.ts insists that this is valid.
+                        // but if enum isn't has num, not assignable
+                        let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
+
+                        if let Some(items) = items {
+                            for t in items {
+                                if let Type::Enum(en) = t.normalize() {
+                                    if en.has_str {
                                         return Ok(());
                                     }
                                 }
@@ -1125,10 +1155,6 @@ impl Analyzer<'_, '_> {
                     | Type::TypeLit(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
                     | Type::Keyword(KeywordType {
