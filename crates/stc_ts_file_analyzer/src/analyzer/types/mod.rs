@@ -1503,7 +1503,7 @@ impl Analyzer<'_, '_> {
 
                 false
             }
-            v_ => true,
+            _ => true,
         })
     }
 
