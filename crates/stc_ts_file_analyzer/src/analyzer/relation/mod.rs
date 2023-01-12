@@ -36,12 +36,18 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // if source.is_structured_or_instantiable() ||
-        // target.is_structured_or_instantiable() {
-        self.check_type_related_to(source, target, relation)
-        // }
+        if source.is_structured_or_instantiable() || target.is_structured_or_instantiable() {
+            return self.check_type_related_to(source, target, relation);
+        }
 
-        // false
+        match relation {
+            Relation::StrictSubtype => {
+                // TODO: This should be false.
+                // This is true just because this function is not implemented yet
+                return true;
+            }
+            _ => false,
+        }
     }
 
     /// TODO: Implement
@@ -68,7 +74,7 @@ impl Analyzer<'_, '_> {
         //     (source as StringLiteralType).value === (target as
         // StringLiteralType).value) return true;
 
-        if s.is_number_like() && t.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+        if s.is_num_like() && t.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
             return true;
         }
 
@@ -160,14 +166,6 @@ impl Analyzer<'_, '_> {
     ///
     /// Ported from `checkTypeRelatedTo` of `tsc`.
     fn check_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
-        match relation {
-            Relation::Identity => false,
-            Relation::Comparable => false,
-            Relation::StrictSubtype => {
-                // TODO: This should be false.
-                // This is true just because this function is not implemented yet
-                true
-            }
-        }
+        false
     }
 }
