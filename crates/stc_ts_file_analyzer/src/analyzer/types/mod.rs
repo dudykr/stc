@@ -1565,6 +1565,7 @@ impl Analyzer<'_, '_> {
         types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(name).cloned().into_iter().flatten());
 
         let before = dump_type_as_string(ty);
+        dbg!(&types_to_exclude);
         self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(ty);
 
@@ -2436,6 +2437,43 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUnknownKeyword | TsKeywordTypeKind::TsAnyKeyword,
+                span,
+                ..
+            }) => {
+                let mut unknown = vec![
+                    Type::Keyword(KeywordType {
+                        span: *span,
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                    Type::Keyword(KeywordType {
+                        span: *span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                    Type::TypeLit(TypeLit {
+                        span: *span,
+                        members: vec![],
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                ];
+                unknown.retain(|ty| !ty.type_eq(excluded.normalize()));
+                *ty = if unknown.len() == 3 {
+                    Type::Keyword(KeywordType {
+                        span: *span,
+                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                } else {
+                    Type::new_union(*span, unknown)
+                }
+            }
             _ => {}
         }
     }
