@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
 
-use crate::{IntrinsicMetadata, TypeParamInstantiation};
+use crate::{StringMappingMetadata, TypeParamInstantiation};
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct StringMapping {
     pub span: Span,
     pub kind: IntrinsicKind,
     pub type_args: TypeParamInstantiation,
-    pub metadata: IntrinsicMetadata,
+    pub metadata: StringMappingMetadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]

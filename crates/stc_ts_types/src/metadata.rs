@@ -313,11 +313,11 @@ pub struct EnumMetadata {
 impl_traits!(EnumMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct IntrinsicMetadata {
+pub struct StringMappingMetadata {
     pub common: CommonTypeMetadata,
 }
 
-impl_traits!(IntrinsicMetadata);
+impl_traits!(StringMappingMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RestTypeMetadata {
