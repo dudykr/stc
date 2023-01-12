@@ -8,8 +8,8 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, ThisType, Tuple, Type, TypeElement, TypeLit,
+    Array, Conditional, EnumVariant, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType,
+    Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement, TypeLit,
     TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
@@ -527,7 +527,7 @@ impl Analyzer<'_, '_> {
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
             | Type::Instance(..)
-            | Type::Intrinsic(..)
+            | Type::StringMapping(..)
             | Type::Mapped(..)
             | Type::Enum(..)
             | Type::Union(..)
@@ -1860,7 +1860,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Type::Intrinsic(Intrinsic { type_args, .. }) = rhs {
+                if let Type::StringMapping(StringMapping { type_args, .. }) = rhs {
                     if let Some(res) = type_args.params.iter().find_map(|param| {
                         if let Type::Param(TypeParam {
                             constraint: Some(constraint),
@@ -2629,7 +2629,7 @@ impl Analyzer<'_, '_> {
             )
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
 
-            (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
+            (Type::StringMapping(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
 
             (Type::Rest(l), Type::Rest(r)) => {
                 return self
@@ -2649,7 +2649,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only if `to` is not expandable.
-    fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &Intrinsic, r: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
         match to.kind {
             IntrinsicKind::Uppercase => {}
             IntrinsicKind::Lowercase => {}

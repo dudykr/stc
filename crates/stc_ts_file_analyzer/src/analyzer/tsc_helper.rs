@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use num_bigint::BigInt;
-use stc_ts_types::{Intrinsic, IntrinsicKind, TplElem, TplType, Type};
+use stc_ts_types::{IntrinsicKind, StringMapping, TplElem, TplType, Type};
 use swc_atoms::Atom;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
             return Ok(self.is_type_assignable_to(span, source, target));
         }
 
-        if let Type::Intrinsic(Intrinsic {
+        if let Type::StringMapping(StringMapping {
             kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
             ..
         }) = target.normalize()

@@ -54,7 +54,7 @@ use self::type_id::SymbolId;
 pub use self::{
     convert::rprop_name_to_expr,
     id::Id,
-    intrinsic::{Intrinsic, IntrinsicKind},
+    intrinsic::{IntrinsicKind, StringMapping},
     metadata::*,
     module_id::ModuleId,
 };
@@ -206,7 +206,7 @@ pub enum Type {
 
     Tpl(TplType),
 
-    Intrinsic(Intrinsic),
+    StringMapping(StringMapping),
 }
 
 impl Clone for Type {
@@ -318,7 +318,7 @@ impl TypeEq for Type {
             (Type::Rest(l), Type::Rest(r)) => l.type_eq(r),
             (Type::Optional(l), Type::Optional(r)) => l.type_eq(r),
             (Type::Symbol(l), Type::Symbol(r)) => l.type_eq(r),
-            (Type::Intrinsic(l), Type::Intrinsic(r)) => l.type_eq(r),
+            (Type::StringMapping(l), Type::StringMapping(r)) => l.type_eq(r),
             (Type::Tpl(l), Type::Tpl(r)) => l.type_eq(r),
             _ => false,
         }
@@ -1746,7 +1746,7 @@ impl Type {
             Type::Optional(ty) => ty.metadata.common,
             Type::Symbol(ty) => ty.metadata.common,
             Type::Tpl(ty) => ty.metadata.common,
-            Type::Intrinsic(ty) => ty.metadata.common,
+            Type::StringMapping(ty) => ty.metadata.common,
 
             Type::Arc(_) => unreachable!(),
         }
@@ -1788,7 +1788,7 @@ impl Type {
             Type::Optional(ty) => &mut ty.metadata.common,
             Type::Symbol(ty) => &mut ty.metadata.common,
             Type::Tpl(ty) => &mut ty.metadata.common,
-            Type::Intrinsic(ty) => &mut ty.metadata.common,
+            Type::StringMapping(ty) => &mut ty.metadata.common,
 
             Type::Arc(_) => unreachable!(),
         }
@@ -1875,7 +1875,7 @@ impl Type {
 
             Type::Tpl(ty) => ty.span = span,
 
-            Type::Intrinsic(ty) => ty.span = span,
+            Type::StringMapping(ty) => ty.span = span,
 
             Type::Arc(..) => {
                 unreachable!()

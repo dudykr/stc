@@ -17,9 +17,9 @@ use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
-    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator,
-    PropertySignature, QueryExpr, QueryType, Ref, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature,
+    QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
+    TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -207,7 +207,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Cow::Owned(self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned()));
                     }
 
-                    Type::Intrinsic(i) => {
+                    Type::StringMapping(i) => {
                         let ty = self
                             .expand_intrinsic_types(actual_span, i)
                             .context("tried to expand intrinsic type as a part of normalization")?;
@@ -2081,7 +2081,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<Type> {
         let arg = &ty.type_args;
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
@@ -2144,7 +2144,7 @@ impl Analyzer<'_, '_> {
                     }) => self
                         .expand_intrinsic_types(
                             span,
-                            &Intrinsic {
+                            &StringMapping {
                                 span: ty.span,
                                 kind: ty.kind.clone(),
                                 type_args: TypeParamInstantiation {
@@ -2174,7 +2174,7 @@ impl Analyzer<'_, '_> {
                                 .map(|inner_ty| {
                                     self.expand_intrinsic_types(
                                         span,
-                                        &Intrinsic {
+                                        &StringMapping {
                                             span: ty.span(),
                                             kind: ty.kind.clone(),
                                             type_args: TypeParamInstantiation {
@@ -2215,7 +2215,7 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 });
 
-                return Ok(Type::Intrinsic(Intrinsic {
+                return Ok(Type::StringMapping(StringMapping {
                     span,
                     kind: ty.kind.clone(),
                     type_args: TypeParamInstantiation {
@@ -2229,7 +2229,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(Type::Intrinsic(ty.clone()))
+        Ok(Type::StringMapping(ty.clone()))
     }
 
     #[instrument(skip(self, span, type_name, type_args))]

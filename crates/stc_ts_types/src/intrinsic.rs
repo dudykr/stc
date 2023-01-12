@@ -6,7 +6,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
 use crate::{IntrinsicMetadata, TypeParamInstantiation};
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
-pub struct Intrinsic {
+pub struct StringMapping {
     pub span: Span,
     pub kind: IntrinsicKind,
     pub type_args: TypeParamInstantiation,
