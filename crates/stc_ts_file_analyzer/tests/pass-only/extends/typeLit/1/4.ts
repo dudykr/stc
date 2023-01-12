@@ -11,7 +11,7 @@ type B = {
 }
 
 
-type T2 = Extract<B, A>
+type T2 = Extract<A | B, B>
 
 export let _21: T2 = null as any as B;
 export let _22: B = null as any as T2;
