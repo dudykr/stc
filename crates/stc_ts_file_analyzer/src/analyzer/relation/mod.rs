@@ -18,12 +18,12 @@ pub(crate) struct IsRelatedOpts {
 struct IsRelatedData {}
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn is_related_to(&mut self, source: &Type, target: &Type, opts: IsRelatedOpts) -> bool {
+    pub(crate) fn is_type_related_to(&mut self, source: &Type, target: &Type, opts: IsRelatedOpts) -> bool {
         let mut data = IsRelatedData::default();
-        self.is_related_to_inner(&mut data, source, target, opts)
+        self.is_type_related_to_inner(&mut data, source, target, opts)
     }
 
-    fn is_related_to_inner(&mut self, data: &mut IsRelatedData, source: &Type, target: &Type, opts: IsRelatedOpts) -> bool {
+    fn is_type_related_to_inner(&mut self, data: &mut IsRelatedData, source: &Type, target: &Type, opts: IsRelatedOpts) -> bool {
         if source.type_eq(target) {
             return true;
         }

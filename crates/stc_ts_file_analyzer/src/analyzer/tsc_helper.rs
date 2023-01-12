@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
 
     /// `isTypeIdenticalTo` of `tsc`.
     pub(crate) fn is_type_identical_to(&mut self, source: &Type, target: &Type) -> bool {
-        self.is_related_to(
+        self.is_type_related_to(
             source,
             target,
             IsRelatedOpts {
