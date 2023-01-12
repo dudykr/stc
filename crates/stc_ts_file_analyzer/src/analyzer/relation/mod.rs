@@ -41,7 +41,9 @@ impl Analyzer<'_, '_> {
         false
     }
 
+    /// Ported from `isSimpleTypeRelatedTo` of `tsc`.
     fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {}
 
+    /// Ported from `checkTypeRelatedTo` of `tsc`.
     fn check_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {}
 }
