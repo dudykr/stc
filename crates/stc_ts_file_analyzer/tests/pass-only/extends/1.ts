@@ -1,3 +1,4 @@
+//@strict: true
 
 
 enum TerrestrialAnimalTypes {

@@ -1,3 +1,4 @@
+//@strict: true
 
 
 type A = {
