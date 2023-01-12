@@ -1,0 +1,146 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:3:3]
+ 3 | if (value === undefined) {
+   :     ^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:3:3]
+ 3 | if (value === undefined) {
+   :               ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:3:3]
+ 3 | if (value === undefined) {
+   :     ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:4:5]
+ 4 | return value; // value: T extends unknown
+   :        ^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:6:3]
+ 6 | value; // T & ({} | null)
+   : ^^^^^
+   `----
+
+Error: 
+  > (T & (null | {
+  | }))
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:7:3]
+ 7 | if (value === 42) {
+   :     ^^^^^
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:7:3]
+ 7 | if (value === 42) {
+   :     ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:8:5]
+ 8 | value; // T & {}
+   : ^^^^^
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:9:5]
+ 9 | throw Error("Meaning of life value");
+   :       ^^^^^
+   `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:9:5]
+ 9 | throw Error("Meaning of life value");
+   :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Error
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:11:3]
+ 11 | value; // value: T & ({} | null)
+    : ^^^^^
+    `----
+
+Error: 
+  > (T & (null | {
+  | }))
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:12:3]
+ 12 | throw Error("Meaning of life value");
+    :       ^^^^^
+    `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:12:3]
+ 12 | throw Error("Meaning of life value");
+    :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Error
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:16:1]
+ 16 | doSomething1(undefined); // undefined
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends unknown>(value: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:16:1]
+ 16 | doSomething1(undefined); // undefined
+    :              ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:16:1]
+ 16 | doSomething1(undefined); // undefined
+    : ^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any

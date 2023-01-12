@@ -2413,10 +2413,12 @@ impl Analyzer<'_, '_> {
                 constraint: Some(constraint),
                 ..
             }) => {
-                self.exclude_type(span, constraint, &excluded);
-                if constraint.is_never() {
-                    *ty = Type::never(span, Default::default());
-                }
+                let mut constraint_temp = constraint.normalize().clone();
+                self.exclude_type(span, &mut constraint_temp, &excluded);
+                *ty = Type::new_intersection(span, [ty.clone(), constraint_temp]);
+                // if constraint_temp.is_never() {
+                //     *ty = Type::never(span, Default::default());
+                // }
             }
 
             Type::Class(cls) => {
@@ -2438,10 +2440,14 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsUnknownKeyword | TsKeywordTypeKind::TsAnyKeyword,
+                kind: TsKeywordTypeKind::TsUnknownKeyword,
                 span,
                 ..
             }) => {
+                if !self.rule().strict_null_checks {
+                    return;
+                }
+
                 let mut unknown = vec![
                     Type::Keyword(KeywordType {
                         span: *span,

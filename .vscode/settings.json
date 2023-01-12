@@ -17,6 +17,7 @@
   },
   // Important
   "editor.formatOnSave": true,
+  "files.eol": "\n",
   "git.ignoreLimitWarning": true,
   "git.detectSubmodules": false,
   "rust-analyzer.diagnostics.disabled": [
@@ -41,5 +42,5 @@
   ],
   "rust-analyzer.checkOnSave.command": "clippy",
   "debug.allowBreakpointsEverywhere": true,
-  "rust-analyzer.debug.openDebugPane": true,
+  "rust-analyzer.debug.openDebugPane": true
 }
