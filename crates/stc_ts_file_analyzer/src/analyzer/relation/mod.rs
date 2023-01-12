@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
 
         // if source.is_structured_or_instantiable() ||
         // target.is_structured_or_instantiable() {
-        return self.check_type_related_to(source, target, relation);
+        self.check_type_related_to(source, target, relation)
         // }
 
         // false
