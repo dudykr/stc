@@ -53,6 +53,14 @@ impl Analyzer<'_, '_> {
     ///
     /// Ported from `checkTypeRelatedTo` of `tsc`.
     fn check_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
-        false
+        match relation {
+            Relation::Identity => false,
+            Relation::Comparable => false,
+            Relation::StrictSubtype => {
+                // TODO: This should be false.
+                // This is true just because this function is not implemented yet
+                true
+            }
+        }
     }
 }
