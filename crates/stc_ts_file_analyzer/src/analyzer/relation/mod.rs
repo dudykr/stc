@@ -34,16 +34,25 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if source.is_structured_or_instantiable() || target.is_structured_or_instantiable() {
-            return self.check_type_related_to(source, target, relation);
-        }
+        // if source.is_structured_or_instantiable() ||
+        // target.is_structured_or_instantiable() {
+        return self.check_type_related_to(source, target, relation);
+        // }
 
+        // false
+    }
+
+    /// TODO: Implement
+    ///
+    /// Ported from `isSimpleTypeRelatedTo` of `tsc`.
+    fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
         false
     }
 
-    /// Ported from `isSimpleTypeRelatedTo` of `tsc`.
-    fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {}
-
+    /// TODO: Implement
+    ///
     /// Ported from `checkTypeRelatedTo` of `tsc`.
-    fn check_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {}
+    fn check_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
+        false
+    }
 }
