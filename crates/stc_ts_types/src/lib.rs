@@ -1554,7 +1554,7 @@ impl Type {
     }
 
     pub fn is_any(&self) -> bool {
-        match self.normalize() {
+        match self.normalize_instance() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -1562,20 +1562,18 @@ impl Type {
 
             Type::Union(t) => t.types.iter().any(|t| t.is_any()),
 
-            Type::Instance(ty) => ty.ty.is_any(),
-
             _ => false,
         }
     }
 
     pub fn is_unknown(&self) -> bool {
-        match *self.normalize() {
+        match self.normalize_instance() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => true,
 
-            Type::Union(ref t) => t.types.iter().any(|t| t.is_unknown()),
+            Type::Union(t) => t.types.iter().any(|t| t.is_unknown()),
 
             _ => false,
         }
