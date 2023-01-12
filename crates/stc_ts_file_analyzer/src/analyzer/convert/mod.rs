@@ -16,8 +16,8 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
     ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
-    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator,
-    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplElem, TplType,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
+    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem, TplType,
     TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
     TypeParamInstantiation,
 };
@@ -200,7 +200,7 @@ impl Analyzer<'_, '_> {
                     RTsType::TsKeywordType(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
-                    }) => Type::Intrinsic(Intrinsic {
+                    }) => Type::StringMapping(StringMapping {
                         span: d.span,
                         kind: IntrinsicKind::from(&*d.id.sym),
                         type_args: TypeParamInstantiation {

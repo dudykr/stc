@@ -217,13 +217,13 @@ impl_is!(
 impl_is!(Symbol, Symbol, is_symbol, as_symbol, as_symbol_mut, symbol, expect_symbol);
 impl_is!(Tpl, TplType, is_tpl, as_tpl, as_tpl_mut, tpl, expect_tpl);
 impl_is!(
-    Intrinsic,
-    Intrinsic,
-    is_intrinsic,
-    as_intrinsic,
-    as_intrinsic_mut,
-    intrinsic,
-    expect_intrinsic
+    StringMapping,
+    StringMapping,
+    is_string_mapping,
+    as_string_mapping,
+    as_string_mapping_mut,
+    string_mapping,
+    expect_string_mapping
 );
 impl_is!(
     Instance,

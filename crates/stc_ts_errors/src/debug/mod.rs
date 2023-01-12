@@ -82,7 +82,7 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
         return String::new();
     }
 
-    if let Type::Intrinsic(t) = t.normalize() {
+    if let Type::StringMapping(t) = t.normalize() {
         return format!("intrinsic:{:?}<{}>", t.kind, force_dump_type_as_string(&t.type_args.params[0]));
     }
 
