@@ -8,6 +8,7 @@ use super::Analyzer;
 pub(crate) enum Relation {
     #[default]
     Identity,
+    Assignable,
     Comparable,
     StrictSubtype,
 }
@@ -115,6 +116,41 @@ impl Analyzer<'_, '_> {
         }
         if s.is_null() && (!self.rule().strict_null_checks && !(t.is_union_type() || t.is_intersection()) || t.is_null()) {
             return true;
+        }
+
+        // TODO
+        // if (s & TypeFlags.Object && t & TypeFlags.NonPrimitive && !(relation ===
+        // strictSubtypeRelation && isEmptyAnonymousObjectType(source) &&
+        // !(getObjectFlags(source) & ObjectFlags.FreshLiteral))) return true;
+
+        if relation == Relation::Assignable || relation == Relation::Comparable {
+            if s.is_any() {
+                return true;
+            }
+
+            // Type number is assignable to any computed numeric enum type or
+            // any numeric enum literal type, and a numeric literal
+            // type is assignable any computed numeric enum type or any numeric
+            // enum literal type with a matching value. These rules
+            // exist such that enums can be used for bit-flag purposes.
+
+            // TODO
+            // if (s & TypeFlags.Number && (t & TypeFlags.Enum || t &
+            // TypeFlags.NumberLiteral && t & TypeFlags.EnumLiteral)) return
+            // true;
+
+            // TODO
+            // if (s & TypeFlags.NumberLiteral && !(s & TypeFlags.EnumLiteral)
+            // && (t & TypeFlags.Enum ||     t & TypeFlags.
+            // NumberLiteral && t & TypeFlags.EnumLiteral &&
+            //     (source as NumberLiteralType).value === (target as
+            // NumberLiteralType).value)) return true;
+
+            // Anything is assignable to a union containing undefined, null, and
+            // {}
+
+            // TODO
+            // if (isUnknownLikeUnionType(target)) return true;
         }
 
         false
