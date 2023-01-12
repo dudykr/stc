@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
         }
 
         if relation != Relation::Identity {
-            if relation == Relation::Comparable && !target.is_never() && self.is_simple_type_related_to(target, source, opts)
+            if relation == Relation::Comparable && !target.is_never() && self.is_simple_type_related_to(target, source, relation)
                 || self.is_simple_type_related_to(source, target, relation)
             {
                 return true;

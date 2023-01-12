@@ -25,10 +25,7 @@ use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::info;
 
-use super::{
-    relation::{IsRelatedOpts, Relation},
-    types::NormalizeTypeOpts,
-};
+use super::{relation::Relation, types::NormalizeTypeOpts};
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -490,13 +487,7 @@ impl Analyzer<'_, '_> {
                         break;
                     }
 
-                    if self.is_type_related_to(
-                        b,
-                        ty,
-                        IsRelatedOpts {
-                            kind: Relation::StrictSubtype,
-                        },
-                    ) {
+                    if self.is_type_related_to(b, ty, Relation::StrictSubtype) {
                         match self.extends(span, b, ty, Default::default()) {
                             Some(true) => {
                                 // Remove ty.
