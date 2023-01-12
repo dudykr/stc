@@ -420,18 +420,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) enum UnionReduction {
-    None = 0,
-    Literal,
-    Subtype,
-}
-
 impl Analyzer<'_, '_> {
-    /// Ported from `getUnionType` of `tsc`.
-    pub(super) fn get_union_type(&mut self, span: Span, types: Vec<Type>, reduction: Option<UnionReduction>) -> VResult<Type> {
-        let reduction = reduction.unwrap_or(UnionReduction::Literal);
-    }
-
     /// This method may remove `SafeSubscriber` from `Subscriber` |
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
