@@ -349,16 +349,9 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for v in &e.members {
-                    keys.push(match &v.id {
-                        RTsEnumMemberId::Ident(i) => Key::Normal {
-                            span: i.span,
-                            sym: i.sym.clone(),
-                        },
-                        RTsEnumMemberId::Str(i) => Key::Normal {
-                            span: i.span,
-                            sym: i.value.clone(),
-                        },
-                    });
+                    if let Ok(val) = self.validate_key(&v.val, false) {
+                        keys.push(val);
+                    }
                 }
 
                 Ok(Some(keys))
