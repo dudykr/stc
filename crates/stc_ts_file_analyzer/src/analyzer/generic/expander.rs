@@ -281,11 +281,6 @@ impl Analyzer<'_, '_> {
                 Type::Class(..) | Type::Enum(..) => return Some(false),
                 _ => {}
             },
-            Type::Interface(..) => {
-                if let Type::TypeLit(..) = parent {
-                    return Some(false);
-                }
-            }
             Type::TypeLit(..) => match parent {
                 Type::Class(..) | Type::ClassDef(..) => return Some(false),
                 _ => {}
