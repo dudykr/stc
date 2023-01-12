@@ -1,5 +1,6 @@
 use stc_ts_types::Type;
 use swc_common::TypeEq;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::Analyzer;
 
@@ -46,6 +47,76 @@ impl Analyzer<'_, '_> {
     ///
     /// Ported from `isSimpleTypeRelatedTo` of `tsc`.
     fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
+        let (s, t) = (source, target);
+
+        if t.is_any() || t.is_unknown() || s.is_never() {
+            return true;
+        }
+
+        if t.is_never() {
+            return false;
+        }
+
+        if s.is_str_like() && t.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+            return true;
+        }
+
+        // TODO
+        // if (s & TypeFlags.StringLiteral && s & TypeFlags.EnumLiteral &&
+        //     t & TypeFlags.StringLiteral && !(t & TypeFlags.EnumLiteral) &&
+        //     (source as StringLiteralType).value === (target as
+        // StringLiteralType).value) return true;
+
+        if s.is_number_like() && t.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+            return true;
+        }
+
+        // TODO
+        // if (s & TypeFlags.NumberLiteral && s & TypeFlags.EnumLiteral &&
+        //     t & TypeFlags.NumberLiteral && !(t & TypeFlags.EnumLiteral) &&
+        //     (source as NumberLiteralType).value === (target as
+        // NumberLiteralType).value) return true;
+
+        if s.is_bigint_like() && t.is_kwd(TsKeywordTypeKind::TsBigIntKeyword) {
+            return true;
+        }
+
+        if s.is_bool_like() && t.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
+            return true;
+        }
+
+        if s.is_symbol_like() && t.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+            return true;
+        }
+
+        // TODO
+        // if (s & TypeFlags.Enum && t & TypeFlags.Enum && source.symbol.escapedName ===
+        // target.symbol.escapedName &&     isEnumTypeRelatedTo(source.symbol,
+        // target.symbol, errorReporter)) return true;
+
+        // TODO
+        // if (s & TypeFlags.EnumLiteral && t & TypeFlags.EnumLiteral) {
+        //     if (s & TypeFlags.Union && t & TypeFlags.Union &&
+        // isEnumTypeRelatedTo(source.symbol, target.symbol, errorReporter)) return
+        // true;     if (s & TypeFlags.Literal && t & TypeFlags.Literal &&
+        // (source as LiteralType).value === (target as LiteralType).value &&
+        //         isEnumTypeRelatedTo(source.symbol, target.symbol, errorReporter))
+        // return true; }
+
+        // In non-strictNullChecks mode, `undefined` and `null` are assignable to
+        // anything except `never`. Since unions and intersections may reduce to
+        // `never`, we exclude them here.
+
+        if s.is_undefined()
+            && (!self.rule().strict_null_checks && !(t.is_union_type() || t.is_intersection())
+                || (t.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || t.is_kwd(TsKeywordTypeKind::TsVoidKeyword)))
+        {
+            return true;
+        }
+        if s.is_null() && (!self.rule().strict_null_checks && !(t.is_union_type() || t.is_intersection()) || t.is_null()) {
+            return true;
+        }
+
         false
     }
 
