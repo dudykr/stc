@@ -4134,6 +4134,7 @@ impl Analyzer<'_, '_> {
                 ScopeKind::Fn
                 | ScopeKind::Method { .. }
                 | ScopeKind::Class
+                | ScopeKind::ClassStaticBlock
                 | ScopeKind::Module
                 | ScopeKind::Constructor
                 | ScopeKind::ArrowFn => true,

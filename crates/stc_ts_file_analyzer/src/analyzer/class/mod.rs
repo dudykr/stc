@@ -2263,7 +2263,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, b: &RStaticBlock) {
-        b.body.visit_with(self);
+        self.with_child(ScopeKind::ClassStaticBlock, Default::default(), |analyzer| {
+            b.body.stmts.visit_with(analyzer);
+            Ok(())
+        })?;
+
         Ok(())
     }
 }
