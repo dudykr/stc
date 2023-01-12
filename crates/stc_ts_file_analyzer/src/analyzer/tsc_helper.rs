@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
             source,
             target,
             IsRelatedOpts {
-                kind: Relation::Identical,
+                kind: Relation::Identity,
                 ..Default::default()
             },
         )

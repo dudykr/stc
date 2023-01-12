@@ -6,7 +6,8 @@ use super::Analyzer;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum Relation {
     #[default]
-    Identical,
+    Identity,
+    Comparable,
     StrictSubtype,
 }
 
@@ -26,15 +27,24 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_type_related_to_inner(&mut self, data: &mut IsRelatedData, source: &Type, target: &Type, opts: IsRelatedOpts) -> bool {
-        match opts.kind {
-            Relation::Identical => {
-                if source.type_eq(target) {
-                    return true;
-                }
+        let relation = opts.kind;
 
-                false
-            }
+        if source.type_eq(target) {
+            return true;
+        }
+
+        if relation == Relation::Comparable && !target.is_never() && self.is_simple_type_related_to(target, source, opts)
+            || self.is_simple_type_related_to(source, target, opts)
+        {
+            return true;
+        }
+
+        match opts.kind {
+            Relation::Identity => false,
+            Relation::Comparable => false,
             Relation::StrictSubtype => true,
         }
     }
+
+    fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, opts: IsRelatedOpts) -> bool {}
 }
