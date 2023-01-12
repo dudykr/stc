@@ -114,7 +114,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
-        if ty.is_any() || ty.is_str() || ty.is_intrinsic() || ty.is_tpl() {
+        if ty.is_any() || ty.is_str() || ty.is_string_mapping() || ty.is_tpl() {
             Cow::Borrowed(ty)
         } else {
             Cow::Owned(Type::Tpl(TplType {

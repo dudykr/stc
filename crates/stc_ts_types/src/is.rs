@@ -219,11 +219,11 @@ impl_is!(Tpl, TplType, is_tpl, as_tpl, as_tpl_mut, tpl, expect_tpl);
 impl_is!(
     StringMapping,
     StringMapping,
-    is_intrinsic,
-    as_intrinsic,
-    as_intrinsic_mut,
-    intrinsic,
-    expect_intrinsic
+    is_string_mapping,
+    as_string_mapping,
+    as_string_mapping_mut,
+    string_mapping,
+    expect_string_mapping
 );
 impl_is!(
     Instance,

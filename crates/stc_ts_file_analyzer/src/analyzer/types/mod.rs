@@ -2086,7 +2086,7 @@ impl Analyzer<'_, '_> {
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                let new_val = apply_intrinsic(&ty.kind, &s.value);
+                let new_val = apply_string_mapping(&ty.kind, &s.value);
 
                 return Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
@@ -2112,7 +2112,7 @@ impl Analyzer<'_, '_> {
                 let quasis = quasis
                     .iter()
                     .map(|quasis| {
-                        let value = apply_intrinsic(&ty.kind, &quasis.value);
+                        let value = apply_string_mapping(&ty.kind, &quasis.value);
 
                         TplElem { value, ..quasis.clone() }
                     })
@@ -2496,7 +2496,7 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     }
 }
 
-fn apply_intrinsic<T: AsRef<str>>(intrinsic: &IntrinsicKind, raw: T) -> Atom {
+fn apply_string_mapping<T: AsRef<str>>(intrinsic: &IntrinsicKind, raw: T) -> Atom {
     let raw = raw.as_ref();
 
     match intrinsic {
