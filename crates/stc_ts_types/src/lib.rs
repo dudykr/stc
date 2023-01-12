@@ -225,7 +225,7 @@ impl Clone for Type {
                 macro_rules! work {
                     () => {{
                         match self {
-                            Type::Intrinsic(ty) => ty.clone().into(),
+                            Type::StringMapping(ty) => ty.clone().into(),
                             Type::Instance(ty) => ty.clone().into(),
                             Type::Lit(ty) => ty.clone().into(),
                             Type::Query(ty) => ty.clone().into(),
