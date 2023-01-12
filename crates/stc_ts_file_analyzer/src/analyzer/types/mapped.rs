@@ -1,5 +1,6 @@
 use std::{borrow::Cow, collections::HashMap};
 
+use itertools::Itertools;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
@@ -338,6 +339,33 @@ impl Analyzer<'_, '_> {
                     match elem_keys {
                         Some(v) => keys.extend(v),
                         None => return Ok(None),
+                    }
+                }
+
+                Ok(Some(keys))
+            }
+
+            Type::Enum(e) => {
+                let mut keys = vec![];
+
+                for v in &e.members {
+                    if let Ok(val) = self.validate_key(&v.val, false) {
+                        keys.push(val);
+                    }
+                }
+
+                Ok(Some(keys))
+            }
+
+            Type::EnumVariant(e) => {
+                let mut keys = vec![];
+
+                if let Some(types) = self.find_type(&e.enum_name)? {
+                    for ty in types.into_iter().map(Cow::into_owned).collect_vec() {
+                        if ty.is_enum_type() {
+                            let items = self.convert_type_to_keys(span, &ty)?;
+                            keys.extend(items.into_iter().flatten());
+                        }
                     }
                 }
 

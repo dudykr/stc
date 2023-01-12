@@ -1097,6 +1097,8 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
+                        // TODO(kdy1): Check for value and disallow `number` (keyword type)
+
                         // validEnumAssignments.ts insists that this is valid.
                         // but if enum isn't has num, not assignable
                         let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
@@ -1105,6 +1107,34 @@ impl Analyzer<'_, '_> {
                             for t in items {
                                 if let Type::Enum(en) = t.normalize() {
                                     if en.has_num {
+                                        return Ok(());
+                                    }
+                                }
+                            }
+                        }
+
+                        fail!()
+                    }
+
+                    Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                    | Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
+                        // TODO(kdy1): Check for value and disallow `string` (keyword type)
+
+                        // validEnumAssignments.ts insists that this is valid.
+                        // but if enum isn't has num, not assignable
+                        let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
+
+                        if let Some(items) = items {
+                            for t in items {
+                                if let Type::Enum(en) = t.normalize() {
+                                    if en.has_str {
                                         return Ok(());
                                     }
                                 }
@@ -1125,10 +1155,6 @@ impl Analyzer<'_, '_> {
                     | Type::TypeLit(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
                     | Type::Keyword(KeywordType {
@@ -1165,10 +1191,7 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
                     Type::Lit(LitType {
-                        lit: RTsLit::Number(..), ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        lit: RTsLit::Number(r_num),
                         ..
                     }) => {
                         if opts.do_not_convert_enum_to_string_nor_number {
@@ -1184,9 +1207,37 @@ impl Analyzer<'_, '_> {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
                                     }) {
-                                        match &*v.val {
-                                            RExpr::Lit(RLit::Num(..)) => return Ok(()),
-                                            _ => fail!(),
+                                        if let RExpr::Lit(RLit::Num(l_num)) = &*v.val {
+                                            if l_num.value == r_num.value {
+                                                return Ok(());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        fail!()
+                    }
+                    Type::Lit(LitType {
+                        lit: RTsLit::Str(r_str), ..
+                    }) => {
+                        if opts.do_not_convert_enum_to_string_nor_number {
+                            fail!()
+                        }
+
+                        let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
+
+                        if let Some(items) = items {
+                            for t in items {
+                                if let Type::Enum(en) = t.normalize() {
+                                    if let Some(v) = en.members.iter().find(|m| match m.id {
+                                        RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                                        | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
+                                    }) {
+                                        if let RExpr::Lit(RLit::Str(l_str)) = &*v.val {
+                                            if l_str.value == r_str.value {
+                                                return Ok(());
+                                            }
                                         }
                                     }
                                 }
@@ -2805,7 +2856,7 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&r)))
+        res.with_context(|| format!("tried to assign {} to a mapped type", force_dump_type_as_string(&r)))
     }
 
     /// Returns true for `A | B | | C = A | B` and similar cases.

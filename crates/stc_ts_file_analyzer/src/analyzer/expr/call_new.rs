@@ -3145,6 +3145,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -3245,7 +3246,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 if let Some(previous_types) = self.find_var_type(&var_name.clone(), TypeOfMode::RValue).map(Cow::into_owned) {
-                    let narrowed_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
+                    let narrowed_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.fixed().freezed();
 
                     self.add_type_fact(&var_name, narrowed_ty, new_ty.clone());
                     return;
