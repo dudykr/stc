@@ -429,7 +429,7 @@ impl Analyzer<'_, '_> {
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
-            if let Type::Tuple(tuple) = ty.normalize_mut() {
+            if let Some(tuple) = ty.as_tuple_mut() {
                 let span = tuple.span;
 
                 let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
