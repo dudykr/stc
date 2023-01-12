@@ -425,6 +425,7 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
@@ -459,6 +460,7 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
             !matches!(
@@ -507,6 +509,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
         let mut new = vec![];
 

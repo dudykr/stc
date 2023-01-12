@@ -3145,6 +3145,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
