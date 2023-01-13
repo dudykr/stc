@@ -1073,6 +1073,9 @@ impl Analyzer<'_, '_> {
         )?;
         orig_ty.make_clone_cheap();
 
+        if orig_ty.normalize().is_any() {
+            return Ok(ty.into_owned());
+        }
         let _stack = stack::track(span)?;
 
         if let Type::Union(orig) = orig_ty.normalize() {
