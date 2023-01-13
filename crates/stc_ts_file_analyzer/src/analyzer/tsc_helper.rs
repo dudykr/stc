@@ -6,10 +6,7 @@ use swc_atoms::Atom;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
-use super::{
-    relation::{IsRelatedOpts, Relation},
-    Analyzer,
-};
+use super::{relation::Relation, Analyzer};
 use crate::VResult;
 
 /// These methods are ported from `tsc`.
@@ -31,14 +28,7 @@ impl Analyzer<'_, '_> {
 
     /// `isTypeIdenticalTo` of `tsc`.
     pub(crate) fn is_type_identical_to(&mut self, source: &Type, target: &Type) -> bool {
-        self.is_related_to(
-            source,
-            target,
-            IsRelatedOpts {
-                kind: Relation::Identical,
-                ..Default::default()
-            },
-        )
+        self.is_type_related_to(source, target, Relation::Identity)
     }
 
     /// Ported from `isTypeAssignableTo` of `tsc`.
