@@ -1089,6 +1089,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
         let mut orig_ty = self.normalize(
             Some(span),

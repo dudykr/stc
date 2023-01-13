@@ -13,9 +13,9 @@ use swc_ecma_ast::*;
 
 use crate::{
     Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType, InferType, Interface,
-    Intersection, Intrinsic, Key, KeywordType, LitType, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType, StaticThis,
-    Symbol, ThisType, TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation,
-    Union,
+    Intersection, Key, KeywordType, LitType, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType, StaticThis,
+    StringMapping, Symbol, ThisType, TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union,
 };
 
 impl From<Box<Type>> for RTsType {
@@ -64,7 +64,7 @@ impl From<Type> for RTsType {
             Type::Symbol(t) => t.into(),
             Type::StaticThis(t) => t.into(),
             Type::Tpl(t) => t.into(),
-            Type::Intrinsic(t) => t.into(),
+            Type::StringMapping(t) => t.into(),
         }
     }
 }
@@ -785,14 +785,14 @@ impl From<TplElem> for RTplElement {
     }
 }
 
-impl From<Intrinsic> for RTsType {
-    fn from(t: Intrinsic) -> Self {
+impl From<StringMapping> for RTsType {
+    fn from(t: StringMapping) -> Self {
         RTsType::TsKeywordType(t.into())
     }
 }
 
-impl From<Intrinsic> for RTsKeywordType {
-    fn from(t: Intrinsic) -> Self {
+impl From<StringMapping> for RTsKeywordType {
+    fn from(t: StringMapping) -> Self {
         RTsKeywordType {
             span: t.span,
             kind: TsKeywordTypeKind::TsIntrinsicKeyword,

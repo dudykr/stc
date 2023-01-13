@@ -2,7 +2,7 @@
 
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
-use stc_ts_types::{Intrinsic, IntrinsicKind, LitType, TplType, Type};
+use stc_ts_types::{IntrinsicKind, LitType, StringMapping, TplType, Type};
 use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                if let Type::Intrinsic(Intrinsic {
+                if let Type::StringMapping(StringMapping {
                     kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
                     ..
                 }) = target.normalize()
