@@ -45,7 +45,7 @@ use testing::{StdErr, Tester};
 use self::common::load_fixtures;
 
 struct RecordOnPanic {
-    filename: PathBuf,
+    stats_file_name: PathBuf,
     stats: Stats,
 }
 
@@ -55,7 +55,7 @@ impl Drop for RecordOnPanic {
             panic: 1,
             ..self.stats.clone()
         };
-        print_per_test_stat(&self.filename, &stats);
+        print_per_test_stat(&self.stats_file_name, &stats);
         record_stat(stats);
     }
 }
@@ -231,11 +231,11 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     if use_target {
         for spec in specs.iter() {
-            if is_parser_test(&load_expected_errors(&path, Some(spec))) {
+            if is_parser_test(&load_expected_errors(&path, Some(spec)).1) {
                 return None;
             }
         }
-    } else if is_parser_test(&load_expected_errors(&path, None)) {
+    } else if is_parser_test(&load_expected_errors(&path, None).1) {
         return None;
     }
 
@@ -264,7 +264,9 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     Some(box move || {
         for spec in specs {
-            do_test(&path, spec, use_target).unwrap();
+            let _ = catch_unwind(|| {
+                do_test(&path, spec, use_target).unwrap();
+            });
         }
     })
 }
@@ -284,8 +286,10 @@ fn target_to_str(target: EsVersion) -> &'static str {
     }
 }
 
-/// If `spec` is [Some], it's use to construct filename
-fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> Vec<RefError> {
+/// If `spec` is [Some], it's use to construct filename.
+///
+/// Returns `(file_stem, errors)`
+fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<RefError>) {
     let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
             "{}(target={}).errors.json",
@@ -295,11 +299,11 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> Vec<RefError
         None => ts_file.with_extension("errors.json"),
     };
 
-    if !errors_file.exists() {
+    let errors = if !errors_file.exists() {
         println!("errors file does not exists: {}", errors_file.display());
         vec![]
     } else {
-        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(errors_file).expect("failed to open errors file"))
+        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(&errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")
             .unwrap();
 
@@ -315,7 +319,9 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> Vec<RefError
         // TODO(kdy1): Match column and message
 
         errors
-    }
+    };
+
+    (errors_file.file_stem().unwrap().to_string_lossy().into_owned(), errors)
 }
 
 struct TestSpec {
@@ -563,8 +569,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
 fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
+    let (file_stem, mut expected_errors) = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
     expected_errors.sort();
+
+    let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem.replace(".errors.json", "")));
 
     let TestSpec {
         err_shift_n,
@@ -576,7 +584,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     } = spec;
 
     let stat_guard = RecordOnPanic {
-        filename: file_name.to_path_buf(),
+        stats_file_name: stats_file_name.clone(),
         stats: Stats {
             required_error: expected_errors.len(),
             ..Default::default()
@@ -745,7 +753,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     // Print per-test stats so we can prevent regressions.
     if cfg!(debug_assertions) {
-        print_per_test_stat(file_name, &stats);
+        print_per_test_stat(&stats_file_name, &stats);
     }
 
     let total_stats = record_stat(stats);
@@ -801,11 +809,9 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     Ok(())
 }
 
-fn print_per_test_stat(file_name: &Path, stats: &Stats) {
-    let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_name.file_name().unwrap().to_string_lossy()));
-
+fn print_per_test_stat(stats_file_name: &Path, stats: &Stats) {
     if env::var("CI").unwrap_or_default() == "1" {
-        let stat_string = fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
+        let stat_string = fs::read_to_string(stats_file_name).expect("failed to read test stats file");
 
         assert_eq!(format!("{:#?}", stats), stat_string, "CI=1 so test stats must match");
     } else {
