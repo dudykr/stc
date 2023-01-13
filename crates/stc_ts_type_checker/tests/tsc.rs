@@ -211,6 +211,9 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
+    let specs = parse_test(&path);
+    let use_target = specs.len() > 1;
+
     if let Ok(errors) = load_expected_errors(&path) {
         for err in errors {
             if err.code.starts_with("TS1") && err.code.len() == 6 {
@@ -248,7 +251,9 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     .ok()??;
 
     Some(box move || {
-        do_test(&path).unwrap();
+        for spec in specs {
+            do_test(&path, spec, use_target).unwrap();
+        }
     })
 }
 
