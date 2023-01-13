@@ -21,7 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::{Context, Error};
+use anyhow::Context;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
@@ -226,7 +226,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
-    let specs = parse_test(&path).ok()?;
+    let specs = catch_unwind(|| parse_test(&path)).ok()?;
     let use_target = specs.len() > 1;
 
     if use_target {
@@ -348,7 +348,7 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
     s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
 }
 
-fn parse_test(file_name: &Path) -> Result<Vec<TestSpec>, Error> {
+fn parse_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
 
@@ -495,7 +495,7 @@ fn parse_test(file_name: &Path) -> Result<Vec<TestSpec>, Error> {
                     let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
                     rule.suppress_implicit_any_index_errors = v;
                 } else if s.starts_with("module:") {
-                    let v = s["module:".len()..].trim().parse().unwrap();
+                    let v = s["module:".len()..].trim().to_lowercase().parse().unwrap();
                     module_config = v;
                 } else if s.to_lowercase().starts_with("notypesandsymbols") {
                     // Ignored as we don't generate them.
@@ -514,8 +514,7 @@ fn parse_test(file_name: &Path) -> Result<Vec<TestSpec>, Error> {
                     rule.strict_null_checks = strict;
                     rule.strict_function_types = strict;
                 } else {
-                    eprintln!("Comment is not handled: {}", s);
-                    return Err(());
+                    panic!("Comment is not handled: {}", s);
                 }
             }
         }
@@ -558,7 +557,7 @@ fn parse_test(file_name: &Path) -> Result<Vec<TestSpec>, Error> {
             })
             .collect())
     })
-    .map_err(|err| anyhow::anyhow!("Failed to parse {}: {}", fname, err))
+    .unwrap()
 }
 
 fn do_test(
