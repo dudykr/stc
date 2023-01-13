@@ -296,7 +296,7 @@ fn target_to_str(target: EsVersion) -> &'static str {
 
 /// If `spec` is [Some], it's use to construct filename.
 ///
-/// Returns `(file_stem, errors)`
+/// Returns `(file_suffix, errors)`
 fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<RefError>) {
     let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
@@ -329,7 +329,10 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         errors
     };
 
-    (errors_file.file_stem().unwrap().to_string_lossy().into_owned(), errors)
+    (
+        errors_file.file_name().unwrap().to_string_lossy().replace(".errors.json", ""),
+        errors,
+    )
 }
 
 struct TestSpec {
@@ -581,7 +584,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     expected_errors.sort();
 
     dbg!(&file_stem);
-    let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem.replace(".errors.json", "")));
+    let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem));
 
     let TestSpec {
         err_shift_n,
