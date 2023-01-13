@@ -252,7 +252,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     })
 }
 
-fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
+fn load_expected_errors(ts_file: &Path, target: Option<EsVersion>) -> Result<Vec<RefError>, Error> {
     let errors_file = ts_file.with_extension("errors.json");
     if !errors_file.exists() {
         println!("errors file does not exists: {}", errors_file.display());
