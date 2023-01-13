@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
             Relation::StrictSubtype => {
                 // TODO: This should be false.
                 // This is true just because this function is not implemented yet
-                return true;
+                true
             }
             _ => false,
         }
@@ -53,6 +53,7 @@ impl Analyzer<'_, '_> {
     /// TODO: Implement
     ///
     /// Ported from `isSimpleTypeRelatedTo` of `tsc`.
+    #[allow(clippy::nonminimal_bool)]
     fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
         let (s, t) = (source, target);
 
