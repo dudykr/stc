@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use stc_ts_types::Type;
 use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -40,14 +42,7 @@ impl Analyzer<'_, '_> {
             return self.check_type_related_to(source, target, relation);
         }
 
-        match relation {
-            Relation::StrictSubtype => {
-                // TODO: This should be false.
-                // This is true just because this function is not implemented yet
-                true
-            }
-            _ => false,
-        }
+        false
     }
 
     /// TODO: Implement
