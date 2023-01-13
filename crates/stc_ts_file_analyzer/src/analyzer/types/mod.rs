@@ -2438,9 +2438,9 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 if constraint.is_unknown() {
-                    let mut constraint_temp = constraint.normalize().clone();
+                    let mut constraint_temp = constraint.clone();
                     self.exclude_type(span, &mut constraint_temp, &excluded);
-                    *ty = Type::new_intersection(span, [ty.clone(), constraint_temp]);
+                    *ty = Type::new_intersection(span, [ty.clone(), *constraint_temp]);
                 } else {
                     self.exclude_type(span, constraint, &excluded);
                     if constraint.is_never() {
@@ -2496,7 +2496,7 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     }),
                 ];
-                unknown.retain(|ty| !ty.type_eq(excluded.normalize()));
+                unknown.retain(|ty| !ty.type_eq(&excluded));
                 if unknown.len() == 3 {
                     return;
                 }
