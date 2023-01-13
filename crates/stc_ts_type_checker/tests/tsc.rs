@@ -15,7 +15,7 @@ use std::{
     env, fs,
     fs::{read_to_string, File},
     mem,
-    panic::catch_unwind,
+    panic::{catch_unwind, resume_unwind},
     path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, Instant},
@@ -263,10 +263,18 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     .ok()??;
 
     Some(box move || {
+        let mut last = None;
         for spec in specs {
-            let _ = catch_unwind(|| {
+            let res = catch_unwind(|| {
                 do_test(&path, spec, use_target).unwrap();
             });
+            if let Err(err) = res {
+                last = Some(err);
+            }
+        }
+
+        if let Some(last) = last {
+            resume_unwind(last);
         }
     })
 }
@@ -572,6 +580,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let (file_stem, mut expected_errors) = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
     expected_errors.sort();
 
+    dbg!(&file_stem);
     let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem.replace(".errors.json", "")));
 
     let TestSpec {
