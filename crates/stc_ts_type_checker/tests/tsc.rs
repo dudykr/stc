@@ -514,7 +514,8 @@ fn parse_test(file_name: &Path) -> Result<Vec<TestSpec>, Error> {
                     rule.strict_null_checks = strict;
                     rule.strict_function_types = strict;
                 } else {
-                    panic!("Comment is not handled: {}", s);
+                    eprintln!("Comment is not handled: {}", s);
+                    return Err(());
                 }
             }
         }
