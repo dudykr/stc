@@ -166,6 +166,7 @@ classes/classStaticBlock/classStaticBlock12.ts
 classes/classStaticBlock/classStaticBlock13.ts
 classes/classStaticBlock/classStaticBlock14.ts
 classes/classStaticBlock/classStaticBlock15.ts
+classes/classStaticBlock/classStaticBlock17.ts
 classes/classStaticBlock/classStaticBlock18.ts
 classes/classStaticBlock/classStaticBlock21.ts
 classes/classStaticBlock/classStaticBlock25.ts
@@ -228,6 +229,7 @@ classes/members/privateNames/privateNameFieldAssignment.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
 classes/members/privateNames/privateNameFieldUnaryMutation.ts
+classes/members/privateNames/privateNameInLhsReceiverExpression.ts
 classes/members/privateNames/privateNameLateSuper.ts
 classes/members/privateNames/privateNameLateSuperUseDefineForClassFields.ts
 classes/members/privateNames/privateNameMethodInStaticFieldInit.ts

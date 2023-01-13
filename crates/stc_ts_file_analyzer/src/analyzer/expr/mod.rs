@@ -1525,7 +1525,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
+                            stc_ts_types::ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
