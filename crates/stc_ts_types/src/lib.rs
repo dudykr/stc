@@ -1705,6 +1705,18 @@ impl Type {
             tracker: Default::default(),
         })
     }
+
+    pub fn is_str_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            }) | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                | Type::Tpl(..)
+                | Type::StringMapping(..)
+        )
+    }
 }
 
 impl Type {
