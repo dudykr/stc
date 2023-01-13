@@ -166,6 +166,8 @@ pub enum ModuleConfig {
     Es2015,
     /// `es2020`
     Es2020,
+    /// `es2022`
+    Es2022,
     /// `none`
     None,
     /// `umd`
