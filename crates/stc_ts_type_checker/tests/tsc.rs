@@ -583,7 +583,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let (file_stem, mut expected_errors) = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
     expected_errors.sort();
 
-    dbg!(&file_stem);
     let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem));
 
     let TestSpec {
