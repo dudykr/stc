@@ -1753,6 +1753,22 @@ impl Type {
             })
         )
     }
+
+    pub fn is_structured(&self) -> bool {
+        self.is_type_lit() || self.is_union_type() || self.is_intersection()
+    }
+
+    pub fn is_instantiable_non_primitive(&self) -> bool {}
+
+    pub fn is_instantiable_primitive(&self) -> bool {}
+
+    pub fn is_instantiable(&self) -> bool {
+        self.is_instantiable_non_primitive() || self.is_instantiable_primitive()
+    }
+
+    pub fn is_structured_or_instantiable(&self) -> bool {
+        self.is_structured() || self.is_instantiable()
+    }
 }
 
 impl Type {
