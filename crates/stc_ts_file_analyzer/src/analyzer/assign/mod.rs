@@ -1473,6 +1473,7 @@ impl Analyzer<'_, '_> {
                 if !opts.do_not_normalize_intersection_on_rhs {
                     // Filter out `never` types
                     if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                        dbg!(&new);
                         return self
                             .assign_inner(
                                 data,
@@ -1491,7 +1492,8 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                 }
-                let errors = types
+
+                let results = types
                     .iter()
                     .map(|rhs| {
                         self.assign_inner(
@@ -1506,7 +1508,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an element of an intersection type to another type")
                     })
                     .collect::<Vec<_>>();
-                if errors.iter().any(Result::is_ok) {
+                if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
 
@@ -1517,7 +1519,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let use_single_error = types.iter().all(|ty| ty.is_interface());
-                let errors = errors.into_iter().map(Result::unwrap_err).collect();
+                let errors = results.into_iter().map(Result::unwrap_err).collect();
 
                 if use_single_error {
                     return Err(ErrorKind::AssignFailed {

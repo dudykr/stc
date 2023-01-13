@@ -24,8 +24,8 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
-  | })
+  > {
+  | }
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/3.ts:9:5]

@@ -370,8 +370,10 @@ impl Analyzer<'_, '_> {
                             r
                         };
 
+                        let mut is_loose_comparison = false;
                         if let op!("==") | op!("!=") = op {
-                            if r.is_null() || r.is_undefined() {
+                            if r.is_null() | r.is_undefined() {
+                                is_loose_comparison = true;
                                 let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
                                 let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
@@ -385,10 +387,31 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if is_eq {
-                            self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
+                        let exclude_types = if is_loose_comparison {
+                            vec![
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNullKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            ]
                         } else {
-                            self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
+                            vec![r.clone()]
+                        };
+
+                        for ty in exclude_types {
+                            if is_eq {
+                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(ty);
+                            } else {
+                                self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(ty);
+                            }
                         }
                         dbg!(&r);
                         r = if let Type::Param(TypeParam {

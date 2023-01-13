@@ -1140,6 +1140,31 @@ impl Analyzer<'_, '_> {
                 let mut new_types = vec![];
                 match (acc_type.normalize(), elem.normalize()) {
                     (
+                        another @ Type::Param(TypeParam {
+                            constraint:
+                                Some(box Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                    ..
+                                })),
+                            ..
+                        }),
+                        other,
+                    )
+                    | (
+                        other,
+                        another @ Type::Param(TypeParam {
+                            constraint:
+                                Some(box Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                    ..
+                                })),
+                            ..
+                        }),
+                    ) => {
+                        new_types.push(Type::new_intersection(span, [other.clone(), another.clone()]).freezed());
+                    }
+
+                    (
                         Type::Param(TypeParam {
                             constraint: Some(other), ..
                         }),
@@ -2413,12 +2438,16 @@ impl Analyzer<'_, '_> {
                 constraint: Some(constraint),
                 ..
             }) => {
-                let mut constraint_temp = constraint.normalize().clone();
-                self.exclude_type(span, &mut constraint_temp, &excluded);
-                *ty = Type::new_intersection(span, [ty.clone(), constraint_temp]);
-                // if constraint_temp.is_never() {
-                //     *ty = Type::never(span, Default::default());
-                // }
+                if constraint.is_unknown() {
+                    let mut constraint_temp = constraint.normalize().clone();
+                    self.exclude_type(span, &mut constraint_temp, &excluded);
+                    *ty = Type::new_intersection(span, [ty.clone(), constraint_temp]);
+                } else {
+                    self.exclude_type(span, constraint, &excluded);
+                    if constraint.is_never() {
+                        *ty = Type::never(span, Default::default());
+                    }
+                }
             }
 
             Type::Class(cls) => {
@@ -2469,16 +2498,10 @@ impl Analyzer<'_, '_> {
                     }),
                 ];
                 unknown.retain(|ty| !ty.type_eq(excluded.normalize()));
-                *ty = if unknown.len() == 3 {
-                    Type::Keyword(KeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    })
-                } else {
-                    Type::new_union(*span, unknown)
+                if unknown.len() == 3 {
+                    return;
                 }
+                *ty = Type::new_union(*span, unknown)
             }
             _ => {}
         }
