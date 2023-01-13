@@ -1590,7 +1590,6 @@ impl Analyzer<'_, '_> {
         types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(name).cloned().into_iter().flatten());
 
         let before = dump_type_as_string(ty);
-        dbg!(&types_to_exclude);
         self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(ty);
 

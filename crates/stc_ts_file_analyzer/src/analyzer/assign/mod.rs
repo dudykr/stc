@@ -1473,7 +1473,6 @@ impl Analyzer<'_, '_> {
                 if !opts.do_not_normalize_intersection_on_rhs {
                     // Filter out `never` types
                     if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
-                        dbg!(&new);
                         return self
                             .assign_inner(
                                 data,
