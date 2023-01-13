@@ -21,7 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::Context;
+use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
@@ -226,7 +226,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
-    let specs = parse_test(&path);
+    let specs = parse_test(&path).ok()?;
     let use_target = specs.len() > 1;
 
     if use_target {
@@ -348,7 +348,7 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
     s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
 }
 
-fn parse_test(file_name: &Path) -> Vec<TestSpec> {
+fn parse_test(file_name: &Path) -> Result<Vec<TestSpec>, Error> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
 
@@ -557,8 +557,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             })
             .collect())
     })
-    .ok()
-    .unwrap()
+    .map_err(|err| anyhow::anyhow!("Failed to parse {}: {}", fname, err))
 }
 
 fn do_test(
