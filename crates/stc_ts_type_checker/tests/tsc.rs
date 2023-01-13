@@ -269,8 +269,31 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     })
 }
 
+fn target_to_str(target: EsVersion) -> &'static str {
+    match target {
+        EsVersion::Es3 => "es3",
+        EsVersion::Es5 => "es5",
+        EsVersion::Es2015 => "es2015",
+        EsVersion::Es2016 => "es2016",
+        EsVersion::Es2017 => "es2017",
+        EsVersion::Es2018 => "es2018",
+        EsVersion::Es2019 => "es2019",
+        EsVersion::Es2020 => "es2020",
+        EsVersion::Es2021 => "es2021",
+        EsVersion::Es2022 => "es2022",
+    }
+}
+
 fn load_expected_errors(ts_file: &Path, target: Option<EsVersion>) -> Vec<RefError> {
-    let errors_file = ts_file.with_extension("errors.json");
+    let errors_file = match target {
+        Some(v) => ts_file.with_file_name(format!(
+            "{}(target={}).errors.json",
+            ts_file.file_stem().unwrap().to_string_lossy(),
+            target_to_str(v)
+        )),
+        None => ts_file.with_extension("errors.json"),
+    };
+
     if !errors_file.exists() {
         println!("errors file does not exists: {}", errors_file.display());
         vec![]
