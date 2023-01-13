@@ -1731,6 +1731,16 @@ impl Type {
         )
     }
 
+    pub fn is_bool_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+        )
+    }
+
     pub fn is_bigint_like(&self) -> bool {
         matches!(
             self.normalize_instance(),
