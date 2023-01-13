@@ -530,7 +530,15 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match self.extends(span, ty, b, Default::default()) {
+                match self.extends(
+                    span,
+                    ty,
+                    b,
+                    ExtendsOpts {
+                        strict: true,
+                        ..Default::default()
+                    },
+                ) {
                     Some(true) => {
                         // Remove ty.
                         continue 'outer;
