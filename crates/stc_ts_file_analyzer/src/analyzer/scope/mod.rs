@@ -201,6 +201,7 @@ impl Scope<'_> {
             | ScopeKind::Method { .. }
             | ScopeKind::ArrowFn
             | ScopeKind::Class
+            | ScopeKind::ClassStaticBlock
             | ScopeKind::ObjectLit
             | ScopeKind::Module
             | ScopeKind::Call
@@ -1663,7 +1664,7 @@ impl<'a> Scope<'a> {
             // `this` in object literal resolves to the object literal itself.
             ScopeKind::ObjectLit => return true,
 
-            ScopeKind::Class => return false,
+            ScopeKind::Class | ScopeKind::ClassStaticBlock => return false,
             ScopeKind::TypeParams
             | ScopeKind::Call
             | ScopeKind::Method { .. }
@@ -1692,7 +1693,7 @@ impl<'a> Scope<'a> {
             // `this` in object literal resolves to the object literal itself.
             ScopeKind::ObjectLit => return false,
 
-            ScopeKind::Class => return true,
+            ScopeKind::Class | ScopeKind::ClassStaticBlock => return true,
             ScopeKind::TypeParams
             | ScopeKind::Call
             | ScopeKind::Method { .. }
@@ -1848,6 +1849,7 @@ pub(crate) enum ScopeKind {
     LoopBody {
         last: bool,
     },
+    ClassStaticBlock,
 }
 
 impl ScopeKind {

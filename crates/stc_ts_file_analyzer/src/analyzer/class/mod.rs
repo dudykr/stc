@@ -4,8 +4,8 @@ use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
-    RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt, RTsEntityName,
-    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock, RStmt,
+    RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
@@ -756,11 +756,8 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
             RClassMember::StaticBlock(m) => {
-                return Err(ErrorKind::Unimplemented {
-                    span: m.span,
-                    msg: "static blocks".to_string(),
-                }
-                .into())
+                m.validate_with(self)?;
+                None
             }
 
             RClassMember::Constructor(v) => {
@@ -2260,5 +2257,17 @@ impl Analyzer<'_, '_> {
         }
 
         self.scope.this = old_this;
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, b: &RStaticBlock) {
+        self.with_child(ScopeKind::ClassStaticBlock, Default::default(), |analyzer| {
+            b.body.stmts.visit_with(analyzer);
+            Ok(())
+        })?;
+
+        Ok(())
     }
 }
