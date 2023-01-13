@@ -233,18 +233,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     let fm = cm.load_file(&path).unwrap();
 
-    // Postpone multi-file tests.
-    if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
-        if is_all_test_enabled() {
-            record_stat(Stats {
-                required_error: load_expected_errors(&path).map(|v| v.len()).unwrap_or_default(),
-                ..Default::default()
-            });
-        }
-
-        return None;
-    }
-
+    // Ignore parser error tests
     catch_unwind(|| {
         let mut parser = Parser::new(
             Syntax::Typescript(TsConfig {
@@ -547,9 +536,6 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
-        let mut time_of_check = Duration::new(0, 0);
-        let mut full_time = Duration::new(0, 0);
-
         let stat_guard = RecordOnPanic {
             filename: file_name.to_path_buf(),
             stats: Stats {
@@ -557,6 +543,23 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 ..Default::default()
             },
         };
+
+        {
+            let src = fs::read_to_string(file_name).unwrap();
+            // Postpone multi-file tests.
+            if src.to_lowercase().contains("@filename") || src.contains("<reference path") {
+                if is_all_test_enabled() {
+                    record_stat(Stats {
+                        required_error: load_expected_errors(file_name).map(|v| v.len()).unwrap_or_default(),
+                        ..Default::default()
+                    });
+                }
+
+                return Ok(());
+            }
+        }
+        let mut time_of_check = Duration::new(0, 0);
+        let mut full_time = Duration::new(0, 0);
 
         let mut stats = Stats::default();
         dbg!(&libs);
