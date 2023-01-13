@@ -1718,7 +1718,7 @@ impl Type {
         )
     }
 
-    pub fn is_number_like(&self) -> bool {
+    pub fn is_num_like(&self) -> bool {
         matches!(
             self.normalize_instance(),
             Type::Keyword(KeywordType {
