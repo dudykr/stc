@@ -1758,9 +1758,28 @@ impl Type {
         self.is_type_lit() || self.is_union_type() || self.is_intersection()
     }
 
-    pub fn is_instantiable_non_primitive(&self) -> bool {}
+    pub fn is_substitution(&self) -> bool {
+        false
+    }
 
-    pub fn is_instantiable_primitive(&self) -> bool {}
+    pub fn is_instantiable_non_primitive(&self) -> bool {
+        self.is_type_param() || self.is_conditional() || self.is_substitution()
+    }
+
+    /// Is `self` `keyof` type?
+    pub fn is_index(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            })
+        )
+    }
+
+    pub fn is_instantiable_primitive(&self) -> bool {
+        self.is_index() || self.is_tpl() || self.is_string_mapping()
+    }
 
     pub fn is_instantiable(&self) -> bool {
         self.is_instantiable_non_primitive() || self.is_instantiable_primitive()
