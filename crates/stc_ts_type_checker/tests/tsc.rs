@@ -231,7 +231,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     if use_target {
         for spec in specs.iter() {
-            if is_parser_test(&load_expected_errors(&path, Some(spec.target))) {
+            if is_parser_test(&load_expected_errors(&path, Some(spec))) {
                 return None;
             }
         }
@@ -284,12 +284,13 @@ fn target_to_str(target: EsVersion) -> &'static str {
     }
 }
 
-fn load_expected_errors(ts_file: &Path, target: Option<EsVersion>) -> Vec<RefError> {
-    let errors_file = match target {
+/// If `spec` is [Some], it's use to construct filename
+fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> Vec<RefError> {
+    let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
             "{}(target={}).errors.json",
             ts_file.file_stem().unwrap().to_string_lossy(),
-            target_to_str(v)
+            target_to_str(v.target)
         )),
         None => ts_file.with_extension("errors.json"),
     };
@@ -560,21 +561,19 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
     .unwrap()
 }
 
-fn do_test(
-    file_name: &Path,
-    TestSpec {
+fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), StdErr> {
+    let fname = file_name.display().to_string();
+    let mut expected_errors = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
+    expected_errors.sort();
+
+    let TestSpec {
         err_shift_n,
         libs,
         rule,
         ts_config,
         target,
         module_config,
-    }: TestSpec,
-    use_target: bool,
-) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(file_name, if use_target { Some(target) } else { None });
-    expected_errors.sort();
+    } = spec;
 
     let stat_guard = RecordOnPanic {
         filename: file_name.to_path_buf(),
