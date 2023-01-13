@@ -21,7 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::{Context, Error};
+use anyhow::Context;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
@@ -206,6 +206,21 @@ fn conformance() {
     test_main(&args, tests, Default::default());
 }
 
+fn is_parser_test(errors: &[RefError]) -> bool {
+    for err in errors {
+        if err.code.starts_with("TS1") && err.code.len() == 6 {
+            return true;
+        }
+
+        // These are actually parser test.
+        if let "TS2369" = &*err.code {
+            return true;
+        }
+    }
+
+    false
+}
+
 fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     if is_ignored(&path) {
         return None;
@@ -214,17 +229,14 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     let specs = parse_test(&path);
     let use_target = specs.len() > 1;
 
-    if let Ok(errors) = load_expected_errors(&path) {
-        for err in errors {
-            if err.code.starts_with("TS1") && err.code.len() == 6 {
-                return None;
-            }
-
-            // These are actually parser test.
-            if let "TS2369" = &*err.code {
+    if use_target {
+        for spec in specs.iter() {
+            if is_parser_test(&load_expected_errors(&path, Some(spec.target))) {
                 return None;
             }
         }
+    } else if is_parser_test(&load_expected_errors(&path, None)) {
+        return None;
     }
 
     let str_name = path.display().to_string();
@@ -257,14 +269,15 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     })
 }
 
-fn load_expected_errors(ts_file: &Path, target: Option<EsVersion>) -> Result<Vec<RefError>, Error> {
+fn load_expected_errors(ts_file: &Path, target: Option<EsVersion>) -> Vec<RefError> {
     let errors_file = ts_file.with_extension("errors.json");
     if !errors_file.exists() {
         println!("errors file does not exists: {}", errors_file.display());
-        Ok(vec![])
+        vec![]
     } else {
         let mut errors: Vec<RefError> = serde_json::from_reader(File::open(errors_file).expect("failed to open errors file"))
-            .context("failed to parse errors.txt.json")?;
+            .context("failed to parse errors.txt.json")
+            .unwrap();
 
         for err in &mut errors {
             let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
@@ -277,7 +290,7 @@ fn load_expected_errors(ts_file: &Path, target: Option<EsVersion>) -> Result<Vec
 
         // TODO(kdy1): Match column and message
 
-        Ok(errors)
+        errors
     }
 }
 
@@ -538,7 +551,7 @@ fn do_test(
     use_target: bool,
 ) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(file_name, if use_target { Some(target) } else { None }).unwrap();
+    let mut expected_errors = load_expected_errors(file_name, if use_target { Some(target) } else { None });
     expected_errors.sort();
 
     let stat_guard = RecordOnPanic {
@@ -555,7 +568,7 @@ fn do_test(
         if src.to_lowercase().contains("@filename") || src.contains("<reference path") {
             if is_all_test_enabled() {
                 record_stat(Stats {
-                    required_error: load_expected_errors(file_name).map(|v| v.len()).unwrap_or_default(),
+                    required_error: expected_errors.len(),
                     ..Default::default()
                 });
             }
