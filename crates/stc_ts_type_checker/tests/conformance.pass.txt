@@ -157,7 +157,9 @@ classes/classExpressions/classExpression4.ts
 classes/classExpressions/classExpression5.ts
 classes/classExpressions/classExpressionLoop.ts
 classes/classExpressions/classWithStaticFieldInParameterBindingPattern.3.ts
+classes/classExpressions/classWithStaticFieldInParameterBindingPattern.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.3.ts
+classes/classExpressions/classWithStaticFieldInParameterInitializer.ts
 classes/classExpressions/genericClassExpressionInFunction.ts
 classes/classExpressions/modifierOnClassExpressionMemberInFunction.ts
 classes/classStaticBlock/classStaticBlock1.ts
@@ -168,6 +170,7 @@ classes/classStaticBlock/classStaticBlock14.ts
 classes/classStaticBlock/classStaticBlock15.ts
 classes/classStaticBlock/classStaticBlock17.ts
 classes/classStaticBlock/classStaticBlock18.ts
+classes/classStaticBlock/classStaticBlock2.ts
 classes/classStaticBlock/classStaticBlock21.ts
 classes/classStaticBlock/classStaticBlock25.ts
 classes/classStaticBlock/classStaticBlock27.ts
@@ -224,11 +227,13 @@ classes/members/privateNames/privateNameConstructorReserved.ts
 classes/members/privateNames/privateNameConstructorSignature.ts
 classes/members/privateNames/privateNameDeclaration.ts
 classes/members/privateNames/privateNameDeclarationMerging.ts
+classes/members/privateNames/privateNameField.ts
 classes/members/privateNames/privateNameFieldAccess.ts
 classes/members/privateNames/privateNameFieldAssignment.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
 classes/members/privateNames/privateNameFieldUnaryMutation.ts
+classes/members/privateNames/privateNameFieldsESNext.ts
 classes/members/privateNames/privateNameInLhsReceiverExpression.ts
 classes/members/privateNames/privateNameLateSuper.ts
 classes/members/privateNames/privateNameLateSuperUseDefineForClassFields.ts
@@ -258,6 +263,7 @@ classes/mixinClassesMembers.ts
 classes/propertyMemberDeclarations/abstractProperty.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty5.ts
 classes/propertyMemberDeclarations/constructorParameterShadowsOuterScopes2.ts
+classes/propertyMemberDeclarations/defineProperty.ts
 classes/propertyMemberDeclarations/instanceMemberInitialization.ts
 classes/propertyMemberDeclarations/instanceMemberWithComputedPropertyName.ts
 classes/propertyMemberDeclarations/instanceMemberWithComputedPropertyName2.ts
@@ -321,6 +327,7 @@ declarationEmit/classDoesNotDependOnPrivateMember.ts
 declarationEmit/declarationEmitWorkWithInlineComments.ts
 declarationEmit/exportDefaultExpressionComments.ts
 declarationEmit/exportDefaultNamespace.ts
+declarationEmit/libReferenceNoLib.ts
 declarationEmit/nullPropertyName.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicatesWithPrivateName01.ts
@@ -1158,7 +1165,6 @@ es6/yieldExpressions/generatorTypeCheck60.ts
 es6/yieldExpressions/generatorTypeCheck62.ts
 es6/yieldExpressions/generatorTypeCheck7.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
-es6ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSCanBeAssigned1.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS1.ts
@@ -1333,6 +1339,8 @@ expressions/nullishCoalescingOperator/nullishCoalescingOperator7.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator8.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator9.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperatorInAsyncGenerator.ts
+expressions/nullishCoalescingOperator/nullishCoalescingOperatorInParameterBindingPattern.ts
+expressions/nullishCoalescingOperator/nullishCoalescingOperatorInParameterInitializer.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator_es2020.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator_not_strict.ts
 expressions/optionalChaining/callChain/callChain.2.ts
@@ -1346,6 +1354,8 @@ expressions/optionalChaining/elementAccessChain/elementAccessChain.2.ts
 expressions/optionalChaining/elementAccessChain/elementAccessChain.ts
 expressions/optionalChaining/optionalChainingInArrow.ts
 expressions/optionalChaining/optionalChainingInLoop.ts
+expressions/optionalChaining/optionalChainingInParameterBindingPattern.ts
+expressions/optionalChaining/optionalChainingInParameterInitializer.ts
 expressions/optionalChaining/optionalChainingInTypeAssertions.ts
 expressions/optionalChaining/optionalChainingInference.ts
 expressions/optionalChaining/propertyAccessChain/propertyAccessChain.2.ts
@@ -1775,6 +1785,7 @@ parser/ecmascript5/Protected/Protected3.ts
 parser/ecmascript5/Protected/Protected5.ts
 parser/ecmascript5/Protected/Protected8.ts
 parser/ecmascript5/Protected/Protected9.ts
+parser/ecmascript5/RealWorld/parserindenter.ts
 parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
@@ -1888,6 +1899,15 @@ parser/ecmascript5/parserOptionalTypeMembers1.ts
 parser/ecmascript5/parserOverloadOnConstants1.ts
 parser/ecmascript5/parserParenthesizedVariableAndFunctionInTernary.ts
 parser/ecmascript5/parserParenthesizedVariableAndParenthesizedFunctionInTernary.ts
+parser/ecmascript5/parserRealSource1.ts
+parser/ecmascript5/parserRealSource12.ts
+parser/ecmascript5/parserRealSource13.ts
+parser/ecmascript5/parserRealSource14.ts
+parser/ecmascript5/parserRealSource2.ts
+parser/ecmascript5/parserRealSource3.ts
+parser/ecmascript5/parserRealSource5.ts
+parser/ecmascript5/parserRealSource6.ts
+parser/ecmascript5/parserRealSource8.ts
 parser/ecmascript5/parserS7.2_A1.5_T2.ts
 parser/ecmascript5/parserS7.3_A1.1_T2.ts
 parser/ecmascript5/parserS7.6.1.1_A1.10.ts
@@ -1961,6 +1981,7 @@ scanner/ecmascript5/scannerS7.2_A1.5_T2.ts
 scanner/ecmascript5/scannerS7.3_A1.1_T2.ts
 scanner/ecmascript5/scannerS7.6_A4.2_T1.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
+scanner/ecmascript5/scannertest1.ts
 statements/VariableStatements/everyTypeWithAnnotationAndInitializer.ts
 statements/VariableStatements/everyTypeWithInitializer.ts
 statements/VariableStatements/recursiveInitializer.ts
@@ -2393,7 +2414,6 @@ types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInhe
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance4.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance5.ts
-types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilitySymbols/ES5SymbolType1.ts
 types/typeRelationships/assignmentCompatibility/enumAssignability.ts
 types/typeRelationships/assignmentCompatibility/everyTypeAssignableToAny.ts
 types/typeRelationships/assignmentCompatibility/genericCallWithObjectTypeArgsAndInitializers.ts

@@ -1,1 +1,0 @@
-let a: { name: string } = {};
