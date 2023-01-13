@@ -176,13 +176,7 @@ fn load_list(name: &str) -> Vec<String> {
 }
 
 fn is_ignored(path: &Path) -> bool {
-    static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
-        let mut v = load_list("tests/tsc.ignored.txt");
-
-        v.extend(load_list("tests/tsc.multiresult.txt"));
-
-        v
-    });
+    static IGNORED: Lazy<Vec<String>> = Lazy::new(|| load_list("tests/tsc.ignored.txt"));
 
     static PASS: Lazy<Vec<String>> = Lazy::new(|| {
         let mut v = load_list("tests/conformance.pass.txt");
