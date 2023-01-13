@@ -1717,6 +1717,32 @@ impl Type {
                 | Type::StringMapping(..)
         )
     }
+
+    pub fn is_number_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::Number(..),
+                ..
+            })
+        )
+    }
+
+    pub fn is_bigint_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::BigInt(..),
+                ..
+            })
+        )
+    }
 }
 
 impl Type {
