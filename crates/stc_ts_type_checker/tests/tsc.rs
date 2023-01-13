@@ -520,244 +520,243 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
     .unwrap()
 }
 
-fn do_test(file_name: &Path) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(file_name).unwrap();
-    expected_errors.sort();
-
-    let specs = parse_test(file_name);
-
-    for TestSpec {
+fn do_test(
+    file_name: &Path,
+    TestSpec {
         err_shift_n,
         libs,
         rule,
         ts_config,
         target,
         module_config,
-    } in specs
+    }: TestSpec,
+    use_target: bool,
+) -> Result<(), StdErr> {
+    let fname = file_name.display().to_string();
+    let mut expected_errors = load_expected_errors(file_name, if use_target { Some(target) } else { None }).unwrap();
+    expected_errors.sort();
+
+    let stat_guard = RecordOnPanic {
+        filename: file_name.to_path_buf(),
+        stats: Stats {
+            required_error: expected_errors.len(),
+            ..Default::default()
+        },
+    };
+
     {
-        let stat_guard = RecordOnPanic {
-            filename: file_name.to_path_buf(),
-            stats: Stats {
-                required_error: expected_errors.len(),
-                ..Default::default()
-            },
-        };
+        let src = fs::read_to_string(file_name).unwrap();
+        // Postpone multi-file tests.
+        if src.to_lowercase().contains("@filename") || src.contains("<reference path") {
+            if is_all_test_enabled() {
+                record_stat(Stats {
+                    required_error: load_expected_errors(file_name).map(|v| v.len()).unwrap_or_default(),
+                    ..Default::default()
+                });
+            }
 
-        {
-            let src = fs::read_to_string(file_name).unwrap();
-            // Postpone multi-file tests.
-            if src.to_lowercase().contains("@filename") || src.contains("<reference path") {
-                if is_all_test_enabled() {
-                    record_stat(Stats {
-                        required_error: load_expected_errors(file_name).map(|v| v.len()).unwrap_or_default(),
-                        ..Default::default()
-                    });
-                }
+            return Ok(());
+        }
+    }
+    let mut time_of_check = Duration::new(0, 0);
+    let mut full_time = Duration::new(0, 0);
 
+    let mut stats = Stats::default();
+    dbg!(&libs);
+    for err in &mut expected_errors {
+        // This error use special span.
+        if err.line == 0 {
+            continue;
+        }
+        // Typescript conformance test remove lines starting with @-directives.
+        err.line += err_shift_n;
+    }
+
+    let full_ref_errors = expected_errors.clone();
+    let full_ref_err_cnt = full_ref_errors.len();
+
+    let tester = Tester::new();
+    let diagnostics = tester
+        .errors(|cm, handler| {
+            cm.new_source_file(FileName::Anon, "".into());
+
+            let handler = Arc::new(handler);
+            let mut checker = Checker::new(
+                cm,
+                handler.clone(),
+                Env::simple(rule, target, module_config, &libs),
+                TsConfig {
+                    tsx: fname.contains("tsx"),
+                    ..ts_config
+                },
+                None,
+                Arc::new(NodeResolver),
+            );
+
+            // Install a logger
+            let _guard = testing::init();
+
+            let start = Instant::now();
+
+            checker.check(Arc::new(FileName::Real(file_name.into())));
+
+            let end = Instant::now();
+
+            time_of_check = end - start;
+
+            let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
+
+            for e in errors {
+                e.emit(&handler);
+            }
+
+            let end = Instant::now();
+
+            full_time = end - start;
+
+            if false {
                 return Ok(());
-            }
-        }
-        let mut time_of_check = Duration::new(0, 0);
-        let mut full_time = Duration::new(0, 0);
-
-        let mut stats = Stats::default();
-        dbg!(&libs);
-        for err in &mut expected_errors {
-            // This error use special span.
-            if err.line == 0 {
-                continue;
-            }
-            // Typescript conformance test remove lines starting with @-directives.
-            err.line += err_shift_n;
-        }
-
-        let full_ref_errors = expected_errors.clone();
-        let full_ref_err_cnt = full_ref_errors.len();
-
-        let tester = Tester::new();
-        let diagnostics = tester
-            .errors(|cm, handler| {
-                cm.new_source_file(FileName::Anon, "".into());
-
-                let handler = Arc::new(handler);
-                let mut checker = Checker::new(
-                    cm,
-                    handler.clone(),
-                    Env::simple(rule, target, module_config, &libs),
-                    TsConfig {
-                        tsx: fname.contains("tsx"),
-                        ..ts_config
-                    },
-                    None,
-                    Arc::new(NodeResolver),
-                );
-
-                // Install a logger
-                let _guard = testing::init();
-
-                let start = Instant::now();
-
-                checker.check(Arc::new(FileName::Real(file_name.into())));
-
-                let end = Instant::now();
-
-                time_of_check = end - start;
-
-                let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
-
-                for e in errors {
-                    e.emit(&handler);
-                }
-
-                let end = Instant::now();
-
-                full_time = end - start;
-
-                if false {
-                    return Ok(());
-                }
-
-                Err(())
-            })
-            .expect_err("");
-
-        mem::forget(stat_guard);
-
-        if !cfg!(debug_assertions) {
-            let line_cnt = {
-                let content = fs::read_to_string(file_name).unwrap();
-
-                content.lines().count()
-            };
-            record_time(line_cnt, time_of_check, full_time);
-
-            // if time > Duration::new(0, 500_000_000) {
-            //     let _ = fs::write(file_name.with_extension("timings.txt"),
-            // format!("{:?}", time)); }
-        }
-
-        let mut extra_errors = diagnostics
-            .iter()
-            .map(|d| {
-                let span = d.span.primary_span().unwrap();
-                let cp = tester.cm.lookup_char_pos(span.lo());
-                let code = d
-                    .code
-                    .clone()
-                    .expect("conformance testing: All errors should have proper error code");
-                let code = match code {
-                    DiagnosticId::Error(err) => err,
-                    DiagnosticId::Lint(lint) => {
-                        unreachable!("Unexpected lint '{}' found", lint)
-                    }
-                };
-
-                (cp.line, code)
-            })
-            .collect::<Vec<_>>();
-        extra_errors.sort();
-
-        let full_actual_errors = extra_errors.clone();
-
-        for (line, error_code) in full_actual_errors.clone() {
-            if let Some(idx) = expected_errors
-                .iter()
-                .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
-            {
-                stats.matched_error += 1;
-
-                let is_zero_line = expected_errors[idx].line == 0;
-                expected_errors.remove(idx);
-                if let Some(idx) = extra_errors
-                    .iter()
-                    .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
-                {
-                    extra_errors.remove(idx);
-                }
-            }
-        }
-
-        //
-        //      - All reference errors are matched
-        //      - Actual errors does not remain
-        let success = expected_errors.is_empty() && extra_errors.is_empty();
-
-        let res: Result<(), _> = tester.print_errors(|_, handler| {
-            // If we failed, we only emit errors which has wrong line.
-
-            for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
-                if success || env::var("PRINT_ALL").unwrap_or_default() == "1" || extra_errors.contains(&line_col) {
-                    DiagnosticBuilder::new_diagnostic(&handler, d).emit();
-                }
             }
 
             Err(())
-        });
+        })
+        .expect_err("");
 
-        let err = match res {
-            Ok(_) => StdErr::from(String::from("")),
-            Err(err) => err,
+    mem::forget(stat_guard);
+
+    if !cfg!(debug_assertions) {
+        let line_cnt = {
+            let content = fs::read_to_string(file_name).unwrap();
+
+            content.lines().count()
         };
+        record_time(line_cnt, time_of_check, full_time);
 
-        let extra_err_count = extra_errors.len();
-        stats.required_error += expected_errors.len();
-        stats.extra_error += extra_err_count;
+        // if time > Duration::new(0, 500_000_000) {
+        //     let _ = fs::write(file_name.with_extension("timings.txt"),
+        // format!("{:?}", time)); }
+    }
 
-        // Print per-test stats so we can prevent regressions.
-        if cfg!(debug_assertions) {
-            print_per_test_stat(file_name, &stats);
+    let mut extra_errors = diagnostics
+        .iter()
+        .map(|d| {
+            let span = d.span.primary_span().unwrap();
+            let cp = tester.cm.lookup_char_pos(span.lo());
+            let code = d
+                .code
+                .clone()
+                .expect("conformance testing: All errors should have proper error code");
+            let code = match code {
+                DiagnosticId::Error(err) => err,
+                DiagnosticId::Lint(lint) => {
+                    unreachable!("Unexpected lint '{}' found", lint)
+                }
+            };
+
+            (cp.line, code)
+        })
+        .collect::<Vec<_>>();
+    extra_errors.sort();
+
+    let full_actual_errors = extra_errors.clone();
+
+    for (line, error_code) in full_actual_errors.clone() {
+        if let Some(idx) = expected_errors
+            .iter()
+            .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
+        {
+            stats.matched_error += 1;
+
+            let is_zero_line = expected_errors[idx].line == 0;
+            expected_errors.remove(idx);
+            if let Some(idx) = extra_errors
+                .iter()
+                .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
+            {
+                extra_errors.remove(idx);
+            }
         }
+    }
 
-        let total_stats = record_stat(stats);
+    //
+    //      - All reference errors are matched
+    //      - Actual errors does not remain
+    let success = expected_errors.is_empty() && extra_errors.is_empty();
 
-        if cfg!(debug_assertions) {
-            println!("[TOTAL_STATS] {:#?}", total_stats);
+    let res: Result<(), _> = tester.print_errors(|_, handler| {
+        // If we failed, we only emit errors which has wrong line.
 
-            if expected_errors.is_empty() {
-                println!("[REMOVE_ONLY]{}", file_name.display());
+        for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
+            if success || env::var("PRINT_ALL").unwrap_or_default() == "1" || extra_errors.contains(&line_col) {
+                DiagnosticBuilder::new_diagnostic(&handler, d).emit();
             }
         }
 
-        if extra_errors.len() == expected_errors.len() {
-            let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
-            let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
+        Err(())
+    });
 
-            if expected_lines == extra_lines {
-                println!("[ERROR_CODE_ONLY]{}", file_name.display());
-            }
-        }
+    let err = match res {
+        Ok(_) => StdErr::from(String::from("")),
+        Err(err) => err,
+    };
 
-        if print_matched_errors() {
-            eprintln!(
-                "\n============================================================\n{:?}
-============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
-                 {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
-                err,
-                expected_errors.len(),
-                full_ref_err_cnt,
-                extra_err_count,
-                expected_errors,
-                extra_errors,
-                full_ref_errors,
-                full_actual_errors,
-            );
-        } else {
-            eprintln!(
-                "\n============================================================\n{:?}
-============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
-                 {:?}\nUnwanted: {:?}",
-                err,
-                expected_errors.len(),
-                full_ref_err_cnt,
-                extra_err_count,
-                expected_errors,
-                extra_errors,
-            );
+    let extra_err_count = extra_errors.len();
+    stats.required_error += expected_errors.len();
+    stats.extra_error += extra_err_count;
+
+    // Print per-test stats so we can prevent regressions.
+    if cfg!(debug_assertions) {
+        print_per_test_stat(file_name, &stats);
+    }
+
+    let total_stats = record_stat(stats);
+
+    if cfg!(debug_assertions) {
+        println!("[TOTAL_STATS] {:#?}", total_stats);
+
+        if expected_errors.is_empty() {
+            println!("[REMOVE_ONLY]{}", file_name.display());
         }
-        if !success {
-            panic!()
+    }
+
+    if extra_errors.len() == expected_errors.len() {
+        let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
+        let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
+
+        if expected_lines == extra_lines {
+            println!("[ERROR_CODE_ONLY]{}", file_name.display());
         }
+    }
+
+    if print_matched_errors() {
+        eprintln!(
+            "\n============================================================\n{:?}
+============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
+             {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
+            err,
+            expected_errors.len(),
+            full_ref_err_cnt,
+            extra_err_count,
+            expected_errors,
+            extra_errors,
+            full_ref_errors,
+            full_actual_errors,
+        );
+    } else {
+        eprintln!(
+            "\n============================================================\n{:?}
+============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
+             {:?}\nUnwanted: {:?}",
+            err,
+            expected_errors.len(),
+            full_ref_err_cnt,
+            extra_err_count,
+            expected_errors,
+            extra_errors,
+        );
+    }
+    if !success {
+        panic!()
     }
 
     Ok(())
