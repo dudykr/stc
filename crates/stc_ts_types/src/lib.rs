@@ -1554,7 +1554,7 @@ impl Type {
     }
 
     pub fn is_any(&self) -> bool {
-        match self.normalize() {
+        match self.normalize_instance() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -1562,20 +1562,18 @@ impl Type {
 
             Type::Union(t) => t.types.iter().any(|t| t.is_any()),
 
-            Type::Instance(ty) => ty.ty.is_any(),
-
             _ => false,
         }
     }
 
     pub fn is_unknown(&self) -> bool {
-        match *self.normalize() {
+        match self.normalize_instance() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => true,
 
-            Type::Union(ref t) => t.types.iter().any(|t| t.is_unknown()),
+            Type::Union(t) => t.types.iter().any(|t| t.is_unknown()),
 
             _ => false,
         }
@@ -1706,6 +1704,89 @@ impl Type {
             metadata,
             tracker: Default::default(),
         })
+    }
+
+    pub fn is_str_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            }) | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                | Type::Tpl(..)
+                | Type::StringMapping(..)
+        )
+    }
+
+    pub fn is_num_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::Number(..),
+                ..
+            })
+        )
+    }
+
+    pub fn is_bool_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+        )
+    }
+
+    pub fn is_bigint_like(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::BigInt(..),
+                ..
+            })
+        )
+    }
+
+    pub fn is_structured(&self) -> bool {
+        self.is_type_lit() || self.is_union_type() || self.is_intersection()
+    }
+
+    pub fn is_substitution(&self) -> bool {
+        false
+    }
+
+    pub fn is_instantiable_non_primitive(&self) -> bool {
+        self.is_type_param() || self.is_conditional() || self.is_substitution()
+    }
+
+    /// Is `self` `keyof` type?
+    pub fn is_index(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            })
+        )
+    }
+
+    pub fn is_instantiable_primitive(&self) -> bool {
+        self.is_index() || self.is_tpl() || self.is_string_mapping()
+    }
+
+    pub fn is_instantiable(&self) -> bool {
+        self.is_instantiable_non_primitive() || self.is_instantiable_primitive()
+    }
+
+    pub fn is_structured_or_instantiable(&self) -> bool {
+        self.is_structured() || self.is_instantiable()
     }
 }
 

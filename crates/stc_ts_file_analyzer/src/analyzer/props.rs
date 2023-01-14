@@ -237,6 +237,7 @@ impl Analyzer<'_, '_> {
                 | ScopeKind::Constructor
                 | ScopeKind::ArrowFn
                 | ScopeKind::Class
+                | ScopeKind::ClassStaticBlock
                 | ScopeKind::ObjectLit => true,
                 ScopeKind::LoopBody { .. } | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => false,
             });
