@@ -1,0 +1,291 @@
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:13:1]
+ 13 | var x = { p1: 10, p2: 20, p3: 30 };
+    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     p1: 10;
+  |     p2: 20;
+  |     p3: 30;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:14:1]
+ 14 | var y: I1 & I3 = x;
+    :                  ^
+    `----
+
+Error: 
+  > {
+  |     p1: number;
+  |     p2: number;
+  |     p3: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:15:1]
+ 15 | var z: I2 = x;
+    :             ^
+    `----
+
+Error: 
+  > {
+  |     p1: number;
+  |     p2: number;
+  |     p3: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :     ^
+    `----
+
+Error: 
+  > (I1 & I3)
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :           ^
+    `----
+
+Error: 
+  > I2
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :     ^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :                ^
+    `----
+
+Error: 
+  > I2
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :                      ^
+    `----
+
+Error: 
+  > (I1 & I3)
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :                ^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :     ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :          ^
+    `----
+
+Error: 
+  > (I1 & I3)
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                ^
+    `----
+
+Error: 
+  > I2
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :          ^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                     ^
+    `----
+
+Error: 
+  > I2
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                           ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                     ^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :          ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :          ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :               ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :          ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :                    ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :                         ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :                    ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :          ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :          ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :               ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :          ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :                    ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :                         ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :                    ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :          ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean

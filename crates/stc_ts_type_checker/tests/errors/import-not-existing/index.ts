@@ -1,1 +1,0 @@
-import Foo from "./model";

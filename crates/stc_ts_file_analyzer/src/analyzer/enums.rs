@@ -618,8 +618,6 @@ struct LitValidator<'a> {
 
 impl Visit<RExpr> for LitValidator<'_> {
     fn visit(&mut self, e: &RExpr) {
-        e.visit_children_with(self);
-
         match e {
             RExpr::Lit(..) => {}
             RExpr::Ident(ref i) => {
@@ -637,7 +635,10 @@ impl Visit<RExpr> for LitValidator<'_> {
                     self.error = true;
                 }
             }
-            RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Paren(..) => {}
+            RExpr::Member(..) => {}
+            RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Paren(..) => {
+                e.visit_children_with(self);
+            }
 
             _ => {
                 self.error = true;

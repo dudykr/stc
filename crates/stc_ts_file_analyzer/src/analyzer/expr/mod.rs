@@ -136,9 +136,7 @@ impl Analyzer<'_, '_> {
                 RExpr::This(RThisExpr { span, .. }) => {
                     let span = *span;
 
-                    if self.ctx.in_static_property_initializer {
-                        self.storage.report(ErrorKind::ThisInStaticPropertyInitializer { span }.into())
-                    } else if self.ctx.in_constructor_param {
+                    if self.ctx.in_constructor_param {
                         self.storage.report(ErrorKind::ThisInConstructorParam { span }.into())
                     }
 
@@ -251,7 +249,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.type_of_member_expr(expr, mode)
+                    self.type_of_member_expr(expr, mode, true)
                 }
 
                 RExpr::SuperProp(ref expr) => self.type_of_super_prop_expr(expr, mode),
@@ -1525,7 +1523,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
+                            stc_ts_types::ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
@@ -3852,7 +3850,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
+    fn type_of_member_expr(
+        &mut self,
+        expr: &RMemberExpr,
+        type_mode: TypeOfMode,
+        include_optional_chaining_undefined: bool,
+    ) -> VResult<Type> {
         let RMemberExpr {
             ref obj, ref prop, span, ..
         } = *expr;
@@ -3990,7 +3993,7 @@ impl Analyzer<'_, '_> {
             ty
         };
 
-        if should_be_optional {
+        if should_be_optional && include_optional_chaining_undefined {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
         } else {
             Ok(ty)
@@ -4134,6 +4137,7 @@ impl Analyzer<'_, '_> {
                 ScopeKind::Fn
                 | ScopeKind::Method { .. }
                 | ScopeKind::Class
+                | ScopeKind::ClassStaticBlock
                 | ScopeKind::Module
                 | ScopeKind::Constructor
                 | ScopeKind::ArrowFn => true,

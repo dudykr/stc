@@ -25,7 +25,7 @@ use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::info;
 
-use super::types::NormalizeTypeOpts;
+use super::{generic::ExtendsOpts, types::NormalizeTypeOpts};
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -487,13 +487,24 @@ impl Analyzer<'_, '_> {
                         break;
                     }
 
-                    match self.extends(span, b, ty, Default::default()) {
+                    // TODO:
+                    // if self.is_type_related_to(b, ty, Relation::StrictSubtype) {
+                    match self.extends(
+                        span,
+                        b,
+                        ty,
+                        ExtendsOpts {
+                            strict: true,
+                            ..Default::default()
+                        },
+                    ) {
                         Some(true) => {
                             // Remove ty.
                             continue 'outer;
                         }
                         res => {}
                     }
+                    // }
                 }
             }
 
@@ -519,7 +530,15 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match self.extends(span, ty, b, Default::default()) {
+                match self.extends(
+                    span,
+                    ty,
+                    b,
+                    ExtendsOpts {
+                        strict: true,
+                        ..Default::default()
+                    },
+                ) {
                     Some(true) => {
                         // Remove ty.
                         continue 'outer;

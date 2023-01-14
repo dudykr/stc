@@ -30,6 +30,9 @@ pub(crate) struct ExtendsOpts {
     /// type Foo = C extends D ? 1 : 0
     /// ```
     pub disallow_different_classes: bool,
+
+    /// `strictSubtype` of `tsc`.
+    pub strict: bool,
 }
 
 /// Generic expander.
@@ -283,7 +286,9 @@ impl Analyzer<'_, '_> {
             },
             Type::Interface(..) => {
                 if let Type::TypeLit(..) = parent {
-                    return Some(false);
+                    if opts.strict {
+                        return Some(false);
+                    }
                 }
             }
             Type::TypeLit(..) => match parent {
@@ -359,8 +364,8 @@ impl Analyzer<'_, '_> {
                 disallow_special_assignment_to_empty_class: true,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: true,
-                allow_unknown_rhs: Some(false),
-                allow_unknown_rhs_if_expanded: true,
+                allow_unknown_rhs: Some(!opts.strict),
+                allow_unknown_rhs_if_expanded: !opts.strict,
                 ..Default::default()
             },
         );
