@@ -406,12 +406,20 @@ impl Analyzer<'_, '_> {
                             vec![r.clone()]
                         };
 
-                        for ty in exclude_types {
-                            if is_eq {
-                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(ty);
-                            } else {
-                                self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(ty);
-                            }
+                        if is_eq {
+                            self.cur_facts
+                                .false_facts
+                                .excludes
+                                .entry(name.clone())
+                                .or_default()
+                                .extend(exclude_types);
+                        } else {
+                            self.cur_facts
+                                .true_facts
+                                .excludes
+                                .entry(name.clone())
+                                .or_default()
+                                .extend(exclude_types);
                         }
 
                         r = if let Type::Param(TypeParam {
