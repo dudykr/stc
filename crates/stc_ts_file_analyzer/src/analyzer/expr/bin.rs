@@ -429,10 +429,9 @@ impl Analyzer<'_, '_> {
                             metadata,
                             default,
                             ..
-                        }) = c.left.1
+                        }) = c.left.1.normalize()
                         {
-                            let normalize_param = param.normalize();
-                            if normalize_param.is_unknown() || normalize_param.is_any() {
+                            if param.is_unknown() || param.is_any() {
                                 Type::Param(TypeParam {
                                     span: *param_span,
                                     constraint: Some(box Type::Keyword(KeywordType {
