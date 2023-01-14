@@ -217,7 +217,7 @@ classes/members/inheritanceAndOverriding/derivedClassOverridesWithoutSubtype.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity2.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity3.ts
-classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers2.ts
+classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers5.ts
 classes/members/privateNames/privateNameAmbientNoImplicitAny.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
 classes/members/privateNames/privateNameClassExpressionLoop.ts
@@ -244,6 +244,7 @@ classes/members/privateNames/privateNameSetterExprReturnValue.ts
 classes/members/privateNames/privateNameStaticAndStaticInitializer.ts
 classes/members/privateNames/privateNameStaticFieldAccess.ts
 classes/members/privateNames/privateNameStaticFieldAssignment.ts
+classes/members/privateNames/privateNameStaticFieldCallExpression.ts
 classes/members/privateNames/privateNameStaticFieldInitializer.ts
 classes/members/privateNames/privateNameStaticFieldNoInitializer.ts
 classes/members/privateNames/privateNameStaticFieldUnaryMutation.ts

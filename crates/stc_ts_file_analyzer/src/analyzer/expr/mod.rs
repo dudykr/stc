@@ -136,9 +136,7 @@ impl Analyzer<'_, '_> {
                 RExpr::This(RThisExpr { span, .. }) => {
                     let span = *span;
 
-                    if self.ctx.in_static_property_initializer {
-                        self.storage.report(ErrorKind::ThisInStaticPropertyInitializer { span }.into())
-                    } else if self.ctx.in_constructor_param {
+                    if self.ctx.in_constructor_param {
                         self.storage.report(ErrorKind::ThisInConstructorParam { span }.into())
                     }
 

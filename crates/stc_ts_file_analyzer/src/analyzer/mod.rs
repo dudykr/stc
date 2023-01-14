@@ -135,6 +135,7 @@ pub(crate) struct Ctx {
     /// variable is global.
     report_error_for_non_local_vars: bool,
 
+    #[allow(unused)]
     in_static_property_initializer: bool,
     in_static_method: bool,
 
