@@ -918,47 +918,6 @@ impl Analyzer<'_, '_> {
 
         let c = Comparator { left: l, right: r };
 
-        if let RExpr::Unary(RUnaryExpr {
-            op: op!("typeof"),
-            ref arg,
-            ..
-        }) = l
-        {
-            match r {
-                RExpr::Lit(RLit::Str(RStr { ref value, .. })) => match (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value)) {
-                    (None, None) => {
-                        let name = Name::try_from(&**arg).unwrap();
-
-                        self.cur_facts.true_facts.excludes.insert(
-                            name.clone(),
-                            vec![
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsStringKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            ],
-                        );
-                    }
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
-
         // Check typeof a === 'string'
         if let Some((Ok(name), (Some(t), Some(f)))) = c.take_if_any_matches(|l, r| {
             if let RExpr::Unary(RUnaryExpr {
@@ -982,14 +941,73 @@ impl Analyzer<'_, '_> {
                             },
                         ))
                     }
-                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
-                        name,
-                        if is_eq {
-                            (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value))
-                        } else {
-                            (TypeFacts::typeof_neq(value), TypeFacts::typeof_eq(value))
-                        },
-                    )),
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => match (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value)) {
+                        (Some(t), Some(f)) => Some((name, if is_eq { (Some(t), Some(f)) } else { (Some(f), Some(t)) })),
+                        (None, None) => {
+                            // A type guard of the form typeof x === s and typeof x !== s,
+                            // where s is a string literal with any value but 'string', 'number' or
+                            // 'boolean'
+                            let name = Name::try_from(&**arg).unwrap();
+
+                            if is_eq {
+                                //  - typeof x === s
+                                //  removes the primitive types string, number, and boolean from
+                                //  the type of x in true facts.
+                                self.cur_facts.true_facts.excludes.insert(
+                                    name.clone(),
+                                    vec![
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsStringKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                    ],
+                                );
+                            } else {
+                                //  - typeof x !== s
+                                //  removes the primitive types string, number, and boolean from
+                                //  the type of x in false facts.
+                                self.cur_facts.false_facts.excludes.insert(
+                                    name.clone(),
+                                    vec![
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsStringKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                    ],
+                                );
+                            }
+                            None
+                        }
+                        _ => None,
+                    },
                     _ => None,
                 }
             } else {
