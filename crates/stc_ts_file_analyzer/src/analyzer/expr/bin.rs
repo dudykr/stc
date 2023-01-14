@@ -425,7 +425,6 @@ impl Analyzer<'_, '_> {
                         {
                             let normalize_param = param.normalize();
                             if normalize_param.is_unknown() || normalize_param.is_any() {
-                                self.add_deep_type_fact(span, name.clone(), r, !is_eq);
                                 Type::Param(TypeParam {
                                     span: *param_span,
                                     constraint: Some(box Type::Keyword(KeywordType {
