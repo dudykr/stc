@@ -217,7 +217,6 @@ classes/members/inheritanceAndOverriding/derivedClassOverridesWithoutSubtype.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity2.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity3.ts
-classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers2.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers5.ts
 classes/members/privateNames/privateNameAmbientNoImplicitAny.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
