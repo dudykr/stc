@@ -17,9 +17,9 @@ Error:
    `----
 
 Error: 
-  > {
+  > (undefined | {
   |     x: number;
-  | }
+  | })
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]

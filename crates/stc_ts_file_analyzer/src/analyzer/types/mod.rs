@@ -1486,7 +1486,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(match &*ty {
+        Ok(match ty.normalize() {
             Type::Class(..)
             | Type::ClassDef(..)
             | Type::Enum(..)

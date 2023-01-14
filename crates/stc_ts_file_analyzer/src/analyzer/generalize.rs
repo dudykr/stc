@@ -74,7 +74,7 @@ impl Fold<Union> for Simplifier<'_> {
         let should_remove_null_and_undefined = union
             .types
             .iter()
-            .any(|ty| matches!(ty.normalize(), Type::TypeLit(..) | Type::Ref(..) | Type::Function(..)));
+            .any(|ty| matches!(ty.normalize(), Type::Ref(..) | Type::Function(..)));
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {

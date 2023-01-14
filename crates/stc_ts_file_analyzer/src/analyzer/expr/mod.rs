@@ -251,7 +251,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.type_of_member_expr(expr, mode)
+                    self.type_of_member_expr(expr, mode, true)
                 }
 
                 RExpr::SuperProp(ref expr) => self.type_of_super_prop_expr(expr, mode),
@@ -3852,7 +3852,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
+    fn type_of_member_expr(
+        &mut self,
+        expr: &RMemberExpr,
+        type_mode: TypeOfMode,
+        include_optional_chaining_undefined: bool,
+    ) -> VResult<Type> {
         let RMemberExpr {
             ref obj, ref prop, span, ..
         } = *expr;
@@ -3990,7 +3995,7 @@ impl Analyzer<'_, '_> {
             ty
         };
 
-        if should_be_optional {
+        if should_be_optional && include_optional_chaining_undefined {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
         } else {
             Ok(ty)
