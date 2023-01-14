@@ -251,7 +251,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.type_of_member_expr(expr, mode)
+                    self.type_of_member_expr(expr, mode, true)
                 }
 
                 RExpr::SuperProp(ref expr) => self.type_of_super_prop_expr(expr, mode),
@@ -3852,7 +3852,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
+    fn type_of_member_expr(
+        &mut self,
+        expr: &RMemberExpr,
+        type_mode: TypeOfMode,
+        include_optional_chaining_undefined: bool,
+    ) -> VResult<Type> {
         let RMemberExpr {
             ref obj, ref prop, span, ..
         } = *expr;
@@ -3990,11 +3995,152 @@ impl Analyzer<'_, '_> {
             ty
         };
 
-        if should_be_optional {
+        if should_be_optional && include_optional_chaining_undefined {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
         } else {
             Ok(ty)
         }
+    }
+
+    fn exact_type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
+        let RMemberExpr {
+            ref obj, ref prop, span, ..
+        } = *expr;
+        let computed = matches!(prop, RMemberProp::Computed(_));
+
+        let name: Option<Name> = expr.try_into().ok();
+
+        if let TypeOfMode::RValue = type_mode {
+            if let Some(name) = &name {
+                if let Some(ty) = self.scope.get_type_from_name(name) {
+                    return Ok(ty);
+                }
+            }
+        }
+
+        let mut errors = Errors::default();
+
+        let is_obj_opt_chain;
+        let mut should_be_optional = false;
+        let mut obj_ty = {
+            is_obj_opt_chain = is_obj_opt_chaining(obj);
+
+            let obj_ctx = Ctx {
+                allow_module_var: true,
+                in_opt_chain: is_obj_opt_chain,
+                should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
+                ..self.ctx
+            };
+
+            let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
+                Ok(ty) => ty,
+                Err(err) => {
+                    // Recover error if possible.
+                    if computed {
+                        errors.push(err);
+                        Type::any(span, Default::default())
+                    } else {
+                        return Err(err);
+                    }
+                }
+            };
+
+            obj_ty.assert_valid();
+
+            if is_obj_opt_chain {
+                should_be_optional = self.can_be_undefined(span, &obj_ty, true)?;
+            }
+
+            obj_ty
+        };
+        obj_ty.make_clone_cheap();
+
+        self.storage.report_all(errors);
+
+        let mut prop = self
+            .validate_key(
+                &match prop {
+                    RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                    RMemberProp::Computed(c) => *c.expr.clone(),
+                    RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                },
+                computed,
+            )
+            .report(&mut self.storage)
+            .unwrap_or_else(|| {
+                let span = prop.span().with_ctxt(SyntaxContext::empty());
+                Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::any(span, Default::default()),
+                })
+            });
+        prop.make_clone_cheap();
+
+        let prop_access_ctx = Ctx {
+            in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,
+            ..self.ctx
+        };
+
+        let ctx = self.ctx;
+        let mut ty = self
+            .with_ctx(prop_access_ctx)
+            .access_property(
+                span,
+                &obj_ty,
+                &prop,
+                type_mode,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    check_for_undefined_or_null: false,
+                    ..Default::default()
+                },
+            )
+            .context("tried to access property of an object to calculate type of a member expression")?;
+
+        if !self.is_builtin {
+            if let Some(name) = name {
+                ty = self.apply_type_facts(&name, ty);
+
+                self.exclude_types_using_fact(span, &name, &mut ty);
+            }
+        }
+
+        let ty = if computed {
+            ty
+        } else {
+            if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
+                // Add type facts.
+                if let Some(name) = extract_name_for_assignment(obj, false) {
+                    let next_ty = self
+                        .narrow_types_with_property(
+                            span,
+                            &obj_ty,
+                            match &prop {
+                                Key::Normal { sym, .. } => sym,
+                                _ => unreachable!(),
+                            },
+                            Some(TypeFacts::Truthy),
+                        )
+                        .report(&mut self.storage)
+                        .map(|ty| ty.freezed());
+                    if let Some(next_ty) = next_ty {
+                        self.cur_facts
+                            .false_facts
+                            .excludes
+                            .entry(name.clone())
+                            .or_default()
+                            .push(next_ty.clone());
+
+                        self.add_deep_type_fact(span, name, next_ty, true);
+                    }
+                }
+            }
+
+            ty
+        };
+
+        Ok(ty)
     }
 
     /// TODO(kdy1): Expand type arguments if provided.

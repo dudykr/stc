@@ -9,7 +9,7 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 use crate::{
-    analyzer::{expr::TypeOfMode, util::ResultExt, Analyzer, ScopeKind},
+    analyzer::{expr::TypeOfMode, scope::ScopeKind, util::ResultExt, Analyzer},
     ty::Type,
     validator,
     validator::ValidateWith,
@@ -213,14 +213,16 @@ impl Analyzer<'_, '_> {
             })
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
-                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match err {
-                        ErrorKind::ObjectIsPossiblyNull { span, .. }
-                        | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
-                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span },
-                        _ => err,
-                    })?;
+                    let ty = self
+                        .type_of_member_expr(expr, TypeOfMode::RValue, false)
+                        .convert_err(|err| match err {
+                            ErrorKind::ObjectIsPossiblyNull { span, .. }
+                            | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
+                            | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span },
+                            _ => err,
+                        })?;
 
-                    if !ty.is_optional() {
+                    if !ty.is_optional() && !ty.contains_undefined() {
                         return Err(ErrorKind::DeleteOperandMustBeOptional { span }.into());
                     }
                 }

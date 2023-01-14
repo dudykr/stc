@@ -7,7 +7,7 @@ Stats {
 =======
     required_error: 4154,
     matched_error: 5743,
-    extra_error: 893,
+    extra_error: 892,
     panic: 26,
 >>>>>>> d678bb21 (fix(ts/analyzer): Fix checking of optional properties for delete operand)
 }
