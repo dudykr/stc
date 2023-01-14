@@ -1,0 +1,129 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:4:3]
+ 4 | if (value === undefined) {
+   :     ^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:4:3]
+ 4 | if (value === undefined) {
+   :               ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:4:3]
+ 4 | if (value === undefined) {
+   :     ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:5:5]
+ 5 | return value; // value: T extends unknown
+   :        ^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:7:3]
+ 7 | value; // T & ({} | null)
+   : ^^^^^
+   `----
+
+Error: 
+  > (T & (null | {
+  | }))
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:8:3]
+ 8 | if (value === 42) {
+   :     ^^^^^
+   `----
+
+Error: 
+  > (T & (null | {
+  | }))
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:8:3]
+ 8 | if (value === 42) {
+   :     ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:9:5]
+ 9 | value; // T & {}
+   : ^^^^^
+   `----
+
+Error: 
+  > 42
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:10:5]
+ 10 | throw Error("Meaning of life value");
+    :       ^^^^^
+    `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:10:5]
+ 10 | throw Error("Meaning of life value");
+    :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Error
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:12:3]
+ 12 | return value; // T & ({} | null)
+    :        ^^^^^
+    `----
+
+Error: 
+  > (T & (null | {
+  | }))
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:15:1]
+ 15 | doSomething1(undefined); // undefined
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends unknown>(value: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:15:1]
+ 15 | doSomething1(undefined); // undefined
+    :              ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/types/unknown/controlFlow/1.ts:15:1]
+ 15 | doSomething1(undefined); // undefined
+    : ^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
