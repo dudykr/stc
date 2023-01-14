@@ -16,10 +16,10 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
-    ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
-    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature,
-    QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParam, TypeParamInstantiation, Union,
+    ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Interface,
+    InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
+    Operator, PropertySignature, QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -108,7 +108,6 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Lit(..)
             | Type::TypeLit(..)
-            | Type::Interface(..)
             | Type::Class(..)
             | Type::ClassDef(..)
             | Type::Tuple(..)
@@ -117,6 +116,36 @@ impl Analyzer<'_, '_> {
             | Type::EnumVariant(..)
             | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
+            Type::Interface(Interface {
+                span,
+                name,
+                type_params,
+                extends,
+                body,
+                metadata: InterfaceMetadata { common },
+                tracker,
+            }) => {
+                for extend in extends {
+                    let types = extend.to_owned().type_args.into_iter().flat_map(|cur| cur.params);
+                    let union_type = Type::new_union(*span, types);
+                    if let box RExpr::Ident(ident) = &extend.expr {
+                        let RIdent {
+                            node_id,
+                            span,
+                            sym,
+                            optional,
+                        } = ident;
+                        if sym == &js_word!("Array") {
+                            return Ok(Cow::Owned(Type::Array(Array {
+                                span: *span,
+                                elem_type: box union_type,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })));
+                        };
+                    };
+                }
+            }
             _ => {}
         }
 
