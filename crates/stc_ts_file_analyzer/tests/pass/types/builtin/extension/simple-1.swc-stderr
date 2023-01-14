@@ -1,8 +1,8 @@
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:7:1]
- 7 | export var a: string = x.doStuff();
-   :                        ^
+ 7 | var a: string = x.doStuff();
+   :                 ^
    `----
 
 Error: 
@@ -10,8 +10,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:7:1]
- 7 | export var a: string = x.doStuff();
-   :                        ^^^^^^^^^^^
+ 7 | var a: string = x.doStuff();
+   :                 ^^^^^^^^^^^
    `----
 
 Error: 
@@ -19,8 +19,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:8:1]
- 8 | export var b: string = x.doOtherStuff('hm');
-   :                        ^
+ 8 | var b: string = x.doOtherStuff('hm');
+   :                 ^
    `----
 
 Error: 
@@ -28,8 +28,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:8:1]
- 8 | export var b: string = x.doOtherStuff('hm');
-   :                        ^^^^^^^^^^^^^^^^^^^^
+ 8 | var b: string = x.doOtherStuff('hm');
+   :                 ^^^^^^^^^^^^^^^^^^^^
    `----
 
 Error: 
@@ -37,8 +37,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:9:1]
- 9 | export var c: string = x['doStuff']();
-   :                        ^
+ 9 | var c: string = x['doStuff']();
+   :                 ^
    `----
 
 Error: 
@@ -46,8 +46,8 @@ Error:
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:9:1]
- 9 | export var c: string = x['doStuff']();
-   :                        ^^^^^^^^^^^^^^
+ 9 | var c: string = x['doStuff']();
+   :                 ^^^^^^^^^^^^^^
    `----
 
 Error: 
@@ -55,8 +55,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:10:1]
- 10 | export var d: string = x['doOtherStuff']('hm');
-    :                        ^
+ 10 | var d: string = x['doOtherStuff']('hm');
+    :                 ^
     `----
 
 Error: 
@@ -64,8 +64,8 @@ Error:
 
   x Type
     ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:10:1]
- 10 | export var d: string = x['doOtherStuff']('hm');
-    :                        ^^^^^^^^^^^^^^^^^^^^^^^
+ 10 | var d: string = x['doOtherStuff']('hm');
+    :                 ^^^^^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
