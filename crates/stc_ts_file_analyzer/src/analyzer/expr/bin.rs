@@ -918,6 +918,47 @@ impl Analyzer<'_, '_> {
 
         let c = Comparator { left: l, right: r };
 
+        if let RExpr::Unary(RUnaryExpr {
+            op: op!("typeof"),
+            ref arg,
+            ..
+        }) = l
+        {
+            match r {
+                RExpr::Lit(RLit::Str(RStr { ref value, .. })) => match (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value)) {
+                    (None, None) => {
+                        let name = Name::try_from(&**arg).unwrap();
+
+                        self.cur_facts.true_facts.excludes.insert(
+                            name.clone(),
+                            vec![
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            ],
+                        );
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+
         // Check typeof a === 'string'
         if let Some((Ok(name), (Some(t), Some(f)))) = c.take_if_any_matches(|l, r| {
             if let RExpr::Unary(RUnaryExpr {
