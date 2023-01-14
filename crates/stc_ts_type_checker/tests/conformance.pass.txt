@@ -301,6 +301,7 @@ controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBinaryOrExpression.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
+controlFlow/controlFlowDeleteOperator.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
@@ -1350,6 +1351,7 @@ expressions/optionalChaining/callChain/callChainInference.ts
 expressions/optionalChaining/callChain/parentheses.ts
 expressions/optionalChaining/callChain/superMethodCall.ts
 expressions/optionalChaining/callChain/thisMethodCall.ts
+expressions/optionalChaining/delete/deleteChain.ts
 expressions/optionalChaining/elementAccessChain/elementAccessChain.2.ts
 expressions/optionalChaining/elementAccessChain/elementAccessChain.ts
 expressions/optionalChaining/optionalChainingInArrow.ts
@@ -1863,6 +1865,7 @@ parser/ecmascript5/SuperExpressions/parserSuperExpression1.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression4.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty7.ts
+parser/ecmascript5/TupleTypes/TupleTypSymbols/ES5SymbolType1.ts
 parser/ecmascript5/TupleTypes/TupleType1.ts
 parser/ecmascript5/TupleTypes/TupleType2.ts
 parser/ecmascript5/TupleTypes/TupleType3.ts
