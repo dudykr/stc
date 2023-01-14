@@ -125,25 +125,11 @@ impl Analyzer<'_, '_> {
                 metadata: InterfaceMetadata { common },
                 tracker,
             }) => {
-                for extend in extends {
-                    let types = extend.to_owned().type_args.into_iter().flat_map(|cur| cur.params);
-                    let union_type = Type::new_union(*span, types);
-                    if let box RExpr::Ident(ident) = &extend.expr {
-                        let RIdent {
-                            node_id,
-                            span,
-                            sym,
-                            optional,
-                        } = ident;
-                        if sym == &js_word!("Array") {
-                            return Ok(Cow::Owned(Type::Array(Array {
-                                span: *span,
-                                elem_type: box union_type,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })));
-                        };
-                    };
+                for parent in extends {
+                    let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
+                    if let Type::Array(_) = &parent {
+                        return Ok(Cow::Owned(parent));
+                    }
                 }
             }
             _ => {}
