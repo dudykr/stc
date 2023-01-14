@@ -1,0 +1,72 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
+ 11 | return toTest && toTest.b;
+    :        ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
+ 11 | return toTest && toTest.b;
+    :                  ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
+ 11 | return toTest && toTest.b;
+    :                  ^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
+ 11 | return toTest && toTest.b;
+    :        ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:5]
+ 16 | if (isB(a)) {
+    :     ^^^
+    `----
+
+Error: 
+  > (toTest: any) => toTest is B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:5]
+ 16 | if (isB(a)) {
+    :         ^
+    `----
+
+Error: 
+  > A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:5]
+ 16 | if (isB(a)) {
+    :     ^^^^^^
+    `----
+
+Error: 
+  > toTest is B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:17:9]
+ 17 | return a;
+    :        ^
+    `----
+
+Error: 
+  > (A & B)

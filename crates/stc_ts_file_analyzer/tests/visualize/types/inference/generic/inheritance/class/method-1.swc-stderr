@@ -1,0 +1,104 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:5:13]
+ 5 | return x;
+   :        ^
+   `----
+
+Error: 
+  > V
+
+  x Type
+   ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:7:9]
+ 7 | return bar;
+   :        ^^^
+   `----
+
+Error: 
+  > <V extends U>(x: V) => V
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:1]
+ 11 | var c = new C({ length: 2 });
+    :             ^
+    `----
+
+Error: 
+  > typeof C
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:1]
+ 11 | var c = new C({ length: 2 });
+    :               ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     length: 2;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:1]
+ 11 | var c = new C({ length: 2 });
+    :         ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > C
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:1]
+ 12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+    :                ^
+    `----
+
+Error: 
+  > C
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:1]
+ 12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+    :                                           ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: number) => void
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:1]
+ 12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+    :                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     length: 3;
+  |     charAt: (x: number) => void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:1]
+ 12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+    :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <V>(x: V) => V
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:13:1]
+ 13 | export var r2 = r('');
+    :                 ^
+    `----
+
+Error: 
+  > <V extends U>(x: V) => V
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:13:1]
+ 13 | export var r2 = r('');
+    :                 ^^^^^
+    `----
+
+Error: 
+  > string
