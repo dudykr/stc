@@ -2,6 +2,7 @@ classStaticBlock16.ts
 conditionalTypes1.ts
 namedTupleMembers.ts
 privateNameAccessorssDerivedClasses.ts
+privateNameComputedPropertyName2.ts
 privateNameFieldDerivedClasses.ts
 privateNameMethodsDerivedClasses.ts
 privateNameStaticFieldDerivedClasses.ts
