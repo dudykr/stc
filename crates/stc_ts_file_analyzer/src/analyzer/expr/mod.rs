@@ -482,7 +482,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::any(span, Default::default()));
             }
 
-            Ok(rhs_ty)
+            Ok(ret_ty)
         })
     }
 }
