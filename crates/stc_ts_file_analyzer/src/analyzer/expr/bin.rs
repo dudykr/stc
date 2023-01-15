@@ -963,7 +963,7 @@ impl Analyzer<'_, '_> {
                                 //  - typeof x === s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in true facts.
-                                self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().extend(vec![
+                                self.cur_facts.true_facts.excludes.entry(name).or_default().extend(vec![
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsStringKeyword,
@@ -987,7 +987,7 @@ impl Analyzer<'_, '_> {
                                 //  - typeof x !== s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in false facts.
-                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().extend(vec![
+                                self.cur_facts.false_facts.excludes.entry(name).or_default().extend(vec![
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsStringKeyword,
