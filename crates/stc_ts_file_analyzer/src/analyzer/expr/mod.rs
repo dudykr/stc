@@ -4211,19 +4211,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<Type> {
-        if e.exprs.is_empty() {
-            return Ok(Type::Lit(LitType {
-                span: e.span,
-                lit: RTsLit::Str(RStr {
-                    span: e.span,
-                    value: (&*e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())).into(),
-                    raw: None,
-                }),
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }));
-        }
-
         let types = e
             .exprs
             .iter()
