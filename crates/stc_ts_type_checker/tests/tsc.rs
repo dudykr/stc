@@ -279,22 +279,6 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     })
 }
 
-fn target_to_str(target: EsVersion) -> &'static str {
-    match target {
-        EsVersion::Es3 => "es3",
-        EsVersion::Es5 => "es5",
-        EsVersion::Es2015 => "es2015",
-        EsVersion::Es2016 => "es2016",
-        EsVersion::Es2017 => "es2017",
-        EsVersion::Es2018 => "es2018",
-        EsVersion::Es2019 => "es2019",
-        EsVersion::Es2020 => "es2020",
-        EsVersion::Es2021 => "es2021",
-        EsVersion::Es2022 => "es2022",
-        EsVersion::EsNext => "esnext",
-    }
-}
-
 /// If `spec` is [Some], it's use to construct filename.
 ///
 /// Returns `(file_suffix, errors)`
@@ -303,7 +287,7 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         Some(v) => ts_file.with_file_name(format!(
             "{}(target={}).errors.json",
             ts_file.file_stem().unwrap().to_string_lossy(),
-            target_to_str(v.target)
+            v.raw_target
         )),
         None => ts_file.with_extension("errors.json"),
     };
@@ -342,27 +326,35 @@ struct TestSpec {
     rule: Rule,
     ts_config: TsConfig,
     target: EsVersion,
+    raw_target: String,
     module_config: ModuleConfig,
 }
 
-fn parse_targets(s: &str) -> Vec<EsVersion> {
-    match s {
-        "es3" => return vec![EsVersion::Es3],
-        "es5" => return vec![EsVersion::Es5],
-        "es2015" => return vec![EsVersion::Es2015],
-        "es6" => return vec![EsVersion::Es2015],
-        "es2016" => return vec![EsVersion::Es2016],
-        "es2017" => return vec![EsVersion::Es2017],
-        "es2018" => return vec![EsVersion::Es2018],
-        "es2019" => return vec![EsVersion::Es2019],
-        "es2020" => return vec![EsVersion::Es2020],
-        "es2021" => return vec![EsVersion::Es2021],
-        "es2022" => return vec![EsVersion::Es2022],
-        "esnext" => return vec![EsVersion::EsNext],
-        _ => {}
+fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
+    fn parse_target_inner(s: &str) -> Vec<EsVersion> {
+        match s {
+            "es3" => return vec![EsVersion::Es3],
+            "es5" => return vec![EsVersion::Es5],
+            "es2015" => return vec![EsVersion::Es2015],
+            "es6" => return vec![EsVersion::Es2015],
+            "es2016" => return vec![EsVersion::Es2016],
+            "es2017" => return vec![EsVersion::Es2017],
+            "es2018" => return vec![EsVersion::Es2018],
+            "es2019" => return vec![EsVersion::Es2019],
+            "es2020" => return vec![EsVersion::Es2020],
+            "es2021" => return vec![EsVersion::Es2021],
+            "es2022" => return vec![EsVersion::Es2022],
+            "esnext" => return vec![EsVersion::EsNext],
+            _ => {}
+        }
+        if !s.contains(',') {
+            panic!("failed to parse `{}` as targets", s)
+        }
+        s.split(',').map(|s| s.trim()).flat_map(parse_target_inner).collect()
     }
+
     if !s.contains(',') {
-        panic!("failed to parse `{}` as targets", s)
+        return vec![(s.into(), parse_target_inner(s)[0])];
     }
     s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
 }
@@ -390,7 +382,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
-        let mut targets = vec![(EsVersion::default(), false)];
+        let mut targets = vec![("".into(), EsVersion::default(), false)];
 
         let program = parser.parse_program().map_err(|e| {
             e.into_diagnostic(handler).emit();
@@ -456,7 +448,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
                 if s.starts_with("target:") || s.starts_with("Target:") {
                     let s = s["target:".len()..].trim().to_lowercase();
-                    targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
+                    targets = parse_targets(&s).into_iter().map(|v| (v.0, v.1, true)).collect();
                 } else if s.starts_with("strict:") {
                     let strict = s["strict:".len()..].trim().parse().unwrap();
                     rule.no_implicit_any = strict;
@@ -545,7 +537,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         Ok(targets
             .into_iter()
-            .map(|(target, specified)| {
+            .map(|(raw_target, target, specified)| {
                 let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
                         EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
@@ -571,6 +563,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     rule,
                     ts_config,
                     target,
+                    raw_target,
                     module_config,
                 }
             })
@@ -593,6 +586,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         ts_config,
         target,
         module_config,
+        raw_target: _,
     } = spec;
 
     let stat_guard = RecordOnPanic {
