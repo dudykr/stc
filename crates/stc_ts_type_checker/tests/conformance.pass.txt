@@ -1,4 +1,9 @@
+Symbols/ES5SymbolProperty1.ts
+Symbols/ES5SymbolProperty2.ts
+Symbols/ES5SymbolProperty3.ts
+Symbols/ES5SymbolProperty4.ts
 Symbols/ES5SymbolProperty6.ts
+Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
 ambient/ambientDeclarations.ts
 ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
@@ -415,6 +420,8 @@ es6/Symbols/symbolProperty41.ts
 es6/Symbols/symbolProperty43.ts
 es6/Symbols/symbolProperty45.ts
 es6/Symbols/symbolProperty46.ts
+es6/Symbols/symbolProperty48.ts
+es6/Symbols/symbolProperty49.ts
 es6/Symbols/symbolProperty5.ts
 es6/Symbols/symbolProperty50.ts
 es6/Symbols/symbolProperty51.ts
@@ -424,6 +431,7 @@ es6/Symbols/symbolProperty54.ts
 es6/Symbols/symbolProperty55.ts
 es6/Symbols/symbolProperty56.ts
 es6/Symbols/symbolProperty57.ts
+es6/Symbols/symbolProperty58.ts
 es6/Symbols/symbolProperty6.ts
 es6/Symbols/symbolProperty60.ts
 es6/Symbols/symbolProperty8.ts
