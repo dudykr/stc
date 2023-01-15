@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if (from.is_str() || from.is_tpl()) && to.is_tpl() {
+        if from.is_kwd(TsKeywordTypeKind::TsStringKeyword) && to.is_tpl() {
             return Ok(true);
         }
 
