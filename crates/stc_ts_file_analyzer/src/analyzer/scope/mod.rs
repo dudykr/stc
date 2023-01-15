@@ -22,7 +22,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
+    KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
+    TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -1896,7 +1897,11 @@ impl Expander<'_, '_, '_> {
             RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
                     if *class == *i {
-                        return Ok(None);
+                        return Ok(Some(Type::This(ThisType {
+                            span,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })));
                     }
                 }
                 if i.sym == js_word!("void") {
