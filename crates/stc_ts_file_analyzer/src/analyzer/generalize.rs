@@ -691,6 +691,7 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
+                span,
                 obj_type:
                     box Type::Class(Class {
                         def: box ClassDef { body, .. },
@@ -734,7 +735,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 new_types.dedup_type();
 
-                return Type::union(new_types);
+                return Type::new_union(span, new_types);
             }
 
             _ => {}
