@@ -993,7 +993,7 @@ impl Analyzer<'_, '_> {
             TypeOfMode::LValue => Type::new_intersection(span, res_vec),
             TypeOfMode::RValue => Type::new_union(span, res_vec),
         };
-        Ok(Some(result.freezed()))
+        Ok(Some(result))
     }
 
     pub(super) fn access_property(
