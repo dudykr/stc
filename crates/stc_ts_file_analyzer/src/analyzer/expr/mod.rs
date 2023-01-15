@@ -2771,7 +2771,11 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span, Default::default()));
                     }
                     kind => {
-                        unimplemented!("access property of this to {:?}", kind)
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("access property of this to {:?}", kind),
+                        }
+                        .into())
                     }
                 }
             }
