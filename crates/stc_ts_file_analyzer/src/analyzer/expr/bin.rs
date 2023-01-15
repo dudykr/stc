@@ -963,56 +963,50 @@ impl Analyzer<'_, '_> {
                                 //  - typeof x === s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in true facts.
-                                self.cur_facts.true_facts.excludes.insert(
-                                    name.clone(),
-                                    vec![
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsStringKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                    ],
-                                );
+                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().extend(vec![
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                ]);
                             } else {
                                 //  - typeof x !== s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in false facts.
-                                self.cur_facts.false_facts.excludes.insert(
-                                    name.clone(),
-                                    vec![
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsStringKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                    ],
-                                );
+                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().extend(vec![
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                ]);
                             }
                             None
                         }
