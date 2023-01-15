@@ -405,11 +405,13 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let (Type::Tpl(from), Type::Tpl(to)) = (from.normalize(), to.normalize()) {
-            if self.tpl_lit_type_definitely_unrelated(span, from, to)? {
-                return Ok(false);
-            } else {
-                return Ok(true);
+        if let Type::Tpl(to) = to.normalize() {
+            if let Type::Tpl(from) = from.normalize() {
+                if self.tpl_lit_type_definitely_unrelated(span, from, to)? {
+                    return Ok(false);
+                } else {
+                    return Ok(true);
+                }
             }
         }
 
