@@ -729,7 +729,7 @@ impl Analyzer<'_, '_> {
                                 let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
 
                                 if let Some(var) = self.scope.vars.get_mut(&Id::from(left)) {
-                                    var.actual_ty = Some(new_actual_ty);
+                                    var.actual_ty = Some(new_actual_ty.freezed());
                                 }
                             }
                         }

@@ -1347,7 +1347,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("access_property_inner: global_this: {:?}", prop);
+            return Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("access_property_inner: global_this: {:?}", prop),
+            }
+            .into());
         }
 
         if opts.check_for_undefined_or_null && self.rule().strict_null_checks {
@@ -2771,7 +2775,11 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span, Default::default()));
                     }
                     kind => {
-                        unimplemented!("access property of this to {:?}", kind)
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("access property of this to {:?}", kind),
+                        }
+                        .into())
                     }
                 }
             }

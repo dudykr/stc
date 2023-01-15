@@ -1,23 +1,5 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple-1.ts:9:5]
- 9 | [Symbol.iterator]() {
-   :  ^^^^^^
-   `----
-
-Error: 
-  > SymbolConstructor
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple-1.ts:9:5]
- 9 | [Symbol.iterator]() {
-   :  ^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > symbol
-
-  x Type
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple-1.ts:5:13]
  5 | value: new Foo,
    :            ^^^
@@ -48,6 +30,24 @@ Error:
   |     value: Foo;
   |     done: false;
   | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple-1.ts:9:5]
+ 9 | [Symbol.iterator]() {
+   :  ^^^^^^
+   `----
+
+Error: 
+  > SymbolConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple-1.ts:9:5]
+ 9 | [Symbol.iterator]() {
+   :  ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > symbol
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple-1.ts:10:9]

@@ -249,8 +249,9 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = p
                 {
-                    assert!(ty.is_some(), "parameter named `this` should have type");
-                    self.scope.this = ty.clone();
+                    if ty.is_some() {
+                        self.scope.this = ty.clone();
+                    }
                 }
 
                 let mut visitor = VarVisitor { names: &mut names };

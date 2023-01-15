@@ -250,6 +250,7 @@ classes/members/privateNames/privateNameStaticFieldNoInitializer.ts
 classes/members/privateNames/privateNameStaticFieldUnaryMutation.ts
 classes/members/privateNames/privateNameStaticMethodInStaticFieldInit.ts
 classes/members/privateNames/privateNamesAndFields.ts
+classes/members/privateNames/privateNamesAndkeyof.ts
 classes/members/privateNames/privateNamesAssertion.ts
 classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesUnique-1.ts
@@ -1866,7 +1867,6 @@ parser/ecmascript5/SuperExpressions/parserSuperExpression1.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression4.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty7.ts
-parser/ecmascript5/TupleTypes/TupleTypSymbols/ES5SymbolType1.ts
 parser/ecmascript5/TupleTypes/TupleType1.ts
 parser/ecmascript5/TupleTypes/TupleType2.ts
 parser/ecmascript5/TupleTypes/TupleType3.ts
