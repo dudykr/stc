@@ -478,6 +478,8 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> VResult<_> {
+                child.ctx.in_static_method = c.is_static;
+
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
                     child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
