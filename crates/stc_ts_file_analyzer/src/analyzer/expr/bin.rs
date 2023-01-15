@@ -289,7 +289,8 @@ impl Analyzer<'_, '_> {
                     right: &**right,
                 };
 
-                self.add_type_facts_for_typeof(span, left, right, is_eq).report(&mut self.storage);
+                self.add_type_facts_for_typeof(span, left, right, is_eq, &lt, &rt)
+                    .report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -911,7 +912,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool) -> VResult<()> {
+    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool, l_ty: &Type, r_ty: &Type) -> VResult<()> {
         if !self.ctx.in_cond {
             return Ok(());
         }
@@ -944,6 +945,15 @@ impl Analyzer<'_, '_> {
                     RExpr::Lit(RLit::Str(RStr { ref value, .. })) => match (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value)) {
                         (Some(t), Some(f)) => Some((name, if is_eq { (Some(t), Some(f)) } else { (Some(f), Some(t)) })),
                         (None, None) => {
+                            self.storage.report(
+                                ErrorKind::NoOverlap {
+                                    span,
+                                    value: true,
+                                    left: box l_ty.clone(),
+                                    right: box r_ty.clone(),
+                                }
+                                .into(),
+                            );
                             // A type guard of the form typeof x === s and typeof x !== s,
                             // where s is a string literal with any value but 'string', 'number' or
                             // 'boolean'
