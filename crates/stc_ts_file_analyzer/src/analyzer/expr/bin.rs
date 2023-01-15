@@ -1160,7 +1160,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if orig_ty.normalize().is_any() {
+        if orig_ty.is_any() {
             if ty.is_interface() || ty.is_type_lit() {
                 if let Ok(result) = self.access_property(
                     span,
