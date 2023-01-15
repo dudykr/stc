@@ -15,7 +15,7 @@ pub struct TscError {
     pub line: usize,
     pub col: usize,
     pub code: usize,
-    pub msg: String,
+    // pub msg: String,
 }
 
 impl TscError {
@@ -68,7 +68,7 @@ impl TscError {
                         }
                     }
                     3 => {
-                        error.msg = line.to_string();
+                        // error.msg = line.to_string();
                     }
                     _ => {}
                 }
