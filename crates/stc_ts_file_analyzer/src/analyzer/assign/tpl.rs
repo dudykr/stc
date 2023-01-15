@@ -73,8 +73,8 @@ impl Analyzer<'_, '_> {
             Type::Lit(LitType {
                 lit: RTsLit::Str(value), ..
             }) => {
-                if target.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && self.is_valid_num_str(&value.value, false)
-                    || target.is_kwd(TsKeywordTypeKind::TsBigIntKeyword) && self.is_valid_big_int_str(&value.value, false)
+                if target.is_num() && self.is_valid_num_str(&value.value, false)
+                    || target.is_bigint() && self.is_valid_big_int_str(&value.value, false)
                 {
                     return Ok(true);
                 }
