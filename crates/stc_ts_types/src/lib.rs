@@ -2301,6 +2301,19 @@ impl Type {
         )
     }
 
+    pub fn is_bigint(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::BigInt(..),
+                ..
+            })
+        )
+    }
+
     pub fn is_num_lit(&self) -> bool {
         matches!(
             self.normalize(),

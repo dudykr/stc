@@ -206,6 +206,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
@@ -221,7 +222,7 @@ impl Analyzer<'_, '_> {
     ///
     /// - `l`: from
     /// - `r`: to
-
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type, opts: CastableOpts) -> VResult<bool> {
         let from = self
             .normalize(
@@ -260,7 +261,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if (from.is_str() || from.is_tpl()) && to.is_tpl() {
+        if from.is_kwd(TsKeywordTypeKind::TsStringKeyword) && to.is_tpl() {
             return Ok(true);
         }
 
@@ -404,11 +405,9 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let (Type::Tpl(from), Type::Tpl(to)) = (from.normalize(), to.normalize()) {
-            if self.tpl_lit_type_definitely_unrelated(span, from, to)? {
-                return Ok(false);
-            } else {
-                return Ok(true);
+        if let Type::Tpl(to) = to.normalize() {
+            if let Type::Tpl(from) = from.normalize() {
+                return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
             }
         }
 

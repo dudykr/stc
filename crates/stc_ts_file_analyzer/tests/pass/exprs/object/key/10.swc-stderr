@@ -6,7 +6,7 @@
    `----
 
 Error: 
-  > "hello bye"
+  > `hello bye`
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/key/10.ts:5:1]

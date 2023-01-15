@@ -6,7 +6,7 @@
    `----
 
 Error: 
-  > "test"
+  > `test`
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:1]
