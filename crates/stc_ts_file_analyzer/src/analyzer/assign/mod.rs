@@ -2178,7 +2178,8 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssignToThis { span: *span }.into()),
+            // TODO(kdy1): Use data stored in the current scope.
+            Type::This(ThisType { span, .. }) => return Ok(()),
 
             Type::Interface(Interface {
                 name,
