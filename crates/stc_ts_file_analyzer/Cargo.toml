@@ -48,7 +48,6 @@ stc_ts_ordering = {path = "../stc_ts_ordering"}
 stc_ts_simple_ast_validations = {path = "../stc_ts_simple_ast_validations"}
 stc_ts_storage = {path = "../stc_ts_storage"}
 stc_ts_type_cache = {path = "../stc_ts_type_cache"}
-stc_ts_type_form = {path = "../stc_ts_type_form"}
 stc_ts_type_ops = {path = "../stc_ts_type_ops"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
