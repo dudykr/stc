@@ -245,6 +245,7 @@ classes/members/privateNames/privateNameMethodInStaticFieldInit.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
 classes/members/privateNames/privateNameNotAccessibleOutsideDefiningClass.ts
 classes/members/privateNames/privateNameSetterExprReturnValue.ts
+classes/members/privateNames/privateNameStaticAccessorsAccess.ts
 classes/members/privateNames/privateNameStaticAndStaticInitializer.ts
 classes/members/privateNames/privateNameStaticFieldAccess.ts
 classes/members/privateNames/privateNameStaticFieldAssignment.ts
