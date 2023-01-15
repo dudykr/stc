@@ -12,8 +12,8 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
-    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id,
+    Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
@@ -1683,24 +1683,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-            }
-
-            {
-                // Remove class members with const EnumVariant keys.
-                c.body.iter().for_each(|v| {
-                    if let RClassMember::Method(method) = v {
-                        if let RPropName::Computed(c) = &method.key {
-                            if let Ok(Key::Computed(ComputedKey { ty, .. })) = c.validate_with(child) {
-                                if let Type::EnumVariant(e) = ty.normalize() {
-                                    //
-                                    if let Some(m) = &mut child.mutations {
-                                        m.for_class_members.entry(method.node_id).or_default().remove = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
             }
 
             // Handle nodes in order described above
