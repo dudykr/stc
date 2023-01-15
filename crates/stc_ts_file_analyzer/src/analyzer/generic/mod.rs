@@ -40,7 +40,6 @@ mod expander;
 mod inference;
 #[cfg(test)]
 mod tests;
-mod type_form;
 
 #[derive(Debug)]
 pub(super) struct InferData {

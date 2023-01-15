@@ -291,6 +291,7 @@ fn target_to_str(target: EsVersion) -> &'static str {
         EsVersion::Es2020 => "es2020",
         EsVersion::Es2021 => "es2021",
         EsVersion::Es2022 => "es2022",
+        EsVersion::EsNext => "esnext",
     }
 }
 
@@ -357,7 +358,7 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
         "es2020" => return vec![EsVersion::Es2020],
         "es2021" => return vec![EsVersion::Es2021],
         "es2022" => return vec![EsVersion::Es2022],
-        "esnext" => return vec![EsVersion::latest()],
+        "esnext" => return vec![EsVersion::EsNext],
         _ => {}
     }
     if !s.contains(',') {
