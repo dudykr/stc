@@ -736,7 +736,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     match op {
-                        op!("??=") | op!("||=") => Type::new_union(span, vec![lhs_ty, rhs_ty.clone()]),
+                        op!("??=") | op!("||=") => {
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty);
+
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                        }
                         _ => rhs_ty.clone(),
                     }
                 }
