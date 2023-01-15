@@ -1593,7 +1593,12 @@ impl Analyzer<'_, '_> {
             };
             if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
                 if this.is_this() {
-                    unreachable!("this() should not be `this`")
+                    return Err(ErrorKind::NoSuchProperty {
+                        span,
+                        obj: Some(box obj.clone()),
+                        prop: Some(box prop.clone()),
+                    }
+                    .context("tried to access property of `this`"));
                 }
 
                 return self

@@ -1329,6 +1329,14 @@ impl Analyzer<'_, '_> {
 
     // This is part of normalization.
     fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            let ty_str = force_dump_type_as_string(ty);
+
+            Some(span!(Level::ERROR, "instantiate_for_normalization", ty = &*ty_str).entered())
+        } else {
+            None
+        };
+
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
