@@ -10,6 +10,7 @@ pub trait Freeze: Sized + Clone {
     /// Make `[Clone::clone] cheap.
     fn freeze(&mut self);
 
+    /// Call [`Self::freeze`] and return `self`.
     #[inline]
     fn freezed(mut self) -> Self {
         self.freeze();
