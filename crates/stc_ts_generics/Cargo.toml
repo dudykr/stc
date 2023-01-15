@@ -19,5 +19,5 @@ stc_ts_utils = {path = "../stc_ts_utils"}
 stc_utils = {path = "../stc_utils"}
 swc_atoms = "0.4.33"
 swc_common = "0.29.27"
-swc_ecma_ast = "0.96.0"
+swc_ecma_ast = "0.96.1"
 tracing = "0.1.37"

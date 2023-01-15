@@ -20,12 +20,12 @@ stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_types = {path = "../stc_ts_types"}
 swc_atoms = "0.4.33"
 swc_common = "0.29.27"
-swc_ecma_ast = "0.96.0"
+swc_ecma_ast = "0.96.1"
 swc_ecma_codegen = "0.129.2"
-swc_ecma_parser = "0.124.1"
+swc_ecma_parser = "0.124.2"
 swc_ecma_transforms = "0.201.0"
 swc_ecma_utils = "0.107.1"
-swc_ecma_visit = "0.82.0"
+swc_ecma_visit = "0.82.1"
 tempdir = "0.3.7"
 tokio = {version = "1.22.0", features = ["test-util", "process"]}
 tracing = "0.1.37"
