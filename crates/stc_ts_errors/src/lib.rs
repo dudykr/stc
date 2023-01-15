@@ -1367,11 +1367,6 @@ pub enum ErrorKind {
         op: AssignOp,
     },
 
-    /// TS2471
-    NonSymbolComputedPropInFormOfSymbol {
-        span: Span,
-    },
-
     ExpectedNArgsButGotM {
         span: Span,
         min: usize,
@@ -1691,7 +1686,6 @@ impl ErrorKind {
             | ErrorKind::NoSuchPropertyInModule { .. } => 2339,
 
             ErrorKind::AssignOpCannotBeApplied { .. } => 2365,
-            ErrorKind::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             ErrorKind::TypeUsedAsVar { .. } => 2693,
             ErrorKind::TypeNotFound { .. } => 2304,
 
