@@ -143,7 +143,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        vec.make_clone_cheap();
+                        vec.freeze();
 
                         for new_l_params in vec {
                             let _ctx = ctx!("tried to assign by expanding overloads in a type literal");

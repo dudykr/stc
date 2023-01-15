@@ -5,6 +5,7 @@ use scoped_tls::scoped_thread_local;
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 pub trait Freeze: Sized + Clone {
+    /// Returns `true` if `[Clone::clone] is cheap.
     fn is_clone_cheap(&self) -> bool;
 
     /// Make `[Clone::clone] cheap.
