@@ -367,6 +367,7 @@ es2021/logicalAssignment/logicalAssignment1.ts
 es2021/logicalAssignment/logicalAssignment10.ts
 es2021/logicalAssignment/logicalAssignment2.ts
 es2021/logicalAssignment/logicalAssignment3.ts
+es2021/logicalAssignment/logicalAssignment8.ts
 es2021/logicalAssignment/logicalAssignment9.ts
 es2022/es2022IntlAPIs.ts
 es6/Symbols/symbolDeclarationEmit1.ts
@@ -1211,6 +1212,7 @@ esnext/logicalAssignment/logicalAssignment10.ts
 esnext/logicalAssignment/logicalAssignment11.ts
 esnext/logicalAssignment/logicalAssignment2.ts
 esnext/logicalAssignment/logicalAssignment3.ts
+esnext/logicalAssignment/logicalAssignment8.ts
 esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiteralInference.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
