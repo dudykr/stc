@@ -1397,7 +1397,7 @@ impl Analyzer<'_, '_> {
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
                     if !computed {
-                        let should_be_static = self.ctx.in_static_method;
+                        let should_be_static = self.ctx.in_static_method || self.ctx.in_static_property_initializer;
                         // We are currently declaring a class.
                         for (_, member) in self.scope.class_members() {
                             match member {
