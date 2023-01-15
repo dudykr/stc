@@ -85,7 +85,11 @@ impl Analyzer<'_, '_> {
                         };
                         // a.storage.export_wildcard_module(s.span, s.value,
                         // module);
-                        todo!("Exporting module with a wildcard: {:?}", module)
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("Exporting module with a wildcard: {:?}", module),
+                        }
+                        .into());
                     }
                 },
                 RDecl::TsTypeAlias(ref decl) => {
