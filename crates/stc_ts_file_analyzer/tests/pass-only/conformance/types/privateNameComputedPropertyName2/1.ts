@@ -1,8 +1,5 @@
-// @target: esnext, es2022, es2015
-
 let getX: (a: A) => number;
 
 class A {
-    #x = 100;
-    [(getX = (a: A) => a.#x, "_")]() { }
+    [((a: A) => null, "_")]() { }
 }
