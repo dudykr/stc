@@ -734,6 +734,11 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
+
+                    match op {
+                        op!("??=") | op!("||=") => Type::new_union(span, vec![lhs_ty, rhs_ty.clone()]),
+                        _ => rhs_ty.clone(),
+                    }
                 }
 
                 RPatOrExpr::Pat(ref pat) => {
@@ -760,6 +765,9 @@ impl Analyzer<'_, '_> {
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,
                         }
                     }
+
+                    // TODO: Use the correct type
+                    rhs_ty.clone()
                 }
             }
         };
