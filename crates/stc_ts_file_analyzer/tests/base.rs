@@ -3,6 +3,7 @@
 
 use std::{
     env,
+    fs::{self, read_to_string},
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
@@ -275,14 +276,21 @@ fn pass_only(input: PathBuf) {
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
-    if env::var("STC_SKIP_EXEC").unwrap_or_default() == "1" {
-        return;
-    }
+    let cache_path = input.with_extension("tsc-errors.json");
 
     let mut actual = validate(&input);
     actual.sort();
 
-    let tsc_result = invoke_tsc(&input);
+    let tsc_result = if !cache_path.is_file() {
+        if env::var("STC_SKIP_EXEC").unwrap_or_default() == "1" {
+            return;
+        }
+        let result = invoke_tsc(&input);
+        fs::write(&cache_path, serde_json::to_string_pretty(&result).unwrap()).unwrap();
+        result
+    } else {
+        serde_json::from_str(&read_to_string(&cache_path).unwrap()).unwrap()
+    };
 
     let mut expected = tsc_result
         .into_iter()
