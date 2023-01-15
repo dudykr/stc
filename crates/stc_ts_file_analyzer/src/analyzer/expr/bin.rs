@@ -1131,9 +1131,6 @@ impl Analyzer<'_, '_> {
         )?;
         orig_ty.make_clone_cheap();
 
-        if orig_ty.normalize().is_any() {
-            return Ok(ty.into_owned());
-        }
         let _stack = stack::track(span)?;
 
         if let Type::Union(orig) = orig_ty.normalize() {
@@ -1161,6 +1158,30 @@ impl Analyzer<'_, '_> {
             if ty.is_interface() {
                 return Ok(Type::never(span, Default::default()));
             }
+        }
+
+        if orig_ty.normalize().is_any() {
+            if ty.is_interface() || ty.is_type_lit() {
+                if let Ok(result) = self.access_property(
+                    span,
+                    ty.normalize(),
+                    &Key::Normal {
+                        span,
+                        sym: "prototype".into(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    Default::default(),
+                ) {
+                    if !result.is_any() {
+                        return Ok(result);
+                    }
+                }
+                if let Ok(result) = self.make_instance(span, ty.normalize()) {
+                    return Ok(result);
+                }
+            }
+            return Ok(ty.into_owned());
         }
 
         match ty.normalize() {

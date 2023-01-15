@@ -2069,6 +2069,8 @@ types/any/anyAsGenericFunctionCall.ts
 types/any/anyPropertyAccess.ts
 types/any/assignAnyToEveryType.ts
 types/any/assignEveryTypeToAny.ts
+types/any/narrowExceptionVariableInCatchClause.ts
+types/any/narrowFromAnyWithInstanceof.ts
 types/conditional/inferTypes2.ts
 types/conditional/inferTypesWithExtends1.ts
 types/conditional/variance.ts

@@ -1,0 +1,72 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:12:1]
+ 12 | if (obj12 instanceof F) {
+    :     ^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:12:1]
+ 12 | if (obj12 instanceof F) {
+    :                      ^
+    `----
+
+Error: 
+  > FConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:12:1]
+ 12 | if (obj12 instanceof F) {
+    :     ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:13:3]
+ 13 | obj12; // any
+    : ^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:14:3]
+ 14 | obj12.foo;
+    : ^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:14:3]
+ 14 | obj12.foo;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:15:3]
+ 15 | obj12.bar;
+    : ^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/6.ts:15:3]
+ 15 | obj12.bar;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > any

@@ -99,7 +99,16 @@ Error:
     `----
 
 Error: 
-  > ErrorConstructor
+  > Error
+
+  x Type
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:13:7]
+ 13 | err.message;
+    : ^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:14:7]
@@ -108,7 +117,7 @@ Error:
     `----
 
 Error: 
-  > ErrorConstructor
+  > Error
 
   x Type
     ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:16:7]

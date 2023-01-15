@@ -1,0 +1,54 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:19:1]
+ 19 | if (obj6 instanceof C) {
+    :     ^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:19:1]
+ 19 | if (obj6 instanceof C) {
+    :                     ^
+    `----
+
+Error: 
+  > CConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:19:1]
+ 19 | if (obj6 instanceof C) {
+    :     ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:20:3]
+ 20 | obj6; // C1 | C2
+    : ^^^^
+    `----
+
+Error: 
+  > (C1 | C2)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:21:3]
+ 21 | obj6.foo;
+    : ^^^^
+    `----
+
+Error: 
+  > (C1 | C2)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:21:3]
+ 21 | obj6.foo;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > string
