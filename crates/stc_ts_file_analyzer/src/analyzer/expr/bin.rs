@@ -223,6 +223,12 @@ impl Analyzer<'_, '_> {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(ErrorKind::Errors { span, errors }.into()),
         };
+        if self.ctx.in_switch_case_test {
+            if lt.is_tpl() {
+                lt = lt.generalize_lit();
+            }
+        }
+
         lt.freeze();
         rt.freeze();
 
