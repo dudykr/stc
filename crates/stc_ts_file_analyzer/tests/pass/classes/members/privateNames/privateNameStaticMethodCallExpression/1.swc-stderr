@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:3:5]
+ 3 | static #method() { this.x = 10; };
+   :                    ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:3:5]
+ 3 | static #method() { this.x = 10; };
+   :                    ^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:3:5]
+ 3 | static #method() { this.x = 10; };
+   :                    ^^^^^^^^^^^
+   `----
+
+Error: 
+  > 10
