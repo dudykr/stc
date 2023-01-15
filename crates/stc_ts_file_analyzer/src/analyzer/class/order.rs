@@ -23,10 +23,10 @@ impl Analyzer<'_, '_> {
     ///
     /// Note that the body constructor is analyzed.
     pub(super) fn calc_eval_order_of_class_methods(&mut self, mut remaining_indexes: Vec<usize>, members: &[RClassMember]) -> Vec<usize> {
-        let mut keys = Inliner::<Key>::default();
-        let mut graph = DiGraphMap::<NodeId<Key>, ()>::default();
+        let mut keys = Inliner::<MemberKey>::default();
+        let mut graph = DiGraphMap::<NodeId<MemberKey>, ()>::default();
         // Map of an index from remaining_indexes to a node id.
-        let mut defined = FxHashMap::<usize, NodeId<Key>>::default();
+        let mut defined = FxHashMap::<usize, NodeId<MemberKey>>::default();
 
         // Now we should create a dependency graph.
         for (index, member) in members.iter().enumerate() {
@@ -47,10 +47,10 @@ impl Analyzer<'_, '_> {
                 RClassMember::Method(..) | RClassMember::PrivateMethod(..) => {
                     let key = match member {
                         RClassMember::Method(v) => match rprop_name_to_expr(v.key.clone()) {
-                            RExpr::Ident(i) => Key::Id(i.into()),
+                            RExpr::Ident(i) => MemberKey::Id(i.into()),
                             _ => continue,
                         },
-                        RClassMember::PrivateMethod(v) => Key::Private(v.key.id.clone().into()),
+                        RClassMember::PrivateMethod(v) => MemberKey::Private(v.key.id.clone().into()),
                         _ => unreachable!(),
                     };
                     let key = keys.inline(key);
@@ -99,7 +99,7 @@ impl Analyzer<'_, '_> {
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Key {
+enum MemberKey {
     Id(Id),
     Private(Id),
 }
@@ -107,7 +107,7 @@ pub enum Key {
 #[derive(Default)]
 struct AnalysisResult {
     /// `this.#foo` or `this.foo`.
-    depends_on: FxHashSet<Key>,
+    depends_on: FxHashSet<MemberKey>,
 }
 
 struct MethodAnalyzer {
@@ -125,10 +125,10 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
             // We detects this.#foo and this.foo
             match &e.prop {
                 RMemberProp::Ident(i) => {
-                    self.result.depends_on.insert(Key::Id(i.into()));
+                    self.result.depends_on.insert(MemberKey::Id(i.into()));
                 }
                 RMemberProp::PrivateName(i) => {
-                    self.result.depends_on.insert(Key::Private(i.id.clone().into()));
+                    self.result.depends_on.insert(MemberKey::Private(i.id.clone().into()));
                 }
                 _ => {}
             }
