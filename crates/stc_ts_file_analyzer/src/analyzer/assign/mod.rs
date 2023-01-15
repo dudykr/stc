@@ -627,9 +627,9 @@ impl Analyzer<'_, '_> {
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let mut to = self.normalize_for_assign(span, to, opts).context("tried to normalize lhs")?;
-        to.make_clone_cheap();
+        to.freeze();
         let mut rhs = self.normalize_for_assign(span, rhs, opts).context("tried to normalize rhs")?;
-        rhs.make_clone_cheap();
+        rhs.freeze();
 
         let to = to.normalize();
         let rhs = rhs.normalize();
@@ -1428,7 +1428,7 @@ impl Analyzer<'_, '_> {
         match rhs {
             Type::Ref(..) => {
                 let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
-                new_rhs.make_clone_cheap();
+                new_rhs.freeze();
                 // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
                     .assign_inner(data, to, &new_rhs, opts)
@@ -2725,7 +2725,7 @@ impl Analyzer<'_, '_> {
         let rhs = rhs.normalize();
 
         let mut rhs_keys = self.extract_keys(opts.span, rhs)?;
-        rhs_keys.make_clone_cheap();
+        rhs_keys.freeze();
 
         self.assign_with_opts(
             data,
@@ -2744,7 +2744,7 @@ impl Analyzer<'_, '_> {
         let mut r = self
             .normalize(Some(span), Cow::Borrowed(r), NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
-        r.make_clone_cheap();
+        r.freeze();
 
         let res: VResult<_> = try {
             // Validate keys

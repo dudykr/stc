@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
                     Type::unknown(span, Default::default())
                 }
             };
-            ty.make_clone_cheap();
+            ty.freeze();
 
             if match mode {
                 ComputedPropMode::Class { has_body } => errors.is_empty(),
@@ -462,7 +462,7 @@ impl Analyzer<'_, '_> {
                                         tracker: Default::default(),
                                     })
                                 });
-                            inferred_ret_ty.make_clone_cheap();
+                            inferred_ret_ty.freeze();
 
                             // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {

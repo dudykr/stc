@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
 
         match r_res {
             Ok(mut r) => {
-                r.make_clone_cheap();
+                r.freeze();
 
                 if r.is_union_type() {
                     Some(

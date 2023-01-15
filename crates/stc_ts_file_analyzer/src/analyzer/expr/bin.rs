@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
             Ok(ty)
         })
         .store(&mut errors);
-        lt.make_clone_cheap();
+        lt.freeze();
 
         let true_facts_for_rhs = if op == op!("&&") {
             // We need a new virtual scope.
@@ -223,8 +223,8 @@ impl Analyzer<'_, '_> {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(ErrorKind::Errors { span, errors }.into()),
         };
-        lt.make_clone_cheap();
-        rt.make_clone_cheap();
+        lt.freeze();
+        rt.freeze();
 
         if !self.is_builtin {
             debug_assert!(!lt.span().is_dummy());
@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
                             })
                         } else {
                             prevent_generalize(&mut r);
-                            r.make_clone_cheap();
+                            r.freeze();
                             r
                         };
 
@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
                                 .into(),
                             )
                         }
-                        orig_ty.make_clone_cheap();
+                        orig_ty.freeze();
 
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
@@ -1192,7 +1192,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        orig_ty.make_clone_cheap();
+        orig_ty.freeze();
 
         let _stack = stack::track(span)?;
 

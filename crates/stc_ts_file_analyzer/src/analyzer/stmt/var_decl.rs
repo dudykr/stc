@@ -238,7 +238,7 @@ impl Analyzer<'_, '_> {
                             })
                         })();
                         ty.assert_valid();
-                        ty.make_clone_cheap();
+                        ty.freeze();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
@@ -248,7 +248,7 @@ impl Analyzer<'_, '_> {
                         value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
-                        value_ty.make_clone_cheap();
+                        value_ty.freeze();
 
                         let opts = AssignOpts {
                             span: v_span,
@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                             Ok(()) => {
                                 let mut ty = ty;
                                 prevent_generalize(&mut ty);
-                                ty.make_clone_cheap();
+                                ty.freeze();
 
                                 let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?.freezed();
 
@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             ty.assert_valid();
-                            ty.make_clone_cheap();
+                            ty.freeze();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty.assert_valid();
-                        ty.make_clone_cheap();
+                        ty.freeze();
 
                         if self.scope.is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
@@ -660,7 +660,7 @@ impl Analyzer<'_, '_> {
                             self.prevent_expansion(&mut *ty);
                         }
 
-                        ty.make_clone_cheap();
+                        ty.freeze();
 
                         if !self.is_builtin {
                             // Report error if type is not found.

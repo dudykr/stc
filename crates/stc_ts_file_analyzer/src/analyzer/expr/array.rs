@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
         let mut iterator = type_ann
             .as_deref()
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
-        iterator.make_clone_cheap();
+        iterator.freeze();
 
         let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
@@ -543,7 +543,7 @@ impl Analyzer<'_, '_> {
         let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
-            iterator.make_clone_cheap();
+            iterator.freeze();
             let ty = iterator.into_owned().expect_tuple();
 
             // TODO: Handle [Type::Rest]
@@ -619,7 +619,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to normalize type to get iterator")?;
-        ty.make_clone_cheap();
+        ty.freeze();
 
         let res: VResult<_> = (|| {
             if ty.is_str() {
@@ -763,7 +763,7 @@ impl Analyzer<'_, '_> {
         let mut iterator = self
             .get_iterator(span, ty, opts)
             .with_context(|| format!("tried to get a type of an iterator to get the element type of it ({})", ty_str))?;
-        iterator.make_clone_cheap();
+        iterator.freeze();
 
         if iterator.is_str() {
             return Ok(Cow::Owned(Type::Keyword(KeywordType {

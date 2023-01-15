@@ -1642,7 +1642,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }
             };
-            super_class.make_clone_cheap();
+            super_class.freeze();
 
             let implements = c.implements.validate_with(child).map(Box::new)?;
 

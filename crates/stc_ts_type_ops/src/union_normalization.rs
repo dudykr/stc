@@ -73,7 +73,7 @@ impl ObjectUnionNormalizer {
         if !ty.is_union_type() {
             return;
         }
-        ty.make_clone_cheap();
+        ty.freeze();
         let u = match ty.as_union_type_mut() {
             Some(v) => v,
             None => return,
@@ -157,7 +157,7 @@ impl ObjectUnionNormalizer {
         if !ty.is_union_type() {
             return;
         }
-        ty.make_clone_cheap();
+        ty.freeze();
 
         let u = match ty.as_union_type_mut() {
             Some(u) => u,

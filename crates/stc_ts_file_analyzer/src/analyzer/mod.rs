@@ -1041,7 +1041,7 @@ impl Analyzer<'_, '_> {
                 Ok(None)
             })?;
 
-        ty.make_clone_cheap();
+        ty.freeze();
 
         if let Some(ty) = &ty {
             match &decl.id {

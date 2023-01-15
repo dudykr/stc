@@ -90,7 +90,7 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let mut type_ann = self.expand_type_ann(span, type_ann)?;
-        type_ann.make_clone_cheap();
+        type_ann.freeze();
 
         let callee = match callee {
             RCallee::Super(..) => {
@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let mut type_ann = self.expand_type_ann(span, type_ann)?;
-        type_ann.make_clone_cheap();
+        type_ann.freeze();
 
         // TODO(kdy1): e.visit_children
 
@@ -239,7 +239,7 @@ impl Analyzer<'_, '_> {
             Some(v) => {
                 let mut type_args = v.validate_with(self)?;
                 self.prevent_expansion(&mut type_args);
-                type_args.make_clone_cheap();
+                type_args.freeze();
                 Some(type_args)
             }
             None => None,
@@ -352,7 +352,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                obj_type.make_clone_cheap();
+                obj_type.freeze();
 
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(KeywordType {
@@ -373,7 +373,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 let mut arg_types = self.validate_args(args)?;
-                arg_types.make_clone_cheap();
+                arg_types.freeze();
 
                 let spread_arg_types = self.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
@@ -508,11 +508,11 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            callee_ty.make_clone_cheap();
+            callee_ty.freeze();
 
             analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
             let mut arg_types = analyzer.validate_args(args)?;
-            arg_types.make_clone_cheap();
+            arg_types.freeze();
 
             let spread_arg_types = analyzer.spread_args(&arg_types).context("tried to handle spreads in arguments")?;
 
@@ -1262,7 +1262,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new_arg_types.make_clone_cheap();
+            new_arg_types.freeze();
 
             return Ok(Cow::Owned(new_arg_types));
         } else {
@@ -2405,7 +2405,7 @@ impl Analyzer<'_, '_> {
             .map(|param| {
                 let mut ty = param.ty.clone();
                 self.expand_this_in_type(&mut ty);
-                ty.make_clone_cheap();
+                ty.freeze();
                 FnParam { ty, ..param.clone() }
             })
             .collect_vec();
@@ -2478,7 +2478,7 @@ impl Analyzer<'_, '_> {
                         Ok(FnParam { ty, ..v })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-                expanded_params.make_clone_cheap();
+                expanded_params.freeze();
                 expanded_params
             } else {
                 params
@@ -2671,12 +2671,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 new_arg_types.fix();
-                new_arg_types.make_clone_cheap();
+                new_arg_types.freeze();
 
                 &*new_arg_types
             } else {
                 new_args.fix();
-                new_args.make_clone_cheap();
+                new_args.freeze();
 
                 &*new_args
             };
@@ -2772,7 +2772,7 @@ impl Analyzer<'_, '_> {
             }
 
             ty.reposition(span);
-            ty.make_clone_cheap();
+            ty.freeze();
 
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, args, &mut ty);
@@ -2791,7 +2791,7 @@ impl Analyzer<'_, '_> {
         print_type("Return, simplified", &ret_ty);
 
         self.add_required_type_params(&mut ret_ty);
-        ret_ty.make_clone_cheap();
+        ret_ty.freeze();
 
         if kind == ExtractKind::Call {
             self.add_call_facts(&params, args, &mut ret_ty);
@@ -3593,7 +3593,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             }) if type_args.params.len() == 1 && type_args.params.iter().any(|ty| matches!(ty.normalize(), Type::Union(..))) => {
                 // TODO(kdy1): Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
-                    type_args.make_clone_cheap();
+                    type_args.freeze();
 
                     for stored_ty in types {
                         if let Type::Alias(Alias { ty: aliased_ty, .. }) = stored_ty.normalize() {

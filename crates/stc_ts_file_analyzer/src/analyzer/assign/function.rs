@@ -188,8 +188,8 @@ impl Analyzer<'_, '_> {
                         .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                         .context("tried to expand return type of rhs as a step of function assignment")?;
 
-                    new_r_params.make_clone_cheap();
-                    new_r_ret_ty.make_clone_cheap();
+                    new_r_params.freeze();
+                    new_r_ret_ty.freeze();
 
                     let _ctx = ctx!("tried to assign to a mapped (wrong) function");
 
@@ -254,8 +254,8 @@ impl Analyzer<'_, '_> {
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of lhs as a step of function assignment")?;
 
-                new_l_params.make_clone_cheap();
-                new_l_ret_ty.make_clone_cheap();
+                new_l_params.freeze();
+                new_l_ret_ty.freeze();
 
                 return self
                     .assign_to_fn_like(

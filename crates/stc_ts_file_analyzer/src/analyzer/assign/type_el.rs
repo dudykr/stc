@@ -489,7 +489,7 @@ impl Analyzer<'_, '_> {
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                         .unwrap();
-                    rhs.make_clone_cheap();
+                    rhs.freeze();
 
                     return self
                         .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
