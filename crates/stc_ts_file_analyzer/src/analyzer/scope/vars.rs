@@ -3,7 +3,11 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind,
+};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
@@ -858,7 +862,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("exclude_props: {}", dump_type_as_string(&ty))
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("exclude_props: {}", force_dump_type_as_string(&ty)),
+            }
+            .into())
         })()?;
 
         Ok(ty.fixed())
