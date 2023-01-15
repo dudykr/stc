@@ -28,9 +28,11 @@ impl Analyzer<'_, '_> {
 
                 self.assign_with_opts(data, &to, rhs, opts)
             }
-            QueryExpr::Import(_) => {
-                unimplemented!("assignment of query type with import")
+            QueryExpr::Import(_) => Err(ErrorKind::Unimplemented {
+                span: opts.span,
+                msg: "assignment of query type with import".to_string(),
             }
+            .into()),
         }
     }
 
