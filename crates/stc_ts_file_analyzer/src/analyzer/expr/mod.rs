@@ -476,7 +476,7 @@ impl Analyzer<'_, '_> {
             rhs_ty.respan(e.right.span());
             rhs_ty.make_clone_cheap();
 
-            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
+            let ret_ty = analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span, Default::default()));

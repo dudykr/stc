@@ -695,10 +695,10 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
-        ty.assert_valid();
+    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, rhs_ty: &Type) -> Type {
+        rhs_ty.assert_valid();
 
-        let res: VResult<()> = try {
+        let res: VResult<Type> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
@@ -712,7 +712,7 @@ impl Analyzer<'_, '_> {
                         self.assign_with_opts(
                             &mut Default::default(),
                             &lhs_ty,
-                            ty,
+                            rhs_ty,
                             AssignOpts {
                                 span,
                                 left_ident_span: Some(lhs.span()),
@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                     } else {
-                        self.assign_with_op(span, op, &lhs_ty, ty)?;
+                        self.assign_with_op(span, op, &lhs_ty, rhs_ty)?;
                     }
 
                     if let RExpr::Ident(left) = &**expr {
@@ -741,7 +741,7 @@ impl Analyzer<'_, '_> {
                         self.try_assign_pat_with_opts(
                             span,
                             pat,
-                            ty,
+                            rhs_ty,
                             PatAssignOpts {
                                 ignore_lhs_errors: true,
                                 ..Default::default()
@@ -754,7 +754,7 @@ impl Analyzer<'_, '_> {
                                 let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
 
                                 if let Ok(lhs) = lhs {
-                                    self.assign_with_op(span, op, &lhs, ty)?;
+                                    self.assign_with_op(span, op, &lhs, rhs_ty)?;
                                 }
                             }
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,
@@ -765,8 +765,11 @@ impl Analyzer<'_, '_> {
         };
 
         match res {
-            Ok(()) => {}
-            Err(err) => self.storage.report(err),
+            Ok(ty) => ty,
+            Err(err) => {
+                self.storage.report(err);
+                rhs_ty.clone()
+            }
         }
     }
 
