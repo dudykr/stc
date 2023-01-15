@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|| Type::any(span, Default::default())),
                 ),
             };
-            elem_ty.make_clone_cheap();
+            elem_ty.freeze();
 
             child.scope.declaring.clear();
 

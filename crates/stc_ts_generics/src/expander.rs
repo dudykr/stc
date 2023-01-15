@@ -145,7 +145,7 @@ impl GenericExpander<'_> {
             }
 
             Type::Mapped(mut m @ Mapped { ty: Some(..), .. }) => {
-                m.make_clone_cheap();
+                m.freeze();
 
                 if let Some(constraint) = &m.type_param.constraint {
                     if let Type::Operator(

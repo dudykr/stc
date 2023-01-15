@@ -43,9 +43,9 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
-        casted_ty.make_clone_cheap();
+        casted_ty.freeze();
         let mut orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
-        orig_ty.make_clone_cheap();
+        orig_ty.freeze();
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
@@ -96,14 +96,14 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        orig_ty.make_clone_cheap();
+        orig_ty.freeze();
 
         let mut casted_ty = make_instance_type(casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
         self.prevent_expansion(&mut casted_ty);
-        casted_ty.make_clone_cheap();
+        casted_ty.freeze();
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty).report(&mut self.storage);
 

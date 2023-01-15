@@ -2907,7 +2907,7 @@ macro_rules! impl_freeze {
 
             #[inline]
             #[instrument(skip(self))]
-            fn make_clone_cheap(&mut self) {
+            fn freeze(&mut self) {
                 self.visit_mut_with(&mut Freezer);
             }
         }

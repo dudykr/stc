@@ -262,12 +262,12 @@ pub trait BuiltInGen: Sized {
 
         for (_, ty) in types.iter_mut() {
             ty.fix();
-            ty.make_clone_cheap();
+            ty.freeze();
         }
 
         for (_, ty) in vars.iter_mut() {
             ty.fix();
-            ty.make_clone_cheap();
+            ty.freeze();
         }
 
         let dur = Instant::now() - start;

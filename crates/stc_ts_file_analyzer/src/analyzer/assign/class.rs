@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
         match r {
             Type::Ref(..) => {
                 let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
-                r.make_clone_cheap();
+                r.freeze();
                 return self.assign_to_class(data, l, &r, opts);
             }
 

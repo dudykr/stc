@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
 
             // Resolve constraints
             let mut params = self.expand_type_params(&map, params, Default::default())?;
-            params.make_clone_cheap();
+            params.freeze();
 
             for param in &params {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     child.prevent_expansion(&mut ty);
                 }
-                ty.make_clone_cheap();
+                ty.freeze();
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             };
             child.prevent_expansion(&mut ty.body);
-            ty.body.make_clone_cheap();
+            ty.body.freeze();
 
             child.resolve_parent_interfaces(&d.extends, true);
             child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
@@ -663,7 +663,7 @@ impl Analyzer<'_, '_> {
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
-            params.make_clone_cheap();
+            params.freeze();
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 

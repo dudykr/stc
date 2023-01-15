@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
                 .arg
                 .validate_with_args(a, (TypeOfMode::RValue, None, arg_type_ann.as_ref()))
                 .context("tried to validate the argument of an await expr")?;
-            arg_ty.make_clone_cheap();
+            arg_ty.freeze();
 
             if let Ok(arg) = a.get_awaited_type(span, Cow::Borrowed(&arg_ty)) {
                 return Ok(arg.into_owned());

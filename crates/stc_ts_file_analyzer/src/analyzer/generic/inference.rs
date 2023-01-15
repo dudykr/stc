@@ -1345,7 +1345,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            ty.inferred_type.make_clone_cheap();
+            ty.inferred_type.freeze();
 
             map.insert(k, ty.inferred_type);
         }

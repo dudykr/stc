@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to normalize")?;
 
             if matches!(ty.normalize(), Type::TypeLit(..)) {
-                ty.make_clone_cheap()
+                ty.freeze()
             }
 
             match ty.normalize() {

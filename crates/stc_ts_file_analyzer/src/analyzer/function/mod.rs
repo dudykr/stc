@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
             child.scope.declared_return_type = declared_ret_ty.clone();
 
             if let Some(ty) = &mut declared_ret_ty {
-                ty.make_clone_cheap();
+                ty.freeze();
 
                 child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
                 None => Type::any(f.span, Default::default()),
             };
 
-            inferred_return_type.make_clone_cheap();
+            inferred_return_type.freeze();
 
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {

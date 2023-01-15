@@ -555,7 +555,7 @@ impl Scope<'_> {
                         prev_i.types.push(ty);
                         prev_i.fix();
 
-                        prev.make_clone_cheap();
+                        prev.freeze();
                     }
                 }
                 Entry::Vacant(e) => {
@@ -583,7 +583,7 @@ impl Scope<'_> {
                     i.types.push(ty);
 
                     prev.fix();
-                    prev.make_clone_cheap();
+                    prev.freeze();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
                     *prev = Type::Intersection(Intersection {
@@ -1038,7 +1038,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     ty.fix();
-                    ty.make_clone_cheap();
+                    ty.freeze();
                 }
 
                 return Some(Cow::Owned(ty));
@@ -1965,12 +1965,12 @@ impl Expander<'_, '_, '_> {
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let mut type_params = type_params.clone();
-                                type_params.make_clone_cheap();
+                                type_params.freeze();
 
                                 if let Some(type_params) = type_params {
                                     let mut type_args: Option<_> = type_args.cloned().fold_with(self);
                                     type_args.visit_mut_with(&mut ShallowNormalizer { analyzer: self.analyzer });
-                                    type_args.make_clone_cheap();
+                                    type_args.freeze();
 
                                     if cfg!(debug_assertions) {
                                         info!("expand: expanding type parameters");
@@ -1992,7 +1992,7 @@ impl Expander<'_, '_, '_> {
                                     inferred.types.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
 
-                                        ty.make_clone_cheap();
+                                        ty.freeze();
                                     });
 
                                     let before = dump_type_as_string(&ty);
@@ -2155,7 +2155,7 @@ impl Expander<'_, '_, '_> {
         }
 
         if ty.is_ref_type() {
-            ty.make_clone_cheap();
+            ty.freeze();
         }
 
         let _stack = match stack::track(self.span) {

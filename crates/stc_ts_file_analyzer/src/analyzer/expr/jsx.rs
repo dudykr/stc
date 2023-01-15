@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        object.make_clone_cheap();
+        object.freeze();
 
         match name {
             ResolvedJsxName::Intrinsic(name) => {
@@ -193,10 +193,10 @@ impl Analyzer<'_, '_> {
 
         match &mut name {
             ResolvedJsxName::Intrinsic(name) => {
-                name.make_clone_cheap();
+                name.freeze();
             }
             ResolvedJsxName::Value(name) => {
-                name.make_clone_cheap();
+                name.freeze();
             }
         }
 

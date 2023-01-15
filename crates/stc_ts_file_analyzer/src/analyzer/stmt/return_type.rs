@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
 
             Ok(Some(ty))
         })()?;
-        ret_ty.make_clone_cheap();
+        ret_ty.freeze();
 
         if self.is_builtin {
             return Ok(ret_ty);
@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
-        ty.make_clone_cheap();
+        ty.freeze();
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             match (self.ctx.in_async, self.ctx.in_generator) {
