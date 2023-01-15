@@ -2151,6 +2151,7 @@ dependencies = [
  "rnode",
  "rustc-hash",
  "serde",
+ "serde_json",
  "sha1",
  "smallvec",
  "stc_arc_cow",

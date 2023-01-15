@@ -3,18 +3,19 @@
 use std::{fs::read_to_string, path::Path, sync::Arc};
 
 use anyhow::{bail, Context, Error};
+use serde::{Deserialize, Serialize};
 use swc_common::{comments::Comments, errors::Handler, input::SourceFileInput, FileName, SourceMap};
 use swc_ecma_ast::*;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 
 /// Error from `tsc`.
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TscError {
     pub file: String,
     pub line: usize,
     pub col: usize,
     pub code: usize,
-    pub msg: String,
+    // pub msg: String,
 }
 
 impl TscError {
@@ -67,7 +68,7 @@ impl TscError {
                         }
                     }
                     3 => {
-                        error.msg = line.to_string();
+                        // error.msg = line.to_string();
                     }
                     _ => {}
                 }
