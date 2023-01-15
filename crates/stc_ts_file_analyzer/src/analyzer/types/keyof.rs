@@ -230,7 +230,7 @@ impl Analyzer<'_, '_> {
                     for member in &cls.body {
                         match member {
                             ClassMember::Property(ClassProperty { key, .. }) | ClassMember::Method(Method { key, .. }) => {
-                                if !key.is_computed() {
+                                if !key.is_computed() && !key.is_private() {
                                     key_types.push(key.ty().into_owned());
                                 }
                             }

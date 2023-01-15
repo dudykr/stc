@@ -476,13 +476,13 @@ impl Analyzer<'_, '_> {
             rhs_ty.respan(e.right.span());
             rhs_ty.make_clone_cheap();
 
-            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
+            let ret_ty = analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span, Default::default()));
             }
 
-            Ok(rhs_ty)
+            Ok(ret_ty)
         })
     }
 }
@@ -1347,7 +1347,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("access_property_inner: global_this: {:?}", prop);
+            return Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("access_property_inner: global_this: {:?}", prop),
+            }
+            .into());
         }
 
         if opts.check_for_undefined_or_null && self.rule().strict_null_checks {
@@ -1393,6 +1397,7 @@ impl Analyzer<'_, '_> {
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
                     if !computed {
+                        let should_be_static = self.ctx.in_static_method;
                         // We are currently declaring a class.
                         for (_, member) in self.scope.class_members() {
                             match member {
@@ -1400,19 +1405,21 @@ impl Analyzer<'_, '_> {
                                 // Validate<Class>.
                                 ClassMember::Constructor(_) => {}
 
-                                ClassMember::Method(member @ Method { is_static: false, .. }) if member.key.type_eq(prop) => {
-                                    return Ok(Type::Function(ty::Function {
-                                        span: member.span,
-                                        type_params: member.type_params.clone(),
-                                        params: member.params.clone(),
-                                        ret_ty: member.ret_ty.clone(),
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }));
+                                ClassMember::Method(member @ Method { is_static, .. }) => {
+                                    if *is_static == should_be_static && member.key.type_eq(prop) {
+                                        return Ok(Type::Function(ty::Function {
+                                            span: member.span,
+                                            type_params: member.type_params.clone(),
+                                            params: member.params.clone(),
+                                            ret_ty: member.ret_ty.clone(),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }));
+                                    }
                                 }
 
-                                ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
-                                    if member.key.type_eq(prop) {
+                                ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
+                                    if *is_static == should_be_static && member.key.type_eq(prop) {
                                         let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
                                         let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty), Default::default()) {
                                             Ok(new_ty) => {
@@ -1428,8 +1435,6 @@ impl Analyzer<'_, '_> {
                                         return Ok(ty);
                                     }
                                 }
-
-                                ClassMember::Property(..) | ClassMember::Method(..) => {}
 
                                 ClassMember::IndexSignature(_) => {
                                     unimplemented!("class -> this.foo where an `IndexSignature` exists")
@@ -2771,7 +2776,11 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span, Default::default()));
                     }
                     kind => {
-                        unimplemented!("access property of this to {:?}", kind)
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("access property of this to {:?}", kind),
+                        }
+                        .into())
                     }
                 }
             }

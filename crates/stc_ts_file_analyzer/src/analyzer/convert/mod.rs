@@ -346,11 +346,19 @@ impl Analyzer<'_, '_> {
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
-            RTsTypeElement::TsGetterSignature(_) => {
-                unimplemented!()
+            RTsTypeElement::TsGetterSignature(e) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: e.span,
+                    msg: "TsGetterSignature".to_string(),
+                }
+                .into())
             }
-            RTsTypeElement::TsSetterSignature(_) => {
-                unimplemented!()
+            RTsTypeElement::TsSetterSignature(e) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: e.span,
+                    msg: "TsSetterSignature".to_string(),
+                }
+                .into())
             }
         })
     }
