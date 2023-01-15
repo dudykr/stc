@@ -1164,7 +1164,7 @@ impl Analyzer<'_, '_> {
             if ty.is_interface() || ty.is_type_lit() {
                 if let Ok(result) = self.access_property(
                     span,
-                    ty.normalize(),
+                    ty,
                     &Key::Normal {
                         span,
                         sym: "prototype".into(),
