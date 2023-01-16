@@ -6,14 +6,14 @@ use std::{
 
 use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsLit, RUnaryExpr,
+    RTsEntityName, RTsInstantiation, RTsLit, RTsTypeParamInstantiation, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, TypeParam, Union,
-    UnionMetadata,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, TypeParam,
+    TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -25,7 +25,7 @@ use tracing::info;
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{type_cast::CastableOpts, TypeOfMode},
+        expr::{dump_type_as_string, type_cast::CastableOpts, RExpr::TsInstantiation, TypeOfMode},
         generic::ExtendsOpts,
         scope::ExpandOpts,
         types::NormalizeTypeOpts,
@@ -132,10 +132,28 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Flow, true_facts_for_rhs.clone(), |child: &mut Analyzer| -> VResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
 
+                let mut type_param = vec![];
+                // let mut params_vec : Vec<T> = vec![];
+                if let TsInstantiation(RTsInstantiation {
+                    type_args: box RTsTypeParamInstantiation { params, .. },
+                    ..
+                }) = &**right
+                {
+                    for param in params {
+                        let ty = child.validate(&**param, ());
+                        if let Ok(ty) = ty {
+                            // params_vec.push(Type::TypeParam(TypeParam{}));
+                            type_param.push(ty);
+                        }
+                    }
+                };
+                let is_empty = type_param.is_empty();
+                let type_args = TypeParamInstantiation { span, params: type_param };
+
                 let truthy_lt;
                 let child_ctxt = (
                     TypeOfMode::RValue,
-                    None,
+                    if is_empty { None } else { Some(&type_args) },
                     match op {
                         op!("??") | op!("&&") | op!("||") => match type_ann {
                             Some(ty) => Some(ty),
@@ -150,8 +168,17 @@ impl Analyzer<'_, '_> {
                         _ => None,
                     },
                 );
-
+                dbg!(&right);
                 let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
+                    // if let Type::Interface(mut itf) = ty {
+                    //     if let Some(box mut tps) = itf.type_params {
+                    //         if tps.params.is_empty() {
+                    //             tps.params.append(&type_param);
+                    //         }
+                    //     }
+                    // }
+                    dbg!(&type_ann);
+                    dbg!(&ty);
                     if ty.is_ref_type() {
                         let ctx = Ctx {
                             preserve_ref: false,
@@ -473,7 +500,8 @@ impl Analyzer<'_, '_> {
                             )
                         }
                         orig_ty.make_clone_cheap();
-
+                        dbg!(&rt);
+                        dbg!(dump_type_as_string(&rt));
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
@@ -1164,7 +1192,7 @@ impl Analyzer<'_, '_> {
             if ty.is_interface() || ty.is_type_lit() {
                 if let Ok(result) = self.access_property(
                     span,
-                    ty,
+                    &ty,
                     &Key::Normal {
                         span,
                         sym: "prototype".into(),
@@ -1177,7 +1205,9 @@ impl Analyzer<'_, '_> {
                         return Ok(result);
                     }
                 }
-                if let Ok(result) = self.make_instance(span, ty.normalize()) {
+                if let Ok(result) = self.make_instance(span, &ty) {
+                    dbg!(dump_type_as_string(&result));
+                    dbg!(&result);
                     return Ok(result);
                 }
             }

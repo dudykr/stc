@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsLit, RTsType};
-use stc_ts_errors::{Error, ErrorKind};
+use stc_ts_errors::{debug::dump_type_as_string, Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -49,7 +49,28 @@ impl Analyzer<'_, '_> {
             match member {
                 TypeElement::Constructor(c) => {
                     if let Some(ty) = &c.ret_ty {
-                        ret_ty_vec.push(*ty.clone());
+                        let mut ret_ty = *ty.clone();
+                        dbg!(&c);
+
+                        dbg!(dump_type_as_string(&callee));
+                        dbg!(&callee);
+                        dbg!(dump_type_as_string(&ret_ty));
+                        dbg!(&ret_ty);
+                        // if let Some(tp1) = &c.type_params {
+                        //     if let Type::Interface(interface@Interface {type_params, ..}) = callee {
+                        //         if let Some(type_params) = type_params {
+                        //
+                        //         } else {
+                        //             let mut temp = interface.clone();
+                        //             temp.type_params
+                        //         }
+                        //         let mut temp = interface.clone();
+                        //         temp.type_params =
+                        //     } else {
+                        //     }
+                        // }
+
+                        ret_ty_vec.push(ret_ty);
                     }
                 }
                 _ => continue,

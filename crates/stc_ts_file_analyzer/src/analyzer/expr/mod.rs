@@ -23,7 +23,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -46,7 +46,6 @@ use crate::{
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
-        TypeParamInstantiation,
     },
     type_facts::TypeFacts,
     util::RemoveTypes,
@@ -117,7 +116,7 @@ impl Analyzer<'_, '_> {
         let preserve_unreachable_state = matches!(e, RExpr::Arrow(..) | RExpr::Fn(..) | RExpr::Assign(..));
 
         let previous_unreachable_state = self.ctx.in_unreachable;
-
+        dbg!(&e, &type_ann, &type_args);
         let mut ty = (|| -> VResult<Type> {
             match e {
                 RExpr::TaggedTpl(e) => e.validate_with(self),
@@ -264,7 +263,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
-                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::JSXElement(expr) => expr.validate_with_args(self, type_ann),
 
@@ -277,6 +276,7 @@ impl Analyzer<'_, '_> {
                 .into()),
             }
         })()?;
+        dbg!(&ty);
 
         if self.is_builtin {
             // `Symbol.iterator` is defined multiple times, and it results in union of
