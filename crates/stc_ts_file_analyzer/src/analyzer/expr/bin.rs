@@ -25,7 +25,7 @@ use tracing::info;
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{dump_type_as_string, type_cast::CastableOpts, RExpr::TsInstantiation, TypeOfMode},
+        expr::{type_cast::CastableOpts, RExpr::TsInstantiation, TypeOfMode},
         generic::ExtendsOpts,
         scope::ExpandOpts,
         types::NormalizeTypeOpts,
@@ -1271,8 +1271,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 if let Ok(result) = self.make_instance(span, &ty) {
-                    dbg!(dump_type_as_string(&result));
-                    dbg!(&result);
                     return Ok(result);
                 }
             }
