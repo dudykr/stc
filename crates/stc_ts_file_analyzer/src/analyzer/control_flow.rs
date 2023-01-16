@@ -302,7 +302,7 @@ impl AddAssign for CondFacts {
                         }
                     };
                     e.get_mut().fix();
-                    e.get_mut().make_clone_cheap();
+                    e.get_mut().freeze();
                 }
                 Entry::Vacant(e) => {
                     e.insert(v);
@@ -706,7 +706,7 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         _ => Type::any(lhs.span(), Default::default()),
                     };
-                    lhs_ty.make_clone_cheap();
+                    lhs_ty.freeze();
 
                     if op == op!("=") {
                         self.assign_with_opts(
@@ -840,7 +840,7 @@ impl Analyzer<'_, '_> {
                     if let Some(mut var_ty) = var_info.ty.clone() {
                         let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(ty)));
 
-                        var_ty.make_clone_cheap();
+                        var_ty.freeze();
 
                         self.assign_with_opts(
                             &mut Default::default(),
@@ -883,7 +883,7 @@ impl Analyzer<'_, '_> {
 
                         let mut narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
                         narrowed_ty.assert_valid();
-                        narrowed_ty.make_clone_cheap();
+                        narrowed_ty.freeze();
                         actual_ty = Some(narrowed_ty);
                     }
                 } else {
@@ -909,7 +909,7 @@ impl Analyzer<'_, '_> {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
                     let mut new_ty = actual_ty.unwrap_or_else(|| ty.clone());
                     new_ty.assert_valid();
-                    new_ty.make_clone_cheap();
+                    new_ty.freeze();
                     var_info.actual_ty = Some(new_ty);
                     return Ok(());
                 }
@@ -1161,7 +1161,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .flatten()
         {
-            ty.make_clone_cheap();
+            ty.freeze();
             ty.assert_valid();
 
             if is_for_true {
@@ -1371,13 +1371,13 @@ impl Analyzer<'_, '_> {
 
             Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
         })?;
-        cons.make_clone_cheap();
+        cons.freeze();
         let mut alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt.validate_with_args(child, (mode, None, type_ann)).report(&mut child.storage);
 
             Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
         })?;
-        alt.make_clone_cheap();
+        alt.freeze();
 
         if cons.type_eq(&alt) {
             return Ok(cons);

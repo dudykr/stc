@@ -2301,6 +2301,19 @@ impl Type {
         )
     }
 
+    pub fn is_bigint(&self) -> bool {
+        matches!(
+            self.normalize_instance(),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::BigInt(..),
+                ..
+            })
+        )
+    }
+
     pub fn is_num_lit(&self) -> bool {
         matches!(
             self.normalize(),
@@ -2907,7 +2920,7 @@ macro_rules! impl_freeze {
 
             #[inline]
             #[instrument(skip(self))]
-            fn make_clone_cheap(&mut self) {
+            fn freeze(&mut self) {
                 self.visit_mut_with(&mut Freezer);
             }
         }

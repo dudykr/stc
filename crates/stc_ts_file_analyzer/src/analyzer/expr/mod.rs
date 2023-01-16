@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
                 Err(()) => Type::any(span, Default::default()),
             };
             rhs_ty.respan(e.right.span());
-            rhs_ty.make_clone_cheap();
+            rhs_ty.freeze();
 
             let ret_ty = analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
@@ -992,7 +992,7 @@ impl Analyzer<'_, '_> {
             TypeOfMode::LValue => Type::new_intersection(span, res_vec),
             TypeOfMode::RValue => Type::new_union(span, res_vec),
         };
-        Ok(Some(result.freezed()))
+        Ok(Some(result))
     }
 
     pub(super) fn access_property(
@@ -1396,7 +1396,8 @@ impl Analyzer<'_, '_> {
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
                     if !computed {
-                        let should_be_static = self.ctx.in_static_method;
+                        let should_be_static =
+                            self.ctx.in_static_method || self.ctx.in_static_property_initializer || self.ctx.in_static_block;
                         // We are currently declaring a class.
                         for (_, member) in self.scope.class_members() {
                             match member {
@@ -1591,7 +1592,12 @@ impl Analyzer<'_, '_> {
             };
             if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
                 if this.is_this() {
-                    unreachable!("this() should not be `this`")
+                    return Err(ErrorKind::NoSuchProperty {
+                        span,
+                        obj: Some(box obj.clone()),
+                        prop: Some(box prop.clone()),
+                    }
+                    .context("tried to access property of `this`"));
                 }
 
                 return self
@@ -1620,14 +1626,14 @@ impl Analyzer<'_, '_> {
             _ => Cow::Borrowed(obj),
         };
         if !self.is_builtin {
-            obj.make_clone_cheap();
+            obj.freeze();
         }
         let mut obj = self
             .with_ctx(ctx)
             .expand(span, obj.into_owned(), Default::default())?
             .generalize_lit();
         if !self.is_builtin {
-            obj.make_clone_cheap();
+            obj.freeze();
         }
 
         match obj.normalize() {
@@ -2597,6 +2603,12 @@ impl Analyzer<'_, '_> {
                             }
                             // TODO(kdy1): normalized string / ident
                             if self.key_matches(span, &p.key, prop, false) {
+                                if p.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
                                 }
@@ -2611,6 +2623,12 @@ impl Analyzer<'_, '_> {
                             }
 
                             if self.key_matches(span, &m.key, prop, false) {
+                                if m.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
                                 return Ok(Type::Function(ty::Function {
                                     span,
                                     type_params: m.type_params.clone(),
@@ -2823,7 +2841,7 @@ impl Analyzer<'_, '_> {
             Type::Mapped(m) => {
                 //
                 let mut constraint = self::constraint_reducer::reduce(m);
-                constraint.make_clone_cheap();
+                constraint.freeze();
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
@@ -3325,7 +3343,7 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             });
             ty.fix();
-            ty.make_clone_cheap();
+            ty.freeze();
         }
 
         debug!("type_of_var({:?}): {:?}", id, ty);
@@ -3935,7 +3953,7 @@ impl Analyzer<'_, '_> {
 
             obj_ty
         };
-        obj_ty.make_clone_cheap();
+        obj_ty.freeze();
 
         self.storage.report_all(errors);
 
@@ -3957,7 +3975,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::any(span, Default::default()),
                 })
             });
-        prop.make_clone_cheap();
+        prop.freeze();
 
         let prop_access_ctx = Ctx {
             in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,
@@ -4051,7 +4069,7 @@ impl Analyzer<'_, '_> {
                 Type::any(span, Default::default())
             }
         };
-        obj_ty.make_clone_cheap();
+        obj_ty.freeze();
 
         let mut prop = self
             .validate_key(
@@ -4070,7 +4088,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::any(span, Default::default()),
                 })
             });
-        prop.make_clone_cheap();
+        prop.freeze();
 
         let prop_access_ctx = Ctx {
             obj_is_super: true,
@@ -4225,19 +4243,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<Type> {
-        if e.exprs.is_empty() {
-            return Ok(Type::Lit(LitType {
-                span: e.span,
-                lit: RTsLit::Str(RStr {
-                    span: e.span,
-                    value: (&*e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())).into(),
-                    raw: None,
-                }),
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }));
-        }
-
         let types = e
             .exprs
             .iter()

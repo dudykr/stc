@@ -3,7 +3,11 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    ctx,
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind,
+};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
@@ -97,7 +101,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to expand reference to declare a complex variable")?
                     .into_owned();
 
-                ty.make_clone_cheap();
+                ty.freeze();
 
                 return self.add_vars(pat, Some(ty), actual, default, opts);
             }
@@ -126,7 +130,7 @@ impl Analyzer<'_, '_> {
                     (default, ty) => opt_union(span, ty, default),
                 };
 
-                ty.make_clone_cheap();
+                ty.freeze();
 
                 if let Some(ty) = &ty {
                     if let Some(m) = &mut self.mutations {
@@ -158,7 +162,7 @@ impl Analyzer<'_, '_> {
                 };
                 let is_typed = type_ann.is_some();
                 let mut type_ann = type_ann.or(default);
-                type_ann.make_clone_cheap();
+                type_ann.freeze();
 
                 let mut right = p
                     .right
@@ -175,7 +179,7 @@ impl Analyzer<'_, '_> {
                     right = right.fold_with(&mut Widen { tuple_to_array: true });
                 }
 
-                right.make_clone_cheap();
+                right.freeze();
 
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
@@ -739,7 +743,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
-            ty.make_clone_cheap();
+            ty.freeze();
 
             if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
                 return Ok(ty.into_owned());
@@ -858,7 +862,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("exclude_props: {}", dump_type_as_string(&ty))
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("exclude_props: {}", force_dump_type_as_string(&ty)),
+            }
+            .into())
         })()?;
 
         Ok(ty.fixed())
@@ -936,6 +944,6 @@ fn remove_readonly(ty: &mut Type) {
             }
         }
 
-        ty.make_clone_cheap();
+        ty.freeze();
     }
 }

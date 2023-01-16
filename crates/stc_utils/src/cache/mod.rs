@@ -5,13 +5,16 @@ use scoped_tls::scoped_thread_local;
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 pub trait Freeze: Sized + Clone {
+    /// Returns `true` if `[Clone::clone] is cheap.
     fn is_clone_cheap(&self) -> bool;
 
-    fn make_clone_cheap(&mut self);
+    /// Make `[Clone::clone] cheap.
+    fn freeze(&mut self);
 
+    /// Call [`Self::freeze`] and return `self`.
     #[inline]
     fn freezed(mut self) -> Self {
-        self.make_clone_cheap();
+        self.freeze();
         self
     }
 }
@@ -27,9 +30,9 @@ where
         }
     }
 
-    fn make_clone_cheap(&mut self) {
+    fn freeze(&mut self) {
         match self {
-            Some(v) => v.make_clone_cheap(),
+            Some(v) => v.freeze(),
             None => {}
         }
     }
@@ -43,8 +46,8 @@ where
         self.iter().all(|v| v.is_clone_cheap())
     }
 
-    fn make_clone_cheap(&mut self) {
-        self.iter_mut().for_each(|v| v.make_clone_cheap())
+    fn freeze(&mut self) {
+        self.iter_mut().for_each(|v| v.freeze())
     }
 }
 
@@ -52,8 +55,8 @@ impl<T> Freeze for Box<T>
 where
     T: Freeze,
 {
-    fn make_clone_cheap(&mut self) {
-        (**self).make_clone_cheap()
+    fn freeze(&mut self) {
+        (**self).freeze()
     }
 
     fn is_clone_cheap(&self) -> bool {
@@ -66,17 +69,17 @@ impl<T> Freeze for Cow<'_, T>
 where
     T: Clone + Freeze,
 {
-    fn make_clone_cheap(&mut self) {
+    fn freeze(&mut self) {
         match self {
             Cow::Borrowed(v) => {
                 if !v.is_clone_cheap() {
                     let mut v = ALLOW_DEEP_CLONE.set(&(), || v.clone());
-                    v.make_clone_cheap();
+                    v.freeze();
                     *self = Cow::Owned(v);
                 }
             }
             Cow::Owned(v) => {
-                v.make_clone_cheap();
+                v.freeze();
             }
         }
     }

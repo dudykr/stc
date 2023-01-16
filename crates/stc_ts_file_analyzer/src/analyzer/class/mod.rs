@@ -1642,7 +1642,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }
             };
-            super_class.make_clone_cheap();
+            super_class.freeze();
 
             let implements = c.implements.validate_with(child).map(Box::new)?;
 
@@ -2248,6 +2248,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, b: &RStaticBlock) {
         self.with_child(ScopeKind::ClassStaticBlock, Default::default(), |analyzer| {
+            analyzer.ctx.in_static_block = true;
+
             b.body.stmts.visit_with(analyzer);
             Ok(())
         })?;

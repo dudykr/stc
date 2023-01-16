@@ -194,7 +194,7 @@ impl Analyzer<'_, '_> {
 
                 if let RPat::Rest(..) = param {
                     if let Ok(mut ty) = self.get_rest_elements(Some(param.span()), Cow::Borrowed(&params_tuple), idx) {
-                        ty.make_clone_cheap();
+                        ty.freeze();
 
                         if let Some(pat_node_id) = param.node_id() {
                             if let Some(m) = &mut self.mutations {

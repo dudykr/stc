@@ -137,7 +137,7 @@ impl Analyzer<'_, '_> {
                 ty.normalize(),
                 Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..) | Type::Union(..)
             ) {
-                ty.make_clone_cheap();
+                ty.freeze();
             }
 
             {
@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
 
                         new_ty.assert_valid();
 
-                        new_ty.make_clone_cheap();
+                        new_ty.freeze();
 
                         return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
                     }
@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = self
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
-                                ty.make_clone_cheap();
+                                ty.freeze();
                                 let mut ty = ty.into_owned();
 
                                 if let Some(u) = ty.as_union_type_mut() {
@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
                         ty.assert_valid();
 
                         let mut ty = self.normalize(span, Cow::Owned(ty), opts)?;
-                        ty.make_clone_cheap();
+                        ty.freeze();
                         let ty = ty.into_owned();
 
                         return Ok(Cow::Owned(ty));
@@ -1122,7 +1122,7 @@ impl Analyzer<'_, '_> {
 
         {
             let normalized_len = normalized_types.len();
-            normalized_types.make_clone_cheap();
+            normalized_types.freeze();
             let mut type_iter = normalized_types.clone().into_iter();
             let mut acc_type = type_iter
                 .next()
@@ -1291,8 +1291,8 @@ impl Analyzer<'_, '_> {
             ..
         }) = ty
         {
-            extends_type.make_clone_cheap();
-            check_type.make_clone_cheap();
+            extends_type.freeze();
+            check_type.freeze();
 
             // We need to handle infer type.
             let type_params = self.infer_ts_infer_types(span, &extends_type, &check_type, Default::default()).ok();
@@ -1329,6 +1329,14 @@ impl Analyzer<'_, '_> {
 
     // This is part of normalization.
     fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            let ty_str = force_dump_type_as_string(ty);
+
+            Some(span!(Level::ERROR, "instantiate_for_normalization", ty = &*ty_str).entered())
+        } else {
+            None
+        };
+
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
@@ -1337,7 +1345,7 @@ impl Analyzer<'_, '_> {
                 ..opts
             },
         )?;
-        ty.make_clone_cheap();
+        ty.freeze();
         let metadata = ty.metadata();
         let actual_span = ty.span();
 
@@ -2507,7 +2515,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
-        ty.make_clone_cheap();
+        ty.freeze();
 
         let mapped_ty = self.normalize(
             Some(span),

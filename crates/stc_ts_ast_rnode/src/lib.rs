@@ -1025,6 +1025,7 @@ define_rnode!({
         pub default: Option<Box<TsType>>,
         pub is_in: bool,
         pub is_out: bool,
+        pub is_const: bool,
     }
     pub struct TsTypeParamInstantiation {
         pub span: Span,

@@ -217,7 +217,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Ref(..) = parent.normalize() {
                     return None;
                 }
-                parent.make_clone_cheap();
+                parent.freeze();
 
                 return self.extends(span, child, &parent, opts);
             }

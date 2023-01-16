@@ -135,8 +135,8 @@ pub(crate) struct Ctx {
     /// variable is global.
     report_error_for_non_local_vars: bool,
 
-    #[allow(unused)]
     in_static_property_initializer: bool,
+    in_static_block: bool,
     in_static_method: bool,
 
     reevaluating_call_or_new: bool,
@@ -499,6 +499,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_actual_type: false,
                 report_error_for_non_local_vars: false,
                 in_static_property_initializer: false,
+                in_static_block: false,
                 in_static_method: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
@@ -1040,7 +1041,7 @@ impl Analyzer<'_, '_> {
                 Ok(None)
             })?;
 
-        ty.make_clone_cheap();
+        ty.freeze();
 
         if let Some(ty) = &ty {
             match &decl.id {

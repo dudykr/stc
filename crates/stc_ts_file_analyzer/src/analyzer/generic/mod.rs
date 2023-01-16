@@ -40,7 +40,6 @@ mod expander;
 mod inference;
 #[cfg(test)]
 mod tests;
-mod type_form;
 
 #[derive(Debug)]
 pub(super) struct InferData {
@@ -499,13 +498,13 @@ impl Analyzer<'_, '_> {
 
         if let Type::Instance(..) = param {
             let mut param = self.normalize(Some(span), Cow::Borrowed(param), Default::default())?;
-            param.make_clone_cheap();
+            param.freeze();
             return self.infer_type(span, inferred, &param, arg, opts);
         }
 
         if let Type::Instance(..) = arg {
             let mut arg = self.normalize(Some(span), Cow::Borrowed(arg), Default::default())?;
-            arg.make_clone_cheap();
+            arg.freeze();
 
             return self.infer_type(span, inferred, param, &arg, opts);
         }
@@ -1034,7 +1033,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )?;
-                    param.make_clone_cheap();
+                    param.freeze();
                     match param.normalize() {
                         Type::Ref(..) => {
                             dbg!();
@@ -1535,7 +1534,7 @@ impl Analyzer<'_, '_> {
                                     let type_ann: Option<_> = if let Some(arg_prop_ty) = &arg_prop.type_ann {
                                         if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
                                             let mut ty = param.ty.clone();
-                                            ty.make_clone_cheap();
+                                            ty.freeze();
                                             ty
                                         }) {
                                             let old = take(&mut self.mapped_type_param_name);
@@ -1600,10 +1599,10 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     });
-                                    arg_prop_ty.make_clone_cheap();
+                                    arg_prop_ty.freeze();
                                     let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
                                         let mut ty = param.ty.clone();
-                                        ty.make_clone_cheap();
+                                        ty.freeze();
                                         ty
                                     }) {
                                         let old = take(&mut self.mapped_type_param_name);
@@ -2161,7 +2160,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        ty.make_clone_cheap();
+        ty.freeze();
 
         debug!(
             "rename_type_params(has_ann = {:?}, ty = {})",

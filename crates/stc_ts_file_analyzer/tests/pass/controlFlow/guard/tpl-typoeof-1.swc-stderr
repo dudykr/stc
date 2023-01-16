@@ -24,7 +24,7 @@ Error:
    `----
 
 Error: 
-  > "string"
+  > `string`
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]

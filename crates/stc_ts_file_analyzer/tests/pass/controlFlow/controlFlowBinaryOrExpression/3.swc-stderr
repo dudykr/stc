@@ -24,7 +24,7 @@ Error:
     `----
 
 Error: 
-  > (sourceObj: any) => sourceObj is NodeList
+  > (sourceObj: any) => sourceObj is I1
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
@@ -35,7 +35,7 @@ Error:
 Error: 
   > ({
   |     a: string;
-  | } | HTMLCollection | NodeList)
+  | } | I2 | I1)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
@@ -44,7 +44,7 @@ Error:
     `----
 
 Error: 
-  > sourceObj is NodeList
+  > sourceObj is I1
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
@@ -53,7 +53,7 @@ Error:
     `----
 
 Error: 
-  > (sourceObj: any) => sourceObj is HTMLCollection
+  > (sourceObj: any) => sourceObj is I2
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
@@ -64,7 +64,7 @@ Error:
 Error: 
   > ({
   |     a: string;
-  | } | HTMLCollection)
+  | } | I2)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
@@ -73,7 +73,7 @@ Error:
     `----
 
 Error: 
-  > sourceObj is HTMLCollection
+  > sourceObj is I2
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
@@ -82,7 +82,7 @@ Error:
     `----
 
 Error: 
-  > (sourceObj is NodeList | sourceObj is HTMLCollection)
+  > (sourceObj is I1 | sourceObj is I2)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:18:5]
@@ -91,7 +91,7 @@ Error:
     `----
 
 Error: 
-  > (HTMLCollection | NodeList)
+  > (I2 | I1)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:18:5]

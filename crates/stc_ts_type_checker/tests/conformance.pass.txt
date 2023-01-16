@@ -1,7 +1,7 @@
 Symbols/ES5SymbolProperty1.ts
+Symbols/ES5SymbolProperty2.ts
 Symbols/ES5SymbolProperty3.ts
 Symbols/ES5SymbolProperty4.ts
-Symbols/ES5SymbolProperty5.ts
 Symbols/ES5SymbolProperty6.ts
 Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
@@ -175,6 +175,7 @@ classes/classStaticBlock/classStaticBlock21.ts
 classes/classStaticBlock/classStaticBlock25.ts
 classes/classStaticBlock/classStaticBlock27.ts
 classes/classStaticBlock/classStaticBlock28.ts
+classes/classStaticBlock/classStaticBlockUseBeforeDef1.ts
 classes/constructorDeclarations/automaticConstructors/classWithoutExplicitConstructor.ts
 classes/constructorDeclarations/automaticConstructors/derivedClassWithoutExplicitConstructor.ts
 classes/constructorDeclarations/automaticConstructors/derivedClassWithoutExplicitConstructor2.ts
@@ -217,6 +218,9 @@ classes/members/inheritanceAndOverriding/derivedClassOverridesWithoutSubtype.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity2.ts
 classes/members/inheritanceAndOverriding/derivedClassTransitivity3.ts
+classes/members/instanceAndStaticMembers/thisAndSuperInStaticMembers3.ts
+classes/members/instanceAndStaticMembers/thisAndSuperInStaticMembers4.ts
+classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers2.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers5.ts
 classes/members/privateNames/privateNameAmbientNoImplicitAny.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
@@ -241,6 +245,7 @@ classes/members/privateNames/privateNameMethodInStaticFieldInit.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
 classes/members/privateNames/privateNameNotAccessibleOutsideDefiningClass.ts
 classes/members/privateNames/privateNameSetterExprReturnValue.ts
+classes/members/privateNames/privateNameStaticAccessorsAccess.ts
 classes/members/privateNames/privateNameStaticAndStaticInitializer.ts
 classes/members/privateNames/privateNameStaticFieldAccess.ts
 classes/members/privateNames/privateNameStaticFieldAssignment.ts
@@ -255,6 +260,7 @@ classes/members/privateNames/privateNamesAndFields.ts
 classes/members/privateNames/privateNamesAndStaticMethods.ts
 classes/members/privateNames/privateNamesAndkeyof.ts
 classes/members/privateNames/privateNamesAssertion.ts
+classes/members/privateNames/privateNamesInGenericClasses.ts
 classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesUnique-1.ts
 classes/members/privateNames/privateNamesUnique-4.ts
@@ -268,11 +274,11 @@ classes/mixinClassesMembers.ts
 classes/propertyMemberDeclarations/abstractProperty.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty5.ts
 classes/propertyMemberDeclarations/constructorParameterShadowsOuterScopes2.ts
-classes/propertyMemberDeclarations/defineProperty.ts
 classes/propertyMemberDeclarations/instanceMemberInitialization.ts
 classes/propertyMemberDeclarations/instanceMemberWithComputedPropertyName.ts
 classes/propertyMemberDeclarations/instanceMemberWithComputedPropertyName2.ts
 classes/propertyMemberDeclarations/memberAccessorDeclarations/accessorWithES5.ts
+classes/propertyMemberDeclarations/memberAccessorDeclarations/accessorWithMismatchedAccessibilityModifiers.ts
 classes/propertyMemberDeclarations/memberAccessorDeclarations/ambientAccessors.ts
 classes/propertyMemberDeclarations/memberFunctionDeclarations/derivedTypeAccessesHiddenBaseCallViaSuperPropertyAccess.ts
 classes/propertyMemberDeclarations/memberFunctionDeclarations/memberFunctionOverloadMixingStaticAndInstance.ts
@@ -298,6 +304,7 @@ classes/staticIndexSignature/staticIndexSignature6.ts
 constEnums/constEnum1.ts
 constEnums/constEnum3.ts
 constEnums/constEnum4.ts
+constEnums/constEnumPropertyAccess1.ts
 constEnums/constEnumPropertyAccess2.ts
 controlFlow/constLocalsInFunctionExpressions.ts
 controlFlow/controlFlowAssignmentExpression.ts
@@ -360,6 +367,8 @@ es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
 es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
+es2020/bigintMissingES2020.ts
+es2020/bigintMissingESNext.ts
 es2020/modules/exportAsNamespace_nonExistent.ts
 es2020/numberFormatCurrencySign.ts
 es2020/numberFormatCurrencySignResolved.ts
@@ -367,6 +376,7 @@ es2021/logicalAssignment/logicalAssignment1.ts
 es2021/logicalAssignment/logicalAssignment10.ts
 es2021/logicalAssignment/logicalAssignment2.ts
 es2021/logicalAssignment/logicalAssignment3.ts
+es2021/logicalAssignment/logicalAssignment8.ts
 es2021/logicalAssignment/logicalAssignment9.ts
 es2022/es2022IntlAPIs.ts
 es6/Symbols/symbolDeclarationEmit1.ts
@@ -400,7 +410,10 @@ es6/Symbols/symbolProperty23.ts
 es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
+es6/Symbols/symbolProperty29.ts
 es6/Symbols/symbolProperty3.ts
+es6/Symbols/symbolProperty31.ts
+es6/Symbols/symbolProperty36.ts
 es6/Symbols/symbolProperty37.ts
 es6/Symbols/symbolProperty38.ts
 es6/Symbols/symbolProperty4.ts
@@ -696,6 +709,7 @@ es6/destructuring/emptyAssignmentPatterns04_ES6.ts
 es6/destructuring/emptyObjectBindingPatternParameter01.ts
 es6/destructuring/emptyObjectBindingPatternParameter02.ts
 es6/destructuring/emptyObjectBindingPatternParameter03.ts
+es6/destructuring/emptyObjectBindingPatternParameter04.ts
 es6/destructuring/emptyVariableDeclarationBindingPatterns01_ES5.ts
 es6/destructuring/emptyVariableDeclarationBindingPatterns01_ES5iterable.ts
 es6/destructuring/emptyVariableDeclarationBindingPatterns01_ES6.ts
@@ -1206,12 +1220,7 @@ es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts
 es7/exponentiationOperator/exponentiationOperatorWithTypeParameter.ts
 es7/exponentiationOperator/exponentiationOperatorWithUndefinedValueAndInvalidOperands.ts
 es7/exponentiationOperator/exponentiationOperatorWithUndefinedValueAndValidOperands.ts
-esnext/logicalAssignment/logicalAssignment1.ts
-esnext/logicalAssignment/logicalAssignment10.ts
 esnext/logicalAssignment/logicalAssignment11.ts
-esnext/logicalAssignment/logicalAssignment2.ts
-esnext/logicalAssignment/logicalAssignment3.ts
-esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiteralInference.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
@@ -1731,6 +1740,7 @@ parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration1.ts
 parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration2.ts
 parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration3.ts
 parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration4.ts
+parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration6.ts
 parser/ecmascript5/InterfaceDeclarations/parserInterfaceDeclaration5.ts
 parser/ecmascript5/InterfaceDeclarations/parserInterfaceDeclaration7.ts
 parser/ecmascript5/InterfaceDeclarations/parserInterfaceDeclaration8.ts
@@ -1869,6 +1879,9 @@ parser/ecmascript5/StrictMode/parserStrictMode6-negative.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression1.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression4.ts
+parser/ecmascript5/Symbols/parserES5SymbolIndexer1.ts
+parser/ecmascript5/Symbols/parserES5SymbolIndexer2.ts
+parser/ecmascript5/Symbols/parserES5SymbolIndexer3.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty7.ts
 parser/ecmascript5/TupleTypes/TupleType1.ts
 parser/ecmascript5/TupleTypes/TupleType2.ts
@@ -1954,6 +1967,10 @@ parser/ecmascript6/Iterators/parserForOfStatement24.ts
 parser/ecmascript6/Iterators/parserForOfStatement5.ts
 parser/ecmascript6/Iterators/parserForOfStatement8.ts
 parser/ecmascript6/Iterators/parserForOfStatement9.ts
+parser/ecmascript6/Symbols/parserSymbolIndexer1.ts
+parser/ecmascript6/Symbols/parserSymbolIndexer2.ts
+parser/ecmascript6/Symbols/parserSymbolIndexer3.ts
+parser/ecmascript6/Symbols/parserSymbolIndexer4.ts
 parser/ecmascript6/Symbols/parserSymbolProperty1.ts
 parser/ecmascript6/Symbols/parserSymbolProperty2.ts
 parser/ecmascript6/Symbols/parserSymbolProperty3.ts
@@ -1963,10 +1980,6 @@ parser/ecmascript6/Symbols/parserSymbolProperty6.ts
 parser/ecmascript6/Symbols/parserSymbolProperty7.ts
 parser/ecmascript6/Symbols/parserSymbolProperty8.ts
 parser/ecmascript6/Symbols/parserSymbolProperty9.ts
-parser/ecmascriptnext/numericSeparators/parser.numericSeparators.binary.ts
-parser/ecmascriptnext/numericSeparators/parser.numericSeparators.decimal.ts
-parser/ecmascriptnext/numericSeparators/parser.numericSeparators.hex.ts
-parser/ecmascriptnext/numericSeparators/parser.numericSeparators.octal.ts
 salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
 salsa/propertyAssignmentUseParentType3.ts
@@ -2270,6 +2283,7 @@ types/specifyingTypes/typeLiterals/arrayLiteral.ts
 types/specifyingTypes/typeLiterals/arrayOfFunctionTypes3.ts
 types/specifyingTypes/typeLiterals/arrayTypeOfFunctionTypes.ts
 types/specifyingTypes/typeLiterals/arrayTypeOfFunctionTypes2.ts
+types/specifyingTypes/typeLiterals/arrayTypeOfTypeOf.ts
 types/specifyingTypes/typeLiterals/functionLiteral.ts
 types/specifyingTypes/typeLiterals/functionLiteralForOverloads.ts
 types/specifyingTypes/typeLiterals/functionLiteralForOverloads2.ts
