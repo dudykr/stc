@@ -502,9 +502,7 @@ impl Analyzer<'_, '_> {
                                 .into(),
                             )
                         }
-                        orig_ty.make_clone_cheap();
-                        dbg!(&rt);
-                        dbg!(dump_type_as_string(&rt));
+
                         orig_ty.freeze();
 
                         //
