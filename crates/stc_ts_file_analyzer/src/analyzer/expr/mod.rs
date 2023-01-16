@@ -21,8 +21,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, Id, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
     QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
         let preserve_unreachable_state = matches!(e, RExpr::Arrow(..) | RExpr::Fn(..) | RExpr::Assign(..));
 
         let previous_unreachable_state = self.ctx.in_unreachable;
-        dbg!(&e, &type_ann, &type_args);
+
         let mut ty = (|| -> VResult<Type> {
             match e {
                 RExpr::TaggedTpl(e) => e.validate_with(self),
@@ -3114,8 +3114,31 @@ impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
         match ty.normalize() {
-            Type::Interface(Interface { type_params, .. })
-            | Type::Alias(Alias { type_params, .. })
+            Type::Interface(Interface { type_params, body, .. }) => {
+                let mut params = HashMap::default();
+                let mut type_params_vec: Vec<TypeParam> = vec![];
+
+                if let Some(type_params) = type_params {
+                    type_params_vec.append(&mut type_params.params.clone());
+                }
+
+                for type_elem in body {
+                    if let TypeElement::Constructor(ConstructorSignature {
+                        type_params: Some(type_params),
+                        ..
+                    }) = type_elem
+                    {
+                        type_params_vec.append(&mut type_params.params.clone());
+                    }
+                }
+                dbg!(&type_args);
+                for (param, arg) in type_params_vec.iter().zip(type_args.params.iter()) {
+                    params.insert(param.name.clone(), arg.clone());
+                }
+                dbg!(&params);
+                return self.expand_type_params(&params, ty.clone(), Default::default());
+            }
+            Type::Alias(Alias { type_params, .. })
             | Type::Class(Class {
                 def: box ClassDef { type_params, .. },
                 ..
@@ -4337,6 +4360,12 @@ impl Analyzer<'_, '_> {
             // `i` is truthy
             self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
             self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
+        }
+
+        if let Some(type_args) = type_args {
+            if let Ok(new) = self.expand_generics_with_type_args(i.span, ty.clone(), &type_args) {
+                return Ok(new);
+            }
         }
 
         Ok(ty)

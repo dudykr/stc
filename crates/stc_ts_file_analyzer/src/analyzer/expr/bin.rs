@@ -133,7 +133,6 @@ impl Analyzer<'_, '_> {
                 child.ctx.should_store_truthy_for_access = false;
 
                 let mut type_param = vec![];
-                // let mut params_vec : Vec<T> = vec![];
                 if let TsInstantiation(RTsInstantiation {
                     type_args: box RTsTypeParamInstantiation { params, .. },
                     ..
@@ -142,18 +141,24 @@ impl Analyzer<'_, '_> {
                     for param in params {
                         let ty = child.validate(&**param, ());
                         if let Ok(ty) = ty {
-                            // params_vec.push(Type::TypeParam(TypeParam{}));
                             type_param.push(ty);
                         }
                     }
                 };
-                let is_empty = type_param.is_empty();
+                if type_param.is_empty() {
+                    type_param.push(Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }))
+                }
                 let type_args = TypeParamInstantiation { span, params: type_param };
 
                 let truthy_lt;
                 let child_ctxt = (
                     TypeOfMode::RValue,
-                    if is_empty { None } else { Some(&type_args) },
+                    Some(&type_args),
                     match op {
                         op!("??") | op!("&&") | op!("||") => match type_ann {
                             Some(ty) => Some(ty),
@@ -168,17 +173,8 @@ impl Analyzer<'_, '_> {
                         _ => None,
                     },
                 );
-                dbg!(&right);
+
                 let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
-                    // if let Type::Interface(mut itf) = ty {
-                    //     if let Some(box mut tps) = itf.type_params {
-                    //         if tps.params.is_empty() {
-                    //             tps.params.append(&type_param);
-                    //         }
-                    //     }
-                    // }
-                    dbg!(&type_ann);
-                    dbg!(&ty);
                     if ty.is_ref_type() {
                         let ctx = Ctx {
                             preserve_ref: false,

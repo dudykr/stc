@@ -51,8 +51,7 @@ Error:
     `----
 
 Error: 
-  > {
-  | }
+  > any
 
   x Type
     ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
@@ -79,8 +78,7 @@ Error:
     `----
 
 Error: 
-  > {
-  | }
+  > any
 
   x Type
     ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
