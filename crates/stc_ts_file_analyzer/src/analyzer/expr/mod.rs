@@ -2604,6 +2604,12 @@ impl Analyzer<'_, '_> {
                             }
                             // TODO(kdy1): normalized string / ident
                             if self.key_matches(span, &p.key, prop, false) {
+                                if p.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
                                 }
@@ -2618,6 +2624,12 @@ impl Analyzer<'_, '_> {
                             }
 
                             if self.key_matches(span, &m.key, prop, false) {
+                                if m.key.is_private() {
+                                    self.storage
+                                        .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
+                                    return Ok(Type::any(span, Default::default()));
+                                }
+
                                 return Ok(Type::Function(ty::Function {
                                     span,
                                     type_params: m.type_params.clone(),
