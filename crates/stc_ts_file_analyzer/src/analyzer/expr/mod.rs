@@ -276,7 +276,6 @@ impl Analyzer<'_, '_> {
                 .into()),
             }
         })()?;
-        dbg!(&ty);
 
         if self.is_builtin {
             // `Symbol.iterator` is defined multiple times, and it results in union of
@@ -3131,11 +3130,9 @@ impl Analyzer<'_, '_> {
                         type_params_vec.append(&mut type_params.params.clone());
                     }
                 }
-                dbg!(&type_args);
                 for (param, arg) in type_params_vec.iter().zip(type_args.params.iter()) {
                     params.insert(param.name.clone(), arg.clone());
                 }
-                dbg!(&params);
                 return self.expand_type_params(&params, ty.clone(), Default::default());
             }
             Type::Alias(Alias { type_params, .. })
@@ -4362,9 +4359,11 @@ impl Analyzer<'_, '_> {
             self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
         }
 
-        if let Some(type_args) = type_args {
-            if let Ok(new) = self.expand_generics_with_type_args(i.span, ty.clone(), &type_args) {
-                return Ok(new);
+        if ty.is_interface() | ty.is_class() | ty.is_class_def() | ty.is_alias() {
+            if let Some(type_args) = type_args {
+                if let Ok(new) = self.expand_generics_with_type_args(i.span, ty.clone(), type_args) {
+                    return Ok(new);
+                }
             }
         }
 
