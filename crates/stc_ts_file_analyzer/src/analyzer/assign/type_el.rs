@@ -213,11 +213,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Intersection(..) => {
-                    if let Some(rty) = self
+                    if let Some(mut rty) = self
                         .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
+                        rty.freeze();
                         return self
                             .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, AssignOpts { ..opts })
                             .context("tried to assign to type elements by converting rhs to a type literal");

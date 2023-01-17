@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt,
+    DebugExt, ErrorKind,
 };
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -374,7 +374,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("keyof: {}", force_dump_type_as_string(&ty));
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("keyof: {}", force_dump_type_as_string(&ty)),
+            }
+            .into())
         })()?;
 
         ty.assert_valid();
