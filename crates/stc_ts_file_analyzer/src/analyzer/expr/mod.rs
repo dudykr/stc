@@ -3776,22 +3776,8 @@ impl Analyzer<'_, '_> {
                             Type::Conditional(_) => {}
                             Type::Tuple(_) => {}
                             Type::Array(_) => {}
-                            Type::Union(ty) => {
-                                // TODO(kdy1): Expand types
-                                if !self.is_builtin {
-                                    if cfg!(debug_assertions) {
-                                        dbg!(&ty);
-                                    }
-                                }
-                            }
-                            Type::Intersection(ty) => {
-                                // TODO(kdy1): Expand types
-                                if !self.is_builtin {
-                                    if cfg!(debug_assertions) {
-                                        dbg!(&ty);
-                                    }
-                                }
-                            }
+                            Type::Union(_) => {}
+                            Type::Intersection(_) => {}
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
                             Type::Arc(_) => {}
