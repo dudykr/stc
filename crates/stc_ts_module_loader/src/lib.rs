@@ -271,7 +271,7 @@ where
             return Ok(None);
         }
 
-        debug!("Loading {:?}: {}", module_id, filename);
+        debug!(resolve_all = resolve_all, "Loading {:?}: {}", module_id, filename);
 
         // TODO(kdy1): Check if it's better to use content of `declare module "http"`?
         if resolve_all {
