@@ -3139,17 +3139,20 @@ impl Analyzer<'_, '_> {
                     type_params_vec.append(&mut type_params.params.clone());
                 }
 
-                for type_elem in body {
-                    if let TypeElement::Constructor(ConstructorSignature {
-                        type_params: Some(type_params),
-                        ..
-                    }) = type_elem
-                    {
-                        for param in &type_params.params {
-                            type_params_vec.push(param.clone());
+                if type_params_vec.is_empty() {
+                    for type_elem in body {
+                        if let TypeElement::Constructor(ConstructorSignature {
+                            type_params: Some(type_params),
+                            ..
+                        }) = type_elem
+                        {
+                            for param in &type_params.params {
+                                type_params_vec.push(param.clone());
+                            }
                         }
                     }
                 }
+
                 for (param, arg) in type_params_vec.iter().zip(type_args.params.iter()) {
                     params.insert(param.name.clone(), arg.clone());
                 }
