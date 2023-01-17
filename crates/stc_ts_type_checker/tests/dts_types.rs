@@ -33,7 +33,7 @@ fn run_tests_for_types_pkg(name: &str) {
         let mut checker = Checker::new(
             cm,
             handler.clone(),
-            Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es2020")),
+            Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("esnext")),
             TsConfig { ..Default::default() },
             None,
             Arc::new(NodeResolver),
