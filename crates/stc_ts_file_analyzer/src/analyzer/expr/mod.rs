@@ -22,8 +22,8 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature, QueryExpr,
+    QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -368,8 +368,23 @@ impl Analyzer<'_, '_> {
                             match &err {
                                 ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
                                     match ty.normalize() {
-                                        Type::Module(..) => ErrorKind::CannotAssignToNamespace { span },
-                                        Type::Namespace(..) => ErrorKind::CannotAssignToModule { span },
+                                        Type::Module(Module {
+                                            exports:
+                                                box ModuleTypeData {
+                                                    private_types,
+                                                    types,
+                                                    private_vars,
+                                                    vars,
+                                                },
+                                            ..
+                                        }) => {
+                                            if private_types.is_empty() && private_vars.is_empty() && types.is_empty() && vars.is_empty() {
+                                                ErrorKind::CannotAssignToModule { span }
+                                            } else {
+                                                ErrorKind::CannotAssignToNamespace { span }
+                                            }
+                                        }
+                                        Type::Namespace(..) => ErrorKind::CannotAssignToNamespace { span },
                                         Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
                                         Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
                                         Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
