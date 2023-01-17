@@ -1,4 +1,4 @@
-use std::{path::Path, sync::Arc};
+use std::sync::Arc;
 
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
@@ -8,6 +8,7 @@ use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
+use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
 
 #[test]
@@ -24,6 +25,10 @@ fn run_tests_for_types_pkg(name: &str) {
     testing::run_test2(false, |cm, handler| {
         let handler = Arc::new(handler);
 
+        let path = NodeResolver::new()
+            .resolve(&FileName::Real(".".into()), &format!("@types/{}", name))
+            .expect("failed to resolve entry");
+
         let mut checker = Checker::new(
             cm,
             handler.clone(),
@@ -33,9 +38,7 @@ fn run_tests_for_types_pkg(name: &str) {
             Arc::new(NodeResolver),
         );
 
-        checker.check(Arc::new(FileName::Real(
-            Path::new("node_modules").join("@types").join(name).join("index.d.ts"),
-        )));
+        checker.check(Arc::new(path));
 
         for err in ErrorKind::flatten(checker.take_errors()) {
             err.emit(&handler);
