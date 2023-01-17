@@ -8,6 +8,7 @@ use std::{
 use rayon::prelude::*;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use swc_common::FileName;
+use tracing::info;
 
 use crate::Checker;
 
@@ -60,6 +61,8 @@ impl Checker {
     /// - https://www.typescriptlang.org/tsconfig#typeRoots
     /// - https://www.typescriptlang.org/tsconfig#types
     pub fn load_typings(&self, base: &Path, _type_roots: Option<&[PathBuf]>, types: Option<&[String]>) {
+        info!("Loading typings from `{}`", base.display());
+
         let mut dirs = vec![];
 
         let mut cur = Some(base);
