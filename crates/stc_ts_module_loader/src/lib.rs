@@ -301,20 +301,23 @@ where
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
         for decl in declared_modules {
-            let id = self.id_for_declare_module(&decl);
-            self.resolver.declare_module(decl);
+            if resolve_all {
+                let id = self.id_for_declare_module(&decl);
 
-            self.loaded.insert(
-                id,
-                Ok(ModuleRecord {
-                    module: Arc::new(Module {
-                        span: DUMMY_SP,
-                        body: Default::default(),
-                        shebang: None,
+                self.loaded.insert(
+                    id,
+                    Ok(ModuleRecord {
+                        module: Arc::new(Module {
+                            span: DUMMY_SP,
+                            body: Default::default(),
+                            shebang: None,
+                        }),
+                        deps: Default::default(),
                     }),
-                    deps: Default::default(),
-                }),
-            );
+                );
+            }
+
+            self.resolver.declare_module(decl);
         }
 
         let resolver = &self.resolver;
