@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{env::current_dir, sync::Arc};
 
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
@@ -26,7 +26,7 @@ fn run_tests_for_types_pkg(name: &str) {
         let handler = Arc::new(handler);
 
         let path = NodeResolver::new()
-            .resolve(&FileName::Real(".".into()), &format!("@types/{}", name))
+            .resolve(&FileName::Real(current_dir().unwrap()), &format!("@types/{}/index.d.ts", name))
             .expect("failed to resolve entry");
 
         let mut checker = Checker::new(
