@@ -4364,7 +4364,7 @@ impl Analyzer<'_, '_> {
             self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
         }
 
-        if ty.is_interface() | ty.is_class() | ty.is_class_def() | ty.is_alias() {
+        if ty.is_interface() || ty.is_class() || ty.is_class_def() || ty.is_alias() {
             if let Some(type_args) = type_args {
                 if let Ok(new) = self.expand_generics_with_type_args(i.span, ty.clone(), type_args) {
                     return Ok(new);
