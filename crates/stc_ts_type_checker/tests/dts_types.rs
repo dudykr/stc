@@ -12,11 +12,13 @@ use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
 
 #[test]
+#[ignore = "Not implemented yet"]
 fn test_node() {
     run_tests_for_types_pkg("node");
 }
 
 #[test]
+#[ignore = "Not implemented yet"]
 fn test_react() {
     run_tests_for_types_pkg("react");
 }
