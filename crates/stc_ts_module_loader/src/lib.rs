@@ -210,8 +210,8 @@ where
         let loaded = match loaded {
             Ok(v) => v,
             Err(err) => {
-                error!("failed to load module: {:?}", err);
                 if resolve_all {
+                    error!("failed to load module: {:?}", err);
                     self.errors.lock().push(err);
 
                     self.loaded.insert(id, Err(()));
