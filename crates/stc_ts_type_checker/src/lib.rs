@@ -281,6 +281,8 @@ impl Checker {
     }
 
     fn analyze_non_circular_module(&self, module_id: ModuleId, path: Arc<FileName>) -> Type {
+        info!("analyze_non_circular_module({:?}, {})", module_id, path);
+
         let _panic = panic_ctx!(format!("analyze_non_circular_module({})", path));
 
         let start = Instant::now();
