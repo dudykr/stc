@@ -3145,7 +3145,9 @@ impl Analyzer<'_, '_> {
                         ..
                     }) = type_elem
                     {
-                        type_params_vec.append(&mut type_params.params.clone());
+                        for param in &type_params.params {
+                            type_params_vec.push(param.clone());
+                        }
                     }
                 }
                 for (param, arg) in type_params_vec.iter().zip(type_args.params.iter()) {

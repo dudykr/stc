@@ -146,12 +146,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
                 if type_param.is_empty() {
-                    type_param.push(Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }))
+                    type_param.push(Type::any(span, Default::default()))
                 }
                 let type_args = TypeParamInstantiation { span, params: type_param };
 
