@@ -10,7 +10,7 @@ use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_utils::panic_ctx;
 use swc_atoms::JsWord;
-use swc_common::{collections::AHashMap, comments::Comments, FileName, Mark, SourceMap, DUMMY_SP};
+use swc_common::{collections::AHashMap, comments::Comments, FileName, Mark, SourceMap, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -210,9 +210,8 @@ where
         let loaded = match loaded {
             Ok(v) => v,
             Err(err) => {
+                error!("failed to load module: {:?}", err);
                 if resolve_all {
-                    error!("failed to load module: {:?}", err);
-
                     self.errors.lock().push(err);
 
                     self.loaded.insert(id, Err(()));
@@ -227,20 +226,23 @@ where
             None => return,
         };
 
-        #[cfg(feature = "no-threading")]
-        let iter = loaded.deps.into_iter();
-        #[cfg(not(feature = "no-threading"))]
-        let iter = loaded.deps.into_par_iter();
+        let dep_module_ids = GLOBALS.with(|globals| {
+            #[cfg(feature = "no-threading")]
+            let iter = loaded.deps.into_iter();
+            #[cfg(not(feature = "no-threading"))]
+            let iter = loaded.deps.into_par_iter();
 
-        let dep_module_ids = iter
-            .map(|dep_path| {
-                let (id, _) = self.id_generator.generate(&dep_path);
+            iter.map(|dep_path| {
+                GLOBALS.set(globals, || {
+                    let (id, _) = self.id_generator.generate(&dep_path);
 
-                self.load_including_deps(&dep_path, resolve_all);
+                    self.load_including_deps(&dep_path, resolve_all);
 
-                id
+                    id
+                })
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
+        });
 
         if resolve_all {
             let res = self.loaded.insert(
@@ -268,7 +270,7 @@ where
             return Ok(None);
         }
 
-        debug!("Loading {:?}: {}", module_id, filename);
+        debug!(resolve_all = resolve_all, "Loading {:?}: {}", module_id, filename);
 
         // TODO(kdy1): Check if it's better to use content of `declare module "http"`?
         if resolve_all {
@@ -298,6 +300,22 @@ where
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
         for decl in declared_modules {
+            if resolve_all {
+                let id = self.id_for_declare_module(&decl);
+
+                self.loaded.insert(
+                    id,
+                    Ok(ModuleRecord {
+                        module: Arc::new(Module {
+                            span: DUMMY_SP,
+                            body: Default::default(),
+                            shebang: None,
+                        }),
+                        deps: Default::default(),
+                    }),
+                );
+            }
+
             self.resolver.declare_module(decl);
         }
 
