@@ -3148,30 +3148,26 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Interface(Interface { type_params, body, .. }) => {
                 let mut params = HashMap::default();
-                let mut type_params_vec: Vec<TypeParam> = vec![];
 
-                if let Some(type_params) = type_params {
-                    type_params_vec.append(&mut type_params.params.clone());
-                }
+                if let Some(type_params) = type_params {}
 
-                if type_params_vec.is_empty() {
+                if params.is_empty() {
                     for type_elem in body {
                         if let TypeElement::Constructor(ConstructorSignature {
                             type_params: Some(type_params),
                             ..
                         }) = type_elem
                         {
-                            for param in &type_params.params {
-                                type_params_vec.push(param.clone());
+                            for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+                                params.insert(param.name.clone(), arg.clone());
                             }
                         }
                     }
                 }
 
-                for (param, arg) in type_params_vec.iter().zip(type_args.params.iter()) {
-                    params.insert(param.name.clone(), arg.clone());
+                if !params.is_empty() {
+                    return self.expand_type_params(&params, ty.clone(), Default::default());
                 }
-                return self.expand_type_params(&params, ty.clone(), Default::default());
             }
             Type::Alias(Alias { type_params, .. })
             | Type::Class(Class {
