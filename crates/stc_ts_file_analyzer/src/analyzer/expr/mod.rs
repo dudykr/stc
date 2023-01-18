@@ -1873,7 +1873,7 @@ impl Analyzer<'_, '_> {
                     match v {
                         ClassMember::Property(ref class_prop) => {
                             if self.key_matches(span, &class_prop.key, prop, false) {
-                                if self.ctx.obj_is_super {
+                                if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
                                     if !class_prop.accessor.getter && !class_prop.accessor.setter {
                                         if class_prop.key.type_eq(prop) {
                                             return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
