@@ -3149,7 +3149,11 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface { type_params, body, .. }) => {
                 let mut params = HashMap::default();
 
-                if let Some(type_params) = type_params {}
+                if let Some(type_params) = type_params {
+                    for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+                        params.insert(param.name.clone(), arg.clone());
+                    }
+                }
 
                 if params.is_empty() {
                     for type_elem in body {
