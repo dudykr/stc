@@ -2509,6 +2509,7 @@ version = "0.1.0"
 dependencies = [
  "num-bigint",
  "rustc-hash",
+ "scoped-tls",
  "stc_visit_macros",
  "swc_atoms",
  "swc_common",
