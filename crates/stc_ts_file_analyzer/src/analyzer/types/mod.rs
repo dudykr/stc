@@ -1974,6 +1974,7 @@ impl Analyzer<'_, '_> {
                 return Ok(els);
             }
 
+            els.freeze();
             // For (ai, bi) in `merged`, we can assume ai < bi because we only store in that
             // case
             for (ai, bi) in merged.iter().copied() {
