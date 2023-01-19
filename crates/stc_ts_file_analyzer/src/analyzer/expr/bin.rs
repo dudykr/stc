@@ -1203,21 +1203,19 @@ impl Analyzer<'_, '_> {
         let _stack = stack::track(span)?;
 
         if let Type::Union(orig) = orig_ty.normalize() {
-            let mut new_types = orig
+            let new_types = orig
                 .types
                 .iter()
                 .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
                 .collect::<Result<Vec<_>, _>>()?;
 
-            new_types.retain(|ty| !ty.is_never());
+            for elem in new_types.iter() {
+                if orig.types.iter().any(|o_ty| elem.type_eq(o_ty)) {
+                    return Ok(elem.to_owned());
+                }
+            }
 
-            return Ok(Type::Union(Union {
-                span: orig.span,
-                types: new_types,
-                metadata: orig.metadata,
-                tracker: Default::default(),
-            })
-            .fixed());
+            return Ok(Type::new_union(orig.span, new_types).fixed());
         }
 
         if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
