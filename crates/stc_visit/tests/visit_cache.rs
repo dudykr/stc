@@ -87,8 +87,19 @@ impl Fold<Vec<Deep>> for Folder {
 
 impl Fold<Deep> for Folder {
     fn fold(&mut self, value: Deep) -> Deep {
-        assert!(FOUND.is_set());
-        value
+        FOUND.configure(|| {
+            let mut visitor = Visitor {
+                calc_count: self.count.clone(),
+                found: false,
+            };
+
+            value.visit_with(&mut visitor);
+            if !visitor.found {
+                return value;
+            }
+
+            value.fold_children_with(self)
+        })
     }
 }
 
