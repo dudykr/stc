@@ -17,7 +17,19 @@ fn test_fold_1() {
         inner: Some(Box::new(Deep {
             inner: None,
             vec: vec![Deep {
-                inner: None,
+                inner: Some(Box::new(Deep {
+                    inner: None,
+                    vec: vec![Deep {
+                        inner: Some(Box::new(Deep {
+                            inner: None,
+                            vec: vec![Deep {
+                                inner: None,
+                                vec: vec![Deep { inner: None, vec: vec![] }],
+                            }],
+                        })),
+                        vec: vec![Deep { inner: None, vec: vec![] }],
+                    }],
+                })),
                 vec: vec![Deep { inner: None, vec: vec![] }],
             }],
         })),
@@ -58,9 +70,9 @@ impl Fold<Vec<Vec<Deep>>> for Folder {
             };
 
             value.visit_with(&mut visitor);
-            if !visitor.found {
-                return value;
-            }
+            // if !visitor.found {
+            //     return value;
+            // }
 
             value.fold_children_with(self)
         })
@@ -76,9 +88,9 @@ impl Fold<Vec<Deep>> for Folder {
             };
 
             value.visit_with(&mut visitor);
-            if !visitor.found {
-                return value;
-            }
+            // if !visitor.found {
+            //     return value;
+            // }
 
             value.fold_children_with(self)
         })
