@@ -1,11 +1,12 @@
 #![deny(warnings)]
 
-use std::{mem::take, sync::Arc};
+use std::{collections::VecDeque, mem::take, sync::Arc};
 
 use anyhow::{anyhow, bail, Error};
 use dashmap::DashMap;
-use fxhash::FxBuildHasher;
+use fxhash::{FxBuildHasher, FxHashSet};
 use parking_lot::{Mutex, RwLock};
+use petgraph::algo::tarjan_scc;
 use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_utils::panic_ctx;
@@ -15,7 +16,6 @@ use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
-use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 use tracing::{debug, error};
 
 use self::analyzer::find_modules_and_deps;
@@ -103,6 +103,36 @@ where
         &self.comments
     }
 
+    fn render_graph(&self, entry: ModuleId) -> FastDiGraphMap<ModuleId, ()> {
+        let mut g = FastDiGraphMap::default();
+
+        let mut queue = VecDeque::default();
+        queue.push_back(entry);
+        let mut done = FxHashSet::default();
+
+        while let Some(id) = queue.pop_front() {
+            if !done.insert(id) {
+                continue;
+            }
+
+            let deps = self
+                .loaded
+                .get(&id)
+                .expect("module does not exist in the graph")
+                .value()
+                .as_ref()
+                .expect("failed to load module")
+                .deps
+                .clone();
+            for dep in deps {
+                g.add_edge(id, dep, ());
+                queue.push_back(dep);
+            }
+        }
+
+        g
+    }
+
     /// TODO: Fix race condition of `errors`.
     pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, (ModuleId, Error)> {
         self.load_including_deps(entry, false);
@@ -111,9 +141,13 @@ where
         let module_id = self.id_generator.generate(entry).0;
 
         let res = {
-            let mut analyzer = GraphAnalyzer::new(self);
-            analyzer.load(module_id);
-            analyzer.into_result()
+            let graph = self.render_graph(module_id);
+
+            let all = graph.nodes().collect::<Vec<_>>();
+            let mut cycles = tarjan_scc(&graph);
+            cycles.retain(|v| v.len() > 1);
+
+            DepGraphData { all, graph, cycles }
         };
 
         {
@@ -384,26 +418,5 @@ where
         self.parse_cache.lock().insert(filename.clone(), module.clone());
 
         Ok(module)
-    }
-}
-
-impl<C, R> DepGraph for ModuleGraph<C, R>
-where
-    C: Comments + Send + Sync,
-    R: Resolve,
-{
-    type ModuleId = ModuleId;
-
-    fn deps_of(&self, module_id: Self::ModuleId) -> Vec<Self::ModuleId> {
-        let m = self.loaded.get(&module_id).unwrap_or_else(|| {
-            //
-            let path = self.id_generator.path(module_id);
-            unreachable!("{:?}({:?}) is not loaded", module_id, path)
-        });
-
-        match &*m {
-            Ok(m) => m.deps.clone(),
-            Err(..) => Default::default(),
-        }
     }
 }
