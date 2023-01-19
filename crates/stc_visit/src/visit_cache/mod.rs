@@ -5,6 +5,9 @@ use std::{
 
 use rustc_hash::FxHashMap;
 
+#[cfg(test)]
+mod tests;
+
 thread_local! {
     static CURRENT_STATE: State = State {
         default: RefCell::new(None),
