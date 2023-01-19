@@ -5,11 +5,11 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat, RObjectPatProp, RPat, RTsArrayType,
     RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType, RTsEntityName, RTsExprWithTypeArgs,
-    RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType, RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody,
-    RTsInterfaceDecl, RTsIntersectionType, RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType,
-    RTsParenthesizedType, RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
-    RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
-    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsGetterSignature, RTsImportType, RTsIndexSignature, RTsIndexedAccessType,
+    RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType, RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature,
+    RTsOptionalType, RTsParenthesizedType, RTsPropertySignature, RTsRestType, RTsSetterSignature, RTsTplLitType, RTsTupleElement,
+    RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl,
+    RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -346,20 +346,8 @@ impl Analyzer<'_, '_> {
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
-            RTsTypeElement::TsGetterSignature(e) => {
-                return Err(ErrorKind::Unimplemented {
-                    span: e.span,
-                    msg: "TsGetterSignature".to_string(),
-                }
-                .into())
-            }
-            RTsTypeElement::TsSetterSignature(e) => {
-                return Err(ErrorKind::Unimplemented {
-                    span: e.span,
-                    msg: "TsSetterSignature".to_string(),
-                }
-                .into())
-            }
+            RTsTypeElement::TsGetterSignature(d) => TypeElement::Property(d.validate_with(self)?),
+            RTsTypeElement::TsSetterSignature(d) => TypeElement::Property(d.validate_with(self)?),
         })
     }
 }
@@ -501,6 +489,63 @@ impl Analyzer<'_, '_> {
             type_params,
             metadata: Default::default(),
             accessor: Default::default(),
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &RTsGetterSignature) -> VResult<PropertySignature> {
+        let key = self.validate_key(&d.key, d.computed)?;
+        let type_ann = {
+            match d.type_ann.validate_with(self) {
+                Some(v) => match v {
+                    Ok(ty) => Some(box ty),
+                    Err(e) => {
+                        self.storage.report(e);
+                        Some(box Type::any(d.span, Default::default()))
+                    }
+                },
+                None => Some(box Type::any(d.span, Default::default())),
+            }
+        };
+        Ok(PropertySignature {
+            accessibility: None,
+            span: d.span,
+            key,
+            optional: d.optional,
+            params: Default::default(),
+            readonly: d.readonly,
+            type_ann,
+            type_params: Default::default(),
+            metadata: Default::default(),
+            accessor: Accessor {
+                getter: true,
+                setter: false,
+            },
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &RTsSetterSignature) -> VResult<PropertySignature> {
+        let key = self.validate_key(&d.key, d.computed)?;
+        let params = vec![d.param.validate_with(self)?];
+        Ok(PropertySignature {
+            accessibility: None,
+            span: d.span,
+            key,
+            optional: d.optional,
+            params,
+            readonly: d.readonly,
+            type_ann: Default::default(),
+            type_params: Default::default(),
+            metadata: Default::default(),
+            accessor: Accessor {
+                getter: false,
+                setter: true,
+            },
         })
     }
 }
