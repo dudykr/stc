@@ -1203,6 +1203,26 @@ impl Analyzer<'_, '_> {
         let _stack = stack::track(span)?;
 
         if let Type::Union(orig) = orig_ty.normalize() {
+            if ty.is_interface() || ty.is_type_lit() {
+                if let Ok(out_result) = self.access_property(
+                    span,
+                    &ty,
+                    &Key::Normal {
+                        span,
+                        sym: "prototype".into(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    Default::default(),
+                ) {
+                    if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(&out_result), Default::default()) {
+                        let result = result.normalize();
+                        if orig.types.iter().any(|ty| ty.type_eq(result)) {
+                            return Ok(out_result.freezed());
+                        }
+                    }
+                }
+            }
             let new_types = orig
                 .types
                 .iter()
