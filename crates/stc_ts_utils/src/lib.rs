@@ -240,6 +240,7 @@ impl PatExt for RPat {
 }
 
 /// Type annotation
+#[inline(always)]
 pub fn run<Ret>(op: impl FnOnce() -> Result<Ret, Error>) -> Result<Ret, Error> {
     op()
 }
