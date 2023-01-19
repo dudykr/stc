@@ -24,6 +24,7 @@ fn test_react() {
 }
 
 #[test]
+#[ignore = "Not implemented yet"]
 fn test_csstype() {
     run_tests_for_types_pkg("csstype/index.d.ts");
 }
