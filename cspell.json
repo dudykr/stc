@@ -20,6 +20,7 @@
         "dashmap",
         "debuginfo",
         "dejavu",
+        "Deque",
         "doctest",
         "elems",
         "fastpath",
