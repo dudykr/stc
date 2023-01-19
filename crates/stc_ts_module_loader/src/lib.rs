@@ -106,11 +106,11 @@ where
     fn render_graph(&self, entry: ModuleId) -> FastDiGraphMap<ModuleId, ()> {
         let mut g = FastDiGraphMap::default();
 
-        let mut queoe = VecDeque::default();
-        queoe.push_back(entry);
+        let mut queue = VecDeque::default();
+        queue.push_back(entry);
         let mut done = FxHashSet::default();
 
-        while let Some(id) = queoe.pop_front() {
+        while let Some(id) = queue.pop_front() {
             if !done.insert(id) {
                 continue;
             }
@@ -126,7 +126,7 @@ where
                 .clone();
             for dep in deps {
                 g.add_edge(id, dep, ());
-                queoe.push_back(dep);
+                queue.push_back(dep);
             }
         }
 
