@@ -14,21 +14,26 @@ use swc_ecma_parser::TsConfig;
 #[test]
 #[ignore = "Not implemented yet"]
 fn test_node() {
-    run_tests_for_types_pkg("node");
+    run_tests_for_types_pkg("@types/node/index.d.ts");
 }
 
 #[test]
 #[ignore = "Not implemented yet"]
 fn test_react() {
-    run_tests_for_types_pkg("react");
+    run_tests_for_types_pkg("@types/react/index.d.ts");
 }
 
-fn run_tests_for_types_pkg(name: &str) {
+#[test]
+fn test_csstype() {
+    run_tests_for_types_pkg("csstype/index.d.ts");
+}
+
+fn run_tests_for_types_pkg(module_specifier: &str) {
     testing::run_test2(false, |cm, handler| {
         let handler = Arc::new(handler);
 
         let path = NodeResolver::new()
-            .resolve(&FileName::Real(current_dir().unwrap()), &format!("@types/{}/index.d.ts", name))
+            .resolve(&FileName::Real(current_dir().unwrap()), module_specifier)
             .expect("failed to resolve entry");
 
         let mut checker = Checker::new(
