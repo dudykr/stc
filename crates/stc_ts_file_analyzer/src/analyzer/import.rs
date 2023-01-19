@@ -10,7 +10,7 @@ use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
 use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
-use swc_common::{comments::Comments, Span, Spanned};
+use swc_common::{comments::Comments, Span, Spanned, GLOBALS};
 
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
@@ -107,12 +107,15 @@ impl Analyzer<'_, '_> {
         #[cfg(not(feature = "no-threading"))]
         let iter = normal_imports.into_par_iter();
 
-        let import_results = iter
-            .map(|(ctxt, dep_id, import)| {
-                let res = loader.load_non_circular_dep(ctxt, dep_id);
-                (ctxt, dep_id, import, res)
+        let import_results = GLOBALS.with(|globals| {
+            iter.map(|(ctxt, dep_id, import)| {
+                GLOBALS.set(globals, || {
+                    let res = loader.load_non_circular_dep(ctxt, dep_id);
+                    (ctxt, dep_id, import, res)
+                })
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
+        });
 
         for (ctxt, dep_id, import, res) in import_results {
             let span = import.span;
