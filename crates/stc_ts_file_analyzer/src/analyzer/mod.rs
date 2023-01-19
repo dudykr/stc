@@ -489,7 +489,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_opt_chain: false,
                 in_declare: is_dts,
                 in_fn_without_body: false,
-                in_global: is_dts,
+                in_global: !is_builtin && is_dts,
                 in_export_default_expr: false,
                 in_async: false,
                 in_generator: false,
