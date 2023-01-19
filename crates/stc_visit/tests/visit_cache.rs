@@ -35,7 +35,49 @@ fn test_fold_1() {
         })),
         vec: vec![Deep {
             inner: None,
-            vec: vec![Deep { inner: None, vec: vec![] }],
+            vec: vec![Deep {
+                inner: None,
+                vec: vec![
+                    Deep {
+                        inner: None,
+                        vec: vec![Deep {
+                            inner: Some(Box::new(Deep {
+                                inner: None,
+                                vec: vec![Deep {
+                                    inner: Some(Box::new(Deep {
+                                        inner: None,
+                                        vec: vec![Deep {
+                                            inner: None,
+                                            vec: vec![Deep { inner: None, vec: vec![] }],
+                                        }],
+                                    })),
+                                    vec: vec![Deep { inner: None, vec: vec![] }],
+                                }],
+                            })),
+                            vec: vec![Deep { inner: None, vec: vec![] }],
+                        }],
+                    },
+                    Deep {
+                        inner: None,
+                        vec: vec![Deep {
+                            inner: Some(Box::new(Deep {
+                                inner: None,
+                                vec: vec![Deep {
+                                    inner: Some(Box::new(Deep {
+                                        inner: None,
+                                        vec: vec![Deep {
+                                            inner: None,
+                                            vec: vec![Deep { inner: None, vec: vec![] }],
+                                        }],
+                                    })),
+                                    vec: vec![Deep { inner: None, vec: vec![] }],
+                                }],
+                            })),
+                            vec: vec![Deep { inner: None, vec: vec![] }],
+                        }],
+                    },
+                ],
+            }],
         }],
     };
 
@@ -46,7 +88,7 @@ fn test_fold_1() {
     let result = data.fold_with(&mut folder);
     dbg!(&result);
 
-    assert_eq!(*folder.count.borrow(), 4);
+    assert_eq!(*folder.count.borrow(), 30);
 }
 
 visit_cache!(static FOUND: bool);
@@ -70,9 +112,9 @@ impl Fold<Vec<Vec<Deep>>> for Folder {
             };
 
             value.visit_with(&mut visitor);
-            // if !visitor.found {
-            //     return value;
-            // }
+            if !visitor.found {
+                return value;
+            }
 
             value.fold_children_with(self)
         })
@@ -88,9 +130,9 @@ impl Fold<Vec<Deep>> for Folder {
             };
 
             value.visit_with(&mut visitor);
-            // if !visitor.found {
-            //     return value;
-            // }
+            if !visitor.found {
+                return value;
+            }
 
             value.fold_children_with(self)
         })
@@ -106,9 +148,9 @@ impl Fold<Deep> for Folder {
             };
 
             value.visit_with(&mut visitor);
-            // if !visitor.found {
-            //     return value;
-            // }
+            if !visitor.found {
+                return value;
+            }
 
             value.fold_children_with(self)
         })
