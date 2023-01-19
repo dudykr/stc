@@ -631,8 +631,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let tester = Tester::new();
     let diagnostics = tester
         .errors(|cm, handler| {
-            cm.new_source_file(FileName::Anon, "".into());
-
             let handler = Arc::new(handler);
             let mut checker = Checker::new(
                 cm,
