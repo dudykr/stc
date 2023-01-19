@@ -1,6 +1,9 @@
+#![allow(incomplete_features)]
+#![feature(specialization)]
+
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{visit_cache, Fold, FoldWith, Visit, VisitWith};
+use stc_visit::{visit_cache, Fold, FoldWith, Visit, VisitWith};
 
 #[derive(Visit)]
 struct Deep {

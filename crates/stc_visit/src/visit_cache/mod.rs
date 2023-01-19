@@ -43,7 +43,7 @@ where
     T: 'static,
 {
     #[doc(hidden)]
-    pub(super) inner: &'static ScopedKey<CacheData<T>>,
+    pub inner: &'static ScopedKey<CacheData<T>>,
 }
 
 impl<T> VisitCache<T>
