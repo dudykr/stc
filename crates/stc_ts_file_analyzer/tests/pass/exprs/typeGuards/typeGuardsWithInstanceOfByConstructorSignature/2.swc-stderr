@@ -1,0 +1,45 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:15:1]
+ 15 | if (obj13 instanceof G) {
+    :     ^^^^^
+    `----
+
+Error: 
+  > (G1 | G2)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:15:1]
+ 15 | if (obj13 instanceof G) {
+    :                      ^
+    `----
+
+Error: 
+  > GConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:15:1]
+ 15 | if (obj13 instanceof G) {
+    :     ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:17:3]
+ 17 | obj13.foo1;
+    : ^^^^^
+    `----
+
+Error: 
+  > G1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:17:3]
+ 17 | obj13.foo1;
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > number
