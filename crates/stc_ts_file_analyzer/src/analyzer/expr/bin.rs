@@ -1203,10 +1203,8 @@ impl Analyzer<'_, '_> {
         let _stack = stack::track(span)?;
 
         if let Type::Union(orig) = orig_ty.normalize() {
-            dbg!(1);
             if ty.is_interface() || ty.is_type_lit() {
-                dbg!(2);
-                if let Ok(result) = self.access_property(
+                if let Ok(out_result) = self.access_property(
                     span,
                     &ty,
                     &Key::Normal {
@@ -1217,15 +1215,10 @@ impl Analyzer<'_, '_> {
                     IdCtx::Type,
                     Default::default(),
                 ) {
-                    dbg!(3);
-
-                    if let Ok(result) = self.normalize(Some(span), Cow::Owned(result), Default::default()) {
-                        dbg!(&orig.types);
-                        dbg!(&result);
+                    if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(&out_result), Default::default()) {
                         let result = result.normalize();
                         if orig.types.iter().any(|ty| ty.type_eq(result)) {
-                            dbg!(4);
-                            return Ok(result.clone());
+                            return Ok(out_result.freezed());
                         }
                     }
                 }
