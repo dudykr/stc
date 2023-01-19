@@ -1,6 +1,9 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
+#[doc(hidden)]
+pub extern crate scoped_tls;
+
 use num_bigint::BigInt;
 pub use stc_visit_macros::Visit;
 use swc_atoms::{Atom, JsWord};
