@@ -2270,7 +2270,6 @@ dependencies = [
  "swc_ecma_parser",
  "swc_ecma_visit",
  "swc_fast_graph",
- "swc_graph_analyzer",
  "tracing",
 ]
 
