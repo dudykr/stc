@@ -5,7 +5,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use stc_visit::{visit_cache, Fold, FoldWith, Visit, VisitWith};
 
-#[derive(Visit)]
+#[derive(Debug, Visit)]
 struct Deep {
     inner: Option<Box<Deep>>,
     vec: Vec<Deep>,
@@ -32,6 +32,8 @@ fn test_fold_1() {
     };
 
     let result = data.fold_with(&mut folder);
+    dbg!(&result);
+
     assert_eq!(*folder.count.borrow(), 4);
 }
 
@@ -47,8 +49,8 @@ struct Visitor {
     found: bool,
 }
 
-impl Fold<Vec<Vec<String>>> for Folder {
-    fn fold(&mut self, value: Vec<Vec<String>>) -> Vec<Vec<String>> {
+impl Fold<Vec<Vec<Deep>>> for Folder {
+    fn fold(&mut self, value: Vec<Vec<Deep>>) -> Vec<Vec<Deep>> {
         FOUND.configure(|| {
             let mut visitor = Visitor {
                 calc_count: self.count.clone(),
@@ -65,8 +67,8 @@ impl Fold<Vec<Vec<String>>> for Folder {
     }
 }
 
-impl Fold<Vec<String>> for Folder {
-    fn fold(&mut self, value: Vec<String>) -> Vec<String> {
+impl Fold<Vec<Deep>> for Folder {
+    fn fold(&mut self, value: Vec<Deep>) -> Vec<Deep> {
         FOUND.configure(|| {
             let mut visitor = Visitor {
                 calc_count: self.count.clone(),
@@ -83,20 +85,20 @@ impl Fold<Vec<String>> for Folder {
     }
 }
 
-impl Fold<String> for Folder {
-    fn fold(&mut self, value: String) -> String {
+impl Fold<Deep> for Folder {
+    fn fold(&mut self, value: Deep) -> Deep {
         assert!(FOUND.is_set());
         value
     }
 }
 
-impl Visit<String> for Visitor {
-    fn visit(&mut self, v: &String) {
+impl Visit<Deep> for Visitor {
+    fn visit(&mut self, v: &Deep) {
         assert!(FOUND.is_set());
 
         dbg!("Visit");
 
-        let key = v as *const String as *const ();
+        let key = v as *const Deep as *const ();
 
         dbg!(key);
         if let Some(..) = FOUND.get_copied(key) {
@@ -105,7 +107,7 @@ impl Visit<String> for Visitor {
         }
 
         *self.calc_count.borrow_mut() += 1;
-        let result = v.contains("aa");
+        let result = v.inner.is_none() && v.vec.is_empty();
 
         FOUND.insert(key, result);
     }
