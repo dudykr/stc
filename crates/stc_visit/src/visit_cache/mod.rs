@@ -53,6 +53,7 @@ where
     /// Runs `op` with the cache configured.
     ///
     /// If the cache is already configured, this does nothing.
+    #[inline]
     pub fn configure<Ret>(&'static self, op: impl FnOnce() -> Ret) -> Ret {
         if self.inner.is_set() {
             op()
@@ -62,6 +63,7 @@ where
     }
 
     /// Insert a value into the cache. Noop if the cache is not configured.
+    #[inline]
     pub fn insert(&'static self, key: *const (), value: T) {
         if !self.inner.is_set() {
             return;
@@ -72,6 +74,7 @@ where
         })
     }
 
+    #[inline]
     pub fn get_copied(&'static self, key: *const ()) -> Option<T>
     where
         T: Copy,
@@ -83,6 +86,7 @@ where
         self.inner.with(|cache| cache.0.borrow().get(&key).copied())
     }
 
+    #[inline]
     pub fn get<F, Ret>(&'static self, key: *const (), op: F) -> Option<Ret>
     where
         F: FnOnce(&T) -> Ret,
@@ -97,5 +101,10 @@ where
 
             cached.map(op)
         })
+    }
+
+    #[inline(always)]
+    pub fn is_set(&'static self) -> bool {
+        self.inner.is_set()
     }
 }
