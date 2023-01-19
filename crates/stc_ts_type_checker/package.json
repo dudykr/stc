@@ -1,5 +1,5 @@
 {
-  "name": "stc_ts_file_analyzer",
+  "name": "stc_ts_type_checker",
   "private": true,
   "version": "1.0.0",
   "description": "The typescript type checker.",
@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "csstype": "^3.0.8",
-    "typescript": "^4.4.2"
+    "@types/node": "^18.11.18",
+    "@types/react": "^18.0.26"
   }
 }
