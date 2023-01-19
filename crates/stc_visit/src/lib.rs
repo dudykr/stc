@@ -15,6 +15,7 @@ pub use self::{
 
 mod fold;
 mod visit;
+pub mod visit_cache;
 mod visit_mut;
 mod visitable;
 
