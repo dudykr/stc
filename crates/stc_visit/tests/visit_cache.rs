@@ -121,5 +121,7 @@ impl Visit<Deep> for Visitor {
         let result = v.inner.is_none() && v.vec.is_empty();
 
         FOUND.insert(key, result);
+
+        v.visit_children_with(self);
     }
 }
