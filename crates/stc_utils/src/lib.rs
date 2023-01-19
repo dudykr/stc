@@ -17,6 +17,7 @@ pub mod error;
 pub mod ext;
 pub mod panic_context;
 pub mod stack;
+pub mod visit_cache;
 
 pub type ABuilderHasher = ahash::RandomState;
 
