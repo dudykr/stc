@@ -106,9 +106,9 @@ impl Fold<Deep> for Folder {
             };
 
             value.visit_with(&mut visitor);
-            if !visitor.found {
-                return value;
-            }
+            // if !visitor.found {
+            //     return value;
+            // }
 
             value.fold_children_with(self)
         })
