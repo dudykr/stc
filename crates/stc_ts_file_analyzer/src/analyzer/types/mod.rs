@@ -1680,7 +1680,14 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
-        let ty = self.normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })?;
+        let ty = self.normalize(
+            Some(span),
+            ty,
+            NormalizeTypeOpts {
+                preserve_union: true,
+                ..Default::default()
+            },
+        )?;
 
         if ty.is_type_lit() {
             match ty {
@@ -1974,6 +1981,7 @@ impl Analyzer<'_, '_> {
                 return Ok(els);
             }
 
+            els.freeze();
             // For (ai, bi) in `merged`, we can assume ai < bi because we only store in that
             // case
             for (ai, bi) in merged.iter().copied() {
@@ -1997,42 +2005,16 @@ impl Analyzer<'_, '_> {
             (TypeElement::Property(to), TypeElement::Property(from)) => {
                 if let Some(to_type) = &to.type_ann {
                     if let Some(from_type) = from.type_ann {
-                        let to_type_lit = self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
-                        let from = self.convert_type_to_type_lit(span, Cow::Borrowed(&from_type))?;
-
-                        match (to_type_lit, from) {
-                            (Some(to_type_lit), Some(from)) => {
-                                let mut to_type_lit = to_type_lit.into_owned();
-                                to_type_lit.members.extend(from.into_owned().members);
-
-                                let members = self.merge_type_elements(span, to_type_lit.members)?;
-
-                                to.type_ann = Some(
-                                    box Type::TypeLit(TypeLit {
-                                        span,
-                                        members,
-                                        metadata: TypeLitMetadata {
-                                            common: to_type.metadata(),
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    })
-                                    .freezed(),
-                                )
-                            }
-                            _ => {
-                                to.type_ann = Some(
-                                    box Type::Intersection(Intersection {
-                                        span: to_type.span(),
-                                        types: vec![*to_type.clone(), *from_type],
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })
-                                    .fixed()
-                                    .freezed(),
-                                );
-                            }
-                        }
+                        to.type_ann = Some(
+                            box Type::Intersection(Intersection {
+                                span: to_type.span(),
+                                types: vec![*to_type.clone(), *from_type],
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                            .fixed()
+                            .freezed(),
+                        );
                     }
                 }
 

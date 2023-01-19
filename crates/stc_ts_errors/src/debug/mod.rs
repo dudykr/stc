@@ -187,22 +187,18 @@ pub fn assert_no_ref(ty: &Type) {
 /// Use this when if you think a wrong code is called, but **it should not be
 /// called**.
 pub fn print_backtrace() {
-    if cfg!(debug_assertions) {
-        let s = dump_backtrace();
+    // if cfg!(debug_assertions) {
+    let s = dump_backtrace();
 
-        println!("{}", s);
-    }
+    println!("{}", s);
+    // }
 }
 
 pub fn dump_backtrace() -> String {
-    if cfg!(debug_assertions) {
-        let bt = Backtrace::new();
-        let bt = filter(bt);
+    let bt = Backtrace::new();
+    let bt = filter(bt);
 
-        format!("{:?}", bt)
-    } else {
-        String::new()
-    }
+    format!("{:?}", bt)
 }
 
 fn filter(mut bt: Backtrace) -> Backtrace {
