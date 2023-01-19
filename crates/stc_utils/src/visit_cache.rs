@@ -1,6 +1,19 @@
-use std::thread::LocalKey;
+use std::{
+    cell::{Cell, RefCell},
+    thread::LocalKey,
+};
 
 use rustc_hash::FxHashMap;
+
+thread_local! {
+    static CURRENT_STATE: State = State {
+        default: RefCell::new(None),
+    };
+}
+
+struct State {
+    default: RefCell<Option<Dispatch>>,
+}
 
 /// A cache for `Visit`.
 ///
@@ -15,13 +28,15 @@ pub struct VisitCache<T>
 where
     T: 'static,
 {
-    data: &'static LocalKey<FxHashMap<*const (), T>>,
+    data: &'static LocalKey<Cell<FxHashMap<*const (), T>>>,
 }
 
 impl<T> VisitCache<T>
 where
     T: 'static,
 {
+    pub fn configure(&'static self) -> Option<VisitCacheGuard> {}
+
     pub fn current(&'static self) -> Option<Self> {}
 }
 
