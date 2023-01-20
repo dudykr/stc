@@ -1,7 +1,10 @@
 use fxhash::FxHashMap;
 use rnode::FoldWith;
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_generics::{expander::GenericExpander, ExpandGenericOpts};
+use stc_ts_generics::{
+    expander::{GenericExpander, GENERIC_CACHE},
+    ExpandGenericOpts,
+};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, ext::SpanExt};
@@ -94,17 +97,19 @@ impl Analyzer<'_, '_> {
             debug_assert!(param.is_clone_cheap());
         }
 
-        let ty = ty
-            .fold_with(&mut GenericExpander {
-                cm: self.cm.clone(),
-                params,
-                fully: false,
-                dejavu: Default::default(),
-                opts,
-            })
-            .fixed();
+        GENERIC_CACHE.configure(|| {
+            let ty = ty
+                .fold_with(&mut GenericExpander {
+                    cm: self.cm.clone(),
+                    params,
+                    fully: false,
+                    dejavu: Default::default(),
+                    opts,
+                })
+                .fixed();
 
-        Ok(ty)
+            Ok(ty)
+        })
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.

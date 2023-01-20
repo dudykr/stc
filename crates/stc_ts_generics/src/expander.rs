@@ -483,37 +483,35 @@ impl Fold<Type> for GenericExpander<'_> {
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
 
-        GENERIC_CACHE.configure(|| {
-            {
-                // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
-                let mut v = TypeParamNameUsageFinder::default();
-                ty.visit_with(&mut v);
-                let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
-                if !will_expand {
-                    return ty;
-                }
+        {
+            // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
+            let mut v = TypeParamNameUsageFinder::default();
+            ty.visit_with(&mut v);
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
+            if !will_expand {
+                return ty;
             }
+        }
 
-            {
-                let mut checker = GenericChecker {
-                    params: self.params,
-                    found: false,
-                };
-                ty.visit_with(&mut checker);
-                if !checker.found {
-                    return ty;
-                }
+        {
+            let mut checker = GenericChecker {
+                params: self.params,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+            if !checker.found {
+                return ty;
             }
+        }
 
-            let start = dump_type_as_string(&ty);
-            let ty = self.fold_type(ty).fixed();
-            ty.assert_valid();
-            let expanded = dump_type_as_string(&ty);
+        let start = dump_type_as_string(&ty);
+        let ty = self.fold_type(ty).fixed();
+        ty.assert_valid();
+        let expanded = dump_type_as_string(&ty);
 
-            debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
+        debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 
-            ty
-        })
+        ty
     }
 }
 
