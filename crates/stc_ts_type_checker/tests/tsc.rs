@@ -546,9 +546,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2017 => Lib::load("es2017.full"),
                         EsVersion::Es2018 => Lib::load("es2018.full"),
                         EsVersion::Es2019 => Lib::load("es2019.full"),
-                        _ => Lib::load("es2020.full"),
-                        // TODO(kdy1): Enable when we support es2021
-                        // EsVersion::Es2021 => Lib::load("es2021.full"),
+                        EsVersion::Es2021 => Lib::load("es2021.full"),
+                        _ => Lib::load("es2021.full"),
                         // EsVersion::Es2022 => Lib::load("es2022.full"),
                     }
                 } else if specified {
