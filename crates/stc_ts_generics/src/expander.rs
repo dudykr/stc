@@ -11,7 +11,6 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
-use stc_visit::visit_cache;
 use swc_atoms::js_word;
 use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -467,8 +466,6 @@ impl GenericExpander<'_> {
     }
 }
 
-visit_cache!(static CACHE: bool);
-
 impl Fold<Type> for GenericExpander<'_> {
     fn fold(&mut self, ty: Type) -> Type {
         let _stack = match stack::track(ty.span()) {
@@ -483,37 +480,35 @@ impl Fold<Type> for GenericExpander<'_> {
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
 
-        CACHE.configure(|| {
-            {
-                // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
-                let mut v = TypeParamNameUsageFinder::default();
-                ty.visit_with(&mut v);
-                let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
-                if !will_expand {
-                    return ty;
-                }
+        {
+            // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
+            let mut v = TypeParamNameUsageFinder::default();
+            ty.visit_with(&mut v);
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
+            if !will_expand {
+                return ty;
             }
+        }
 
-            {
-                let mut checker = GenericChecker {
-                    params: self.params,
-                    found: false,
-                };
-                ty.visit_with(&mut checker);
-                if !checker.found {
-                    return ty;
-                }
+        {
+            let mut checker = GenericChecker {
+                params: self.params,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+            if !checker.found {
+                return ty;
             }
+        }
 
-            let start = dump_type_as_string(&ty);
-            let ty = self.fold_type(ty).fixed();
-            ty.assert_valid();
-            let expanded = dump_type_as_string(&ty);
+        let start = dump_type_as_string(&ty);
+        let ty = self.fold_type(ty).fixed();
+        ty.assert_valid();
+        let expanded = dump_type_as_string(&ty);
 
-            debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
+        debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 
-            ty
-        })
+        ty
     }
 }
 
@@ -600,25 +595,6 @@ impl Fold<Method> for GenericExpander<'_> {
 struct GenericChecker<'a> {
     params: &'a FxHashMap<Id, Type>,
     found: bool,
-}
-
-impl Visit<Type> for GenericChecker<'_> {
-    fn visit(&mut self, ty: &Type) {
-        if self.found {
-            return;
-        }
-
-        let key = ty as *const Type as *const ();
-
-        if let Some(v) = CACHE.get_copied(key) {
-            self.found |= v;
-            return;
-        }
-
-        ty.visit_children_with(self);
-
-        CACHE.insert(key, self.found);
-    }
 }
 
 impl Visit<TypeParam> for GenericChecker<'_> {
