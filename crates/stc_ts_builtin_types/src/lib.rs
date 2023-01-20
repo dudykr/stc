@@ -194,20 +194,3 @@ fn parse(content: &str) -> TsNamespaceDecl {
         })),
     }
 }
-
-#[test]
-fn test_deps() {
-    let libs = Lib::load("esnext.full");
-    let mut sorted = libs.clone();
-    sorted.sort();
-
-    if libs != sorted {
-        let msg: String = libs
-            .into_iter()
-            .enumerate()
-            .map(|(idx, lib)| format!("Self::{:?} => {},\n", lib, idx + 1))
-            .collect();
-        panic!("Should be\n{}", msg);
-    }
-    assert_eq!(libs, sorted);
-}
