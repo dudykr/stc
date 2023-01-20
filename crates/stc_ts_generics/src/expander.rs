@@ -11,6 +11,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
+use stc_visit::visit_cache;
 use swc_atoms::js_word;
 use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -466,6 +467,8 @@ impl GenericExpander<'_> {
     }
 }
 
+visit_cache!(pub static GENERIC_CACHE: bool);
+
 impl Fold<Type> for GenericExpander<'_> {
     fn fold(&mut self, ty: Type) -> Type {
         let _stack = match stack::track(ty.span()) {
@@ -595,6 +598,25 @@ impl Fold<Method> for GenericExpander<'_> {
 struct GenericChecker<'a> {
     params: &'a FxHashMap<Id, Type>,
     found: bool,
+}
+
+impl Visit<Type> for GenericChecker<'_> {
+    fn visit(&mut self, ty: &Type) {
+        if self.found {
+            return;
+        }
+
+        let key = ty as *const Type as *const ();
+
+        if let Some(v) = GENERIC_CACHE.get_copied(key) {
+            self.found |= v;
+            return;
+        }
+
+        ty.visit_children_with(self);
+
+        GENERIC_CACHE.insert(key, self.found);
+    }
 }
 
 impl Visit<TypeParam> for GenericChecker<'_> {

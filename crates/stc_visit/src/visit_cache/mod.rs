@@ -65,10 +65,6 @@ where
     /// Insert a value into the cache. Noop if the cache is not configured.
     #[inline]
     pub fn insert(&'static self, key: *const (), value: T) {
-        if !self.inner.is_set() {
-            return;
-        }
-
         self.inner.with(|cache| {
             cache.0.borrow_mut().insert(key, value);
         })
@@ -79,10 +75,6 @@ where
     where
         T: Copy,
     {
-        if !self.inner.is_set() {
-            return None;
-        }
-
         self.inner.with(|cache| cache.0.borrow().get(&key).copied())
     }
 
@@ -91,10 +83,6 @@ where
     where
         F: FnOnce(&T) -> Ret,
     {
-        if !self.inner.is_set() {
-            return None;
-        }
-
         self.inner.with(|cache| {
             let b = cache.0.borrow();
             let cached = b.get(&key);
