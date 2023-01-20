@@ -27,7 +27,7 @@ use stc_ts_types::{
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 use tracing::{debug, info, warn, Level};
 use ty::TypeExt;
@@ -104,7 +104,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let _stack = stack::start(64);
-        let _ctx = debug_ctx!(format!("validate\nExpr: {:?}", e));
+        let _ctx = debug_ctx!(format!(
+            "validate {}\n{}\nExpr: {:?}",
+            self.cm.span_to_string(e.span()),
+            self.cm.span_to_snippet(e.span()).unwrap_or_else(|_| "no-source".into()),
+            e
+        ));
 
         let span = e.span();
         let need_type_param_handling = match e {
