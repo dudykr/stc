@@ -467,7 +467,7 @@ impl GenericExpander<'_> {
     }
 }
 
-visit_cache!(static CACHE: bool);
+visit_cache!(pub static GENERIC_CACHE: bool);
 
 impl Fold<Type> for GenericExpander<'_> {
     fn fold(&mut self, ty: Type) -> Type {
@@ -483,7 +483,7 @@ impl Fold<Type> for GenericExpander<'_> {
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
 
-        CACHE.configure(|| {
+        GENERIC_CACHE.configure(|| {
             {
                 // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
                 let mut v = TypeParamNameUsageFinder::default();
@@ -610,14 +610,14 @@ impl Visit<Type> for GenericChecker<'_> {
 
         let key = ty as *const Type as *const ();
 
-        if let Some(v) = CACHE.get_copied(key) {
+        if let Some(v) = GENERIC_CACHE.get_copied(key) {
             self.found |= v;
             return;
         }
 
         ty.visit_children_with(self);
 
-        CACHE.insert(key, self.found);
+        GENERIC_CACHE.insert(key, self.found);
     }
 }
 
