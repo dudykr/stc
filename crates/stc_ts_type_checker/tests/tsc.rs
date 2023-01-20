@@ -344,6 +344,8 @@ fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
             "es2020" => return vec![EsVersion::Es2020],
             "es2021" => return vec![EsVersion::Es2021],
             "es2022" => return vec![EsVersion::Es2022],
+            // TODO(upstream): enable es2023
+            // "es2023" => return vec![EsVersion::Es2023],
             "esnext" => return vec![EsVersion::EsNext],
             _ => {}
         }
@@ -548,6 +550,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2019 => Lib::load("es2019.full"),
                         EsVersion::Es2021 => Lib::load("es2021.full"),
                         EsVersion::Es2022 => Lib::load("es2022.full"),
+                        // TODO(upstream): enable es2023
+                        // EsVersion::Es2023 => Lib::load("es2023.full"),
                         _ => Lib::load("es2022.full"),
                     }
                 } else if specified {
