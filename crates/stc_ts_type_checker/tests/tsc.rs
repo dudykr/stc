@@ -344,6 +344,8 @@ fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
             "es2020" => return vec![EsVersion::Es2020],
             "es2021" => return vec![EsVersion::Es2021],
             "es2022" => return vec![EsVersion::Es2022],
+            // TODO(upstream): enable es2023
+            // "es2023" => return vec![EsVersion::Es2023],
             "esnext" => return vec![EsVersion::EsNext],
             _ => {}
         }
@@ -546,10 +548,11 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2017 => Lib::load("es2017.full"),
                         EsVersion::Es2018 => Lib::load("es2018.full"),
                         EsVersion::Es2019 => Lib::load("es2019.full"),
-                        _ => Lib::load("es2020.full"),
-                        // TODO(kdy1): Enable when we support es2021
-                        // EsVersion::Es2021 => Lib::load("es2021.full"),
-                        // EsVersion::Es2022 => Lib::load("es2022.full"),
+                        EsVersion::Es2021 => Lib::load("es2021.full"),
+                        EsVersion::Es2022 => Lib::load("es2022.full"),
+                        // TODO(upstream): enable es2023
+                        // EsVersion::Es2023 => Lib::load("es2023.full"),
+                        _ => Lib::load("es2022.full"),
                     }
                 } else if specified {
                     libs_with_deps(&libs)
@@ -842,46 +845,73 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
 
         match l {
             Lib::Es5 | Lib::Es5Full => {}
-            Lib::Es2015
+
+            Lib::Es2015Collection
             | Lib::Es2015Core
+            | Lib::Es2015
             | Lib::Es2015Full
-            | Lib::Es2015Collection
-            | Lib::Es2015SymbolWellknown
             | Lib::Es2015Generator
             | Lib::Es2015Iterable
             | Lib::Es2015Promise
             | Lib::Es2015Proxy
             | Lib::Es2015Reflect
-            | Lib::Es2015Symbol => add(libs, Lib::Es5Full),
-            Lib::Es2016 | Lib::Es2016ArrayInclude | Lib::Es2016Full => add(libs, Lib::Es2015Full),
+            | Lib::Es2015Symbol
+            | Lib::Es2015SymbolWellknown => add(libs, Lib::Es2015Full),
+
+            Lib::Es2016ArrayInclude | Lib::Es2016 | Lib::Es2016Full => add(libs, Lib::Es2016Full),
             Lib::Es2017
-            | Lib::Es2017Sharedmemory
             | Lib::Es2017Full
             | Lib::Es2017Intl
             | Lib::Es2017Object
+            | Lib::Es2017Sharedmemory
             | Lib::Es2017String
-            | Lib::Es2017Typedarrays => add(libs, Lib::Es2016Full),
-            Lib::Es2018
-            | Lib::Es2018Asyncgenerator
+            | Lib::Es2017Typedarrays => add(libs, Lib::Es2017Full),
+
+            Lib::Es2018Asyncgenerator
             | Lib::Es2018Asynciterable
+            | Lib::Es2018
+            | Lib::Es2018Full
             | Lib::Es2018Intl
             | Lib::Es2018Promise
-            | Lib::Es2018Regexp
-            | Lib::Es2018Full => add(libs, Lib::Es2017Full),
-            Lib::Es2019 | Lib::Es2019Array | Lib::Es2019Full | Lib::Es2019Object | Lib::Es2019String | Lib::Es2019Symbol => {
-                add(libs, Lib::Es2018Full)
-            }
-            Lib::Es2020
-            | Lib::Es2020Bigint
+            | Lib::Es2018Regexp => add(libs, Lib::Es2018Full),
+
+            Lib::Es2019Array
+            | Lib::Es2019
+            | Lib::Es2019Full
+            | Lib::Es2019Object
+            | Lib::Es2019String
+            | Lib::Es2019Symbol
+            | Lib::Es2019Intl => add(libs, Lib::Es2019Full),
+
+            Lib::Es2020Bigint
+            | Lib::Es2020
             | Lib::Es2020Full
             | Lib::Es2020Intl
             | Lib::Es2020Promise
             | Lib::Es2020Sharedmemory
             | Lib::Es2020String
-            | Lib::Es2020SymbolWellknown => add(libs, Lib::Es2019Full),
+            | Lib::Es2020SymbolWellknown
+            | Lib::Es2020Date
+            | Lib::Es2020Number => add(libs, Lib::Es2020Full),
 
-            Lib::Esnext | Lib::EsnextIntl | Lib::EsnextPromise | Lib::EsnextString | Lib::EsnextWeakref | Lib::EsnextFull => {
-                add(libs, Lib::Es2020Full)
+            Lib::Es2021 | Lib::Es2021Full | Lib::Es2021Weakref | Lib::Es2021Intl | Lib::Es2021Promise | Lib::Es2021String => {
+                add(libs, Lib::Es2021Full)
+            }
+
+            Lib::Es2022
+            | Lib::Es2022Array
+            | Lib::Es2022Error
+            | Lib::Es2022Object
+            | Lib::Es2022Full
+            | Lib::Es2022Intl
+            | Lib::Es2022Sharedmemory
+            | Lib::Es2022String
+            | Lib::Es2022Regexp => add(libs, Lib::Es2022Full),
+
+            Lib::Es2023 | Lib::Es2023Array | Lib::Es2023Full => add(libs, Lib::Es2023Full),
+
+            Lib::Esnext | Lib::EsnextFull | Lib::EsnextIntl | Lib::EsnextPromise | Lib::EsnextString | Lib::EsnextWeakref => {
+                add(libs, Lib::Es2022Full)
             }
 
             Lib::Dom
@@ -891,7 +921,9 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
             | Lib::Scripthost
             | Lib::WebworkerGenerated
             | Lib::WebworkerImportscripts
-            | Lib::WebworkerIterableGenerated => {}
+            | Lib::WebworkerIterableGenerated
+            | Lib::Decorators
+            | Lib::DecoratorsLegacy => {}
         }
 
         for l in l.deps() {

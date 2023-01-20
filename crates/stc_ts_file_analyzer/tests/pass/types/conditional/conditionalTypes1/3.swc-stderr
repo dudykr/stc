@@ -6,7 +6,8 @@
    `----
 
 Error: 
-  > T extends (null | undefined) ? never : T
+  > (T & {
+  | })
 
   x Type
    ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/3.ts:2:5]
@@ -15,4 +16,5 @@ Error:
    `----
 
 Error: 
-  > T extends (null | undefined) ? never : T
+  > (T & {
+  | })
