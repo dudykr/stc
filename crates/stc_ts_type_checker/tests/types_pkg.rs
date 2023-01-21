@@ -18,7 +18,6 @@ fn test_node() {
 }
 
 #[test]
-#[ignore = "Not implemented yet"]
 fn test_react() {
     run_tests_for_types_pkg("@types/react/index.d.ts");
 }
