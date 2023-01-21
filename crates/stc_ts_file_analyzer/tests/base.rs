@@ -14,7 +14,7 @@ use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
-use stc_ts_env::{Env, ModuleConfig, Rule};
+use stc_ts_env::{Env, JsxMode, ModuleConfig, Rule};
 use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
@@ -363,6 +363,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                 suppress_excess_property_errors: false,
                 suppress_implicit_any_index_errors: false,
                 use_define_property_for_class_fields: false,
+                jsx: JsxMode::Preserve,
             };
 
             for line in fm.src.lines() {

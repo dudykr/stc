@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
@@ -210,4 +210,19 @@ pub enum JsxMode {
     ReactNative,
     ReactJsx,
     ReactJsxdev,
+}
+
+impl FromStr for JsxMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "preserve" => Ok(JsxMode::Preserve),
+            "react" => Ok(JsxMode::React),
+            "react-native" => Ok(JsxMode::ReactNative),
+            "react-jsx" => Ok(JsxMode::ReactJsx),
+            "react-jsxdev" => Ok(JsxMode::ReactJsxdev),
+            _ => Err(()),
+        }
+    }
 }
