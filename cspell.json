@@ -37,6 +37,7 @@
         "isize",
         "itertools",
         "jemalloc",
+        "Jsxdev",
         "keyof",
         "libcore",
         "libpanic",
