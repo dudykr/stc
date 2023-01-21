@@ -192,7 +192,11 @@ impl Analyzer<'_, '_> {
 
                 return prev;
             }
-
+            // `never` extends all types because it's bottom type in TypeScript
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                ..
+            }) => return Some(true),
             _ => {}
         }
 
