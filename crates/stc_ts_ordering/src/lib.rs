@@ -5,6 +5,8 @@
 #![feature(specialization)]
 #![feature(box_patterns)]
 
+use std::cmp;
+
 use either::Either;
 use rayon::prelude::*;
 use swc_common::collections::{AHashMap, AHashSet};
@@ -29,20 +31,26 @@ where
     let usages = nodes
         .par_iter()
         .map(|node| {
+            let precedence = node.precedence();
             let decls = node.get_decls();
 
-            if decls.is_empty() {
+            let v = if decls.is_empty() {
                 Either::Left(node.uses())
             } else {
                 Either::Right(decls)
-            }
+            };
+
+            (precedence, v)
         })
         .collect::<Vec<_>>();
 
     let mut declared_by: AHashMap<_, Vec<usize>> = Default::default();
     let mut used_by_idx: AHashMap<usize, AHashSet<_>> = Default::default();
 
-    for (idx, usage) in usages.into_iter().enumerate() {
+    let mut precedences = vec![];
+    for (idx, (precedence, usage)) in usages.into_iter().enumerate() {
+        precedences.push(precedence);
+
         match usage {
             Either::Left(used) => {
                 used_by_idx.entry(idx).or_default().extend(used);
@@ -65,5 +73,10 @@ where
         nodes.len(),
     );
 
-    calc_order(cycles, &mut graph, nodes.len())
+    let mut order = calc_order(cycles, &mut graph, nodes.len());
+
+    // This sort should be a stable sort
+    order.sort_by_key(|indexes| cmp::Reverse(indexes.iter().map(|idx| precedences[*idx]).max()));
+
+    order
 }

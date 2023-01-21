@@ -21,6 +21,13 @@ pub struct TypedId {
 impl Sortable for RStmt {
     type Id = TypedId;
 
+    fn precedence(&self) -> u8 {
+        match self {
+            RStmt::Decl(RDecl::TsModule(box RTsModuleDecl { global: true, .. })) => 255,
+            _ => 0,
+        }
+    }
+
     fn get_decls(&self) -> AHashMap<Self::Id, AHashSet<Self::Id>> {
         ids_declared_by(self)
     }
@@ -32,6 +39,13 @@ impl Sortable for RStmt {
 
 impl Sortable for RModuleItem {
     type Id = TypedId;
+
+    fn precedence(&self) -> u8 {
+        match self {
+            RModuleItem::Stmt(s) => s.precedence(),
+            _ => 0,
+        }
+    }
 
     fn get_decls(&self) -> AHashMap<Self::Id, AHashSet<Self::Id>> {
         ids_declared_by(self)
