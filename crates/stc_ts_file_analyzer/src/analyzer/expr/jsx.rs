@@ -2,6 +2,7 @@ use stc_ts_ast_rnode::{
     RBool, RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
     RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText, RTsLit,
 };
+use stc_ts_env::JsxMode;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
@@ -42,7 +43,7 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to get type of an intrinsic jsx element")
         } else {
-            if !self.ctx.in_declare {
+            if !self.ctx.in_declare && !matches!(self.rule().jsx, JsxMode::Preserve) {
                 self.storage
                     .report(ErrorKind::ImplicitAny { span }.context("jsx namespace not found"))
             }

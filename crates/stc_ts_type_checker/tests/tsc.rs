@@ -514,10 +514,9 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     // Ignored as we don't generate them.
                 } else if s.to_lowercase().starts_with("usedefineforclassfields") {
                     rule.use_define_property_for_class_fields = true;
-                } else if s.to_lowercase().starts_with("noemit")
-                    || s.to_lowercase().starts_with("jsx")
-                    || s.to_lowercase().starts_with("preserveconstenums")
-                {
+                } else if s.to_lowercase().starts_with("jsx") {
+                    rule.jsx = s["jsx:".len()..].trim().to_lowercase().parse().unwrap();
+                } else if s.to_lowercase().starts_with("noemit") || s.to_lowercase().starts_with("preserveconstenums") {
                     // Ignored as we only checks type.
                 } else if s.starts_with("strict") {
                     let strict = true;
