@@ -12,7 +12,7 @@ use stc_ts_types::{
     Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement, TypeLit,
     TypeParam,
 };
-use stc_utils::{cache::Freeze, debug_ctx, stack};
+use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
@@ -561,9 +561,6 @@ impl Analyzer<'_, '_> {
 
         let l = dump_type_as_string(left);
         let r = dump_type_as_string(right);
-
-        let _panic_ctx = debug_ctx!(format!("left = {}", l));
-        let _panic_ctx = debug_ctx!(format!("right = {}", r));
 
         if data
             .dejavu

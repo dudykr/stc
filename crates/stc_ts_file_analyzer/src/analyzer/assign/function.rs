@@ -324,9 +324,6 @@ impl Analyzer<'_, '_> {
                     .context("tried to expand return type of rhs as a step of function assignment")?
                     .freezed();
 
-                let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
-                let _panic_ctx = debug_ctx!(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
-
                 return self
                     .assign_to_fn_like(
                         data,

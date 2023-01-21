@@ -26,7 +26,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, panic_ctx, stack,
+    debug_ctx, stack,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -1115,8 +1115,6 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
         });
-
-        let _panic = panic_ctx!(format!("find_local_type({})", name));
 
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
