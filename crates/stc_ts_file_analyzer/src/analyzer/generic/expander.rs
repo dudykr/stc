@@ -233,6 +233,10 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
+            })
+            | Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
             }) => return Some(false),
             Type::Union(parent) => {
                 let mut has_false = false;
