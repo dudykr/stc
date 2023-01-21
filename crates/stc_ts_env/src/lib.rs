@@ -198,4 +198,16 @@ pub struct Rule {
     pub no_unused_locals: bool,
     pub no_unused_parameters: bool,
     pub use_define_property_for_class_fields: bool,
+
+    pub jsx: JsxMode,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub enum JsxMode {
+    #[default]
+    Preserve,
+    React,
+    ReactNative,
+    ReactJsx,
+    ReactJsxdev,
 }

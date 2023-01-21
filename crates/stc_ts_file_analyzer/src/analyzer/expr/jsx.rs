@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to get type of an intrinsic jsx element")
         } else {
-            if !self.ctx.in_declare {
+            if !self.ctx.in_declare && matches!(self.rule().jsx, JsxOption) {
                 self.storage
                     .report(ErrorKind::ImplicitAny { span }.context("jsx namespace not found"))
             }
