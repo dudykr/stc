@@ -19,7 +19,7 @@ use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, panic_ctx, AHashMap, AHashSet};
+use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
@@ -489,7 +489,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_opt_chain: false,
                 in_declare: is_dts,
                 in_fn_without_body: false,
-                in_global: false,
+                in_global: !is_builtin && is_dts,
                 in_export_default_expr: false,
                 in_async: false,
                 in_generator: false,
@@ -768,8 +768,6 @@ impl Analyzer<'_, '_> {
 
         let ctxt = self.storage.module_id(0);
         let path = self.storage.path(ctxt);
-
-        let _panic = panic_ctx!(format!("Validate({}, module_id = {:?})", path, ctxt));
 
         let items_ref = m.body.iter().collect::<Vec<_>>();
         self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);

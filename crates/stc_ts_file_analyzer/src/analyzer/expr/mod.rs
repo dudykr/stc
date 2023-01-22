@@ -27,7 +27,7 @@ use stc_ts_types::{
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 use tracing::{debug, info, warn, Level};
 use ty::TypeExt;
@@ -103,7 +103,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let _stack = stack::start(64);
-        let _ctx = debug_ctx!(format!("validate\nExpr: {:?}", e));
+        let _ctx = debug_ctx!(format!(
+            "validate {}\n{}\nExpr: {:?}",
+            self.cm.span_to_string(e.span()),
+            self.cm.span_to_snippet(e.span()).unwrap_or_else(|_| "no-source".into()),
+            e
+        ));
 
         let span = e.span();
         let need_type_param_handling = match e {
@@ -305,7 +310,7 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts.assert_clone_cheap();
 
-        if !self.is_builtin {
+        if !self.is_builtin && !ty.is_any() {
             debug_assert_ne!(
                 ty.span(),
                 DUMMY_SP,
@@ -1606,7 +1611,7 @@ impl Analyzer<'_, '_> {
                 Some(&self.scope)
             };
             if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
-                if this.is_this() {
+                if this.normalize_instance().is_this() {
                     return Err(ErrorKind::NoSuchProperty {
                         span,
                         obj: Some(box obj.clone()),
@@ -3816,22 +3821,8 @@ impl Analyzer<'_, '_> {
                             Type::Conditional(_) => {}
                             Type::Tuple(_) => {}
                             Type::Array(_) => {}
-                            Type::Union(ty) => {
-                                // TODO(kdy1): Expand types
-                                if !self.is_builtin {
-                                    if cfg!(debug_assertions) {
-                                        dbg!(&ty);
-                                    }
-                                }
-                            }
-                            Type::Intersection(ty) => {
-                                // TODO(kdy1): Expand types
-                                if !self.is_builtin {
-                                    if cfg!(debug_assertions) {
-                                        dbg!(&ty);
-                                    }
-                                }
-                            }
+                            Type::Union(ty) => {}
+                            Type::Intersection(ty) => {}
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
                             Type::Arc(_) => {}

@@ -17,7 +17,7 @@ use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, early_error, panic_ctx};
+use stc_utils::{cache::Freeze, early_error};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, FileName, SourceMap, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::Module;
@@ -281,8 +281,6 @@ impl Checker {
     }
 
     fn analyze_non_circular_module(&self, module_id: ModuleId, path: Arc<FileName>) -> Type {
-        let _panic = panic_ctx!(format!("analyze_non_circular_module({})", path));
-
         let start = Instant::now();
 
         let is_dts = match &*path {
@@ -297,8 +295,6 @@ impl Checker {
             .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", module_id, path));
         let top_level_mark = self.module_graph.top_level_mark(module_id);
         module = module.fold_with(&mut resolver(self.env.shared().marks().unresolved_mark(), top_level_mark, true));
-
-        let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
         let mut module = RModule::from_orig(&mut node_id_gen, module);
 

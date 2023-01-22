@@ -11,13 +11,12 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
 };
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::Freeze,
-    debug_ctx,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_atoms::JsWord;
@@ -807,7 +806,6 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .freezed();
-        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&orig_ty)));
 
         let ty = orig_ty.normalize();
 
@@ -838,8 +836,6 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
-                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(ty)));
-
                         var_ty.freeze();
 
                         self.assign_with_opts(

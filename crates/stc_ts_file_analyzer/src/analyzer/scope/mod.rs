@@ -22,12 +22,11 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
-    TypeParamInstantiation,
+    KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, panic_ctx, stack,
+    debug_ctx, stack,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -810,11 +809,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.is_builtin {
+        if self.is_builtin || self.ctx.is_dts {
             let ty = ty.freezed();
 
-            self.storage
-                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
+            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty.clone(), false);
+
+            if !self.is_builtin {
+                self.storage.export_type(ty.span(), self.ctx.module_id, name.clone());
+            }
+
             self.scope.register_type(name, ty.clone(), false);
 
             ty
@@ -1112,8 +1115,6 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
         });
-
-        let _panic = panic_ctx!(format!("find_local_type({})", name));
 
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
