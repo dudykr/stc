@@ -10,4 +10,4 @@ export RUST_MIN_STACK=$((16 * 1024 * 1024))
 export CARGO_PROFILE_RELEASE_DEBUG=true
 export STC_SKIP_EXEC=1
 
-cargo profile instruments -t time --features swc_common/concurrent --features tracing/max_level_off --features stc_ts_file_analyzer/no-threading --release --test types_pkg $@
+cargo profile instruments -t time --features swc_common/concurrent --features tracing/max_level_off --features stc_ts_file_analyzer/no-threading --test types_pkg $@

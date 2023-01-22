@@ -9,7 +9,6 @@ use parking_lot::{Mutex, RwLock};
 use petgraph::algo::tarjan_scc;
 use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
-use stc_utils::panic_ctx;
 use swc_atoms::JsWord;
 use swc_common::{collections::AHashMap, comments::Comments, FileName, Mark, SourceMap, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::{EsVersion, Module};
@@ -328,8 +327,6 @@ where
         if !resolve_all {
             self.started.insert(module_id, module.clone());
         }
-
-        let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
 
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 

@@ -2078,8 +2078,6 @@ impl Type {
             return;
         }
 
-        let _ctx = debug_ctx!(format!("{:?}", self));
-
         self.visit_with(&mut AssertValid);
     }
 
