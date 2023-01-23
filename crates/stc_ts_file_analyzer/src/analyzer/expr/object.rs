@@ -179,12 +179,6 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        if self.is_always_undefined(&rhs) {
-            self.storage
-                .report(ErrorKind::NonObjectInSpread { span, ty: box rhs.clone() }.into());
-            return Ok(Type::any(to.span(), Default::default()));
-        }
-
         if let Type::Function(..) = to.normalize() {
             // objectSpread.ts says
             //
@@ -230,6 +224,12 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {}
+        }
+
+        if self.is_always_undefined(&rhs) {
+            self.storage
+                .report(ErrorKind::NonObjectInSpread { span, ty: box rhs.clone() }.into());
+            return Ok(Type::any(to.span(), Default::default()));
         }
 
         let mut to = to.foldable();
