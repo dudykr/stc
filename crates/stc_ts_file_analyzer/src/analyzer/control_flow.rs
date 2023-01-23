@@ -374,37 +374,63 @@ impl Analyzer<'_, '_> {
 
         let mut cons_ends_with_unreachable = false;
 
-        let ends_with_ret = stmt.cons.ends_with_ret();
+        let cons_ends_with_ret = stmt.cons.ends_with_ret();
 
         self.cur_facts = prev_facts.clone();
-        self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
-            stmt.cons.visit_with(child);
+        let facts_from_cons = self
+            .with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+                stmt.cons.visit_with(child);
 
-            cons_ends_with_unreachable = child.ctx.in_unreachable;
+                cons_ends_with_unreachable = child.ctx.in_unreachable;
 
-            Ok(())
-        })
-        .report(&mut self.storage);
+                Ok(child.cur_facts.true_facts.take())
+            })
+            .report(&mut self.storage);
 
         let mut alt_ends_with_unreachable = None;
 
-        if let Some(alt) = &stmt.alt {
+        let facts_from_alt = if let Some(alt) = &stmt.alt {
             self.cur_facts = prev_facts.clone();
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
                 alt.visit_with(child);
 
                 alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
 
-                Ok(())
+                Ok(child.cur_facts.true_facts.take())
             })
-            .report(&mut self.storage);
-        }
+            .report(&mut self.storage)
+        } else {
+            None
+        };
 
         self.cur_facts = prev_facts;
 
-        if ends_with_ret {
+        if cons_ends_with_ret {
             self.cur_facts.true_facts += false_facts;
             return Ok(());
+        }
+
+        if let (Some(facts_from_cons), Some(facts_from_alt)) = (facts_from_cons, facts_from_alt) {
+            // Intersect type facts from cons and alt
+
+            for (k, v) in facts_from_cons.facts {
+                if let Some(&v2) = facts_from_alt.facts.get(&k) {
+                    *self.cur_facts.true_facts.facts.entry(k).or_insert(TypeFacts::None) |= v & v2;
+                }
+            }
+
+            for (k, types1) in facts_from_cons.excludes {
+                if let Some(types2) = facts_from_alt.excludes.get(&k) {
+                    let types = types1
+                        .into_iter()
+                        .filter(|t1| types2.iter().any(|t2| t1.type_eq(t2)))
+                        .collect::<Vec<_>>();
+
+                    if !types.is_empty() {
+                        self.cur_facts.true_facts.excludes.entry(k).or_default().extend(types);
+                    }
+                }
+            }
         }
 
         if cons_ends_with_unreachable {

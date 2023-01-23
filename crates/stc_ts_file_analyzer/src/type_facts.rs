@@ -3,6 +3,12 @@
 use bitflags::bitflags;
 use swc_common::add_bitflags;
 
+impl Default for TypeFacts {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 bitflags! {
     pub struct TypeFacts: u32 {
         const None = 0;
