@@ -334,6 +334,7 @@ controlFlow/controlFlowParameter.ts
 controlFlow/controlFlowStringIndex.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
+controlFlow/controlFlowTypeofObject.ts
 controlFlow/controlFlowWhileStatement.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
