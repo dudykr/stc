@@ -83,18 +83,17 @@ struct Stats {
 
 impl fmt::Debug for Stats {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut s = f.debug_struct("Stats");
-        let mut fs = s
-            .field("required_error", &self.required_error)
+        let mut stat = f.debug_struct("Stats");
+        stat.field("required_error", &self.required_error)
             .field("matched_error", &self.matched_error)
             .field("extra_error", &self.extra_error)
             .field("panic", &self.panic);
 
         if self.unimplemented > 0 {
-            fs = fs.field("unimplemented", &self.unimplemented);
+            stat.field("unimplemented", &self.unimplemented);
         }
 
-        fs.finish()
+        stat.finish()
     }
 }
 
