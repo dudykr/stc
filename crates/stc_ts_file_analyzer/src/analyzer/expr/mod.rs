@@ -4372,11 +4372,9 @@ impl Analyzer<'_, '_> {
         let ty = self.type_of_var(i, mode, type_args)?;
         if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
             // `i` is truthy
-            self.cur_facts.true_facts.facts.insert(
-                i.into(),
-                TypeFacts::Truthy | TypeFacts::NEUndefinedOrNull | TypeFacts::NEUndefined | TypeFacts::NENull,
-            );
-            self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
+            *self.cur_facts.true_facts.facts.entry(i.into()).or_default() |=
+                TypeFacts::Truthy | TypeFacts::NEUndefinedOrNull | TypeFacts::NEUndefined | TypeFacts::NENull;
+            *self.cur_facts.false_facts.facts.entry(i.into()).or_default() |= TypeFacts::Falsy;
         }
 
         if ty.is_interface() || ty.is_class() || ty.is_class_def() || ty.is_alias() {
