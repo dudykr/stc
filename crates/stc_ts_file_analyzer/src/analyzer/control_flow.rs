@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
         let cons_ends_with_ret = stmt.cons.ends_with_ret();
 
         self.cur_facts = prev_facts.clone();
-        self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+        self.with_child(ScopeKind::Flow, true_facts.clone(), |child: &mut Analyzer| {
             stmt.cons.visit_with(child);
 
             cons_ends_with_unreachable = child.ctx.in_unreachable;
@@ -405,6 +405,29 @@ impl Analyzer<'_, '_> {
         if cons_ends_with_ret {
             self.cur_facts.true_facts += false_facts;
             return Ok(());
+        }
+
+        {
+            // Intersect type facts from cons and alt
+
+            for (k, v) in true_facts.facts {
+                if let Some(&v2) = false_facts.facts.get(&k) {
+                    *self.cur_facts.true_facts.facts.entry(k).or_insert(TypeFacts::None) |= v & v2;
+                }
+            }
+
+            for (k, types1) in true_facts.excludes {
+                if let Some(types2) = false_facts.excludes.get(&k) {
+                    let types = types1
+                        .into_iter()
+                        .filter(|t1| types2.iter().any(|t2| t1.type_eq(t2)))
+                        .collect::<Vec<_>>();
+
+                    if !types.is_empty() {
+                        self.cur_facts.true_facts.excludes.entry(k).or_default().extend(types);
+                    }
+                }
+            }
         }
 
         if cons_ends_with_unreachable {
