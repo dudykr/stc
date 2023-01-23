@@ -36,7 +36,7 @@ tracing = {version = "0.1.37", features = ["release_max_level_off"]}
 tracing-subscriber = {version = "0.2.19", features = ["env-filter"]}
 
 [profile.release]
-# lto = true
+lto = true
 # Strip debug symbols
 # strip = "symbols"
 
