@@ -3126,12 +3126,15 @@ impl Analyzer<'_, '_> {
 
         if let Type::Predicate(p) = ret_ty.normalize() {
             let ty = match &p.ty {
-                Some(v) => v.normalize(),
+                Some(v) => v,
                 None => return,
             };
 
             match &p.param_name {
-                RTsThisTypeOrIdent::TsThisType(this) => {}
+                RTsThisTypeOrIdent::TsThisType(this) => {
+                    //
+                    self.store_call_fact_for_var(this.span, Id::word("this".into()), &ty.clone().freezed());
+                }
                 RTsThisTypeOrIdent::Ident(arg_id) => {
                     for (idx, param) in params.iter().enumerate() {
                         match &param.pat {

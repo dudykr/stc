@@ -411,7 +411,7 @@ impl Analyzer<'_, '_> {
                             .into_owned()
                             .freezed();
 
-                        if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type, Default::default()) {
+                        if let Some(v) = self.extends(actual_span, &c.check_type, &c.extends_type, Default::default()) {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
                             let ty = self
