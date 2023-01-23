@@ -129,6 +129,12 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS2698
+    NonObjectInSpread {
+        span: Span,
+        ty: Box<Type>,
+    },
+
     /// TS2312
     NotExtendableType {
         span: Span,
@@ -2015,6 +2021,8 @@ impl ErrorKind {
             ErrorKind::TargetLacksConstructSignature { .. } => 7009,
 
             ErrorKind::NotExtendableType { .. } => 2312,
+
+            ErrorKind::NonObjectInSpread { .. } => 2698,
 
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
