@@ -3126,7 +3126,7 @@ impl Analyzer<'_, '_> {
 
         if let Type::Predicate(p) = ret_ty.normalize() {
             let ty = match &p.ty {
-                Some(v) => v.normalize(),
+                Some(v) => v,
                 None => return,
             };
 
