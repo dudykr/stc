@@ -84,6 +84,10 @@ impl Error {
 
         err.emit();
     }
+
+    pub fn is_unimplemented(&self) -> bool {
+        matches!(self.inner.as_ref(), ErrorKind::Unimplemented { .. })
+    }
 }
 
 impl Debug for Error {

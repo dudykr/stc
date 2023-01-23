@@ -12,7 +12,7 @@ mod common;
 
 use std::{
     collections::HashSet,
-    env, fs,
+    env, fmt, fs,
     fs::{read_to_string, File},
     mem,
     panic::{catch_unwind, resume_unwind},
@@ -67,7 +67,7 @@ struct RefError {
     pub code: String,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Default, Clone)]
 struct Stats {
     required_error: usize,
     /// Correct error count.
@@ -77,6 +77,25 @@ struct Stats {
 
     /// Tests failed with panic
     panic: usize,
+
+    unimplemented: usize,
+}
+
+impl fmt::Debug for Stats {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut s = f.debug_struct("Stats");
+        let mut fs = s
+            .field("required_error", &self.required_error)
+            .field("matched_error", &self.matched_error)
+            .field("extra_error", &self.extra_error)
+            .field("panic", &self.panic);
+
+        if self.unimplemented > 0 {
+            fs = fs.field("unimplemented", &self.unimplemented);
+        }
+
+        fs.finish()
+    }
 }
 
 fn is_all_test_enabled() -> bool {
@@ -149,6 +168,7 @@ fn record_stat(stats: Stats) -> Stats {
     guard.matched_error += stats.matched_error;
     guard.extra_error += stats.extra_error;
     guard.panic += stats.panic;
+    guard.unimplemented += stats.unimplemented;
 
     let stats = (*guard).clone();
 
@@ -629,6 +649,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     let full_ref_errors = expected_errors.clone();
     let full_ref_err_cnt = full_ref_errors.len();
+    let mut unimplemented_count: usize = 0;
 
     let tester = Tester::new();
     let diagnostics = tester
@@ -660,6 +681,9 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
             for e in errors {
+                if e.is_unimplemented() {
+                    unimplemented_count += 1;
+                }
                 e.emit(&handler);
             }
 
@@ -755,7 +779,8 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     let extra_err_count = extra_errors.len();
     stats.required_error += expected_errors.len();
-    stats.extra_error += extra_err_count;
+    stats.extra_error += extra_err_count - unimplemented_count;
+    stats.unimplemented = unimplemented_count;
 
     // Print per-test stats so we can prevent regressions.
     if cfg!(debug_assertions) {
