@@ -47,6 +47,9 @@ impl Analyzer<'_, '_> {
             child.ctx.in_fn_with_return_type = f.return_type.is_some();
             child.ctx.in_async = f.is_async;
             child.ctx.in_generator = f.is_generator;
+            child.ctx.in_static_method = false;
+            child.ctx.in_static_property_initializer = false;
+            child.ctx.in_static_block = false;
 
             let mut errors = Errors::default();
 
