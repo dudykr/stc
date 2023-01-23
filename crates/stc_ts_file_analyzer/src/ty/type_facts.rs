@@ -123,12 +123,23 @@ impl Analyzer<'_, '_> {
                     span,
                     vec![
                         ty,
-                        Type::Keyword(KeywordType {
-                            kind: TsKeywordTypeKind::TsObjectKeyword,
-                            metadata: Default::default(),
+                        Type::new_union_without_dedup(
                             span,
-                            tracker: Default::default(),
-                        }),
+                            vec![
+                                Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsObjectKeyword,
+                                    metadata: Default::default(),
+                                    span,
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsNullKeyword,
+                                    metadata: Default::default(),
+                                    span,
+                                    tracker: Default::default(),
+                                }),
+                            ],
+                        ),
                     ],
                 );
             }
