@@ -18,7 +18,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, StaticThis, Symbol, Union,
     UnionMetadata,
 };
@@ -3133,7 +3133,7 @@ impl Analyzer<'_, '_> {
             match &p.param_name {
                 RTsThisTypeOrIdent::TsThisType(this) => {
                     //
-                    self.add_deep_type_fact(this.span, Name::from(this.clone()), *ty.clone().freezed(), true)
+                    self.store_call_fact_for_var(this.span, Id::word("this".into()), &ty.clone().freezed());
                 }
                 RTsThisTypeOrIdent::Ident(arg_id) => {
                     for (idx, param) in params.iter().enumerate() {
