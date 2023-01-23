@@ -5,9 +5,9 @@ use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
-use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union, UnionMetadata};
+use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, TypeParam, Union, UnionMetadata};
 use stc_utils::cache::Freeze;
-use swc_common::{Spanned, SyntaxContext, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
@@ -104,9 +104,9 @@ impl Analyzer<'_, '_> {
         object_type: Option<&Type>,
     ) -> VResult<Type> {
         match prop {
-            RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
+            RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
-                self.append_type(to, prop_ty)
+                self.append_type(*dot3_token, to, prop_ty)
             }
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
@@ -154,14 +154,35 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(crate) fn is_always_undefined(&mut self, ty: &Type) -> bool {
+        if ty.is_undefined() {
+            return true;
+        }
+        match ty.normalize() {
+            Type::Union(ty) => ty.types.iter().all(|ty| self.is_always_undefined(ty)),
+            Type::Intersection(ty) => ty.types.iter().any(|ty| self.is_always_undefined(ty)),
+            Type::Param(TypeParam {
+                constraint: Some(constraint),
+                ..
+            }) => self.is_always_undefined(constraint),
+            _ => false,
+        }
+    }
+
     /// If rhs is an union type, return type will be union.
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn append_type(&mut self, to: Type, rhs: Type) -> VResult<Type> {
+    pub(super) fn append_type(&mut self, span: Span, to: Type, rhs: Type) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
+        }
+
+        if self.is_always_undefined(&rhs) {
+            self.storage
+                .report(ErrorKind::NonObjectInSpread { span, ty: box rhs.clone() }.into());
+            return Ok(Type::any(to.span(), Default::default()));
         }
 
         if let Type::Function(..) = to.normalize() {
@@ -204,7 +225,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
                 if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {
-                    return self.append_type(to, Type::TypeLit(rhs.into_owned()));
+                    return self.append_type(span, to, Type::TypeLit(rhs.into_owned()));
                 }
             }
 
@@ -232,7 +253,7 @@ impl Analyzer<'_, '_> {
                             types: rhs
                                 .types
                                 .into_iter()
-                                .map(|rhs| self.append_type(to.clone(), rhs))
+                                .map(|rhs| self.append_type(span, to.clone(), rhs))
                                 .collect::<Result<_, _>>()?,
                             metadata: UnionMetadata {
                                 common: common_metadata,
@@ -252,7 +273,7 @@ impl Analyzer<'_, '_> {
                     types: to
                         .types
                         .into_iter()
-                        .map(|to| self.append_type(to, rhs.clone()))
+                        .map(|to| self.append_type(span, to, rhs.clone()))
                         .collect::<Result<_, _>>()?,
                     metadata: to.metadata,
                     tracker: Default::default(),

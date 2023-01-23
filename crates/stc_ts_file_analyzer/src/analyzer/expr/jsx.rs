@@ -157,9 +157,9 @@ impl Analyzer<'_, '_> {
                         .into())
                     }
                 },
-                RJSXAttrOrSpread::SpreadElement(attr) => {
-                    let attr = attr.expr.validate_with_default(self)?;
-                    object = self.append_type(object, attr)?;
+                RJSXAttrOrSpread::SpreadElement(el) => {
+                    let attr = el.expr.validate_with_default(self)?;
+                    object = self.append_type(el.dot3_token, object, attr)?;
                 }
             }
         }
