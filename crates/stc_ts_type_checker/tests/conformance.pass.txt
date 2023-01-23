@@ -164,6 +164,7 @@ classes/classExpressions/genericClassExpressionInFunction.ts
 classes/classExpressions/modifierOnClassExpressionMemberInFunction.ts
 classes/classStaticBlock/classStaticBlock1.ts
 classes/classStaticBlock/classStaticBlock10.ts
+classes/classStaticBlock/classStaticBlock11.ts
 classes/classStaticBlock/classStaticBlock12.ts
 classes/classStaticBlock/classStaticBlock13.ts
 classes/classStaticBlock/classStaticBlock14.ts
