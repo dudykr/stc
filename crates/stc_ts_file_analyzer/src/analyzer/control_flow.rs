@@ -378,12 +378,12 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts = prev_facts.clone();
         let facts_from_cons = self
-            .with_child(ScopeKind::Flow, true_facts.clone(), |child: &mut Analyzer| {
+            .with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
                 stmt.cons.visit_with(child);
 
                 cons_ends_with_unreachable = child.ctx.in_unreachable;
 
-                Ok(())
+                Ok(child.cur_facts.true_facts.take())
             })
             .report(&mut self.storage);
 
@@ -396,9 +396,11 @@ impl Analyzer<'_, '_> {
 
                 alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
 
-                Ok(())
+                Ok(child.cur_facts.true_facts.take())
             })
-            .report(&mut self.storage);
+            .report(&mut self.storage)
+        } else {
+            None
         };
 
         self.cur_facts = prev_facts;
