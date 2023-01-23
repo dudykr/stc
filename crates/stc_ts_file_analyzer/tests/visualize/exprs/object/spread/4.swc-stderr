@@ -7,3 +7,13 @@
 
 Error: 
   > T
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/spread/4.ts:2:5]
+ 2 | return { ...arg }
+   :        ^^^^^^^^^^
+   `----
+
+Error: 
+  > ({
+  | } & T)
