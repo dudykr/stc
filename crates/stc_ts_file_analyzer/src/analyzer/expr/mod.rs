@@ -21,9 +21,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature, QueryExpr,
-    QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, Id, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
+    QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -46,7 +46,6 @@ use crate::{
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
-        TypeParamInstantiation,
     },
     type_facts::TypeFacts,
     util::RemoveTypes,
@@ -269,7 +268,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
-                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::JSXElement(expr) => expr.validate_with_args(self, type_ann),
 
@@ -3152,8 +3151,34 @@ impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
         match ty.normalize() {
-            Type::Interface(Interface { type_params, .. })
-            | Type::Alias(Alias { type_params, .. })
+            Type::Interface(Interface { type_params, body, .. }) => {
+                let mut params = HashMap::default();
+
+                if let Some(type_params) = type_params {
+                    for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+                        params.insert(param.name.clone(), arg.clone());
+                    }
+                }
+
+                if params.is_empty() {
+                    for type_elem in body {
+                        if let TypeElement::Constructor(ConstructorSignature {
+                            type_params: Some(type_params),
+                            ..
+                        }) = type_elem
+                        {
+                            for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+                                params.insert(param.name.clone(), arg.clone());
+                            }
+                        }
+                    }
+                }
+
+                if !params.is_empty() {
+                    return self.expand_type_params(&params, ty.clone(), Default::default());
+                }
+            }
+            Type::Alias(Alias { type_params, .. })
             | Type::Class(Class {
                 def: box ClassDef { type_params, .. },
                 ..
@@ -4348,6 +4373,14 @@ impl Analyzer<'_, '_> {
             // `i` is truthy
             self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
             self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
+        }
+
+        if ty.is_interface() || ty.is_class() || ty.is_class_def() || ty.is_alias() {
+            if let Some(type_args) = type_args {
+                if let Ok(new) = self.expand_generics_with_type_args(i.span, ty.clone(), type_args) {
+                    return Ok(new);
+                }
+            }
         }
 
         Ok(ty)

@@ -1,0 +1,54 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+ 12 | if (obj16 instanceof H) {
+    :     ^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+ 12 | if (obj16 instanceof H) {
+    :                      ^
+    `----
+
+Error: 
+  > HConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+ 12 | if (obj16 instanceof H) {
+    :     ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:13:3]
+ 13 | obj16; // H
+    : ^^^^^
+    `----
+
+Error: 
+  > H
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:14:3]
+ 14 | obj16.foo;
+    : ^^^^^
+    `----
+
+Error: 
+  > H
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:14:3]
+ 14 | obj16.foo;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > number

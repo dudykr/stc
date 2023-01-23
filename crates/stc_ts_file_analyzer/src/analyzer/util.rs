@@ -44,15 +44,26 @@ impl Analyzer<'_, '_> {
     /// `span` and `callee` is used only for error reporting.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn make_instance_from_type_elements(&mut self, span: Span, callee: &Type, elements: &[TypeElement]) -> VResult<Type> {
+        let mut ret_ty_vec = vec![];
         for member in elements {
             match member {
                 TypeElement::Constructor(c) => {
                     if let Some(ty) = &c.ret_ty {
-                        return Ok(*ty.clone());
+                        ret_ty_vec.push(*ty.clone());
                     }
                 }
                 _ => continue,
             }
+        }
+
+        if ret_ty_vec.len() == 1 {
+            if let Some(ty) = ret_ty_vec.pop() {
+                return Ok(ty);
+            }
+        }
+
+        if ret_ty_vec.len() > 1 {
+            return Ok(Type::new_union(span, ret_ty_vec));
         }
 
         Err(ErrorKind::NoNewSignature {

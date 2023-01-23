@@ -1,45 +1,90 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:15:1]
- 15 | if (obj13 instanceof G) {
-    :     ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:11:1]
+ 11 | if (obj4 instanceof B) {
+    :     ^^^^
     `----
 
 Error: 
-  > (G1 | G2)
+  > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:15:1]
- 15 | if (obj13 instanceof G) {
-    :                      ^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:11:1]
+ 11 | if (obj4 instanceof B) {
+    :                     ^
     `----
 
 Error: 
-  > GConstructor
+  > BConstructor
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:15:1]
- 15 | if (obj13 instanceof G) {
-    :     ^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:11:1]
+ 11 | if (obj4 instanceof B) {
+    :     ^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:17:3]
- 17 | obj13.foo1;
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:12:3]
+ 12 | obj4; // B<any>
+    : ^^^^
     `----
 
 Error: 
-  > G1
+  > B
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:17:3]
- 17 | obj13.foo1;
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
+ 13 | obj4.foo = "str";
+    : ^^^^
     `----
 
 Error: 
-  > number
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
+ 13 | obj4.foo = "str";
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
+ 13 | obj4.foo = "str";
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "str"
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
+ 14 | obj4.foo = 1;
+    : ^^^^
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
+ 14 | obj4.foo = 1;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
+ 14 | obj4.foo = 1;
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 1

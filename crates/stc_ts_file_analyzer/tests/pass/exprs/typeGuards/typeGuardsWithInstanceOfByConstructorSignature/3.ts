@@ -1,23 +1,22 @@
-interface EConstructor {
-  new (): E1 | E2;
+// has multiple construct signature
+interface CConstructor {
+  new (value: string): C1;
+  new (value: number): C2;
 }
-
-interface A {
+interface C1 {
   foo: string;
-}
-
-interface E1 {
-  foo: string;
+  c: string;
   bar1: number;
 }
-interface E2 {
+interface C2 {
   foo: string;
+  c: string;
   bar2: number;
 }
-declare var E: EConstructor;
+declare var C: CConstructor;
 
-var obj9: E1 | A;
-if (obj9 instanceof E) {
-  obj9.foo;
-  obj9.bar1;
+var obj6: any;
+if (obj6 instanceof C) {
+  obj6; // C1 | C2
+  obj6.foo;
 }

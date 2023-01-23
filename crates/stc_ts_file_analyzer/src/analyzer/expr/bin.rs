@@ -12,8 +12,8 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, TypeParam, Union,
-    UnionMetadata,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, TypeParam,
+    TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -132,10 +132,20 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Flow, true_facts_for_rhs.clone(), |child: &mut Analyzer| -> VResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
 
+                let any_type_param = TypeParamInstantiation {
+                    span,
+                    params: vec![Type::any(span, Default::default())],
+                };
+                let type_args = if let RExpr::Ident(..) = &**right {
+                    Some(&any_type_param)
+                } else {
+                    None
+                };
+
                 let truthy_lt;
                 let child_ctxt = (
                     TypeOfMode::RValue,
-                    None,
+                    type_args,
                     match op {
                         op!("??") | op!("&&") | op!("||") => match type_ann {
                             Some(ty) => Some(ty),
@@ -479,6 +489,7 @@ impl Analyzer<'_, '_> {
                                 .into(),
                             )
                         }
+
                         orig_ty.freeze();
 
                         //
@@ -1245,6 +1256,30 @@ impl Analyzer<'_, '_> {
             if ty.is_interface() {
                 return Ok(Type::never(span, Default::default()));
             }
+        }
+
+        if orig_ty.is_any() {
+            if ty.is_interface() || ty.is_type_lit() {
+                if let Ok(result) = self.access_property(
+                    span,
+                    &ty,
+                    &Key::Normal {
+                        span,
+                        sym: "prototype".into(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    Default::default(),
+                ) {
+                    if !result.is_any() {
+                        return Ok(result);
+                    }
+                }
+                if let Ok(result) = self.make_instance(span, &ty) {
+                    return Ok(result);
+                }
+            }
+            return Ok(ty.into_owned());
         }
 
         match ty.normalize() {

@@ -1,18 +1,15 @@
-// a type with a prototype, it overrides the construct signature
-interface GConstructor {
-  prototype: G1; // high priority
-  new (): G2; // low priority
+// a construct signature with generics
+interface BConstructor {
+  new <T>(): B<T>;
 }
-interface G1 {
-  foo1: number;
+interface B<T> {
+  foo: T;
 }
-interface G2 {
-  foo2: boolean;
-}
-declare var G: GConstructor;
+declare var B: BConstructor;
 
-var obj13: G1 | G2;
-if (obj13 instanceof G) {
-  // narrowed to G1. G1 is return type of prototype property.
-  obj13.foo1;
+var obj4: any;
+if (obj4 instanceof B) {
+  obj4; // B<any>
+  obj4.foo = "str";
+  obj4.foo = 1;
 }

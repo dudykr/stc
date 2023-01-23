@@ -1,25 +1,25 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:20:1]
- 20 | if (obj9 instanceof E) {
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:19:1]
+ 19 | if (obj6 instanceof C) {
     :     ^^^^
     `----
 
 Error: 
-  > (E1 | A)
+  > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:20:1]
- 20 | if (obj9 instanceof E) {
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:19:1]
+ 19 | if (obj6 instanceof C) {
     :                     ^
     `----
 
 Error: 
-  > EConstructor
+  > CConstructor
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:20:1]
- 20 | if (obj9 instanceof E) {
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:19:1]
+ 19 | if (obj6 instanceof C) {
     :     ^^^^^^^^^^^^^^^^^
     `----
 
@@ -27,37 +27,28 @@ Error:
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:21:3]
- 21 | obj9.foo;
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:20:3]
+ 20 | obj6; // C1 | C2
     : ^^^^
     `----
 
 Error: 
-  > E1
+  > (C1 | C2)
 
   x Type
     ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:21:3]
- 21 | obj9.foo;
+ 21 | obj6.foo;
+    : ^^^^
+    `----
+
+Error: 
+  > (C1 | C2)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:21:3]
+ 21 | obj6.foo;
     : ^^^^^^^^
     `----
 
 Error: 
   > string
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:22:3]
- 22 | obj9.bar1;
-    : ^^^^
-    `----
-
-Error: 
-  > E1
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/3.ts:22:3]
- 22 | obj9.bar1;
-    : ^^^^^^^^^
-    `----
-
-Error: 
-  > number
