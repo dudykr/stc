@@ -395,11 +395,11 @@ impl Analyzer<'_, '_> {
                                 let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
                                 if op == op!("==") {
-                                    self.cur_facts.true_facts.facts.insert(name.clone(), eq);
-                                    self.cur_facts.false_facts.facts.insert(name.clone(), neq);
+                                    *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
                                 } else {
-                                    self.cur_facts.true_facts.facts.insert(name.clone(), neq);
-                                    self.cur_facts.false_facts.facts.insert(name.clone(), eq);
+                                    *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
                                 }
                             }
                         }
