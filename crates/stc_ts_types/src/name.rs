@@ -5,8 +5,8 @@ use std::{
 
 use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RTsEntityName,
-    RTsThisTypeOrIdent,
+    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RThisExpr, RTsEntityName,
+    RTsThisType, RTsThisTypeOrIdent,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
@@ -77,6 +77,22 @@ impl From<Id> for Name {
     #[inline]
     fn from(v: Id) -> Name {
         Name(smallvec![v])
+    }
+}
+
+impl From<RThisExpr> for Name {
+    #[inline]
+    fn from(this: RThisExpr) -> Name {
+        let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+        Name(smallvec![this])
+    }
+}
+
+impl From<RTsThisType> for Name {
+    #[inline]
+    fn from(this: RTsThisType) -> Name {
+        let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+        Name(smallvec![this])
     }
 }
 

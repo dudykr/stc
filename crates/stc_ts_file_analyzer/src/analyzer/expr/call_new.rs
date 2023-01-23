@@ -20,6 +20,8 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, StaticThis, Symbol, Union,
+    name::Name, type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
+    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union,
     UnionMetadata,
 };
 use stc_ts_utils::PatExt;
@@ -3131,7 +3133,10 @@ impl Analyzer<'_, '_> {
             };
 
             match &p.param_name {
-                RTsThisTypeOrIdent::TsThisType(this) => {}
+                RTsThisTypeOrIdent::TsThisType(this) => {
+                    //
+                    self.add_deep_type_fact(this.span, Name::from(*this), *ty.clone().freezed(), true)
+                }
                 RTsThisTypeOrIdent::Ident(arg_id) => {
                     for (idx, param) in params.iter().enumerate() {
                         match &param.pat {
