@@ -1,3 +1,4 @@
+//@strict:true
 
 // Repro from #48468
 
