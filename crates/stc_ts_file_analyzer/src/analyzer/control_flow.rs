@@ -377,18 +377,19 @@ impl Analyzer<'_, '_> {
         let cons_ends_with_ret = stmt.cons.ends_with_ret();
 
         self.cur_facts = prev_facts.clone();
-        self.with_child(ScopeKind::Flow, true_facts.clone(), |child: &mut Analyzer| {
-            stmt.cons.visit_with(child);
+        let facts_from_cons = self
+            .with_child(ScopeKind::Flow, true_facts.clone(), |child: &mut Analyzer| {
+                stmt.cons.visit_with(child);
 
-            cons_ends_with_unreachable = child.ctx.in_unreachable;
+                cons_ends_with_unreachable = child.ctx.in_unreachable;
 
-            Ok(())
-        })
-        .report(&mut self.storage);
+                Ok(())
+            })
+            .report(&mut self.storage);
 
         let mut alt_ends_with_unreachable = None;
 
-        if let Some(alt) = &stmt.alt {
+        let facts_from_alt = if let Some(alt) = &stmt.alt {
             self.cur_facts = prev_facts.clone();
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
                 alt.visit_with(child);
@@ -398,7 +399,7 @@ impl Analyzer<'_, '_> {
                 Ok(())
             })
             .report(&mut self.storage);
-        }
+        };
 
         self.cur_facts = prev_facts;
 
@@ -407,17 +408,17 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        {
+        if let (Some(facts_from_cons), Some(facts_from_alt)) = (facts_from_cons, facts_from_alt) {
             // Intersect type facts from cons and alt
 
-            for (k, v) in true_facts.facts {
-                if let Some(&v2) = false_facts.facts.get(&k) {
+            for (k, v) in facts_from_cons.facts {
+                if let Some(&v2) = facts_from_alt.facts.get(&k) {
                     *self.cur_facts.true_facts.facts.entry(k).or_insert(TypeFacts::None) |= v & v2;
                 }
             }
 
-            for (k, types1) in true_facts.excludes {
-                if let Some(types2) = false_facts.excludes.get(&k) {
+            for (k, types1) in facts_from_cons.excludes {
+                if let Some(types2) = facts_from_alt.excludes.get(&k) {
                     let types = types1
                         .into_iter()
                         .filter(|t1| types2.iter().any(|t2| t1.type_eq(t2)))
