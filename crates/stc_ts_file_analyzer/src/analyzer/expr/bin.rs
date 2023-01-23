@@ -6,7 +6,7 @@ use std::{
 
 use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsInstantiation, RTsLit, RTsTypeParamInstantiation, RUnaryExpr,
+    RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -25,7 +25,7 @@ use tracing::info;
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{type_cast::CastableOpts, RExpr::TsInstantiation, TypeOfMode},
+        expr::{type_cast::CastableOpts, TypeOfMode},
         generic::ExtendsOpts,
         scope::ExpandOpts,
         types::NormalizeTypeOpts,
@@ -132,28 +132,20 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Flow, true_facts_for_rhs.clone(), |child: &mut Analyzer| -> VResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
 
-                let mut type_param = vec![];
-                if let TsInstantiation(RTsInstantiation {
-                    type_args: box RTsTypeParamInstantiation { params, .. },
-                    ..
-                }) = &**right
-                {
-                    for param in params {
-                        let ty = child.validate(&**param, ());
-                        if let Ok(ty) = ty {
-                            type_param.push(ty);
-                        }
-                    }
+                let any_type_param = TypeParamInstantiation {
+                    span,
+                    params: vec![Type::any(span, Default::default())],
                 };
-                if type_param.is_empty() {
-                    type_param.push(Type::any(span, Default::default()))
-                }
-                let type_args = TypeParamInstantiation { span, params: type_param };
+                let type_args = if let RExpr::Ident(..) = &**right {
+                    Some(&any_type_param)
+                } else {
+                    None
+                };
 
                 let truthy_lt;
                 let child_ctxt = (
                     TypeOfMode::RValue,
-                    Some(&type_args),
+                    type_args,
                     match op {
                         op!("??") | op!("&&") | op!("||") => match type_ann {
                             Some(ty) => Some(ty),
