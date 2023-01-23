@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
     /// Handle declaration merging. This method is used to avoid implementing
     /// same logic twice.
     fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> VResult<Option<Type>> {
-        if self.is_builtin || self.ctx.is_dts {
+        if self.is_builtin {
             return Ok(None);
         }
 
