@@ -776,9 +776,11 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         Err(err) => err,
     };
 
-    let extra_err_count = extra_errors.len();
-    stats.required_error += expected_errors.len();
-    stats.extra_error += extra_err_count - unimplemented_count;
+    let expected_count = expected_errors.len();
+    let extra_count = extra_errors.len();
+    let true_extra_count = extra_count - unimplemented_count;
+    stats.required_error += expected_count;
+    stats.extra_error += true_extra_count;
     stats.unimplemented = unimplemented_count;
 
     // Print per-test stats so we can prevent regressions.
@@ -796,7 +798,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         }
     }
 
-    if extra_errors.len() == expected_errors.len() {
+    if true_extra_count == expected_count {
         let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
         let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
 
@@ -810,26 +812,14 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             "\n============================================================\n{:?}
 ============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
              {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
-            err,
-            expected_errors.len(),
-            full_ref_err_cnt,
-            extra_err_count,
-            expected_errors,
-            extra_errors,
-            full_ref_errors,
-            full_actual_errors,
+            err, expected_count, full_ref_err_cnt, extra_count, expected_errors, extra_errors, full_ref_errors, full_actual_errors,
         );
     } else {
         eprintln!(
             "\n============================================================\n{:?}
 ============================================================\n{} unmatched errors out of {} errors. Got {} extra errors.\nWanted: \
              {:?}\nUnwanted: {:?}",
-            err,
-            expected_errors.len(),
-            full_ref_err_cnt,
-            extra_err_count,
-            expected_errors,
-            extra_errors,
+            err, expected_count, full_ref_err_cnt, extra_count, expected_errors, extra_errors,
         );
     }
     if !success {
