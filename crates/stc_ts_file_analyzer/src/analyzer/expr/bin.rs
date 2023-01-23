@@ -220,7 +220,7 @@ impl Analyzer<'_, '_> {
                 self.cur_facts.true_facts += true_facts_for_rhs;
 
                 for (k, v) in additional_false_facts.facts.drain() {
-                    *self.cur_facts.false_facts.facts.entry(k.clone()).or_insert(TypeFacts::None) &= v;
+                    *self.cur_facts.false_facts.facts.entry(k.clone()).or_default() &= v;
                 }
             }
 
