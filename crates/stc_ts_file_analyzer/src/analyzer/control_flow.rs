@@ -374,7 +374,7 @@ impl Analyzer<'_, '_> {
 
         let mut cons_ends_with_unreachable = false;
 
-        let ends_with_ret = stmt.cons.ends_with_ret();
+        let cons_ends_with_ret = stmt.cons.ends_with_ret();
 
         self.cur_facts = prev_facts.clone();
         self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
@@ -402,7 +402,7 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts = prev_facts;
 
-        if ends_with_ret {
+        if cons_ends_with_ret {
             self.cur_facts.true_facts += false_facts;
             return Ok(());
         }
