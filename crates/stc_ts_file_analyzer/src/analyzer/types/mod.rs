@@ -926,6 +926,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
+        let is_lit = normalized_types.iter().any(|ty| ty.is_lit());
         let is_symbol = normalized_types.iter().any(|ty| ty.is_symbol());
         let is_str = normalized_types.iter().any(|ty| ty.is_str());
         let is_num = normalized_types.iter().any(|ty| ty.is_num());
@@ -935,6 +936,14 @@ impl Analyzer<'_, '_> {
         let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
         let is_function = normalized_types.iter().any(|ty| ty.is_fn_type());
+        let is_non_empty_type_lit = normalized_types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(ty) => !ty.members.is_empty(),
+            _ => false,
+        });
+
+        if is_lit && is_non_empty_type_lit {
+            return never!();
+        }
 
         let sum = u32::from(is_symbol)
             + u32::from(is_str)
