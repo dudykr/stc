@@ -116,6 +116,24 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if !ty.is_intersection() {
+            if facts.contains(TypeFacts::TypeofEQObject) {
+                let span = ty.span();
+                ty = Type::new_intersection(
+                    span,
+                    vec![
+                        ty,
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsObjectKeyword,
+                            metadata: Default::default(),
+                            span,
+                            tracker: Default::default(),
+                        }),
+                    ],
+                );
+            }
+        }
+
         let after = dump_type_as_string(&ty);
 
         debug!("[types/fact] {} => {}\nTypeFacts: {:?}", before, after, facts);
