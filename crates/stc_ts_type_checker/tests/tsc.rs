@@ -648,7 +648,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     let full_ref_errors = expected_errors.clone();
     let full_ref_err_cnt = full_ref_errors.len();
-    let mut unimplemented_count: usize = 0;
 
     let tester = Tester::new();
     let diagnostics = tester
@@ -681,7 +680,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
             for e in errors {
                 if e.is_unimplemented() {
-                    unimplemented_count += 1;
+                    stats.unimplemented += 1;
                 }
                 e.emit(&handler);
             }
@@ -778,10 +777,9 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     let expected_count = expected_errors.len();
     let extra_count = extra_errors.len();
-    let true_extra_count = extra_count - unimplemented_count;
+    let true_extra_count = extra_count - stats.unimplemented;
     stats.required_error += expected_count;
     stats.extra_error += true_extra_count;
-    stats.unimplemented = unimplemented_count;
 
     // Print per-test stats so we can prevent regressions.
     if cfg!(debug_assertions) {
