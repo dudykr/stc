@@ -284,11 +284,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(ErrorKind::Unimplemented {
-            span: to.span(),
-            msg: format!("append_type:\n{:?}\n{:?}", to, rhs),
-        }
-        .into())
+        Ok(Type::new_intersection(span, vec![to, rhs]))
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
