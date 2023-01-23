@@ -11,7 +11,6 @@ let lastSomeProperty: unknown | undefined;
 function someFunction(someOptionalObject: SomeObject | undefined): void {
     if (someOptionalObject?.someProperty !== lastSomeProperty) {
         console.log(someOptionalObject);
-        console.log(someOptionalObject.someProperty);  // Error
         lastSomeProperty = someOptionalObject?.someProperty;
     }
 }
