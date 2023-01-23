@@ -388,20 +388,48 @@ impl Analyzer<'_, '_> {
                         };
 
                         let mut is_loose_comparison = false;
-                        if let op!("==") | op!("!=") = op {
-                            if r.is_null() | r.is_undefined() {
-                                is_loose_comparison = true;
-                                let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
-                                let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
+                        match op {
+                            op!("==") | op!("!=") => {
+                                if r.is_null() | r.is_undefined() {
+                                    is_loose_comparison = true;
+                                    let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
+                                    let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
-                                if op == op!("==") {
-                                    *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
-                                    *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
-                                } else {
-                                    *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
-                                    *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    if op == op!("==") {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    } else {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    }
                                 }
                             }
+                            op!("===") => {
+                                if r.is_null() {
+                                    let eq = TypeFacts::EQNull;
+                                    let neq = TypeFacts::NENull;
+
+                                    if op == op!("===") {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    } else {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    }
+                                } else if r.is_undefined() {
+                                    let eq = TypeFacts::EQUndefined;
+                                    let neq = TypeFacts::NEUndefined;
+
+                                    if op == op!("===") {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    } else {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    }
+                                }
+                            }
+                            _ => (),
                         }
 
                         let exclude_types = if is_loose_comparison {
