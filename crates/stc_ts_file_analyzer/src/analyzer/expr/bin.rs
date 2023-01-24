@@ -4,7 +4,6 @@ use std::{
     convert::{TryFrom, TryInto},
 };
 
-use itertools::Itertools;
 use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
@@ -450,7 +449,7 @@ impl Analyzer<'_, '_> {
                                 }),
                             ]
                         } else {
-                            exclude.into_iter().collect_vec()
+                            exclude
                         };
 
                         if is_eq {
@@ -1783,7 +1782,7 @@ impl Analyzer<'_, '_> {
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
     ///
     /// Returns `(name, true_fact, false_fact)`.
-    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Option<Type>)> {
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
         let span = equals_to.span();
 
         let mut id: RIdent = name.as_ids()[0].clone().into();
@@ -1798,7 +1797,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to narrow type with equality")?
                 .freezed();
 
-            return Ok((name, narrowed.clone(), Some(narrowed)));
+            return Ok((name, narrowed.clone(), vec![narrowed]));
         }
 
         let eq_ty = equals_to.normalize();
@@ -1848,10 +1847,10 @@ impl Analyzer<'_, '_> {
             let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
             let ty = Type::new_union(span, candidates).freezed();
-            return Ok((actual, ty, Some(Type::new_union(span, excluded).freezed())));
+            return Ok((actual, ty, excluded.freezed()));
         }
 
-        Ok((name, equals_to.clone(), Some(equals_to.clone())))
+        Ok((name, equals_to.clone(), vec![equals_to.clone()]))
     }
 
     /// Returns new type of the variable after comparison with `===`.
