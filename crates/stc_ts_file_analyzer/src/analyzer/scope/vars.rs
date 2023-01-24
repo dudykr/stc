@@ -9,7 +9,9 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{
+    Array, Key, KeywordType, LitType, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
+};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -452,6 +454,12 @@ impl Analyzer<'_, '_> {
             RPat::Object(obj) => {
                 let should_use_no_such_property = !matches!(ty.as_ref().map(Type::normalize), Some(Type::TypeLit(..)));
 
+                let mut real = Type::TypeLit(TypeLit {
+                    span,
+                    members: vec![],
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                });
                 // TODO(kdy1): Normalize static
                 //
                 let mut used_keys = vec![];
@@ -507,11 +515,11 @@ impl Analyzer<'_, '_> {
                                 })
                                 .freezed();
 
-                            match prop_ty {
+                            let real_property_type = match prop_ty {
                                 Ok(prop_ty) => {
                                     // TODO(kdy1): actual_ty
                                     self.add_vars(&prop.value, prop_ty.freezed(), None, default_prop_ty, opts)
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
                                 }
 
                                 Err(err) => {
@@ -527,9 +535,27 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     self.add_vars(&prop.value, None, None, default_prop_ty, opts)
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
                                 }
                             }
+                            .flatten()
+                            .map(|v| box v);
+
+                            real = self.append_type_element(
+                                real,
+                                TypeElement::Property(PropertySignature {
+                                    span,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key,
+                                    optional: false,
+                                    params: Vec::new(),
+                                    type_ann: real_property_type,
+                                    type_params: None,
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }),
+                            )?;
                         }
                         RObjectPatProp::Assign(prop) => {
                             let key = Key::Normal {
@@ -602,7 +628,7 @@ impl Analyzer<'_, '_> {
                                 });
                             }
 
-                            match prop_ty {
+                            let real_property_type = match prop_ty {
                                 Ok(prop_ty) => {
                                     let prop_ty = prop_ty.map(Type::freezed);
 
@@ -619,18 +645,19 @@ impl Analyzer<'_, '_> {
 
                                             let default = opt_union(span, default_prop_ty, default_value_type).freezed();
 
-                                            self.add_vars(
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                prop_ty.clone(),
-                                                None,
-                                                default,
-                                                opts,
-                                            )
-                                            .report(&mut self.storage);
+                                            let result = self
+                                                .add_vars(
+                                                    &RPat::Ident(RBindingIdent {
+                                                        node_id: NodeId::invalid(),
+                                                        id: prop.key.clone(),
+                                                        type_ann: None,
+                                                    }),
+                                                    prop_ty.clone(),
+                                                    None,
+                                                    default,
+                                                    opts,
+                                                )
+                                                .report(&mut self.storage);
 
                                             if let Some(prop_ty) = &prop_ty {
                                                 self.try_assign_pat(
@@ -645,6 +672,8 @@ impl Analyzer<'_, '_> {
                                                 .context("tried to assign default values")
                                                 .report(&mut self.storage);
                                             }
+
+                                            result
                                         }
                                         None => {
                                             // TODO(kdy1): actual_ty
@@ -659,7 +688,7 @@ impl Analyzer<'_, '_> {
                                                 default_prop_ty,
                                                 opts,
                                             )
-                                            .report(&mut self.storage);
+                                            .report(&mut self.storage)
                                         }
                                     }
                                 }
@@ -686,9 +715,25 @@ impl Analyzer<'_, '_> {
                                         default_prop_ty,
                                         opts,
                                     )
-                                    .report(&mut self.storage);
+                                    .report(&mut self.storage)
                                 }
-                            }
+                            };
+
+                            real = self.append_type_element(
+                                real,
+                                TypeElement::Property(PropertySignature {
+                                    span,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key,
+                                    optional: true,
+                                    params: Vec::new(),
+                                    type_ann: real_property_type.flatten().map(|v| box v),
+                                    type_params: None,
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }),
+                            )?;
                         }
                         RObjectPatProp::Rest(pat) => {
                             if !is_last {
@@ -719,12 +764,16 @@ impl Analyzer<'_, '_> {
                             let rest = self
                                 .add_vars(&pat.arg, rest_ty, None, default, opts)
                                 .context("tried to assign to an object rest pattern")?;
+
+                            if let Some(rest) = rest {
+                                real = self.append_type(span, real, rest, Default::default())?;
+                            }
                             break;
                         }
                     }
                 }
 
-                Ok(ty.or(default))
+                Ok(Some(real))
             }
 
             RPat::Rest(pat) => {
