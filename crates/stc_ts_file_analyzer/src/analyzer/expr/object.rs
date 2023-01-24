@@ -194,7 +194,7 @@ impl Analyzer<'_, '_> {
 
         let mut rhs = self
             .normalize(
-                Some(rhs.span()),
+                Some(span),
                 Cow::Owned(rhs),
                 NormalizeTypeOpts {
                     preserve_intersection: true,
