@@ -322,15 +322,16 @@ impl Analyzer<'_, '_> {
         }
 
         let mut to = if let Some(key) = rhs.key() {
-            match key {
-                Key::Computed(..) => to.foldable(),
-                _ => self
-                    .exclude_props(rhs.span(), &to, &[key.clone()])
-                    .context("tried to exclude properties before appending a type element")?,
+            if to.is_type_lit() && !key.is_computed() {
+                self.exclude_props(rhs.span(), &to, &[key.clone()])
+                    .context("tried to exclude properties before appending a type element")?
+            } else {
+                to
             }
         } else {
-            to.foldable()
+            to
         };
+        to.normalize_mut();
 
         match to {
             Type::TypeLit(ref mut lit) => {
