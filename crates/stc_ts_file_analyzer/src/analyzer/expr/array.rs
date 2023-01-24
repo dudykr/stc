@@ -3,7 +3,6 @@ use std::{borrow::Cow, time::Instant};
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
@@ -656,11 +655,11 @@ impl Analyzer<'_, '_> {
                     constraint: Some(constraint),
                     ..
                 }) => {
-                    let _ctx = ctx!("tried to get iterator from type parameter constraint");
                     return self
                         .get_iterator(span, Cow::Borrowed(constraint), opts)
                         .map(Cow::into_owned)
-                        .map(Cow::Owned);
+                        .map(Cow::Owned)
+                        .context("tried to get iterator from type parameter constraint");
                 }
                 Type::Union(u) => {
                     let types = u

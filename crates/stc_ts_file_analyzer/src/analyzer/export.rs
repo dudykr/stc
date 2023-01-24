@@ -4,7 +4,7 @@ use stc_ts_ast_rnode::{
     RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
     RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::{ctx, DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
@@ -322,7 +322,6 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
-            let ctx = ctx!("tried to reexport with named export specifier");
             let ident = match &node.orig {
                 RModuleExportName::Ident(v) => v.clone(),
                 RModuleExportName::Str(v) => RIdent::new(v.value.clone(), v.span),
@@ -332,7 +331,9 @@ impl Analyzer<'_, '_> {
                 "any" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "undefined" | "symbol" => {
                     return Err(ErrorKind::CannotExportNonLocalVar { span: ident.span }.into())
                 }
-                _ => a.type_of_var(&ident, TypeOfMode::RValue, None)?,
+                _ => a
+                    .type_of_var(&ident, TypeOfMode::RValue, None)
+                    .context("tried to reexport with named export specifier")?,
             };
 
             Ok(())
