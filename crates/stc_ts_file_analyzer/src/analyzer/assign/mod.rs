@@ -473,7 +473,6 @@ impl Analyzer<'_, '_> {
     fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
-        let _ctx = ctx!("tried to normalize a type for assignment");
         let ty = ty.normalize();
 
         if let Type::Instance(Instance { ty, .. }) = ty {

@@ -1,4 +1,4 @@
-use stc_ts_errors::{ctx, DebugExt, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{

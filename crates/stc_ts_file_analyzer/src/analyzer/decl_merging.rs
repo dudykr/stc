@@ -48,8 +48,6 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        let _ctx = ctx!("merge with another interface");
-
         debug_assert!(a.is_clone_cheap());
         debug_assert!(b.is_clone_cheap());
 
@@ -120,9 +118,10 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 // Convert to a type literal first.
-                if let Some(b) = self.convert_type_to_type_lit(span, Cow::Owned(b))? {
-                    let _ctx = ctx!("tried to convert an interface to a type literal");
-
+                if let Some(b) = self
+                    .convert_type_to_type_lit(span, Cow::Owned(b))
+                    .context("tried to convert an interface to a type literal")?
+                {
                     new_members.extend(b.into_owned().members);
 
                     return Ok(Some(Type::Interface(Interface {
