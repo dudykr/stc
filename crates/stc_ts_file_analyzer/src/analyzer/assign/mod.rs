@@ -631,12 +631,6 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
-                let _ctx = ctx!(format!(
-                    "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
-                    line!(),
-                    force_dump_type_as_string(to),
-                    force_dump_type_as_string(rhs)
-                ));
                 return Err(ErrorKind::AssignFailed {
                     span,
                     left: box to.clone(),
@@ -644,7 +638,11 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
-                .into());
+                .context(format!(
+                    "LHS (final): {}\nRHS (final): {}",
+                    force_dump_type_as_string(to),
+                    force_dump_type_as_string(rhs)
+                )));
             }};
         }
 
