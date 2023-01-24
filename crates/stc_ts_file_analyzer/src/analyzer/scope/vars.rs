@@ -561,7 +561,7 @@ impl Analyzer<'_, '_> {
                                 sym: prop.key.sym.clone(),
                             };
                             used_keys.push(key.clone());
-                            let optional = prop.value.is_some();
+                            let optional = default.is_some() || prop.value.is_some();
 
                             let ctx = Ctx {
                                 disallow_unknown_object_property: true,
