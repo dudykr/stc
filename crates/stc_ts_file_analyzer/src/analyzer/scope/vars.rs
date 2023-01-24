@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
                         if let Some(elem) = elem {
                             if let RPat::Rest(elem) = elem {
                                 // Rest element is special.
-                                let type_for_rest_arg = match ty {
+                                let type_for_rest_arg = match &ty {
                                     Some(ty) => self
                                         .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
@@ -370,9 +370,9 @@ impl Analyzer<'_, '_> {
                             Some(elem) => {
                                 if let RPat::Rest(elem) = elem {
                                     // Rest element is special.
-                                    let type_for_rest_arg = match ty {
+                                    let type_for_rest_arg = match &ty {
                                         Some(ty) => self
-                                            .get_rest_elements(Some(span), Cow::Owned(ty), idx)
+                                            .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                             .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                             .map(Cow::into_owned)
                                             .report(&mut self.storage),
@@ -380,9 +380,9 @@ impl Analyzer<'_, '_> {
                                     }
                                     .freezed();
 
-                                    let default = match default {
+                                    let default = match &default {
                                         Some(ty) => self
-                                            .get_rest_elements(Some(span), Cow::Owned(ty), idx)
+                                            .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                             .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                             .map(Cow::into_owned)
                                             .report(&mut self.storage),

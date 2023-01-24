@@ -1415,7 +1415,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                v.ty = if let Some(ty) = ty {
+                v.ty = if let Some(ty) = ty.clone() {
                     Some(if let Some(var_ty) = v.ty {
                         match ty.normalize() {
                             Type::Union(..) => {
