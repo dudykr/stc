@@ -612,14 +612,19 @@ impl Analyzer<'_, '_> {
 
                                     match &prop.value {
                                         Some(default) => {
-                                            let default_value_type = default
+                                            let mut default_value_type = default
                                                 .validate_with_args(
                                                     self,
                                                     (TypeOfMode::RValue, None, prop_ty.as_ref().or(default_prop_ty.as_ref())),
                                                 )
                                                 .context("tried to validate default value of an assignment pattern")
-                                                .report(&mut self.storage)
-                                                .freezed();
+                                                .report(&mut self.storage);
+
+                                            if self.ctx.is_fn_param && prop_ty.is_none() {
+                                                default_value_type = default_value_type.fold_with(&mut Widen { tuple_to_array: true });
+                                            }
+
+                                            default_value_type.freeze();
 
                                             let default = opt_union(span, default_prop_ty, default_value_type).freezed();
 
