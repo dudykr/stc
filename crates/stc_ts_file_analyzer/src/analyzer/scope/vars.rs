@@ -48,8 +48,6 @@ pub enum VarKind {
 pub(crate) struct DeclareVarsOpts {
     pub kind: VarKind,
     pub use_iterator_for_array: bool,
-
-    pub cannot_be_array: bool,
 }
 
 impl Default for DeclareVarsOpts {
@@ -57,7 +55,6 @@ impl Default for DeclareVarsOpts {
         Self {
             kind: VarKind::Var(VarDeclKind::Var),
             use_iterator_for_array: false,
-            cannot_be_array: false,
         }
     }
 }
@@ -299,18 +296,9 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
-                                self.add_vars(
-                                    &elem.arg,
-                                    type_for_rest_arg,
-                                    None,
-                                    default,
-                                    DeclareVarsOpts {
-                                        cannot_be_array: true,
-                                        ..opts
-                                    },
-                                )
-                                .context("tried to declare left elements to the argument of a rest pattern")
-                                .report(&mut self.storage);
+                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, DeclareVarsOpts { ..opts })
+                                    .context("tried to declare left elements to the argument of a rest pattern")
+                                    .report(&mut self.storage);
                                 break;
                             }
 
@@ -416,16 +404,7 @@ impl Analyzer<'_, '_> {
                                     .freezed();
 
                                     let rest_ty = self
-                                        .add_vars(
-                                            &elem.arg,
-                                            type_for_rest_arg,
-                                            None,
-                                            default,
-                                            DeclareVarsOpts {
-                                                cannot_be_array: true,
-                                                ..opts
-                                            },
-                                        )
+                                        .add_vars(&elem.arg, type_for_rest_arg, None, default, DeclareVarsOpts { ..opts })
                                         .context("tried to declare left elements to the argument of a rest pattern")
                                         .report(&mut self.storage)
                                         .flatten();
@@ -845,16 +824,7 @@ impl Analyzer<'_, '_> {
                 let actual = actual.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
                 let default = default.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
 
-                self.add_vars(
-                    &pat.arg,
-                    ty,
-                    actual,
-                    default,
-                    DeclareVarsOpts {
-                        cannot_be_array: true,
-                        ..opts
-                    },
-                )
+                self.add_vars(&pat.arg, ty, actual, default, DeclareVarsOpts { ..opts })
             }
 
             _ => {
