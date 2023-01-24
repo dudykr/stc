@@ -26,22 +26,15 @@ use swc_common::{
 use swc_ecma_ast::{AssignOp, BinaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
-#[cfg(debug_assertions)]
-use crate::context::with_ctx;
 
-pub mod context;
 pub mod debug;
 mod result_ext;
-#[cfg(debug_assertions)]
-type Contexts = Vec<String>;
-
-#[cfg(not(debug_assertions))]
-type Contexts = ();
 
 /// [ErrorKind] with debug contexts attached.
 #[derive(Clone, PartialEq, Spanned)]
 pub struct Error {
-    contexts: Contexts,
+    #[cfg(debug_assertions)]
+    contexts: Vec<String>,
     #[span]
     inner: Box<ErrorKind>,
 }
@@ -58,9 +51,7 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             #[cfg(debug_assertions)]
-            contexts: with_ctx(|contexts| contexts.iter().rev().map(|v| v()).collect()),
-            #[cfg(not(debug_assertions))]
-            contexts: (),
+            contexts: Default::default(),
             inner: Box::new(kind),
         }
     }
