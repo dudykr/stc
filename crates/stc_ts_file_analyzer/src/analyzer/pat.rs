@@ -182,6 +182,12 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPat) -> VResult<ty::FnParam> {
+        self.validate_pat(p)
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn validate_pat(&mut self, p: &RPat) -> VResult<ty::FnParam> {
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
