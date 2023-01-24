@@ -866,7 +866,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<()> {
+    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<Option<Type>> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
@@ -1207,7 +1207,7 @@ impl Analyzer<'_, '_> {
         initialized: bool,
         allow_multiple: bool,
         is_override: bool,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1571,7 +1571,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
                 pat,

@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
         actual: Option<Type>,
         default: Option<Type>,
         opts: DeclareVarsOpts,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         let _ctx = ctx!(format!("add_vars: {:?}", opts));
 
         if let Some(ty) = &ty {
