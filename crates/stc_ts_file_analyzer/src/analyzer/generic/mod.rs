@@ -474,12 +474,6 @@ impl Analyzer<'_, '_> {
             Err(_) => return Ok(()),
         };
 
-        let _ctx = debug_ctx!(format!(
-            "infer_type()\nParam: {}\nArg: {}",
-            dump_type_as_string(param),
-            dump_type_as_string(arg)
-        ));
-
         if !opts.skip_initial_union_check {
             if inferred
                 .dejavu

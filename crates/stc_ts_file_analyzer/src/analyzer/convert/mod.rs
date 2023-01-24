@@ -1018,8 +1018,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
-        let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
-
         let is_topmost_type = !self.ctx.is_not_topmost_type;
         let ctx = Ctx {
             is_not_topmost_type: true,

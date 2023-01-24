@@ -49,8 +49,6 @@ impl Analyzer<'_, '_> {
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(ty)));
-
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
         }

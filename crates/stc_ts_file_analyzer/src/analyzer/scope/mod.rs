@@ -684,7 +684,6 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&ty)));
         let orig = dump_type_as_string(&ty);
 
         let mut v = Expander {
@@ -2472,8 +2471,6 @@ impl Expander<'_, '_, '_> {
                 return Type::any(span, Default::default());
             }
         };
-
-        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
 
         self.analyzer.expand_conditional_type(self.span, ty)
     }

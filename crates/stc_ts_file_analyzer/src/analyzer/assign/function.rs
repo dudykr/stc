@@ -640,9 +640,6 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
 
-        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
-        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
-
         if let RPat::Rest(..) = l.pat {
             let l_ty = self
                 .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())

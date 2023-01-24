@@ -478,7 +478,6 @@ impl Fold<Type> for GenericExpander<'_> {
                 return ty;
             }
         };
-        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&ty)));
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
