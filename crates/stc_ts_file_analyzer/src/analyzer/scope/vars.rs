@@ -749,6 +749,7 @@ impl Analyzer<'_, '_> {
                                 .context("tried to assign to an object rest pattern")?;
 
                             if let Some(rest) = rest {
+                                real.freeze();
                                 real = self.append_type(span, real, rest, Default::default())?;
                             }
                             break;
