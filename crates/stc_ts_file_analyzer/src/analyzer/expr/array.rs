@@ -202,7 +202,7 @@ impl Analyzer<'_, '_> {
             let mut ty = Type::Array(
                 Array {
                     span,
-                    elem_type: box Type::union(types),
+                    elem_type: box Type::new_union(span, types),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }
