@@ -628,7 +628,11 @@ impl Analyzer<'_, '_> {
 
                                             default_value_type.freeze();
 
-                                            let default = opt_union(span, default_prop_ty, default_value_type).freezed();
+                                            let mut default = opt_union(span, default_prop_ty, default_value_type).freezed();
+                                            // TODO(kdy1): Pass default when it's possible.
+                                            if prop_ty.is_some() {
+                                                default = None;
+                                            }
 
                                             let result = self
                                                 .add_vars(
