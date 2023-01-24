@@ -4029,6 +4029,10 @@ impl Analyzer<'_, '_> {
 
                 ty = self.apply_type_facts(&name, ty);
 
+                if ty.span().is_dummy() {
+                    ty.respan(span);
+                }
+
                 debug_assert_ne!(ty.span(), DUMMY_SP);
 
                 self.exclude_types_using_fact(span, &name, &mut ty);
