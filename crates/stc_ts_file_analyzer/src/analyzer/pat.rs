@@ -240,7 +240,6 @@ impl Analyzer<'_, '_> {
                         })
                     })
             })
-            .map(|res| res.map(|ty| ty.freezed()))
             .transpose()?
             .freezed();
 
