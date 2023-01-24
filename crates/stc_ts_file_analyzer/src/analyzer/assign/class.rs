@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
@@ -57,11 +57,8 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.body.iter().enumerate() {
-                    let _ctx = ctx!(format!(
-                        "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
-                        i, lm, r_body
-                    ));
-                    self.assign_class_members_to_class_member(data, lm, r_body, opts)?;
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
+                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
                 return Ok(());
@@ -83,7 +80,6 @@ impl Analyzer<'_, '_> {
                     lhs_members.push(lm);
                 }
 
-                let _ctx = ctx!("tried to assign type elements to a class member");
                 self.assign_to_type_elements(
                     data,
                     l.span,
@@ -98,7 +94,8 @@ impl Analyzer<'_, '_> {
                         is_assigning_to_class_members: true,
                         ..opts
                     },
-                )?;
+                )
+                .context("tried to assign type elements to a class member")?;
 
                 return Ok(());
             }
@@ -146,11 +143,8 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.def.body.iter().enumerate() {
-                    let _ctx = ctx!(format!(
-                        "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
-                        i, lm, r_body
-                    ));
-                    self.assign_class_members_to_class_member(data, lm, r_body, opts)?;
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
+                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
                 if !rc.def.is_abstract {
@@ -159,8 +153,9 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
-                        let _ctx = ctx!("tried to instantiated class to assign the super class to a class");
-                        let parent = self.instantiate_class(opts.span, parent)?;
+                        let parent = self
+                            .instantiate_class(opts.span, parent)
+                            .context("tried to instantiated class to assign the super class to a class")?;
                         if self.assign_to_class(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
@@ -191,8 +186,6 @@ impl Analyzer<'_, '_> {
                     lhs_members.push(lm);
                 }
 
-                let _ctx = ctx!("tried to assign type elements to class members");
-
                 self.assign_to_type_elements(
                     data,
                     l.span,
@@ -207,7 +200,8 @@ impl Analyzer<'_, '_> {
                         is_assigning_to_class_members: true,
                         ..opts
                     },
-                )?;
+                )
+                .context("tried to assign type elements to class members")?;
 
                 return Ok(());
             }
@@ -273,7 +267,6 @@ impl Analyzer<'_, '_> {
                                     return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
                                 }
 
-                                let _ctx = ctx!("tried to assign a class method to another one");
                                 self.assign_to_fn_like(
                                     data,
                                     true,
@@ -284,7 +277,8 @@ impl Analyzer<'_, '_> {
                                     &rm.params,
                                     Some(&rm.ret_ty),
                                     opts,
-                                )?;
+                                )
+                                .context("tried to assign a class method to another one")?;
 
                                 return Ok(());
                             }
@@ -313,8 +307,8 @@ impl Analyzer<'_, '_> {
                             if lp.is_static == rp.is_static && self.key_matches(span, &lp.key, &rp.key, false) {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        let _ctx = ctx!("tried to assign a class property to another");
-                                        self.assign_inner(data, lt, rt, opts)?;
+                                        self.assign_inner(data, lt, rt, opts)
+                                            .context("tried to assign a class property to another")?;
                                     }
                                 }
 

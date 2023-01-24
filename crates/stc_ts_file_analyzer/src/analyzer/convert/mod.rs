@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
     RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl,
     RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
@@ -1149,8 +1149,6 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let _ctx = ctx!("report_error_for_duplicate_params");
-
         let mut prev_ids: Vec<RIdent> = vec![];
         for param in params {
             let ids: Vec<RIdent> = find_ids_in_pat(&param.pat);
@@ -1162,14 +1160,14 @@ impl Analyzer<'_, '_> {
                             span: prev.span,
                             name: prev.into(),
                         }
-                        .into(),
+                        .context("report_error_for_duplicate_params"),
                     );
                     self.storage.report(
                         ErrorKind::DuplicateName {
                             span: id.span,
                             name: id.into(),
                         }
-                        .into(),
+                        .context("report_error_for_duplicate_params"),
                     );
                 } else {
                     prev_ids.push(id);

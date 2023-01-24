@@ -2,7 +2,6 @@ use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
@@ -267,8 +266,8 @@ impl Analyzer<'_, '_> {
                     self.storage
                         .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: rhs.span() }.into());
                 } else {
-                    let _ctx = ctx!("tried to check operands of a numeric assignment");
-                    self.deny_null_or_undefined(rhs.span(), rhs)?;
+                    self.deny_null_or_undefined(rhs.span(), rhs)
+                        .context("tried to check operands of a numeric assignment")?;
                 }
 
                 match lhs {
@@ -474,7 +473,6 @@ impl Analyzer<'_, '_> {
     fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
-        let _ctx = ctx!("tried to normalize a type for assignment");
         let ty = ty.normalize();
 
         if let Type::Instance(Instance { ty, .. }) = ty {
@@ -633,12 +631,6 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
-                let _ctx = ctx!(format!(
-                    "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
-                    line!(),
-                    force_dump_type_as_string(to),
-                    force_dump_type_as_string(rhs)
-                ));
                 return Err(ErrorKind::AssignFailed {
                     span,
                     left: box to.clone(),
@@ -646,7 +638,11 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
-                .into());
+                .context(format!(
+                    "LHS (final): {}\nRHS (final): {}",
+                    force_dump_type_as_string(to),
+                    force_dump_type_as_string(rhs)
+                )));
             }};
         }
 
@@ -989,26 +985,21 @@ impl Analyzer<'_, '_> {
 
             if lc.extends_type.type_eq(&rc.extends_type) {
                 //
-                let l_variance = self.variance(lc)?;
-                let r_variance = self.variance(rc)?;
+                let variance = self.variance(lc)?;
 
-                match (l_variance, r_variance) {
-                    (Variance::Covariant, Variance::Covariant) => {
+                match variance {
+                    Variance::Covariant => {
                         return self
                             .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
                             .context("tried assignment of covariant types")
                     }
-                    (Variance::Contravariant, Variance::Contravariant) => {
+                    Variance::Contravariant => {
                         return self
                             .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
                             .context("tried assignment of contravariant types")
                     }
-                    _ => {
-                        return Err(ErrorKind::Unimplemented {
-                            span,
-                            msg: format!("{:?} = {:?}", l_variance, r_variance),
-                        }
-                        .into())
+                    Variance::Invariant => {
+                        fail!()
                     }
                 }
             }
@@ -2881,12 +2872,12 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
-        let covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+        let can_be_covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
-        let contravariant =
+        let can_be_contravariant =
             self.is_contravariant(&ty.check_type, &ty.true_type)? || self.is_contravariant(&ty.check_type, &ty.false_type)?;
 
-        match (covariant, contravariant) {
+        match (can_be_covariant, can_be_contravariant) {
             (true, true) | (false, false) => Ok(Variance::Invariant),
             (true, false) => Ok(Variance::Covariant),
             (false, true) => Ok(Variance::Contravariant),

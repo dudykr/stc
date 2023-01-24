@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
-use stc_ts_errors::{ctx, debug::force_dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
@@ -244,8 +244,6 @@ impl Analyzer<'_, '_> {
                     let mut types = vec![];
 
                     for (idx, elem) in ty.elems.iter().enumerate() {
-                        let _ctx = ctx!("tried to get key of a tuple element");
-
                         let elem_ty = self.normalize(
                             Some(elem.span),
                             Cow::Borrowed(&elem.ty),
@@ -255,7 +253,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?;
                         if let Some(rest) = elem_ty.as_rest() {
-                            types.push(self.keyof(elem.span, &rest.ty)?);
+                            types.push(self.keyof(elem.span, &rest.ty).context("tried to get key of a tuple element")?);
                         } else {
                             types.push(Type::Lit(LitType {
                                 span,

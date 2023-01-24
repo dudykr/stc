@@ -7,6 +7,7 @@ use std::{
     fmt,
     fmt::{Debug, Display},
     ops::RangeInclusive,
+    panic::Location,
     path::PathBuf,
 };
 
@@ -25,22 +26,15 @@ use swc_common::{
 use swc_ecma_ast::{AssignOp, BinaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
-#[cfg(debug_assertions)]
-use crate::context::with_ctx;
 
-pub mod context;
 pub mod debug;
 mod result_ext;
-#[cfg(debug_assertions)]
-type Contexts = Vec<String>;
-
-#[cfg(not(debug_assertions))]
-type Contexts = ();
 
 /// [ErrorKind] with debug contexts attached.
 #[derive(Clone, PartialEq, Spanned)]
 pub struct Error {
-    contexts: Contexts,
+    #[cfg(debug_assertions)]
+    contexts: Vec<String>,
     #[span]
     inner: Box<ErrorKind>,
 }
@@ -57,18 +51,25 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             #[cfg(debug_assertions)]
-            contexts: with_ctx(|contexts| contexts.iter().rev().map(|v| v()).collect()),
-            #[cfg(not(debug_assertions))]
-            contexts: (),
+            contexts: Default::default(),
             inner: Box::new(kind),
         }
     }
 }
 
 impl Error {
-    pub fn context(mut self, context: impl Display) -> Error {
+    #[track_caller]
+    pub fn context(self, context: impl Display) -> Error {
+        return self.context_impl(Location::caller(), context);
+    }
+
+    #[cfg_attr(not(debug_assertions), attr)]
+    pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
-        self.contexts.push(context.to_string());
+        {
+            self.contexts
+                .push(format!("{} (at {}:{}:{})", context, loc.file(), loc.line(), loc.column()));
+        }
         self
     }
 
@@ -1616,9 +1617,10 @@ impl ErrorKind {
                 }
             }
         }
+        let loc = Location::caller();
 
         let err: Error = self.into();
-        err.context(context.to_string())
+        err.context_impl(loc, context)
     }
 
     /// Split error into causes.
