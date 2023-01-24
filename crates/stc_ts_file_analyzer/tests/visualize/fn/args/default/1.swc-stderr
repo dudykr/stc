@@ -18,7 +18,7 @@ Error:
 
 Error: 
   > ({ z  }: {
-  |     z: (undefined | number);
+  |     z?: (undefined | number);
   | }) => void
 
   x Type
