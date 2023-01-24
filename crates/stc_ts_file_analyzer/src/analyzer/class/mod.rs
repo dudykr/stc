@@ -2234,7 +2234,7 @@ impl Analyzer<'_, '_> {
             false,
             false,
         ) {
-            Ok(()) => {}
+            Ok(..) => {}
             Err(err) => {
                 self.storage.report(err);
             }
