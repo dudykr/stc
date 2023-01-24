@@ -882,7 +882,7 @@ impl Analyzer<'_, '_> {
                     )
                 })
         })()
-        .with_context(|| format!("tried to call a property of an object ({})", dump_type_as_string(obj_type)));
+        .with_context(|| format!("tried to call a property of an object ({})", force_dump_type_as_string(obj_type)));
         self.scope.this = old_this;
         res
     }
