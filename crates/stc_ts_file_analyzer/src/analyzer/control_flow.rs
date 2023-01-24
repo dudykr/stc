@@ -749,7 +749,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if let RExpr::Ident(left) = &**expr {
-                        if op == op!("??=") {
+                        if op == op!("??=") || op == op!("||=") || op == op!("&&=") {
                             if let Ok(prev) = self.type_of_var(left, TypeOfMode::RValue, None) {
                                 let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
 
