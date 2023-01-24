@@ -449,7 +449,7 @@ impl Analyzer<'_, '_> {
                                 }),
                             ]
                         } else {
-                            exclude
+                            exclude.freezed()
                         };
 
                         if is_eq {
