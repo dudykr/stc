@@ -3689,6 +3689,18 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            if &*i.sym == "globalThis" {
+                return Ok(Type::Query(QueryType {
+                    span,
+                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                        "globalThis".into(),
+                        span.with_ctxt(SyntaxContext::empty()),
+                    ))),
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }));
+            }
+
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
