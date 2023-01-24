@@ -595,6 +595,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Array(obj) => {
+                    if let Key::Computed(key) = prop {
+                        if let Type::Symbol(key_ty) = key.ty.normalize() {
+                            if key_ty.id == SymbolId::iterator() {
+                                return Ok(obj_type);
+                            }
+                        }
+                    }
+
                     let obj = Type::Ref(Ref {
                         span,
                         type_name: RTsEntityName::Ident(RIdent::new(
