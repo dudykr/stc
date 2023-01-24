@@ -180,10 +180,10 @@ impl Analyzer<'_, '_> {
 
                 right.freeze();
 
-                if let Some(left) = &type_ann {
+                if let Some(type_ann) = &type_ann {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        left,
+                        type_ann,
                         &right,
                         AssignOpts {
                             span: p.right.span(),
