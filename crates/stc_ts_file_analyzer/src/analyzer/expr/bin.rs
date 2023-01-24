@@ -1819,6 +1819,12 @@ impl Analyzer<'_, '_> {
             let mut candidates = vec![];
             let mut excluded = vec![];
             for ty in &u.types {
+                // TODO(kdy1): Enable this logic iff it's an optional chaining
+                if ty.is_undefined() {
+                    candidates.push(ty.clone());
+                    continue;
+                }
+
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                 if let Ok(prop_ty) = prop_res {
