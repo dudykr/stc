@@ -191,22 +191,22 @@ impl Analyzer<'_, '_> {
                     new_r_params.freeze();
                     new_r_ret_ty.freeze();
 
-                    let _ctx = ctx!("tried to assign to a mapped (wrong) function");
-
-                    return self.assign_to_fn_like(
-                        data,
-                        is_call,
-                        l_type_params,
-                        l_params,
-                        l_ret_ty,
-                        None,
-                        &new_r_params,
-                        new_r_ret_ty.as_ref(),
-                        AssignOpts {
-                            allow_assignment_of_void: Some(false),
-                            ..opts
-                        },
-                    );
+                    return self
+                        .assign_to_fn_like(
+                            data,
+                            is_call,
+                            l_type_params,
+                            l_params,
+                            l_ret_ty,
+                            None,
+                            &new_r_params,
+                            new_r_ret_ty.as_ref(),
+                            AssignOpts {
+                                allow_assignment_of_void: Some(false),
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign to a mapped (wrong) function");
                 }
             }
 
@@ -862,8 +862,6 @@ impl Analyzer<'_, '_> {
                 break
             };
 
-            let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
-
             // TODO(kdy1): What should we do?
             if opts.allow_assignment_to_param {
                 if let Ok(()) = self.assign_param(
@@ -882,8 +880,8 @@ impl Analyzer<'_, '_> {
             // A rest pattern is always the last
             match (&l.pat, &r.pat) {
                 (RPat::Rest(..), RPat::Rest(..)) => {
-                    let _ctx = ctx!(format!("tried to assign a rest parameter to another rest parameter"));
-                    self.assign_param(data, l, r, opts)?;
+                    self.assign_param(data, l, r, opts)
+                        .with_context(|| "tried to assign a rest parameter to another rest parameter".to_string())?;
                     break;
                 }
 
@@ -924,11 +922,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     self.assign_param(data, l, r, opts)
-                        .with_context(|| format!("tried to assign a rest parameter to parameters where r-ty is not a tuple"))?;
+                        .context("tried to assign a rest parameter to parameters where r-ty is not a tuple")?;
 
                     for l in li {
                         self.assign_param(data, l, r, opts)
-                            .with_context(|| format!("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)"))?;
+                            .context("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)")?;
                     }
 
                     return Ok(());
