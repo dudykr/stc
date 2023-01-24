@@ -191,6 +191,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
+                    .context("tried to assign a value to a variable with an assignment pattern")
                     .report(&mut self.storage);
                 }
 
