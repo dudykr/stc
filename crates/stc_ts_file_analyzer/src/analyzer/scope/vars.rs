@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.declare_var(
+                return self.declare_var(
                     span,
                     opts.kind,
                     i.id.clone().into(),
@@ -150,8 +150,7 @@ impl Analyzer<'_, '_> {
                     // same name
                     opts.kind == VarKind::Var(VarDeclKind::Var),
                     false,
-                )?;
-                Ok(())
+                );
             }
 
             RPat::Assign(p) => {
@@ -222,38 +221,47 @@ impl Analyzer<'_, '_> {
                     //      const [a , setA] = useState();
                     //
 
-                    let ty = ty.map(|ty| {
-                        self.get_iterator(
-                            span,
-                            Cow::Owned(ty),
-                            GetIteratorOpts {
-                                disallow_str: true,
-                                ..Default::default()
-                            },
-                        )
-                        .context("tried to convert a type to an iterator to assign with an array pattern.")
-                        .unwrap_or_else(|err| {
-                            self.storage.report(err);
-                            Cow::Owned(Type::any(span, Default::default()))
+                    let ty = ty
+                        .map(|ty| {
+                            self.get_iterator(
+                                span,
+                                Cow::Owned(ty),
+                                GetIteratorOpts {
+                                    disallow_str: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .context("tried to convert a type to an iterator to assign with an array pattern.")
+                            .unwrap_or_else(|err| {
+                                self.storage.report(err);
+                                Cow::Owned(Type::any(span, Default::default()))
+                            })
                         })
-                    });
+                        .freezed()
+                        .map(Cow::into_owned)
+                        .freezed();
 
                     let default_ty = default;
-                    let default = default_ty.as_ref().map(|ty| {
-                        self.get_iterator(
-                            span,
-                            Cow::Borrowed(ty),
-                            GetIteratorOpts {
-                                disallow_str: true,
-                                ..Default::default()
-                            },
-                        )
-                        .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
-                        .unwrap_or_else(|err| {
-                            self.storage.report(err);
-                            Cow::Owned(Type::any(span, Default::default()))
+                    let default = default_ty
+                        .as_ref()
+                        .map(|ty| {
+                            self.get_iterator(
+                                span,
+                                Cow::Borrowed(ty),
+                                GetIteratorOpts {
+                                    disallow_str: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
+                            .unwrap_or_else(|err| {
+                                self.storage.report(err);
+                                Cow::Owned(Type::any(span, Default::default()))
+                            })
                         })
-                    });
+                        .freezed()
+                        .map(Cow::into_owned)
+                        .freezed();
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
@@ -355,7 +363,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Ok(())
+                    Ok(ty.or_else(|| default_ty))
                 } else {
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {

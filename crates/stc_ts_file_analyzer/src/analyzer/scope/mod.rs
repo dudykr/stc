@@ -1527,7 +1527,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(())
+        Ok(ty)
     }
 
     /// Returns [Err] if overload is wrong.
