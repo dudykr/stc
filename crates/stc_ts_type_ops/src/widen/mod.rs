@@ -29,6 +29,8 @@ impl Fold<Type> for Widen {
                 ..ty
             }),
 
+            Type::Lit(..) => ty.force_generalize_top_level_literals(),
+
             Type::Tuple(tuple) if self.tuple_to_array => {
                 let span = tuple.span;
 
