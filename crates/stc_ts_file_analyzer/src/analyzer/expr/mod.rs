@@ -3689,6 +3689,18 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            if &*i.sym == "globalThis" {
+                return Ok(Type::Query(QueryType {
+                    span,
+                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                        "globalThis".into(),
+                        span.with_ctxt(SyntaxContext::empty()),
+                    ))),
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }));
+            }
+
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
@@ -3925,6 +3937,7 @@ impl Analyzer<'_, '_> {
         if let TypeOfMode::RValue = type_mode {
             if let Some(name) = &name {
                 if let Some(ty) = self.scope.get_type_from_name(name) {
+                    debug_assert_ne!(ty.span(), DUMMY_SP);
                     return Ok(ty);
                 }
             }
@@ -4012,9 +4025,23 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             if let Some(name) = name {
+                debug_assert_ne!(ty.span(), DUMMY_SP);
+
                 ty = self.apply_type_facts(&name, ty);
 
+                if ty.span().is_dummy() {
+                    ty.respan(span);
+                }
+
+                debug_assert_ne!(ty.span(), DUMMY_SP);
+
                 self.exclude_types_using_fact(span, &name, &mut ty);
+
+                if ty.span().is_dummy() {
+                    ty.respan(span);
+                }
+
+                debug_assert_ne!(ty.span(), DUMMY_SP);
             }
         }
 
@@ -4053,8 +4080,11 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional && include_optional_chaining_undefined {
-            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+            Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
         } else {
+            if !self.is_builtin {
+                debug_assert_ne!(ty.span(), DUMMY_SP);
+            }
             Ok(ty)
         }
     }
