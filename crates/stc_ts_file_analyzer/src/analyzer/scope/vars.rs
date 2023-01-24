@@ -7,8 +7,10 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, LitType, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
+use stc_ts_types::{
+    Array, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
+};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -46,6 +48,15 @@ pub enum VarKind {
 pub(crate) struct DeclareVarsOpts {
     pub kind: VarKind,
     pub use_iterator_for_array: bool,
+}
+
+impl Default for DeclareVarsOpts {
+    fn default() -> Self {
+        Self {
+            kind: VarKind::Var(VarDeclKind::Var),
+            use_iterator_for_array: false,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
@@ -285,7 +296,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
-                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, DeclareVarsOpts { ..opts })
                                     .context("tried to declare left elements to the argument of a rest pattern")
                                     .report(&mut self.storage);
                                 break;
@@ -363,6 +374,8 @@ impl Analyzer<'_, '_> {
 
                     Ok(ty.or(default_ty))
                 } else {
+                    let mut elems = vec![];
+
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {
                             Some(elem) => {
@@ -388,9 +401,25 @@ impl Analyzer<'_, '_> {
                                     }
                                     .freezed();
 
-                                    self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                    let rest_ty = self
+                                        .add_vars(&elem.arg, type_for_rest_arg, None, default, DeclareVarsOpts { ..opts })
                                         .context("tried to declare left elements to the argument of a rest pattern")
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
+                                        .flatten();
+
+                                    elems.push(TupleElement {
+                                        span: elem.span(),
+                                        label: None,
+                                        ty: box Type::Rest(RestType {
+                                            span: elem.span,
+                                            ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                        .freezed(),
+                                        tracker: Default::default(),
+                                    });
+
                                     break;
                                 }
 
@@ -435,14 +464,40 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                                 // TODO(kdy1): actual_ty
-                                self.add_vars(elem, elem_ty, None, default, opts).report(&mut self.storage);
+                                let elem_ty = self
+                                    .add_vars(elem, elem_ty, None, default, opts)
+                                    .report(&mut self.storage)
+                                    .flatten();
+
+                                elems.push(TupleElement {
+                                    span: elem.span(),
+                                    label: None,
+                                    ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
+                                    tracker: Default::default(),
+                                });
                             }
                             // Skip
                             None => {}
                         }
                     }
 
-                    Ok(ty.or(default))
+                    let mut real_ty = Type::Tuple(Tuple {
+                        span,
+                        elems,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    });
+
+                    if let Some(ty) = &ty {
+                        if ty.normalize_instance().is_array() {
+                            real_ty = real_ty.fold_with(&mut TupleToArray);
+                            real_ty.fix();
+                        }
+                    }
+
+                    real_ty.freeze();
+
+                    Ok(Some(real_ty))
                 }
             }
 
@@ -767,7 +822,7 @@ impl Analyzer<'_, '_> {
                 let actual = actual.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
                 let default = default.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
 
-                self.add_vars(&pat.arg, ty, actual, default, opts)
+                self.add_vars(&pat.arg, ty, actual, default, DeclareVarsOpts { ..opts })
             }
 
             _ => {
@@ -947,7 +1002,7 @@ impl Analyzer<'_, '_> {
                 default_ty,
                 DeclareVarsOpts {
                     kind,
-                    use_iterator_for_array: false,
+                    ..Default::default()
                 },
             ),
 
