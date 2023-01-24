@@ -30,6 +30,7 @@ impl Analyzer<'_, '_> {
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
                     allow_ref_declaring: false,
+                    is_fn_param: true,
                     ..child.ctx
                 };
 
