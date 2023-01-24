@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<Type> {
+    pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -313,7 +313,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
+    pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
