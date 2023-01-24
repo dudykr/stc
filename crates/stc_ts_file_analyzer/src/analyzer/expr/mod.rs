@@ -3937,6 +3937,7 @@ impl Analyzer<'_, '_> {
         if let TypeOfMode::RValue = type_mode {
             if let Some(name) = &name {
                 if let Some(ty) = self.scope.get_type_from_name(name) {
+                    debug_assert_ne!(ty.span(), DUMMY_SP);
                     return Ok(ty);
                 }
             }
@@ -4024,9 +4025,15 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             if let Some(name) = name {
+                debug_assert_ne!(ty.span(), DUMMY_SP);
+
                 ty = self.apply_type_facts(&name, ty);
 
+                debug_assert_ne!(ty.span(), DUMMY_SP);
+
                 self.exclude_types_using_fact(span, &name, &mut ty);
+
+                debug_assert_ne!(ty.span(), DUMMY_SP);
             }
         }
 
@@ -4065,8 +4072,11 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional && include_optional_chaining_undefined {
-            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+            Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
         } else {
+            if !self.is_builtin {
+                debug_assert_ne!(ty.span(), DUMMY_SP);
+            }
             Ok(ty)
         }
     }
