@@ -878,7 +878,7 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 

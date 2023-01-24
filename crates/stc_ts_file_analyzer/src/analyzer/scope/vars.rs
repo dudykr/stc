@@ -881,7 +881,7 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         let marks = self.marks();
 
         let span = ty

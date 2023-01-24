@@ -272,11 +272,13 @@ impl Analyzer<'_, '_> {
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 if !self.is_builtin {
-                    match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
-                        Ok(()) => {}
+                    ty = match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
+                        Ok(Some(v)) => Some(v),
                         Err(err) => {
                             self.storage.report(err);
+                            None
                         }
+                        Ok(None) => ty,
                     }
                 }
             }
