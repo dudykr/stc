@@ -1577,6 +1577,7 @@ impl Analyzer<'_, '_> {
                 DeclareVarsOpts {
                     kind,
                     use_iterator_for_array: true,
+                    ..Default::default()
                 },
             ),
 

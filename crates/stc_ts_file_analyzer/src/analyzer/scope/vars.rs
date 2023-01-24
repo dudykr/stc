@@ -48,6 +48,18 @@ pub enum VarKind {
 pub(crate) struct DeclareVarsOpts {
     pub kind: VarKind,
     pub use_iterator_for_array: bool,
+
+    pub cannot_be_array: bool,
+}
+
+impl Default for DeclareVarsOpts {
+    fn default() -> Self {
+        Self {
+            kind: VarKind::Var(VarDeclKind::Var),
+            use_iterator_for_array: false,
+            cannot_be_array: false,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
@@ -287,9 +299,18 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
-                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
-                                    .context("tried to declare left elements to the argument of a rest pattern")
-                                    .report(&mut self.storage);
+                                self.add_vars(
+                                    &elem.arg,
+                                    type_for_rest_arg,
+                                    None,
+                                    default,
+                                    DeclareVarsOpts {
+                                        cannot_be_array: true,
+                                        ..opts
+                                    },
+                                )
+                                .context("tried to declare left elements to the argument of a rest pattern")
+                                .report(&mut self.storage);
                                 break;
                             }
 
@@ -395,7 +416,16 @@ impl Analyzer<'_, '_> {
                                     .freezed();
 
                                     let rest_ty = self
-                                        .add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                        .add_vars(
+                                            &elem.arg,
+                                            type_for_rest_arg,
+                                            None,
+                                            default,
+                                            DeclareVarsOpts {
+                                                cannot_be_array: true,
+                                                ..opts
+                                            },
+                                        )
                                         .context("tried to declare left elements to the argument of a rest pattern")
                                         .report(&mut self.storage)
                                         .flatten();
@@ -482,10 +512,12 @@ impl Analyzer<'_, '_> {
                     });
 
                     dbg!(has_init, &ty);
-                    if match ty {
-                        Some(ty) => !matches!(ty.normalize_instance(), Type::Tuple(..)),
-                        None => !has_init,
-                    } {
+                    if !opts.cannot_be_array
+                        && match ty {
+                            Some(ty) => !matches!(ty.normalize_instance(), Type::Tuple(..)),
+                            None => !has_init,
+                        }
+                    {
                         real_ty = real_ty.fold_with(&mut TupleToArray);
                         real_ty.fix();
                     }
@@ -819,7 +851,16 @@ impl Analyzer<'_, '_> {
                 let actual = actual.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
                 let default = default.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
 
-                self.add_vars(&pat.arg, ty, actual, default, opts)
+                self.add_vars(
+                    &pat.arg,
+                    ty,
+                    actual,
+                    default,
+                    DeclareVarsOpts {
+                        cannot_be_array: true,
+                        ..opts
+                    },
+                )
             }
 
             _ => {
@@ -999,7 +1040,7 @@ impl Analyzer<'_, '_> {
                 default_ty,
                 DeclareVarsOpts {
                     kind,
-                    use_iterator_for_array: false,
+                    ..Default::default()
                 },
             ),
 
