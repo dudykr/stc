@@ -4,7 +4,6 @@ use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };

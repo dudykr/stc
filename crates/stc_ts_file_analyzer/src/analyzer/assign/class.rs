@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;

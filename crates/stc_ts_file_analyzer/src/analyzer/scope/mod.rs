@@ -14,7 +14,6 @@ use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
