@@ -1969,7 +1969,7 @@ impl Analyzer<'_, '_> {
                         false,
                         false,
                     ) {
-                        Ok(()) => {}
+                        Ok(..) => {}
                         Err(err) => {
                             analyzer.storage.report(err);
                         }

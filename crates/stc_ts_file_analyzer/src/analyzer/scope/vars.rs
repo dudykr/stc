@@ -905,7 +905,7 @@ impl Analyzer<'_, '_> {
                 },
             ),
 
-            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(()),
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(None),
 
             _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
         }

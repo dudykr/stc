@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
                         Some(Type::any(v_span, Default::default())),
                         None,
                     ) {
-                        Ok(()) => {}
+                        Ok(..) => {}
                         Err(err) => {
                             self.storage.report(err);
                         }
@@ -277,7 +277,7 @@ impl Analyzer<'_, '_> {
 
                                 // let ty = ty.fold_with(&mut Generalizer::default());
                                 match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, Some(actual_ty), None) {
-                                    Ok(()) => {}
+                                    Ok(..) => {}
                                     Err(err) => {
                                         self.storage.report(err);
                                     }
@@ -289,7 +289,7 @@ impl Analyzer<'_, '_> {
                                 self.storage.report(err);
 
                                 match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, None, None) {
-                                    Ok(()) => {}
+                                    Ok(..) => {}
                                     Err(err) => {
                                         self.storage.report(err);
                                     }
@@ -689,7 +689,7 @@ impl Analyzer<'_, '_> {
                             kind == VarDeclKind::Var,
                             false,
                         ) {
-                            Ok(()) => {}
+                            Ok(..) => {}
                             Err(err) => {
                                 self.storage.report(err);
                             }
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
                         // For ambient contexts and loops, we add variables to the scope.
 
                         match self.declare_vars(VarKind::Var(kind), &v.name) {
-                            Ok(()) => {}
+                            Ok(..) => {}
                             Err(err) => {
                                 self.storage.report(err);
                             }
