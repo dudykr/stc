@@ -1395,8 +1395,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !self.is_builtin && is_override {
-                    v.ty = ty;
-                    return Ok(());
+                    v.ty = ty.clone();
+                    return Ok(ty);
                 }
 
                 if !self.data.known_wrong_overloads.contains(&name) {
@@ -1459,9 +1459,9 @@ impl Analyzer<'_, '_> {
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
-                                            v.ty = Some(var_ty);
+                                            v.ty = Some(var_ty.clone());
                                             restore!();
-                                            return Ok(());
+                                            return Ok(Some(var_ty));
 
                                             // TODO(kdy1):
                                             //  return Err(ErrorKind::
