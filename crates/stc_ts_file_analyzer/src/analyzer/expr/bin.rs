@@ -1816,9 +1816,16 @@ impl Analyzer<'_, '_> {
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
         if let Type::Union(u) = ty.normalize() {
+            let mut has_undefined = false;
             let mut candidates = vec![];
             let mut excluded = vec![];
             for ty in &u.types {
+                // TODO(kdy1): Enable this logic iff it's an optional chaining
+                if ty.is_undefined() {
+                    has_undefined = true;
+                    continue;
+                }
+
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                 if let Ok(prop_ty) = prop_res {
@@ -1846,6 +1853,18 @@ impl Analyzer<'_, '_> {
             }
             let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
+            if has_undefined && candidates.is_empty() {
+                return Ok((
+                    actual,
+                    Type::Keyword(KeywordType {
+                        span: u.span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                    excluded.freezed(),
+                ));
+            }
             let ty = Type::new_union(span, candidates).freezed();
             return Ok((actual, ty, excluded.freezed()));
         }
