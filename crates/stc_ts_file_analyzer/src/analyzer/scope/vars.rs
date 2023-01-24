@@ -8,7 +8,9 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, LitType, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{
+    Array, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
+};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -363,6 +365,8 @@ impl Analyzer<'_, '_> {
 
                     Ok(ty.or(default_ty))
                 } else {
+                    let mut elems = vec![];
+
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {
                             Some(elem) => {
@@ -388,9 +392,25 @@ impl Analyzer<'_, '_> {
                                     }
                                     .freezed();
 
-                                    self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                    let rest_ty = self
+                                        .add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
                                         .context("tried to declare left elements to the argument of a rest pattern")
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
+                                        .flatten();
+
+                                    elems.push(TupleElement {
+                                        span: elem.span(),
+                                        label: None,
+                                        ty: box Type::Rest(RestType {
+                                            span: elem.span,
+                                            ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                        .freezed(),
+                                        tracker: Default::default(),
+                                    });
+
                                     break;
                                 }
 
@@ -435,14 +455,29 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                                 // TODO(kdy1): actual_ty
-                                self.add_vars(elem, elem_ty, None, default, opts).report(&mut self.storage);
+                                let elem_ty = self
+                                    .add_vars(elem, elem_ty, None, default, opts)
+                                    .report(&mut self.storage)
+                                    .flatten();
+
+                                elems.push(TupleElement {
+                                    span: elem.span(),
+                                    label: None,
+                                    ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
+                                    tracker: Default::default(),
+                                });
                             }
                             // Skip
                             None => {}
                         }
                     }
 
-                    Ok(ty.or(default))
+                    Ok(Some(Type::Tuple(Tuple {
+                        span,
+                        elems,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })))
                 }
             }
 
