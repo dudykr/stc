@@ -388,11 +388,11 @@ impl Analyzer<'_, '_> {
                             r
                         };
 
-                        let mut is_loose_comparison = false;
+                        let mut is_loose_comparison_with_null_or_undefined = false;
                         match op {
                             op!("==") | op!("!=") => {
                                 if r.is_null() | r.is_undefined() {
-                                    is_loose_comparison = true;
+                                    is_loose_comparison_with_null_or_undefined = true;
                                     let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
                                     let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
@@ -433,7 +433,7 @@ impl Analyzer<'_, '_> {
                             _ => (),
                         }
 
-                        let exclude_types = if is_loose_comparison {
+                        let exclude_types = if is_loose_comparison_with_null_or_undefined {
                             vec![
                                 Type::Keyword(KeywordType {
                                     span,
