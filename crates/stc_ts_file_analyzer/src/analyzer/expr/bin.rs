@@ -4,6 +4,7 @@ use std::{
     convert::{TryFrom, TryInto},
 };
 
+use itertools::Itertools;
 use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
@@ -374,7 +375,7 @@ impl Analyzer<'_, '_> {
                 }) {
                     // === with an unknown does not narrow type
                     if self.ctx.in_cond && !r_ty.is_unknown() {
-                        let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                        let (name, mut r, exclude) = self.calc_type_facts_for_equality(l, r_ty)?;
                         r = if has_switch_case_test_not_compatible {
                             Type::Keyword(KeywordType {
                                 span,
@@ -449,7 +450,7 @@ impl Analyzer<'_, '_> {
                                 }),
                             ]
                         } else {
-                            vec![r.clone()]
+                            exclude.into_iter().collect_vec()
                         };
 
                         if is_eq {
@@ -1794,9 +1795,10 @@ impl Analyzer<'_, '_> {
 
             let narrowed = self
                 .narrow_with_equality(&orig_ty, equals_to)
-                .context("tried to narrow type with equality")?;
+                .context("tried to narrow type with equality")?
+                .freezed();
 
-            return Ok((name, narrowed));
+            return Ok((name, narrowed.clone(), Some(narrowed)));
         }
 
         let eq_ty = equals_to.normalize();
@@ -1840,10 +1842,11 @@ impl Analyzer<'_, '_> {
             }
             let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
-            return Ok((actual, Type::union(candidates)));
+            let ty = Type::new_union(span, candidates).freezed();
+            return Ok((actual, ty.clone(), Some(ty)));
         }
 
-        Ok((name, eq_ty.clone()))
+        Ok((name, equals_to.clone(), Some(equals_to.clone())))
     }
 
     /// Returns new type of the variable after comparison with `===`.
