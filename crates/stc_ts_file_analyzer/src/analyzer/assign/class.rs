@@ -186,8 +186,6 @@ impl Analyzer<'_, '_> {
                     lhs_members.push(lm);
                 }
 
-                let _ctx = ctx!("tried to assign type elements to class members");
-
                 self.assign_to_type_elements(
                     data,
                     l.span,
@@ -202,7 +200,8 @@ impl Analyzer<'_, '_> {
                         is_assigning_to_class_members: true,
                         ..opts
                     },
-                )?;
+                )
+                .context("tried to assign type elements to class members")?;
 
                 return Ok(());
             }

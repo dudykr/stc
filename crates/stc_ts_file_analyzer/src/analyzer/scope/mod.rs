@@ -1209,8 +1209,6 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = ctx!(format!("declare_var: {:?}", name));
-
         if let Some(ty) = &ty {
             ty.assert_valid();
             debug!("[({})/vars]: Declaring {} as {}", self.scope.depth(), name, dump_type_as_string(ty));
