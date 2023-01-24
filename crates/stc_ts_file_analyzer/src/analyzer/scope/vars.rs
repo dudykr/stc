@@ -481,7 +481,7 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     });
 
-                    if has_init {
+                    if !has_init && ty.is_none() {
                         real_ty = real_ty.fold_with(&mut TupleToArray);
                         real_ty.fix();
                     }
