@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return self.declare_var(
+                self.declare_var(
                     span,
                     opts.kind,
                     i.id.clone().into(),
@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
                     // same name
                     opts.kind == VarKind::Var(VarDeclKind::Var),
                     false,
-                );
+                )
             }
 
             RPat::Assign(p) => {
@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                                 // Rest element is special.
                                 let type_for_rest_arg = match &ty {
                                     Some(ty) => self
-                                        .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
+                                        .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                         .map(Cow::into_owned)
                                         .report(&mut self.storage),
@@ -363,7 +363,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Ok(ty.or_else(|| default_ty))
+                    Ok(ty.or(default_ty))
                 } else {
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {
@@ -444,7 +444,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Ok(ty.or_else(|| default))
+                    Ok(ty.or(default))
                 }
             }
 
@@ -721,7 +721,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Ok(ty.or_else(|| default))
+                Ok(ty.or(default))
             }
 
             RPat::Rest(pat) => {
