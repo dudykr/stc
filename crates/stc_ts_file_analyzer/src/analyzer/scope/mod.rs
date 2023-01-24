@@ -1267,7 +1267,7 @@ impl Analyzer<'_, '_> {
             spans.push((kind, span));
 
             if err {
-                let mut done = false;
+                let mut reported_error = false;
                 for (_, span) in &**spans {
                     if matches!(kind, VarKind::Param | VarKind::Class) {
                         self.storage.report(
@@ -1277,7 +1277,7 @@ impl Analyzer<'_, '_> {
                             }
                             .into(),
                         );
-                        done = true;
+                        reported_error = true;
                     } else {
                         self.storage.report(
                             ErrorKind::DuplicateVar {
@@ -1289,8 +1289,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if done {
-                    return Ok(());
+                if reported_error {
+                    return Ok(None);
                 }
             }
         }
