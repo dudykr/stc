@@ -315,6 +315,7 @@ controlFlow/controlFlowAssignmentExpression.ts
 controlFlow/controlFlowAssignmentPatternOrder.ts
 controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBinaryOrExpression.ts
+controlFlow/controlFlowBindingElement.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
 controlFlow/controlFlowDeleteOperator.ts
