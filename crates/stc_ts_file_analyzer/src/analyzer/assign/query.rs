@@ -15,8 +15,9 @@ impl Analyzer<'_, '_> {
 
         match &*to.expr {
             QueryExpr::TsEntityName(e) => {
-                let _ctx = ctx!("tried to resolve typeof for assignment");
-                let to = self.resolve_typeof(opts.span, e)?;
+                let to = self
+                    .resolve_typeof(opts.span, e)
+                    .context("tried to resolve typeof for assignment")?;
 
                 if to.is_global_this() {
                     return Err(ErrorKind::SimpleAssignFailed {
