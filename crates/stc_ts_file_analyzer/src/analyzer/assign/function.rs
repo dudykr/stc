@@ -460,8 +460,9 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    let _ctx = ctx!("tried to assign an expanded type to a function");
-                    return self.assign_to_function(data, lt, l, &ty, opts);
+                    return self
+                        .assign_to_function(data, lt, l, &ty, opts)
+                        .context("tried to assign an expanded type to a function");
                 }
             }
             _ => {}
@@ -887,47 +888,47 @@ impl Analyzer<'_, '_> {
                 }
 
                 (RPat::Rest(..), _) => {
-                    let _ctx = ctx!(format!(
-                        "tried to assign parameters to a rest parameter; l_ty = {}",
-                        force_dump_type_as_string(&l.ty)
-                    ));
-
                     // TODO(kdy1): Implement correct logic
 
                     return Ok(());
                 }
 
                 (_, RPat::Rest(..)) => {
-                    let _ctx = ctx!(format!(
-                        "tried to assign a rest parameter to parameters; r_ty = {}",
-                        force_dump_type_as_string(&r.ty)
-                    ));
-
                     // If r is a tuple, we should assign each element to l.
                     let r_ty = self.normalize(Some(span), Cow::Borrowed(&r.ty), Default::default())?;
                     if let Some(r_tuple) = r_ty.as_tuple() {
                         let mut ri = r_tuple.elems.iter();
 
-                        let r = ri.next();
-                        if let Some(ri) = r {
-                            self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                        let re = ri.next();
+                        if let Some(ri) = re {
+                            self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
+                                format!(
+                                    "tried to assign a rest parameter to parameters; r_ty = {}",
+                                    force_dump_type_as_string(&r.ty)
+                                )
+                            })?;
                         }
                         for l in li {
-                            let r = ri.next();
-                            if let Some(ri) = r {
-                                self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                            let re = ri.next();
+                            if let Some(ri) = re {
+                                self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
+                                    format!(
+                                        "tried to assign a rest parameter to parameters; r_ty = {} (iter)",
+                                        force_dump_type_as_string(&r.ty)
+                                    )
+                                })?;
                             }
                         }
 
                         return Ok(());
                     }
 
-                    let _ctx = ctx!(format!("tried to assign a rest parameter to parameters where r-ty is not a tuple"));
-
-                    self.assign_param(data, l, r, opts)?;
+                    self.assign_param(data, l, r, opts)
+                        .with_context(|| format!("tried to assign a rest parameter to parameters where r-ty is not a tuple"))?;
 
                     for l in li {
-                        self.assign_param(data, l, r, opts)?;
+                        self.assign_param(data, l, r, opts)
+                            .with_context(|| format!("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)"))?;
                     }
 
                     return Ok(());
