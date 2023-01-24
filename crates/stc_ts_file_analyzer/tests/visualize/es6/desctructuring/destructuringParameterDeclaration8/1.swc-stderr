@@ -16,7 +16,7 @@ Error:
 
 Error: 
   > ({ nested: { p ='c'  }  }: {
-  |     nested: {
+  |     nested?: {
   |         p?: ('a' | 'b');
   |     };
   | }) => void

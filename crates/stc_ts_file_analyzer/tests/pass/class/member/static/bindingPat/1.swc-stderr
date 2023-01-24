@@ -29,7 +29,7 @@ Error:
   | }.x]: b = ""  }: {
   |     [class {
   |         static x = 1;
-  |     }.x]: any;
+  |     }.x]?: any;
   | }) => void
 
   x Type
@@ -44,7 +44,7 @@ Error:
   | }.x]: b = ""  }: {
   |     [class {
   |         static x = 1;
-  |     }.x]: any;
+  |     }.x]?: any;
   | }) => void
 
   x Type
