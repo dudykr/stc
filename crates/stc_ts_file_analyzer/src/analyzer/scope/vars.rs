@@ -444,7 +444,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Ok(())
+                    Ok(ty.or_else(|| default))
                 }
             }
 
@@ -721,7 +721,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Ok(())
+                Ok(ty.or_else(|| default))
             }
 
             RPat::Rest(pat) => {

@@ -210,7 +210,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = p
+        let mut ty = p
             .node_id()
             .and_then(|node_id| {
                 self.mutations
