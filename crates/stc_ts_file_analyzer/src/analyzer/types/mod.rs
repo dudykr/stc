@@ -24,7 +24,6 @@ use stc_ts_types::{
 use stc_ts_utils::run;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx,
     ext::{SpanExt, TypeVecExt},
     stack,
 };
