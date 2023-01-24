@@ -7,6 +7,7 @@ use std::{
     fmt,
     fmt::{Debug, Display},
     ops::RangeInclusive,
+    panic::Location,
     path::PathBuf,
 };
 
@@ -66,9 +67,18 @@ impl From<ErrorKind> for Error {
 }
 
 impl Error {
-    pub fn context(mut self, context: impl Display) -> Error {
+    #[track_caller]
+    pub fn context(self, context: impl Display) -> Error {
+        return self.context_impl(Location::caller(), context);
+    }
+
+    #[cfg_attr(not(debug_assertions), attr)]
+    pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
-        self.contexts.push(context.to_string());
+        {
+            self.contexts
+                .push(format!("{} (at {}:{}:{})", context, loc.file(), loc.line(), loc.column()));
+        }
         self
     }
 
@@ -1616,9 +1626,10 @@ impl ErrorKind {
                 }
             }
         }
+        let loc = Location::caller();
 
         let err: Error = self.into();
-        err.context(context.to_string())
+        err.context_impl(loc, context)
     }
 
     /// Split error into causes.

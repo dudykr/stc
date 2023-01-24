@@ -1,3 +1,5 @@
+use std::panic::Location;
+
 use crate::{Error, ErrorKind};
 
 pub trait DebugExt<T>: Into<Result<T, Error>> {
@@ -14,8 +16,9 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
         if !cfg!(debug_assertions) {
             return self.into();
         }
+        let loc = Location::caller();
 
-        self.into().map_err(|err: Error| err.context(msg))
+        self.into().map_err(|err: Error| err.context_impl(loc, msg))
     }
 
     #[inline]
@@ -27,8 +30,9 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
         if !cfg!(debug_assertions) {
             return self.into();
         }
+        let loc = Location::caller();
 
-        self.into().map_err(|err: Error| err.context(msg()))
+        self.into().map_err(|err: Error| err.context_impl(loc, msg()))
     }
 }
 
