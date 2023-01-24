@@ -2302,6 +2302,7 @@ types/specifyingTypes/typeQueries/typeofClass2.ts
 types/specifyingTypes/typeQueries/typeofClassWithPrivates.ts
 types/specifyingTypes/typeQueries/typeofModuleWithoutExports.ts
 types/specifyingTypes/typeQueries/typeofTypeParameter.ts
+types/spread/objectSpread.ts
 types/spread/objectSpreadComputedProperty.ts
 types/spread/objectSpreadNoTransform.ts
 types/spread/objectSpreadRepeatedComplexity.ts
