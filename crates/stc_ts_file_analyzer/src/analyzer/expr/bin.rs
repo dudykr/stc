@@ -372,7 +372,8 @@ impl Analyzer<'_, '_> {
 
                     (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
-                    if self.ctx.in_cond {
+                    // === with an unknown does not narrow type
+                    if self.ctx.in_cond && !r_ty.is_unknown() {
                         let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
                         r = if has_switch_case_test_not_compatible {
                             Type::Keyword(KeywordType {
