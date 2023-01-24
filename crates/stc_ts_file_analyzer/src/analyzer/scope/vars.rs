@@ -374,8 +374,6 @@ impl Analyzer<'_, '_> {
 
                     Ok(ty.or(default_ty))
                 } else {
-                    let has_init = arr.elems.iter().flatten().any(pat_has_init);
-
                     let mut elems = vec![];
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
@@ -1048,34 +1046,5 @@ fn remove_readonly(ty: &mut Type) {
         }
 
         ty.freeze();
-    }
-}
-
-fn pat_has_init(p: &RPat) -> bool {
-    match p {
-        RPat::Ident(_) => false,
-        RPat::Array(p) => {
-            for elem in &p.elems {
-                if let Some(elem) = elem {
-                    if pat_has_init(elem) {
-                        return true;
-                    }
-                }
-            }
-            false
-        }
-        RPat::Rest(p) => pat_has_init(&p.arg),
-        RPat::Object(p) => p.props.iter().any(obj_pat_has_init),
-        RPat::Assign(_) => true,
-        RPat::Invalid(_) => false,
-        RPat::Expr(_) => false,
-    }
-}
-
-fn obj_pat_has_init(p: &RObjectPatProp) -> bool {
-    match p {
-        RObjectPatProp::KeyValue(p) => pat_has_init(&p.value),
-        RObjectPatProp::Assign(_) => true,
-        RObjectPatProp::Rest(p) => pat_has_init(&p.arg),
     }
 }
