@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
+use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{
     Array, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
 };
@@ -510,17 +510,6 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     });
-
-                    dbg!(has_init, &ty);
-                    if !opts.cannot_be_array
-                        && match ty {
-                            Some(ty) => !matches!(ty.normalize_instance(), Type::Tuple(..)),
-                            None => !has_init,
-                        }
-                    {
-                        real_ty = real_ty.fold_with(&mut TupleToArray);
-                        real_ty.fix();
-                    }
 
                     real_ty.freeze();
 
