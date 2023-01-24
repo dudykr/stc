@@ -520,8 +520,6 @@ impl Analyzer<'_, '_> {
 
                     real_ty.freeze();
 
-                    dbg!(force_dump_type_as_string(&real_ty));
-
                     Ok(Some(real_ty))
                 }
             }
