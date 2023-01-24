@@ -404,7 +404,7 @@ impl Analyzer<'_, '_> {
                         // TODO(kdy1): Remove this reevaluation
                         //
                         // We call declare_vars above, and it validates the default value
-                        let mut ty = p.right.validate_with_default(&mut *self.with_ctx(ctx))?.generalize_lit();
+                        let mut rhs_ty = p.right.validate_with_default(&mut *self.with_ctx(ctx))?.generalize_lit();
 
                         if self.ctx.is_fn_param {
                             // If the declaration includes an initializer expression (which is
@@ -413,10 +413,10 @@ impl Analyzer<'_, '_> {
                             // function body), the parameter type is the widened form (section
                             // 3.11) of the type of the initializer expression.
 
-                            ty = ty.fold_with(&mut Widen { tuple_to_array: true });
+                            rhs_ty = rhs_ty.fold_with(&mut Widen { tuple_to_array: true });
                         }
 
-                        ty
+                        rhs_ty
                     }),
                     PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
