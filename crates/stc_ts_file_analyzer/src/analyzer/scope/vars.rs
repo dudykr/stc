@@ -492,8 +492,6 @@ impl Analyzer<'_, '_> {
                                     .context("tried to access property to declare variables")
                             });
 
-                            let optional = default.is_some();
-
                             let default_prop_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
@@ -548,7 +546,7 @@ impl Analyzer<'_, '_> {
                                     accessibility: None,
                                     readonly: false,
                                     key,
-                                    optional,
+                                    optional: true,
                                     params: Vec::new(),
                                     type_ann: real_property_type,
                                     type_params: None,
@@ -563,6 +561,7 @@ impl Analyzer<'_, '_> {
                                 sym: prop.key.sym.clone(),
                             };
                             used_keys.push(key.clone());
+                            let optional = prop.value.is_some();
 
                             let ctx = Ctx {
                                 disallow_unknown_object_property: true,
@@ -715,7 +714,7 @@ impl Analyzer<'_, '_> {
                                     accessibility: None,
                                     readonly: false,
                                     key,
-                                    optional: true,
+                                    optional,
                                     params: Vec::new(),
                                     type_ann: real_property_type.flatten().map(|v| box v),
                                     type_params: None,
