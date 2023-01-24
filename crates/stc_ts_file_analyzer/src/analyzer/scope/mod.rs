@@ -866,7 +866,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<()> {
+    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<Option<Type>> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
@@ -878,7 +878,7 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
@@ -1207,7 +1207,7 @@ impl Analyzer<'_, '_> {
         initialized: bool,
         allow_multiple: bool,
         is_override: bool,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1267,7 +1267,7 @@ impl Analyzer<'_, '_> {
             spans.push((kind, span));
 
             if err {
-                let mut done = false;
+                let mut reported_error = false;
                 for (_, span) in &**spans {
                     if matches!(kind, VarKind::Param | VarKind::Class) {
                         self.storage.report(
@@ -1277,7 +1277,7 @@ impl Analyzer<'_, '_> {
                             }
                             .into(),
                         );
-                        done = true;
+                        reported_error = true;
                     } else {
                         self.storage.report(
                             ErrorKind::DuplicateVar {
@@ -1289,8 +1289,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if done {
-                    return Ok(());
+                if reported_error {
+                    return Ok(None);
                 }
             }
         }
@@ -1395,8 +1395,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !self.is_builtin && is_override {
-                    v.ty = ty;
-                    return Ok(());
+                    v.ty = ty.clone();
+                    return Ok(ty);
                 }
 
                 if !self.data.known_wrong_overloads.contains(&name) {
@@ -1415,7 +1415,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                v.ty = if let Some(ty) = ty {
+                v.ty = if let Some(ty) = ty.clone() {
                     Some(if let Some(var_ty) = v.ty {
                         match ty.normalize() {
                             Type::Union(..) => {
@@ -1459,9 +1459,9 @@ impl Analyzer<'_, '_> {
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
-                                            v.ty = Some(var_ty);
+                                            v.ty = Some(var_ty.clone());
                                             restore!();
-                                            return Ok(());
+                                            return Ok(Some(var_ty));
 
                                             // TODO(kdy1):
                                             //  return Err(ErrorKind::
@@ -1527,7 +1527,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(())
+        Ok(ty)
     }
 
     /// Returns [Err] if overload is wrong.
@@ -1571,7 +1571,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
                 pat,

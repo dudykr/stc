@@ -1,10 +1,9 @@
-use rnode::{FoldWith, VisitWith};
+use rnode::VisitWith;
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat, RObjectPatProp,
     RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{ErrorKind, Errors};
-use stc_ts_type_ops::widen::Widen;
 use stc_ts_types::{
     Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, RestType, Tuple, TupleElement, TypeElMetadata,
     TypeElement, TypeLit, TypeLitMetadata,
@@ -182,6 +181,12 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPat) -> VResult<ty::FnParam> {
+        self.validate_pat(p)
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn validate_pat(&mut self, p: &RPat) -> VResult<ty::FnParam> {
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
@@ -204,7 +209,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = p
+        let mut ty = p
             .node_id()
             .and_then(|node_id| {
                 self.mutations
@@ -234,7 +239,6 @@ impl Analyzer<'_, '_> {
                         })
                     })
             })
-            .map(|res| res.map(|ty| ty.freezed()))
             .transpose()?
             .freezed();
 
@@ -267,11 +271,13 @@ impl Analyzer<'_, '_> {
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 if !self.is_builtin {
-                    match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
-                        Ok(()) => {}
+                    ty = match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
+                        Ok(Some(v)) => Some(v),
                         Err(err) => {
                             self.storage.report(err);
+                            None
                         }
+                        Ok(None) => ty,
                     }
                 }
             }
@@ -390,28 +396,7 @@ impl Analyzer<'_, '_> {
             Some(v) => Some(v),
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
-                    PatMode::Decl => Some({
-                        let ctx = Ctx {
-                            reevaluating_assign_pat_rhs: true,
-                            ..self.ctx
-                        };
-                        // TODO(kdy1): Remove this reevaluation
-                        //
-                        // We call declare_vars above, and it validates the default value
-                        let mut ty = p.right.validate_with_default(&mut *self.with_ctx(ctx))?.generalize_lit();
-
-                        if self.ctx.is_fn_param {
-                            // If the declaration includes an initializer expression (which is
-                            // permitted only when the parameter list
-                            // occurs in conjunction with a
-                            // function body), the parameter type is the widened form (section
-                            // 3.11) of the type of the initializer expression.
-
-                            ty = ty.fold_with(&mut Widen { tuple_to_array: true });
-                        }
-
-                        ty
-                    }),
+                    PatMode::Decl => None,
                     PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,

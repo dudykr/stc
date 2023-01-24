@@ -7,7 +7,7 @@
 
 Error: 
   > ({ z =10  }: {
-  |     z?;
+  |     z?: any;
   | }) => void
 
   x Type

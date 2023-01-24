@@ -578,6 +578,7 @@ impl Analyzer<'_, '_> {
                 child.ctx.in_async = c.function.is_async;
                 child.ctx.in_generator = c.function.is_generator;
                 child.ctx.in_static_method = c.is_static;
+                child.ctx.is_fn_param = true;
 
                 child.scope.declaring_prop = match &key {
                     Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
@@ -628,6 +629,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let params = c.function.params.validate_with(child)?;
+                child.ctx.is_fn_param = false;
 
                 // c.function.visit_children_with(child);
 
@@ -1969,7 +1971,7 @@ impl Analyzer<'_, '_> {
                         false,
                         false,
                     ) {
-                        Ok(()) => {}
+                        Ok(..) => {}
                         Err(err) => {
                             analyzer.storage.report(err);
                         }
@@ -2234,7 +2236,7 @@ impl Analyzer<'_, '_> {
             false,
             false,
         ) {
-            Ok(()) => {}
+            Ok(..) => {}
             Err(err) => {
                 self.storage.report(err);
             }
