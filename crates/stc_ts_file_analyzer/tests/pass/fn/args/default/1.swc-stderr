@@ -17,7 +17,7 @@ Error:
 
 Error: 
   > ({ z  }: {
-  |     z?: string;
+  |     z?: (undefined | string);
   | }) => void
 
   x Type
