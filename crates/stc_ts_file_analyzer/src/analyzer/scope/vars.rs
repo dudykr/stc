@@ -481,12 +481,11 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     });
 
-                    if !has_init
-                        && match ty {
-                            Some(ty) => matches!(ty.normalize_instance(), Type::Array(..)),
-                            None => true,
-                        }
-                    {
+                    dbg!(has_init, &ty);
+                    if match ty {
+                        Some(ty) => !matches!(ty.normalize_instance(), Type::Tuple(..)),
+                        None => !has_init,
+                    } {
                         real_ty = real_ty.fold_with(&mut TupleToArray);
                         real_ty.fix();
                     }
