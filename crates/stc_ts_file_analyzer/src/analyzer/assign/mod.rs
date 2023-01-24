@@ -989,9 +989,9 @@ impl Analyzer<'_, '_> {
 
             if lc.extends_type.type_eq(&rc.extends_type) {
                 //
-                let l_variance = self.variance(lc)?;
+                let variance = self.variance(lc)?;
 
-                match l_variance {
+                match variance {
                     Variance::Covariant => {
                         return self
                             .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
