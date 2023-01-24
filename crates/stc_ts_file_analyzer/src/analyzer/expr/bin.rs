@@ -374,7 +374,7 @@ impl Analyzer<'_, '_> {
                 }) {
                     // === with an unknown does not narrow type
                     if self.ctx.in_cond && !r_ty.is_unknown() {
-                        let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                        let (name, mut r, exclude) = self.calc_type_facts_for_equality(l, r_ty)?;
                         r = if has_switch_case_test_not_compatible {
                             Type::Keyword(KeywordType {
                                 span,
@@ -388,11 +388,11 @@ impl Analyzer<'_, '_> {
                             r
                         };
 
-                        let mut is_loose_comparison = false;
+                        let mut is_loose_comparison_with_null_or_undefined = false;
                         match op {
                             op!("==") | op!("!=") => {
                                 if r.is_null() | r.is_undefined() {
-                                    is_loose_comparison = true;
+                                    is_loose_comparison_with_null_or_undefined = true;
                                     let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
                                     let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
@@ -433,7 +433,7 @@ impl Analyzer<'_, '_> {
                             _ => (),
                         }
 
-                        let exclude_types = if is_loose_comparison {
+                        let exclude_types = if is_loose_comparison_with_null_or_undefined {
                             vec![
                                 Type::Keyword(KeywordType {
                                     span,
@@ -449,7 +449,7 @@ impl Analyzer<'_, '_> {
                                 }),
                             ]
                         } else {
-                            vec![r.clone()]
+                            exclude.freezed()
                         };
 
                         if is_eq {
@@ -1780,7 +1780,9 @@ impl Analyzer<'_, '_> {
     }
 
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
-    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type)> {
+    ///
+    /// Returns `(name, true_fact, false_fact)`.
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
         let span = equals_to.span();
 
         let mut id: RIdent = name.as_ids()[0].clone().into();
@@ -1792,9 +1794,10 @@ impl Analyzer<'_, '_> {
 
             let narrowed = self
                 .narrow_with_equality(&orig_ty, equals_to)
-                .context("tried to narrow type with equality")?;
+                .context("tried to narrow type with equality")?
+                .freezed();
 
-            return Ok((name, narrowed));
+            return Ok((name, narrowed.clone(), vec![narrowed]));
         }
 
         let eq_ty = equals_to.normalize();
@@ -1814,6 +1817,7 @@ impl Analyzer<'_, '_> {
 
         if let Type::Union(u) = ty.normalize() {
             let mut candidates = vec![];
+            let mut excluded = vec![];
             for ty in &u.types {
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
@@ -1832,16 +1836,21 @@ impl Analyzer<'_, '_> {
                         }
                     };
                     if possible {
+                        if prop_ty.iter_union().any(|prop_ty| prop_ty.type_eq(equals_to)) {
+                            excluded.push(ty.clone())
+                        }
+
                         candidates.push(ty.clone())
                     }
                 }
             }
             let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
-            return Ok((actual, Type::union(candidates)));
+            let ty = Type::new_union(span, candidates).freezed();
+            return Ok((actual, ty, excluded.freezed()));
         }
 
-        Ok((name, eq_ty.clone()))
+        Ok((name, equals_to.clone(), vec![equals_to.clone()]))
     }
 
     /// Returns new type of the variable after comparison with `===`.
