@@ -351,6 +351,23 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
             .fixed()),
+            Type::Intersection(ref mut to_intersection) => {
+                for to_ty in to_intersection.types.iter_mut().rev() {
+                    if to_ty.is_type_lit() {
+                        *to_ty = self.append_type_element(to_ty.clone(), rhs)?;
+                        return Ok(to);
+                    }
+                }
+
+                to_intersection.types.push(Type::TypeLit(TypeLit {
+                    span: rhs.span(),
+                    members: vec![rhs],
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }));
+
+                Ok(to)
+            }
             _ => Err(ErrorKind::Unimplemented {
                 span: to.span(),
                 msg: format!("append_type_element\n{:?}\n{:?}", to, rhs),
