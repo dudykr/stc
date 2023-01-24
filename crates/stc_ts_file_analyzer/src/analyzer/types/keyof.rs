@@ -244,8 +244,6 @@ impl Analyzer<'_, '_> {
                     let mut types = vec![];
 
                     for (idx, elem) in ty.elems.iter().enumerate() {
-                        let _ctx = ctx!("tried to get key of a tuple element");
-
                         let elem_ty = self.normalize(
                             Some(elem.span),
                             Cow::Borrowed(&elem.ty),
@@ -255,7 +253,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?;
                         if let Some(rest) = elem_ty.as_rest() {
-                            types.push(self.keyof(elem.span, &rest.ty)?);
+                            types.push(self.keyof(elem.span, &rest.ty).context("tried to get key of a tuple element")?);
                         } else {
                             types.push(Type::Lit(LitType {
                                 span,
