@@ -9,9 +9,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{
-    Array, Key, KeywordType, LitType, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
-};
+use stc_ts_types::{Array, Key, LitType, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -569,7 +567,7 @@ impl Analyzer<'_, '_> {
                                 ..self.ctx
                             };
 
-                            let mut prop_ty = ty.as_ref().try_map(|ty| {
+                            let prop_ty = ty.as_ref().try_map(|ty| {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
@@ -607,26 +605,6 @@ impl Analyzer<'_, '_> {
                                         .ok()
                                 })
                                 .freezed();
-
-                            if prop.value.is_some() {
-                                prop_ty = prop_ty.map(|ty| {
-                                    // Optional
-                                    ty.map(|ty| {
-                                        Type::new_union(
-                                            span,
-                                            vec![
-                                                ty,
-                                                Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                            ],
-                                        )
-                                    })
-                                });
-                            }
 
                             let real_property_type = match prop_ty {
                                 Ok(prop_ty) => {
