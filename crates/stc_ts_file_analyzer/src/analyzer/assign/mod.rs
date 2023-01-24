@@ -990,25 +990,20 @@ impl Analyzer<'_, '_> {
             if lc.extends_type.type_eq(&rc.extends_type) {
                 //
                 let l_variance = self.variance(lc)?;
-                let r_variance = self.variance(rc)?;
 
-                match (l_variance, r_variance) {
-                    (Variance::Covariant, Variance::Covariant) => {
+                match l_variance {
+                    Variance::Covariant => {
                         return self
                             .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
                             .context("tried assignment of covariant types")
                     }
-                    (Variance::Contravariant, Variance::Contravariant) => {
+                    Variance::Contravariant => {
                         return self
                             .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
                             .context("tried assignment of contravariant types")
                     }
-                    _ => {
-                        return Err(ErrorKind::Unimplemented {
-                            span,
-                            msg: format!("{:?} = {:?}", l_variance, r_variance),
-                        }
-                        .into())
+                    Variance::Invariant => {
+                        fail!()
                     }
                 }
             }
