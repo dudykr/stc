@@ -1,0 +1,41 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/es6/desctructuring/destructuringParameterDeclaration8/1.ts:8:5]
+ 8 | p
+   : ^
+   `----
+
+Error: 
+  > ('a' | 'b')
+
+  x Type
+    ,-[$DIR/tests/visualize/es6/desctructuring/destructuringParameterDeclaration8/1.ts:11:1]
+ 11 | test({});
+    : ^^^^
+    `----
+
+Error: 
+  > ({ nested: { p ='c'  }  }: {
+  |     nested: {
+  |         p?: ('a' | 'b');
+  |     };
+  | }) => void
+
+  x Type
+    ,-[$DIR/tests/visualize/es6/desctructuring/destructuringParameterDeclaration8/1.ts:11:1]
+ 11 | test({});
+    :      ^^
+    `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/es6/desctructuring/destructuringParameterDeclaration8/1.ts:11:1]
+ 11 | test({});
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > void
