@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    let mut ty = Type::Tuple(Tuple {
+                    let mut real_ty = Type::Tuple(Tuple {
                         span,
                         elems,
                         metadata: Default::default(),
@@ -482,15 +482,15 @@ impl Analyzer<'_, '_> {
                     });
 
                     if has_init {
-                        ty = ty.fold_with(&mut TupleToArray);
-                        ty.fix();
+                        real_ty = real_ty.fold_with(&mut TupleToArray);
+                        real_ty.fix();
                     }
 
-                    ty.freeze();
+                    real_ty.freeze();
 
-                    dbg!(force_dump_type_as_string(&ty));
+                    dbg!(force_dump_type_as_string(&real_ty));
 
-                    Ok(Some(ty))
+                    Ok(Some(real_ty))
                 }
             }
 
