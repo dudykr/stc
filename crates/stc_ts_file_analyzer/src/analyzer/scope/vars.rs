@@ -492,6 +492,8 @@ impl Analyzer<'_, '_> {
                                     .context("tried to access property to declare variables")
                             });
 
+                            let optional = default.is_some();
+
                             let default_prop_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
@@ -546,7 +548,7 @@ impl Analyzer<'_, '_> {
                                     accessibility: None,
                                     readonly: false,
                                     key,
-                                    optional: false,
+                                    optional,
                                     params: Vec::new(),
                                     type_ann: real_property_type,
                                     type_params: None,
