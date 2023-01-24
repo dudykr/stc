@@ -2876,12 +2876,12 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
-        let covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+        let can_be_covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
-        let contravariant =
+        let can_be_contravariant =
             self.is_contravariant(&ty.check_type, &ty.true_type)? || self.is_contravariant(&ty.check_type, &ty.false_type)?;
 
-        match (covariant, contravariant) {
+        match (can_be_covariant, can_be_contravariant) {
             (true, true) | (false, false) => Ok(Variance::Invariant),
             (true, false) => Ok(Variance::Covariant),
             (false, true) => Ok(Variance::Contravariant),
