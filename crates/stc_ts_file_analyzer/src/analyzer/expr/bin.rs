@@ -1836,7 +1836,7 @@ impl Analyzer<'_, '_> {
                         }
                     };
                     if possible {
-                        if prop_ty.type_eq(equals_to) {
+                        if prop_ty.iter_union().any(|prop_ty| prop_ty.type_eq(equals_to)) {
                             excluded.push(ty.clone())
                         }
 
