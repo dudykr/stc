@@ -141,7 +141,6 @@ pub(crate) struct Ctx {
 
     reevaluating_call_or_new: bool,
     reevaluating_argument: bool,
-    reevaluating_assign_pat_rhs: bool,
 
     /// If true, all errors should be ignored.
     ///
@@ -216,7 +215,7 @@ pub(crate) struct Ctx {
 
 impl Ctx {
     pub fn reevaluating(self) -> bool {
-        self.reevaluating_argument || self.reevaluating_call_or_new || self.reevaluating_assign_pat_rhs
+        self.reevaluating_argument || self.reevaluating_call_or_new
     }
 
     pub fn can_generalize_literals(self) -> bool {
@@ -503,7 +502,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_static_method: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
-                reevaluating_assign_pat_rhs: false,
                 ignore_errors: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
