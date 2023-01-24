@@ -4,7 +4,6 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
