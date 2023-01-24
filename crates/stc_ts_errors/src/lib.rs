@@ -2074,14 +2074,7 @@ impl ErrorKind {
         for e in vec {
             match *e.inner {
                 ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
-                _ => {
-                    if let Some(idx) = buf.iter().position(|prev| prev.inner == e.inner) {
-                        #[cfg(debug_assertions)]
-                        buf[idx].contexts.push(format!("duplicate: {}", e.contexts.join("\n")));
-                        continue;
-                    }
-                    buf.push(e)
-                }
+                _ => buf.push(e),
             }
         }
 
