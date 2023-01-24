@@ -2,7 +2,6 @@ use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
