@@ -1848,7 +1848,7 @@ impl Analyzer<'_, '_> {
             let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
             let ty = Type::new_union(span, candidates).freezed();
-            return Ok((actual, ty.clone(), Some(Type::new_union(span, excluded))));
+            return Ok((actual, ty.clone(), Some(Type::new_union(span, excluded).freezed())));
         }
 
         Ok((name, equals_to.clone(), Some(equals_to.clone())))
