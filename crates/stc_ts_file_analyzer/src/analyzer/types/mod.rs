@@ -24,7 +24,6 @@ use stc_ts_types::{
 use stc_ts_utils::run;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx,
     ext::{SpanExt, TypeVecExt},
     stack,
 };
@@ -125,7 +124,6 @@ impl Analyzer<'_, '_> {
 
         let res = (|| {
             let _stack = stack::track(actual_span)?;
-            let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&ty)));
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -646,8 +644,6 @@ impl Analyzer<'_, '_> {
                             if ty.type_eq(&prop_ty) {
                                 return Ok(ty);
                             }
-
-                            let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&prop_ty)));
 
                             let ty = self
                                 .normalize(span, Cow::Owned(prop_ty), opts)

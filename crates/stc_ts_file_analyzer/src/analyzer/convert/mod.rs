@@ -22,7 +22,7 @@ use stc_ts_types::{
     TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
+use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -1018,8 +1018,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
-        let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
-
         let is_topmost_type = !self.ctx.is_not_topmost_type;
         let ctx = Ctx {
             is_not_topmost_type: true,

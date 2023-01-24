@@ -1424,8 +1424,6 @@ impl Type {
     }
 
     pub fn new_union<I: IntoIterator<Item = Self> + Debug>(span: Span, iter: I) -> Self {
-        let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
-
         let mut elements = vec![];
 
         for ty in iter {
@@ -1466,8 +1464,6 @@ impl Type {
     ///
     ///  - never types are excluded.
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
-
         let mut span = DUMMY_SP;
 
         let mut elements = vec![];

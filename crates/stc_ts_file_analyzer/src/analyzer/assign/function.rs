@@ -5,11 +5,11 @@ use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
     ctx,
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string},
+    debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
-use stc_utils::{cache::Freeze, debug_ctx};
+use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -639,9 +639,6 @@ impl Analyzer<'_, '_> {
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
-
-        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
-        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
 
         if let RPat::Rest(..) = l.pat {
             let l_ty = self

@@ -10,7 +10,7 @@ use stc_ts_types::{
     InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, debug_ctx, stack};
+use stc_utils::{cache::Freeze, stack};
 use stc_visit::visit_cache;
 use swc_atoms::js_word;
 use swc_common::{SourceMap, Spanned, DUMMY_SP};
@@ -478,7 +478,6 @@ impl Fold<Type> for GenericExpander<'_> {
                 return ty;
             }
         };
-        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&ty)));
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));

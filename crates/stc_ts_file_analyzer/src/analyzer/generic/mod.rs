@@ -21,7 +21,7 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, stack,
+    stack,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -473,12 +473,6 @@ impl Analyzer<'_, '_> {
             Ok(v) => v,
             Err(_) => return Ok(()),
         };
-
-        let _ctx = debug_ctx!(format!(
-            "infer_type()\nParam: {}\nArg: {}",
-            dump_type_as_string(param),
-            dump_type_as_string(arg)
-        ));
 
         if !opts.skip_initial_union_check {
             if inferred

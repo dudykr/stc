@@ -26,7 +26,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, stack,
+    stack,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -684,7 +684,6 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&ty)));
         let orig = dump_type_as_string(&ty);
 
         let mut v = Expander {
@@ -2472,8 +2471,6 @@ impl Expander<'_, '_, '_> {
                 return Type::any(span, Default::default());
             }
         };
-
-        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
 
         self.analyzer.expand_conditional_type(self.span, ty)
     }
