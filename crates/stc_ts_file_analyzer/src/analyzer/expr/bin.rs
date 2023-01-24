@@ -1818,6 +1818,7 @@ impl Analyzer<'_, '_> {
 
         if let Type::Union(u) = ty.normalize() {
             let mut candidates = vec![];
+            let mut excluded = vec![];
             for ty in &u.types {
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
@@ -1836,6 +1837,10 @@ impl Analyzer<'_, '_> {
                         }
                     };
                     if possible {
+                        if prop_ty.type_eq(equals_to) {
+                            excluded.push(equals_to.clone())
+                        }
+
                         candidates.push(ty.clone())
                     }
                 }
@@ -1843,7 +1848,7 @@ impl Analyzer<'_, '_> {
             let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
             let ty = Type::new_union(span, candidates).freezed();
-            return Ok((actual, ty.clone(), Some(ty)));
+            return Ok((actual, ty.clone(), Some(Type::new_union(span, excluded))));
         }
 
         Ok((name, equals_to.clone(), Some(equals_to.clone())))
