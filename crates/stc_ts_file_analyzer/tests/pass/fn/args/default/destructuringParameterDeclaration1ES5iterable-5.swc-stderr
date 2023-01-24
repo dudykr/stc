@@ -7,7 +7,7 @@
 
 Error: 
   > ({ z =10  }: {
-  |     z?: (any | undefined);
+  |     z?: any;
   | }) => void
 
   x Type
