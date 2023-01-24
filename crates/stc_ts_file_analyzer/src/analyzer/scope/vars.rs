@@ -472,12 +472,17 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Ok(Some(Type::Tuple(Tuple {
+                    let ty = Type::Tuple(Tuple {
                         span,
                         elems,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    })))
+                    })
+                    .freezed();
+
+                    dbg!(force_dump_type_as_string(&ty));
+
+                    Ok(Some(ty))
                 }
             }
 
