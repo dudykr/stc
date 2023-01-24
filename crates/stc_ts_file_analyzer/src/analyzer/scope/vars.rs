@@ -704,7 +704,8 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             let mut default = default
-                                .and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok())
+                                .as_ref()
+                                .and_then(|ty| self.exclude_props(pat.span(), ty, &used_keys).ok())
                                 .freezed();
 
                             if let Some(ty) = &mut rest_ty {
@@ -715,9 +716,10 @@ impl Analyzer<'_, '_> {
                                 remove_readonly(ty);
                             }
 
-                            return self
+                            let rest = self
                                 .add_vars(&pat.arg, rest_ty, None, default, opts)
-                                .context("tried to assign to an object rest pattern");
+                                .context("tried to assign to an object rest pattern")?;
+                            break;
                         }
                     }
                 }
