@@ -12,7 +12,7 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
     Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
@@ -22,6 +22,7 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 use self::type_param::StaticTypeParamValidator;
+use super::expr::AccessPropertyOpts;
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -566,6 +567,22 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
+
+        if let Some(object_type) = object_type {
+            if let Ok(type_ann) = self.access_property(
+                c.span,
+                object_type,
+                &key,
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            ) {
+                self.apply_fn_type_ann(c.span, c.function.params.iter().map(|v| &v.pat), Some(&type_ann));
+            }
+        }
 
         let c_span = c.span();
         let key_span = c.key.span();
