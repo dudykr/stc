@@ -1271,7 +1271,6 @@ impl Analyzer<'_, '_> {
                 .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
                 .collect::<Result<Vec<_>, _>>()?;
 
-            dbg!(&new_types, &orig.types, &ty);
             for elem in new_types.iter() {
                 if orig.types.iter().any(|o_ty| elem.type_eq(o_ty)) {
                     return Ok(elem.to_owned());
