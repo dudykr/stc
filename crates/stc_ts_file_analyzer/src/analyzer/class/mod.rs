@@ -562,7 +562,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassMethod) -> VResult<ClassMember> {
+    fn validate(&mut self, c: &RClassMethod, object_type: Option<&Type>) -> VResult<ClassMember> {
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
@@ -754,7 +754,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, m: &RClassMember) -> VResult<Option<ClassMember>> {
+    fn validate(&mut self, m: &RClassMember, object_type: Option<&Type>) -> VResult<Option<ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
@@ -1465,7 +1465,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass) -> VResult<ClassDef> {
+    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ClassDef> {
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
