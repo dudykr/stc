@@ -3701,6 +3701,10 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
+            if self.is_builtin {
+                unreachable!("no such variable for builtin")
+            }
+
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
