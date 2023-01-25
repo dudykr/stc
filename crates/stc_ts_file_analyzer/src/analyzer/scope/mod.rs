@@ -53,7 +53,7 @@ use crate::{
 
 mod this;
 mod type_param;
-mod vars;
+pub(crate) mod vars;
 
 macro_rules! no_ref {
     ($t:expr) => {{
@@ -119,6 +119,9 @@ pub(crate) struct Scope<'a> {
 
     /// All states related to validation of a class.
     pub(super) class: ClassState,
+
+    /// Save All destructur valiable state
+    pub(super) destructure_vars: FxHashMap<Id, Type>,
 }
 
 impl Scope<'_> {
@@ -371,6 +374,7 @@ impl Scope<'_> {
             type_params: self.type_params,
             cur_module_name: self.cur_module_name,
             class: self.class,
+            destructure_vars: self.destructure_vars,
         }
     }
 
@@ -863,23 +867,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<Option<Type>> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
-    }
-
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars_with_ty(
-        &mut self,
-        kind: VarKind,
-        pat: &RPat,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
-    ) -> VResult<Option<Type>> {
-        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
-    }
-
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
@@ -1190,6 +1177,24 @@ impl Analyzer<'_, '_> {
             copied: true,
             is_actual_type_modified_in_loop: false,
         }))
+    }
+
+    pub fn declare_destructor(&mut self, span: Span, name: Id, ty: Option<Type>) -> VResult<Option<Type>> {
+        let marks = self.marks();
+        let span = span.with_ctxt(SyntaxContext::empty());
+
+        if let Some(ty) = &ty {
+            ty.assert_valid();
+            debug!("[({})/vars]: Declaring {} as {}", self.scope.depth(), name, dump_type_as_string(ty));
+        } else {
+            debug!("[({})/vars]: Declaring {} without type", self.scope.depth(), name,);
+        }
+
+        if let Some(ty) = ty.clone() {
+            self.scope.destructure_vars.insert(name, ty);
+        }
+        self.ctx.has_destructor_variable = true;
+        Ok(ty)
     }
 
     /// If `allow_multiple` is true and `is_override` is false, the value type
@@ -1739,6 +1744,7 @@ impl<'a> Scope<'a> {
             type_params: Default::default(),
             cur_module_name: None,
             class: Default::default(),
+            destructure_vars: Default::default(),
         }
     }
 

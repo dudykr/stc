@@ -9,10 +9,12 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    Array, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
+    Array, Id, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation,
+    Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
+use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
 use tracing::debug;
@@ -114,7 +116,7 @@ impl Analyzer<'_, '_> {
                 return self.add_vars(pat, Some(ty), actual, default, opts);
             }
         }
-
+        dbg!(&pat);
         match pat {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
@@ -813,7 +815,8 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
+                real.freeze();
+                self.declare_destructor(span, Id::new(js_word!("default"), SyntaxContext::empty()), Some(real.clone()))?;
                 Ok(Some(real))
             }
 
@@ -824,6 +827,7 @@ impl Analyzer<'_, '_> {
 
                 self.add_vars(&pat.arg, ty, actual, default, DeclareVarsOpts { ..opts })
             }
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(None),
 
             _ => {
                 unimplemented!("declare_vars({:#?}, {:#?})", pat, ty)
@@ -971,45 +975,6 @@ impl Analyzer<'_, '_> {
         })()?;
 
         Ok(ty.fixed())
-    }
-
-    /// TODO(kdy1): Remove this. All logics are merged into add_vars.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn declare_vars_inner_with_ty(
-        &mut self,
-        kind: VarKind,
-        pat: &RPat,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
-    ) -> VResult<Option<Type>> {
-        let marks = self.marks();
-
-        let span = ty
-            .as_ref()
-            .map(|v| v.span())
-            .and_then(|span| if span.is_dummy() { None } else { Some(span) })
-            .unwrap_or_else(|| pat.span());
-        if !self.is_builtin {
-            debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
-        }
-
-        match pat {
-            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
-                pat,
-                ty,
-                actual_ty,
-                default_ty,
-                DeclareVarsOpts {
-                    kind,
-                    ..Default::default()
-                },
-            ),
-
-            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(None),
-
-            _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
-        }
     }
 
     fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<Type> {

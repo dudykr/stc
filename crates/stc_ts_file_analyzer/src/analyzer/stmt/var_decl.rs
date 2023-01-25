@@ -23,7 +23,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         pat::PatMode,
-        scope::VarKind,
+        scope::{vars::DeclareVarsOpts, VarKind},
         types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
         Analyzer, Ctx,
@@ -698,7 +698,16 @@ impl Analyzer<'_, '_> {
                     _ => {
                         // For ambient contexts and loops, we add variables to the scope.
 
-                        match self.declare_vars(VarKind::Var(kind), &v.name) {
+                        match self.add_vars(
+                            &v.name,
+                            None,
+                            None,
+                            None,
+                            DeclareVarsOpts {
+                                kind: VarKind::Var(kind),
+                                use_iterator_for_array: false,
+                            },
+                        ) {
                             Ok(..) => {}
                             Err(err) => {
                                 self.storage.report(err);
@@ -712,7 +721,17 @@ impl Analyzer<'_, '_> {
 
             debug_assert!(self.ctx.allow_ref_declaring);
             if v.name.get_ty().is_none() {
-                self.declare_vars(VarKind::Var(kind), &v.name).report(&mut self.storage);
+                self.add_vars(
+                    &v.name,
+                    None,
+                    None,
+                    None,
+                    DeclareVarsOpts {
+                        kind: VarKind::Var(kind),
+                        use_iterator_for_array: false,
+                    },
+                )
+                .report(&mut self.storage);
             }
 
             remove_declaring!();
