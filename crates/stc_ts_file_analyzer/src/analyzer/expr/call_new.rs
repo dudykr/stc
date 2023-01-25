@@ -867,6 +867,15 @@ impl Analyzer<'_, '_> {
             let callee_str = force_dump_type_as_string(&callee);
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
+                .or_else(|err| {
+                    if obj_type.is_type_param() {
+                        if prop.is_computed() {
+                            return Ok(Type::any(span, Default::default()));
+                        }
+                    }
+
+                    Err(err)
+                })
                 .convert_err(|err| {
                     if obj_type.is_type_param() {
                         return ErrorKind::NoSuchProperty {
