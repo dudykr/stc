@@ -3702,6 +3702,18 @@ impl Analyzer<'_, '_> {
             }
 
             if self.is_builtin {
+                // TODO: Remove this code after fixing a resolution bug
+                if i.sym == js_word!("Symbol") {
+                    return Ok(Type::Query(QueryType {
+                        span: DUMMY_SP,
+                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                            js_word!("Symbol"),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        ))),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                }
                 unreachable!("no such variable for builtin")
             }
 
