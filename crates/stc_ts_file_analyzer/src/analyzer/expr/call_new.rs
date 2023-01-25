@@ -64,6 +64,8 @@ pub(crate) struct CallOpts {
 
     /// Used to prevent infinite recursion.
     pub do_not_check_object: bool,
+
+    pub do_not_use_any_for_computed_key: bool,
 }
 
 #[validator]
@@ -1215,6 +1217,10 @@ impl Analyzer<'_, '_> {
             SelectOpts { ..Default::default() },
         )? {
             return Ok(v);
+        }
+
+        if !opts.do_not_use_any_for_computed_key && prop.is_computed() {
+            return Ok(Type::any(span, Default::default()));
         }
 
         Err(ErrorKind::NoSuchProperty {
