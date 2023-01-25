@@ -868,17 +868,22 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                if l.0.eq_ignore_span(r.0) && l.1 == r.1 {
-                    if is_private_props.contains(&i) && is_private_props.contains(&j) {
-                        continue;
-                    }
+                if l.0.eq_ignore_span(r.0) {
+                    if l.1 == r.1 {
+                        if is_private_props.contains(&i) && is_private_props.contains(&j) {
+                            continue;
+                        }
 
-                    // We use different error for duplicate functions
-                    if !is_private_props.contains(&i) && !is_private_props.contains(&j) {
-                        continue;
-                    }
+                        // We use different error for duplicate functions
+                        if !is_private_props.contains(&i) && !is_private_props.contains(&j) {
+                            continue;
+                        }
 
-                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
+                        self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
+                    } else if j < i {
+                        self.storage
+                            .report(ErrorKind::DuplicatePrivateStaticInstance { span: l.0.span() }.into());
+                    }
                 }
             }
         }

@@ -267,6 +267,7 @@ classes/members/privateNames/privateNamesAssertion.ts
 classes/members/privateNames/privateNamesInGenericClasses.ts
 classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesUnique-1.ts
+classes/members/privateNames/privateNamesUnique-3.ts
 classes/members/privateNames/privateNamesUnique-4.ts
 classes/members/privateNames/privateNamesUnique-5.ts
 classes/members/privateNames/privateStaticNameShadowing.ts
