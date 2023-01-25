@@ -538,6 +538,19 @@ pub(crate) struct AccessPropertyOpts {
 
     /// `true` means that the provided [Key] is crated from a computed key.
     pub is_key_computed: bool,
+
+    // ```ts
+    // interface F {
+    //   foo: string;
+    //   bar: number;
+    // }
+
+    //  var obj11: F | string;
+    //
+    //  obj11.foo; // Error TS2339
+    //
+    // ```
+    pub disallow_property_is_any: bool,
 }
 
 #[validator]
@@ -2172,10 +2185,21 @@ impl Analyzer<'_, '_> {
                         .into());
                     }
                 };
+
                 let interface = self.env.get_global_type(span, &word)?;
 
                 let err = match self.access_property(span, &interface, prop, type_mode, id_ctx, opts) {
-                    Ok(v) => return Ok(v),
+                    Ok(v) => {
+                        if v.is_indexed_access_type() && opts.disallow_property_is_any {
+                            return Err(ErrorKind::NoSuchProperty {
+                                span,
+                                obj: Some(box obj.clone()),
+                                prop: Some(box prop.clone()),
+                            }
+                            .into());
+                        }
+                        return Ok(v);
+                    }
                     Err(err) => err,
                 };
                 if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.disallow_unknown_object_property {
@@ -2425,6 +2449,7 @@ impl Analyzer<'_, '_> {
                         id_ctx,
                         AccessPropertyOpts {
                             use_undefined_for_tuple_index_error,
+                            disallow_property_is_any: true,
                             ..opts
                         },
                     ) {
