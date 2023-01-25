@@ -772,7 +772,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             RClassMember::Method(method) => {
-                let v = method.validate_with(self)?;
+                let v = method.validate_with_args(self, object_type)?;
 
                 Some(v)
             }
