@@ -237,7 +237,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    Ok(class.validate_with(self)?.into())
+                    Ok(class.validate_with_args(self, type_ann)?.into())
                 }
 
                 RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann)?.into()),

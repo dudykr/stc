@@ -12,7 +12,7 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
     Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
@@ -22,6 +22,7 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 use self::type_param::StaticTypeParamValidator;
+use super::expr::AccessPropertyOpts;
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -138,7 +139,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RClassProp) -> VResult<ClassProperty> {
+    fn validate(&mut self, p: &RClassProp, object_type: Option<&Type>) -> VResult<ClassProperty> {
         let marks = self.marks();
 
         if p.is_static {
@@ -153,6 +154,26 @@ impl Analyzer<'_, '_> {
         // Verify key if key is computed
         if let RPropName::Computed(p) = &p.key {
             self.validate_computed_prop_key(p.span, &p.expr).report(&mut self.storage);
+        }
+
+        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
+
+        if let Some(value) = &p.value {
+            if let Some(object_type) = object_type {
+                if let Ok(type_ann) = self.access_property(
+                    p.span,
+                    object_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    AccessPropertyOpts {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        ..Default::default()
+                    },
+                ) {
+                    self.apply_type_ann_to_expr(value, &type_ann)?;
+                }
+            }
         }
 
         let value = self
@@ -177,8 +198,6 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
 
         Ok(ClassProperty {
             span: p.span,
@@ -562,10 +581,26 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassMethod) -> VResult<ClassMember> {
+    fn validate(&mut self, c: &RClassMethod, object_type: Option<&Type>) -> VResult<ClassMember> {
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
+
+        if let Some(object_type) = object_type {
+            if let Ok(type_ann) = self.access_property(
+                c.span,
+                object_type,
+                &key,
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            ) {
+                self.apply_fn_type_ann(c.span, c.function.params.iter().map(|v| &v.pat), Some(&type_ann));
+            }
+        }
 
         let c_span = c.span();
         let key_span = c.key.span();
@@ -754,7 +789,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, m: &RClassMember) -> VResult<Option<ClassMember>> {
+    fn validate(&mut self, m: &RClassMember, object_type: Option<&Type>) -> VResult<Option<ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
@@ -772,11 +807,11 @@ impl Analyzer<'_, '_> {
                 }
             }
             RClassMember::Method(method) => {
-                let v = method.validate_with(self)?;
+                let v = method.validate_with_args(self, object_type)?;
 
                 Some(v)
             }
-            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with(self)?)),
+            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
         })
     }
@@ -1465,7 +1500,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass) -> VResult<ClassDef> {
+    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ClassDef> {
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -1704,7 +1739,7 @@ impl Analyzer<'_, '_> {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
-                            let m = node.validate_with(child)?;
+                            let m = node.validate_with_args(child, type_ann)?;
                             if let Some(member) = m {
                                 // Check for duplicate property names.
                                 if let Some(key) = member.key() {
@@ -1826,7 +1861,7 @@ impl Analyzer<'_, '_> {
                         RClassMember::ClassProp(RClassProp { is_static: false, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
                             //
-                            let class_member = member.validate_with(child).report(&mut child.storage).flatten();
+                            let class_member = member.validate_with_args(child, type_ann).report(&mut child.storage).flatten();
                             if let Some(member) = class_member {
                                 // Check for duplicate property names.
                                 if let Some(key) = member.key() {
@@ -1888,7 +1923,7 @@ impl Analyzer<'_, '_> {
                 let order = child.calc_eval_order_of_class_methods(remaining, &c.body);
 
                 for index in order {
-                    let ty = c.body[index].validate_with(child)?;
+                    let ty = c.body[index].validate_with_args(child, type_ann)?;
                     if let Some(ty) = ty {
                         child.scope.this_class_members.push((index, ty));
                     }
@@ -1946,9 +1981,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassExpr) -> VResult<()> {
+    fn validate(&mut self, c: &RClassExpr, type_ann: Option<&Type>) -> VResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
-        let ty = match c.class.validate_with(self) {
+        let ty = match c.class.validate_with_args(self, type_ann) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
@@ -2215,7 +2250,7 @@ impl Analyzer<'_, '_> {
         c.ident.visit_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());
-        let ty = match c.class.validate_with(self) {
+        let ty = match c.class.validate_with_args(self, None) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
