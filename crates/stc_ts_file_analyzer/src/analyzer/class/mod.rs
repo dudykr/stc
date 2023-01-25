@@ -1704,7 +1704,7 @@ impl Analyzer<'_, '_> {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
-                            let m = node.validate_with(child)?;
+                            let m = node.validate_with_args(child, type_ann)?;
                             if let Some(member) = m {
                                 // Check for duplicate property names.
                                 if let Some(key) = member.key() {
@@ -1826,7 +1826,7 @@ impl Analyzer<'_, '_> {
                         RClassMember::ClassProp(RClassProp { is_static: false, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
                             //
-                            let class_member = member.validate_with(child).report(&mut child.storage).flatten();
+                            let class_member = member.validate_with_args(child, type_ann).report(&mut child.storage).flatten();
                             if let Some(member) = class_member {
                                 // Check for duplicate property names.
                                 if let Some(key) = member.key() {
@@ -1888,7 +1888,7 @@ impl Analyzer<'_, '_> {
                 let order = child.calc_eval_order_of_class_methods(remaining, &c.body);
 
                 for index in order {
-                    let ty = c.body[index].validate_with(child)?;
+                    let ty = c.body[index].validate_with_args(child, type_ann)?;
                     if let Some(ty) = ty {
                         child.scope.this_class_members.push((index, ty));
                     }
@@ -1946,9 +1946,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassExpr) -> VResult<()> {
+    fn validate(&mut self, c: &RClassExpr, type_ann: Option<&Type>) -> VResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
-        let ty = match c.class.validate_with(self) {
+        let ty = match c.class.validate_with_args(self, type_ann) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
@@ -2215,7 +2215,7 @@ impl Analyzer<'_, '_> {
         c.ident.visit_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());
-        let ty = match c.class.validate_with(self) {
+        let ty = match c.class.validate_with_args(self, None) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
