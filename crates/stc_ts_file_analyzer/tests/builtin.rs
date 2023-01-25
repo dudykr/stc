@@ -11,6 +11,8 @@ pub fn builtin() {
         let shared = StableEnv::new();
         let mut libs = vec![];
         for s in &[
+            "es2022.full",
+            "es2021.full",
             "es2020.full",
             "es2019.full",
             "es2018.full",
