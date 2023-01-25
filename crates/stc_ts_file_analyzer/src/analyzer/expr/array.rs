@@ -446,6 +446,7 @@ impl Analyzer<'_, '_> {
                 None,
                 CallOpts {
                     disallow_optional_object_property: true,
+                    do_not_use_any_for_computed_key: true,
                     ..Default::default()
                 },
             )
@@ -723,6 +724,7 @@ impl Analyzer<'_, '_> {
                 None,
                 CallOpts {
                     disallow_optional_object_property: true,
+                    do_not_use_any_for_computed_key: true,
                     ..Default::default()
                 },
             )
