@@ -548,7 +548,9 @@ impl Analyzer<'_, '_> {
                                 .context("tried to narrow type with instanceof")?
                                 .freezed();
 
-                            narrowed_ty.assert_valid();
+                            let filtered_ty = if narrowed_ty.is_any() { orig_ty.clone() } else { narrowed_ty };
+
+                            filtered_ty.assert_valid();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
@@ -556,7 +558,7 @@ impl Analyzer<'_, '_> {
                                     name,
                                     Type::Intersection(Intersection {
                                         span,
-                                        types: vec![orig_ty, narrowed_ty],
+                                        types: vec![orig_ty, filtered_ty],
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
@@ -564,9 +566,9 @@ impl Analyzer<'_, '_> {
                                     .freezed(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(name.clone(), narrowed_ty.clone());
+                                self.cur_facts.true_facts.vars.insert(name.clone(), filtered_ty.clone());
 
-                                self.cur_facts.false_facts.excludes.entry(name).or_default().push(narrowed_ty);
+                                self.cur_facts.false_facts.excludes.entry(name).or_default().push(filtered_ty);
                             }
                         }
                     }
@@ -1330,6 +1332,9 @@ impl Analyzer<'_, '_> {
                     for m in &ty.members {
                         if let TypeElement::Constructor(c) = m {
                             if let Some(ret_ty) = &c.ret_ty {
+                                if ret_ty.is_any() {
+                                    return Ok(*ret_ty.clone());
+                                }
                                 return self
                                     .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
                                     .context("tried to narrow constructor return type");

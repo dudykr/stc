@@ -517,6 +517,17 @@ pub(crate) struct AccessPropertyOpts {
     pub disallow_indexing_array_with_string: bool,
 
     /// If `true`, `access_property` will not produce types like `Array['b']`
+    ///
+    /// ```ts
+    /// interface F {
+    ///   foo: string;
+    ///   bar: number;
+    /// }
+    ///
+    ///  var obj11: F | string;
+    ///
+    ///  obj11.foo; // Error TS2339
+    /// ```
     pub disallow_creating_indexed_type_from_ty_els: bool,
 
     pub disallow_indexing_class_with_computed: bool,
@@ -2172,6 +2183,7 @@ impl Analyzer<'_, '_> {
                         .into());
                     }
                 };
+
                 let interface = self.env.get_global_type(span, &word)?;
 
                 let err = match self.access_property(span, &interface, prop, type_mode, id_ctx, opts) {
@@ -2425,6 +2437,7 @@ impl Analyzer<'_, '_> {
                         id_ctx,
                         AccessPropertyOpts {
                             use_undefined_for_tuple_index_error,
+                            disallow_creating_indexed_type_from_ty_els: true,
                             ..opts
                         },
                     ) {
