@@ -3419,15 +3419,15 @@ impl Analyzer<'_, '_> {
                 break;
             }
 
-            self.apply_type_ann_for_arg(&arg.expr, &param.ty)?;
+            self.apply_type_ann_to_expr(&arg.expr, &param.ty)?;
         }
 
         Ok(())
     }
 
-    fn apply_type_ann_for_arg(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
+    pub(crate) fn apply_type_ann_to_expr(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
         match arg {
-            RExpr::Paren(arg) => return self.apply_type_ann_for_arg(&arg.expr, type_ann),
+            RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {
                 self.apply_fn_type_ann(arg.span(), arg.function.params.iter().map(|v| &v.pat), Some(type_ann));
             }

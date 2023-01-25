@@ -139,7 +139,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RClassProp) -> VResult<ClassProperty> {
+    fn validate(&mut self, p: &RClassProp, object_type: Option<&Type>) -> VResult<ClassProperty> {
         let marks = self.marks();
 
         if p.is_static {
@@ -154,6 +154,26 @@ impl Analyzer<'_, '_> {
         // Verify key if key is computed
         if let RPropName::Computed(p) = &p.key {
             self.validate_computed_prop_key(p.span, &p.expr).report(&mut self.storage);
+        }
+
+        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
+
+        if let Some(value) = &p.value {
+            if let Some(object_type) = object_type {
+                if let Ok(type_ann) = self.access_property(
+                    p.span,
+                    object_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    AccessPropertyOpts {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        ..Default::default()
+                    },
+                ) {
+                    self.apply_type_ann_to_expr(value, &type_ann)?;
+                }
+            }
         }
 
         let value = self
@@ -178,8 +198,6 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
 
         Ok(ClassProperty {
             span: p.span,
@@ -793,7 +811,7 @@ impl Analyzer<'_, '_> {
 
                 Some(v)
             }
-            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with(self)?)),
+            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
         })
     }
