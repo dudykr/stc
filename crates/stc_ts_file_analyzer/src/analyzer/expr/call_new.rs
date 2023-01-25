@@ -651,7 +651,10 @@ impl Analyzer<'_, '_> {
                                 arg_types,
                                 spread_arg_types,
                                 type_ann,
-                                opts,
+                                CallOpts {
+                                    do_not_use_any_for_computed_key: true,
+                                    ..opts
+                                },
                             )
                         })
                         .filter_map(Result::ok)
