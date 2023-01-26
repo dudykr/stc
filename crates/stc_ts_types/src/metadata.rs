@@ -106,7 +106,7 @@ pub struct CommonTypeMetadata {
     /// TODO(kdy1): Move this to [TupleMetadata]
     pub prevent_tuple_to_array: bool,
 
-    pub be_assigned_by_destructuring: bool,
+    pub destructure_key: u32,
 }
 
 impl_basic_traits!(CommonTypeMetadata);

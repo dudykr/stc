@@ -20,8 +20,9 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam, TypeParamInstantiation,
+    name::Name, type_id::DestructurId, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType,
+    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement,
+    TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -121,7 +122,7 @@ pub(crate) struct Scope<'a> {
     pub(super) class: ClassState,
 
     /// Save All destructur valiable state
-    pub(super) destructure_vars: FxHashMap<Id, Type>,
+    pub(super) destructure_vars: FxHashMap<DestructurId, Type>,
 }
 
 impl Scope<'_> {
@@ -1183,22 +1184,50 @@ impl Analyzer<'_, '_> {
         }))
     }
 
-    pub fn declare_destructor(&mut self, span: Span, name: Id, ty: Option<Type>) -> VResult<Option<Type>> {
+    pub fn get_destructor_unique_key(&self) -> DestructurId {
+        DestructurId::generate()
+    }
+
+    pub fn declare_destructor(&mut self, span: Span, ty: &Type, key: DestructurId) -> VResult<bool> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        if let Some(ty) = &ty {
+        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+        if let Ok(ty) = ty {
+            let ty = ty.into_owned();
             ty.assert_valid();
-            debug!("[({})/vars]: Declaring {} as {}", self.scope.depth(), name, dump_type_as_string(ty));
+            debug!(
+                "[({})/vars/destructor]: Declaring {:?} as {}",
+                self.scope.depth(),
+                key,
+                dump_type_as_string(&ty)
+            );
+            self.scope.destructure_vars.insert(key, ty.freezed());
+
+            self.ctx.has_destructor_variable = true;
+            Ok(true)
         } else {
-            debug!("[({})/vars]: Declaring {} without type", self.scope.depth(), name,);
+            debug!("[({})/vars/destructor]: Declaring {:?} without type", self.scope.depth(), key);
+            self.ctx.has_destructor_variable = false;
+            Ok(false)
+        }
+    }
+
+    pub fn find_destructor(&self, key: DestructurId) -> Option<Cow<Type>> {
+        let mut scope = Some(&self.scope);
+        while let Some(s) = scope {
+            if let Some(v) = s.destructure_vars.get(&key) {
+                v.assert_clone_cheap();
+
+                if cfg!(debug_assertions) {
+                    debug!("Scope.find_var_type({:?}): Handled from facts", key);
+                }
+                return Some(Cow::Borrowed(v));
+            }
+            scope = s.parent;
         }
 
-        if let Some(ty) = ty.clone() {
-            self.scope.destructure_vars.insert(name, ty);
-        }
-        self.ctx.has_destructor_variable = true;
-        Ok(ty)
+        None
     }
 
     /// If `allow_multiple` is true and `is_override` is false, the value type
