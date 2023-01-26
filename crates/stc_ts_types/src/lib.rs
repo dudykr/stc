@@ -280,7 +280,7 @@ impl Clone for Type {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Type, [u8; 104]);
+assert_eq_size!(Type, [u8; 112]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -867,7 +867,7 @@ pub struct Mapped {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Mapped, [u8; 96]);
+assert_eq_size!(Mapped, [u8; 104]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
