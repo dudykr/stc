@@ -1704,15 +1704,13 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
-            }) => {
-                if prop.is_num() {
-                    return Ok(Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
-                }
+            }) if prop.is_num() => {
+                return Ok(Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }));
             }
 
             Type::Tpl(obj) => {
