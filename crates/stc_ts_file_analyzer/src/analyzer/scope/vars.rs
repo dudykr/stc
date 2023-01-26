@@ -9,12 +9,11 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    Array, Id, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation,
-    Union,
+    Array, CommonTypeMetadata, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
-use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
 use tracing::debug;
@@ -504,14 +503,32 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = !matches!(ty.as_ref().map(Type::normalize), Some(Type::TypeLit(..)));
+                let normalize_ty = ty.as_ref().map(Type::normalize);
+                let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
+                let ty_is_union = !matches!(normalize_ty, Some(Type::Union(..)));
+
+                let mut destructure_key = 0;
+                if ty_is_union {
+                    if let Some(real) = normalize_ty {
+                        let des_key = self.get_destructor_unique_key();
+                        destructure_key = des_key.extract();
+                        self.declare_destructor(span, real, des_key)?;
+                    }
+                }
 
                 let mut real = Type::TypeLit(TypeLit {
                     span,
                     members: vec![],
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            destructure_key,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
                     tracker: Default::default(),
                 });
+
                 // TODO(kdy1): Normalize static
                 //
                 let mut used_keys = vec![];
@@ -640,7 +657,7 @@ impl Analyzer<'_, '_> {
                                     .context("tried to access property to declare variables")
                             });
 
-                            let default_prop_ty = default
+                            let mut default_prop_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
                                     self.with_ctx(ctx)
@@ -662,7 +679,13 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             let real_property_type = match prop_ty {
-                                Ok(prop_ty) => {
+                                Ok(mut prop_ty) => {
+                                    if let Some(ty) = &mut prop_ty {
+                                        add_destructur_sign(ty, destructure_key);
+                                    }
+                                    if let Some(ty) = &mut default_prop_ty {
+                                        add_destructur_sign(ty, destructure_key);
+                                    }
                                     let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
@@ -678,6 +701,9 @@ impl Analyzer<'_, '_> {
                                             if self.ctx.is_fn_param && prop_ty.is_none() {
                                                 default_value_type = default_value_type.fold_with(&mut Widen { tuple_to_array: true });
                                             }
+                                            if let Some(ty) = &mut default_value_type {
+                                                add_destructur_sign(ty, destructure_key);
+                                            }
 
                                             default_value_type.freeze();
 
@@ -686,8 +712,10 @@ impl Analyzer<'_, '_> {
                                             if prop_ty.is_some() {
                                                 default = None;
                                             }
-
-                                            let result = self
+                                            if let Some(ty) = &mut default {
+                                                add_destructur_sign(ty, destructure_key);
+                                            }
+                                            let mut result = self
                                                 .add_vars(
                                                     &RPat::Ident(RBindingIdent {
                                                         node_id: NodeId::invalid(),
@@ -714,7 +742,9 @@ impl Analyzer<'_, '_> {
                                                 .context("tried to assign default values")
                                                 .report(&mut self.storage);
                                             }
-
+                                            if let Some(Some(ty)) = &mut result {
+                                                add_destructur_sign(ty, destructure_key);
+                                            }
                                             result
                                         }
                                         None => {
@@ -744,6 +774,10 @@ impl Analyzer<'_, '_> {
                                             }
                                         }
                                         _ => self.storage.report(err),
+                                    }
+
+                                    if let Some(ty) = &mut default_prop_ty {
+                                        add_destructur_sign(ty, destructure_key);
                                     }
 
                                     self.add_vars(
@@ -797,10 +831,12 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ty) = &mut rest_ty {
                                 remove_readonly(ty);
+                                add_destructur_sign(ty, destructure_key);
                             }
 
                             if let Some(ty) = &mut default {
                                 remove_readonly(ty);
+                                add_destructur_sign(ty, destructure_key);
                             }
 
                             let rest = self
@@ -816,7 +852,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 real.freeze();
-                self.declare_destructor(span, Id::new(js_word!("default"), SyntaxContext::empty()), Some(real.clone()))?;
                 Ok(Some(real))
             }
 
@@ -1012,4 +1047,8 @@ fn remove_readonly(ty: &mut Type) {
 
         ty.freeze();
     }
+}
+
+fn add_destructur_sign(ty: &mut Type, key: u32) {
+    ty.metadata_mut().destructure_key = key;
 }

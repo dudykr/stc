@@ -12,8 +12,8 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, TypeParam,
-    TypeParamInstantiation, Union, UnionMetadata,
+    name::Name, type_id::DestructurId, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement,
+    TypeLit, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -300,11 +300,6 @@ impl Analyzer<'_, '_> {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
                 let is_eq = op == op!("===") || op == op!("==");
 
-                let c = Comparator {
-                    left: &**left,
-                    right: &**right,
-                };
-
                 self.add_type_facts_for_typeof(span, left, right, is_eq, &lt, &rt)
                     .report(&mut self.storage);
 
@@ -375,6 +370,33 @@ impl Analyzer<'_, '_> {
                     // === with an unknown does not narrow type
                     if self.ctx.in_cond && !r_ty.is_unknown() {
                         let (name, mut r, exclude) = self.calc_type_facts_for_equality(l, r_ty)?;
+                        dbg!(&r, &name, &exclude);
+                        let mut additional_target_name: Vec<Name> = vec![];
+                        if lt.metadata().destructure_key > 0 {
+                            let origin_ty = self.find_destructor(DestructurId::get(lt.metadata().destructure_key));
+                            if let Some(ty) = origin_ty {
+                                let ty = ty.into_owned();
+                                if let Type::Union(Union { types, .. }) = ty.normalize() {
+                                    for ty in types {
+                                        dbg!(&ty);
+                                        if let Type::TypeLit(TypeLit { members, .. }) = ty.normalize() {
+                                            for m in members {
+                                                if let Some(key) = m.non_computed_key() {
+                                                    let l_name = Name::new(name.get_ctxt(), key.clone());
+                                                    if name == l_name {
+                                                        continue;
+                                                    }
+                                                    additional_target_name.push(l_name);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        additional_target_name.sort();
+                        additional_target_name.dedup();
+                        dbg!(&additional_target_name);
                         r = if has_switch_case_test_not_compatible {
                             Type::Keyword(KeywordType {
                                 span,
