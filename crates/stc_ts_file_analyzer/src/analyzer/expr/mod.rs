@@ -1701,6 +1701,20 @@ impl Analyzer<'_, '_> {
                     .context("tried to access property of a type generalized from a literal");
             }
 
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            }) => {
+                if prop.is_num() {
+                    return Ok(Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                }
+            }
+
             Type::Tpl(obj) => {
                 // Even if literal generalization is prevented, it should be
                 // expanded in this case.
