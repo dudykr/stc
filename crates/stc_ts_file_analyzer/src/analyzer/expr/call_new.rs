@@ -64,6 +64,8 @@ pub(crate) struct CallOpts {
 
     /// Used to prevent infinite recursion.
     pub do_not_check_object: bool,
+
+    pub do_not_use_any_for_computed_key: bool,
 }
 
 #[validator]
@@ -649,7 +651,10 @@ impl Analyzer<'_, '_> {
                                 arg_types,
                                 spread_arg_types,
                                 type_ann,
-                                opts,
+                                CallOpts {
+                                    do_not_use_any_for_computed_key: true,
+                                    ..opts
+                                },
                             )
                         })
                         .filter_map(Result::ok)
@@ -867,18 +872,37 @@ impl Analyzer<'_, '_> {
             let callee_str = force_dump_type_as_string(&callee);
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
-                .convert_err(|err| match err {
-                    ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
-                        span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
-                    },
-                    ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
-                        span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
-                    },
-                    _ => err,
+                .or_else(|err| {
+                    if obj_type.is_type_param() {
+                        if prop.is_computed() {
+                            return Ok(Type::any(span, Default::default()));
+                        }
+                    }
+
+                    Err(err)
+                })
+                .convert_err(|err| {
+                    if obj_type.is_type_param() {
+                        return ErrorKind::NoSuchProperty {
+                            span,
+                            obj: Some(box obj_type.clone()),
+                            prop: Some(box prop.clone()),
+                        };
+                    }
+
+                    match err {
+                        ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
+                            span,
+                            obj: box obj_type.clone(),
+                            key: box prop.clone(),
+                        },
+                        ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
+                            span,
+                            obj: box obj_type.clone(),
+                            key: box prop.clone(),
+                        },
+                        _ => err,
+                    }
                 })
                 .with_context(|| {
                     format!(
@@ -1196,6 +1220,10 @@ impl Analyzer<'_, '_> {
             SelectOpts { ..Default::default() },
         )? {
             return Ok(v);
+        }
+
+        if !opts.do_not_use_any_for_computed_key && prop.is_computed() {
+            return Ok(Type::any(span, Default::default()));
         }
 
         Err(ErrorKind::NoSuchProperty {
@@ -3419,15 +3447,15 @@ impl Analyzer<'_, '_> {
                 break;
             }
 
-            self.apply_type_ann_for_arg(&arg.expr, &param.ty)?;
+            self.apply_type_ann_to_expr(&arg.expr, &param.ty)?;
         }
 
         Ok(())
     }
 
-    fn apply_type_ann_for_arg(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
+    pub(crate) fn apply_type_ann_to_expr(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
         match arg {
-            RExpr::Paren(arg) => return self.apply_type_ann_for_arg(&arg.expr, type_ann),
+            RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {
                 self.apply_fn_type_ann(arg.span(), arg.function.params.iter().map(|v| &v.pat), Some(type_ann));
             }

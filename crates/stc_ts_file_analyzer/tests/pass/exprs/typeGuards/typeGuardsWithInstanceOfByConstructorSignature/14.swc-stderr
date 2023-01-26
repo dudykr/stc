@@ -1,0 +1,36 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:11:1]
+ 11 | if (obj11 instanceof F) {
+    :     ^^^^^
+    `----
+
+Error: 
+  > (F | string)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:11:1]
+ 11 | if (obj11 instanceof F) {
+    :                      ^
+    `----
+
+Error: 
+  > FConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:11:1]
+ 11 | if (obj11 instanceof F) {
+    :     ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:13:3]
+ 13 | obj11; // F | string Because F constructor is any
+    : ^^^^^
+    `----
+
+Error: 
+  > (F | string)

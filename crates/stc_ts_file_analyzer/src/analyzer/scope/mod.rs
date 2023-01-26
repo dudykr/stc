@@ -920,6 +920,10 @@ impl Analyzer<'_, '_> {
 
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
+        if cfg!(debug_assertions) {
+            debug!("({}) Analyzer.find_var(`{}`)", self.scope.depth(), name);
+        }
+
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
             ty: Some(Type::any(DUMMY_SP, Default::default())),
             actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
@@ -1109,7 +1113,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(debug_assertions) {
-            debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+            debug!("({}) Scope.find_type(`{}`)", self.scope.depth(), name);
         }
 
         let mut src = vec![];

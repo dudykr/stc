@@ -139,7 +139,7 @@ pub trait BuiltInGen: Sized {
                                                 .class
                                                 .body
                                                 .clone()
-                                                .validate_with(analyzer)
+                                                .validate_with_default(analyzer)
                                                 .unwrap()
                                                 .into_iter()
                                                 .flatten()

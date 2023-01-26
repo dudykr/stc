@@ -237,7 +237,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    Ok(class.validate_with(self)?.into())
+                    Ok(class.validate_with_args(self, type_ann)?.into())
                 }
 
                 RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann)?.into()),
@@ -517,6 +517,17 @@ pub(crate) struct AccessPropertyOpts {
     pub disallow_indexing_array_with_string: bool,
 
     /// If `true`, `access_property` will not produce types like `Array['b']`
+    ///
+    /// ```ts
+    /// interface F {
+    ///   foo: string;
+    ///   bar: number;
+    /// }
+    ///
+    ///  var obj11: F | string;
+    ///
+    ///  obj11.foo; // Error TS2339
+    /// ```
     pub disallow_creating_indexed_type_from_ty_els: bool,
 
     pub disallow_indexing_class_with_computed: bool,
@@ -2172,6 +2183,7 @@ impl Analyzer<'_, '_> {
                         .into());
                     }
                 };
+
                 let interface = self.env.get_global_type(span, &word)?;
 
                 let err = match self.access_property(span, &interface, prop, type_mode, id_ctx, opts) {
@@ -2425,6 +2437,7 @@ impl Analyzer<'_, '_> {
                         id_ctx,
                         AccessPropertyOpts {
                             use_undefined_for_tuple_index_error,
+                            disallow_creating_indexed_type_from_ty_els: true,
                             ..opts
                         },
                     ) {
@@ -3699,6 +3712,22 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }));
+            }
+
+            if self.is_builtin {
+                // TODO: Remove this code after fixing a resolution bug
+                if i.sym == js_word!("Symbol") {
+                    return Ok(Type::Query(QueryType {
+                        span: DUMMY_SP,
+                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                            js_word!("Symbol"),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        ))),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                }
+                unreachable!("no such variable for builtin")
             }
 
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {

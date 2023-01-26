@@ -267,6 +267,7 @@ classes/members/privateNames/privateNamesAssertion.ts
 classes/members/privateNames/privateNamesInGenericClasses.ts
 classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesUnique-1.ts
+classes/members/privateNames/privateNamesUnique-3.ts
 classes/members/privateNames/privateNamesUnique-4.ts
 classes/members/privateNames/privateNamesUnique-5.ts
 classes/members/privateNames/privateStaticNameShadowing.ts
@@ -1438,6 +1439,7 @@ expressions/typeGuards/typeGuardsInWhileStatement.ts
 expressions/typeGuards/typeGuardsObjectMethods.ts
 expressions/typeGuards/typeGuardsOnClassProperty.ts
 expressions/typeGuards/typeGuardsWithAny.ts
+expressions/typeGuards/typeGuardsWithInstanceOfByConstructorSignature.ts
 expressions/typeGuards/typePredicateASI.ts
 expressions/typeSatisfaction/typeSatisfaction_contextualTyping1.ts
 expressions/typeSatisfaction/typeSatisfaction_contextualTyping2.ts
@@ -2410,6 +2412,7 @@ types/typeParameters/typeParameterLists/innerTypeParameterShadowingOuterOne2.ts
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithConstraints.ts
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithConstraints2.ts
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithConstraints3.ts
+types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithConstraints4.ts
 types/typeParameters/typeParameterLists/propertyAccessOnTypeParameterWithoutConstraints.ts
 types/typeParameters/typeParameterLists/staticMembersUsingClassTypeParameter.ts
 types/typeParameters/typeParameterLists/typeParameterUsedAsConstraint.ts
