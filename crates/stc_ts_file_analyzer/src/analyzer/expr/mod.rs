@@ -1704,7 +1704,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
-            }) if prop.is_num() => {
+            }) if prop.is_num_like() => {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
