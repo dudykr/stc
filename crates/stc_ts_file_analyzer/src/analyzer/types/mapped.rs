@@ -287,6 +287,7 @@ impl Analyzer<'_, '_> {
             }
             _ => (),
         if let Some(array) = keyof_operand.as_array() {
+        if let Type::Array(array) = keyof_operand.normalize() {
             let ty = Type::Array(Array {
                 span,
                 elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
