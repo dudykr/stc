@@ -147,6 +147,8 @@ impl Analyzer<'_, '_> {
             None
         };
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
+    fn expand_mapped_type_with_keyof(&mut self, span: Span, keyof_operand: &Type, m: &Mapped) -> VResult<Option<Type>> {
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
             .context("tried to normalize the operand of `in keyof`")?;
