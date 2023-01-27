@@ -2139,6 +2139,12 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(())
+        // TODO: Optimize by using generics
+        with_spread_rest(
+            &param.elems.iter().map(|element| *element.ty.clone()).collect_vec(),
+            &arg.elems.iter().map(|element| *element.ty.clone()).collect_vec(),
+            |param, arg| self.infer_type(span, inferred, param, arg, opts),
+        )
     }
 
     fn infer_type_of_fn_param(
