@@ -12,6 +12,8 @@ use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
+    Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -170,6 +172,7 @@ impl Analyzer<'_, '_> {
         match keyof_operand.normalize() {
             Type::Array(array) => {
                 let mut ty = Type::Array(Array {
+                let ty = Type::Array(Array {
                     span,
                     elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                     metadata: array.metadata,
@@ -203,6 +206,9 @@ impl Analyzer<'_, '_> {
 
                 // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
 
+                return Ok(Some(ty));
+            }
+            Type::Tuple(tuple) => {
                 let ty = Type::Tuple(Tuple {
                     span,
                     elems: tuple
@@ -275,6 +281,8 @@ impl Analyzer<'_, '_> {
                                     |_| Some(*elem.ty.clone()),
                                 );
                             }
+                        .map(|elem| {
+                            let ty = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
 
                             Ok(TupleElement { ty, ..elem.clone() })
                         })
@@ -296,6 +304,11 @@ impl Analyzer<'_, '_> {
             })
             .freezed();
             return Ok(Some(ty));
+                })
+                .freezed();
+                return Ok(Some(ty));
+            }
+            _ => (),
         }
 
         match keyof_operand.normalize() {
