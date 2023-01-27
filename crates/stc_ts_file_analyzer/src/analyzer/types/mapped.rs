@@ -206,6 +206,20 @@ impl Analyzer<'_, '_> {
 
                 // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
 
+                let ty = {
+                    let mapped_type_param = m.type_param.name.clone();
+                    let mut type_params = HashMap::default();
+                    type_params.insert(
+                        mapped_type_param,
+                        Type::Keyword(KeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                    );
+                    self.expand_type_params(&type_params, ty, Default::default())
+                }?;
                 return Ok(Some(ty));
             }
             Type::Tuple(tuple) => {
@@ -283,6 +297,33 @@ impl Analyzer<'_, '_> {
                             }
                         .map(|elem| {
                             let ty = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+
+                            let ty = {
+                                let mapped_type_param = m.type_param.name.clone();
+                                let mut type_params = HashMap::default();
+                                type_params.insert(
+                                    mapped_type_param,
+                                    match elem.ty.normalize() {
+                                        Type::Rest(elem_ty) => Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        _ => Type::Lit(LitType {
+                                            span,
+                                            lit: RTsLit::Number(RNumber {
+                                                span,
+                                                value: idx as _,
+                                                raw: None,
+                                            }),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                    },
+                                );
+                                self.expand_type_params(&type_params, ty, Default::default())
+                            }?;
 
                             Ok(TupleElement { ty, ..elem.clone() })
                         })
