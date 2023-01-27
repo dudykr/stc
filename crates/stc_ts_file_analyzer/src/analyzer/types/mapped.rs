@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Handle index signatures.
-    #[instrument(name = "expand_mapped", skip(self, span, m))]
+    #[instrument(name = "expand_mapped", skip_all)]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
