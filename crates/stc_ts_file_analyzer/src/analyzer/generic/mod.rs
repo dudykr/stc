@@ -773,7 +773,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Array(arr @ Array { .. }) => {
+            Type::Array(param_arr @ Array { .. }) => {
                 let opts = InferTypeOpts {
                     append_type_as_union: true,
                     ..opts
@@ -782,11 +782,11 @@ impl Analyzer<'_, '_> {
                 match arg {
                     Type::Array(Array {
                         elem_type: arg_elem_type, ..
-                    }) => return self.infer_type(span, inferred, &arr.elem_type, arg_elem_type, opts),
+                    }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
                         let arg = Type::new_union(span, arg.elems.iter().map(|element| *element.ty.clone()));
-                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
+                        return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
                     }
 
                     _ => {}
