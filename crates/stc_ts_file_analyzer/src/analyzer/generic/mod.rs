@@ -2064,6 +2064,7 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn infer_type_using_tuple_and_tuple(
         &mut self,
         span: Span,
