@@ -760,7 +760,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Array(arr @ Array { .. }) => {
+            Type::Array(param_arr @ Array { .. }) => {
                 let opts = InferTypeOpts {
                     append_type_as_union: true,
                     ..opts
@@ -769,7 +769,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Param(TypeParam {
                     constraint: Some(constraint),
                     ..
-                }) = arr.elem_type.normalize()
+                }) = param_arr.elem_type.normalize()
                 {
                     if let Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
@@ -778,18 +778,18 @@ impl Analyzer<'_, '_> {
                     {
                         let mut arg = arg.clone();
                         prevent_generalize(&mut arg);
-                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
+                        return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
                     }
                 }
 
                 match arg {
                     Type::Array(Array {
                         elem_type: arg_elem_type, ..
-                    }) => return self.infer_type(span, inferred, &arr.elem_type, arg_elem_type, opts),
+                    }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
                         let arg = Type::union(arg.elems.iter().map(|element| *element.ty.clone()));
-                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
+                        return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
                     }
 
                     _ => {}
