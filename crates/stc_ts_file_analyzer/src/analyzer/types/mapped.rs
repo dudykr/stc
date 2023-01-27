@@ -286,6 +286,15 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(ty));
             }
             _ => (),
+        if let Some(array) = keyof_operand.as_array() {
+            let ty = Type::Array(Array {
+                span,
+                elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                metadata: array.metadata,
+                tracker: Default::default(),
+            })
+            .freezed();
+            return Ok(Some(ty));
         }
 
         match keyof_operand.normalize() {
@@ -296,6 +305,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Some(v) = self
                     .expand_mapped_type_with_keyof(span, ty, original_keyof_operand, m)
+                    .expand_mapped_type_with_keyof(span, ty, m)
                     .context("tried to expand mapped type using a readonly operator")?
                 {
                     return Ok(Some(v));
@@ -308,6 +318,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Some(v) = self
                     .expand_mapped_type_with_keyof(span, constraint, original_keyof_operand, m)
+                    .expand_mapped_type_with_keyof(span, constraint, m)
                     .context("tried to expand mapped type using a constraint")?
                 {
                     return Ok(Some(v));
