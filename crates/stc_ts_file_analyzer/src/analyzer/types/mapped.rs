@@ -169,15 +169,11 @@ impl Analyzer<'_, '_> {
             ..
         }) = keyof_operand.normalize()
         {
-            if let Some(array) = constraint.as_array_without_readonly() {
-                let ty = Type::Array(Array {
-                    span,
-                    elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
-                    metadata: array.metadata,
-                    tracker: Default::default(),
-                })
-                .freezed();
-                return Ok(Some(ty));
+            if let Some(v) = self
+                .expand_mapped_type_with_keyof(span, constraint, m)
+                .context("tried to expand mapped type using a constraint")?
+            {
+                return Ok(Some(v));
             }
         }
 
