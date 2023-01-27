@@ -363,7 +363,12 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u.types.retain(|v| !v.is_never());
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
-            u.types.retain(|ty| !matches!(ty.normalize(), Type::Function(..)));
+            u.types
+                .retain(|ty| !matches!(ty.normalize(), Type::Function(..) | Type::Constructor(..)));
+        }
+        if self.facts.contains(TypeFacts::TypeofEQFunction) {
+            u.types
+                .retain(|ty| matches!(ty.normalize(), Type::Function(..) | Type::Constructor(..)));
         }
 
         if self.facts != TypeFacts::None {
