@@ -9,6 +9,7 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
+use stc_ts_type_ops::replace::replace_type;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
@@ -301,7 +302,23 @@ impl Analyzer<'_, '_> {
 
                             let ty = {
                                 match elem.ty.normalize() {
-                                    Type::Rest(elem_ty) => ty,
+                                    Type::Rest(elem_ty) => {
+                                        replace_type(
+                                            &mut ty,
+                                            |ty| {
+                                                // Check for indexed access type
+                                                if let Type::IndexedAccessType(iat) = ty.normalize() {
+                                                    if let Type::Param(index_type) = iat.index_type.normalize() {
+                                                        return index_type.name == m.type_param.name;
+                                                    }
+                                                }
+
+                                                false
+                                            },
+                                            |_| Some(*elem_ty.ty.clone()),
+                                        );
+                                        ty
+                                    }
                                     _ => {
                                         let mut type_params = HashMap::default();
                                         type_params.insert(
