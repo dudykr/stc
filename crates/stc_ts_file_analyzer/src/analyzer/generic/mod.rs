@@ -491,6 +491,11 @@ impl Analyzer<'_, '_> {
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
         if param.is_keyword() || param.type_eq(arg) {
+        if param.type_eq(arg) {
+            return Ok(());
+        }
+
+        if param.is_keyword() {
             return Ok(());
         }
 
@@ -768,7 +773,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Array(param_arr @ Array { .. }) => {
+            Type::Array(arr @ Array { .. }) => {
                 let opts = InferTypeOpts {
                     append_type_as_union: true,
                     ..opts
@@ -777,11 +782,11 @@ impl Analyzer<'_, '_> {
                 match arg {
                     Type::Array(Array {
                         elem_type: arg_elem_type, ..
-                    }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
+                    }) => return self.infer_type(span, inferred, &arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
                         let arg = Type::new_union(span, arg.elems.iter().map(|element| *element.ty.clone()));
-                        return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
+                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
                     }
 
                     _ => {}
