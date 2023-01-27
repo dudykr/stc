@@ -54,163 +54,7 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ty: keyof_operand,
                 ..
-            })) => {
-                let keyof_operand = self
-                    .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
-                    .context("tried to normalize the operand of `in keyof`")?;
-
-                if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
-                    // Special case, but many usages can be handled with this check.
-                    if (*keyof_operand).type_eq(mapped_ty) {
-                        let new_type = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
-                            .context("tried to convert a type to type literal to expand mapped type")?
-                            .map(Cow::into_owned);
-
-                        if let Some(mut new) = new_type {
-                            for member in &mut new.members {
-                                apply_mapped_flags(member, m.optional, m.readonly);
-                            }
-
-                            return Ok(Some(Type::TypeLit(new)));
-                        }
-                    }
-                }
-
-                if let Some(array) = keyof_operand.as_array_without_readonly() {
-                    let ty = Type::Array(Array {
-                        span,
-                        elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
-                        metadata: array.metadata,
-                        tracker: Default::default(),
-                    })
-                    .freezed();
-                    return Ok(Some(ty));
-                }
-
-                if let Type::Param(TypeParam {
-                    constraint: Some(constraint),
-                    ..
-                }) = keyof_operand.normalize()
-                {
-                    if let Some(array) = constraint.as_array_without_readonly() {
-                        let ty = Type::Array(Array {
-                            span,
-                            elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
-                            metadata: array.metadata,
-                            tracker: Default::default(),
-                        })
-                        .freezed();
-                        return Ok(Some(ty));
-                    }
-                }
-
-                let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
-                if let Some(keys) = keys {
-                    let members = keys
-                        .into_iter()
-                        .map(|key| -> VResult<_> {
-                            match key {
-                                PropertyName::Key(key) => {
-                                    let ty = match &m.ty {
-                                        Some(mapped_ty) => self
-                                            .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
-                                            .map(Box::new)
-                                            .map(Some)?,
-                                        None => None,
-                                    };
-
-                                    let p = PropertySignature {
-                                        span: key.span(),
-                                        accessibility: None,
-                                        readonly: false,
-                                        key,
-                                        optional: false,
-                                        params: Default::default(),
-                                        type_ann: ty,
-                                        type_params: Default::default(),
-                                        metadata: Default::default(),
-                                        accessor: Default::default(),
-                                    };
-                                    let mut el = TypeElement::Property(p);
-
-                                    apply_mapped_flags(&mut el, m.optional, m.readonly);
-                                    Ok(el)
-                                }
-                                PropertyName::IndexSignature { span, params, readonly } => {
-                                    let ty = match &m.ty {
-                                        Some(mapped_ty) => {
-                                            let mut map = HashMap::default();
-                                            map.insert(m.type_param.name.clone(), *params[0].ty.clone());
-                                            self.expand_type_params(&map, m.ty.clone(), Default::default())?
-                                        }
-                                        None => None,
-                                    };
-
-                                    Ok(TypeElement::Index(IndexSignature {
-                                        span,
-                                        is_static: false,
-                                        params,
-                                        type_ann: ty,
-                                        readonly: match m.readonly {
-                                            Some(v) => match v {
-                                                TruePlusMinus::True => true,
-                                                TruePlusMinus::Plus => true,
-                                                TruePlusMinus::Minus => false,
-                                            },
-                                            None => readonly,
-                                        },
-                                    }))
-                                }
-                            }
-                        })
-                        .collect::<Result<_, _>>()?;
-
-                    return Ok(Some(Type::TypeLit(TypeLit {
-                        span: m.span,
-                        members,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    })));
-                }
-
-                if let Some(mapped_ty) = m.ty.as_deref() {
-                    let found_type_param_in_keyof_operand = {
-                        let mut v = TypeParamNameUsageFinder::default();
-                        keyof_operand.visit_with(&mut v);
-                        !v.params.is_empty()
-                    };
-                    if !found_type_param_in_keyof_operand {
-                        // Check if type in `keyof T` is only used as `T[K]`.
-                        // If so, we can just use the type.
-                        //
-                        // {
-                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
-                        // };
-
-                        let mut finder = IndexedAccessTypeFinder {
-                            obj: &keyof_operand,
-                            key: &m.type_param.name,
-                            can_replace_indexed_type: false,
-                        };
-
-                        mapped_ty.visit_with(&mut finder);
-                        if finder.can_replace_indexed_type {
-                            let mut replacer = IndexedAccessTypeReplacer {
-                                obj: &keyof_operand,
-                                key: &m.type_param.name,
-                            };
-
-                            let mut ret_ty = mapped_ty.clone();
-                            ret_ty.visit_mut_with(&mut replacer);
-
-                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
-
-                            return Ok(Some(ret_ty));
-                        }
-                    }
-                }
-            }
+            })) => return self.expand_mapped_type_with_keyof(span, keyof_operand, m),
             _ => {
                 if let Some(constraint) = m.type_param.constraint.as_deref() {
                     if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) || constraint.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
@@ -283,6 +127,170 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        Ok(None)
+    }
+
+    fn expand_mapped_type_with_keyof(&mut self, span: Span, keyof_operand: &Type, m: &Mapped) -> VResult<Option<Type>> {
+        let keyof_operand = self
+            .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
+            .context("tried to normalize the operand of `in keyof`")?;
+
+        if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
+            // Special case, but many usages can be handled with this check.
+            if (*keyof_operand).type_eq(mapped_ty) {
+                let new_type = self
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
+                    .context("tried to convert a type to type literal to expand mapped type")?
+                    .map(Cow::into_owned);
+
+                if let Some(mut new) = new_type {
+                    for member in &mut new.members {
+                        apply_mapped_flags(member, m.optional, m.readonly);
+                    }
+
+                    return Ok(Some(Type::TypeLit(new)));
+                }
+            }
+        }
+
+        if let Some(array) = keyof_operand.as_array_without_readonly() {
+            let ty = Type::Array(Array {
+                span,
+                elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                metadata: array.metadata,
+                tracker: Default::default(),
+            })
+            .freezed();
+            return Ok(Some(ty));
+        }
+
+        if let Type::Param(TypeParam {
+            constraint: Some(constraint),
+            ..
+        }) = keyof_operand.normalize()
+        {
+            if let Some(array) = constraint.as_array_without_readonly() {
+                let ty = Type::Array(Array {
+                    span,
+                    elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                    metadata: array.metadata,
+                    tracker: Default::default(),
+                })
+                .freezed();
+                return Ok(Some(ty));
+            }
+        }
+
+        let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
+        if let Some(keys) = keys {
+            let members = keys
+                .into_iter()
+                .map(|key| -> VResult<_> {
+                    match key {
+                        PropertyName::Key(key) => {
+                            let ty = match &m.ty {
+                                Some(mapped_ty) => self
+                                    .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
+                                    .map(Box::new)
+                                    .map(Some)?,
+                                None => None,
+                            };
+
+                            let p = PropertySignature {
+                                span: key.span(),
+                                accessibility: None,
+                                readonly: false,
+                                key,
+                                optional: false,
+                                params: Default::default(),
+                                type_ann: ty,
+                                type_params: Default::default(),
+                                metadata: Default::default(),
+                                accessor: Default::default(),
+                            };
+                            let mut el = TypeElement::Property(p);
+
+                            apply_mapped_flags(&mut el, m.optional, m.readonly);
+                            Ok(el)
+                        }
+                        PropertyName::IndexSignature { span, params, readonly } => {
+                            let ty = match &m.ty {
+                                Some(mapped_ty) => {
+                                    let mut map = HashMap::default();
+                                    map.insert(m.type_param.name.clone(), *params[0].ty.clone());
+                                    self.expand_type_params(&map, m.ty.clone(), Default::default())?
+                                }
+                                None => None,
+                            };
+
+                            Ok(TypeElement::Index(IndexSignature {
+                                span,
+                                is_static: false,
+                                params,
+                                type_ann: ty,
+                                readonly: match m.readonly {
+                                    Some(v) => match v {
+                                        TruePlusMinus::True => true,
+                                        TruePlusMinus::Plus => true,
+                                        TruePlusMinus::Minus => false,
+                                    },
+                                    None => readonly,
+                                },
+                            }))
+                        }
+                    }
+                })
+                .collect::<Result<_, _>>()?;
+
+            return Ok(Some(Type::TypeLit(TypeLit {
+                span: m.span,
+                members,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })));
+        }
+
+        if let Some(mapped_ty) = m.ty.as_deref() {
+            let found_type_param_in_keyof_operand = {
+                let mut v = TypeParamNameUsageFinder::default();
+                keyof_operand.visit_with(&mut v);
+                !v.params.is_empty()
+            };
+            if !found_type_param_in_keyof_operand {
+                // Check if type in `keyof T` is only used as `T[K]`.
+                // If so, we can just use the type.
+                //
+                // {
+                //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
+                // };
+
+                let mut finder = IndexedAccessTypeFinder {
+                    obj: &keyof_operand,
+                    key: &m.type_param.name,
+                    can_replace_indexed_type: false,
+                };
+
+                mapped_ty.visit_with(&mut finder);
+                if finder.can_replace_indexed_type {
+                    let mut replacer = IndexedAccessTypeReplacer {
+                        obj: &keyof_operand,
+                        key: &m.type_param.name,
+                    };
+
+                    let mut ret_ty = mapped_ty.clone();
+                    ret_ty.visit_mut_with(&mut replacer);
+
+                    ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
+
+                    return Ok(Some(ret_ty));
+                }
+            }
+        }
+
+        error!(
+            "unimplemented: expand_mapped_type_with_keyof\nkeyof: {}",
+            force_dump_type_as_string(&keyof_operand)
+        );
         Ok(None)
     }
 
