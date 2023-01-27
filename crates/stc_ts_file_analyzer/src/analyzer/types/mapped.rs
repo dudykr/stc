@@ -2,7 +2,7 @@ use std::{borrow::Cow, collections::HashMap};
 
 use itertools::Itertools;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
@@ -149,7 +149,13 @@ impl Analyzer<'_, '_> {
         };
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn expand_mapped_type_with_keyof(&mut self, span: Span, keyof_operand: &Type, m: &Mapped) -> VResult<Option<Type>> {
+    fn expand_mapped_type_with_keyof(
+        &mut self,
+        span: Span,
+        keyof_operand: &Type,
+        original_keyof_operand: &Type,
+        m: &Mapped,
+    ) -> VResult<Option<Type>> {
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
             .context("tried to normalize the operand of `in keyof`")?;
@@ -312,40 +318,22 @@ impl Analyzer<'_, '_> {
                                                         return index_type.name == m.type_param.name;
                                                     }
                                                 }
+                            replace_type(
+                                &mut ty,
+                                |ty| {
+                                    // Check for indexed access type
+                                    if let Type::IndexedAccessType(iat) = ty.normalize() {
+                                        if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
+                                            if let Type::Param(index_type) = iat.index_type.normalize() {
+                                                return index_type.name == m.type_param.name;
+                                            }
+                                        }
+                                    }
 
-                                                false
-                                            },
-                                            |_| Some(*elem.ty.clone()),
-                                        );
-                                        ty
-                                    }
-                                    _ => {
-                                        let mut type_params = HashMap::default();
-                                        type_params.insert(
-                                            m.type_param.name.clone(),
-                                            match elem.ty.normalize() {
-                                                Type::Rest(elem_ty) => Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                                _ => Type::Lit(LitType {
-                                                    span,
-                                                    lit: RTsLit::Number(RNumber {
-                                                        span,
-                                                        value: idx as _,
-                                                        raw: None,
-                                                    }),
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                            },
-                                        );
-                                        self.expand_type_params(&type_params, ty, Default::default())?
-                                    }
-                                }
-                            };
+                                    false
+                                },
+                                |_| Some(*elem.ty.clone()),
+                            );
 
                             Ok(TupleElement { ty, ..elem.clone() })
                         })
