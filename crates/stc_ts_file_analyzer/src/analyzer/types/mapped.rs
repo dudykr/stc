@@ -303,10 +303,9 @@ impl Analyzer<'_, '_> {
                                 match elem.ty.normalize() {
                                     Type::Rest(elem_ty) => ty,
                                     _ => {
-                                        let mapped_type_param = m.type_param.name.clone();
                                         let mut type_params = HashMap::default();
                                         type_params.insert(
-                                            mapped_type_param,
+                                            m.type_param.name.clone(),
                                             match elem.ty.normalize() {
                                                 Type::Rest(elem_ty) => Type::Keyword(KeywordType {
                                                     span,
