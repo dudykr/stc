@@ -302,7 +302,7 @@ impl Analyzer<'_, '_> {
 
                             let ty = {
                                 match elem.ty.normalize() {
-                                    Type::Rest(elem_ty) => {
+                                    Type::Rest(_) => {
                                         replace_type(
                                             &mut ty,
                                             |ty| {
@@ -315,7 +315,7 @@ impl Analyzer<'_, '_> {
 
                                                 false
                                             },
-                                            |_| Some(*elem_ty.ty.clone()),
+                                            |_| Some(*elem.ty.clone()),
                                         );
                                         ty
                                     }
