@@ -283,10 +283,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        error!(
-            "unimplemented: expand_mapped_type_with_keyof\nkeyof: {}",
-            force_dump_type_as_string(&keyof_operand)
-        );
+        // error!(
+        //     "unimplemented: expand_mapped_type_with_keyof\nkeyof: {}",
+        //     force_dump_type_as_string(&keyof_operand)
+        // );
         Ok(None)
     }
 
