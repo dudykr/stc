@@ -14,7 +14,7 @@ use std::{
     borrow::Cow,
     fmt,
     fmt::{Debug, Formatter},
-    iter::{self, FusedIterator},
+    iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
 };
