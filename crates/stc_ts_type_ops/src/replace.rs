@@ -1,4 +1,5 @@
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use rustc_hash::FxHashMap;
 use stc_ts_types::Type;
 
 /// Replaces all types which matches `matcher` with `replacer`.
@@ -12,17 +13,24 @@ where
     M: Fn(&Type) -> bool,
     R: Fn(&Type) -> Option<Type>,
 {
+    let mut cache = FxHashMap::default();
     ty.visit_mut_with(&mut TypeReplacer {
+        cache: &mut cache,
+
         matcher: &matcher,
         replacer: &replacer,
     });
 }
+
+type Cache = FxHashMap<*const (), bool>;
 
 struct TypeReplacer<'a, M, R>
 where
     M: Fn(&Type) -> bool,
     R: Fn(&Type) -> Option<Type>,
 {
+    cache: &'a mut Cache,
+
     matcher: &'a M,
     replacer: &'a R,
 }
@@ -35,6 +43,7 @@ where
     fn visit_mut(&mut self, ty: &mut Type) {
         {
             let mut finder = Finder {
+                cache: self.cache,
                 matcher: self.matcher,
                 found: false,
             };
@@ -57,6 +66,7 @@ where
 }
 
 struct Finder<'a, M> {
+    cache: &'a mut Cache,
     matcher: &'a M,
     found: bool,
 }
@@ -74,6 +84,15 @@ where
             return;
         }
 
+        let key = ty as *const Type as *const ();
+
+        if let Some(v) = self.cache.get(&key).copied() {
+            self.found |= v;
+            return;
+        }
+
         ty.visit_children_with(self);
+
+        self.cache.insert(key, self.found);
     }
 }
