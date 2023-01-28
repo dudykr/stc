@@ -16,6 +16,7 @@ use stc_ts_types::Type;
 pub mod expansion;
 pub mod generalization;
 pub mod metadata;
+pub mod replace;
 pub mod this;
 pub mod tuple_normalization;
 pub mod tuple_to_array;
