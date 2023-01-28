@@ -14,7 +14,7 @@ use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
     Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
-    Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -156,6 +156,12 @@ impl Analyzer<'_, '_> {
         original_keyof_operand: &Type,
         m: &Mapped,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "expand_mapped_type_with_keyof").entered())
+        } else {
+            None
+        };
+
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
             .context("tried to normalize the operand of `in keyof`")?;
@@ -335,12 +341,44 @@ impl Analyzer<'_, '_> {
                                                 return index_type.name == m.type_param.name;
                                             }
                                         }
-                                    }
 
-                                    false
-                                },
-                                |_| Some(*elem.ty.clone()),
-                            );
+                                        false
+                                    },
+                                    |_| {
+                                        Some(Type::Rest(RestType {
+                                            span,
+                                            ty: box Type::Mapped(Mapped {
+                                                type_param: TypeParam {
+                                                    constraint: Some(elem_rest_ty.ty.clone()),
+                                                    tracker: Default::default(),
+                                                    ..m.type_param.clone()
+                                                },
+                                                tracker: Default::default(),
+                                                ..m.clone()
+                                            }),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }))
+                                    },
+                                );
+                            } else {
+                                replace_type(
+                                    &mut ty,
+                                    |ty| {
+                                        // Check for indexed access type
+                                        if let Type::IndexedAccessType(iat) = ty.normalize() {
+                                            if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
+                                                if let Type::Param(index_type) = iat.index_type.normalize() {
+                                                    return index_type.name == m.type_param.name;
+                                                }
+                                            }
+                                        }
+
+                                        false
+                                    },
+                                    |_| Some(*elem.ty.clone()),
+                                );
+                            }
 
                             Ok(TupleElement { ty, ..elem.clone() })
                         })
