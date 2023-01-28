@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
 
                 // =>
 
-                // type F<T extends unknown[]> = [string[], number[], ...Arrayify<T>]
+                // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
 
                 let ty = Type::Tuple(Tuple {
                     span,
