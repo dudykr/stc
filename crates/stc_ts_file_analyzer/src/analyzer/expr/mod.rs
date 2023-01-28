@@ -30,7 +30,6 @@ use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 use tracing::{debug, info, warn, Level};
-use ty::TypeExt;
 
 use self::bin::extract_name_for_assignment;
 pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
@@ -1660,10 +1659,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             obj.freeze();
         }
-        let mut obj = self
-            .with_ctx(ctx)
-            .expand(span, obj.into_owned(), Default::default())?
-            .generalize_lit();
+        let mut obj = self.with_ctx(ctx).expand(span, obj.into_owned(), Default::default())?;
         if !self.is_builtin {
             obj.freeze();
         }
