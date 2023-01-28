@@ -2535,7 +2535,10 @@ impl Analyzer<'_, '_> {
                                         }),
                                         type_mode,
                                         id_ctx,
-                                        opts,
+                                        AccessPropertyOpts {
+                                            use_undefined_for_tuple_index_error: false,
+                                            ..opts
+                                        },
                                     ) {
                                         return Ok(ty);
                                     }
