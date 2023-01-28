@@ -2401,13 +2401,20 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
+                        let len = lhs_elems.len().max(rhs_elems.len());
+
                         let mut errors = vec![];
-                        for (l, r) in lhs_elems.iter().zip(rhs_elems) {
+                        for (l, r) in lhs_elems
+                            .iter()
+                            .flat_map(|e| e.ty.iter_rest())
+                            .zip(rhs_elems.iter().flat_map(|e| e.ty.iter_rest()))
+                            .take(len)
+                        {
                             for el in lhs_elems {
                                 if let Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     ..
-                                }) = *r.ty.normalize()
+                                }) = r.normalize()
                                 {
                                     continue;
                                 }
@@ -2415,8 +2422,8 @@ impl Analyzer<'_, '_> {
                                 errors.extend(
                                     self.assign_inner(
                                         data,
-                                        &l.ty,
-                                        &r.ty,
+                                        l,
+                                        r,
                                         AssignOpts {
                                             allow_unknown_rhs: Some(true),
                                             ..opts
