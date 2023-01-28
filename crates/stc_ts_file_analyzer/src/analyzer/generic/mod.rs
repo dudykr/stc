@@ -1311,7 +1311,6 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn infer_type_using_mapped_type(
         &mut self,
         span: Span,
@@ -1549,11 +1548,20 @@ impl Analyzer<'_, '_> {
                                         if let Some(param_ty) = &param.ty {
                                             // TODO(kdy1): PERF
 
-                                            let mapped_param_ty = arg_prop_ty
-                                                .clone()
-                                                .foldable()
-                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
-                                                .freezed();
+                                            let mut mapped_param_ty = arg_prop_ty.clone().foldable();
+
+                                            replace_type(
+                                                &mut mapped_param_ty,
+                                                |ty| matches!(ty.normalize(), Type::Param(TypeParam { name: param_name, .. }) if name == *param_name),
+                                                |ty| match ty.normalize() {
+                                                    Type::Param(TypeParam { name: param_name, .. }) if name == *param_name => {
+                                                        Some(*param_ty.clone())
+                                                    }
+
+                                                    _ => None,
+                                                },
+                                            );
+                                            mapped_param_ty.freeze();
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
