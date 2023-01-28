@@ -2526,29 +2526,31 @@ impl Analyzer<'_, '_> {
 
                         if (v as usize) + 1 >= elems.len() {
                             if let Some(elem) = elems.last() {
-                                if !opts.return_rest_tuple_element_as_is {
-                                    if let Type::Rest(rest_ty) = elem.ty.normalize() {
-                                        if let Ok(ty) = self.access_property(
-                                            span,
-                                            &rest_ty.ty,
-                                            &Key::Num(RNumber {
-                                                span: n.span,
-                                                value: (v + 1i64 - (elems.len() as i64)) as _,
-                                                raw: None,
-                                            }),
-                                            type_mode,
-                                            id_ctx,
-                                            AccessPropertyOpts {
-                                                use_undefined_for_tuple_index_error: false,
-                                                ..opts
-                                            },
-                                        ) {
-                                            return Ok(ty);
-                                        }
-
-                                        // debug_assert!(rest_ty.ty.is_clone_cheap());
+                                if let Type::Rest(rest_ty) = elem.ty.normalize() {
+                                    if opts.return_rest_tuple_element_as_is {
                                         return Ok(*rest_ty.ty.clone());
                                     }
+
+                                    if let Ok(ty) = self.access_property(
+                                        span,
+                                        &rest_ty.ty,
+                                        &Key::Num(RNumber {
+                                            span: n.span,
+                                            value: (v + 1i64 - (elems.len() as i64)) as _,
+                                            raw: None,
+                                        }),
+                                        type_mode,
+                                        id_ctx,
+                                        AccessPropertyOpts {
+                                            use_undefined_for_tuple_index_error: false,
+                                            ..opts
+                                        },
+                                    ) {
+                                        return Ok(ty);
+                                    }
+
+                                    // debug_assert!(rest_ty.ty.is_clone_cheap());
+                                    return Ok(*rest_ty.ty.clone());
                                 }
                             }
                         }
