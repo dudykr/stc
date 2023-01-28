@@ -18,8 +18,8 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
     IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature,
-    QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParam, TypeParamInstantiation, Union,
+    QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -733,6 +733,17 @@ impl Analyzer<'_, '_> {
 
                     Type::Operator(_) => {
                         // TODO(kdy1):
+                    }
+
+                    Type::Rest(rest) => {
+                        let ty = box self.normalize(span, Cow::Borrowed(&rest.ty), opts)?.into_owned();
+
+                        return Ok(Cow::Owned(Type::Rest(RestType {
+                            span: rest.span,
+                            ty,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })));
                     }
 
                     Type::Tpl(tpl) => {
