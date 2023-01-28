@@ -14,9 +14,10 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType, KeywordTypeMetadata,
-    LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement,
+    TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -2087,24 +2088,6 @@ impl Analyzer<'_, '_> {
 
     fn rename_inferred(&mut self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
         info!("rename_inferred");
-        struct Renamer<'a> {
-            fixed: &'a FxHashMap<Id, Type>,
-        }
-
-        impl VisitMut<Type> for Renamer<'_> {
-            fn visit_mut(&mut self, node: &mut Type) {
-                match node.normalize() {
-                    Type::Param(p) if self.fixed.contains_key(&p.name) => {
-                        *node = (*self.fixed.get(&p.name).unwrap()).clone();
-                    }
-                    _ => {
-                        // TODO(kdy1): PERF
-                        node.normalize_mut();
-                        node.visit_mut_children_with(self)
-                    }
-                }
-            }
-        }
 
         if arg_type_params.params.iter().any(|v| inferred.errored.contains(&v.name)) {
             return Ok(());
@@ -2122,9 +2105,21 @@ impl Analyzer<'_, '_> {
             fixed.insert(param_name.clone(), ty.inferred_type.clone());
         });
 
-        let mut v = Renamer { fixed: &fixed };
         inferred.type_params.iter_mut().for_each(|(_, ty)| {
-            ty.inferred_type.visit_mut_with(&mut v);
+            replace_type(
+                &mut ty.inferred_type,
+                |node| match node.normalize() {
+                    Type::Param(p) => fixed.contains_key(&p.name),
+                    _ => false,
+                },
+                |node| {
+                    //
+                    match node.normalize() {
+                        Type::Param(p) if fixed.contains_key(&p.name) => Some((*fixed.get(&p.name).unwrap()).clone()),
+                        _ => None,
+                    }
+                },
+            )
         });
 
         Ok(())
