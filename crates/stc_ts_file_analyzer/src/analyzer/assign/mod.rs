@@ -2385,15 +2385,16 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !opts.ignore_tuple_length_difference && lhs_elems.len() > rhs_elems.len() {
-                            let is_len_fine = lhs_elems.iter().skip(rhs_elems.len()).all(|l| {
-                                matches!(
-                                    l.ty.normalize_instance(),
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                        ..
-                                    }) | Type::Optional(..)
-                                )
-                            });
+                            let is_len_fine = rhs_elems.iter().any(|elem| elem.ty.is_rest())
+                                || lhs_elems.iter().skip(rhs_elems.len()).all(|l| {
+                                    matches!(
+                                        l.ty.normalize_instance(),
+                                        Type::Keyword(KeywordType {
+                                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                                            ..
+                                        }) | Type::Optional(..)
+                                    )
+                                });
 
                             if !is_len_fine {
                                 return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
