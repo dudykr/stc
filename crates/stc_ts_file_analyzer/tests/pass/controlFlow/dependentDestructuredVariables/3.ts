@@ -2,7 +2,8 @@
 
 type Action = { kind: "A"; payload: number } | { kind: "B"; payload: string };
 
-function f10({ kind, payload }: Action) {
+function f14<T extends Action>(t: T) {
+  const { kind, payload } = t;
   if (kind === "A") {
     payload.toFixed();
   }

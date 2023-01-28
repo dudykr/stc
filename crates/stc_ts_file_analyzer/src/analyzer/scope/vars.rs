@@ -10,7 +10,7 @@ use stc_ts_errors::{
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
     Array, CommonTypeMetadata, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParamInstantiation, Union,
+    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
         }
 
         let span = pat.span().with_ctxt(SyntaxContext::empty());
-
+        dbg!(&pat);
         if !matches!(pat, RPat::Ident(..)) {
             if let Some(ty @ Type::Ref(..)) = ty.as_ref().map(Type::normalize) {
                 let mut ty = self
@@ -503,15 +503,27 @@ impl Analyzer<'_, '_> {
             RPat::Object(obj) => {
                 let normalize_ty = ty.as_ref().map(Type::normalize);
                 let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
-                let ty_is_union = !matches!(normalize_ty, Some(Type::Union(..)));
-
                 let mut destructure_key = 0;
-                if ty_is_union {
-                    if let Some(real) = normalize_ty {
+
+                match normalize_ty {
+                    Some(real @ Type::Union(..)) => {
                         let des_key = self.get_destructor_unique_key();
                         destructure_key = des_key.extract();
                         self.declare_destructor(span, real, des_key)?;
                     }
+                    Some(Type::Param(TypeParam {
+                        constraint: Some(box result),
+                        ..
+                    })) => {
+                        if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                            if let real @ Type::Union(..) = result.normalize() {
+                                let des_key = self.get_destructor_unique_key();
+                                destructure_key = des_key.extract();
+                                self.declare_destructor(span, real, des_key)?;
+                            }
+                        }
+                    }
+                    _ => {}
                 }
 
                 let mut real = Type::TypeLit(TypeLit {
