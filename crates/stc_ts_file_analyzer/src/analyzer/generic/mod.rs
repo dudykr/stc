@@ -2227,35 +2227,6 @@ impl Fold<Type> for SingleTypeParamReplacer<'_> {
     }
 }
 
-struct TypeParamInliner<'a> {
-    param: &'a Id,
-    value: &'a RStr,
-}
-
-impl VisitMut<Type> for TypeParamInliner<'_> {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
-        ty.visit_mut_children_with(self);
-
-        match ty.normalize() {
-            Type::Param(p) if p.name == *self.param => {
-                *ty = Type::Lit(LitType {
-                    span: p.span,
-                    lit: RTsLit::Str(self.value.clone()),
-                    metadata: LitTypeMetadata {
-                        common: p.metadata.common,
-                        ..Default::default()
-                    },
-                    tracker: Default::default(),
-                });
-            }
-            _ => {}
-        }
-    }
-}
-
 pub(crate) fn calc_true_plus_minus_in_param(param: Option<TruePlusMinus>, previous: bool) -> bool {
     match param {
         Some(v) => match v {
