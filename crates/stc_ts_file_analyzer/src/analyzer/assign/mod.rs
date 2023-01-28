@@ -2461,6 +2461,7 @@ impl Analyzer<'_, '_> {
                                         ..opts
                                     },
                                 )
+                                .with_context(|| format!("tried to assign {}th tuple assignment", index))
                                 .err(),
                             );
                         }
