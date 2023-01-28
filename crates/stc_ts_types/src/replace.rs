@@ -1,6 +1,7 @@
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use rustc_hash::FxHashMap;
-use stc_ts_types::Type;
+
+use crate::Type;
 
 /// Replaces all types which matches `matcher` with `replacer`.
 ///

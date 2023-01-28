@@ -67,6 +67,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+pub mod replace;
 mod tracker;
 pub mod type_id;
 
