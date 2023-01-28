@@ -4,7 +4,11 @@ use stc_ts_utils::MapWithMut;
 use stc_utils::ext::TypeVecExt;
 use swc_common::Spanned;
 
-pub struct TupleNormalizer;
+pub fn normalize_tuples(ty: &mut Type) {
+    ty.visit_mut_with(&mut TupleNormalizer);
+}
+
+struct TupleNormalizer;
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
