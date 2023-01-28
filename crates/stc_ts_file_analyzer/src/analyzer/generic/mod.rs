@@ -2052,6 +2052,7 @@ impl Analyzer<'_, '_> {
                     disallow_creating_indexed_type_from_ty_els: true,
                     disallow_indexing_class_with_computed: true,
                     use_undefined_for_tuple_index_error: true,
+                    return_rest_tuple_element_as_is: true,
                     ..Default::default()
                 },
             )?;
@@ -2072,6 +2073,7 @@ impl Analyzer<'_, '_> {
                     disallow_creating_indexed_type_from_ty_els: true,
                     disallow_indexing_class_with_computed: true,
                     use_undefined_for_tuple_index_error: true,
+                    return_rest_tuple_element_as_is: true,
                     ..Default::default()
                 },
             )?;
