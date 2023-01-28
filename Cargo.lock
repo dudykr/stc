@@ -2458,6 +2458,7 @@ dependencies = [
  "once_cell",
  "parking_lot",
  "rnode",
+ "rustc-hash",
  "scoped-tls",
  "serde",
  "smallvec",
