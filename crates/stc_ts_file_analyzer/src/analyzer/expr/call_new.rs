@@ -3620,7 +3620,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 .fixed();
             }
 
-            Type::IndexedAccessType(ty) if is_str_lit_or_union(&ty.index_type) => {
+            Type::IndexedAccessType(iat) if is_str_lit_or_union(&iat.index_type) => {
                 prevent_generalize(ty);
             }
 

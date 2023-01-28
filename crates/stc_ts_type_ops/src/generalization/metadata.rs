@@ -4,10 +4,7 @@ use stc_ts_types::{LitType, Type};
 use tracing::instrument;
 
 #[instrument(skip(ty))]
-pub fn prevent_generalize<N>(ty: &mut N)
-where
-    N: VisitMutWith<PreventGeneralization>,
-{
+pub fn prevent_generalize(ty: &mut Type) {
     ty.visit_mut_with(&mut PreventGeneralization { _priv: () });
 }
 
@@ -34,7 +31,7 @@ impl Visit<Type> for GeneralizableLiteralFinder {
     }
 }
 
-pub struct PreventGeneralization {
+struct PreventGeneralization {
     _priv: (),
 }
 
