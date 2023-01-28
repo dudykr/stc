@@ -231,6 +231,13 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(ty));
             }
             Type::Tuple(tuple) => {
+                // type Arrayify<T> = { [P in keyof T]: T[P][] };
+                // type F<T extends unknown[]> = Arrayify<[string, number, ...T]>
+
+                // =>
+
+                // type F<T extends unknown[]> = [string[], number[], ...Arrayify<T>]
+
                 let ty = Type::Tuple(Tuple {
                     span,
                     elems: tuple
