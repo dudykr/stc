@@ -2403,11 +2403,40 @@ impl Analyzer<'_, '_> {
 
                         let len = lhs_elems.len().max(rhs_elems.len());
 
-                        let mut errors = vec![];
-                        for (l, r) in lhs_elems
+                        let lhs = lhs_elems
                             .iter()
-                            .flat_map(|e| e.ty.iter_rest())
-                            .zip(rhs_elems.iter().flat_map(|e| e.ty.iter_rest()))
+                            .map(|el| {
+                                self.normalize(
+                                    Some(span),
+                                    Cow::Borrowed(&el.ty),
+                                    NormalizeTypeOpts {
+                                        preserve_global_this: true,
+                                        preserve_intersection: true,
+                                        ..Default::default()
+                                    },
+                                )
+                            })
+                            .collect::<Result<Vec<_>, _>>()?;
+                        let rhs = rhs_elems
+                            .iter()
+                            .map(|el| {
+                                self.normalize(
+                                    Some(span),
+                                    Cow::Borrowed(&el.ty),
+                                    NormalizeTypeOpts {
+                                        preserve_global_this: true,
+                                        preserve_intersection: true,
+                                        ..Default::default()
+                                    },
+                                )
+                            })
+                            .collect::<Result<Vec<_>, _>>()?;
+
+                        let mut errors = vec![];
+                        for (l, r) in lhs
+                            .iter()
+                            .flat_map(|ty| ty.iter_rest())
+                            .zip(rhs.iter().flat_map(|ty| ty.iter_rest()))
                             .take(len)
                         {
                             for el in lhs_elems {
