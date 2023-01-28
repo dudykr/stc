@@ -4,6 +4,7 @@ use std::{
     convert::{TryFrom, TryInto},
 };
 
+use fxhash::FxHashMap;
 use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
@@ -370,33 +371,7 @@ impl Analyzer<'_, '_> {
                     // === with an unknown does not narrow type
                     if self.ctx.in_cond && !r_ty.is_unknown() {
                         let (name, mut r, exclude) = self.calc_type_facts_for_equality(l, r_ty)?;
-                        dbg!(&r, &name, &exclude);
-                        let mut additional_target_name: Vec<Name> = vec![];
-                        if lt.metadata().destructure_key > 0 {
-                            let origin_ty = self.find_destructor(DestructurId::get(lt.metadata().destructure_key));
-                            if let Some(ty) = origin_ty {
-                                let ty = ty.into_owned();
-                                if let Type::Union(Union { types, .. }) = ty.normalize() {
-                                    for ty in types {
-                                        dbg!(&ty);
-                                        if let Type::TypeLit(TypeLit { members, .. }) = ty.normalize() {
-                                            for m in members {
-                                                if let Some(key) = m.non_computed_key() {
-                                                    let l_name = Name::new(name.get_ctxt(), key.clone());
-                                                    if name == l_name {
-                                                        continue;
-                                                    }
-                                                    additional_target_name.push(l_name);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        additional_target_name.sort();
-                        additional_target_name.dedup();
-                        dbg!(&additional_target_name);
+
                         r = if has_switch_case_test_not_compatible {
                             Type::Keyword(KeywordType {
                                 span,
@@ -455,6 +430,18 @@ impl Analyzer<'_, '_> {
                             _ => (),
                         }
 
+                        let additional_target = if lt.metadata().destructure_key > 0 {
+                            let origin_ty = self.find_destructor(DestructurId::get(lt.metadata().destructure_key));
+                            if let Some(ty) = origin_ty {
+                                let ty = ty.into_owned();
+                                self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
+                            } else {
+                                Default::default()
+                            }
+                        } else {
+                            Default::default()
+                        };
+
                         let exclude_types = if is_loose_comparison_with_null_or_undefined {
                             vec![
                                 Type::Keyword(KeywordType {
@@ -481,6 +468,14 @@ impl Analyzer<'_, '_> {
                                 .entry(name.clone())
                                 .or_default()
                                 .extend(exclude_types);
+                            for (name, exclude_type) in additional_target.iter() {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .extend(exclude_type.clone());
+                            }
                         } else {
                             self.cur_facts
                                 .true_facts
@@ -488,6 +483,14 @@ impl Analyzer<'_, '_> {
                                 .entry(name.clone())
                                 .or_default()
                                 .extend(exclude_types);
+                            for (name, exclude_type) in additional_target.iter() {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .extend(exclude_type.clone());
+                            }
                         }
 
                         r = if let Type::Param(TypeParam {
@@ -520,6 +523,11 @@ impl Analyzer<'_, '_> {
                             r
                         };
                         self.add_deep_type_fact(span, name, r, is_eq);
+                        for (name, exclude_type) in additional_target.iter() {
+                            for exclude in exclude_type.iter() {
+                                self.add_deep_type_fact(span, name.clone(), exclude.clone(), is_eq);
+                            }
+                        }
                     }
                 }
             }
@@ -2260,6 +2268,73 @@ impl Analyzer<'_, '_> {
 
         search(e.span, e.op, &e.left)?;
         search(e.span, e.op, &e.right)?;
+    }
+
+    fn get_additional_exclude_target(
+        &mut self,
+        span: Span,
+        origin_ty: Type,
+        r: &Type,
+        name: Name,
+        is_loose_comparison: bool,
+    ) -> FxHashMap<Name, Vec<Type>> {
+        let mut additional_target: FxHashMap<Name, Vec<Type>> = Default::default();
+
+        if let Type::Union(Union { types, .. }) = origin_ty.normalize() {
+            for ty in types {
+                if let Ok(property) = self.access_property(
+                    span,
+                    ty.normalize(),
+                    &Key::Normal {
+                        span,
+                        sym: name.top().sym().clone(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    Default::default(),
+                ) {
+                    if property.type_eq(r) {
+                        if let Type::TypeLit(tl @ TypeLit { members, .. }) = ty.normalize() {
+                            for m in members {
+                                if let Some(key) = m.non_computed_key() {
+                                    let l_name = Name::new(name.get_ctxt(), key.clone());
+                                    if name == l_name {
+                                        continue;
+                                    }
+                                    if let Some(act_ty) = m.get_type() {
+                                        let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
+                                            temp_vec.clone()
+                                        } else {
+                                            if is_loose_comparison {
+                                                vec![
+                                                    Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsNullKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    }),
+                                                    Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    }),
+                                                ]
+                                            } else {
+                                                vec![]
+                                            }
+                                        };
+                                        temp_vec.push(act_ty.freezed());
+                                        additional_target.insert(l_name, temp_vec);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        additional_target
     }
 }
 

@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
                 return self.add_vars(pat, Some(ty), actual, default, opts);
             }
         }
-        dbg!(&pat);
+
         match pat {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
@@ -248,8 +248,7 @@ impl Analyzer<'_, '_> {
                             })
                         })
                         .freezed()
-                        .map(Cow::into_owned)
-                        .freezed();
+                        .map(Cow::into_owned);
 
                     let default_ty = default;
                     let default = default_ty
@@ -270,8 +269,7 @@ impl Analyzer<'_, '_> {
                             })
                         })
                         .freezed()
-                        .map(Cow::into_owned)
-                        .freezed();
+                        .map(Cow::into_owned);
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
@@ -851,7 +849,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                real.freeze();
+
                 Ok(Some(real))
             }
 
@@ -1051,4 +1049,5 @@ fn remove_readonly(ty: &mut Type) {
 
 fn add_destructur_sign(ty: &mut Type, key: u32) {
     ty.metadata_mut().destructure_key = key;
+    ty.freeze();
 }

@@ -1,0 +1,72 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:10:3]
+ 10 | if (kind === "A") {
+    :     ^^^^
+    `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:10:3]
+ 10 | if (kind === "A") {
+    :     ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:11:5]
+ 11 | payload.toFixed();
+    : ^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:11:5]
+ 11 | payload.toFixed();
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:13:3]
+ 13 | if (kind === "B") {
+    :     ^^^^
+    `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:13:3]
+ 13 | if (kind === "B") {
+    :     ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:14:5]
+ 14 | payload.toUpperCase();
+    : ^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:14:5]
+ 14 | payload.toUpperCase();
+    : ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string

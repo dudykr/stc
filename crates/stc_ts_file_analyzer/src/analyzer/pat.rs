@@ -246,7 +246,6 @@ impl Analyzer<'_, '_> {
         // Declaring names
         let mut names = vec![];
 
-        dbg!(&self.ctx, &p);
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 if let RPat::Ident(RBindingIdent {

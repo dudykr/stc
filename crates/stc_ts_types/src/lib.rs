@@ -1052,6 +1052,22 @@ impl TypeElement {
             TypeElement::Index(_) => None,
         }
     }
+
+    pub fn get_type(&self) -> Option<Type> {
+        let ty = match self {
+            TypeElement::Call(CallSignature { ret_ty, .. }) => ret_ty,
+            TypeElement::Constructor(ConstructorSignature { ret_ty, .. }) => ret_ty,
+            TypeElement::Property(PropertySignature { type_ann, .. }) => type_ann,
+            TypeElement::Method(MethodSignature { ret_ty, .. }) => ret_ty,
+            TypeElement::Index(IndexSignature { type_ann, .. }) => type_ann,
+        };
+
+        if let Some(ref ty) = ty {
+            Some(*ty.clone())
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
