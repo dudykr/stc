@@ -9,7 +9,6 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
-use stc_ts_type_ops::replace::replace_type;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
