@@ -16,6 +16,7 @@ use stc_ts_types::{
     Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
     RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
+use stc_ts_utils::MapWithMut;
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -345,22 +346,23 @@ impl Analyzer<'_, '_> {
                                         false
                                     },
                                     |_| {
-                                        Some(Type::Rest(RestType {
-                                            span,
-                                            ty: box Type::Mapped(Mapped {
-                                                type_param: TypeParam {
-                                                    constraint: Some(elem_rest_ty.ty.clone()),
-                                                    tracker: Default::default(),
-                                                    ..m.type_param.clone()
-                                                },
+                                        Some(Type::Mapped(Mapped {
+                                            type_param: TypeParam {
+                                                constraint: Some(elem_rest_ty.ty.clone()),
                                                 tracker: Default::default(),
-                                                ..m.clone()
-                                            }),
-                                            metadata: Default::default(),
+                                                ..m.type_param.clone()
+                                            },
                                             tracker: Default::default(),
+                                            ..m.clone()
                                         }))
                                     },
                                 );
+                                *ty = Type::Rest(RestType {
+                                    span,
+                                    ty: box ty.take(),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                });
                             } else {
                                 replace_type(
                                     &mut ty,
