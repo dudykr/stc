@@ -14,7 +14,7 @@ use std::{
     borrow::Cow,
     fmt,
     fmt::{Debug, Formatter},
-    iter::FusedIterator,
+    iter::{self, FusedIterator},
     mem::{replace, transmute},
     ops::AddAssign,
 };
@@ -2236,6 +2236,23 @@ impl Type {
             ty: self.normalize(),
             idx: 0,
         }
+    }
+
+    /// Note: This iterator is infinite if the type is [Type::Rest].
+    pub fn iter_rest(&self) -> impl '_ + Iterator<Item = &Type> {
+        let mut done = false;
+        iter::from_fn(move || {
+            if done {
+                return None;
+            }
+            match self.normalize_instance() {
+                Type::Rest(ty) => Some(&*ty.ty),
+                _ => {
+                    done = true;
+                    Some(self)
+                }
+            }
+        })
     }
 }
 
