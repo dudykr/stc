@@ -1,6 +1,7 @@
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use rustc_hash::FxHashMap;
-use stc_ts_types::Type;
+
+use crate::Type;
 
 /// Replaces all types which matches `matcher` with `replacer`.
 ///
@@ -11,7 +12,7 @@ use stc_ts_types::Type;
 pub fn replace_type<M, R>(ty: &mut Type, matcher: M, replacer: R)
 where
     M: Fn(&Type) -> bool,
-    R: Fn(&Type) -> Option<Type>,
+    R: Fn(&mut Type) -> Option<Type>,
 {
     let mut cache = FxHashMap::default();
     ty.visit_mut_with(&mut TypeReplacer {
@@ -27,7 +28,7 @@ type Cache = FxHashMap<*const (), bool>;
 struct TypeReplacer<'a, M, R>
 where
     M: Fn(&Type) -> bool,
-    R: Fn(&Type) -> Option<Type>,
+    R: Fn(&mut Type) -> Option<Type>,
 {
     cache: &'a mut Cache,
 
@@ -38,7 +39,7 @@ where
 impl<M, R> VisitMut<Type> for TypeReplacer<'_, M, R>
 where
     M: Fn(&Type) -> bool,
-    R: Fn(&Type) -> Option<Type>,
+    R: Fn(&mut Type) -> Option<Type>,
 {
     fn visit_mut(&mut self, ty: &mut Type) {
         {

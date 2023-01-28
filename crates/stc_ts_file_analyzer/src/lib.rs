@@ -10,7 +10,6 @@
 #![allow(clippy::only_used_in_recursion)]
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
-#![deny(unused_imports)]
 #![deny(irrefutable_let_patterns)]
 #![feature(box_patterns)]
 #![feature(box_syntax)]
