@@ -1,15 +1,15 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType,
-    Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement, TypeLit,
-    TypeParam,
+    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -18,7 +18,12 @@ use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info, span, Level};
 
 use crate::{
-    analyzer::{types::NormalizeTypeOpts, util::is_lit_eq_ignore_span, Analyzer},
+    analyzer::{
+        expr::{AccessPropertyOpts, TypeOfMode},
+        types::NormalizeTypeOpts,
+        util::is_lit_eq_ignore_span,
+        Analyzer,
+    },
     ty::TypeExt,
     util::is_str_or_union,
     VResult,
@@ -2403,64 +2408,59 @@ impl Analyzer<'_, '_> {
 
                         let len = lhs_elems.len().max(rhs_elems.len());
 
-                        let lhs = lhs_elems
-                            .iter()
-                            .map(|el| {
-                                self.normalize(
-                                    Some(span),
-                                    Cow::Borrowed(&el.ty),
-                                    NormalizeTypeOpts {
-                                        preserve_global_this: true,
-                                        preserve_intersection: true,
-                                        ..Default::default()
-                                    },
-                                )
-                            })
-                            .collect::<Result<Vec<_>, _>>()?;
-                        let rhs = rhs_elems
-                            .iter()
-                            .map(|el| {
-                                self.normalize(
-                                    Some(span),
-                                    Cow::Borrowed(&el.ty),
-                                    NormalizeTypeOpts {
-                                        preserve_global_this: true,
-                                        preserve_intersection: true,
-                                        ..Default::default()
-                                    },
-                                )
-                            })
-                            .collect::<Result<Vec<_>, _>>()?;
-
                         let mut errors = vec![];
-                        for (l, r) in lhs
-                            .iter()
-                            .flat_map(|ty| ty.iter_rest())
-                            .zip(rhs.iter().flat_map(|ty| ty.iter_rest()))
-                            .take(len)
-                        {
-                            for el in lhs_elems {
-                                if let Type::Keyword(KeywordType {
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    ..
-                                }) = r.normalize()
-                                {
-                                    continue;
-                                }
 
-                                errors.extend(
-                                    self.assign_inner(
-                                        data,
-                                        l,
-                                        r,
-                                        AssignOpts {
-                                            allow_unknown_rhs: Some(true),
-                                            ..opts
-                                        },
-                                    )
-                                    .err(),
-                                );
-                            }
+                        for index in 0..len {
+                            let l_elem_type = self.access_property(
+                                span,
+                                to,
+                                &Key::Num(RNumber {
+                                    span,
+                                    value: index as _,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Type,
+                                AccessPropertyOpts {
+                                    do_not_validate_type_of_computed_prop: true,
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    ..Default::default()
+                                },
+                            )?;
+
+                            let r_elem_type = self.access_property(
+                                span,
+                                rhs,
+                                &Key::Num(RNumber {
+                                    span,
+                                    value: index as _,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Type,
+                                AccessPropertyOpts {
+                                    do_not_validate_type_of_computed_prop: true,
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    ..Default::default()
+                                },
+                            )?;
+
+                            errors.extend(
+                                self.assign_inner(
+                                    data,
+                                    &l_elem_type,
+                                    &r_elem_type,
+                                    AssignOpts {
+                                        allow_unknown_rhs: Some(true),
+                                        ..opts
+                                    },
+                                )
+                                .err(),
+                            );
                         }
 
                         if !errors.is_empty() {
