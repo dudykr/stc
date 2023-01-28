@@ -1,50 +1,51 @@
-use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{Array, ArrayMetadata, Type};
+use stc_ts_types::{replace::replace_type, Array, ArrayMetadata, Type};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::TypeVecExt;
 use swc_common::Spanned;
 
 pub fn normalize_tuples(ty: &mut Type) {
-    ty.visit_mut_with(&mut TupleNormalizer);
-}
+    replace_type(
+        ty,
+        |ty| {
+            if let Type::Tuple(tuple) = ty.normalize() {
+                if tuple.metadata.common.prevent_tuple_to_array {
+                    return false;
+                }
 
-struct TupleNormalizer;
+                if tuple.elems.is_empty() {
+                    return false;
+                }
 
-impl VisitMut<Type> for TupleNormalizer {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-        ty.visit_mut_children_with(self);
-
-        if let Type::Tuple(tuple) = ty.normalize() {
-            if tuple.metadata.common.prevent_tuple_to_array {
-                return;
+                return true;
             }
 
-            let common_metadata = tuple.metadata.common;
+            false
+        },
+        |ty| {
+            if let Type::Tuple(tuple) = ty.normalize() {
+                let common_metadata = tuple.metadata.common;
 
-            if tuple.elems.is_empty() {
-                return;
+                let span = ty.span();
+                let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| *elem.ty).collect::<Vec<_>>();
+                types.dedup_type();
+
+                let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
+                if has_other {
+                    types.retain(|ty| !ty.is_null_or_undefined())
+                }
+
+                return Some(Type::Array(Array {
+                    span,
+                    elem_type: box Type::new_union(span, types),
+                    metadata: ArrayMetadata {
+                        common: common_metadata,
+                        ..Default::default()
+                    },
+                    tracker: Default::default(),
+                }));
             }
 
-            let span = ty.span();
-            let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| *elem.ty).collect::<Vec<_>>();
-            types.dedup_type();
-
-            let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
-            if has_other {
-                types.retain(|ty| !ty.is_null_or_undefined())
-            }
-
-            *ty = Type::Array(Array {
-                span,
-                elem_type: box Type::new_union(span, types),
-                metadata: ArrayMetadata {
-                    common: common_metadata,
-                    ..Default::default()
-                },
-                tracker: Default::default(),
-            });
-        }
-    }
+            None
+        },
+    )
 }
