@@ -1052,6 +1052,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn regist_destructure(&mut self, span: Span, ty: Option<Type>) -> u32 {
+    fn regist_destructure(&mut self, span: Span, ty: Option<&Type>) -> u32 {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = self.get_destructor_unique_key();
