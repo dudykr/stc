@@ -1,5 +1,5 @@
-pub use self::{class::ClassId, destructur::DestructurId, symbol::SymbolId};
+pub use self::{class::ClassId, destructure::DestructureId, symbol::SymbolId};
 
 mod class;
-mod destructur;
+mod destructure;
 mod symbol;

@@ -678,10 +678,10 @@ impl Analyzer<'_, '_> {
                             let real_property_type = match prop_ty {
                                 Ok(mut prop_ty) => {
                                     if let Some(ty) = &mut prop_ty {
-                                        add_destructur_sign(ty, destructure_key);
+                                        add_destructure_sign(ty, destructure_key);
                                     }
                                     if let Some(ty) = &mut default_prop_ty {
-                                        add_destructur_sign(ty, destructure_key);
+                                        add_destructure_sign(ty, destructure_key);
                                     }
                                     let prop_ty = prop_ty.map(Type::freezed);
 
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
                                                 default_value_type = default_value_type.fold_with(&mut Widen { tuple_to_array: true });
                                             }
                                             if let Some(ty) = &mut default_value_type {
-                                                add_destructur_sign(ty, destructure_key);
+                                                add_destructure_sign(ty, destructure_key);
                                             }
 
                                             default_value_type.freeze();
@@ -710,7 +710,7 @@ impl Analyzer<'_, '_> {
                                                 default = None;
                                             }
                                             if let Some(ty) = &mut default {
-                                                add_destructur_sign(ty, destructure_key);
+                                                add_destructure_sign(ty, destructure_key);
                                             }
                                             let mut result = self
                                                 .add_vars(
@@ -740,7 +740,7 @@ impl Analyzer<'_, '_> {
                                                 .report(&mut self.storage);
                                             }
                                             if let Some(Some(ty)) = &mut result {
-                                                add_destructur_sign(ty, destructure_key);
+                                                add_destructure_sign(ty, destructure_key);
                                             }
                                             result
                                         }
@@ -774,7 +774,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     if let Some(ty) = &mut default_prop_ty {
-                                        add_destructur_sign(ty, destructure_key);
+                                        add_destructure_sign(ty, destructure_key);
                                     }
 
                                     self.add_vars(
@@ -828,12 +828,12 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ty) = &mut rest_ty {
                                 remove_readonly(ty);
-                                add_destructur_sign(ty, destructure_key);
+                                add_destructure_sign(ty, destructure_key);
                             }
 
                             if let Some(ty) = &mut default {
                                 remove_readonly(ty);
-                                add_destructur_sign(ty, destructure_key);
+                                add_destructure_sign(ty, destructure_key);
                             }
 
                             let rest = self
@@ -1076,7 +1076,7 @@ fn remove_readonly(ty: &mut Type) {
     }
 }
 
-fn add_destructur_sign(ty: &mut Type, key: u32) {
+fn add_destructure_sign(ty: &mut Type, key: u32) {
     ty.metadata_mut().destructure_key = key;
     ty.freeze();
 }
