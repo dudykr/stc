@@ -13,8 +13,8 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement,
-    TypeLit, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
+    name::Name, type_id::DestructureId, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple,
+    TypeElement, TypeLit, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -434,13 +434,19 @@ impl Analyzer<'_, '_> {
                             let origin_ty = self.find_destructor(DestructureId::get(lt.metadata().destructure_key));
                             if let Some(ty) = origin_ty {
                                 let ty = ty.into_owned();
+                                dbg!(&ty);
                                 self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
                             } else {
+                                dbg!(123);
+                                dbg!(&origin_ty);
                                 Default::default()
                             }
                         } else {
+                            dbg!(123);
+                            dbg!(&lt);
                             Default::default()
                         };
+                        dbg!(&additional_target);
 
                         let exclude_types = if is_loose_comparison_with_null_or_undefined {
                             vec![
@@ -2282,53 +2288,60 @@ impl Analyzer<'_, '_> {
 
         if let Type::Union(Union { types, .. }) = origin_ty.normalize() {
             for ty in types {
-                if let Ok(property) = self.access_property(
-                    span,
-                    ty.normalize(),
-                    &Key::Normal {
-                        span,
-                        sym: name.top().sym().clone(),
-                    },
-                    TypeOfMode::RValue,
-                    IdCtx::Type,
-                    Default::default(),
-                ) {
-                    if property.type_eq(r) {
-                        if let Type::TypeLit(tl @ TypeLit { members, .. }) = ty.normalize() {
-                            for m in members {
-                                if let Some(key) = m.non_computed_key() {
-                                    let l_name = Name::new(name.get_ctxt(), key.clone());
-                                    if name == l_name {
-                                        continue;
-                                    }
-                                    if let Some(act_ty) = m.get_type() {
-                                        let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
-                                            temp_vec.clone()
-                                        } else {
-                                            if is_loose_comparison {
-                                                vec![
-                                                    Type::Keyword(KeywordType {
-                                                        span,
-                                                        kind: TsKeywordTypeKind::TsNullKeyword,
-                                                        metadata: Default::default(),
-                                                        tracker: Default::default(),
-                                                    }),
-                                                    Type::Keyword(KeywordType {
-                                                        span,
-                                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                        metadata: Default::default(),
-                                                        tracker: Default::default(),
-                                                    }),
-                                                ]
+                match ty.normalize() {
+                    Type::TypeLit(tl @ TypeLit { members, .. }) => {
+                        if let Ok(property) = self.access_property(
+                            span,
+                            ty.normalize(),
+                            &Key::Normal {
+                                span,
+                                sym: name.top().sym().clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                            Default::default(),
+                        ) {
+                            if property.type_eq(r) {
+                                for m in members {
+                                    if let Some(key) = m.non_computed_key() {
+                                        let l_name = Name::new(name.get_ctxt(), key.clone());
+                                        if name == l_name {
+                                            continue;
+                                        }
+                                        if let Some(act_ty) = m.get_type() {
+                                            let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
+                                                temp_vec.clone()
                                             } else {
-                                                vec![]
-                                            }
-                                        };
-                                        temp_vec.push(act_ty.freezed());
-                                        additional_target.insert(l_name, temp_vec);
+                                                if is_loose_comparison {
+                                                    vec![
+                                                        Type::Keyword(KeywordType {
+                                                            span,
+                                                            kind: TsKeywordTypeKind::TsNullKeyword,
+                                                            metadata: Default::default(),
+                                                            tracker: Default::default(),
+                                                        }),
+                                                        Type::Keyword(KeywordType {
+                                                            span,
+                                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                            metadata: Default::default(),
+                                                            tracker: Default::default(),
+                                                        }),
+                                                    ]
+                                                } else {
+                                                    vec![]
+                                                }
+                                            };
+                                            temp_vec.push(act_ty.freezed());
+                                            additional_target.insert(l_name, temp_vec);
+                                        }
                                     }
                                 }
                             }
+                        }
+                    }
+                    Type::Tuple(tu @ Tuple { elems, .. }) => {
+                        if elems.iter().any(|elem| elem.ty.type_eq(r)) {
+                            // TODO
                         }
                     }
                 }
