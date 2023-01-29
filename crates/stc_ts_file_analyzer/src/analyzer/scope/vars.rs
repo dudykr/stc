@@ -9,7 +9,7 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    Array, CommonTypeMetadata, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit,
+    Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit,
     TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
         }
 
         let span = pat.span().with_ctxt(SyntaxContext::empty());
-        dbg!(&pat);
+
         if !matches!(pat, RPat::Ident(..)) {
             if let Some(ty @ Type::Ref(..)) = ty.as_ref().map(Type::normalize) {
                 let mut ty = self
@@ -503,28 +503,7 @@ impl Analyzer<'_, '_> {
             RPat::Object(obj) => {
                 let normalize_ty = ty.as_ref().map(Type::normalize);
                 let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
-                let mut destructure_key = 0;
-
-                match normalize_ty {
-                    Some(real @ Type::Union(..)) => {
-                        let des_key = self.get_destructor_unique_key();
-                        destructure_key = des_key.extract();
-                        self.declare_destructor(span, real, des_key)?;
-                    }
-                    Some(Type::Param(TypeParam {
-                        constraint: Some(box result),
-                        ..
-                    })) => {
-                        if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                            if let real @ Type::Union(..) = result.normalize() {
-                                let des_key = self.get_destructor_unique_key();
-                                destructure_key = des_key.extract();
-                                self.declare_destructor(span, real, des_key)?;
-                            }
-                        }
-                    }
-                    _ => {}
-                }
+                let destructure_key = self.regist_destructure(span, normalize_ty);
 
                 let mut real = Type::TypeLit(TypeLit {
                     span,
@@ -1044,6 +1023,36 @@ impl Analyzer<'_, '_> {
             .freezed())
         })
         .context("tried to ensure iterator")
+    }
+
+    fn regist_destructure(&mut self, span: Span, ty: Option<&Type>) -> u32 {
+        match ty {
+            Some(real @ Type::Union(..)) => {
+                let des_key = self.get_destructor_unique_key();
+                let destructure_key = des_key.extract();
+                if let Ok(result) = self.declare_destructor(span, real, des_key) {
+                    if result {
+                        return destructure_key;
+                    }
+                }
+            }
+            Some(Type::Param(TypeParam {
+                constraint: Some(box result),
+                ..
+            })) => {
+                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                    return self.regist_destructure(span, Some(result.normalize()));
+                }
+            }
+
+            Some(Type::Instance(Instance { ty: box result, .. })) => {
+                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                    return self.regist_destructure(span, Some(result.normalize()));
+                }
+            }
+            _ => {}
+        }
+        0
     }
 }
 

@@ -1,6 +1,6 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:6:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:6:3]
  6 | if (kind === "A") {
    :     ^^^^
    `----
@@ -9,7 +9,7 @@ Error:
   > ("A" | "B")
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:6:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:6:3]
  6 | if (kind === "A") {
    :     ^^^^^^^^^^^^
    `----
@@ -18,7 +18,7 @@ Error:
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:7:5]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:7:5]
  7 | payload.toFixed();
    : ^^^^^^^
    `----
@@ -27,7 +27,7 @@ Error:
   > number
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:7:5]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:7:5]
  7 | payload.toFixed();
    : ^^^^^^^^^^^^^^^^^
    `----
@@ -36,7 +36,7 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:9:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:9:3]
  9 | if (kind === "B") {
    :     ^^^^
    `----
@@ -45,7 +45,7 @@ Error:
   > ("A" | "B")
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:9:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:9:3]
  9 | if (kind === "B") {
    :     ^^^^^^^^^^^^
    `----
@@ -54,7 +54,7 @@ Error:
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:10:5]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:10:5]
  10 | payload.toUpperCase();
     : ^^^^^^^
     `----
@@ -63,7 +63,7 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:10:5]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:10:5]
  10 | payload.toUpperCase();
     : ^^^^^^^^^^^^^^^^^^^^^
     `----
