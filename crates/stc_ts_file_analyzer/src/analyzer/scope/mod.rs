@@ -1203,12 +1203,9 @@ impl Analyzer<'_, '_> {
                 dump_type_as_string(&ty)
             );
             self.scope.destructure_vars.insert(key, ty.freezed());
-
-            self.ctx.has_destructor_variable = true;
             Ok(true)
         } else {
             debug!("[({})/vars/destructor]: Declaring {:?} without type", self.scope.depth(), key);
-            self.ctx.has_destructor_variable = false;
             Ok(false)
         }
     }
