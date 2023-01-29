@@ -1,6 +1,6 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:6:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:6:3]
  6 | const { kind, payload } = t;
    :                           ^
    `----
@@ -9,7 +9,7 @@ Error:
   > T
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:7:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:7:3]
  7 | if (kind === "A") {
    :     ^^^^
    `----
@@ -18,7 +18,7 @@ Error:
   > ("A" | "B")
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:7:3]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:7:3]
  7 | if (kind === "A") {
    :     ^^^^^^^^^^^^
    `----
@@ -27,7 +27,7 @@ Error:
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:8:5]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:8:5]
  8 | payload.toFixed();
    : ^^^^^^^
    `----
@@ -36,7 +36,7 @@ Error:
   > number
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:8:5]
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:8:5]
  8 | payload.toFixed();
    : ^^^^^^^^^^^^^^^^^
    `----
@@ -45,7 +45,7 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:10:3]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:10:3]
  10 | if (kind === "B") {
     :     ^^^^
     `----
@@ -54,7 +54,7 @@ Error:
   > ("A" | "B")
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:10:3]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:10:3]
  10 | if (kind === "B") {
     :     ^^^^^^^^^^^^
     `----
@@ -63,7 +63,7 @@ Error:
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:11:5]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:11:5]
  11 | payload.toUpperCase();
     : ^^^^^^^
     `----
@@ -72,7 +72,7 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:11:5]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/2.ts:11:5]
  11 | payload.toUpperCase();
     : ^^^^^^^^^^^^^^^^^^^^^
     `----
