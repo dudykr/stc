@@ -67,6 +67,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+pub mod replace;
 mod tracker;
 pub mod type_id;
 
@@ -463,6 +464,15 @@ impl From<RPrivateName> for PrivateName {
 assert_eq_size!(Key, [u8; 40]);
 
 impl Key {
+    /// Returns `true` if this key is a number or a number-like string.
+    pub fn is_num_like(&self) -> bool {
+        match self {
+            Key::Num(..) => true,
+            Key::Normal { sym, .. } => sym.parse::<f64>().is_ok(),
+            _ => false,
+        }
+    }
+
     pub fn ty(&self) -> Cow<Type> {
         match self {
             Key::Computed(prop) => Cow::Borrowed(&*prop.ty),

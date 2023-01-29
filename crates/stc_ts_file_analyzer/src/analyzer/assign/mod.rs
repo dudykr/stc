@@ -20,6 +20,7 @@ use tracing::{debug, error, info, span, Level};
 use crate::{
     analyzer::{types::NormalizeTypeOpts, util::is_lit_eq_ignore_span, Analyzer},
     ty::TypeExt,
+    util::is_str_or_union,
     VResult,
 };
 
@@ -2770,6 +2771,20 @@ impl Analyzer<'_, '_> {
                                     self.assign_with_opts(data, l_ty, prop_ty, opts)?;
                                 }
                             }
+                            TypeElement::Index(ri) => {
+                                if !ri.params.is_empty() && is_str_or_union(&ri.params[0].ty) {
+                                    if let Some(lt) = &l.ty {
+                                        if let Some(rt) = &ri.type_ann {
+                                            return self
+                                                .assign_inner(data, lt, rt, opts)
+                                                .context("tried to assign an index signature to a mapped type");
+                                        }
+                                    }
+
+                                    return Ok(());
+                                }
+                            }
+
                             _ => Err(ErrorKind::Unimplemented {
                                 span: opts.span,
                                 msg: format!("Assignment to mapped type: type element - {:?}", member),

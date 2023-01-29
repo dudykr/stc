@@ -2,7 +2,7 @@ use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use rnode::{NodeId, VisitMutWith, VisitWith};
+use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
@@ -13,7 +13,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
+use stc_ts_type_ops::{tuple_normalization::normalize_tuples, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
@@ -2076,9 +2076,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
-        let marks = self.marks();
-
-        ty.visit_mut_with(&mut TupleNormalizer);
+        normalize_tuples(ty);
         ty.fix();
     }
 

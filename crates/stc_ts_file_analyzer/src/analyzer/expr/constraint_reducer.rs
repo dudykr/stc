@@ -1,29 +1,37 @@
-use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{Mapped, Type, TypeParam};
+use stc_ts_types::{replace::replace_type, Mapped, Type, TypeParam};
 use stc_ts_utils::MapWithMut;
 
 pub fn reduce(m: &Mapped) -> Option<Type> {
     let mut type_param = m.type_param.clone();
-    type_param.constraint.visit_mut_with(&mut ConstraintReducer);
-    type_param.constraint.map(|v| *v)
-}
 
-struct ConstraintReducer;
+    if let Some(constraint) = &mut type_param.constraint {
+        replace_type(
+            constraint,
+            |ty| {
+                if let Type::Param(TypeParam {
+                    constraint: Some(box arr_ty @ Type::Array(..)),
+                    ..
+                }) = ty
+                {
+                    return true;
+                }
 
-impl VisitMut<Type> for ConstraintReducer {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
+                false
+            },
+            |ty| {
+                if let Type::Param(TypeParam {
+                    constraint: Some(box arr_ty @ Type::Array(..)),
+                    ..
+                }) = ty
+                {
+                    let arr_ty = arr_ty.take();
+                    return Some(arr_ty);
+                }
 
-        ty.visit_mut_children_with(self);
-
-        if let Type::Param(TypeParam {
-            constraint: Some(box arr_ty @ Type::Array(..)),
-            ..
-        }) = ty
-        {
-            let arr_ty = arr_ty.take();
-            *ty = arr_ty;
-        }
+                None
+            },
+        )
     }
+
+    type_param.constraint.map(|v| *v)
 }

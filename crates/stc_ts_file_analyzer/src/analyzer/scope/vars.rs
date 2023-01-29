@@ -26,6 +26,7 @@ use crate::{
         util::{opt_union, ResultExt},
         Analyzer, Ctx,
     },
+    ty::TypeExt,
     validator::ValidateWith,
     VResult,
 };
@@ -312,7 +313,7 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     match result {
-                                        Ok(ty) => Ok(ty.into_owned()),
+                                        Ok(ty) => Ok(ty.into_owned().generalize_lit()),
                                         Err(err) => match &*err {
                                             ErrorKind::TupleIndexError { .. } => match elem {
                                                 RPat::Assign(p) => {
@@ -364,6 +365,7 @@ impl Analyzer<'_, '_> {
                                         .ok()
                                 })
                                 .map(Cow::into_owned)
+                                .map(|ty| ty.generalize_lit())
                                 .freezed();
 
                             // TODO(kdy1): actual_ty
@@ -436,6 +438,7 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
+                                        .map(|ty| ty.generalize_lit())
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
@@ -456,6 +459,7 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
+                                        .map(|ty| ty.generalize_lit())
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
@@ -549,6 +553,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
+                                    .map(|ty| ty.generalize_lit())
                                     .context("tried to access property to declare variables")
                             });
 
@@ -571,6 +576,7 @@ impl Analyzer<'_, '_> {
                                         )
                                         .ok()
                                 })
+                                .map(|ty| ty.generalize_lit())
                                 .freezed();
 
                             let real_property_type = match prop_ty {
@@ -643,6 +649,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
+                                    .map(|ty| ty.generalize_lit())
                                     .context("tried to access property to declare variables")
                             });
 
@@ -665,6 +672,7 @@ impl Analyzer<'_, '_> {
                                         )
                                         .ok()
                                 })
+                                .map(|ty| ty.generalize_lit())
                                 .freezed();
 
                             let real_property_type = match prop_ty {

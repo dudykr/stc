@@ -1,62 +1,26 @@
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_types::{LitType, Type};
+use stc_ts_types::{replace::replace_type, LitType, Type};
+use stc_ts_utils::MapWithMut;
 use tracing::instrument;
 
 #[instrument(skip(ty))]
-pub fn prevent_generalize<N>(ty: &mut N)
-where
-    N: VisitMutWith<PreventGeneralization>,
-{
-    ty.visit_mut_with(&mut PreventGeneralization { _priv: () });
-}
+pub fn prevent_generalize(ty: &mut Type) {
+    replace_type(
+        ty,
+        |ty| {
+            if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
+                if metadata.common.prevent_generalization {
+                    return false;
+                }
 
-pub(crate) struct GeneralizableLiteralFinder {
-    pub found: bool,
-}
-
-impl Visit<Type> for GeneralizableLiteralFinder {
-    fn visit(&mut self, ty: &Type) {
-        if self.found {
-            return;
-        }
-
-        if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
-            if metadata.common.prevent_generalization {
-                return;
+                return true;
             }
 
-            self.found = true;
-            return;
-        }
-
-        ty.visit_children_with(self);
-    }
-}
-
-pub struct PreventGeneralization {
-    _priv: (),
-}
-
-impl VisitMut<Type> for PreventGeneralization {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        {
-            let mut checker = GeneralizableLiteralFinder { found: false };
-            ty.visit_with(&mut checker);
-
-            if !checker.found {
-                return;
-            }
-        }
-
-        ty.normalize_mut();
-        ty.metadata_mut().prevent_generalization = true;
-
-        ty.visit_mut_children_with(self);
-    }
-}
-
-/// Prevent interop with hygiene.
-impl VisitMut<RIdent> for PreventGeneralization {
-    fn visit_mut(&mut self, _: &mut RIdent) {}
+            false
+        },
+        |ty| {
+            let mut ty = ty.take();
+            ty.metadata_mut().prevent_generalization = true;
+            Some(ty)
+        },
+    )
 }

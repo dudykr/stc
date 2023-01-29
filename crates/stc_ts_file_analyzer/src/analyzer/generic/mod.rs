@@ -14,9 +14,10 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType, KeywordTypeMetadata,
-    LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement,
+    TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -760,36 +761,20 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Array(arr @ Array { .. }) => {
+            Type::Array(param_arr @ Array { .. }) => {
                 let opts = InferTypeOpts {
                     append_type_as_union: true,
                     ..opts
                 };
 
-                if let Type::Param(TypeParam {
-                    constraint: Some(constraint),
-                    ..
-                }) = arr.elem_type.normalize()
-                {
-                    if let Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ..
-                    }) = constraint.normalize()
-                    {
-                        let mut arg = arg.clone();
-                        prevent_generalize(&mut arg);
-                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
-                    }
-                }
-
                 match arg {
                     Type::Array(Array {
                         elem_type: arg_elem_type, ..
-                    }) => return self.infer_type(span, inferred, &arr.elem_type, arg_elem_type, opts),
+                    }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
-                        let arg = Type::union(arg.elems.iter().map(|element| *element.ty.clone()));
-                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
+                        let arg = Type::new_union(span, arg.elems.iter().map(|element| *element.ty.clone()));
+                        return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
                     }
 
                     _ => {}
@@ -1326,7 +1311,6 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn infer_type_using_mapped_type(
         &mut self,
         span: Span,
@@ -1564,11 +1548,20 @@ impl Analyzer<'_, '_> {
                                         if let Some(param_ty) = &param.ty {
                                             // TODO(kdy1): PERF
 
-                                            let mapped_param_ty = arg_prop_ty
-                                                .clone()
-                                                .foldable()
-                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
-                                                .freezed();
+                                            let mut mapped_param_ty = arg_prop_ty.clone().foldable();
+
+                                            replace_type(
+                                                &mut mapped_param_ty,
+                                                |ty| matches!(ty.normalize(), Type::Param(TypeParam { name: param_name, .. }) if name == *param_name),
+                                                |ty| match ty.normalize() {
+                                                    Type::Param(TypeParam { name: param_name, .. }) if name == *param_name => {
+                                                        Some(*param_ty.clone())
+                                                    }
+
+                                                    _ => None,
+                                                },
+                                            );
+                                            mapped_param_ty.freeze();
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
@@ -2103,24 +2096,6 @@ impl Analyzer<'_, '_> {
 
     fn rename_inferred(&mut self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
         info!("rename_inferred");
-        struct Renamer<'a> {
-            fixed: &'a FxHashMap<Id, Type>,
-        }
-
-        impl VisitMut<Type> for Renamer<'_> {
-            fn visit_mut(&mut self, node: &mut Type) {
-                match node.normalize() {
-                    Type::Param(p) if self.fixed.contains_key(&p.name) => {
-                        *node = (*self.fixed.get(&p.name).unwrap()).clone();
-                    }
-                    _ => {
-                        // TODO(kdy1): PERF
-                        node.normalize_mut();
-                        node.visit_mut_children_with(self)
-                    }
-                }
-            }
-        }
 
         if arg_type_params.params.iter().any(|v| inferred.errored.contains(&v.name)) {
             return Ok(());
@@ -2138,9 +2113,21 @@ impl Analyzer<'_, '_> {
             fixed.insert(param_name.clone(), ty.inferred_type.clone());
         });
 
-        let mut v = Renamer { fixed: &fixed };
         inferred.type_params.iter_mut().for_each(|(_, ty)| {
-            ty.inferred_type.visit_mut_with(&mut v);
+            replace_type(
+                &mut ty.inferred_type,
+                |node| match node.normalize() {
+                    Type::Param(p) => fixed.contains_key(&p.name),
+                    _ => false,
+                },
+                |node| {
+                    //
+                    match node.normalize() {
+                        Type::Param(p) if fixed.contains_key(&p.name) => Some((*fixed.get(&p.name).unwrap()).clone()),
+                        _ => None,
+                    }
+                },
+            )
         });
 
         Ok(())
@@ -2245,35 +2232,6 @@ impl Fold<Type> for SingleTypeParamReplacer<'_> {
         }
 
         ty
-    }
-}
-
-struct TypeParamInliner<'a> {
-    param: &'a Id,
-    value: &'a RStr,
-}
-
-impl VisitMut<Type> for TypeParamInliner<'_> {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
-        ty.visit_mut_children_with(self);
-
-        match ty.normalize() {
-            Type::Param(p) if p.name == *self.param => {
-                *ty = Type::Lit(LitType {
-                    span: p.span,
-                    lit: RTsLit::Str(self.value.clone()),
-                    metadata: LitTypeMetadata {
-                        common: p.metadata.common,
-                        ..Default::default()
-                    },
-                    tracker: Default::default(),
-                });
-            }
-            _ => {}
-        }
     }
 }
 
