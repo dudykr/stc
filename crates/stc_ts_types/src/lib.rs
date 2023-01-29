@@ -1072,11 +1072,7 @@ impl TypeElement {
             TypeElement::Index(IndexSignature { type_ann, .. }) => type_ann,
         };
 
-        if let Some(ref ty) = ty {
-            Some(*ty.clone())
-        } else {
-            None
-        }
+        ty.as_ref().map(|ty| *ty.clone())
     }
 }
 
