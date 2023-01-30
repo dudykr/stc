@@ -2541,21 +2541,40 @@ impl Analyzer<'_, '_> {
                                         return Ok(*elem.ty.clone());
                                     }
 
-                                    let inner_result = self.access_property(
-                                        span,
-                                        &rest_ty.ty,
-                                        &Key::Num(RNumber {
-                                            span: n.span,
-                                            value: (v as usize - sum) as _,
-                                            raw: None,
-                                        }),
-                                        type_mode,
-                                        id_ctx,
-                                        AccessPropertyOpts {
-                                            use_undefined_for_tuple_index_error: false,
-                                            ..opts
-                                        },
-                                    );
+                                    let inner_result = self
+                                        .access_property(
+                                            span,
+                                            &rest_ty.ty,
+                                            &Key::Num(RNumber {
+                                                span: n.span,
+                                                value: (v as usize - sum) as _,
+                                                raw: None,
+                                            }),
+                                            type_mode,
+                                            id_ctx,
+                                            AccessPropertyOpts {
+                                                use_undefined_for_tuple_index_error: false,
+                                                ..opts
+                                            },
+                                        )
+                                        .or_else(|err| match &*err {
+                                            ErrorKind::TupleIndexError { .. } => self.access_property(
+                                                span,
+                                                &rest_ty.ty,
+                                                &Key::Num(RNumber {
+                                                    span: n.span,
+                                                    value: sum as _,
+                                                    raw: None,
+                                                }),
+                                                type_mode,
+                                                id_ctx,
+                                                AccessPropertyOpts {
+                                                    use_undefined_for_tuple_index_error: false,
+                                                    ..opts
+                                                },
+                                            ),
+                                            _ => Err(err),
+                                        });
                                     // dbg!(&inner_result);
                                     if let Ok(ty) = inner_result {
                                         return Ok(ty);
