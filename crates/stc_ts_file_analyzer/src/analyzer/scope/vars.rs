@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     let mut elems = vec![];
 
-                    let destructure_key = self.get_destructor_unique_key().0;
+                    let destructure_key = self.get_destructor_unique_key();
 
                     let mut has_rest = false;
                     for (idx, elem) in arr.elems.iter().enumerate() {
@@ -534,7 +534,7 @@ impl Analyzer<'_, '_> {
 
                     real_ty.freeze();
 
-                    self.regist_destructure(span, save_ty, Some(DestructureId(destructure_key)));
+                    self.regist_destructure(span, save_ty, Some(destructure_key));
                     Ok(Some(real_ty))
                 }
             }
@@ -1058,11 +1058,11 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> u32 {
+    fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
-                let destructure_key = des_key.0;
+                let destructure_key = des_key;
                 if let Ok(result) = self.declare_destructor(span, real, des_key) {
                     if result {
                         return destructure_key;
@@ -1085,7 +1085,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
-        0
+        DestructureId(0)
     }
 }
 
@@ -1101,7 +1101,7 @@ fn remove_readonly(ty: &mut Type) {
     }
 }
 
-fn add_destructure_sign(ty: &mut Type, key: u32) {
+fn add_destructure_sign(ty: &mut Type, key: DestructureId) {
     ty.metadata_mut().destructure_key = key;
     ty.freeze();
 }

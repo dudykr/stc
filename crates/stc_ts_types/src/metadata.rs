@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use stc_visit::Visitable;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
+use crate::type_id::DestructureId;
+
 pub trait TypeMetadata {
     fn common(&self) -> CommonTypeMetadata;
 }
@@ -106,7 +108,7 @@ pub struct CommonTypeMetadata {
     /// TODO(kdy1): Move this to [TupleMetadata]
     pub prevent_tuple_to_array: bool,
 
-    pub destructure_key: u32,
+    pub destructure_key: DestructureId,
 }
 
 impl_basic_traits!(CommonTypeMetadata);

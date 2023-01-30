@@ -13,8 +13,8 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple,
-    TypeElement, TypeLit, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple, TypeElement, TypeLit, TypeParam,
+    TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -429,8 +429,8 @@ impl Analyzer<'_, '_> {
                             }
                             _ => (),
                         }
-                        let additional_target = if lt.metadata().destructure_key > 0 {
-                            let origin_ty = self.find_destructor(DestructureId(lt.metadata().destructure_key));
+                        let additional_target = if lt.metadata().destructure_key.0 > 0 {
+                            let origin_ty = self.find_destructor(lt.metadata().destructure_key);
                             if let Some(ty) = origin_ty {
                                 let ty = ty.into_owned();
                                 self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
