@@ -22,7 +22,7 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 use self::type_param::StaticTypeParamValidator;
-use super::expr::AccessPropertyOpts;
+use super::{expr::AccessPropertyOpts, pat::PatMode};
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -338,6 +338,7 @@ impl Analyzer<'_, '_> {
                     let p: FnParam = {
                         let ctx = Ctx {
                             in_constructor_param: true,
+                            pat_mode: PatMode::Decl,
                             ..child.ctx
                         };
 
