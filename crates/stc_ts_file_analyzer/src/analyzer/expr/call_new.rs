@@ -3562,12 +3562,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         _ => return,
                     };
 
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.analyzer.ctx
-                    };
-                    let mut a = self.analyzer.with_ctx(ctx);
+                    let mut a = self.analyzer;
 
                     if let Some(actual_ty) = a
                         .access_property(

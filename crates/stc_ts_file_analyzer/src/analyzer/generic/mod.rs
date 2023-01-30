@@ -1348,21 +1348,15 @@ impl Analyzer<'_, '_> {
     ) -> VResult<bool> {
         match arg.normalize() {
             Type::Ref(arg) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    preserve_params: true,
-                    ..self.ctx
-                };
-
                 let arg = self
-                    .with_ctx(ctx)
                     .expand(
                         arg.span,
                         Type::Ref(arg.clone()),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
                             ..Default::default()
                         },
                     )?
