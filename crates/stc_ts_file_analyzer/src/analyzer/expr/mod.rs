@@ -1048,7 +1048,7 @@ impl Analyzer<'_, '_> {
             let obj = dump_type_as_string(obj);
             // let prop_ty = dump_type_as_string( &prop.ty());
 
-            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj).entered())
+            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = tracing::field::debug(&prop)).entered())
         } else {
             None
         };
@@ -2532,7 +2532,7 @@ impl Analyzer<'_, '_> {
                                         return Ok(*elem.ty.clone());
                                     }
 
-                                    if let Ok(ty) = self.access_property(
+                                    let inner_result = self.access_property(
                                         span,
                                         &rest_ty.ty,
                                         &Key::Num(RNumber {
@@ -2546,7 +2546,9 @@ impl Analyzer<'_, '_> {
                                             use_undefined_for_tuple_index_error: false,
                                             ..opts
                                         },
-                                    ) {
+                                    );
+                                    // dbg!(&inner_result);
+                                    if let Ok(ty) = inner_result {
                                         return Ok(ty);
                                     }
 
