@@ -909,6 +909,21 @@ impl Analyzer<'_, '_> {
                     }
                     Ok(Some(sum))
                 }
+                Type::Union(u) => {
+                    let val = self.calculate_tuple_element_count(span, &u.types[0])?;
+                    let val = match val {
+                        Some(v) => v,
+                        None => return Ok(None),
+                    };
+                    for ty in u.types.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(ty.span(), ty)? {
+                            if v != val {
+                                return Ok(None);
+                            }
+                        }
+                    }
+                    Ok(Some(val))
+                }
                 _ => Ok(None),
             },
             _ => Ok(Some(1)),

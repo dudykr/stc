@@ -2546,7 +2546,7 @@ impl Analyzer<'_, '_> {
                                         &rest_ty.ty,
                                         &Key::Num(RNumber {
                                             span: n.span,
-                                            value: sum as _,
+                                            value: (v as usize - sum) as _,
                                             raw: None,
                                         }),
                                         type_mode,
