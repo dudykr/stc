@@ -1,15 +1,15 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType,
-    Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement, TypeLit,
-    TypeParam,
+    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -18,7 +18,12 @@ use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info, span, Level};
 
 use crate::{
-    analyzer::{types::NormalizeTypeOpts, util::is_lit_eq_ignore_span, Analyzer},
+    analyzer::{
+        expr::{AccessPropertyOpts, TypeOfMode},
+        types::NormalizeTypeOpts,
+        util::is_lit_eq_ignore_span,
+        Analyzer,
+    },
     ty::TypeExt,
     util::is_str_or_union,
     VResult,
@@ -529,6 +534,7 @@ impl Analyzer<'_, '_> {
             | Type::StringMapping(..)
             | Type::Mapped(..)
             | Type::Enum(..)
+            | Type::Tuple(..)
             | Type::Union(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
@@ -2362,8 +2368,8 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Tuple(Tuple { ref elems, .. }) => {
-                if elems.is_empty() {
+            Type::Tuple(Tuple { elems: ref lhs_elems, .. }) => {
+                if lhs_elems.is_empty() {
                     match rhs {
                         Type::Array(..) | Type::Tuple(..) => return Ok(()),
                         _ => {}
@@ -2376,54 +2382,89 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
-                        if !opts.ignore_tuple_length_difference && elems.len() < rhs_elems.len() {
-                            if elems.iter().any(|elem| elem.ty.is_rest()) {
+                        if !opts.ignore_tuple_length_difference && lhs_elems.len() < rhs_elems.len() {
+                            if lhs_elems.iter().any(|elem| elem.ty.is_rest()) {
                                 // Type::Rest eats many elements
                             } else {
                                 return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                             }
                         }
 
-                        if !opts.ignore_tuple_length_difference && elems.len() > rhs_elems.len() {
-                            let is_len_fine = elems.iter().skip(rhs_elems.len()).all(|l| {
-                                matches!(
-                                    l.ty.normalize_instance(),
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                        ..
-                                    }) | Type::Optional(..)
-                                )
-                            });
+                        if !opts.ignore_tuple_length_difference && lhs_elems.len() > rhs_elems.len() {
+                            let is_len_fine = rhs_elems.iter().any(|elem| elem.ty.is_rest())
+                                || lhs_elems.iter().skip(rhs_elems.len()).all(|l| {
+                                    matches!(
+                                        l.ty.normalize_instance(),
+                                        Type::Keyword(KeywordType {
+                                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                                            ..
+                                        }) | Type::Optional(..)
+                                    )
+                                });
 
                             if !is_len_fine {
                                 return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                             }
                         }
 
-                        let mut errors = vec![];
-                        for (l, r) in elems.iter().zip(rhs_elems) {
-                            for el in elems {
-                                if let Type::Keyword(KeywordType {
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    ..
-                                }) = *r.ty.normalize()
-                                {
-                                    continue;
-                                }
+                        let len = lhs_elems.len().max(rhs_elems.len());
 
-                                errors.extend(
-                                    self.assign_inner(
-                                        data,
-                                        &l.ty,
-                                        &r.ty,
-                                        AssignOpts {
-                                            allow_unknown_rhs: Some(true),
-                                            ..opts
-                                        },
-                                    )
-                                    .err(),
-                                );
-                            }
+                        let mut errors = vec![];
+
+                        for index in 0..len {
+                            let l_elem_type = self.access_property(
+                                span,
+                                to,
+                                &Key::Num(RNumber {
+                                    span,
+                                    value: index as _,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Type,
+                                AccessPropertyOpts {
+                                    do_not_validate_type_of_computed_prop: true,
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    use_undefined_for_tuple_index_error: true,
+                                    ..Default::default()
+                                },
+                            )?;
+
+                            let r_elem_type = self.access_property(
+                                span,
+                                rhs,
+                                &Key::Num(RNumber {
+                                    span,
+                                    value: index as _,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Type,
+                                AccessPropertyOpts {
+                                    do_not_validate_type_of_computed_prop: true,
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    use_undefined_for_tuple_index_error: true,
+                                    ..Default::default()
+                                },
+                            )?;
+
+                            errors.extend(
+                                self.assign_inner(
+                                    data,
+                                    &l_elem_type,
+                                    &r_elem_type,
+                                    AssignOpts {
+                                        allow_unknown_rhs: Some(true),
+                                        ..opts
+                                    },
+                                )
+                                .with_context(|| format!("tried to assign {}th tuple assignment", index))
+                                .err(),
+                            );
                         }
 
                         if !errors.is_empty() {
@@ -2436,11 +2477,11 @@ impl Analyzer<'_, '_> {
                         elem_type: ref rhs_elem_type,
                         ..
                     }) => {
-                        if elems.len() != 1 {
+                        if lhs_elems.len() != 1 {
                             fail!();
                         }
 
-                        match elems[0].ty.normalize() {
+                        match lhs_elems[0].ty.normalize() {
                             Type::Rest(RestType { ty: l_ty, .. }) => {
                                 self.assign_inner(
                                     data,
@@ -2480,7 +2521,7 @@ impl Analyzer<'_, '_> {
                                 .get_iterator(span, Cow::Borrowed(rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
-                            for (i, elem) in elems.iter().enumerate() {
+                            for (i, elem) in lhs_elems.iter().enumerate() {
                                 let r_ty = self
                                     .get_element_from_iterator(span, Cow::Borrowed(&r), i)
                                     .context("tried to get an element of type to assign to a tuple element")?;

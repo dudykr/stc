@@ -265,7 +265,7 @@ fn pass_only(input: PathBuf) {
         }
 
         if !ok {
-            return Err(());
+            panic!()
         }
 
         Ok(())

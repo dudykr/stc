@@ -531,6 +531,9 @@ pub(crate) struct AccessPropertyOpts {
 
     pub disallow_indexing_class_with_computed: bool,
 
+    /// If true, [Type::Rest] is returned as is.
+    pub return_rest_tuple_element_as_is: bool,
+
     /// Note: If it's in l-value context, `access_property` will return
     /// undefined even if this field is `false`.
     pub use_undefined_for_tuple_index_error: bool,
@@ -1045,7 +1048,7 @@ impl Analyzer<'_, '_> {
             let obj = dump_type_as_string(obj);
             // let prop_ty = dump_type_as_string( &prop.ty());
 
-            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj).entered())
+            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = tracing::field::debug(&prop)).entered())
         } else {
             None
         };
@@ -2522,26 +2525,65 @@ impl Analyzer<'_, '_> {
                             .into());
                         }
 
-                        if (v as usize) + 1 >= elems.len() {
-                            if let Some(elem) = elems.last() {
+                        let mut val = v as usize;
+                        let mut sum = 0;
+                        for elem in elems {
+                            if let Some(count) = self.calculate_tuple_element_count(span, &elem.ty)? {
+                                sum += count;
+                                if val < count {
+                                    return Ok(*elem.ty.clone());
+                                }
+
+                                val -= count;
+                            } else {
                                 if let Type::Rest(rest_ty) = elem.ty.normalize() {
-                                    if let Ok(ty) = self.access_property(
-                                        span,
-                                        &rest_ty.ty,
-                                        &Key::Num(RNumber {
-                                            span: n.span,
-                                            value: (v + 1i64 - (elems.len() as i64)) as _,
-                                            raw: None,
-                                        }),
-                                        type_mode,
-                                        id_ctx,
-                                        opts,
-                                    ) {
+                                    if opts.return_rest_tuple_element_as_is {
+                                        return Ok(*elem.ty.clone());
+                                    }
+
+                                    let inner_result = self
+                                        .access_property(
+                                            span,
+                                            &rest_ty.ty,
+                                            &Key::Num(RNumber {
+                                                span: n.span,
+                                                value: (v as usize - sum) as _,
+                                                raw: None,
+                                            }),
+                                            type_mode,
+                                            id_ctx,
+                                            AccessPropertyOpts {
+                                                use_undefined_for_tuple_index_error: false,
+                                                ..opts
+                                            },
+                                        )
+                                        .or_else(|err| match &*err {
+                                            ErrorKind::TupleIndexError { .. } => self.access_property(
+                                                span,
+                                                &rest_ty.ty,
+                                                &Key::Num(RNumber {
+                                                    span: n.span,
+                                                    value: sum as _,
+                                                    raw: None,
+                                                }),
+                                                type_mode,
+                                                id_ctx,
+                                                AccessPropertyOpts {
+                                                    use_undefined_for_tuple_index_error: false,
+                                                    ..opts
+                                                },
+                                            ),
+                                            _ => Err(err),
+                                        });
+                                    // dbg!(&inner_result);
+                                    if let Ok(ty) = inner_result {
                                         return Ok(ty);
                                     }
 
                                     // debug_assert!(rest_ty.ty.is_clone_cheap());
                                     return Ok(*rest_ty.ty.clone());
+                                } else {
+                                    unreachable!()
                                 }
                             }
                         }

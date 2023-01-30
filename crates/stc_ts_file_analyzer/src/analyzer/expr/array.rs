@@ -887,4 +887,46 @@ impl Analyzer<'_, '_> {
 
         Ok(elem_ty.into_owned())
     }
+
+    pub(crate) fn calculate_tuple_element_count(&mut self, span: Span, ty: &Type) -> VResult<Option<usize>> {
+        let ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        )?;
+
+        match ty.normalize() {
+            Type::Rest(rest) => match ty.normalize() {
+                Type::Tuple(tuple) => {
+                    let mut sum = 0;
+                    for elem in tuple.elems.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(elem.span(), &elem.ty)? {
+                            sum += v;
+                        }
+                    }
+                    Ok(Some(sum))
+                }
+                Type::Union(u) => {
+                    let val = self.calculate_tuple_element_count(span, &u.types[0])?;
+                    let val = match val {
+                        Some(v) => v,
+                        None => return Ok(None),
+                    };
+                    for ty in u.types.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(ty.span(), ty)? {
+                            if v != val {
+                                return Ok(None);
+                            }
+                        }
+                    }
+                    Ok(Some(val))
+                }
+                _ => Ok(None),
+            },
+            _ => Ok(Some(1)),
+        }
+    }
 }

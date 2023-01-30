@@ -2080,7 +2080,16 @@ impl ErrorKind {
 
         for e in vec {
             match *e.inner {
-                ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
+                ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => {
+                    buf.extend(Self::flatten(errors).into_iter().map(|mut err| {
+                        #[cfg(debug_assertions)]
+                        for context in &e.contexts {
+                            err.contexts.push(context.clone());
+                        }
+
+                        err
+                    }))
+                }
                 _ => buf.push(e),
             }
         }
