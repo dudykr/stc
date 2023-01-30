@@ -2237,31 +2237,6 @@ impl Type {
             idx: 0,
         }
     }
-
-    // /// Note: This iterator is infinite if the type is [Type::Rest].
-    // pub fn iter_rest(&self) -> impl '_ + Iterator<Item = &Type> {
-    //     let mut done = false;
-    //     let mut index = 0;
-    //     iter::from_fn(move || {
-    //         if done {
-    //             return None;
-    //         }
-    //         match self.normalize_instance() {
-    //             Type::Rest(rest) => match rest.ty.normalize() {
-    //                 Type::Tuple(tuple) => {
-    //                     let ty = tuple.elems.get(index).map(|el| &*el.ty);
-    //                     index += 1;
-    //                     ty
-    //                 }
-    //                 _ => Some(&*rest.ty),
-    //             },
-    //             _ => {
-    //                 done = true;
-    //                 Some(self)
-    //             }
-    //         }
-    //     })
-    // }
 }
 
 #[derive(Debug)]
