@@ -1844,13 +1844,13 @@ pub(crate) struct ExpandOpts {
 
     pub ignore_expand_prevention_for_all: bool,
 
-    /// If true, `expand` and `expand_fully` will not expand function
+    /// If true, `expand` and `expand_fully` will expand function
     /// parameters.
-    pub preserve_params: bool,
+    pub expand_params: bool,
 
-    /// If true, `expand` and `expand_fully` will not expand function
+    /// If true, `expand` and `expand_fully` will expand function
     /// parameters.
-    pub preserve_ret_ty: bool,
+    pub expand_ret_ty: bool,
 
     pub generic: ExpandGenericOpts,
 }
