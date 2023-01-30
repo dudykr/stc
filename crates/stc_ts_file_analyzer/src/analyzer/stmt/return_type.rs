@@ -90,7 +90,6 @@ impl Analyzer<'_, '_> {
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
-                    preserve_ref: true,
                     cannot_fallback_to_iterable_iterator,
                     ..self.ctx
                 };
@@ -111,18 +110,14 @@ impl Analyzer<'_, '_> {
                         .into_iter()
                         .map(|ty| {
                             debug_assert_ne!(ty.span(), DUMMY_SP);
-                            let ctx = Ctx {
-                                preserve_ref: true,
-                                ignore_expand_prevention_for_top: false,
-                                ignore_expand_prevention_for_all: false,
-                                ..self.ctx
-                            };
-                            self.with_ctx(ctx).expand(
+
+                            self.expand(
                                 ty.span(),
                                 ty,
                                 ExpandOpts {
                                     full: true,
                                     expand_union: true,
+                                    preserve_ref: true,
                                     ..Default::default()
                                 },
                             )
