@@ -1185,8 +1185,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn get_destructor_unique_key(&self) -> DestructureId {
-        let id = self.destructure_count.get();
-        self.destructure_count.set(id.clone().next_id());
+        let mut id = self.destructure_count.get();
+        self.destructure_count.set(id.next_id());
         id
     }
 
