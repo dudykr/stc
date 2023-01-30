@@ -2528,7 +2528,7 @@ impl Analyzer<'_, '_> {
                             if let Some(elem) = elems.last() {
                                 if let Type::Rest(rest_ty) = elem.ty.normalize() {
                                     if opts.return_rest_tuple_element_as_is {
-                                        return Ok(*rest_ty.ty.clone());
+                                        return Ok(*elem.ty.clone());
                                     }
 
                                     if let Ok(ty) = self.access_property(
