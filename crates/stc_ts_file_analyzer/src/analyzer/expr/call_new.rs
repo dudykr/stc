@@ -3454,8 +3454,8 @@ impl Analyzer<'_, '_> {
         let ctx = Ctx {
             in_argument: true,
             should_store_truthy_for_access: false,
-            prefer_tuple: true,
-            cannot_be_tuple: false,
+            prefer_tuple_for_array_lit: true,
+            array_lit_cannot_be_tuple: false,
             ..self.ctx
         };
         self.with_ctx(ctx).with(|this: &mut Analyzer| {

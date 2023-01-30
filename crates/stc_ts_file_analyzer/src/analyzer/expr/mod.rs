@@ -442,7 +442,7 @@ impl Analyzer<'_, '_> {
 
                     let ctx = Ctx {
                         in_assign_rhs: true,
-                        cannot_be_tuple,
+                        array_lit_cannot_be_tuple: cannot_be_tuple,
                         ..analyzer.ctx
                     };
                     let mut analyzer = analyzer.with_ctx(ctx);

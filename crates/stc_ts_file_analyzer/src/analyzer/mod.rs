@@ -96,8 +96,8 @@ pub(crate) struct Ctx {
     check_for_implicit_any: bool,
 
     /// If `true`, expression validator will not emit tuple.
-    cannot_be_tuple: bool,
-    prefer_tuple: bool,
+    array_lit_cannot_be_tuple: bool,
+    prefer_tuple_for_array_lit: bool,
 
     in_shorthand: bool,
 
@@ -461,8 +461,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 use_undefined_for_empty_array_lit: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,
-                cannot_be_tuple: false,
-                prefer_tuple: false,
+                array_lit_cannot_be_tuple: false,
+                prefer_tuple_for_array_lit: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
                 in_cond: false,
