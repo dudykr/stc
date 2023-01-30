@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
                 .collect();
             types.dedup_type();
             if types.is_empty() {
-                types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
+                types.push(if self.ctx.use_undefined_for_empty_array_lit && is_empty {
                     Type::undefined(span, Default::default())
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());

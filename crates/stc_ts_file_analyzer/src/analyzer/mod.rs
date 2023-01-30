@@ -89,7 +89,7 @@ pub(crate) struct Ctx {
 
     disallow_unknown_object_property: bool,
 
-    use_undefined_for_empty_tuple: bool,
+    use_undefined_for_empty_array_lit: bool,
 
     allow_module_var: bool,
 
@@ -458,7 +458,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_const_assertion: false,
                 in_constructor_param: false,
                 disallow_unknown_object_property: false,
-                use_undefined_for_empty_tuple: false,
+                use_undefined_for_empty_array_lit: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
