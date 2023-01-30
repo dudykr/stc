@@ -1,7 +1,9 @@
 use std::{
+    cell::Cell,
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
+    rc::Rc,
     sync::Arc,
 };
 
@@ -263,6 +265,8 @@ pub struct Analyzer<'scope, 'b> {
     debugger: Option<Debugger>,
 
     data: AnalyzerData,
+
+    destructure_count: Rc<Cell<u32>>,
 }
 #[derive(Debug, Default)]
 struct AnalyzerData {
@@ -537,6 +541,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             imports_by_id: Default::default(),
             debugger,
             data,
+            destructure_count: Rc::new(Cell::new(0)),
         }
     }
 

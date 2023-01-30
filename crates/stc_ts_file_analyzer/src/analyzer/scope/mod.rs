@@ -1185,7 +1185,9 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn get_destructor_unique_key(&self) -> DestructureId {
-        DestructureId::generate()
+        let id = self.destructure_count.get() + 1;
+        self.destructure_count.set(id);
+        DestructureId::get(id)
     }
 
     pub fn declare_destructor(&mut self, span: Span, ty: &Type, key: DestructureId) -> VResult<bool> {
