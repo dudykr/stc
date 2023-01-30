@@ -17,7 +17,7 @@ use swc_ecma_ast::*;
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        scope::VarKind,
+        scope::{vars::DeclareVarsOpts, VarKind},
         util::{ResultExt, VarVisitor},
         Analyzer, Ctx,
     },
@@ -263,15 +263,18 @@ impl Analyzer<'_, '_> {
                 p.visit_with(&mut visitor);
 
                 self.scope.declaring.extend(names.clone());
-            }
 
-            PatMode::Assign => {}
-        }
-
-        match self.ctx.pat_mode {
-            PatMode::Decl => {
                 if !self.is_builtin {
-                    ty = match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
+                    ty = match self.add_vars(
+                        p,
+                        ty.clone(),
+                        None,
+                        None,
+                        DeclareVarsOpts {
+                            kind: VarKind::Param,
+                            use_iterator_for_array: false,
+                        },
+                    ) {
                         Ok(Some(v)) => Some(v),
                         Err(err) => {
                             self.storage.report(err);

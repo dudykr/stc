@@ -27,6 +27,10 @@ impl Id {
         &self.sym
     }
 
+    pub fn ctxt(&self) -> &SyntaxContext {
+        &self.ctxt
+    }
+
     pub fn sym(&self) -> &JsWord {
         &self.sym
     }

@@ -281,7 +281,7 @@ impl Clone for Type {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Type, [u8; 104]);
+assert_eq_size!(Type, [u8; 120]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -568,7 +568,7 @@ pub struct Instance {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Instance, [u8; 32]);
+assert_eq_size!(Instance, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
@@ -581,7 +581,7 @@ pub struct LitType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(LitType, [u8; 96]);
+assert_eq_size!(LitType, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct KeywordType {
@@ -595,7 +595,7 @@ pub struct KeywordType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(KeywordType, [u8; 24]);
+assert_eq_size!(KeywordType, [u8; 32]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Symbol {
@@ -607,7 +607,7 @@ pub struct Symbol {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Symbol, [u8; 48]);
+assert_eq_size!(Symbol, [u8; 56]);
 
 /// Type of form `...T` .
 ///
@@ -623,7 +623,7 @@ pub struct RestType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(RestType, [u8; 32]);
+assert_eq_size!(RestType, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct OptionalType {
@@ -635,7 +635,7 @@ pub struct OptionalType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(OptionalType, [u8; 32]);
+assert_eq_size!(OptionalType, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct IndexedAccessType {
@@ -649,7 +649,7 @@ pub struct IndexedAccessType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(IndexedAccessType, [u8; 40]);
+assert_eq_size!(IndexedAccessType, [u8; 48]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Ref {
@@ -663,7 +663,7 @@ pub struct Ref {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Ref, [u8; 64]);
+assert_eq_size!(Ref, [u8; 72]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -685,7 +685,7 @@ pub struct InferType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(InferType, [u8; 80]);
+assert_eq_size!(InferType, [u8; 96]);
 
 impl Debug for InferType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -703,7 +703,7 @@ pub struct QueryType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(QueryType, [u8; 32]);
+assert_eq_size!(QueryType, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub enum QueryExpr {
@@ -724,7 +724,7 @@ pub struct ImportType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ImportType, [u8; 96]);
+assert_eq_size!(ImportType, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Namespace {
@@ -748,7 +748,7 @@ pub struct Module {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Module, [u8; 72]);
+assert_eq_size!(Module, [u8; 80]);
 
 /// Enum **definition**.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -789,7 +789,7 @@ pub struct Class {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Class, [u8; 32]);
+assert_eq_size!(Class, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassDef {
@@ -806,7 +806,7 @@ pub struct ClassDef {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ClassDef, [u8; 88]);
+assert_eq_size!(ClassDef, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum ClassMember {
@@ -877,7 +877,7 @@ pub struct Mapped {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Mapped, [u8; 96]);
+assert_eq_size!(Mapped, [u8; 112]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
@@ -892,7 +892,7 @@ pub struct Conditional {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Conditional, [u8; 56]);
+assert_eq_size!(Conditional, [u8; 64]);
 
 impl Debug for Conditional {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -917,7 +917,7 @@ pub struct Operator {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Operator, [u8; 32]);
+assert_eq_size!(Operator, [u8; 40]);
 
 impl TypeEq for Operator {
     fn type_eq(&self, other: &Self) -> bool {
@@ -943,7 +943,7 @@ pub struct Tuple {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Tuple, [u8; 48]);
+assert_eq_size!(Tuple, [u8; 56]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TupleElement {
@@ -972,7 +972,7 @@ pub struct Alias {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Alias, [u8; 40]);
+assert_eq_size!(Alias, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Interface {
@@ -987,7 +987,7 @@ pub struct Interface {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Interface, [u8; 96]);
+assert_eq_size!(Interface, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeLit {
@@ -1061,6 +1061,17 @@ impl TypeElement {
             TypeElement::Method(m) => Some(&m.key),
             TypeElement::Index(_) => None,
         }
+    }
+
+    pub fn get_type(&self) -> Option<&Type> {
+        match self {
+            TypeElement::Call(CallSignature { ret_ty, .. }) => ret_ty,
+            TypeElement::Constructor(ConstructorSignature { ret_ty, .. }) => ret_ty,
+            TypeElement::Property(PropertySignature { type_ann, .. }) => type_ann,
+            TypeElement::Method(MethodSignature { ret_ty, .. }) => ret_ty,
+            TypeElement::Index(IndexSignature { type_ann, .. }) => type_ann,
+        }
+        .as_deref()
     }
 }
 
@@ -1149,7 +1160,7 @@ pub struct Array {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Array, [u8; 32]);
+assert_eq_size!(Array, [u8; 40]);
 
 /// a | b
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1162,7 +1173,7 @@ pub struct Union {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Union, [u8; 48]);
+assert_eq_size!(Union, [u8; 56]);
 
 impl Debug for Union {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1211,7 +1222,7 @@ pub struct Intersection {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Intersection, [u8; 48]);
+assert_eq_size!(Intersection, [u8; 56]);
 
 impl Debug for Intersection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1265,7 +1276,7 @@ pub struct EnumVariant {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(EnumVariant, [u8; 48]);
+assert_eq_size!(EnumVariant, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
@@ -1279,7 +1290,7 @@ pub struct Function {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Function, [u8; 96]);
+assert_eq_size!(Function, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Constructor {
@@ -1295,7 +1306,7 @@ pub struct Constructor {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Constructor, [u8; 96]);
+assert_eq_size!(Constructor, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Predicate {
@@ -1310,7 +1321,7 @@ pub struct Predicate {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Predicate, [u8; 64]);
+assert_eq_size!(Predicate, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeOrSpread {
@@ -2686,7 +2697,7 @@ pub struct StaticThis {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(StaticThis, [u8; 24]);
+assert_eq_size!(StaticThis, [u8; 28]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ThisType {
@@ -2697,7 +2708,7 @@ pub struct ThisType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ThisType, [u8; 24]);
+assert_eq_size!(ThisType, [u8; 28]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TplType {
@@ -2737,7 +2748,7 @@ impl From<RTplElement> for TplElem {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(TplType, [u8; 72]);
+assert_eq_size!(TplType, [u8; 80]);
 
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct Freezed {

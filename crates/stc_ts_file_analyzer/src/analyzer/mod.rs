@@ -1,7 +1,9 @@
 use std::{
+    cell::Cell,
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
+    rc::Rc,
     sync::Arc,
 };
 
@@ -17,7 +19,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{type_id::DestructureId, Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
@@ -263,6 +265,8 @@ pub struct Analyzer<'scope, 'b> {
     debugger: Option<Debugger>,
 
     data: AnalyzerData,
+
+    destructure_count: Rc<Cell<DestructureId>>,
 }
 #[derive(Debug, Default)]
 struct AnalyzerData {
@@ -537,6 +541,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             imports_by_id: Default::default(),
             debugger,
             data,
+            destructure_count: Default::default(),
         }
     }
 

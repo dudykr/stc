@@ -20,8 +20,9 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam, TypeParamInstantiation,
+    name::Name, type_id::DestructureId, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType,
+    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement,
+    TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -53,7 +54,7 @@ use crate::{
 
 mod this;
 mod type_param;
-mod vars;
+pub(crate) mod vars;
 
 macro_rules! no_ref {
     ($t:expr) => {{
@@ -119,6 +120,9 @@ pub(crate) struct Scope<'a> {
 
     /// All states related to validation of a class.
     pub(super) class: ClassState,
+
+    /// Save All destructure state
+    pub(super) destructure_vars: FxHashMap<DestructureId, Type>,
 }
 
 impl Scope<'_> {
@@ -371,6 +375,7 @@ impl Scope<'_> {
             type_params: self.type_params,
             cur_module_name: self.cur_module_name,
             class: self.class,
+            destructure_vars: self.destructure_vars,
         }
     }
 
@@ -863,23 +868,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<Option<Type>> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
-    }
-
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars_with_ty(
-        &mut self,
-        kind: VarKind,
-        pat: &RPat,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
-    ) -> VResult<Option<Type>> {
-        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
-    }
-
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
@@ -1194,6 +1182,51 @@ impl Analyzer<'_, '_> {
             copied: true,
             is_actual_type_modified_in_loop: false,
         }))
+    }
+
+    pub fn get_destructor_unique_key(&self) -> DestructureId {
+        let mut id = self.destructure_count.get();
+        self.destructure_count.set(id.next_id());
+        id
+    }
+
+    pub fn declare_destructor(&mut self, span: Span, ty: &Type, key: DestructureId) -> VResult<bool> {
+        let marks = self.marks();
+        let span = span.with_ctxt(SyntaxContext::empty());
+
+        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+        if let Ok(ty) = ty {
+            let ty = ty.into_owned();
+            ty.assert_valid();
+            debug!(
+                "[({})/vars/destructor]: Declaring {:?} as {}",
+                self.scope.depth(),
+                key,
+                dump_type_as_string(&ty)
+            );
+            self.scope.destructure_vars.insert(key, ty.freezed());
+            Ok(true)
+        } else {
+            debug!("[({})/vars/destructor]: Declaring {:?} without type", self.scope.depth(), key);
+            Ok(false)
+        }
+    }
+
+    pub fn find_destructor(&self, key: DestructureId) -> Option<Cow<Type>> {
+        let mut scope = Some(&self.scope);
+        while let Some(s) = scope {
+            if let Some(v) = s.destructure_vars.get(&key) {
+                v.assert_clone_cheap();
+
+                if cfg!(debug_assertions) {
+                    debug!("Scope.find_var_type({:?}): Handled from facts", key);
+                }
+                return Some(Cow::Borrowed(v));
+            }
+            scope = s.parent;
+        }
+
+        None
     }
 
     /// If `allow_multiple` is true and `is_override` is false, the value type
@@ -1743,6 +1776,7 @@ impl<'a> Scope<'a> {
             type_params: Default::default(),
             cur_module_name: None,
             class: Default::default(),
+            destructure_vars: parent.map(|p| p.destructure_vars.clone()).unwrap_or_default(),
         }
     }
 
