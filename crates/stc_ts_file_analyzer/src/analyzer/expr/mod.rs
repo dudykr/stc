@@ -531,6 +531,7 @@ pub(crate) struct AccessPropertyOpts {
 
     pub disallow_indexing_class_with_computed: bool,
 
+    /// If true, [Type::Rest] is returned as is.
     pub return_rest_tuple_element_as_is: bool,
 
     /// Note: If it's in l-value context, `access_property` will return
