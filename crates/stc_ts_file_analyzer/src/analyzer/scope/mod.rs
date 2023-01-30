@@ -725,26 +725,18 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_top: true,
-            ignore_expand_prevention_for_all: false,
-            preserve_params: true,
-            preserve_ret_ty: true,
-            ..self.ctx
-        };
         let ty = ALLOW_DEEP_CLONE.set(&(), || ty.into_owned());
-        self.with_ctx(ctx)
-            .expand(
-                span,
-                ty,
-                ExpandOpts {
-                    full: true,
-                    expand_union: true,
-                    ..opts
-                },
-            )
-            .map(Cow::Owned)
+        self.expand(
+            span,
+            ty,
+            ExpandOpts {
+                full: true,
+                expand_union: true,
+                ignore_expand_prevention_for_top: true,
+                ..opts
+            },
+        )
+        .map(Cow::Owned)
     }
 
     /// This should be called after calling `register_type`.
