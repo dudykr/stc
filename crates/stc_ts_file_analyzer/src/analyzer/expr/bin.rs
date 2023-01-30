@@ -430,7 +430,7 @@ impl Analyzer<'_, '_> {
                             _ => (),
                         }
                         let additional_target = if lt.metadata().destructure_key > 0 {
-                            let origin_ty = self.find_destructor(DestructureId::get(lt.metadata().destructure_key));
+                            let origin_ty = self.find_destructor(DestructureId(lt.metadata().destructure_key));
                             if let Some(ty) = origin_ty {
                                 let ty = ty.into_owned();
                                 self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
@@ -2297,7 +2297,7 @@ impl Analyzer<'_, '_> {
                             if property.type_eq(r) {
                                 for m in members {
                                     if let Some(key) = m.non_computed_key() {
-                                        let l_name = Name::new(name.get_ctxt(), key.clone());
+                                        let l_name = Name::new(key.clone(), name.get_ctxt());
                                         if name == l_name {
                                             continue;
                                         }
@@ -2339,7 +2339,7 @@ impl Analyzer<'_, '_> {
                                     id: RIdent { sym, .. }, ..
                                 })) = &elem.label
                                 {
-                                    let l_name = Name::new(name.get_ctxt(), sym.clone());
+                                    let l_name = Name::new(sym.clone(), name.get_ctxt());
                                     if name == l_name {
                                         continue;
                                     }

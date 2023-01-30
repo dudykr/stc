@@ -20,7 +20,7 @@ type Inner = SmallVec<[Id; 4]>;
 pub struct Name(Inner);
 
 impl Name {
-    pub fn new(ctxt: SyntaxContext, name: JsWord) -> Self {
+    pub fn new(name: JsWord, ctxt: SyntaxContext) -> Self {
         Self(smallvec![Id::new(name, ctxt)])
     }
 
