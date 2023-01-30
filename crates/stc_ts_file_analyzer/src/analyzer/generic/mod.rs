@@ -957,6 +957,28 @@ impl Analyzer<'_, '_> {
                 if let Type::Rest(arg_rest) = arg {
                     return self.infer_type(span, inferred, &param_rest.ty, &arg_rest.ty, opts);
                 }
+
+                return self.infer_type(
+                    span,
+                    inferred,
+                    &param_rest.ty,
+                    &Type::Tuple(Tuple {
+                        span,
+                        elems: vec![TupleElement {
+                            span,
+                            label: None,
+                            ty: box arg.clone(),
+                            tracker: Default::default(),
+                        }],
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .freezed(),
+                    InferTypeOpts {
+                        append_type_as_union: true,
+                        ..opts
+                    },
+                );
             }
 
             Type::Ref(param) => match arg {
