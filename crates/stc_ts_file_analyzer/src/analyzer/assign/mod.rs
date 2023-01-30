@@ -534,6 +534,7 @@ impl Analyzer<'_, '_> {
             | Type::StringMapping(..)
             | Type::Mapped(..)
             | Type::Enum(..)
+            | Type::Tuple(..)
             | Type::Union(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
