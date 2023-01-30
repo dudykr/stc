@@ -83,17 +83,14 @@ impl Analyzer<'_, '_> {
         }
         .and_then(|mut ty| {
             if ty.is_ref_type() {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                ty = self.with_ctx(ctx).expand(
+                ty = self.expand(
                     span,
                     ty,
                     ExpandOpts {
                         full: true,
                         expand_union: true,
+                        preserve_ref: false,
+                        ignore_expand_prevention_for_top: true,
                         ..Default::default()
                     },
                 )?;
@@ -164,17 +161,14 @@ impl Analyzer<'_, '_> {
 
                 let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
                     if ty.is_ref_type() {
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..child.ctx
-                        };
-                        ty = child.with_ctx(ctx).expand(
+                        ty = child.expand(
                             span,
                             ty,
                             ExpandOpts {
                                 full: true,
                                 expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
                                 ..Default::default()
                             },
                         )?;

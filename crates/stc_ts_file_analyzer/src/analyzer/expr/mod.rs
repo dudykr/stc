@@ -442,7 +442,7 @@ impl Analyzer<'_, '_> {
 
                     let ctx = Ctx {
                         in_assign_rhs: true,
-                        cannot_be_tuple,
+                        array_lit_cannot_be_tuple: cannot_be_tuple,
                         ..analyzer.ctx
                     };
                     let mut analyzer = analyzer.with_ctx(ctx);
@@ -1478,16 +1478,13 @@ impl Analyzer<'_, '_> {
 
                         if let Some(super_class) = self.scope.get_super_class() {
                             let super_class = super_class.clone();
-                            let ctx = Ctx {
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..self.ctx
-                            };
-                            let super_class = self.with_ctx(ctx).expand(
+                            let super_class = self.expand(
                                 span,
                                 super_class,
                                 ExpandOpts {
                                     full: true,
+                                    preserve_ref: false,
+                                    ignore_expand_prevention_for_top: true,
                                     expand_union: true,
                                     ..Default::default()
                                 },
@@ -1508,17 +1505,14 @@ impl Analyzer<'_, '_> {
 
                     if let Some(super_class) = self.scope.get_super_class() {
                         let super_class = super_class.clone();
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..self.ctx
-                        };
-                        let super_class = self.with_ctx(ctx).expand(
+                        let super_class = self.expand(
                             span,
                             super_class,
                             ExpandOpts {
                                 full: true,
                                 expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
                                 ..Default::default()
                             },
                         )?;
@@ -1582,17 +1576,14 @@ impl Analyzer<'_, '_> {
 
                     if let Some(super_class) = self.scope.get_super_class() {
                         let super_class = super_class.clone();
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..self.ctx
-                        };
-                        let super_class = self.with_ctx(ctx).expand(
+                        let super_class = self.expand(
                             *span,
                             super_class,
                             ExpandOpts {
                                 full: true,
                                 expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
                                 ..Default::default()
                             },
                         )?;
@@ -1640,13 +1631,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_top: true,
-            ignore_expand_prevention_for_all: false,
-            preserve_params: true,
-            ..self.ctx
-        };
         let mut obj = match obj.normalize() {
             Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
                 Some(span),
@@ -1662,7 +1646,16 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             obj.freeze();
         }
-        let mut obj = self.with_ctx(ctx).expand(span, obj.into_owned(), Default::default())?;
+        let mut obj = self.expand(
+            span,
+            obj.into_owned(),
+            ExpandOpts {
+                preserve_ref: false,
+                ignore_expand_prevention_for_top: true,
+                ignore_expand_prevention_for_all: false,
+                ..Default::default()
+            },
+        )?;
         if !self.is_builtin {
             obj.freeze();
         }
@@ -2254,7 +2247,6 @@ impl Analyzer<'_, '_> {
                     };
 
                 return self
-                    .with_ctx(ctx)
                     .access_property(
                         span,
                         &array_ty,
@@ -4232,16 +4224,13 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(Ref { span, .. }) => {
-                let ctx = Ctx {
-                    ignore_expand_prevention_for_top: true,
-                    preserve_ref: false,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand(
+                let ty = self.expand(
                     *span,
                     ty.clone(),
                     ExpandOpts {
                         full: true,
+                        ignore_expand_prevention_for_top: true,
+                        preserve_ref: false,
                         expand_union: true,
                         ..Default::default()
                     },

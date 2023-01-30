@@ -399,16 +399,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_all: false,
-            ignore_expand_prevention_for_top: false,
-            preserve_ret_ty: true,
-            preserve_params: true,
-            ..self.ctx
-        };
-
-        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+        self.with(|analyzer: &mut Analyzer| {
             let ret_ty = match callee {
                 RExpr::Ident(i) if kind == ExtractKind::New => {
                     let mut ty = Type::Ref(Ref {
@@ -496,11 +487,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let ctx = Ctx {
-                preserve_params: true,
-                ..analyzer.ctx
-            };
-            callee_ty = analyzer.with_ctx(ctx).expand(
+            callee_ty = analyzer.expand(
                 span,
                 callee_ty,
                 ExpandOpts {
@@ -2717,13 +2704,8 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
-            let ctx = Ctx {
-                preserve_params: true,
-                preserve_ret_ty: true,
-                ..self.ctx
-            };
             ret_ty.fix();
-            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty, Default::default())?;
+            let ret_ty = self.expand(span, ret_ty, Default::default())?;
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
@@ -3472,8 +3454,8 @@ impl Analyzer<'_, '_> {
         let ctx = Ctx {
             in_argument: true,
             should_store_truthy_for_access: false,
-            prefer_tuple: true,
-            cannot_be_tuple: false,
+            prefer_tuple_for_array_lit: true,
+            array_lit_cannot_be_tuple: false,
             ..self.ctx
         };
         self.with_ctx(ctx).with(|this: &mut Analyzer| {
@@ -3580,14 +3562,8 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         _ => return,
                     };
 
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.analyzer.ctx
-                    };
-                    let mut a = self.analyzer.with_ctx(ctx);
-
-                    if let Some(actual_ty) = a
+                    if let Some(actual_ty) = self
+                        .analyzer
                         .access_property(
                             *span,
                             obj_ty,
@@ -3600,7 +3576,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             Default::default(),
                         )
                         .context("tried to access property to simplify return type")
-                        .report(&mut a.storage)
+                        .report(&mut self.analyzer.storage)
                     {
                         if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
                             types.push(actual_ty);

@@ -725,26 +725,18 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_top: true,
-            ignore_expand_prevention_for_all: false,
-            preserve_params: true,
-            preserve_ret_ty: true,
-            ..self.ctx
-        };
         let ty = ALLOW_DEEP_CLONE.set(&(), || ty.into_owned());
-        self.with_ctx(ctx)
-            .expand(
-                span,
-                ty,
-                ExpandOpts {
-                    full: true,
-                    expand_union: true,
-                    ..opts
-                },
-            )
-            .map(Cow::Owned)
+        self.expand(
+            span,
+            ty,
+            ExpandOpts {
+                full: true,
+                expand_union: true,
+                ignore_expand_prevention_for_top: true,
+                ..opts
+            },
+        )
+        .map(Cow::Owned)
     }
 
     /// This should be called after calling `register_type`.
@@ -1832,6 +1824,26 @@ pub(crate) struct ExpandOpts {
     pub full: bool,
     pub expand_union: bool,
 
+    pub preserve_ref: bool,
+
+    /// Used before calling `access_property`, which does not accept `Ref` as an
+    /// input.
+    ///
+    ///
+    /// Note: Reference type in top level intersections are treated as
+    /// top-level types.
+    pub ignore_expand_prevention_for_top: bool,
+
+    pub ignore_expand_prevention_for_all: bool,
+
+    /// If true, `expand` and `expand_fully` will expand function
+    /// parameters.
+    pub expand_params: bool,
+
+    /// If true, `expand` and `expand_fully` will expand function
+    /// parameters.
+    pub expand_ret_ty: bool,
+
     pub generic: ExpandGenericOpts,
 }
 
@@ -2160,7 +2172,7 @@ impl Expander<'_, '_, '_> {
         } = r;
         let span = self.span;
 
-        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
+        if !trying_primitive_expansion && (!self.full || self.opts.preserve_ref) {
             return Ok(None);
         }
 
@@ -2225,9 +2237,7 @@ impl Expander<'_, '_, '_> {
         // We do not expand types specified by user
         if is_expansion_prevented {
             #[allow(clippy::nonminimal_bool)]
-            if !self.analyzer.ctx.ignore_expand_prevention_for_all
-                && !(self.expand_top_level && self.analyzer.ctx.ignore_expand_prevention_for_top)
-            {
+            if !self.opts.ignore_expand_prevention_for_all && !(self.expand_top_level && self.opts.ignore_expand_prevention_for_top) {
                 if let Type::Ref(r) = ty.normalize() {
                     // Expand type arguments if it should be expanded
                     if contains_infer_type(&r.type_args) {
@@ -2522,7 +2532,7 @@ impl Fold<ty::Function> for Expander<'_, '_, '_> {
     fn fold(&mut self, mut f: ty::Function) -> ty::Function {
         f.type_params = f.type_params.fold_with(self);
         f.params = f.params.fold_with(self);
-        if self.analyzer.ctx.preserve_ret_ty {
+        if self.opts.expand_ret_ty {
             f.ret_ty = f.ret_ty.fold_with(self);
         }
 
@@ -2538,7 +2548,7 @@ impl Fold<ClassProperty> for Expander<'_, '_, '_> {
 
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params || self.analyzer.is_builtin {
+        if !self.opts.expand_params || self.analyzer.is_builtin {
             return param;
         }
 

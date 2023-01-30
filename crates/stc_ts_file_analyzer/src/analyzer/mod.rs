@@ -89,15 +89,15 @@ pub(crate) struct Ctx {
 
     disallow_unknown_object_property: bool,
 
-    use_undefined_for_empty_tuple: bool,
+    use_undefined_for_empty_array_lit: bool,
 
     allow_module_var: bool,
 
     check_for_implicit_any: bool,
 
     /// If `true`, expression validator will not emit tuple.
-    cannot_be_tuple: bool,
-    prefer_tuple: bool,
+    array_lit_cannot_be_tuple: bool,
+    prefer_tuple_for_array_lit: bool,
 
     in_shorthand: bool,
 
@@ -159,26 +159,6 @@ pub(crate) struct Ctx {
     in_assign_rhs: bool,
 
     in_export_decl: bool,
-
-    preserve_ref: bool,
-
-    /// Used before calling `access_property`, which does not accept `Ref` as an
-    /// input.
-    ///
-    ///
-    /// Note: Reference type in top level intersections are treated as
-    /// top-level types.
-    ignore_expand_prevention_for_top: bool,
-
-    ignore_expand_prevention_for_all: bool,
-
-    /// If true, `expand` and `expand_fully` will not expand function
-    /// parameters.
-    preserve_params: bool,
-
-    /// If true, `expand` and `expand_fully` will not expand function
-    /// parameters.
-    preserve_ret_ty: bool,
 
     skip_identical_while_inference: bool,
 
@@ -478,11 +458,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_const_assertion: false,
                 in_constructor_param: false,
                 disallow_unknown_object_property: false,
-                use_undefined_for_empty_tuple: false,
+                use_undefined_for_empty_array_lit: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,
-                cannot_be_tuple: false,
-                prefer_tuple: false,
+                array_lit_cannot_be_tuple: false,
+                prefer_tuple_for_array_lit: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
                 in_cond: false,
@@ -516,11 +496,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_return_arg: false,
                 in_assign_rhs: false,
                 in_export_decl: false,
-                preserve_ref: false,
-                ignore_expand_prevention_for_top: false,
-                ignore_expand_prevention_for_all: false,
-                preserve_params: true,
-                preserve_ret_ty: true,
                 skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,

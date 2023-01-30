@@ -261,12 +261,7 @@ impl Analyzer<'_, '_> {
                     Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..)
                 )
             {
-                let ctx = Ctx {
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand(
+                let ty = self.expand(
                     span,
                     *type_param.constraint.clone().unwrap(),
                     ExpandOpts {
@@ -1024,21 +1019,18 @@ impl Analyzer<'_, '_> {
                 // },
                 _ => {
                     // TODO(kdy1): Expand children first or add expansion information to inferred.
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ignore_expand_prevention_for_all: false,
-                        ..self.ctx
-                    };
                     if cfg!(debug_assertions) {
                         debug!("infer_type: expanding param");
                     }
-                    let mut param = self.with_ctx(ctx).expand(
+                    let mut param = self.expand(
                         span,
                         Type::Ref(param.clone()),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )?;
@@ -1211,21 +1203,16 @@ impl Analyzer<'_, '_> {
             }) => return Ok(()),
             Type::Keyword(..) => {}
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ignore_expand_prevention_for_all: false,
-                    preserve_params: true,
-                    ..self.ctx
-                };
                 let arg = self
-                    .with_ctx(ctx)
                     .expand(
                         span,
                         arg.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )?
@@ -1351,21 +1338,15 @@ impl Analyzer<'_, '_> {
     ) -> VResult<bool> {
         match arg.normalize() {
             Type::Ref(arg) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    preserve_params: true,
-                    ..self.ctx
-                };
-
                 let arg = self
-                    .with_ctx(ctx)
                     .expand(
                         arg.span,
                         Type::Ref(arg.clone()),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
                             ..Default::default()
                         },
                     )?

@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
             PatMode::Assign => {
                 if let RPat::Assign(assign_pat) = p {
                     let ctx = Ctx {
-                        cannot_be_tuple: true,
+                        array_lit_cannot_be_tuple: true,
                         ..self.ctx
                     };
                     let mut a = self.with_ctx(ctx);

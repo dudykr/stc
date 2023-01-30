@@ -23,7 +23,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         pat::PatMode,
-        scope::{vars::DeclareVarsOpts, VarKind},
+        scope::{vars::DeclareVarsOpts, ExpandOpts, VarKind},
         types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
         Analyzer, Ctx,
@@ -300,7 +300,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     None => {
-                        self.ctx.prefer_tuple = matches!(v.name, RPat::Array(_) | RPat::Object(..));
+                        self.ctx.prefer_tuple_for_array_lit = matches!(v.name, RPat::Array(_) | RPat::Object(..));
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
@@ -364,13 +364,14 @@ impl Analyzer<'_, '_> {
                         debug!("[vars]: Type after normalization: {}", dump_type_as_string(&ty));
 
                         if let Type::Ref(..) = ty.normalize() {
-                            let ctx = Ctx {
-                                preserve_ref: true,
-                                ignore_expand_prevention_for_all: false,
-                                ignore_expand_prevention_for_top: false,
-                                ..self.ctx
-                            };
-                            ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                            ty = self.expand(
+                                span,
+                                ty,
+                                ExpandOpts {
+                                    preserve_ref: true,
+                                    ..Default::default()
+                                },
+                            )?;
                             ty.assert_valid();
 
                             debug!("[vars]: Type after expansion: {}", dump_type_as_string(&ty));
@@ -536,15 +537,14 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Ref(..) => {}
                             _ => {
-                                let ctx = Ctx {
-                                    preserve_ref: true,
-                                    ignore_expand_prevention_for_all: false,
-                                    ignore_expand_prevention_for_top: false,
-                                    preserve_params: true,
-                                    preserve_ret_ty: true,
-                                    ..self.ctx
-                                };
-                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                                ty = self.expand(
+                                    span,
+                                    ty,
+                                    ExpandOpts {
+                                        preserve_ref: true,
+                                        ..Default::default()
+                                    },
+                                )?;
                             }
                         }
                         ty.assert_valid();
