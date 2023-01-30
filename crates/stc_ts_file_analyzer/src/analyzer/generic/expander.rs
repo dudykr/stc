@@ -13,7 +13,7 @@ use swc_ecma_ast::*;
 use tracing::debug;
 
 use crate::{
-    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer},
     ty::Type,
     VResult,
 };
