@@ -1103,6 +1103,8 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
+                                RPat::Expr(box RExpr::SuperProp(..)) => {}
+
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(expr) {
