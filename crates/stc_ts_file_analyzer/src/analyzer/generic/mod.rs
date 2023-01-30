@@ -975,6 +975,7 @@ impl Analyzer<'_, '_> {
                     })
                     .freezed(),
                     InferTypeOpts {
+                        is_inferring_rest_type: true,
                         append_type_as_union: true,
                         ..opts
                     },
