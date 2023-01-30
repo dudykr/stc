@@ -2525,8 +2525,15 @@ impl Analyzer<'_, '_> {
                             .into());
                         }
 
-                        if (v as usize) + 1 >= elems.len() {
-                            if let Some(elem) = elems.last() {
+                        let mut val = v as usize;
+                        for elem in elems {
+                            if let Some(count) = self.calculate_tuple_element_count(span, &elem.ty)? {
+                                if val < count {
+                                    return Ok(*elem.ty.clone());
+                                }
+
+                                val -= count;
+                            } else {
                                 if let Type::Rest(rest_ty) = elem.ty.normalize() {
                                     if opts.return_rest_tuple_element_as_is {
                                         return Ok(*elem.ty.clone());
@@ -2554,6 +2561,8 @@ impl Analyzer<'_, '_> {
 
                                     // debug_assert!(rest_ty.ty.is_clone_cheap());
                                     return Ok(*rest_ty.ty.clone());
+                                } else {
+                                    unreachable!()
                                 }
                             }
                         }
