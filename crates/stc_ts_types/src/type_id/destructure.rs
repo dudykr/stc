@@ -1,16 +1,24 @@
-use std::sync::atomic::{AtomicU32, Ordering::SeqCst};
+use std::{cell::Cell, ops::Add};
 
 use stc_visit::Visit;
 use swc_common::{EqIgnoreSpan, TypeEq};
+
+use crate::std::rc::Rc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Visit)]
 pub struct DestructureId(u32);
 
 impl DestructureId {
-    pub fn generate() -> Self {
-        static GENERATOR: AtomicU32 = AtomicU32::new(1);
+    thread_local! {
+        static LAST_ID: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+    }
 
-        let id = GENERATOR.fetch_add(1, SeqCst);
+    pub fn generate() -> Self {
+        let id = DestructureId::LAST_ID.with(|id| {
+            let last_id = id.get().add(1);
+            id.set(last_id);
+            last_id
+        });
 
         DestructureId(id)
     }

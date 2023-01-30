@@ -415,7 +415,7 @@ impl Analyzer<'_, '_> {
 
                                     elems.push(TupleElement {
                                         span: elem.span(),
-                                        label: Some(elem.arg),
+                                        label: Some(*elem.arg.clone()),
                                         ty: box Type::Rest(RestType {
                                             span: elem.span,
                                             ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
@@ -486,7 +486,7 @@ impl Analyzer<'_, '_> {
 
                                 elems.push(TupleElement {
                                     span: elem.span(),
-                                    label: elem,
+                                    label: Some(elem.clone()),
                                     ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
                                     tracker: Default::default(),
                                 });
@@ -1052,7 +1052,6 @@ impl Analyzer<'_, '_> {
     }
 
     fn regist_destructure(&mut self, span: Span, ty: Option<Type>) -> u32 {
-    fn regist_destructure(&mut self, span: Span, ty: Option<&Type>) -> u32 {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = self.get_destructor_unique_key();

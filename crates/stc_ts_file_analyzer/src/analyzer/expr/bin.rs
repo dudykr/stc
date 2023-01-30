@@ -2340,10 +2340,12 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Type::Tuple(tu @ Tuple { elems, .. }) => {
-                        if elems.iter().any(|elem| elem.ty.type_eq(r)) {
-                            // TODO
-                        }
+                        // if elems.iter().any(|elem|
+                        // elem.ty.to_owned().type_eq(&r)) {
+                        //     // TODO
+                        // }
                     }
+                    _ => {}
                 }
             }
         }
