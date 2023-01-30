@@ -2180,7 +2180,7 @@ impl Expander<'_, '_, '_> {
         } = r;
         let span = self.span;
 
-        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
+        if !trying_primitive_expansion && (!self.full || self.opts.preserve_ref) {
             return Ok(None);
         }
 
