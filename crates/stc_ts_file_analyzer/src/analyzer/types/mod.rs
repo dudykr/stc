@@ -976,6 +976,9 @@ impl Analyzer<'_, '_> {
         let enum_variant_len = enum_variant_iter.len();
 
         if enum_variant_len > 0 {
+            if normalized_types.iter().any(|ty| if let Type::Lit(..) = ty { true } else { false }) {
+                return never!();
+            }
             if let Some(first_enum) = enum_variant_iter.first() {
                 let mut enum_temp = first_enum.normalize();
                 for elem in enum_variant_iter.into_iter() {
