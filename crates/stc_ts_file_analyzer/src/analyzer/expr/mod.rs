@@ -2526,8 +2526,10 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut val = v as usize;
+                        let mut sum = 0;
                         for elem in elems {
                             if let Some(count) = self.calculate_tuple_element_count(span, &elem.ty)? {
+                                sum += count;
                                 if val < count {
                                     return Ok(*elem.ty.clone());
                                 }
@@ -2544,7 +2546,7 @@ impl Analyzer<'_, '_> {
                                         &rest_ty.ty,
                                         &Key::Num(RNumber {
                                             span: n.span,
-                                            value: (v + 1i64 - (elems.len() as i64)) as _,
+                                            value: sum as _,
                                             raw: None,
                                         }),
                                         type_mode,
