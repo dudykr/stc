@@ -2033,6 +2033,12 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple").entered())
+        } else {
+            None
+        };
+
         let len = param.elems.len().max(arg.elems.len());
 
         for index in 0..len {
