@@ -144,22 +144,16 @@ impl Analyzer<'_, '_> {
         match child {
             Type::Param(..) | Type::Infer(..) => return None,
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ignore_expand_prevention_for_all: false,
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
                 let child = self
-                    .with_ctx(ctx)
                     .expand(
                         child.span(),
                         child.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )
@@ -203,22 +197,16 @@ impl Analyzer<'_, '_> {
         match parent {
             Type::Param(..) | Type::Infer(..) => return None,
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ignore_expand_prevention_for_all: false,
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
                 let mut parent = self
-                    .with_ctx(ctx)
                     .expand(
                         parent.span().or_else(|| span),
                         parent.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )
