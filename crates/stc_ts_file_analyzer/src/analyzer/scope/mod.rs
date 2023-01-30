@@ -2245,9 +2245,7 @@ impl Expander<'_, '_, '_> {
         // We do not expand types specified by user
         if is_expansion_prevented {
             #[allow(clippy::nonminimal_bool)]
-            if !self.analyzer.ctx.ignore_expand_prevention_for_all
-                && !(self.expand_top_level && self.analyzer.ctx.ignore_expand_prevention_for_top)
-            {
+            if !self.opts.ignore_expand_prevention_for_all && !(self.expand_top_level && self.opts.ignore_expand_prevention_for_top) {
                 if let Type::Ref(r) = ty.normalize() {
                     // Expand type arguments if it should be expanded
                     if contains_infer_type(&r.type_args) {
@@ -2542,7 +2540,7 @@ impl Fold<ty::Function> for Expander<'_, '_, '_> {
     fn fold(&mut self, mut f: ty::Function) -> ty::Function {
         f.type_params = f.type_params.fold_with(self);
         f.params = f.params.fold_with(self);
-        if self.analyzer.ctx.preserve_ret_ty {
+        if self.opts.expand_ret_ty {
             f.ret_ty = f.ret_ty.fold_with(self);
         }
 
@@ -2558,7 +2556,7 @@ impl Fold<ClassProperty> for Expander<'_, '_, '_> {
 
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params || self.analyzer.is_builtin {
+        if !self.opts.expand_params || self.analyzer.is_builtin {
             return param;
         }
 
