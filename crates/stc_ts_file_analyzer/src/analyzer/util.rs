@@ -116,17 +116,14 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand(
+                let ty = self.expand(
                     span,
                     ty.normalize().clone(),
                     ExpandOpts {
                         full: true,
                         expand_union: false,
+                        preserve_ref: false,
+                        ignore_expand_prevention_for_top: true,
                         ..Default::default()
                     },
                 )?;
