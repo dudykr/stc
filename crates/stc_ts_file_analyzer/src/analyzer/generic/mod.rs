@@ -2084,7 +2084,16 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            self.infer_type(span, inferred, &l_elem_type, &r_elem_type, opts)?;
+            self.infer_type(
+                span,
+                inferred,
+                &l_elem_type,
+                &r_elem_type,
+                InferTypeOpts {
+                    append_type_as_union: true,
+                    ..opts
+                },
+            )?;
         }
 
         Ok(())
