@@ -1653,7 +1653,6 @@ impl Analyzer<'_, '_> {
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: true,
                 ignore_expand_prevention_for_all: false,
-                preserve_params: true,
                 ..Default::default()
             },
         )?;
@@ -2248,7 +2247,6 @@ impl Analyzer<'_, '_> {
                     };
 
                 return self
-                    .with_ctx(ctx)
                     .access_property(
                         span,
                         &array_ty,

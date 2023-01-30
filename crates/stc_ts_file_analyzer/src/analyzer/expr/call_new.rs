@@ -3562,9 +3562,8 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         _ => return,
                     };
 
-                    let mut a = self.analyzer;
-
-                    if let Some(actual_ty) = a
+                    if let Some(actual_ty) = self
+                        .analyzer
                         .access_property(
                             *span,
                             obj_ty,
@@ -3577,7 +3576,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             Default::default(),
                         )
                         .context("tried to access property to simplify return type")
-                        .report(&mut a.storage)
+                        .report(&mut self.analyzer.storage)
                     {
                         if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
                             types.push(actual_ty);
