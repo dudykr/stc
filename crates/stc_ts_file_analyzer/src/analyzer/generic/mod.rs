@@ -953,6 +953,12 @@ impl Analyzer<'_, '_> {
                 dbg!();
             }
 
+            Type::Rest(param_rest) => {
+                if let Type::Rest(arg_rest) = arg {
+                    return self.infer_type(span, inferred, &param_rest.ty, &arg_rest.ty, opts);
+                }
+            }
+
             Type::Ref(param) => match arg {
                 Type::Ref(arg)
                     if param.type_name.eq_ignore_span(&arg.type_name)
