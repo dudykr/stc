@@ -364,13 +364,14 @@ impl Analyzer<'_, '_> {
                         debug!("[vars]: Type after normalization: {}", dump_type_as_string(&ty));
 
                         if let Type::Ref(..) = ty.normalize() {
-                            let ctx = Ctx {
-                                preserve_ref: true,
-                                ignore_expand_prevention_for_all: false,
-                                ignore_expand_prevention_for_top: false,
-                                ..self.ctx
-                            };
-                            ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                            ty = self.expand(
+                                span,
+                                ty,
+                                ExpandOpts {
+                                    preserve_ref: true,
+                                    ..Default::default()
+                                },
+                            )?;
                             ty.assert_valid();
 
                             debug!("[vars]: Type after expansion: {}", dump_type_as_string(&ty));
