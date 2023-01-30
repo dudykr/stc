@@ -1063,16 +1063,15 @@ impl TypeElement {
         }
     }
 
-    pub fn get_type(&self) -> Option<Type> {
-        let ty = match self {
+    pub fn get_type(&self) -> Option<&Type> {
+        match self {
             TypeElement::Call(CallSignature { ret_ty, .. }) => ret_ty,
             TypeElement::Constructor(ConstructorSignature { ret_ty, .. }) => ret_ty,
             TypeElement::Property(PropertySignature { type_ann, .. }) => type_ann,
             TypeElement::Method(MethodSignature { ret_ty, .. }) => ret_ty,
             TypeElement::Index(IndexSignature { type_ann, .. }) => type_ann,
-        };
-
-        ty.as_ref().map(|ty| *ty.clone())
+        }
+        .as_deref()
     }
 }
 

@@ -2301,7 +2301,7 @@ impl Analyzer<'_, '_> {
                                         if name == l_name {
                                             continue;
                                         }
-                                        if let Some(act_ty) = m.get_type() {
+                                        if let Some(act_ty) = m.get_type().cloned() {
                                             let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
                                                 temp_vec.clone()
                                             } else {
