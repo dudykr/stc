@@ -596,22 +596,17 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
             ..
         }) = ty
         {
-            let ctx = Ctx {
-                preserve_ref: false,
-                ignore_expand_prevention_for_top: true,
-                ..self.analyzer.ctx
-            };
-
             // TODO(kdy1): Handle error.
             let index_ty = self
                 .analyzer
-                .with_ctx(ctx)
                 .expand(
                     span,
                     *index_type.clone(),
                     ExpandOpts {
                         full: true,
                         expand_union: true,
+                        preserve_ref: false,
+                        ignore_expand_prevention_for_top: true,
                         ..Default::default()
                     },
                 )
