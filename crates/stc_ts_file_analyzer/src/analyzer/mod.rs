@@ -160,26 +160,6 @@ pub(crate) struct Ctx {
 
     in_export_decl: bool,
 
-    preserve_ref: bool,
-
-    /// Used before calling `access_property`, which does not accept `Ref` as an
-    /// input.
-    ///
-    ///
-    /// Note: Reference type in top level intersections are treated as
-    /// top-level types.
-    ignore_expand_prevention_for_top: bool,
-
-    ignore_expand_prevention_for_all: bool,
-
-    /// If true, `expand` and `expand_fully` will not expand function
-    /// parameters.
-    preserve_params: bool,
-
-    /// If true, `expand` and `expand_fully` will not expand function
-    /// parameters.
-    preserve_ret_ty: bool,
-
     skip_identical_while_inference: bool,
 
     super_references_super_class: bool,
