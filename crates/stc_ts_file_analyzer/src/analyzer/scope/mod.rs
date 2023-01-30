@@ -1776,7 +1776,7 @@ impl<'a> Scope<'a> {
             type_params: Default::default(),
             cur_module_name: None,
             class: Default::default(),
-            destructure_vars: Default::default(),
+            destructure_vars: parent.map(|p| p.destructure_vars.clone()).unwrap_or_default(),
         }
     }
 
