@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement,
+    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
                 return self.add_vars(pat, Some(ty), actual, default, opts);
             }
         }
-        dbg!(&pat);
+
         match pat {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
@@ -231,8 +231,7 @@ impl Analyzer<'_, '_> {
                     //
                     //      const [a , setA] = useState();
                     //
-                    dbg!(1);
-                    dbg!(&ty, &default, &actual, &pat);
+
                     let ty = ty
                         .map(|ty| {
                             self.get_iterator(
@@ -251,7 +250,7 @@ impl Analyzer<'_, '_> {
                         })
                         .freezed()
                         .map(Cow::into_owned);
-                    dbg!(&ty);
+
                     let default_ty = default;
                     let default = default_ty
                         .as_ref()
@@ -378,14 +377,14 @@ impl Analyzer<'_, '_> {
                 } else {
                     let mut elems = vec![];
 
-                    dbg!(2);
-                    dbg!(&ty, &default, &actual, &pat);
+                    let destructure_key = self.get_destructor_unique_key().extract();
 
-                    let destructure_key = self.regist_destructure(span, ty.clone());
+                    let mut has_rest = false;
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {
                             Some(elem) => {
                                 if let RPat::Rest(elem) = elem {
+                                    has_rest = true;
                                     // Rest element is special.
                                     let type_for_rest_arg = match &ty {
                                         Some(ty) => self
@@ -496,6 +495,26 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    let save_ty = ty.clone().map(|ty| {
+                        if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
+                            let mut ty = ty.into_owned();
+                            if let Type::Union(Union { types, .. }) = ty.normalize_mut() {
+                                'outer: for member in types.iter_mut() {
+                                    if let Type::Tuple(tuple) = member.normalize_mut() {
+                                        for (idx, (inner, outer)) in tuple.elems.iter_mut().zip(elems.iter()).enumerate() {
+                                            if has_rest && elems.len() - 1 == idx {
+                                                break 'outer;
+                                            }
+                                            inner.label = outer.label.clone();
+                                        }
+                                    }
+                                }
+                            }
+                            return ty;
+                        }
+                        ty
+                    });
+
                     let mut real_ty = Type::Tuple(Tuple {
                         span,
                         elems,
@@ -518,6 +537,7 @@ impl Analyzer<'_, '_> {
 
                     real_ty.freeze();
 
+                    self.regist_destructure(span, save_ty, Some(DestructureId::get(destructure_key)));
                     Ok(Some(real_ty))
                 }
             }
@@ -525,7 +545,7 @@ impl Analyzer<'_, '_> {
             RPat::Object(obj) => {
                 let normalize_ty = ty.as_ref().map(Type::normalize);
                 let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
-                let destructure_key = self.regist_destructure(span, ty.clone());
+                let destructure_key = self.regist_destructure(span, ty.clone(), None);
 
                 let mut real = Type::TypeLit(TypeLit {
                     span,
@@ -1051,10 +1071,10 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    fn regist_destructure(&mut self, span: Span, ty: Option<Type>) -> u32 {
+    fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> u32 {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
-                let des_key = self.get_destructor_unique_key();
+                let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
                 let destructure_key = des_key.extract();
                 if let Ok(result) = self.declare_destructor(span, real, des_key) {
                     if result {
@@ -1067,13 +1087,13 @@ impl Analyzer<'_, '_> {
                 ..
             })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                    return self.regist_destructure(span, Some(result.into_owned()));
+                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
                 }
             }
 
             Some(Type::Instance(Instance { ty: box result, .. })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                    return self.regist_destructure(span, Some(result.into_owned()));
+                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
                 }
             }
             _ => {}

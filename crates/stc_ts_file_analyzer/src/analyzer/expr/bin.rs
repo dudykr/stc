@@ -6,8 +6,8 @@ use std::{
 
 use fxhash::FxHashMap;
 use stc_ts_ast_rnode::{
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RBindingIdent, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat,
+    RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -429,24 +429,17 @@ impl Analyzer<'_, '_> {
                             }
                             _ => (),
                         }
-
                         let additional_target = if lt.metadata().destructure_key > 0 {
                             let origin_ty = self.find_destructor(DestructureId::get(lt.metadata().destructure_key));
                             if let Some(ty) = origin_ty {
                                 let ty = ty.into_owned();
-                                dbg!(&ty);
                                 self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
                             } else {
-                                dbg!(123);
-                                dbg!(&origin_ty);
                                 Default::default()
                             }
                         } else {
-                            dbg!(123);
-                            dbg!(&lt);
                             Default::default()
                         };
-                        dbg!(&additional_target);
 
                         let exclude_types = if is_loose_comparison_with_null_or_undefined {
                             vec![
@@ -2340,10 +2333,43 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Type::Tuple(tu @ Tuple { elems, .. }) => {
-                        // if elems.iter().any(|elem|
-                        // elem.ty.to_owned().type_eq(&r)) {
-                        //     // TODO
-                        // }
+                        if elems.iter().any(|elem| (*elem.ty).type_eq(r)) {
+                            for elem in tu.elems.iter() {
+                                if let Some(RPat::Ident(RBindingIdent {
+                                    id: RIdent { sym, .. }, ..
+                                })) = &elem.label
+                                {
+                                    let l_name = Name::new(name.get_ctxt(), sym.clone());
+                                    if name == l_name {
+                                        continue;
+                                    }
+                                    let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
+                                        temp_vec.clone()
+                                    } else {
+                                        if is_loose_comparison {
+                                            vec![
+                                                Type::Keyword(KeywordType {
+                                                    span,
+                                                    kind: TsKeywordTypeKind::TsNullKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                Type::Keyword(KeywordType {
+                                                    span,
+                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                            ]
+                                        } else {
+                                            vec![]
+                                        }
+                                    };
+                                    temp_vec.push((*elem.ty).clone().freezed());
+                                    additional_target.insert(l_name, temp_vec);
+                                }
+                            }
+                        }
                     }
                     _ => {}
                 }
