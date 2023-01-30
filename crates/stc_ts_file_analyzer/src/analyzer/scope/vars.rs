@@ -449,7 +449,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
-                                let mut default = match &default {
+                                let default = match &default {
                                     Some(ty) => self
                                         .access_property(
                                             elem.span(),
@@ -471,9 +471,6 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                                 if let Some(ty) = &mut elem_ty {
-                                    add_destructure_sign(ty, destructure_key);
-                                }
-                                if let Some(ty) = &mut default {
                                     add_destructure_sign(ty, destructure_key);
                                 }
 
@@ -718,9 +715,7 @@ impl Analyzer<'_, '_> {
                                     if let Some(ty) = &mut prop_ty {
                                         add_destructure_sign(ty, destructure_key);
                                     }
-                                    if let Some(ty) = &mut default_prop_ty {
-                                        add_destructure_sign(ty, destructure_key);
-                                    }
+
                                     let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
@@ -736,9 +731,6 @@ impl Analyzer<'_, '_> {
                                             if self.ctx.is_fn_param && prop_ty.is_none() {
                                                 default_value_type = default_value_type.fold_with(&mut Widen { tuple_to_array: true });
                                             }
-                                            if let Some(ty) = &mut default_value_type {
-                                                add_destructure_sign(ty, destructure_key);
-                                            }
 
                                             default_value_type.freeze();
 
@@ -747,10 +739,8 @@ impl Analyzer<'_, '_> {
                                             if prop_ty.is_some() {
                                                 default = None;
                                             }
-                                            if let Some(ty) = &mut default {
-                                                add_destructure_sign(ty, destructure_key);
-                                            }
-                                            let mut result = self
+
+                                            let result = self
                                                 .add_vars(
                                                     &RPat::Ident(RBindingIdent {
                                                         node_id: NodeId::invalid(),
@@ -777,9 +767,7 @@ impl Analyzer<'_, '_> {
                                                 .context("tried to assign default values")
                                                 .report(&mut self.storage);
                                             }
-                                            if let Some(Some(ty)) = &mut result {
-                                                add_destructure_sign(ty, destructure_key);
-                                            }
+
                                             result
                                         }
                                         None => {
@@ -871,7 +859,6 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ty) = &mut default {
                                 remove_readonly(ty);
-                                add_destructure_sign(ty, destructure_key);
                             }
 
                             let rest = self
