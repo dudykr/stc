@@ -399,16 +399,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_all: false,
-            ignore_expand_prevention_for_top: false,
-            preserve_ret_ty: true,
-            preserve_params: true,
-            ..self.ctx
-        };
-
-        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+        self.with(|analyzer: &mut Analyzer| {
             let ret_ty = match callee {
                 RExpr::Ident(i) if kind == ExtractKind::New => {
                     let mut ty = Type::Ref(Ref {
@@ -496,11 +487,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let ctx = Ctx {
-                preserve_params: true,
-                ..analyzer.ctx
-            };
-            callee_ty = analyzer.with_ctx(ctx).expand(
+            callee_ty = analyzer.expand(
                 span,
                 callee_ty,
                 ExpandOpts {
@@ -2717,13 +2704,8 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
-            let ctx = Ctx {
-                preserve_params: true,
-                preserve_ret_ty: true,
-                ..self.ctx
-            };
             ret_ty.fix();
-            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty, Default::default())?;
+            let ret_ty = self.expand(span, ret_ty, Default::default())?;
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
