@@ -15,7 +15,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
 use crate::{
-    analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
+    analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer},
     ty,
     ty::Type,
     VResult,

@@ -23,7 +23,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         pat::PatMode,
-        scope::{vars::DeclareVarsOpts, VarKind},
+        scope::{vars::DeclareVarsOpts, ExpandOpts, VarKind},
         types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
         Analyzer, Ctx,
@@ -536,15 +536,14 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Ref(..) => {}
                             _ => {
-                                let ctx = Ctx {
-                                    preserve_ref: true,
-                                    ignore_expand_prevention_for_all: false,
-                                    ignore_expand_prevention_for_top: false,
-                                    preserve_params: true,
-                                    preserve_ret_ty: true,
-                                    ..self.ctx
-                                };
-                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                                ty = self.expand(
+                                    span,
+                                    ty,
+                                    ExpandOpts {
+                                        preserve_ref: true,
+                                        ..Default::default()
+                                    },
+                                )?;
                             }
                         }
                         ty.assert_valid();
