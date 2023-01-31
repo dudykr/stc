@@ -23,15 +23,15 @@ impl Name {
     }
 
     pub fn get_ctxt(&self) -> SyntaxContext {
-        *self.0[0].ctxt()
+        *self.0.ctxt()
     }
 
     pub fn push(&mut self, sym: JsWord) {
-        self.0.push(Id::word(sym))
+        self.1.push(Id::word(sym))
     }
 
     pub fn top(&self) -> Id {
-        self.0[0].clone()
+        self.0.clone()
     }
 
     #[allow(clippy::len_without_is_empty)]
