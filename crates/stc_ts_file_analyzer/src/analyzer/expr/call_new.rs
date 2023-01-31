@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
             let mut candidates: Vec<CallCandidate> = vec![];
             for member in c.body.iter() {
                 match member {
-                    ty::ClassMember::Method(Method {
+                    ClassMember::Method(Method {
                         key,
                         ret_ty,
                         type_params,
@@ -986,7 +986,7 @@ impl Analyzer<'_, '_> {
                             });
                         }
                     }
-                    ty::ClassMember::Property(ClassProperty { key, value, is_static, .. }) if *is_static == is_static_call => {
+                    ClassMember::Property(ClassProperty { key, value, is_static, .. }) if *is_static == is_static_call => {
                         if self.key_matches(span, key, prop, false) {
                             // Check for properties with callable type.
 
