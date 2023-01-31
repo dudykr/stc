@@ -2,16 +2,26 @@ use std::borrow::Cow;
 
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_type_ops::this::contains_this;
-use stc_ts_types::{ClassMember, ClassProperty, Id, Key, Method, Type};
+use stc_ts_types::{ClassMember, ClassProperty, CommonTypeMetadata, Id, Key, KeywordTypeMetadata, Method, Type};
+use swc_common::Span;
 
 use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn this_has_property_named(&mut self, p: &Id) -> bool {
+    pub(crate) fn get_property_type_from_this(&mut self, span: Span, p: &Id) -> Option<Type> {
         if self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class() {
             if let Some(declaring) = &self.scope.declaring_prop() {
                 if *p.sym() == *declaring.sym() {
-                    return true;
+                    return Some(Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    ));
                 }
             }
         }
@@ -19,11 +29,43 @@ impl Analyzer<'_, '_> {
         if self.scope.is_this_ref_to_class() {
             for (_, m) in self.scope.class_members() {
                 match m {
-                    ClassMember::Method(Method { key, is_static: false, .. })
-                    | ClassMember::Property(ClassProperty { key, is_static: false, .. }) => {
+                    ClassMember::Method(Method { key, is_static: false, .. }) => {
                         if let Key::Normal { sym, .. } = key {
                             if *p.sym() == *sym {
-                                return true;
+                                // TODO: Use function type
+                                return Some(Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: CommonTypeMetadata {
+                                            implicit: true,
+                                            ..Default::default()
+                                        },
+                                        ..Default::default()
+                                    },
+                                ));
+                            }
+                        }
+                    }
+                    ClassMember::Property(ClassProperty {
+                        key,
+                        is_static: false,
+                        value,
+                        ..
+                    }) => {
+                        if let Key::Normal { sym, .. } = key {
+                            if *p.sym() == *sym {
+                                return Some(value.clone().map(|v| *v).unwrap_or_else(|| {
+                                    Type::any(
+                                        span,
+                                        KeywordTypeMetadata {
+                                            common: CommonTypeMetadata {
+                                                implicit: true,
+                                                ..Default::default()
+                                            },
+                                            ..Default::default()
+                                        },
+                                    )
+                                }));
                             }
                         }
                     }
@@ -32,7 +74,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        false
+        None
     }
 
     /// Expand `this` contained in `ty`.

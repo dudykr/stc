@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind, Errors,
 };
 use stc_ts_generics::ExpandGenericOpts;
@@ -3693,6 +3693,12 @@ impl Analyzer<'_, '_> {
             return Ok(Type::any(span, Default::default()));
         }
 
+        if self.ctx.use_properties_of_this_implicitly {
+            if let Some(ty) = self.get_property_type_from_this(span, &i.clone().into()) {
+                return Ok(ty);
+            }
+        }
+
         if let Ok(Some(types)) = self.find_type(&i.into()) {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
@@ -3772,7 +3778,8 @@ impl Analyzer<'_, '_> {
                 unreachable!("no such variable for builtin")
             }
 
-            if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
+            if !self.ctx.disallow_suggesting_property_on_no_var && self.get_property_type_from_this(span, &i.clone().into()).is_some() {
+                print_backtrace();
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
