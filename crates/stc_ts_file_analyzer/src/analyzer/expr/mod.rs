@@ -3279,6 +3279,11 @@ impl Analyzer<'_, '_> {
                 .context("tried to get type of a name with len == 1"),
 
             _ => {
+                let ctx = Ctx {
+                    in_opt_chain: true,
+                    ..self.ctx
+                };
+
                 let last_sym = name.last().clone();
 
                 let obj = self
@@ -3286,6 +3291,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to get type of &names[..-1]")?;
 
                 let ty = self
+                    .with_ctx(ctx)
                     .access_property(
                         span,
                         &obj,
