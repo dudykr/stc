@@ -1813,7 +1813,7 @@ impl Analyzer<'_, '_> {
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
         let span = equals_to.span();
 
-        let mut id: RIdent = name.inner()[0].clone().into();
+        let mut id: RIdent = name.top().clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
@@ -1839,7 +1839,7 @@ impl Analyzer<'_, '_> {
             sym: name.last().clone(),
         };
 
-        let ty = self.type_of_name(span, &name.inner()[..name.len() - 1], TypeOfMode::RValue, None)?;
+        let ty = self.type_of_name(span, &name.slice_to(name.len() - 1), TypeOfMode::RValue, None)?;
 
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
@@ -1879,7 +1879,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            let actual = Name::from(&name.inner()[..name.len() - 1]);
+            let actual = name.slice_to(name.len() - 1);
 
             if has_undefined && candidates.is_empty() {
                 return Ok((

@@ -3282,7 +3282,7 @@ impl Analyzer<'_, '_> {
                 let last_sym = name.last().clone();
 
                 let obj = self
-                    .type_of_name(span, &name[..name.len() - 1], type_mode, type_args)
+                    .type_of_name(span, name.slice_to(name.len() - 1), type_mode, type_args)
                     .context("tried to get type of &names[..-1]")?;
 
                 let ty = self
