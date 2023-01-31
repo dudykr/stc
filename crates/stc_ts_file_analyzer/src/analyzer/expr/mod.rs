@@ -1543,7 +1543,7 @@ impl Analyzer<'_, '_> {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
-                            stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
+                            ClassMember::Method(member @ Method { is_static: true, .. }) => {
                                 if member.key.type_eq(prop) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
@@ -1556,7 +1556,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            stc_ts_types::ClassMember::Property(property) => {
+                            ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(

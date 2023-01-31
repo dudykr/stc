@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
             let mut candidates: Vec<CallCandidate> = vec![];
             for member in c.body.iter() {
                 match member {
-                    ty::ClassMember::Method(Method {
+                    ClassMember::Method(Method {
                         key,
                         ret_ty,
                         type_params,
@@ -986,7 +986,7 @@ impl Analyzer<'_, '_> {
                             });
                         }
                     }
-                    ty::ClassMember::Property(ClassProperty { key, value, is_static, .. }) if *is_static == is_static_call => {
+                    ClassMember::Property(ClassProperty { key, value, is_static, .. }) if *is_static == is_static_call => {
                         if self.key_matches(span, key, prop, false) {
                             // Check for properties with callable type.
 
@@ -1905,6 +1905,15 @@ impl Analyzer<'_, '_> {
                     type_params: f.type_params.clone().map(|v| v.params),
                     params: f.params.clone(),
                     ret_ty: *f.ret_ty.clone(),
+                };
+                return Ok(vec![candidate]);
+            }
+
+            Type::Function(f) => {
+                let candidate = CallCandidate {
+                    type_params: f.type_params.clone().map(|v| v.params),
+                    params: f.params.clone(),
+                    ret_ty: Type::any(span, Default::default()),
                 };
                 return Ok(vec![candidate]);
             }
