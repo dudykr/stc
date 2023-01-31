@@ -3279,6 +3279,11 @@ impl Analyzer<'_, '_> {
                 .context("tried to get type of a name with len == 1"),
 
             _ => {
+                let ctx = Ctx {
+                    in_opt_chain: true,
+                    ..self.ctx
+                };
+
                 let last_sym = name.last().clone();
 
                 let obj = self
@@ -3286,6 +3291,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to get type of &names[..-1]")?;
 
                 let ty = self
+                    .with_ctx(ctx)
                     .access_property(
                         span,
                         &obj,
@@ -4014,8 +4020,8 @@ impl Analyzer<'_, '_> {
 
         if let TypeOfMode::RValue = type_mode {
             if let Some(name) = &name {
-                if let Some(ty) = self.scope.get_type_from_name(name) {
-                    debug_assert_ne!(ty.span(), DUMMY_SP);
+                if let Some(mut ty) = self.scope.get_type_from_name(name) {
+                    ty.respan(span);
                     return Ok(ty);
                 }
             }

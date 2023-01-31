@@ -44,6 +44,12 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
+        self.validate_bin_expr(e, type_ann)
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn validate_bin_expr(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let RBinExpr {
             span,
             op,
@@ -547,6 +553,15 @@ impl Analyzer<'_, '_> {
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
+                        // `o` cannot be null in the following code
+                        // if (o?.baz instanceof Error) {
+                        //     o.baz;
+                        // }
+                        for len in 1..=name.len() {
+                            *self.cur_facts.true_facts.facts.entry(name.slice_to(len)).or_default() |=
+                                TypeFacts::NENull & TypeFacts::NEUndefined & TypeFacts::NEUndefinedOrNull;
+                        }
+
                         // typeGuardsWithInstanceOfByConstructorSignature.ts
                         //
                         // says
@@ -980,9 +995,7 @@ impl Analyzer<'_, '_> {
             }
         }
     }
-}
 
-impl Analyzer<'_, '_> {
     fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool, l_ty: &Type, r_ty: &Type) -> VResult<()> {
         if !self.ctx.in_cond {
             return Ok(());
