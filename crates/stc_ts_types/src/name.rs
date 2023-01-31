@@ -20,6 +20,14 @@ type Inner = SmallVec<[Id; 4]>;
 pub struct Name(Inner);
 
 impl Name {
+    pub fn new(name: JsWord, ctxt: SyntaxContext) -> Self {
+        Self(smallvec![Id::new(name, ctxt)])
+    }
+
+    pub fn get_ctxt(&self) -> SyntaxContext {
+        *self.0[0].ctxt()
+    }
+
     pub fn push(&mut self, sym: JsWord) {
         self.0.push(Id::word(sym))
     }

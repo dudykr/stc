@@ -64,9 +64,9 @@ impl Analyzer<'_, '_> {
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
         iterator.freeze();
 
-        let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
+        let prefer_tuple = self.ctx.prefer_tuple_for_array_lit || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
-        let mut can_be_tuple = self.ctx.prefer_tuple || !self.ctx.cannot_be_tuple;
+        let mut can_be_tuple = self.ctx.prefer_tuple_for_array_lit || !self.ctx.array_lit_cannot_be_tuple;
         let mut elements = Vec::with_capacity(elems.len());
 
         for (idx, elem) in elems.iter().enumerate() {
@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
                 .collect();
             types.dedup_type();
             if types.is_empty() {
-                types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
+                types.push(if self.ctx.use_undefined_for_empty_array_lit && is_empty {
                     Type::undefined(span, Default::default())
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());
@@ -217,7 +217,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .all(|el| el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword));
 
-        if should_be_any && !self.ctx.prefer_tuple {
+        if should_be_any && !self.ctx.prefer_tuple_for_array_lit {
             elements.iter_mut().for_each(|el| {
                 let span = el.ty.span().with_ctxt(SyntaxContext::empty());
                 el.ty = box Type::any(
@@ -886,5 +886,47 @@ impl Analyzer<'_, '_> {
             .context("tried to get type from `IteratorResult<T>`")?;
 
         Ok(elem_ty.into_owned())
+    }
+
+    pub(crate) fn calculate_tuple_element_count(&mut self, span: Span, ty: &Type) -> VResult<Option<usize>> {
+        let ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        )?;
+
+        match ty.normalize() {
+            Type::Rest(rest) => match ty.normalize() {
+                Type::Tuple(tuple) => {
+                    let mut sum = 0;
+                    for elem in tuple.elems.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(elem.span(), &elem.ty)? {
+                            sum += v;
+                        }
+                    }
+                    Ok(Some(sum))
+                }
+                Type::Union(u) => {
+                    let val = self.calculate_tuple_element_count(span, &u.types[0])?;
+                    let val = match val {
+                        Some(v) => v,
+                        None => return Ok(None),
+                    };
+                    for ty in u.types.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(ty.span(), ty)? {
+                            if v != val {
+                                return Ok(None);
+                            }
+                        }
+                    }
+                    Ok(Some(val))
+                }
+                _ => Ok(None),
+            },
+            _ => Ok(Some(1)),
+        }
     }
 }

@@ -9,7 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    Array, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParamInstantiation, Union,
+    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement,
+    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
@@ -248,8 +249,7 @@ impl Analyzer<'_, '_> {
                             })
                         })
                         .freezed()
-                        .map(Cow::into_owned)
-                        .freezed();
+                        .map(Cow::into_owned);
 
                     let default_ty = default;
                     let default = default_ty
@@ -270,8 +270,7 @@ impl Analyzer<'_, '_> {
                             })
                         })
                         .freezed()
-                        .map(Cow::into_owned)
-                        .freezed();
+                        .map(Cow::into_owned);
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
@@ -378,10 +377,14 @@ impl Analyzer<'_, '_> {
                 } else {
                     let mut elems = vec![];
 
+                    let destructure_key = self.get_destructor_unique_key();
+
+                    let mut has_rest = false;
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {
                             Some(elem) => {
                                 if let RPat::Rest(elem) = elem {
+                                    has_rest = true;
                                     // Rest element is special.
                                     let type_for_rest_arg = match &ty {
                                         Some(ty) => self
@@ -411,7 +414,7 @@ impl Analyzer<'_, '_> {
 
                                     elems.push(TupleElement {
                                         span: elem.span(),
-                                        label: None,
+                                        label: Some(*elem.arg.clone()),
                                         ty: box Type::Rest(RestType {
                                             span: elem.span,
                                             ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
@@ -425,7 +428,7 @@ impl Analyzer<'_, '_> {
                                     break;
                                 }
 
-                                let elem_ty = match &ty {
+                                let mut elem_ty = match &ty {
                                     Some(ty) => self
                                         .access_property(
                                             elem.span(),
@@ -467,6 +470,10 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
+                                if let Some(ty) = &mut elem_ty {
+                                    add_destructure_sign(ty, destructure_key);
+                                }
+
                                 // TODO(kdy1): actual_ty
                                 let elem_ty = self
                                     .add_vars(elem, elem_ty, None, default, opts)
@@ -475,7 +482,7 @@ impl Analyzer<'_, '_> {
 
                                 elems.push(TupleElement {
                                     span: elem.span(),
-                                    label: None,
+                                    label: Some(elem.clone()),
                                     ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
                                     tracker: Default::default(),
                                 });
@@ -485,10 +492,36 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    let save_ty = ty.clone().map(|ty| {
+                        if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
+                            let mut ty = ty.into_owned();
+                            if let Type::Union(Union { types, .. }) = ty.normalize_mut() {
+                                'outer: for member in types.iter_mut() {
+                                    if let Type::Tuple(tuple) = member.normalize_mut() {
+                                        for (idx, (inner, outer)) in tuple.elems.iter_mut().zip(elems.iter()).enumerate() {
+                                            if has_rest && elems.len() - 1 == idx {
+                                                break 'outer;
+                                            }
+                                            inner.label = outer.label.clone();
+                                        }
+                                    }
+                                }
+                            }
+                            return ty;
+                        }
+                        ty
+                    });
+
                     let mut real_ty = Type::Tuple(Tuple {
                         span,
                         elems,
-                        metadata: Default::default(),
+                        metadata: TupleMetadata {
+                            common: CommonTypeMetadata {
+                                destructure_key,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
                         tracker: Default::default(),
                     });
 
@@ -501,19 +534,29 @@ impl Analyzer<'_, '_> {
 
                     real_ty.freeze();
 
+                    self.regist_destructure(span, save_ty, Some(destructure_key));
                     Ok(Some(real_ty))
                 }
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = !matches!(ty.as_ref().map(Type::normalize), Some(Type::TypeLit(..)));
+                let normalize_ty = ty.as_ref().map(Type::normalize);
+                let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
+                let destructure_key = self.regist_destructure(span, ty.clone(), None);
 
                 let mut real = Type::TypeLit(TypeLit {
                     span,
                     members: vec![],
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            destructure_key,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
                     tracker: Default::default(),
                 });
+
                 // TODO(kdy1): Normalize static
                 //
                 let mut used_keys = vec![];
@@ -645,7 +688,7 @@ impl Analyzer<'_, '_> {
                                     .context("tried to access property to declare variables")
                             });
 
-                            let default_prop_ty = default
+                            let mut default_prop_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
                                     self.with_ctx(ctx)
@@ -668,7 +711,11 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             let real_property_type = match prop_ty {
-                                Ok(prop_ty) => {
+                                Ok(mut prop_ty) => {
+                                    if let Some(ty) = &mut prop_ty {
+                                        add_destructure_sign(ty, destructure_key);
+                                    }
+
                                     let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
@@ -752,6 +799,10 @@ impl Analyzer<'_, '_> {
                                         _ => self.storage.report(err),
                                     }
 
+                                    if let Some(ty) = &mut default_prop_ty {
+                                        add_destructure_sign(ty, destructure_key);
+                                    }
+
                                     self.add_vars(
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
@@ -803,6 +854,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ty) = &mut rest_ty {
                                 remove_readonly(ty);
+                                add_destructure_sign(ty, destructure_key);
                             }
 
                             if let Some(ty) = &mut default {
@@ -832,6 +884,7 @@ impl Analyzer<'_, '_> {
 
                 self.add_vars(&pat.arg, ty, actual, default, DeclareVarsOpts { ..opts })
             }
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(None),
 
             _ => {
                 unimplemented!("declare_vars({:#?}, {:#?})", pat, ty)
@@ -981,45 +1034,6 @@ impl Analyzer<'_, '_> {
         Ok(ty.fixed())
     }
 
-    /// TODO(kdy1): Remove this. All logics are merged into add_vars.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn declare_vars_inner_with_ty(
-        &mut self,
-        kind: VarKind,
-        pat: &RPat,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
-    ) -> VResult<Option<Type>> {
-        let marks = self.marks();
-
-        let span = ty
-            .as_ref()
-            .map(|v| v.span())
-            .and_then(|span| if span.is_dummy() { None } else { Some(span) })
-            .unwrap_or_else(|| pat.span());
-        if !self.is_builtin {
-            debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
-        }
-
-        match pat {
-            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
-                pat,
-                ty,
-                actual_ty,
-                default_ty,
-                DeclareVarsOpts {
-                    kind,
-                    ..Default::default()
-                },
-            ),
-
-            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(None),
-
-            _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
-        }
-    }
-
     fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<Type> {
         run(|| {
             if let Ok(..) = self.get_iterator(
@@ -1043,6 +1057,36 @@ impl Analyzer<'_, '_> {
         })
         .context("tried to ensure iterator")
     }
+
+    fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
+        match ty.as_ref().map(Type::normalize) {
+            Some(real @ Type::Union(..)) => {
+                let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
+                let destructure_key = des_key;
+                if let Ok(result) = self.declare_destructor(span, real, des_key) {
+                    if result {
+                        return destructure_key;
+                    }
+                }
+            }
+            Some(Type::Param(TypeParam {
+                constraint: Some(box result),
+                ..
+            })) => {
+                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                }
+            }
+
+            Some(Type::Instance(Instance { ty: box result, .. })) => {
+                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                }
+            }
+            _ => {}
+        }
+        DestructureId(0)
+    }
 }
 
 fn remove_readonly(ty: &mut Type) {
@@ -1055,4 +1099,9 @@ fn remove_readonly(ty: &mut Type) {
 
         ty.freeze();
     }
+}
+
+fn add_destructure_sign(ty: &mut Type, key: DestructureId) {
+    ty.metadata_mut().destructure_key = key;
+    ty.freeze();
 }

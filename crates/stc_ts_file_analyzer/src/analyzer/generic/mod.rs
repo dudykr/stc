@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -14,10 +14,10 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement,
-    TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union,
-    UnionMetadata,
+    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -31,6 +31,7 @@ use tracing::{debug, error, info, span, trace, warn, Level};
 
 use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
+use super::expr::{AccessPropertyOpts, TypeOfMode};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_ref_with_single_arg, RemoveTypes},
@@ -260,12 +261,7 @@ impl Analyzer<'_, '_> {
                     Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..)
                 )
             {
-                let ctx = Ctx {
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand(
+                let ty = self.expand(
                     span,
                     *type_param.constraint.clone().unwrap(),
                     ExpandOpts {
@@ -934,7 +930,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, arg, opts),
+                Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, p, arg, a, opts),
                 _ => {
                     dbg!();
                 }
@@ -950,6 +946,35 @@ impl Analyzer<'_, '_> {
 
             Type::Predicate(..) => {
                 dbg!();
+            }
+
+            Type::Rest(param_rest) => {
+                if let Type::Rest(arg_rest) = arg {
+                    return self.infer_type(span, inferred, &param_rest.ty, &arg_rest.ty, opts);
+                }
+
+                return self.infer_type(
+                    span,
+                    inferred,
+                    &param_rest.ty,
+                    &Type::Tuple(Tuple {
+                        span,
+                        elems: vec![TupleElement {
+                            span,
+                            label: None,
+                            ty: box arg.clone(),
+                            tracker: Default::default(),
+                        }],
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .freezed(),
+                    InferTypeOpts {
+                        is_inferring_rest_type: true,
+                        append_type_as_union: true,
+                        ..opts
+                    },
+                );
             }
 
             Type::Ref(param) => match arg {
@@ -994,21 +1019,18 @@ impl Analyzer<'_, '_> {
                 // },
                 _ => {
                     // TODO(kdy1): Expand children first or add expansion information to inferred.
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ignore_expand_prevention_for_all: false,
-                        ..self.ctx
-                    };
                     if cfg!(debug_assertions) {
                         debug!("infer_type: expanding param");
                     }
-                    let mut param = self.with_ctx(ctx).expand(
+                    let mut param = self.expand(
                         span,
                         Type::Ref(param.clone()),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )?;
@@ -1181,21 +1203,16 @@ impl Analyzer<'_, '_> {
             }) => return Ok(()),
             Type::Keyword(..) => {}
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ignore_expand_prevention_for_all: false,
-                    preserve_params: true,
-                    ..self.ctx
-                };
                 let arg = self
-                    .with_ctx(ctx)
                     .expand(
                         span,
                         arg.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )?
@@ -1321,21 +1338,15 @@ impl Analyzer<'_, '_> {
     ) -> VResult<bool> {
         match arg.normalize() {
             Type::Ref(arg) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    preserve_params: true,
-                    ..self.ctx
-                };
-
                 let arg = self
-                    .with_ctx(ctx)
                     .expand(
                         arg.span,
                         Type::Ref(arg.clone()),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
                             ..Default::default()
                         },
                     )?
@@ -2027,20 +2038,72 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Tuple,
+        param_ty: &Type,
         arg: &Tuple,
+        arg_ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        for item in param
-            .elems
-            .iter()
-            .map(|element| &element.ty)
-            .zip_longest(arg.elems.iter().map(|element| &element.ty))
-        {
-            match item {
-                EitherOrBoth::Both(param, arg) => self.infer_type(span, inferred, param, arg, opts)?,
-                EitherOrBoth::Left(_) => {}
-                EitherOrBoth::Right(_) => {}
-            }
+        let _tracing = if cfg!(debug_assertions) {
+            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple").entered())
+        } else {
+            None
+        };
+
+        let len = param.elems.len().max(arg.elems.len());
+
+        for index in 0..len {
+            let l_elem_type = self.access_property(
+                span,
+                param_ty,
+                &Key::Num(RNumber {
+                    span,
+                    value: index as _,
+                    raw: None,
+                }),
+                TypeOfMode::RValue,
+                IdCtx::Type,
+                AccessPropertyOpts {
+                    do_not_validate_type_of_computed_prop: true,
+                    disallow_indexing_array_with_string: true,
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    disallow_indexing_class_with_computed: true,
+                    use_undefined_for_tuple_index_error: true,
+                    return_rest_tuple_element_as_is: true,
+                    ..Default::default()
+                },
+            )?;
+
+            let r_elem_type = self.access_property(
+                span,
+                arg_ty,
+                &Key::Num(RNumber {
+                    span,
+                    value: index as _,
+                    raw: None,
+                }),
+                TypeOfMode::RValue,
+                IdCtx::Type,
+                AccessPropertyOpts {
+                    do_not_validate_type_of_computed_prop: true,
+                    disallow_indexing_array_with_string: true,
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    disallow_indexing_class_with_computed: true,
+                    use_undefined_for_tuple_index_error: true,
+                    return_rest_tuple_element_as_is: true,
+                    ..Default::default()
+                },
+            )?;
+
+            self.infer_type(
+                span,
+                inferred,
+                &l_elem_type,
+                &r_elem_type,
+                InferTypeOpts {
+                    append_type_as_union: true,
+                    ..opts
+                },
+            )?;
         }
 
         Ok(())

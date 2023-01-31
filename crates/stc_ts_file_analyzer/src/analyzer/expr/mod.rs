@@ -442,7 +442,7 @@ impl Analyzer<'_, '_> {
 
                     let ctx = Ctx {
                         in_assign_rhs: true,
-                        cannot_be_tuple,
+                        array_lit_cannot_be_tuple: cannot_be_tuple,
                         ..analyzer.ctx
                     };
                     let mut analyzer = analyzer.with_ctx(ctx);
@@ -530,6 +530,9 @@ pub(crate) struct AccessPropertyOpts {
     pub disallow_creating_indexed_type_from_ty_els: bool,
 
     pub disallow_indexing_class_with_computed: bool,
+
+    /// If true, [Type::Rest] is returned as is.
+    pub return_rest_tuple_element_as_is: bool,
 
     /// Note: If it's in l-value context, `access_property` will return
     /// undefined even if this field is `false`.
@@ -1045,7 +1048,7 @@ impl Analyzer<'_, '_> {
             let obj = dump_type_as_string(obj);
             // let prop_ty = dump_type_as_string( &prop.ty());
 
-            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj).entered())
+            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = tracing::field::debug(&prop)).entered())
         } else {
             None
         };
@@ -1475,16 +1478,13 @@ impl Analyzer<'_, '_> {
 
                         if let Some(super_class) = self.scope.get_super_class() {
                             let super_class = super_class.clone();
-                            let ctx = Ctx {
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..self.ctx
-                            };
-                            let super_class = self.with_ctx(ctx).expand(
+                            let super_class = self.expand(
                                 span,
                                 super_class,
                                 ExpandOpts {
                                     full: true,
+                                    preserve_ref: false,
+                                    ignore_expand_prevention_for_top: true,
                                     expand_union: true,
                                     ..Default::default()
                                 },
@@ -1505,17 +1505,14 @@ impl Analyzer<'_, '_> {
 
                     if let Some(super_class) = self.scope.get_super_class() {
                         let super_class = super_class.clone();
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..self.ctx
-                        };
-                        let super_class = self.with_ctx(ctx).expand(
+                        let super_class = self.expand(
                             span,
                             super_class,
                             ExpandOpts {
                                 full: true,
                                 expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
                                 ..Default::default()
                             },
                         )?;
@@ -1579,17 +1576,14 @@ impl Analyzer<'_, '_> {
 
                     if let Some(super_class) = self.scope.get_super_class() {
                         let super_class = super_class.clone();
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..self.ctx
-                        };
-                        let super_class = self.with_ctx(ctx).expand(
+                        let super_class = self.expand(
                             *span,
                             super_class,
                             ExpandOpts {
                                 full: true,
                                 expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
                                 ..Default::default()
                             },
                         )?;
@@ -1637,13 +1631,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_top: true,
-            ignore_expand_prevention_for_all: false,
-            preserve_params: true,
-            ..self.ctx
-        };
         let mut obj = match obj.normalize() {
             Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
                 Some(span),
@@ -1659,7 +1646,16 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             obj.freeze();
         }
-        let mut obj = self.with_ctx(ctx).expand(span, obj.into_owned(), Default::default())?;
+        let mut obj = self.expand(
+            span,
+            obj.into_owned(),
+            ExpandOpts {
+                preserve_ref: false,
+                ignore_expand_prevention_for_top: true,
+                ignore_expand_prevention_for_all: false,
+                ..Default::default()
+            },
+        )?;
         if !self.is_builtin {
             obj.freeze();
         }
@@ -2251,7 +2247,6 @@ impl Analyzer<'_, '_> {
                     };
 
                 return self
-                    .with_ctx(ctx)
                     .access_property(
                         span,
                         &array_ty,
@@ -2522,26 +2517,65 @@ impl Analyzer<'_, '_> {
                             .into());
                         }
 
-                        if (v as usize) + 1 >= elems.len() {
-                            if let Some(elem) = elems.last() {
+                        let mut val = v as usize;
+                        let mut sum = 0;
+                        for elem in elems {
+                            if let Some(count) = self.calculate_tuple_element_count(span, &elem.ty)? {
+                                sum += count;
+                                if val < count {
+                                    return Ok(*elem.ty.clone());
+                                }
+
+                                val -= count;
+                            } else {
                                 if let Type::Rest(rest_ty) = elem.ty.normalize() {
-                                    if let Ok(ty) = self.access_property(
-                                        span,
-                                        &rest_ty.ty,
-                                        &Key::Num(RNumber {
-                                            span: n.span,
-                                            value: (v + 1i64 - (elems.len() as i64)) as _,
-                                            raw: None,
-                                        }),
-                                        type_mode,
-                                        id_ctx,
-                                        opts,
-                                    ) {
+                                    if opts.return_rest_tuple_element_as_is {
+                                        return Ok(*elem.ty.clone());
+                                    }
+
+                                    let inner_result = self
+                                        .access_property(
+                                            span,
+                                            &rest_ty.ty,
+                                            &Key::Num(RNumber {
+                                                span: n.span,
+                                                value: (v as usize - sum) as _,
+                                                raw: None,
+                                            }),
+                                            type_mode,
+                                            id_ctx,
+                                            AccessPropertyOpts {
+                                                use_undefined_for_tuple_index_error: false,
+                                                ..opts
+                                            },
+                                        )
+                                        .or_else(|err| match &*err {
+                                            ErrorKind::TupleIndexError { .. } => self.access_property(
+                                                span,
+                                                &rest_ty.ty,
+                                                &Key::Num(RNumber {
+                                                    span: n.span,
+                                                    value: sum as _,
+                                                    raw: None,
+                                                }),
+                                                type_mode,
+                                                id_ctx,
+                                                AccessPropertyOpts {
+                                                    use_undefined_for_tuple_index_error: false,
+                                                    ..opts
+                                                },
+                                            ),
+                                            _ => Err(err),
+                                        });
+                                    // dbg!(&inner_result);
+                                    if let Ok(ty) = inner_result {
                                         return Ok(ty);
                                     }
 
                                     // debug_assert!(rest_ty.ty.is_clone_cheap());
                                     return Ok(*rest_ty.ty.clone());
+                                } else {
+                                    unreachable!()
                                 }
                             }
                         }
@@ -4190,16 +4224,13 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(Ref { span, .. }) => {
-                let ctx = Ctx {
-                    ignore_expand_prevention_for_top: true,
-                    preserve_ref: false,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand(
+                let ty = self.expand(
                     *span,
                     ty.clone(),
                     ExpandOpts {
                         full: true,
+                        ignore_expand_prevention_for_top: true,
+                        preserve_ref: false,
                         expand_union: true,
                         ..Default::default()
                     },

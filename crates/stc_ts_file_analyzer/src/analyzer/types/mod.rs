@@ -110,7 +110,6 @@ impl Analyzer<'_, '_> {
             | Type::Interface(..)
             | Type::Class(..)
             | Type::ClassDef(..)
-            | Type::Tuple(..)
             | Type::Function(..)
             | Type::Constructor(..)
             | Type::EnumVariant(..)
@@ -734,6 +733,8 @@ impl Analyzer<'_, '_> {
                     Type::Operator(_) => {
                         // TODO(kdy1):
                     }
+
+                    Type::Tuple(tuple) => {}
 
                     Type::Tpl(tpl) => {
                         if tpl.quasis.len() == 2
