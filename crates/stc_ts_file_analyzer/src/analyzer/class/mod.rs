@@ -1820,7 +1820,7 @@ impl Analyzer<'_, '_> {
                                         let ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                         let mut ty = try_opt!(ty.validate_with(&mut *child.with_ctx(ctx)));
                                         if ty.is_none() {
-                                            ty = Some(right.validate_with_default(child)?.generalize_lit());
+                                            ty = Some(right.validate_with_default(&mut *child.with_ctx(ctx))?.generalize_lit());
                                         }
                                         (i, ty)
                                     }
