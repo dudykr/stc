@@ -1909,6 +1909,15 @@ impl Analyzer<'_, '_> {
                 return Ok(vec![candidate]);
             }
 
+            Type::Function(f) => {
+                let candidate = CallCandidate {
+                    type_params: f.type_params.clone().map(|v| v.params),
+                    params: f.params.clone(),
+                    ret_ty: Type::any(span, Default::default()),
+                };
+                return Ok(vec![candidate]);
+            }
+
             // Type::Union(ty) => {
             //     // TODO(kdy1): We should select best one based on the argument type and count.
             //     let mut types = ty
