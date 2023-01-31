@@ -3279,7 +3279,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to get type of a name with len == 1"),
 
             _ => {
-                let last_id = name.last().unwrap();
+                let last_sym = name.last().clone();
 
                 let obj = self
                     .type_of_name(span, &name[..name.len() - 1], type_mode, type_args)
@@ -3291,7 +3291,7 @@ impl Analyzer<'_, '_> {
                         &obj,
                         &Key::Normal {
                             span: id.span,
-                            sym: last_id.sym().clone(),
+                            sym: last_sym,
                         },
                         type_mode,
                         IdCtx::Var,

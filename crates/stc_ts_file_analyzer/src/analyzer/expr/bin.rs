@@ -531,7 +531,7 @@ impl Analyzer<'_, '_> {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let mut orig_ty = self.type_of_name(span, name.inner(), TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_name(span, &name, TypeOfMode::RValue, None)?;
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
                             self.storage.report(
                                 ErrorKind::InvalidLhsInInstanceOf {
@@ -1091,7 +1091,7 @@ impl Analyzer<'_, '_> {
         }) {
             // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
             if t != TypeFacts::EQUndefined {
-                for idx in 1..name.inner().len() {
+                for idx in 1..name.len() {
                     let sub = Name::from(&name.inner()[..idx]);
 
                     self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);

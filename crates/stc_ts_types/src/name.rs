@@ -44,6 +44,10 @@ impl Name {
     pub fn inner(&self) -> (&Id, &[JsWord]) {
         (&self.0, &self.1)
     }
+
+    pub fn last(&self) -> &JsWord {
+        self.1.last().unwrap_or_else(|| self.0.sym())
+    }
 }
 
 impl Debug for Name {
