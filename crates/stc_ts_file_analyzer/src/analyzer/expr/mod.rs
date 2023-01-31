@@ -1543,7 +1543,7 @@ impl Analyzer<'_, '_> {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
-                            stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
+                            ClassMember::Method(member @ Method { is_static: true, .. }) => {
                                 if member.key.type_eq(prop) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
@@ -1556,7 +1556,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            stc_ts_types::ClassMember::Property(property) => {
+                            ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
@@ -2836,8 +2836,10 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
                     if self.ctx.in_computed_prop_name {
-                        self.storage
-                            .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
+                        if !self.ctx.in_class_member {
+                            self.storage
+                                .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
+                        }
                         // Return any to prevent other errors
                         return Ok(Type::any(span, Default::default()));
                     }
@@ -3262,13 +3264,14 @@ impl Analyzer<'_, '_> {
     pub(super) fn type_of_name(
         &mut self,
         span: Span,
-        name: &[Id],
+        name: &Name,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         assert!(!name.is_empty(), "Cannot determine type of empty name");
 
-        let mut id: RIdent = name[0].clone().into();
+        let (top, symbols) = name.inner();
+        let mut id: RIdent = top.clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
@@ -3278,19 +3281,25 @@ impl Analyzer<'_, '_> {
                 .context("tried to get type of a name with len == 1"),
 
             _ => {
-                let last_id = name.last().unwrap();
+                let ctx = Ctx {
+                    in_opt_chain: true,
+                    ..self.ctx
+                };
+
+                let last_sym = name.last().clone();
 
                 let obj = self
-                    .type_of_name(span, &name[..name.len() - 1], type_mode, type_args)
+                    .type_of_name(span, &name.slice_to(name.len() - 1), type_mode, type_args)
                     .context("tried to get type of &names[..-1]")?;
 
                 let ty = self
+                    .with_ctx(ctx)
                     .access_property(
                         span,
                         &obj,
                         &Key::Normal {
                             span: id.span,
-                            sym: last_id.sym().clone(),
+                            sym: last_sym,
                         },
                         type_mode,
                         IdCtx::Var,
@@ -4013,8 +4022,8 @@ impl Analyzer<'_, '_> {
 
         if let TypeOfMode::RValue = type_mode {
             if let Some(name) = &name {
-                if let Some(ty) = self.scope.get_type_from_name(name) {
-                    debug_assert_ne!(ty.span(), DUMMY_SP);
+                if let Some(mut ty) = self.scope.get_type_from_name(name) {
+                    ty.respan(span);
                     return Ok(ty);
                 }
             }

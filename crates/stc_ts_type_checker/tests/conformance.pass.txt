@@ -228,6 +228,7 @@ classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers3.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers4.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers5.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers7.ts
+classes/members/privateNames/privateNameAccessorsCallExpression.ts
 classes/members/privateNames/privateNameAmbientNoImplicitAny.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
 classes/members/privateNames/privateNameClassExpressionLoop.ts
@@ -240,6 +241,7 @@ classes/members/privateNames/privateNameDeclarationMerging.ts
 classes/members/privateNames/privateNameField.ts
 classes/members/privateNames/privateNameFieldAccess.ts
 classes/members/privateNames/privateNameFieldAssignment.ts
+classes/members/privateNames/privateNameFieldCallExpression.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
 classes/members/privateNames/privateNameFieldUnaryMutation.ts
@@ -247,11 +249,13 @@ classes/members/privateNames/privateNameFieldsESNext.ts
 classes/members/privateNames/privateNameInLhsReceiverExpression.ts
 classes/members/privateNames/privateNameLateSuper.ts
 classes/members/privateNames/privateNameLateSuperUseDefineForClassFields.ts
+classes/members/privateNames/privateNameMethodCallExpression.ts
 classes/members/privateNames/privateNameMethodInStaticFieldInit.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
 classes/members/privateNames/privateNameNotAccessibleOutsideDefiningClass.ts
 classes/members/privateNames/privateNameSetterExprReturnValue.ts
 classes/members/privateNames/privateNameStaticAccessorsAccess.ts
+classes/members/privateNames/privateNameStaticAccessorsCallExpression.ts
 classes/members/privateNames/privateNameStaticAndStaticInitializer.ts
 classes/members/privateNames/privateNameStaticFieldAccess.ts
 classes/members/privateNames/privateNameStaticFieldAssignment.ts
@@ -563,6 +567,8 @@ es6/computedProperties/computedPropertyNames20_ES5.ts
 es6/computedProperties/computedPropertyNames20_ES6.ts
 es6/computedProperties/computedPropertyNames21_ES5.ts
 es6/computedProperties/computedPropertyNames21_ES6.ts
+es6/computedProperties/computedPropertyNames22_ES5.ts
+es6/computedProperties/computedPropertyNames22_ES6.ts
 es6/computedProperties/computedPropertyNames23_ES5.ts
 es6/computedProperties/computedPropertyNames23_ES6.ts
 es6/computedProperties/computedPropertyNames24_ES5.ts
@@ -575,6 +581,8 @@ es6/computedProperties/computedPropertyNames27_ES5.ts
 es6/computedProperties/computedPropertyNames27_ES6.ts
 es6/computedProperties/computedPropertyNames28_ES5.ts
 es6/computedProperties/computedPropertyNames28_ES6.ts
+es6/computedProperties/computedPropertyNames29_ES5.ts
+es6/computedProperties/computedPropertyNames29_ES6.ts
 es6/computedProperties/computedPropertyNames2_ES5.ts
 es6/computedProperties/computedPropertyNames2_ES6.ts
 es6/computedProperties/computedPropertyNames30_ES5.ts
