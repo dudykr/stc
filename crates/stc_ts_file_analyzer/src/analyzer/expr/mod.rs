@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
+    debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind, Errors,
 };
 use stc_ts_generics::ExpandGenericOpts;
@@ -3779,7 +3779,6 @@ impl Analyzer<'_, '_> {
             }
 
             if !self.ctx.disallow_suggesting_property_on_no_var && self.get_property_type_from_this(span, &i.clone().into()).is_some() {
-                print_backtrace();
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),

@@ -29,11 +29,34 @@ impl Analyzer<'_, '_> {
         if self.scope.is_this_ref_to_class() {
             for (_, m) in self.scope.class_members() {
                 match m {
-                    ClassMember::Method(Method { key, is_static: false, .. }) => {
-                        if let Key::Normal { sym, .. } = key {
-                            if *p.sym() == *sym {
-                                // TODO: Use function type
-                                return Some(Type::any(
+                    ClassMember::Method(Method {
+                        key: Key::Normal { sym, .. },
+                        is_static: false,
+                        ..
+                    }) => {
+                        if *p.sym() == *sym {
+                            // TODO: Use function type
+                            return Some(Type::any(
+                                span,
+                                KeywordTypeMetadata {
+                                    common: CommonTypeMetadata {
+                                        implicit: true,
+                                        ..Default::default()
+                                    },
+                                    ..Default::default()
+                                },
+                            ));
+                        }
+                    }
+                    ClassMember::Property(ClassProperty {
+                        key: Key::Normal { sym, .. },
+                        is_static: false,
+                        value,
+                        ..
+                    }) => {
+                        if *p.sym() == *sym {
+                            return Some(value.clone().map(|v| *v).unwrap_or_else(|| {
+                                Type::any(
                                     span,
                                     KeywordTypeMetadata {
                                         common: CommonTypeMetadata {
@@ -42,31 +65,8 @@ impl Analyzer<'_, '_> {
                                         },
                                         ..Default::default()
                                     },
-                                ));
-                            }
-                        }
-                    }
-                    ClassMember::Property(ClassProperty {
-                        key,
-                        is_static: false,
-                        value,
-                        ..
-                    }) => {
-                        if let Key::Normal { sym, .. } = key {
-                            if *p.sym() == *sym {
-                                return Some(value.clone().map(|v| *v).unwrap_or_else(|| {
-                                    Type::any(
-                                        span,
-                                        KeywordTypeMetadata {
-                                            common: CommonTypeMetadata {
-                                                implicit: true,
-                                                ..Default::default()
-                                            },
-                                            ..Default::default()
-                                        },
-                                    )
-                                }));
-                            }
+                                )
+                            }));
                         }
                     }
                     _ => {}
