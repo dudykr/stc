@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
                         });
                     }
                 }
-                match (*param.ty).normalize() {
+                match param.ty.normalize() {
                     ty @ Type::Union(..) => {
                         temp_els.push(TupleElement {
                             span: param.span,
