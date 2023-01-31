@@ -3693,6 +3693,12 @@ impl Analyzer<'_, '_> {
             return Ok(Type::any(span, Default::default()));
         }
 
+        if self.ctx.use_properties_of_this_implicitly {
+            if let Some(ty) = self.get_property_type_from_this(span, &i.clone().into()) {
+                return Ok(ty);
+            }
+        }
+
         if let Ok(Some(types)) = self.find_type(&i.into()) {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
@@ -3772,7 +3778,7 @@ impl Analyzer<'_, '_> {
                 unreachable!("no such variable for builtin")
             }
 
-            if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
+            if !self.ctx.disallow_suggesting_property_on_no_var && self.get_property_type_from_this(span, &i.clone().into()).is_some() {
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),

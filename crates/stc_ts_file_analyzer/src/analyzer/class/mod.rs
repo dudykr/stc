@@ -22,7 +22,7 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 use self::type_param::StaticTypeParamValidator;
-use super::expr::AccessPropertyOpts;
+use super::{expr::AccessPropertyOpts, pat::PatMode};
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -338,6 +338,7 @@ impl Analyzer<'_, '_> {
                     let p: FnParam = {
                         let ctx = Ctx {
                             in_constructor_param: true,
+                            pat_mode: PatMode::Decl,
                             ..child.ctx
                         };
 
@@ -1812,10 +1813,14 @@ impl Analyzer<'_, '_> {
                                         right,
                                         ..
                                     }) => {
+                                        let ctx = Ctx {
+                                            use_properties_of_this_implicitly: true,
+                                            ..child.ctx
+                                        };
                                         let ty = type_ann.clone().or_else(|| i.type_ann.clone());
-                                        let mut ty = try_opt!(ty.validate_with(child));
+                                        let mut ty = try_opt!(ty.validate_with(&mut *child.with_ctx(ctx)));
                                         if ty.is_none() {
-                                            ty = Some(right.validate_with_default(child)?.generalize_lit());
+                                            ty = Some(right.validate_with_default(&mut *child.with_ctx(ctx))?.generalize_lit());
                                         }
                                         (i, ty)
                                     }
