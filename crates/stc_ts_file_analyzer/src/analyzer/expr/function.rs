@@ -217,9 +217,9 @@ impl Analyzer<'_, '_> {
             for (idx, param) in params.enumerate() {
                 if temp_els.len() == 1 {
                     if let Some(TupleElement { ty: box ty, .. }) = temp_els.first_mut() {
-                        if let Some(Type::Union(Union { types, .. })) = ty.as_union_type_mut() {
+                        if let Some(Union { types, .. }) = ty.as_union_type_mut() {
                             for ty in types {
-                                if let Some(Type::Tuple(Tuple { elems, .. })) = ty.as_tuple_mut() {
+                                if let Some(Tuple { elems, .. }) = ty.as_tuple_mut() {
                                     if idx < elems.len() {
                                         elems[idx].label = Some(param.clone());
                                     }
