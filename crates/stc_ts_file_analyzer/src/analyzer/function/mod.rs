@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
 
             let type_params = try_opt!(f.type_params.validate_with(child));
 
-            let mut params = {
+            let params = {
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
                     in_fn_without_body: f.body.is_none(),
@@ -96,16 +96,6 @@ impl Analyzer<'_, '_> {
                 };
                 f.params.validate_with(&mut *child.with_ctx(ctx))?
             };
-
-            if !child.is_builtin {
-                params = params
-                    .into_iter()
-                    .map(|param: FnParam| -> VResult<_> {
-                        let ty = box child.expand(param.span, *param.ty, Default::default())?;
-                        Ok(FnParam { ty, ..param })
-                    })
-                    .collect::<Result<_, _>>()?;
-            }
 
             let mut declared_ret_ty = {
                 let ctx = Ctx {
