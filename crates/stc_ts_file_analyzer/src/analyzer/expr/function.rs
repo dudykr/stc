@@ -220,7 +220,7 @@ impl Analyzer<'_, '_> {
                         if let Type::Union(Union { types, .. }) = ty.normalize_mut() {
                             for ty in types {
                                 if let Type::Tuple(Tuple { elems, .. }) = ty.normalize_mut() {
-                                    if elems.len() < idx + 2 {
+                                    if idx < elems.len() {
                                         elems[idx].label = Some(param.clone());
                                     }
                                 }
