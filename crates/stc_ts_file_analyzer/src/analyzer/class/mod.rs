@@ -1533,6 +1533,7 @@ impl Analyzer<'_, '_> {
 
         // Scope is required because of type parameters.
         let c = self.with_child(ScopeKind::Class, Default::default(), |child: &mut Analyzer| -> VResult<_> {
+            child.ctx.in_class = true;
             child.ctx.super_references_super_class = true;
             child.ctx.in_class_with_super = c.super_class.is_some();
 

@@ -83,6 +83,8 @@ pub(crate) struct Ctx {
 
     is_dts: bool,
 
+    in_class: bool,
+
     in_const_assertion: bool,
 
     in_constructor_param: bool,
@@ -457,6 +459,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 is_dts,
+                in_class: false,
                 in_const_assertion: false,
                 in_constructor_param: false,
                 disallow_unknown_object_property: false,
