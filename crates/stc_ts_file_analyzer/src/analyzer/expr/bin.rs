@@ -1836,7 +1836,7 @@ impl Analyzer<'_, '_> {
 
         let prop = Key::Normal {
             span,
-            sym: ids[ids.len() - 1].sym().clone(),
+            sym: name.last().clone(),
         };
 
         let ty = self.type_of_name(span, &name.inner()[..name.len() - 1], TypeOfMode::RValue, None)?;
