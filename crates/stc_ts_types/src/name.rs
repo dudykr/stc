@@ -3,7 +3,6 @@ use std::{
     fmt::{self, Debug, Formatter},
 };
 
-use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::{
     RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RThisExpr, RTsEntityName,
     RTsThisType, RTsThisTypeOrIdent,
@@ -22,12 +21,12 @@ impl Name {
         Self(Id::new(name, ctxt), vec![])
     }
 
-    pub fn get_ctxt(&self) -> SyntaxContext {
-        *self.0.ctxt()
+    pub const fn get_ctxt(&self) -> SyntaxContext {
+        self.0.ctxt()
     }
 
     pub fn push(&mut self, sym: JsWord) {
-        self.1.push(Id::word(sym))
+        self.1.push(sym)
     }
 
     pub fn top(&self) -> Id {
@@ -36,22 +35,21 @@ impl Name {
 
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.1.len() + 1
     }
 
-    pub fn as_ids(&self) -> &[Id] {
-        &self.0
+    pub fn as_ids(&self) -> (&Id, &[JsWord]) {
+        (&self.0, &self.1)
     }
 }
 
 impl Debug for Name {
     #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        for (last, s) in self.0.iter().identify_last() {
-            write!(f, "{}", s)?;
-            if !last {
-                write!(f, ".")?;
-            }
+        write!(f, "{}", self.0)?;
+
+        for s in self.1.iter() {
+            write!(f, ".{}", s)?;
         }
 
         Ok(())
