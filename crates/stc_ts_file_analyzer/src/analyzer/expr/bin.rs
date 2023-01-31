@@ -532,10 +532,8 @@ impl Analyzer<'_, '_> {
             }
 
             op!("instanceof") => {
-                dbg!("instanceof");
                 if !self.is_builtin {
                     if let Ok(name) = Name::try_from(&**left) {
-                        dbg!(&name);
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
@@ -556,7 +554,6 @@ impl Analyzer<'_, '_> {
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
                         for len in 1..=name.len() {
-                            dbg!(name.slice_to(len));
                             *self.cur_facts.true_facts.facts.entry(name.slice_to(len)).or_default() |=
                                 TypeFacts::NENull & TypeFacts::NEUndefined & TypeFacts::NEUndefinedOrNull;
                         }
@@ -608,8 +605,6 @@ impl Analyzer<'_, '_> {
                                 self.cur_facts.false_facts.excludes.entry(name).or_default().push(filtered_ty);
                             }
                         }
-                    } else {
-                        dbg!(&**left);
                     }
                 }
             }
