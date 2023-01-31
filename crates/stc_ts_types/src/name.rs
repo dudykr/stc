@@ -8,7 +8,7 @@ use stc_ts_ast_rnode::{
     RTsThisType, RTsThisTypeOrIdent,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{iter::IdentifyLast, SyntaxContext};
+use swc_common::SyntaxContext;
 
 use crate::Id;
 
@@ -73,14 +73,14 @@ impl From<RIdent> for Name {
 impl From<&'_ Id> for Name {
     #[inline]
     fn from(v: &Id) -> Name {
-        Name(smallvec![v.clone()])
+        Self::from(v.clone())
     }
 }
 
 impl From<Id> for Name {
     #[inline]
     fn from(v: Id) -> Name {
-        Name(smallvec![v])
+        Name(v, vec![])
     }
 }
 
@@ -88,7 +88,7 @@ impl From<RThisExpr> for Name {
     #[inline]
     fn from(this: RThisExpr) -> Name {
         let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
-        Name(smallvec![this])
+        this.into()
     }
 }
 
@@ -96,59 +96,38 @@ impl From<RTsThisType> for Name {
     #[inline]
     fn from(this: RTsThisType) -> Name {
         let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
-        Name(smallvec![this])
-    }
-}
-
-impl From<&'_ [Id]> for Name {
-    #[inline]
-    fn from(v: &[Id]) -> Name {
-        v.to_vec().into()
-    }
-}
-
-impl From<Vec<Id>> for Name {
-    #[inline]
-    fn from(v: Vec<Id>) -> Name {
-        Name(v.into())
+        this.into()
     }
 }
 
 impl From<RTsEntityName> for Name {
     fn from(n: RTsEntityName) -> Self {
-        fn expand(buf: &mut Inner, n: RTsEntityName) {
-            match n {
-                RTsEntityName::Ident(i) => buf.push(Id::from(i)),
-
-                RTsEntityName::TsQualifiedName(box q) => {
-                    expand(buf, q.left);
-                    buf.push(Id::word(q.right.sym));
-                }
-            }
-        }
-
-        let mut buf = Inner::default();
-        expand(&mut buf, n);
-        Self(buf)
+        Self::from(&n)
     }
 }
 
 impl From<&'_ RTsEntityName> for Name {
     fn from(n: &RTsEntityName) -> Self {
-        fn expand(buf: &mut Inner, n: &RTsEntityName) {
+        fn expand(buf: &mut Vec<JsWord>, n: &RTsEntityName) -> Id {
             match n {
-                RTsEntityName::Ident(i) => buf.push(i.into()),
+                RTsEntityName::Ident(i) => {
+                    buf.push(i.sym.clone());
+                    Id::from(i)
+                }
 
                 RTsEntityName::TsQualifiedName(box q) => {
-                    expand(buf, &q.left);
-                    buf.push(q.right.clone().into());
+                    let top = expand(buf, &q.left);
+                    buf.push(q.right.sym.clone());
+
+                    top
                 }
             }
         }
 
-        let mut buf = Inner::default();
-        expand(&mut buf, n);
-        Self(buf)
+        let mut buf = Default::default();
+
+        let top = expand(&mut buf, n);
+        Self(top, buf)
     }
 }
 
@@ -191,12 +170,12 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
     fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
         let mut name: Name = (&*e.obj).try_into()?;
 
-        name.0.push(match &e.prop {
-            RMemberProp::Ident(i) => i.clone().into(),
+        name.1.push(match &e.prop {
+            RMemberProp::Ident(i) => i.sym.clone(),
             RMemberProp::Computed(RComputedPropName {
                 expr: box RExpr::Lit(RLit::Str(s)),
                 ..
-            }) => Id::word(s.value.clone()),
+            }) => s.value.clone(),
             _ => return Err(()),
         });
 
