@@ -6,7 +6,7 @@
    `----
 
 Error: 
-  > <T>(a: (t: T) => <T>(t: T) => T) => T
+  > <T>(a: (t: T) => (t: T) => T) => T
 
   x Type
    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/nested-closure/union-in-closure-param.ts:6:1]
