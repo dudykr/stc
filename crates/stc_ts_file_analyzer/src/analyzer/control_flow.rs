@@ -1314,7 +1314,7 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        let (top, symbols) = name.as_ids();
+        let (top, symbols) = name.inner();
         let mut id: RIdent = top.clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;

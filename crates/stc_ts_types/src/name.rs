@@ -33,12 +33,15 @@ impl Name {
         self.0.clone()
     }
 
-    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.1.len() + 1
     }
 
-    pub fn as_ids(&self) -> (&Id, &[JsWord]) {
+    pub const fn is_empty(&self) -> bool {
+        false
+    }
+
+    pub fn inner(&self) -> (&Id, &[JsWord]) {
         (&self.0, &self.1)
     }
 }

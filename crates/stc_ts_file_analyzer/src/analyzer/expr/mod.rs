@@ -3262,13 +3262,14 @@ impl Analyzer<'_, '_> {
     pub(super) fn type_of_name(
         &mut self,
         span: Span,
-        name: &[Id],
+        name: &Name,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         assert!(!name.is_empty(), "Cannot determine type of empty name");
 
-        let mut id: RIdent = name[0].clone().into();
+        let (top, symbols) = name.inner();
+        let mut id: RIdent = top.clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 

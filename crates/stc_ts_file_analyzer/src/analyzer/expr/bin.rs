@@ -531,7 +531,7 @@ impl Analyzer<'_, '_> {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let mut orig_ty = self.type_of_name(span, name.as_ids(), TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_name(span, name.inner(), TypeOfMode::RValue, None)?;
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
                             self.storage.report(
                                 ErrorKind::InvalidLhsInInstanceOf {
@@ -1091,8 +1091,8 @@ impl Analyzer<'_, '_> {
         }) {
             // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
             if t != TypeFacts::EQUndefined {
-                for idx in 1..name.as_ids().len() {
-                    let sub = Name::from(&name.as_ids()[..idx]);
+                for idx in 1..name.inner().len() {
+                    let sub = Name::from(&name.inner()[..idx]);
 
                     self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
                 }
@@ -1813,7 +1813,7 @@ impl Analyzer<'_, '_> {
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
         let span = equals_to.span();
 
-        let mut id: RIdent = name.as_ids()[0].clone().into();
+        let mut id: RIdent = name.inner()[0].clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
@@ -1832,14 +1832,14 @@ impl Analyzer<'_, '_> {
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 
-        let ids = name.as_ids();
+        let ids = name.inner();
 
         let prop = Key::Normal {
             span,
             sym: ids[ids.len() - 1].sym().clone(),
         };
 
-        let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
+        let ty = self.type_of_name(span, &name.inner()[..name.len() - 1], TypeOfMode::RValue, None)?;
 
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
@@ -1879,7 +1879,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            let actual = Name::from(&name.as_ids()[..name.len() - 1]);
+            let actual = Name::from(&name.inner()[..name.len() - 1]);
 
             if has_undefined && candidates.is_empty() {
                 return Ok((
