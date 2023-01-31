@@ -13,15 +13,13 @@ use swc_common::{iter::IdentifyLast, SyntaxContext};
 
 use crate::Id;
 
-type Inner = SmallVec<[Id; 4]>;
-
 /// Efficient alternative for names with variable length like `foo.bar.baz.qux`.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Name(Inner);
+pub struct Name(Id, Vec<JsWord>);
 
 impl Name {
     pub fn new(name: JsWord, ctxt: SyntaxContext) -> Self {
-        Self(smallvec![Id::new(name, ctxt)])
+        Self(Id::new(name, ctxt), vec![])
     }
 
     pub fn get_ctxt(&self) -> SyntaxContext {
