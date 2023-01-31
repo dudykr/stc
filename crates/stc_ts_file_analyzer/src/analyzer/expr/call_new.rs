@@ -574,15 +574,6 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span, Default::default()));
                 }
 
-                Type::This(..) => {
-                    if self.ctx.in_computed_prop_name {
-                        self.storage
-                            .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
-                        // Return any to prevent other errors
-                        return Ok(Type::any(span, Default::default()));
-                    }
-                }
-
                 Type::Array(obj) => {
                     if let Key::Computed(key) = prop {
                         if let Type::Symbol(key_ty) = key.ty.normalize() {
