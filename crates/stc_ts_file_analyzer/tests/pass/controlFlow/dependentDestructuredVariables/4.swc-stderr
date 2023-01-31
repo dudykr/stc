@@ -1,0 +1,87 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:6:3]
+ 6 | if (kind === "a") {
+   :     ^^^^
+   `----
+
+Error: 
+  > ("a" | "b")
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:6:3]
+ 6 | if (kind === "a") {
+   :     ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:7:5]
+ 7 | payload.toFixed(); // error
+   : ^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:7:5]
+ 7 | payload.toFixed(); // error
+   : ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:9:3]
+ 9 | if (kind === "b") {
+   :     ^^^^
+   `----
+
+Error: 
+  > ("a" | "b")
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:9:3]
+ 9 | if (kind === "b") {
+   :     ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:10:5]
+ 10 | payload.toUpperCase(); // error
+    : ^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:10:5]
+ 10 | payload.toUpperCase(); // error
+    : ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:5:1]
+  5 | ,-> const f60: Func = (kind, payload) => {
+  6 | |     if (kind === "a") {
+  7 | |       payload.toFixed(); // error
+  8 | |     }
+  9 | |     if (kind === "b") {
+ 10 | |       payload.toUpperCase(); // error
+ 11 | |     }
+ 12 | `-> };
+    `----
+
+Error: 
+  > (kind: ("a" | "b"), payload: (number | string)) => void
