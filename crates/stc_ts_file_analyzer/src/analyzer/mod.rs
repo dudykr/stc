@@ -83,6 +83,8 @@ pub(crate) struct Ctx {
 
     is_dts: bool,
 
+    /// `true` for the **body** of class members. This is false for class keys
+    /// of a non-nested class declaration.
     in_class_member: bool,
 
     in_const_assertion: bool,
