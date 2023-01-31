@@ -48,6 +48,12 @@ impl Name {
     pub fn last(&self) -> &JsWord {
         self.1.last().unwrap_or_else(|| self.0.sym())
     }
+
+    pub fn slice_to(&self, end: usize) -> Name {
+        let mut v = self.1.clone();
+        v.truncate(end - 1);
+        Name(self.0.clone(), v)
+    }
 }
 
 impl Debug for Name {

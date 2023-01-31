@@ -1092,7 +1092,7 @@ impl Analyzer<'_, '_> {
             // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
             if t != TypeFacts::EQUndefined {
                 for idx in 1..name.len() {
-                    let sub = Name::from(&name.inner()[..idx]);
+                    let sub = name.slice_to(idx);
 
                     self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
                 }
