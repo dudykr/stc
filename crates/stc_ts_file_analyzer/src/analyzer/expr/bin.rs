@@ -1813,7 +1813,7 @@ impl Analyzer<'_, '_> {
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
         let span = equals_to.span();
 
-        let mut id: RIdent = name.top().clone().into();
+        let mut id: RIdent = name.top().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
