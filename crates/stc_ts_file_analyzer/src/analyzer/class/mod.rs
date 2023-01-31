@@ -351,6 +351,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(body) = &c.body {
+                    child.ctx.in_class_member = true;
                     child
                         .visit_stmts_for_return(c.span, false, false, &body.stmts)
                         .report(&mut child.storage);
@@ -685,6 +686,7 @@ impl Analyzer<'_, '_> {
                 let is_async = c.function.is_async;
                 let is_generator = c.function.is_generator;
 
+                child.ctx.in_class_member = true;
                 let inferred_ret_ty = match c
                     .function
                     .body
