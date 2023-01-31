@@ -2461,7 +2461,6 @@ dependencies = [
  "rustc-hash",
  "scoped-tls",
  "serde",
- "smallvec",
  "static_assertions",
  "stc_arc_cow",
  "stc_ts_ast_rnode",

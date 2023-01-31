@@ -1314,8 +1314,8 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        let ids = name.as_ids();
-        let mut id: RIdent = ids[0].clone().into();
+        let (top, symbols) = name.inner();
+        let mut id: RIdent = top.clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
@@ -1331,7 +1331,7 @@ impl Analyzer<'_, '_> {
         )?;
 
         if let Type::Union(u) = obj.normalize() {
-            if ids.len() == 2 {
+            if name.len() == 2 {
                 let mut new_obj_types = vec![];
 
                 for obj in &u.types {
@@ -1340,7 +1340,7 @@ impl Analyzer<'_, '_> {
                         obj,
                         &Key::Normal {
                             span: ty.span(),
-                            sym: ids[1].sym().clone(),
+                            sym: symbols[0].clone(),
                         },
                         TypeOfMode::RValue,
                         IdCtx::Var,
@@ -1358,7 +1358,7 @@ impl Analyzer<'_, '_> {
                 let mut ty = Type::union(new_obj_types);
                 ty.fix();
 
-                return Ok(Some((Name::from(ids[0].clone()), ty)));
+                return Ok(Some((Name::from(top.clone()), ty)));
             }
         }
 

@@ -23,7 +23,6 @@ rnode = {path = "../rnode"}
 rustc-hash = "1.1.0"
 scoped-tls = "1.0.0"
 serde = {version = "1.0.147", features = ["derive", "rc"]}
-smallvec = "1.6.0"
 static_assertions = "1.1.0"
 stc_arc_cow = {path = "../stc_arc_cow"}
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
