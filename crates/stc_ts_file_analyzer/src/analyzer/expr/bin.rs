@@ -553,6 +553,10 @@ impl Analyzer<'_, '_> {
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
+                        // `o` cannot be null in the following code
+                        // if (o?.baz instanceof Error) {
+                        //     o.baz;
+                        // }
                         for len in 1..=name.len() {
                             *self.cur_facts.true_facts.facts.entry(name.slice_to(len)).or_default() |=
                                 TypeFacts::NENull & TypeFacts::NEUndefined & TypeFacts::NEUndefinedOrNull;
