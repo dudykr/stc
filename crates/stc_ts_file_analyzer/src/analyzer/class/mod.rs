@@ -791,29 +791,35 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RClassMember, object_type: Option<&Type>) -> VResult<Option<ClassMember>> {
-        Ok(match m {
-            RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
-            RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
-            RClassMember::Empty(..) => None,
-            RClassMember::StaticBlock(m) => {
-                m.validate_with(self)?;
-                None
-            }
-
-            RClassMember::Constructor(v) => {
-                if self.is_builtin {
-                    Some(v.validate_with_default(self).map(From::from)?)
-                } else {
-                    unreachable!("constructors should be handled by class handler")
+        let ctx = Ctx {
+            in_class_member: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|this| {
+            Ok(match m {
+                RClassMember::PrivateMethod(m) => Some(m.validate_with(this).map(From::from)?),
+                RClassMember::PrivateProp(m) => Some(m.validate_with(this).map(From::from)?),
+                RClassMember::Empty(..) => None,
+                RClassMember::StaticBlock(m) => {
+                    m.validate_with(this)?;
+                    None
                 }
-            }
-            RClassMember::Method(method) => {
-                let v = method.validate_with_args(self, object_type)?;
 
-                Some(v)
-            }
-            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
-            RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
+                RClassMember::Constructor(v) => {
+                    if this.is_builtin {
+                        Some(v.validate_with_default(this).map(From::from)?)
+                    } else {
+                        unreachable!("constructors should be handled by class handler")
+                    }
+                }
+                RClassMember::Method(method) => {
+                    let v = method.validate_with_args(this, object_type)?;
+
+                    Some(v)
+                }
+                RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(this, object_type)?)),
+                RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(this)?)),
+            })
         })
     }
 }
@@ -1533,7 +1539,6 @@ impl Analyzer<'_, '_> {
 
         // Scope is required because of type parameters.
         let c = self.with_child(ScopeKind::Class, Default::default(), |child: &mut Analyzer| -> VResult<_> {
-            child.ctx.in_class = true;
             child.ctx.super_references_super_class = true;
             child.ctx.in_class_with_super = c.super_class.is_some();
 

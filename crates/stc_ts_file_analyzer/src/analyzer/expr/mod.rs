@@ -2836,7 +2836,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
                     if self.ctx.in_computed_prop_name {
-                        if !self.ctx.in_class {
+                        if !self.ctx.in_class_member {
                             self.storage
                                 .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
                         }
