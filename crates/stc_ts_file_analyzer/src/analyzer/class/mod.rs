@@ -1813,8 +1813,12 @@ impl Analyzer<'_, '_> {
                                         right,
                                         ..
                                     }) => {
+                                        let ctx = Ctx {
+                                            use_properties_of_this_implicitly: true,
+                                            ..child.ctx
+                                        };
                                         let ty = type_ann.clone().or_else(|| i.type_ann.clone());
-                                        let mut ty = try_opt!(ty.validate_with(child));
+                                        let mut ty = try_opt!(ty.validate_with(&mut *child.with_ctx(ctx)));
                                         if ty.is_none() {
                                             ty = Some(right.validate_with_default(child)?.generalize_lit());
                                         }
