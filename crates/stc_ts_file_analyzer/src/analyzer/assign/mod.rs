@@ -540,7 +540,6 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             })
-            | Type::Interface(..)
             | Type::Tpl(..) => {
                 let ty = self
                     .normalize(

@@ -107,6 +107,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Lit(..)
             | Type::TypeLit(..)
+            | Type::Interface(..)
             | Type::Class(..)
             | Type::ClassDef(..)
             | Type::Function(..)
@@ -114,7 +115,6 @@ impl Analyzer<'_, '_> {
             | Type::EnumVariant(..)
             | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
-
             _ => {}
         }
 
