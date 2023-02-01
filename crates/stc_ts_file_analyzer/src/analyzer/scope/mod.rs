@@ -14,19 +14,19 @@ use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
+    name::Name, type_id::DestructureId, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType,
+    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement,
+    TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, panic_ctx, stack,
+    stack,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -54,7 +54,7 @@ use crate::{
 
 mod this;
 mod type_param;
-mod vars;
+pub(crate) mod vars;
 
 macro_rules! no_ref {
     ($t:expr) => {{
@@ -70,6 +70,7 @@ pub(crate) struct Scope<'a> {
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
     pub declaring: Vec<Id>,
+    pub declaring_parameters: Vec<Id>,
 
     pub declared_return_type: Option<Type>,
 
@@ -120,6 +121,9 @@ pub(crate) struct Scope<'a> {
 
     /// All states related to validation of a class.
     pub(super) class: ClassState,
+
+    /// Save All destructure state
+    pub(super) destructure_vars: FxHashMap<DestructureId, Type>,
 }
 
 impl Scope<'_> {
@@ -179,12 +183,23 @@ impl Scope<'_> {
     }
 
     pub fn is_declaring(&self, id: &Id) -> bool {
-        if self.declaring.contains(id) {
+        if self.declaring.contains(id) || self.declaring_parameters.contains(id) {
             return true;
         }
 
         match self.parent {
             Some(s) => s.is_declaring(id),
+            None => false,
+        }
+    }
+
+    pub fn can_access_declaring_regardless_of_context(&self, id: &Id) -> bool {
+        if self.declaring_parameters.contains(id) {
+            return true;
+        }
+
+        match self.parent {
+            Some(s) => s.can_access_declaring_regardless_of_context(id),
             None => false,
         }
     }
@@ -354,6 +369,7 @@ impl Scope<'_> {
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
+            declaring_parameters: self.declaring_parameters,
             declared_return_type: self.declared_return_type,
             declaring_type_params: self.declaring_type_params,
             vars: self.vars,
@@ -372,6 +388,7 @@ impl Scope<'_> {
             type_params: self.type_params,
             cur_module_name: self.cur_module_name,
             class: self.class,
+            destructure_vars: self.destructure_vars,
         }
     }
 
@@ -555,7 +572,7 @@ impl Scope<'_> {
                         prev_i.types.push(ty);
                         prev_i.fix();
 
-                        prev.make_clone_cheap();
+                        prev.freeze();
                     }
                 }
                 Entry::Vacant(e) => {
@@ -583,7 +600,7 @@ impl Scope<'_> {
                     i.types.push(ty);
 
                     prev.fix();
-                    prev.make_clone_cheap();
+                    prev.freeze();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
                     *prev = Type::Intersection(Intersection {
@@ -684,7 +701,6 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&ty)));
         let orig = dump_type_as_string(&ty);
 
         let mut v = Expander {
@@ -722,26 +738,18 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let ctx = Ctx {
-            preserve_ref: false,
-            ignore_expand_prevention_for_top: true,
-            ignore_expand_prevention_for_all: false,
-            preserve_params: true,
-            preserve_ret_ty: true,
-            ..self.ctx
-        };
         let ty = ALLOW_DEEP_CLONE.set(&(), || ty.into_owned());
-        self.with_ctx(ctx)
-            .expand(
-                span,
-                ty,
-                ExpandOpts {
-                    full: true,
-                    expand_union: true,
-                    ..opts
-                },
-            )
-            .map(Cow::Owned)
+        self.expand(
+            span,
+            ty,
+            ExpandOpts {
+                full: true,
+                expand_union: true,
+                ignore_expand_prevention_for_top: true,
+                ..opts
+            },
+        )
+        .map(Cow::Owned)
     }
 
     /// This should be called after calling `register_type`.
@@ -809,11 +817,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.is_builtin {
+        if self.is_builtin || self.ctx.is_dts {
             let ty = ty.freezed();
 
-            self.storage
-                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
+            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty.clone(), false);
+
+            if !self.is_builtin {
+                self.storage.export_type(ty.span(), self.ctx.module_id, name.clone());
+            }
+
             self.scope.register_type(name, ty.clone(), false);
 
             ty
@@ -859,23 +871,6 @@ impl Analyzer<'_, '_> {
 
             ty
         }
-    }
-
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
-    }
-
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars_with_ty(
-        &mut self,
-        kind: VarKind,
-        pat: &RPat,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
-    ) -> VResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
@@ -931,6 +926,10 @@ impl Analyzer<'_, '_> {
 
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
+        if cfg!(debug_assertions) {
+            debug!("({}) Analyzer.find_var(`{}`)", self.scope.depth(), name);
+        }
+
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
             ty: Some(Type::any(DUMMY_SP, Default::default())),
             actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
@@ -1038,7 +1037,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     ty.fix();
-                    ty.make_clone_cheap();
+                    ty.freeze();
                 }
 
                 return Some(Cow::Owned(ty));
@@ -1112,8 +1111,6 @@ impl Analyzer<'_, '_> {
             })
         });
 
-        let _panic = panic_ctx!(format!("find_local_type({})", name));
-
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
                 // TODO(kdy1): Maybe change this to special variant.
@@ -1122,7 +1119,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(debug_assertions) {
-            debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+            debug!("({}) Scope.find_type(`{}`)", self.scope.depth(), name);
         }
 
         let mut src = vec![];
@@ -1192,6 +1189,51 @@ impl Analyzer<'_, '_> {
         }))
     }
 
+    pub fn get_destructor_unique_key(&self) -> DestructureId {
+        let mut id = self.destructure_count.get();
+        self.destructure_count.set(id.next_id());
+        id
+    }
+
+    pub fn declare_destructor(&mut self, span: Span, ty: &Type, key: DestructureId) -> VResult<bool> {
+        let marks = self.marks();
+        let span = span.with_ctxt(SyntaxContext::empty());
+
+        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+        if let Ok(ty) = ty {
+            let ty = ty.into_owned();
+            ty.assert_valid();
+            debug!(
+                "[({})/vars/destructor]: Declaring {:?} as {}",
+                self.scope.depth(),
+                key,
+                dump_type_as_string(&ty)
+            );
+            self.scope.destructure_vars.insert(key, ty.freezed());
+            Ok(true)
+        } else {
+            debug!("[({})/vars/destructor]: Declaring {:?} without type", self.scope.depth(), key);
+            Ok(false)
+        }
+    }
+
+    pub fn find_destructor(&self, key: DestructureId) -> Option<Cow<Type>> {
+        let mut scope = Some(&self.scope);
+        while let Some(s) = scope {
+            if let Some(v) = s.destructure_vars.get(&key) {
+                v.assert_clone_cheap();
+
+                if cfg!(debug_assertions) {
+                    debug!("Scope.find_var_type({:?}): Handled from facts", key);
+                }
+                return Some(Cow::Borrowed(v));
+            }
+            scope = s.parent;
+        }
+
+        None
+    }
+
     /// If `allow_multiple` is true and `is_override` is false, the value type
     /// is updated only if it's temporary type (like `typeof foo` while
     /// validating `foo`).
@@ -1205,11 +1247,9 @@ impl Analyzer<'_, '_> {
         initialized: bool,
         allow_multiple: bool,
         is_override: bool,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
-
-        let _ctx = ctx!(format!("declare_var: {:?}", name));
 
         if let Some(ty) = &ty {
             ty.assert_valid();
@@ -1265,7 +1305,7 @@ impl Analyzer<'_, '_> {
             spans.push((kind, span));
 
             if err {
-                let mut done = false;
+                let mut reported_error = false;
                 for (_, span) in &**spans {
                     if matches!(kind, VarKind::Param | VarKind::Class) {
                         self.storage.report(
@@ -1275,7 +1315,7 @@ impl Analyzer<'_, '_> {
                             }
                             .into(),
                         );
-                        done = true;
+                        reported_error = true;
                     } else {
                         self.storage.report(
                             ErrorKind::DuplicateVar {
@@ -1287,8 +1327,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if done {
-                    return Ok(());
+                if reported_error {
+                    return Ok(None);
                 }
             }
         }
@@ -1393,8 +1433,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !self.is_builtin && is_override {
-                    v.ty = ty;
-                    return Ok(());
+                    v.ty = ty.clone();
+                    return Ok(ty);
                 }
 
                 if !self.data.known_wrong_overloads.contains(&name) {
@@ -1413,7 +1453,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                v.ty = if let Some(ty) = ty {
+                v.ty = if let Some(ty) = ty.clone() {
                     Some(if let Some(var_ty) = v.ty {
                         match ty.normalize() {
                             Type::Union(..) => {
@@ -1457,9 +1497,9 @@ impl Analyzer<'_, '_> {
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
-                                            v.ty = Some(var_ty);
+                                            v.ty = Some(var_ty.clone());
                                             restore!();
-                                            return Ok(());
+                                            return Ok(Some(var_ty));
 
                                             // TODO(kdy1):
                                             //  return Err(ErrorKind::
@@ -1525,7 +1565,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(())
+        Ok(ty)
     }
 
     /// Returns [Err] if overload is wrong.
@@ -1569,7 +1609,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
                 pat,
@@ -1579,6 +1619,7 @@ impl Analyzer<'_, '_> {
                 DeclareVarsOpts {
                     kind,
                     use_iterator_for_array: true,
+                    ..Default::default()
                 },
             ),
 
@@ -1722,6 +1763,7 @@ impl<'a> Scope<'a> {
             parent,
             kind,
             declaring: Default::default(),
+            declaring_parameters: Default::default(),
             declared_return_type: None,
             declaring_type_params: Default::default(),
             vars: Default::default(),
@@ -1740,6 +1782,7 @@ impl<'a> Scope<'a> {
             type_params: Default::default(),
             cur_module_name: None,
             class: Default::default(),
+            destructure_vars: parent.map(|p| p.destructure_vars.clone()).unwrap_or_default(),
         }
     }
 
@@ -1794,6 +1837,26 @@ pub(crate) struct ExpandOpts {
     /// TODO(kdy1): Document this.
     pub full: bool,
     pub expand_union: bool,
+
+    pub preserve_ref: bool,
+
+    /// Used before calling `access_property`, which does not accept `Ref` as an
+    /// input.
+    ///
+    ///
+    /// Note: Reference type in top level intersections are treated as
+    /// top-level types.
+    pub ignore_expand_prevention_for_top: bool,
+
+    pub ignore_expand_prevention_for_all: bool,
+
+    /// If true, `expand` and `expand_fully` will expand function
+    /// parameters.
+    pub expand_params: bool,
+
+    /// If true, `expand` and `expand_fully` will expand function
+    /// parameters.
+    pub expand_ret_ty: bool,
 
     pub generic: ExpandGenericOpts,
 }
@@ -1896,7 +1959,11 @@ impl Expander<'_, '_, '_> {
             RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
                     if *class == *i {
-                        return Ok(None);
+                        return Ok(Some(Type::This(ThisType {
+                            span,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })));
                     }
                 }
                 if i.sym == js_word!("void") {
@@ -1965,12 +2032,12 @@ impl Expander<'_, '_, '_> {
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let mut type_params = type_params.clone();
-                                type_params.make_clone_cheap();
+                                type_params.freeze();
 
                                 if let Some(type_params) = type_params {
                                     let mut type_args: Option<_> = type_args.cloned().fold_with(self);
                                     type_args.visit_mut_with(&mut ShallowNormalizer { analyzer: self.analyzer });
-                                    type_args.make_clone_cheap();
+                                    type_args.freeze();
 
                                     if cfg!(debug_assertions) {
                                         info!("expand: expanding type parameters");
@@ -1992,7 +2059,7 @@ impl Expander<'_, '_, '_> {
                                     inferred.types.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
 
-                                        ty.make_clone_cheap();
+                                        ty.freeze();
                                     });
 
                                     let before = dump_type_as_string(&ty);
@@ -2119,7 +2186,7 @@ impl Expander<'_, '_, '_> {
         } = r;
         let span = self.span;
 
-        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
+        if !trying_primitive_expansion && (!self.full || self.opts.preserve_ref) {
             return Ok(None);
         }
 
@@ -2155,7 +2222,7 @@ impl Expander<'_, '_, '_> {
         }
 
         if ty.is_ref_type() {
-            ty.make_clone_cheap();
+            ty.freeze();
         }
 
         let _stack = match stack::track(self.span) {
@@ -2184,9 +2251,7 @@ impl Expander<'_, '_, '_> {
         // We do not expand types specified by user
         if is_expansion_prevented {
             #[allow(clippy::nonminimal_bool)]
-            if !self.analyzer.ctx.ignore_expand_prevention_for_all
-                && !(self.expand_top_level && self.analyzer.ctx.ignore_expand_prevention_for_top)
-            {
+            if !self.opts.ignore_expand_prevention_for_all && !(self.expand_top_level && self.opts.ignore_expand_prevention_for_top) {
                 if let Type::Ref(r) = ty.normalize() {
                     // Expand type arguments if it should be expanded
                     if contains_infer_type(&r.type_args) {
@@ -2467,8 +2532,6 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
-
         self.analyzer.expand_conditional_type(self.span, ty)
     }
 }
@@ -2483,7 +2546,7 @@ impl Fold<ty::Function> for Expander<'_, '_, '_> {
     fn fold(&mut self, mut f: ty::Function) -> ty::Function {
         f.type_params = f.type_params.fold_with(self);
         f.params = f.params.fold_with(self);
-        if self.analyzer.ctx.preserve_ret_ty {
+        if self.opts.expand_ret_ty {
             f.ret_ty = f.ret_ty.fold_with(self);
         }
 
@@ -2499,7 +2562,7 @@ impl Fold<ClassProperty> for Expander<'_, '_, '_> {
 
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params || self.analyzer.is_builtin {
+        if !self.opts.expand_params || self.analyzer.is_builtin {
             return param;
         }
 

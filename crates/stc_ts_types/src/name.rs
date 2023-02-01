@@ -3,49 +3,66 @@ use std::{
     fmt::{self, Debug, Formatter},
 };
 
-use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RTsEntityName,
-    RTsThisTypeOrIdent,
+    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RThisExpr, RTsEntityName,
+    RTsThisType, RTsThisTypeOrIdent,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{iter::IdentifyLast, SyntaxContext};
+use swc_common::SyntaxContext;
 
 use crate::Id;
 
-type Inner = SmallVec<[Id; 4]>;
-
 /// Efficient alternative for names with variable length like `foo.bar.baz.qux`.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Name(Inner);
+pub struct Name(Id, Vec<JsWord>);
 
 impl Name {
+    pub fn new(name: JsWord, ctxt: SyntaxContext) -> Self {
+        Self(Id::new(name, ctxt), vec![])
+    }
+
+    pub const fn get_ctxt(&self) -> SyntaxContext {
+        self.0.ctxt()
+    }
+
     pub fn push(&mut self, sym: JsWord) {
-        self.0.push(Id::word(sym))
+        self.1.push(sym)
     }
 
     pub fn top(&self) -> Id {
-        self.0[0].clone()
+        self.0.clone()
     }
 
-    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.1.len() + 1
     }
 
-    pub fn as_ids(&self) -> &[Id] {
-        &self.0
+    pub const fn is_empty(&self) -> bool {
+        false
+    }
+
+    pub fn inner(&self) -> (&Id, &[JsWord]) {
+        (&self.0, &self.1)
+    }
+
+    pub fn last(&self) -> &JsWord {
+        self.1.last().unwrap_or_else(|| self.0.sym())
+    }
+
+    pub fn slice_to(&self, end: usize) -> Name {
+        let mut v = self.1.clone();
+        v.truncate(end - 1);
+        Name(self.0.clone(), v)
     }
 }
 
 impl Debug for Name {
     #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        for (last, s) in self.0.iter().identify_last() {
-            write!(f, "{}", s)?;
-            if !last {
-                write!(f, ".")?;
-            }
+        write!(f, "{}", self.0)?;
+
+        for s in self.1.iter() {
+            write!(f, ".{}", s)?;
         }
 
         Ok(())
@@ -69,66 +86,61 @@ impl From<RIdent> for Name {
 impl From<&'_ Id> for Name {
     #[inline]
     fn from(v: &Id) -> Name {
-        Name(smallvec![v.clone()])
+        Self::from(v.clone())
     }
 }
 
 impl From<Id> for Name {
     #[inline]
     fn from(v: Id) -> Name {
-        Name(smallvec![v])
+        Name(v, vec![])
     }
 }
 
-impl From<&'_ [Id]> for Name {
+impl From<RThisExpr> for Name {
     #[inline]
-    fn from(v: &[Id]) -> Name {
-        v.to_vec().into()
+    fn from(this: RThisExpr) -> Name {
+        let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+        this.into()
     }
 }
 
-impl From<Vec<Id>> for Name {
+impl From<RTsThisType> for Name {
     #[inline]
-    fn from(v: Vec<Id>) -> Name {
-        Name(v.into())
+    fn from(this: RTsThisType) -> Name {
+        let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+        this.into()
     }
 }
 
 impl From<RTsEntityName> for Name {
     fn from(n: RTsEntityName) -> Self {
-        fn expand(buf: &mut Inner, n: RTsEntityName) {
-            match n {
-                RTsEntityName::Ident(i) => buf.push(Id::from(i)),
-
-                RTsEntityName::TsQualifiedName(box q) => {
-                    expand(buf, q.left);
-                    buf.push(Id::word(q.right.sym));
-                }
-            }
-        }
-
-        let mut buf = Inner::default();
-        expand(&mut buf, n);
-        Self(buf)
+        Self::from(&n)
     }
 }
 
 impl From<&'_ RTsEntityName> for Name {
     fn from(n: &RTsEntityName) -> Self {
-        fn expand(buf: &mut Inner, n: &RTsEntityName) {
+        fn expand(buf: &mut Vec<JsWord>, n: &RTsEntityName) -> Id {
             match n {
-                RTsEntityName::Ident(i) => buf.push(i.into()),
+                RTsEntityName::Ident(i) => {
+                    buf.push(i.sym.clone());
+                    Id::from(i)
+                }
 
                 RTsEntityName::TsQualifiedName(box q) => {
-                    expand(buf, &q.left);
-                    buf.push(q.right.clone().into());
+                    let top = expand(buf, &q.left);
+                    buf.push(q.right.sym.clone());
+
+                    top
                 }
             }
         }
 
-        let mut buf = Inner::default();
-        expand(&mut buf, n);
-        Self(buf)
+        let mut buf = Default::default();
+
+        let top = expand(&mut buf, n);
+        Self(top, buf)
     }
 }
 
@@ -171,12 +183,12 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
     fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
         let mut name: Name = (&*e.obj).try_into()?;
 
-        name.0.push(match &e.prop {
-            RMemberProp::Ident(i) => i.clone().into(),
+        name.1.push(match &e.prop {
+            RMemberProp::Ident(i) => i.sym.clone(),
             RMemberProp::Computed(RComputedPropName {
                 expr: box RExpr::Lit(RLit::Str(s)),
                 ..
-            }) => Id::word(s.value.clone()),
+            }) => s.value.clone(),
             _ => return Err(()),
         });
 

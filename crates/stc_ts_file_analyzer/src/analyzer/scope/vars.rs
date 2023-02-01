@@ -3,9 +3,15 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
-use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeElement, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind,
+};
+use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
+use stc_ts_types::{
+    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement,
+    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -20,6 +26,7 @@ use crate::{
         util::{opt_union, ResultExt},
         Analyzer, Ctx,
     },
+    ty::TypeExt,
     validator::ValidateWith,
     VResult,
 };
@@ -45,6 +52,15 @@ pub(crate) struct DeclareVarsOpts {
     pub use_iterator_for_array: bool,
 }
 
+impl Default for DeclareVarsOpts {
+    fn default() -> Self {
+        Self {
+            kind: VarKind::Var(VarDeclKind::Var),
+            use_iterator_for_array: false,
+        }
+    }
+}
+
 impl Analyzer<'_, '_> {
     /// TODO(kdy1): Rename to declare_vars
     ///
@@ -66,9 +82,7 @@ impl Analyzer<'_, '_> {
         actual: Option<Type>,
         default: Option<Type>,
         opts: DeclareVarsOpts,
-    ) -> VResult<()> {
-        let _ctx = ctx!(format!("add_vars: {:?}", opts));
-
+    ) -> VResult<Option<Type>> {
         if let Some(ty) = &ty {
             ty.assert_valid();
             if !self.is_builtin {
@@ -97,7 +111,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to expand reference to declare a complex variable")?
                     .into_owned();
 
-                ty.make_clone_cheap();
+                ty.freeze();
 
                 return self.add_vars(pat, Some(ty), actual, default, opts);
             }
@@ -126,7 +140,7 @@ impl Analyzer<'_, '_> {
                     (default, ty) => opt_union(span, ty, default),
                 };
 
-                ty.make_clone_cheap();
+                ty.freeze();
 
                 if let Some(ty) = &ty {
                     if let Some(m) = &mut self.mutations {
@@ -146,8 +160,7 @@ impl Analyzer<'_, '_> {
                     // same name
                     opts.kind == VarKind::Var(VarDeclKind::Var),
                     false,
-                )?;
-                Ok(())
+                )
             }
 
             RPat::Assign(p) => {
@@ -158,7 +171,7 @@ impl Analyzer<'_, '_> {
                 };
                 let is_typed = type_ann.is_some();
                 let mut type_ann = type_ann.or(default);
-                type_ann.make_clone_cheap();
+                type_ann.freeze();
 
                 let mut right = p
                     .right
@@ -175,12 +188,12 @@ impl Analyzer<'_, '_> {
                     right = right.fold_with(&mut Widen { tuple_to_array: true });
                 }
 
-                right.make_clone_cheap();
+                right.freeze();
 
-                if let Some(left) = &type_ann {
+                if let Some(type_ann) = &type_ann {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        left,
+                        type_ann,
                         &right,
                         AssignOpts {
                             span: p.right.span(),
@@ -188,6 +201,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
+                    .context("tried to assign a value to a variable with an assignment pattern")
                     .report(&mut self.storage);
                 }
 
@@ -218,46 +232,53 @@ impl Analyzer<'_, '_> {
                     //      const [a , setA] = useState();
                     //
 
-                    let ty = ty.map(|ty| {
-                        self.get_iterator(
-                            span,
-                            Cow::Owned(ty),
-                            GetIteratorOpts {
-                                disallow_str: true,
-                                ..Default::default()
-                            },
-                        )
-                        .context("tried to convert a type to an iterator to assign with an array pattern.")
-                        .unwrap_or_else(|err| {
-                            self.storage.report(err);
-                            Cow::Owned(Type::any(span, Default::default()))
+                    let ty = ty
+                        .map(|ty| {
+                            self.get_iterator(
+                                span,
+                                Cow::Owned(ty),
+                                GetIteratorOpts {
+                                    disallow_str: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .context("tried to convert a type to an iterator to assign with an array pattern.")
+                            .unwrap_or_else(|err| {
+                                self.storage.report(err);
+                                Cow::Owned(Type::any(span, Default::default()))
+                            })
                         })
-                    });
+                        .freezed()
+                        .map(Cow::into_owned);
 
                     let default_ty = default;
-                    let default = default_ty.as_ref().map(|ty| {
-                        self.get_iterator(
-                            span,
-                            Cow::Borrowed(ty),
-                            GetIteratorOpts {
-                                disallow_str: true,
-                                ..Default::default()
-                            },
-                        )
-                        .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
-                        .unwrap_or_else(|err| {
-                            self.storage.report(err);
-                            Cow::Owned(Type::any(span, Default::default()))
+                    let default = default_ty
+                        .as_ref()
+                        .map(|ty| {
+                            self.get_iterator(
+                                span,
+                                Cow::Borrowed(ty),
+                                GetIteratorOpts {
+                                    disallow_str: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
+                            .unwrap_or_else(|err| {
+                                self.storage.report(err);
+                                Cow::Owned(Type::any(span, Default::default()))
+                            })
                         })
-                    });
+                        .freezed()
+                        .map(Cow::into_owned);
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
                             if let RPat::Rest(elem) = elem {
                                 // Rest element is special.
-                                let type_for_rest_arg = match ty {
+                                let type_for_rest_arg = match &ty {
                                     Some(ty) => self
-                                        .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
+                                        .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                         .map(Cow::into_owned)
                                         .report(&mut self.storage),
@@ -275,7 +296,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
-                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                self.add_vars(&elem.arg, type_for_rest_arg, None, default, DeclareVarsOpts { ..opts })
                                     .context("tried to declare left elements to the argument of a rest pattern")
                                     .report(&mut self.storage);
                                 break;
@@ -292,7 +313,7 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     match result {
-                                        Ok(ty) => Ok(ty.into_owned()),
+                                        Ok(ty) => Ok(ty.into_owned().generalize_lit()),
                                         Err(err) => match &*err {
                                             ErrorKind::TupleIndexError { .. } => match elem {
                                                 RPat::Assign(p) => {
@@ -344,6 +365,7 @@ impl Analyzer<'_, '_> {
                                         .ok()
                                 })
                                 .map(Cow::into_owned)
+                                .map(|ty| ty.generalize_lit())
                                 .freezed();
 
                             // TODO(kdy1): actual_ty
@@ -351,16 +373,22 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Ok(())
+                    Ok(ty.or(default_ty))
                 } else {
+                    let mut elems = vec![];
+
+                    let destructure_key = self.get_destructor_unique_key();
+
+                    let mut has_rest = false;
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         match elem {
                             Some(elem) => {
                                 if let RPat::Rest(elem) = elem {
+                                    has_rest = true;
                                     // Rest element is special.
-                                    let type_for_rest_arg = match ty {
+                                    let type_for_rest_arg = match &ty {
                                         Some(ty) => self
-                                            .get_rest_elements(Some(span), Cow::Owned(ty), idx)
+                                            .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                             .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                             .map(Cow::into_owned)
                                             .report(&mut self.storage),
@@ -368,9 +396,9 @@ impl Analyzer<'_, '_> {
                                     }
                                     .freezed();
 
-                                    let default = match default {
+                                    let default = match &default {
                                         Some(ty) => self
-                                            .get_rest_elements(Some(span), Cow::Owned(ty), idx)
+                                            .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                             .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                             .map(Cow::into_owned)
                                             .report(&mut self.storage),
@@ -378,13 +406,29 @@ impl Analyzer<'_, '_> {
                                     }
                                     .freezed();
 
-                                    self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                    let rest_ty = self
+                                        .add_vars(&elem.arg, type_for_rest_arg, None, default, DeclareVarsOpts { ..opts })
                                         .context("tried to declare left elements to the argument of a rest pattern")
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
+                                        .flatten();
+
+                                    elems.push(TupleElement {
+                                        span: elem.span(),
+                                        label: Some(*elem.arg.clone()),
+                                        ty: box Type::Rest(RestType {
+                                            span: elem.span,
+                                            ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                        .freezed(),
+                                        tracker: Default::default(),
+                                    });
+
                                     break;
                                 }
 
-                                let elem_ty = match &ty {
+                                let mut elem_ty = match &ty {
                                     Some(ty) => self
                                         .access_property(
                                             elem.span(),
@@ -398,6 +442,7 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
+                                        .map(|ty| ty.generalize_lit())
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
@@ -418,26 +463,99 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
+                                        .map(|ty| ty.generalize_lit())
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
                                 }
                                 .freezed();
 
+                                if let Some(ty) = &mut elem_ty {
+                                    add_destructure_sign(ty, destructure_key);
+                                }
+
                                 // TODO(kdy1): actual_ty
-                                self.add_vars(elem, elem_ty, None, default, opts).report(&mut self.storage);
+                                let elem_ty = self
+                                    .add_vars(elem, elem_ty, None, default, opts)
+                                    .report(&mut self.storage)
+                                    .flatten();
+
+                                elems.push(TupleElement {
+                                    span: elem.span(),
+                                    label: Some(elem.clone()),
+                                    ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
+                                    tracker: Default::default(),
+                                });
                             }
                             // Skip
                             None => {}
                         }
                     }
 
-                    Ok(())
+                    let save_ty = ty.clone().map(|ty| {
+                        if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
+                            let mut ty = ty.into_owned();
+                            if let Type::Union(Union { types, .. }) = ty.normalize_mut() {
+                                'outer: for member in types.iter_mut() {
+                                    if let Type::Tuple(tuple) = member.normalize_mut() {
+                                        for (idx, (inner, outer)) in tuple.elems.iter_mut().zip(elems.iter()).enumerate() {
+                                            if has_rest && elems.len() - 1 == idx {
+                                                break 'outer;
+                                            }
+                                            inner.label = outer.label.clone();
+                                        }
+                                    }
+                                }
+                            }
+                            return ty;
+                        }
+                        ty
+                    });
+
+                    let mut real_ty = Type::Tuple(Tuple {
+                        span,
+                        elems,
+                        metadata: TupleMetadata {
+                            common: CommonTypeMetadata {
+                                destructure_key,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                        tracker: Default::default(),
+                    });
+
+                    if let Some(ty) = &ty {
+                        if ty.normalize_instance().is_array() {
+                            real_ty = real_ty.fold_with(&mut TupleToArray);
+                            real_ty.fix();
+                        }
+                    }
+
+                    real_ty.freeze();
+
+                    self.regist_destructure(span, save_ty, Some(destructure_key));
+                    Ok(Some(real_ty))
                 }
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = !matches!(ty.as_ref().map(Type::normalize), Some(Type::TypeLit(..)));
+                let normalize_ty = ty.as_ref().map(Type::normalize);
+                let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
+                let destructure_key = self.regist_destructure(span, ty.clone(), None);
+
+                let mut real = Type::TypeLit(TypeLit {
+                    span,
+                    members: vec![],
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            destructure_key,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                    tracker: Default::default(),
+                });
 
                 // TODO(kdy1): Normalize static
                 //
@@ -470,6 +588,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
+                                    .map(|ty| ty.generalize_lit())
                                     .context("tried to access property to declare variables")
                             });
 
@@ -492,13 +611,14 @@ impl Analyzer<'_, '_> {
                                         )
                                         .ok()
                                 })
+                                .map(|ty| ty.generalize_lit())
                                 .freezed();
 
-                            match prop_ty {
+                            let real_property_type = match prop_ty {
                                 Ok(prop_ty) => {
                                     // TODO(kdy1): actual_ty
                                     self.add_vars(&prop.value, prop_ty.freezed(), None, default_prop_ty, opts)
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
                                 }
 
                                 Err(err) => {
@@ -514,9 +634,27 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     self.add_vars(&prop.value, None, None, default_prop_ty, opts)
-                                        .report(&mut self.storage);
+                                        .report(&mut self.storage)
                                 }
                             }
+                            .flatten()
+                            .map(|v| box v);
+
+                            real = self.append_type_element(
+                                real,
+                                TypeElement::Property(PropertySignature {
+                                    span,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key,
+                                    optional: true,
+                                    params: Vec::new(),
+                                    type_ann: real_property_type,
+                                    type_params: None,
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }),
+                            )?;
                         }
                         RObjectPatProp::Assign(prop) => {
                             let key = Key::Normal {
@@ -524,13 +662,14 @@ impl Analyzer<'_, '_> {
                                 sym: prop.key.sym.clone(),
                             };
                             used_keys.push(key.clone());
+                            let optional = default.is_some() || prop.value.is_some();
 
                             let ctx = Ctx {
                                 disallow_unknown_object_property: true,
                                 ..self.ctx
                             };
 
-                            let mut prop_ty = ty.as_ref().try_map(|ty| {
+                            let prop_ty = ty.as_ref().try_map(|ty| {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
@@ -545,10 +684,11 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
+                                    .map(|ty| ty.generalize_lit())
                                     .context("tried to access property to declare variables")
                             });
 
-                            let default_prop_ty = default
+                            let mut default_prop_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
                                     self.with_ctx(ctx)
@@ -567,57 +707,52 @@ impl Analyzer<'_, '_> {
                                         )
                                         .ok()
                                 })
+                                .map(|ty| ty.generalize_lit())
                                 .freezed();
 
-                            if prop.value.is_some() {
-                                prop_ty = prop_ty.map(|ty| {
-                                    // Optional
-                                    ty.map(|ty| {
-                                        Type::new_union(
-                                            span,
-                                            vec![
-                                                ty,
-                                                Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                            ],
-                                        )
-                                    })
-                                });
-                            }
+                            let real_property_type = match prop_ty {
+                                Ok(mut prop_ty) => {
+                                    if let Some(ty) = &mut prop_ty {
+                                        add_destructure_sign(ty, destructure_key);
+                                    }
 
-                            match prop_ty {
-                                Ok(prop_ty) => {
                                     let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
                                         Some(default) => {
-                                            let default_value_type = default
+                                            let mut default_value_type = default
                                                 .validate_with_args(
                                                     self,
                                                     (TypeOfMode::RValue, None, prop_ty.as_ref().or(default_prop_ty.as_ref())),
                                                 )
                                                 .context("tried to validate default value of an assignment pattern")
-                                                .report(&mut self.storage)
-                                                .freezed();
+                                                .report(&mut self.storage);
 
-                                            let default = opt_union(span, default_prop_ty, default_value_type).freezed();
+                                            if self.ctx.is_fn_param && prop_ty.is_none() {
+                                                default_value_type = default_value_type.fold_with(&mut Widen { tuple_to_array: true });
+                                            }
 
-                                            self.add_vars(
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                prop_ty.clone(),
-                                                None,
-                                                default,
-                                                opts,
-                                            )
-                                            .report(&mut self.storage);
+                                            default_value_type.freeze();
+
+                                            let mut default = opt_union(span, default_prop_ty, default_value_type).freezed();
+                                            // TODO(kdy1): Pass default when it's possible.
+                                            if prop_ty.is_some() {
+                                                default = None;
+                                            }
+
+                                            let result = self
+                                                .add_vars(
+                                                    &RPat::Ident(RBindingIdent {
+                                                        node_id: NodeId::invalid(),
+                                                        id: prop.key.clone(),
+                                                        type_ann: None,
+                                                    }),
+                                                    prop_ty.clone(),
+                                                    None,
+                                                    default,
+                                                    opts,
+                                                )
+                                                .report(&mut self.storage);
 
                                             if let Some(prop_ty) = &prop_ty {
                                                 self.try_assign_pat(
@@ -632,6 +767,8 @@ impl Analyzer<'_, '_> {
                                                 .context("tried to assign default values")
                                                 .report(&mut self.storage);
                                             }
+
+                                            result
                                         }
                                         None => {
                                             // TODO(kdy1): actual_ty
@@ -646,7 +783,7 @@ impl Analyzer<'_, '_> {
                                                 default_prop_ty,
                                                 opts,
                                             )
-                                            .report(&mut self.storage);
+                                            .report(&mut self.storage)
                                         }
                                     }
                                 }
@@ -662,6 +799,10 @@ impl Analyzer<'_, '_> {
                                         _ => self.storage.report(err),
                                     }
 
+                                    if let Some(ty) = &mut default_prop_ty {
+                                        add_destructure_sign(ty, destructure_key);
+                                    }
+
                                     self.add_vars(
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
@@ -673,9 +814,25 @@ impl Analyzer<'_, '_> {
                                         default_prop_ty,
                                         opts,
                                     )
-                                    .report(&mut self.storage);
+                                    .report(&mut self.storage)
                                 }
-                            }
+                            };
+
+                            real = self.append_type_element(
+                                real,
+                                TypeElement::Property(PropertySignature {
+                                    span,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key,
+                                    optional,
+                                    params: Vec::new(),
+                                    type_ann: real_property_type.flatten().map(|v| box v),
+                                    type_params: None,
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }),
+                            )?;
                         }
                         RObjectPatProp::Rest(pat) => {
                             if !is_last {
@@ -691,25 +848,33 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             let mut default = default
-                                .and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok())
+                                .as_ref()
+                                .and_then(|ty| self.exclude_props(pat.span(), ty, &used_keys).ok())
                                 .freezed();
 
                             if let Some(ty) = &mut rest_ty {
                                 remove_readonly(ty);
+                                add_destructure_sign(ty, destructure_key);
                             }
 
                             if let Some(ty) = &mut default {
                                 remove_readonly(ty);
                             }
 
-                            return self
+                            let rest = self
                                 .add_vars(&pat.arg, rest_ty, None, default, opts)
-                                .context("tried to assign to an object rest pattern");
+                                .context("tried to assign to an object rest pattern")?;
+
+                            if let Some(rest) = rest {
+                                real.freeze();
+                                real = self.append_type(span, real, rest, Default::default())?;
+                            }
+                            break;
                         }
                     }
                 }
 
-                Ok(())
+                Ok(Some(real))
             }
 
             RPat::Rest(pat) => {
@@ -717,8 +882,9 @@ impl Analyzer<'_, '_> {
                 let actual = actual.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
                 let default = default.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
 
-                self.add_vars(&pat.arg, ty, actual, default, opts)
+                self.add_vars(&pat.arg, ty, actual, default, DeclareVarsOpts { ..opts })
             }
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(None),
 
             _ => {
                 unimplemented!("declare_vars({:#?}, {:#?})", pat, ty)
@@ -739,7 +905,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
-            ty.make_clone_cheap();
+            ty.freeze();
 
             if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
                 return Ok(ty.into_owned());
@@ -858,49 +1024,14 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("exclude_props: {}", dump_type_as_string(&ty))
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("exclude_props: {}", force_dump_type_as_string(&ty)),
+            }
+            .into())
         })()?;
 
         Ok(ty.fixed())
-    }
-
-    /// TODO(kdy1): Remove this. All logics are merged into add_vars.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn declare_vars_inner_with_ty(
-        &mut self,
-        kind: VarKind,
-        pat: &RPat,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
-    ) -> VResult<()> {
-        let marks = self.marks();
-
-        let span = ty
-            .as_ref()
-            .map(|v| v.span())
-            .and_then(|span| if span.is_dummy() { None } else { Some(span) })
-            .unwrap_or_else(|| pat.span());
-        if !self.is_builtin {
-            debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
-        }
-
-        match pat {
-            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
-                pat,
-                ty,
-                actual_ty,
-                default_ty,
-                DeclareVarsOpts {
-                    kind,
-                    use_iterator_for_array: false,
-                },
-            ),
-
-            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(()),
-
-            _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
-        }
     }
 
     fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<Type> {
@@ -926,6 +1057,48 @@ impl Analyzer<'_, '_> {
         })
         .context("tried to ensure iterator")
     }
+
+    pub fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
+        match ty.as_ref().map(Type::normalize) {
+            Some(real @ Type::Union(..)) => {
+                let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
+                let destructure_key = des_key;
+                if let Ok(result) = self.declare_destructor(span, real, des_key) {
+                    if result {
+                        return destructure_key;
+                    }
+                }
+            }
+            Some(Type::Param(TypeParam {
+                constraint: Some(box result),
+                ..
+            })) => {
+                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                }
+            }
+
+            Some(Type::Instance(Instance { ty: box result, .. })) => {
+                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                }
+            }
+
+            Some(Type::Tuple(Tuple { elems, .. })) => {
+                if elems.len() == 1 {
+                    if let Some(TupleElement { ty: box ty, .. }) = elems.first() {
+                        return self.regist_destructure(span, Some(ty.clone()), des_key);
+                    }
+                }
+            }
+
+            Some(Type::Rest(RestType { ty: box ty, .. })) => {
+                return self.regist_destructure(span, Some(ty.clone()), des_key);
+            }
+            _ => {}
+        }
+        DestructureId(0)
+    }
 }
 
 fn remove_readonly(ty: &mut Type) {
@@ -936,6 +1109,11 @@ fn remove_readonly(ty: &mut Type) {
             }
         }
 
-        ty.make_clone_cheap();
+        ty.freeze();
     }
+}
+
+fn add_destructure_sign(ty: &mut Type, key: DestructureId) {
+    ty.metadata_mut().destructure_key = key;
+    ty.freeze();
 }

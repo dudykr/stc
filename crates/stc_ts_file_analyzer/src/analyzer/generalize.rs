@@ -74,7 +74,7 @@ impl Fold<Union> for Simplifier<'_> {
         let should_remove_null_and_undefined = union
             .types
             .iter()
-            .any(|ty| matches!(ty.normalize(), Type::TypeLit(..) | Type::Ref(..) | Type::Function(..)));
+            .any(|ty| matches!(ty.normalize(), Type::Ref(..) | Type::Function(..)));
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {
@@ -691,40 +691,38 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
+                span,
                 obj_type:
                     box Type::Class(Class {
-                        def: box ClassDef { body, .. },
+                        def: box ClassDef { ref body, .. },
                         ..
                     }),
-                index_type: box Type::Union(keys),
+                index_type: box Type::Union(ref keys),
                 ..
             }) if keys.types.iter().all(is_str_lit_or_union) => {
-                let mut new_types = keys
+                let new_types = keys
                     .types
-                    .into_iter()
+                    .iter()
                     .map(|key| match key.normalize() {
                         Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.clone(),
                         _ => unreachable!(),
                     })
                     .map(|key| {
-                        let member = body
-                            .iter()
-                            .find(|member| match member {
-                                ClassMember::Constructor(_) => false,
-                                ClassMember::Method(_) => false,
-                                ClassMember::Property(p) => p.key == key.value,
-                                ClassMember::IndexSignature(_) => false,
-                            })
-                            .unwrap();
+                        let member = body.iter().find(|member| match member {
+                            ClassMember::Constructor(_) => false,
+                            ClassMember::Method(_) => false,
+                            ClassMember::Property(p) => p.key == key.value,
+                            ClassMember::IndexSignature(_) => false,
+                        })?;
 
                         match member {
                             ClassMember::Method(_) => unimplemented!(),
                             ClassMember::Property(p) => {
                                 if let Some(value) = &p.value {
-                                    return *value.clone();
+                                    return Some(*value.clone());
                                 }
 
-                                Type::any(p.span, Default::default())
+                                Some(Type::any(p.span, Default::default()))
                             }
                             ClassMember::Constructor(_) => unreachable!(),
                             ClassMember::IndexSignature(_) => unreachable!(),
@@ -732,9 +730,12 @@ impl Fold<Type> for Simplifier<'_> {
                     })
                     .collect::<Vec<_>>();
 
-                new_types.dedup_type();
+                if new_types.iter().all(|ty| ty.is_some()) {
+                    let mut new_types = new_types.into_iter().map(|ty| ty.unwrap()).collect::<Vec<_>>();
+                    new_types.dedup_type();
 
-                return Type::union(new_types);
+                    return Type::new_union(span, new_types);
+                }
             }
 
             _ => {}

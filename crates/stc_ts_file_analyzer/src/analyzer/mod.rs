@@ -1,7 +1,9 @@
 use std::{
+    cell::Cell,
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
+    rc::Rc,
     sync::Arc,
 };
 
@@ -17,9 +19,9 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{type_id::DestructureId, Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, panic_ctx, AHashMap, AHashSet};
+use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
@@ -81,21 +83,25 @@ pub(crate) struct Ctx {
 
     is_dts: bool,
 
+    /// `true` for the **body** of class members. This is false for class keys
+    /// of a non-nested class declaration.
+    in_class_member: bool,
+
     in_const_assertion: bool,
 
     in_constructor_param: bool,
 
     disallow_unknown_object_property: bool,
 
-    use_undefined_for_empty_tuple: bool,
+    use_undefined_for_empty_array_lit: bool,
 
     allow_module_var: bool,
 
     check_for_implicit_any: bool,
 
     /// If `true`, expression validator will not emit tuple.
-    cannot_be_tuple: bool,
-    prefer_tuple: bool,
+    array_lit_cannot_be_tuple: bool,
+    prefer_tuple_for_array_lit: bool,
 
     in_shorthand: bool,
 
@@ -136,11 +142,11 @@ pub(crate) struct Ctx {
     report_error_for_non_local_vars: bool,
 
     in_static_property_initializer: bool,
+    in_static_block: bool,
     in_static_method: bool,
 
     reevaluating_call_or_new: bool,
     reevaluating_argument: bool,
-    reevaluating_assign_pat_rhs: bool,
 
     /// If true, all errors should be ignored.
     ///
@@ -157,26 +163,6 @@ pub(crate) struct Ctx {
     in_assign_rhs: bool,
 
     in_export_decl: bool,
-
-    preserve_ref: bool,
-
-    /// Used before calling `access_property`, which does not accept `Ref` as an
-    /// input.
-    ///
-    ///
-    /// Note: Reference type in top level intersections are treated as
-    /// top-level types.
-    ignore_expand_prevention_for_top: bool,
-
-    ignore_expand_prevention_for_all: bool,
-
-    /// If true, `expand` and `expand_fully` will not expand function
-    /// parameters.
-    preserve_params: bool,
-
-    /// If true, `expand` and `expand_fully` will not expand function
-    /// parameters.
-    preserve_ret_ty: bool,
 
     skip_identical_while_inference: bool,
 
@@ -211,11 +197,13 @@ pub(crate) struct Ctx {
 
     /// If true, obj of the expression statement is `super` keyword.
     obj_is_super: bool,
+
+    use_properties_of_this_implicitly: bool,
 }
 
 impl Ctx {
     pub fn reevaluating(self) -> bool {
-        self.reevaluating_argument || self.reevaluating_call_or_new || self.reevaluating_assign_pat_rhs
+        self.reevaluating_argument || self.reevaluating_call_or_new
     }
 
     pub fn can_generalize_literals(self) -> bool {
@@ -263,6 +251,8 @@ pub struct Analyzer<'scope, 'b> {
     debugger: Option<Debugger>,
 
     data: AnalyzerData,
+
+    destructure_count: Rc<Cell<DestructureId>>,
 }
 #[derive(Debug, Default)]
 struct AnalyzerData {
@@ -471,14 +461,15 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 is_dts,
+                in_class_member: false,
                 in_const_assertion: false,
                 in_constructor_param: false,
                 disallow_unknown_object_property: false,
-                use_undefined_for_empty_tuple: false,
+                use_undefined_for_empty_array_lit: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,
-                cannot_be_tuple: false,
-                prefer_tuple: false,
+                array_lit_cannot_be_tuple: false,
+                prefer_tuple_for_array_lit: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
                 in_cond: false,
@@ -488,7 +479,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_opt_chain: false,
                 in_declare: is_dts,
                 in_fn_without_body: false,
-                in_global: false,
+                in_global: !is_builtin && is_dts,
                 in_export_default_expr: false,
                 in_async: false,
                 in_generator: false,
@@ -498,10 +489,10 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_actual_type: false,
                 report_error_for_non_local_vars: false,
                 in_static_property_initializer: false,
+                in_static_block: false,
                 in_static_method: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
-                reevaluating_assign_pat_rhs: false,
                 ignore_errors: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
@@ -512,11 +503,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_return_arg: false,
                 in_assign_rhs: false,
                 in_export_decl: false,
-                preserve_ref: false,
-                ignore_expand_prevention_for_top: false,
-                ignore_expand_prevention_for_all: false,
-                preserve_params: true,
-                preserve_ret_ty: true,
                 skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
@@ -529,6 +515,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_module: false,
                 checking_switch_discriminant_as_bin: false,
                 obj_is_super: false,
+                use_properties_of_this_implicitly: false,
             },
             loader,
             is_builtin,
@@ -537,6 +524,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             imports_by_id: Default::default(),
             debugger,
             data,
+            destructure_count: Default::default(),
         }
     }
 
@@ -766,8 +754,6 @@ impl Analyzer<'_, '_> {
 
         let ctxt = self.storage.module_id(0);
         let path = self.storage.path(ctxt);
-
-        let _panic = panic_ctx!(format!("Validate({}, module_id = {:?})", path, ctxt));
 
         let items_ref = m.body.iter().collect::<Vec<_>>();
         self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
@@ -1039,7 +1025,7 @@ impl Analyzer<'_, '_> {
                 Ok(None)
             })?;
 
-        ty.make_clone_cheap();
+        ty.freeze();
 
         if let Some(ty) = &ty {
             match &decl.id {

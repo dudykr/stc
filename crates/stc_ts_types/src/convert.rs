@@ -400,6 +400,7 @@ impl From<TypeParam> for RTsTypeParam {
             // TODO
             is_in: false,
             is_out: false,
+            is_const: false,
         }
     }
 }

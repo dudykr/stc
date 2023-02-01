@@ -43,9 +43,9 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
-        casted_ty.make_clone_cheap();
+        casted_ty.freeze();
         let mut orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
-        orig_ty.make_clone_cheap();
+        orig_ty.freeze();
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
@@ -96,14 +96,14 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        orig_ty.make_clone_cheap();
+        orig_ty.freeze();
 
         let mut casted_ty = make_instance_type(casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
         self.prevent_expansion(&mut casted_ty);
-        casted_ty.make_clone_cheap();
+        casted_ty.freeze();
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty).report(&mut self.storage);
 
@@ -206,6 +206,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
@@ -221,7 +222,7 @@ impl Analyzer<'_, '_> {
     ///
     /// - `l`: from
     /// - `r`: to
-
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type, opts: CastableOpts) -> VResult<bool> {
         let from = self
             .normalize(
@@ -260,7 +261,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if (from.is_str() || from.is_tpl()) && to.is_tpl() {
+        if from.is_kwd(TsKeywordTypeKind::TsStringKeyword) && to.is_tpl() {
             return Ok(true);
         }
 
@@ -404,11 +405,9 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let (Type::Tpl(from), Type::Tpl(to)) = (from.normalize(), to.normalize()) {
-            if self.tpl_lit_type_definitely_unrelated(span, from, to)? {
-                return Ok(false);
-            } else {
-                return Ok(true);
+        if let Type::Tpl(to) = to.normalize() {
+            if let Type::Tpl(from) = from.normalize() {
+                return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
             }
         }
 

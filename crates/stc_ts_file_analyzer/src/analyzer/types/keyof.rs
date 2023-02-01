@@ -2,17 +2,13 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
-use stc_ts_errors::{
-    ctx,
-    debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt,
-};
+use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
     TypeElement, Union,
 };
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
+use stc_utils::{cache::Freeze, ext::TypeVecExt, try_cache};
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -49,8 +45,6 @@ impl Analyzer<'_, '_> {
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(ty)));
-
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
         }
@@ -68,7 +62,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to normalize")?;
 
             if matches!(ty.normalize(), Type::TypeLit(..)) {
-                ty.make_clone_cheap()
+                ty.freeze()
             }
 
             match ty.normalize() {
@@ -230,7 +224,7 @@ impl Analyzer<'_, '_> {
                     for member in &cls.body {
                         match member {
                             ClassMember::Property(ClassProperty { key, .. }) | ClassMember::Method(Method { key, .. }) => {
-                                if !key.is_computed() {
+                                if !key.is_computed() && !key.is_private() {
                                     key_types.push(key.ty().into_owned());
                                 }
                             }
@@ -250,8 +244,6 @@ impl Analyzer<'_, '_> {
                     let mut types = vec![];
 
                     for (idx, elem) in ty.elems.iter().enumerate() {
-                        let _ctx = ctx!("tried to get key of a tuple element");
-
                         let elem_ty = self.normalize(
                             Some(elem.span),
                             Cow::Borrowed(&elem.ty),
@@ -261,7 +253,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?;
                         if let Some(rest) = elem_ty.as_rest() {
-                            types.push(self.keyof(elem.span, &rest.ty)?);
+                            types.push(self.keyof(elem.span, &rest.ty).context("tried to get key of a tuple element")?);
                         } else {
                             types.push(Type::Lit(LitType {
                                 span,
@@ -374,7 +366,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("keyof: {}", force_dump_type_as_string(&ty));
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: format!("keyof: {}", force_dump_type_as_string(&ty)),
+            }
+            .into())
         })()?;
 
         ty.assert_valid();

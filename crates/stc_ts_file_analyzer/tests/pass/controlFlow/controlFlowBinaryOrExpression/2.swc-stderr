@@ -24,7 +24,7 @@ Error:
     `----
 
 Error: 
-  > (sourceObj: any) => sourceObj is HTMLCollection
+  > (sourceObj: any) => sourceObj is I2
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
@@ -35,7 +35,7 @@ Error:
 Error: 
   > ({
   |     a: string;
-  | } | HTMLCollection | NodeList)
+  | } | I2 | I1)
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
@@ -44,7 +44,7 @@ Error:
     `----
 
 Error: 
-  > sourceObj is HTMLCollection
+  > sourceObj is I2
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:18:5]
@@ -53,7 +53,7 @@ Error:
     `----
 
 Error: 
-  > HTMLCollection
+  > I2
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:18:5]

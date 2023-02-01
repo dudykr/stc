@@ -12,9 +12,10 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
-    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
+    Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
+use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -22,6 +23,7 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 use self::type_param::StaticTypeParamValidator;
+use super::{expr::AccessPropertyOpts, pat::PatMode};
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -138,7 +140,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RClassProp) -> VResult<ClassProperty> {
+    fn validate(&mut self, p: &RClassProp, object_type: Option<&Type>) -> VResult<ClassProperty> {
         let marks = self.marks();
 
         if p.is_static {
@@ -153,6 +155,26 @@ impl Analyzer<'_, '_> {
         // Verify key if key is computed
         if let RPropName::Computed(p) = &p.key {
             self.validate_computed_prop_key(p.span, &p.expr).report(&mut self.storage);
+        }
+
+        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
+
+        if let Some(value) = &p.value {
+            if let Some(object_type) = object_type {
+                if let Ok(type_ann) = self.access_property(
+                    p.span,
+                    object_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    AccessPropertyOpts {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        ..Default::default()
+                    },
+                ) {
+                    self.apply_type_ann_to_expr(value, &type_ann)?;
+                }
+            }
         }
 
         let value = self
@@ -177,8 +199,6 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
 
         Ok(ClassProperty {
             span: p.span,
@@ -319,6 +339,7 @@ impl Analyzer<'_, '_> {
                     let p: FnParam = {
                         let ctx = Ctx {
                             in_constructor_param: true,
+                            pat_mode: PatMode::Decl,
                             ..child.ctx
                         };
 
@@ -331,6 +352,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(body) = &c.body {
+                    child.ctx.in_class_member = true;
                     child
                         .visit_stmts_for_return(c.span, false, false, &body.stmts)
                         .report(&mut child.storage);
@@ -478,6 +500,8 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> VResult<_> {
+                child.ctx.in_static_method = c.is_static;
+
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
                     child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
@@ -560,10 +584,26 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassMethod) -> VResult<ClassMember> {
+    fn validate(&mut self, c: &RClassMethod, object_type: Option<&Type>) -> VResult<ClassMember> {
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
+
+        if let Some(object_type) = object_type {
+            if let Ok(type_ann) = self.access_property(
+                c.span,
+                object_type,
+                &key,
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            ) {
+                self.apply_fn_type_ann(c.span, c.function.params.iter().map(|v| &v.pat), Some(&type_ann));
+            }
+        }
 
         let c_span = c.span();
         let key_span = c.key.span();
@@ -576,6 +616,7 @@ impl Analyzer<'_, '_> {
                 child.ctx.in_async = c.function.is_async;
                 child.ctx.in_generator = c.function.is_generator;
                 child.ctx.in_static_method = c.is_static;
+                child.ctx.is_fn_param = true;
 
                 child.scope.declaring_prop = match &key {
                     Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
@@ -625,7 +666,18 @@ impl Analyzer<'_, '_> {
                     child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
                 }
 
-                let params = c.function.params.validate_with(child)?;
+                let params = {
+                    let prev_len = child.scope.declaring_parameters.len();
+                    let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
+                    child.scope.declaring_parameters.extend(ids);
+
+                    let res = c.function.params.validate_with(child);
+
+                    child.scope.declaring_parameters.truncate(prev_len);
+
+                    res?
+                };
+                child.ctx.is_fn_param = false;
 
                 // c.function.visit_children_with(child);
 
@@ -645,6 +697,7 @@ impl Analyzer<'_, '_> {
                 let is_async = c.function.is_async;
                 let is_generator = c.function.is_generator;
 
+                child.ctx.in_class_member = true;
                 let inferred_ret_ty = match c
                     .function
                     .body
@@ -750,7 +803,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, m: &RClassMember) -> VResult<Option<ClassMember>> {
+    fn validate(&mut self, m: &RClassMember, object_type: Option<&Type>) -> VResult<Option<ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
@@ -768,11 +821,11 @@ impl Analyzer<'_, '_> {
                 }
             }
             RClassMember::Method(method) => {
-                let v = method.validate_with(self)?;
+                let v = method.validate_with_args(self, object_type)?;
 
                 Some(v)
             }
-            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with(self)?)),
+            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
         })
     }
@@ -864,17 +917,22 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                if l.0.eq_ignore_span(r.0) && l.1 == r.1 {
-                    if is_private_props.contains(&i) && is_private_props.contains(&j) {
-                        continue;
-                    }
+                if l.0.eq_ignore_span(r.0) {
+                    if l.1 == r.1 {
+                        if is_private_props.contains(&i) && is_private_props.contains(&j) {
+                            continue;
+                        }
 
-                    // We use different error for duplicate functions
-                    if !is_private_props.contains(&i) && !is_private_props.contains(&j) {
-                        continue;
-                    }
+                        // We use different error for duplicate functions
+                        if !is_private_props.contains(&i) && !is_private_props.contains(&j) {
+                            continue;
+                        }
 
-                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
+                        self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
+                    } else if j < i {
+                        self.storage
+                            .report(ErrorKind::DuplicatePrivateStaticInstance { span: l.0.span() }.into());
+                    }
                 }
             }
         }
@@ -1456,7 +1514,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass) -> VResult<ClassDef> {
+    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ClassDef> {
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -1640,7 +1698,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }
             };
-            super_class.make_clone_cheap();
+            super_class.freeze();
 
             let implements = c.implements.validate_with(child).map(Box::new)?;
 
@@ -1685,24 +1743,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            {
-                // Remove class members with const EnumVariant keys.
-                c.body.iter().for_each(|v| {
-                    if let RClassMember::Method(method) = v {
-                        if let RPropName::Computed(c) = &method.key {
-                            if let Ok(Key::Computed(ComputedKey { ty, .. })) = c.validate_with(child) {
-                                if let Type::EnumVariant(e) = ty.normalize() {
-                                    //
-                                    if let Some(m) = &mut child.mutations {
-                                        m.for_class_members.entry(method.node_id).or_default().remove = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
             // Handle nodes in order described above
             let body = {
                 let mut declared_static_keys = vec![];
@@ -1713,7 +1753,7 @@ impl Analyzer<'_, '_> {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
-                            let m = node.validate_with(child)?;
+                            let m = node.validate_with_args(child, type_ann)?;
                             if let Some(member) = m {
                                 // Check for duplicate property names.
                                 if let Some(key) = member.key() {
@@ -1786,10 +1826,14 @@ impl Analyzer<'_, '_> {
                                         right,
                                         ..
                                     }) => {
+                                        let ctx = Ctx {
+                                            use_properties_of_this_implicitly: true,
+                                            ..child.ctx
+                                        };
                                         let ty = type_ann.clone().or_else(|| i.type_ann.clone());
-                                        let mut ty = try_opt!(ty.validate_with(child));
+                                        let mut ty = try_opt!(ty.validate_with(&mut *child.with_ctx(ctx)));
                                         if ty.is_none() {
-                                            ty = Some(right.validate_with_default(child)?.generalize_lit());
+                                            ty = Some(right.validate_with_default(&mut *child.with_ctx(ctx))?.generalize_lit());
                                         }
                                         (i, ty)
                                     }
@@ -1835,7 +1879,7 @@ impl Analyzer<'_, '_> {
                         RClassMember::ClassProp(RClassProp { is_static: false, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
                             //
-                            let class_member = member.validate_with(child).report(&mut child.storage).flatten();
+                            let class_member = member.validate_with_args(child, type_ann).report(&mut child.storage).flatten();
                             if let Some(member) = class_member {
                                 // Check for duplicate property names.
                                 if let Some(key) = member.key() {
@@ -1897,7 +1941,7 @@ impl Analyzer<'_, '_> {
                 let order = child.calc_eval_order_of_class_methods(remaining, &c.body);
 
                 for index in order {
-                    let ty = c.body[index].validate_with(child)?;
+                    let ty = c.body[index].validate_with_args(child, type_ann)?;
                     if let Some(ty) = ty {
                         child.scope.this_class_members.push((index, ty));
                     }
@@ -1955,9 +1999,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassExpr) -> VResult<()> {
+    fn validate(&mut self, c: &RClassExpr, type_ann: Option<&Type>) -> VResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
-        let ty = match c.class.validate_with(self) {
+        let ty = match c.class.validate_with_args(self, type_ann) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
@@ -1985,7 +2029,7 @@ impl Analyzer<'_, '_> {
                         false,
                         false,
                     ) {
-                        Ok(()) => {}
+                        Ok(..) => {}
                         Err(err) => {
                             analyzer.storage.report(err);
                         }
@@ -2224,7 +2268,7 @@ impl Analyzer<'_, '_> {
         c.ident.visit_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());
-        let ty = match c.class.validate_with(self) {
+        let ty = match c.class.validate_with_args(self, None) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
@@ -2250,7 +2294,7 @@ impl Analyzer<'_, '_> {
             false,
             false,
         ) {
-            Ok(()) => {}
+            Ok(..) => {}
             Err(err) => {
                 self.storage.report(err);
             }
@@ -2264,6 +2308,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, b: &RStaticBlock) {
         self.with_child(ScopeKind::ClassStaticBlock, Default::default(), |analyzer| {
+            analyzer.ctx.in_static_block = true;
+
             b.body.stmts.visit_with(analyzer);
             Ok(())
         })?;

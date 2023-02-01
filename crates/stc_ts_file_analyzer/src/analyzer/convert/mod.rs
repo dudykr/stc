@@ -5,13 +5,13 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat, RObjectPatProp, RPat, RTsArrayType,
     RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType, RTsEntityName, RTsExprWithTypeArgs,
-    RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType, RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody,
-    RTsInterfaceDecl, RTsIntersectionType, RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType,
-    RTsParenthesizedType, RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
-    RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
-    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsGetterSignature, RTsImportType, RTsIndexSignature, RTsIndexedAccessType,
+    RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType, RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature,
+    RTsOptionalType, RTsParenthesizedType, RTsPropertySignature, RTsRestType, RTsSetterSignature, RTsTplLitType, RTsTupleElement,
+    RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl,
+    RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
@@ -22,7 +22,7 @@ use stc_ts_types::{
     TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
+use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
 
             // Resolve constraints
             let mut params = self.expand_type_params(&map, params, Default::default())?;
-            params.make_clone_cheap();
+            params.freeze();
 
             for param in &params {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     child.prevent_expansion(&mut ty);
                 }
-                ty.make_clone_cheap();
+                ty.freeze();
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             };
             child.prevent_expansion(&mut ty.body);
-            ty.body.make_clone_cheap();
+            ty.body.freeze();
 
             child.resolve_parent_interfaces(&d.extends, true);
             child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
@@ -346,12 +346,8 @@ impl Analyzer<'_, '_> {
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
-            RTsTypeElement::TsGetterSignature(_) => {
-                unimplemented!()
-            }
-            RTsTypeElement::TsSetterSignature(_) => {
-                unimplemented!()
-            }
+            RTsTypeElement::TsGetterSignature(d) => TypeElement::Property(d.validate_with(self)?),
+            RTsTypeElement::TsSetterSignature(d) => TypeElement::Property(d.validate_with(self)?),
         })
     }
 }
@@ -493,6 +489,63 @@ impl Analyzer<'_, '_> {
             type_params,
             metadata: Default::default(),
             accessor: Default::default(),
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &RTsGetterSignature) -> VResult<PropertySignature> {
+        let key = self.validate_key(&d.key, d.computed)?;
+        let type_ann = {
+            match d.type_ann.validate_with(self) {
+                Some(v) => match v {
+                    Ok(ty) => Some(box ty),
+                    Err(e) => {
+                        self.storage.report(e);
+                        Some(box Type::any(d.span, Default::default()))
+                    }
+                },
+                None => Some(box Type::any(d.span, Default::default())),
+            }
+        };
+        Ok(PropertySignature {
+            accessibility: None,
+            span: d.span,
+            key,
+            optional: d.optional,
+            params: Default::default(),
+            readonly: d.readonly,
+            type_ann,
+            type_params: Default::default(),
+            metadata: Default::default(),
+            accessor: Accessor {
+                getter: true,
+                setter: false,
+            },
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &RTsSetterSignature) -> VResult<PropertySignature> {
+        let key = self.validate_key(&d.key, d.computed)?;
+        let params = vec![d.param.validate_with(self)?];
+        Ok(PropertySignature {
+            accessibility: None,
+            span: d.span,
+            key,
+            optional: d.optional,
+            params,
+            readonly: d.readonly,
+            type_ann: Default::default(),
+            type_params: Default::default(),
+            metadata: Default::default(),
+            accessor: Accessor {
+                getter: false,
+                setter: true,
+            },
         })
     }
 }
@@ -655,7 +708,7 @@ impl Analyzer<'_, '_> {
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
-            params.make_clone_cheap();
+            params.freeze();
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
@@ -965,8 +1018,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
-        let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
-
         let is_topmost_type = !self.ctx.is_not_topmost_type;
         let ctx = Ctx {
             is_not_topmost_type: true,
@@ -1098,8 +1149,6 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let _ctx = ctx!("report_error_for_duplicate_params");
-
         let mut prev_ids: Vec<RIdent> = vec![];
         for param in params {
             let ids: Vec<RIdent> = find_ids_in_pat(&param.pat);
@@ -1111,14 +1160,14 @@ impl Analyzer<'_, '_> {
                             span: prev.span,
                             name: prev.into(),
                         }
-                        .into(),
+                        .context("report_error_for_duplicate_params"),
                     );
                     self.storage.report(
                         ErrorKind::DuplicateName {
                             span: id.span,
                             name: id.into(),
                         }
-                        .into(),
+                        .context("report_error_for_duplicate_params"),
                     );
                 } else {
                     prev_ids.push(id);

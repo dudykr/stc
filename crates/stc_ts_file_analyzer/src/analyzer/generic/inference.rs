@@ -15,7 +15,7 @@ use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
-    TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::Atom;
@@ -94,6 +94,9 @@ pub(crate) struct InferTypeOpts {
     pub ignore_builtin_object_interface: bool,
 
     pub skip_initial_union_check: bool,
+
+    /// If true, we are inferring a type from [Type::Rest]
+    pub is_inferring_rest_type: bool,
 }
 
 bitflags! {
@@ -836,6 +839,33 @@ impl Analyzer<'_, '_> {
                             .is_ok()
                         {
                             arg.clone()
+                        } else if opts.is_inferring_rest_type
+                            && match e.get().inferred_type.normalize() {
+                                Type::Tuple(tuple) => tuple.elems.len() == 1,
+                                _ => false,
+                            }
+                            && match arg.normalize() {
+                                Type::Tuple(tuple) => tuple.elems.len() == 1,
+                                _ => false,
+                            }
+                        {
+                            // If both are tuples with length is 1, we merge
+                            // them.
+                            let prev = e.get().inferred_type.as_tuple().unwrap().elems[0].ty.clone();
+                            let new = arg.as_tuple().unwrap().elems[0].ty.clone();
+
+                            Type::Tuple(Tuple {
+                                span,
+                                elems: vec![TupleElement {
+                                    span,
+                                    label: None,
+                                    ty: box Type::new_union(span, vec![*prev, *new]),
+                                    tracker: Default::default(),
+                                }],
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                            .freezed()
                         } else {
                             Type::new_union(span, vec![e.get().inferred_type.clone(), arg.clone()].freezed())
                         };
@@ -1345,7 +1375,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            ty.inferred_type.make_clone_cheap();
+            ty.inferred_type.freeze();
 
             map.insert(k, ty.inferred_type);
         }

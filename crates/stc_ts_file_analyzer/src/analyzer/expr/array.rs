@@ -3,7 +3,6 @@ use std::{borrow::Cow, time::Instant};
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit};
 use stc_ts_errors::{
-    ctx,
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
@@ -63,11 +62,11 @@ impl Analyzer<'_, '_> {
         let mut iterator = type_ann
             .as_deref()
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
-        iterator.make_clone_cheap();
+        iterator.freeze();
 
-        let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
+        let prefer_tuple = self.ctx.prefer_tuple_for_array_lit || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
-        let mut can_be_tuple = self.ctx.prefer_tuple || !self.ctx.cannot_be_tuple;
+        let mut can_be_tuple = self.ctx.prefer_tuple_for_array_lit || !self.ctx.array_lit_cannot_be_tuple;
         let mut elements = Vec::with_capacity(elems.len());
 
         for (idx, elem) in elems.iter().enumerate() {
@@ -181,7 +180,7 @@ impl Analyzer<'_, '_> {
                 .collect();
             types.dedup_type();
             if types.is_empty() {
-                types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
+                types.push(if self.ctx.use_undefined_for_empty_array_lit && is_empty {
                     Type::undefined(span, Default::default())
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());
@@ -203,7 +202,7 @@ impl Analyzer<'_, '_> {
             let mut ty = Type::Array(
                 Array {
                     span,
-                    elem_type: box Type::union(types),
+                    elem_type: box Type::new_union(span, types),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }
@@ -218,7 +217,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .all(|el| el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword));
 
-        if should_be_any && !self.ctx.prefer_tuple {
+        if should_be_any && !self.ctx.prefer_tuple_for_array_lit {
             elements.iter_mut().for_each(|el| {
                 let span = el.ty.span().with_ctxt(SyntaxContext::empty());
                 el.ty = box Type::any(
@@ -447,6 +446,7 @@ impl Analyzer<'_, '_> {
                 None,
                 CallOpts {
                     disallow_optional_object_property: true,
+                    do_not_use_any_for_computed_key: true,
                     ..Default::default()
                 },
             )
@@ -543,7 +543,7 @@ impl Analyzer<'_, '_> {
         let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
-            iterator.make_clone_cheap();
+            iterator.freeze();
             let ty = iterator.into_owned().expect_tuple();
 
             // TODO: Handle [Type::Rest]
@@ -619,7 +619,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to normalize type to get iterator")?;
-        ty.make_clone_cheap();
+        ty.freeze();
 
         let res: VResult<_> = (|| {
             if ty.is_str() {
@@ -656,11 +656,11 @@ impl Analyzer<'_, '_> {
                     constraint: Some(constraint),
                     ..
                 }) => {
-                    let _ctx = ctx!("tried to get iterator from type parameter constraint");
                     return self
                         .get_iterator(span, Cow::Borrowed(constraint), opts)
                         .map(Cow::into_owned)
-                        .map(Cow::Owned);
+                        .map(Cow::Owned)
+                        .context("tried to get iterator from type parameter constraint");
                 }
                 Type::Union(u) => {
                     let types = u
@@ -724,6 +724,7 @@ impl Analyzer<'_, '_> {
                 None,
                 CallOpts {
                     disallow_optional_object_property: true,
+                    do_not_use_any_for_computed_key: true,
                     ..Default::default()
                 },
             )
@@ -763,7 +764,7 @@ impl Analyzer<'_, '_> {
         let mut iterator = self
             .get_iterator(span, ty, opts)
             .with_context(|| format!("tried to get a type of an iterator to get the element type of it ({})", ty_str))?;
-        iterator.make_clone_cheap();
+        iterator.freeze();
 
         if iterator.is_str() {
             return Ok(Cow::Owned(Type::Keyword(KeywordType {
@@ -885,5 +886,47 @@ impl Analyzer<'_, '_> {
             .context("tried to get type from `IteratorResult<T>`")?;
 
         Ok(elem_ty.into_owned())
+    }
+
+    pub(crate) fn calculate_tuple_element_count(&mut self, span: Span, ty: &Type) -> VResult<Option<usize>> {
+        let ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        )?;
+
+        match ty.normalize() {
+            Type::Rest(rest) => match ty.normalize() {
+                Type::Tuple(tuple) => {
+                    let mut sum = 0;
+                    for elem in tuple.elems.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(elem.span(), &elem.ty)? {
+                            sum += v;
+                        }
+                    }
+                    Ok(Some(sum))
+                }
+                Type::Union(u) => {
+                    let val = self.calculate_tuple_element_count(span, &u.types[0])?;
+                    let val = match val {
+                        Some(v) => v,
+                        None => return Ok(None),
+                    };
+                    for ty in u.types.iter() {
+                        if let Some(v) = self.calculate_tuple_element_count(ty.span(), ty)? {
+                            if v != val {
+                                return Ok(None);
+                            }
+                        }
+                    }
+                    Ok(Some(val))
+                }
+                _ => Ok(None),
+            },
+            _ => Ok(Some(1)),
+        }
     }
 }

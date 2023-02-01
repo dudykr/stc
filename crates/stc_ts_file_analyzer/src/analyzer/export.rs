@@ -4,7 +4,7 @@ use stc_ts_ast_rnode::{
     RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
     RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
@@ -85,7 +85,11 @@ impl Analyzer<'_, '_> {
                         };
                         // a.storage.export_wildcard_module(s.span, s.value,
                         // module);
-                        todo!("Exporting module with a wildcard: {:?}", module)
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("Exporting module with a wildcard: {:?}", module),
+                        }
+                        .into());
                     }
                 },
                 RDecl::TsTypeAlias(ref decl) => {
@@ -140,7 +144,7 @@ impl Analyzer<'_, '_> {
 
                 let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
-                let class_ty = c.class.validate_with(self)?;
+                let class_ty = c.class.validate_with_args(self, None)?;
                 let class_ty = Type::ClassDef(class_ty).freezed();
                 self.register_type(var_name.clone(), class_ty.clone());
 
@@ -318,7 +322,6 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
-            let ctx = ctx!("tried to reexport with named export specifier");
             let ident = match &node.orig {
                 RModuleExportName::Ident(v) => v.clone(),
                 RModuleExportName::Str(v) => RIdent::new(v.value.clone(), v.span),
@@ -328,7 +331,9 @@ impl Analyzer<'_, '_> {
                 "any" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "undefined" | "symbol" => {
                     return Err(ErrorKind::CannotExportNonLocalVar { span: ident.span }.into())
                 }
-                _ => a.type_of_var(&ident, TypeOfMode::RValue, None)?,
+                _ => a
+                    .type_of_var(&ident, TypeOfMode::RValue, None)
+                    .context("tried to reexport with named export specifier")?,
             };
 
             Ok(())

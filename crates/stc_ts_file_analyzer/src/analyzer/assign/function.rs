@@ -4,12 +4,11 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
 use stc_ts_errors::{
-    ctx,
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string},
+    debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
-use stc_utils::{cache::Freeze, debug_ctx};
+use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -143,21 +142,22 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        vec.make_clone_cheap();
+                        vec.freeze();
 
                         for new_l_params in vec {
-                            let _ctx = ctx!("tried to assign by expanding overloads in a type literal");
-                            return self.assign_to_fn_like(
-                                data,
-                                is_call,
-                                l_type_params,
-                                &new_l_params,
-                                l_ret_ty,
-                                r_type_params,
-                                r_params,
-                                r_ret_ty,
-                                opts,
-                            );
+                            return self
+                                .assign_to_fn_like(
+                                    data,
+                                    is_call,
+                                    l_type_params,
+                                    &new_l_params,
+                                    l_ret_ty,
+                                    r_type_params,
+                                    r_params,
+                                    r_ret_ty,
+                                    opts,
+                                )
+                                .context("tried to assign by expanding overloads in a type literal");
                         }
                     }
                 }};
@@ -188,25 +188,25 @@ impl Analyzer<'_, '_> {
                         .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                         .context("tried to expand return type of rhs as a step of function assignment")?;
 
-                    new_r_params.make_clone_cheap();
-                    new_r_ret_ty.make_clone_cheap();
+                    new_r_params.freeze();
+                    new_r_ret_ty.freeze();
 
-                    let _ctx = ctx!("tried to assign to a mapped (wrong) function");
-
-                    return self.assign_to_fn_like(
-                        data,
-                        is_call,
-                        l_type_params,
-                        l_params,
-                        l_ret_ty,
-                        None,
-                        &new_r_params,
-                        new_r_ret_ty.as_ref(),
-                        AssignOpts {
-                            allow_assignment_of_void: Some(false),
-                            ..opts
-                        },
-                    );
+                    return self
+                        .assign_to_fn_like(
+                            data,
+                            is_call,
+                            l_type_params,
+                            l_params,
+                            l_ret_ty,
+                            None,
+                            &new_r_params,
+                            new_r_ret_ty.as_ref(),
+                            AssignOpts {
+                                allow_assignment_of_void: Some(false),
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign to a mapped (wrong) function");
                 }
             }
 
@@ -254,8 +254,8 @@ impl Analyzer<'_, '_> {
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of lhs as a step of function assignment")?;
 
-                new_l_params.make_clone_cheap();
-                new_l_ret_ty.make_clone_cheap();
+                new_l_params.freeze();
+                new_l_ret_ty.freeze();
 
                 return self
                     .assign_to_fn_like(
@@ -323,9 +323,6 @@ impl Analyzer<'_, '_> {
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignment")?
                     .freezed();
-
-                let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
-                let _panic_ctx = debug_ctx!(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
 
                 return self
                     .assign_to_fn_like(
@@ -463,8 +460,9 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    let _ctx = ctx!("tried to assign an expanded type to a function");
-                    return self.assign_to_function(data, lt, l, &ty, opts);
+                    return self
+                        .assign_to_function(data, lt, l, &ty, opts)
+                        .context("tried to assign an expanded type to a function");
                 }
             }
             _ => {}
@@ -642,9 +640,6 @@ impl Analyzer<'_, '_> {
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
-
-        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
-        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
 
         if let RPat::Rest(..) = l.pat {
             let l_ty = self
@@ -867,8 +862,6 @@ impl Analyzer<'_, '_> {
                 break
             };
 
-            let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
-
             // TODO(kdy1): What should we do?
             if opts.allow_assignment_to_param {
                 if let Ok(()) = self.assign_param(
@@ -887,53 +880,53 @@ impl Analyzer<'_, '_> {
             // A rest pattern is always the last
             match (&l.pat, &r.pat) {
                 (RPat::Rest(..), RPat::Rest(..)) => {
-                    let _ctx = ctx!(format!("tried to assign a rest parameter to another rest parameter"));
-                    self.assign_param(data, l, r, opts)?;
+                    self.assign_param(data, l, r, opts)
+                        .with_context(|| "tried to assign a rest parameter to another rest parameter".to_string())?;
                     break;
                 }
 
                 (RPat::Rest(..), _) => {
-                    let _ctx = ctx!(format!(
-                        "tried to assign parameters to a rest parameter; l_ty = {}",
-                        force_dump_type_as_string(&l.ty)
-                    ));
-
                     // TODO(kdy1): Implement correct logic
 
                     return Ok(());
                 }
 
                 (_, RPat::Rest(..)) => {
-                    let _ctx = ctx!(format!(
-                        "tried to assign a rest parameter to parameters; r_ty = {}",
-                        force_dump_type_as_string(&r.ty)
-                    ));
-
                     // If r is a tuple, we should assign each element to l.
                     let r_ty = self.normalize(Some(span), Cow::Borrowed(&r.ty), Default::default())?;
                     if let Some(r_tuple) = r_ty.as_tuple() {
                         let mut ri = r_tuple.elems.iter();
 
-                        let r = ri.next();
-                        if let Some(ri) = r {
-                            self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                        let re = ri.next();
+                        if let Some(ri) = re {
+                            self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
+                                format!(
+                                    "tried to assign a rest parameter to parameters; r_ty = {}",
+                                    force_dump_type_as_string(&r.ty)
+                                )
+                            })?;
                         }
                         for l in li {
-                            let r = ri.next();
-                            if let Some(ri) = r {
-                                self.assign_param_type(data, &l.ty, &ri.ty, opts)?;
+                            let re = ri.next();
+                            if let Some(ri) = re {
+                                self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
+                                    format!(
+                                        "tried to assign a rest parameter to parameters; r_ty = {} (iter)",
+                                        force_dump_type_as_string(&r.ty)
+                                    )
+                                })?;
                             }
                         }
 
                         return Ok(());
                     }
 
-                    let _ctx = ctx!(format!("tried to assign a rest parameter to parameters where r-ty is not a tuple"));
-
-                    self.assign_param(data, l, r, opts)?;
+                    self.assign_param(data, l, r, opts)
+                        .context("tried to assign a rest parameter to parameters where r-ty is not a tuple")?;
 
                     for l in li {
-                        self.assign_param(data, l, r, opts)?;
+                        self.assign_param(data, l, r, opts)
+                            .context("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)")?;
                     }
 
                     return Ok(());

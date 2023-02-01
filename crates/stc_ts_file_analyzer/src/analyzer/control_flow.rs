@@ -11,13 +11,12 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
 };
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::Freeze,
-    debug_ctx,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_atoms::JsWord;
@@ -302,7 +301,7 @@ impl AddAssign for CondFacts {
                         }
                     };
                     e.get_mut().fix();
-                    e.get_mut().make_clone_cheap();
+                    e.get_mut().freeze();
                 }
                 Entry::Vacant(e) => {
                     e.insert(v);
@@ -375,37 +374,63 @@ impl Analyzer<'_, '_> {
 
         let mut cons_ends_with_unreachable = false;
 
-        let ends_with_ret = stmt.cons.ends_with_ret();
+        let cons_ends_with_ret = stmt.cons.ends_with_ret();
 
         self.cur_facts = prev_facts.clone();
-        self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
-            stmt.cons.visit_with(child);
+        let facts_from_cons = self
+            .with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+                stmt.cons.visit_with(child);
 
-            cons_ends_with_unreachable = child.ctx.in_unreachable;
+                cons_ends_with_unreachable = child.ctx.in_unreachable;
 
-            Ok(())
-        })
-        .report(&mut self.storage);
+                Ok(child.cur_facts.true_facts.take())
+            })
+            .report(&mut self.storage);
 
         let mut alt_ends_with_unreachable = None;
 
-        if let Some(alt) = &stmt.alt {
+        let facts_from_alt = if let Some(alt) = &stmt.alt {
             self.cur_facts = prev_facts.clone();
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
                 alt.visit_with(child);
 
                 alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
 
-                Ok(())
+                Ok(child.cur_facts.true_facts.take())
             })
-            .report(&mut self.storage);
-        }
+            .report(&mut self.storage)
+        } else {
+            None
+        };
 
         self.cur_facts = prev_facts;
 
-        if ends_with_ret {
+        if cons_ends_with_ret {
             self.cur_facts.true_facts += false_facts;
             return Ok(());
+        }
+
+        if let (Some(facts_from_cons), Some(facts_from_alt)) = (facts_from_cons, facts_from_alt) {
+            // Intersect type facts from cons and alt
+
+            for (k, v) in facts_from_cons.facts {
+                if let Some(&v2) = facts_from_alt.facts.get(&k) {
+                    *self.cur_facts.true_facts.facts.entry(k).or_insert(TypeFacts::None) |= v & v2;
+                }
+            }
+
+            for (k, types1) in facts_from_cons.excludes {
+                if let Some(types2) = facts_from_alt.excludes.get(&k) {
+                    let types = types1
+                        .into_iter()
+                        .filter(|t1| types2.iter().any(|t2| t1.type_eq(t2)))
+                        .collect::<Vec<_>>();
+
+                    if !types.is_empty() {
+                        self.cur_facts.true_facts.excludes.entry(k).or_default().extend(types);
+                    }
+                }
+            }
         }
 
         if cons_ends_with_unreachable {
@@ -695,10 +720,10 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
-        ty.assert_valid();
+    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, rhs_ty: &Type) -> Type {
+        rhs_ty.assert_valid();
 
-        let res: VResult<()> = try {
+        let res: VResult<Type> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
@@ -706,13 +731,13 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         _ => Type::any(lhs.span(), Default::default()),
                     };
-                    lhs_ty.make_clone_cheap();
+                    lhs_ty.freeze();
 
                     if op == op!("=") {
                         self.assign_with_opts(
                             &mut Default::default(),
                             &lhs_ty,
-                            ty,
+                            rhs_ty,
                             AssignOpts {
                                 span,
                                 left_ident_span: Some(lhs.span()),
@@ -720,19 +745,33 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                     } else {
-                        self.assign_with_op(span, op, &lhs_ty, ty)?;
+                        self.assign_with_op(span, op, &lhs_ty, rhs_ty)?;
                     }
 
                     if let RExpr::Ident(left) = &**expr {
-                        if op == op!("??=") {
+                        if op == op!("??=") || op == op!("||=") || op == op!("&&=") {
                             if let Ok(prev) = self.type_of_var(left, TypeOfMode::RValue, None) {
                                 let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
 
                                 if let Some(var) = self.scope.vars.get_mut(&Id::from(left)) {
-                                    var.actual_ty = Some(new_actual_ty);
+                                    var.actual_ty = Some(new_actual_ty.freezed());
                                 }
                             }
                         }
+                    }
+
+                    match op {
+                        op!("??=") | op!("||=") => {
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty);
+
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                        }
+                        op!("&&=") => {
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty);
+
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                        }
+                        _ => rhs_ty.clone(),
                     }
                 }
 
@@ -741,7 +780,7 @@ impl Analyzer<'_, '_> {
                         self.try_assign_pat_with_opts(
                             span,
                             pat,
-                            ty,
+                            rhs_ty,
                             PatAssignOpts {
                                 ignore_lhs_errors: true,
                                 ..Default::default()
@@ -754,19 +793,25 @@ impl Analyzer<'_, '_> {
                                 let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
 
                                 if let Ok(lhs) = lhs {
-                                    self.assign_with_op(span, op, &lhs, ty)?;
+                                    self.assign_with_op(span, op, &lhs, rhs_ty)?;
                                 }
                             }
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,
                         }
                     }
+
+                    // TODO: Use the correct type
+                    rhs_ty.clone()
                 }
             }
         };
 
         match res {
-            Ok(()) => {}
-            Err(err) => self.storage.report(err),
+            Ok(ty) => ty,
+            Err(err) => {
+                self.storage.report(err);
+                rhs_ty.clone()
+            }
         }
     }
 
@@ -787,7 +832,6 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .freezed();
-        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&orig_ty)));
 
         let ty = orig_ty.normalize();
 
@@ -818,9 +862,7 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
-                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(ty)));
-
-                        var_ty.make_clone_cheap();
+                        var_ty.freeze();
 
                         self.assign_with_opts(
                             &mut Default::default(),
@@ -863,7 +905,7 @@ impl Analyzer<'_, '_> {
 
                         let mut narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
                         narrowed_ty.assert_valid();
-                        narrowed_ty.make_clone_cheap();
+                        narrowed_ty.freeze();
                         actual_ty = Some(narrowed_ty);
                     }
                 } else {
@@ -889,7 +931,7 @@ impl Analyzer<'_, '_> {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
                     let mut new_ty = actual_ty.unwrap_or_else(|| ty.clone());
                     new_ty.assert_valid();
-                    new_ty.make_clone_cheap();
+                    new_ty.freeze();
                     var_info.actual_ty = Some(new_ty);
                     return Ok(());
                 }
@@ -1061,6 +1103,8 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
+                                RPat::Expr(box RExpr::SuperProp(..)) => {}
+
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(expr) {
@@ -1141,7 +1185,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .flatten()
         {
-            ty.make_clone_cheap();
+            ty.freeze();
             ty.assert_valid();
 
             if is_for_true {
@@ -1270,8 +1314,8 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        let ids = name.as_ids();
-        let mut id: RIdent = ids[0].clone().into();
+        let (top, symbols) = name.inner();
+        let mut id: RIdent = top.clone().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
@@ -1287,7 +1331,7 @@ impl Analyzer<'_, '_> {
         )?;
 
         if let Type::Union(u) = obj.normalize() {
-            if ids.len() == 2 {
+            if name.len() == 2 {
                 let mut new_obj_types = vec![];
 
                 for obj in &u.types {
@@ -1296,7 +1340,7 @@ impl Analyzer<'_, '_> {
                         obj,
                         &Key::Normal {
                             span: ty.span(),
-                            sym: ids[1].sym().clone(),
+                            sym: symbols[0].clone(),
                         },
                         TypeOfMode::RValue,
                         IdCtx::Var,
@@ -1314,7 +1358,7 @@ impl Analyzer<'_, '_> {
                 let mut ty = Type::union(new_obj_types);
                 ty.fix();
 
-                return Ok(Some((Name::from(ids[0].clone()), ty)));
+                return Ok(Some((Name::from(top.clone()), ty)));
             }
         }
 
@@ -1351,13 +1395,13 @@ impl Analyzer<'_, '_> {
 
             Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
         })?;
-        cons.make_clone_cheap();
+        cons.freeze();
         let mut alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt.validate_with_args(child, (mode, None, type_ann)).report(&mut child.storage);
 
             Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
         })?;
-        alt.make_clone_cheap();
+        alt.freeze();
 
         if cons.type_eq(&alt) {
             return Ok(cons);

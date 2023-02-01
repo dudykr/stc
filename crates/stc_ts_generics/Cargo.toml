@@ -17,7 +17,8 @@ stc_ts_errors = {path = "../stc_ts_errors"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
 stc_utils = {path = "../stc_utils"}
-swc_atoms = "0.4.25"
-swc_common = "0.29.15"
-swc_ecma_ast = "0.94.20"
+stc_visit = {path = "../stc_visit"}
+swc_atoms = "0.4.34"
+swc_common = "0.29.29"
+swc_ecma_ast = "0.96.3"
 tracing = "0.1.37"

@@ -4,6 +4,11 @@
 
 1. Clone stc.
 2. Run `yarn` in the cloned directory.
+3. (mac only) Install zld
+
+```sh
+brew install michaeleisel/zld/zld
+```
 
 ## Typical workflow
 

@@ -3,6 +3,7 @@
 
 use std::{
     env,
+    fs::{self, read_to_string},
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
@@ -13,7 +14,7 @@ use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
-use stc_ts_env::{Env, ModuleConfig, Rule};
+use stc_ts_env::{Env, JsxMode, ModuleConfig, Rule};
 use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
@@ -264,7 +265,7 @@ fn pass_only(input: PathBuf) {
         }
 
         if !ok {
-            return Err(());
+            panic!()
         }
 
         Ok(())
@@ -275,14 +276,21 @@ fn pass_only(input: PathBuf) {
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
-    if env::var("STC_SKIP_EXEC").unwrap_or_default() == "1" {
-        return;
-    }
+    let cache_path = input.with_extension("tsc-errors.json");
 
     let mut actual = validate(&input);
     actual.sort();
 
-    let tsc_result = invoke_tsc(&input);
+    let tsc_result = if !cache_path.is_file() {
+        if env::var("STC_SKIP_EXEC").unwrap_or_default() == "1" {
+            return;
+        }
+        let result = invoke_tsc(&input);
+        fs::write(&cache_path, serde_json::to_string_pretty(&result).unwrap()).unwrap();
+        result
+    } else {
+        serde_json::from_str(&read_to_string(&cache_path).unwrap()).unwrap()
+    };
 
     let mut expected = tsc_result
         .into_iter()
@@ -355,6 +363,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                 suppress_excess_property_errors: false,
                 suppress_implicit_any_index_errors: false,
                 use_define_property_for_class_fields: false,
+                jsx: JsxMode::Preserve,
             };
 
             for line in fm.src.lines() {

@@ -2,6 +2,7 @@ use stc_ts_ast_rnode::{
     RBool, RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
     RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText, RTsLit,
 };
+use stc_ts_env::JsxMode;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
@@ -42,7 +43,7 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to get type of an intrinsic jsx element")
         } else {
-            if !self.ctx.in_declare {
+            if !self.ctx.in_declare && !matches!(self.rule().jsx, JsxMode::Preserve) {
                 self.storage
                     .report(ErrorKind::ImplicitAny { span }.context("jsx namespace not found"))
             }
@@ -156,14 +157,14 @@ impl Analyzer<'_, '_> {
                         .into())
                     }
                 },
-                RJSXAttrOrSpread::SpreadElement(attr) => {
-                    let attr = attr.expr.validate_with_default(self)?;
-                    object = self.append_type(object, attr)?;
+                RJSXAttrOrSpread::SpreadElement(el) => {
+                    let attr = el.expr.validate_with_default(self)?;
+                    object = self.append_type(el.dot3_token, object, attr, Default::default())?;
                 }
             }
         }
 
-        object.make_clone_cheap();
+        object.freeze();
 
         match name {
             ResolvedJsxName::Intrinsic(name) => {
@@ -193,10 +194,10 @@ impl Analyzer<'_, '_> {
 
         match &mut name {
             ResolvedJsxName::Intrinsic(name) => {
-                name.make_clone_cheap();
+                name.freeze();
             }
             ResolvedJsxName::Value(name) => {
-                name.make_clone_cheap();
+                name.freeze();
             }
         }
 

@@ -279,21 +279,6 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     })
 }
 
-fn target_to_str(target: EsVersion) -> &'static str {
-    match target {
-        EsVersion::Es3 => "es3",
-        EsVersion::Es5 => "es5",
-        EsVersion::Es2015 => "es2015",
-        EsVersion::Es2016 => "es2016",
-        EsVersion::Es2017 => "es2017",
-        EsVersion::Es2018 => "es2018",
-        EsVersion::Es2019 => "es2019",
-        EsVersion::Es2020 => "es2020",
-        EsVersion::Es2021 => "es2021",
-        EsVersion::Es2022 => "es2022",
-    }
-}
-
 /// If `spec` is [Some], it's use to construct filename.
 ///
 /// Returns `(file_suffix, errors)`
@@ -302,7 +287,7 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         Some(v) => ts_file.with_file_name(format!(
             "{}(target={}).errors.json",
             ts_file.file_stem().unwrap().to_string_lossy(),
-            target_to_str(v.target)
+            v.raw_target
         )),
         None => ts_file.with_extension("errors.json"),
     };
@@ -341,27 +326,37 @@ struct TestSpec {
     rule: Rule,
     ts_config: TsConfig,
     target: EsVersion,
+    raw_target: String,
     module_config: ModuleConfig,
 }
 
-fn parse_targets(s: &str) -> Vec<EsVersion> {
-    match s {
-        "es3" => return vec![EsVersion::Es3],
-        "es5" => return vec![EsVersion::Es5],
-        "es2015" => return vec![EsVersion::Es2015],
-        "es6" => return vec![EsVersion::Es2015],
-        "es2016" => return vec![EsVersion::Es2016],
-        "es2017" => return vec![EsVersion::Es2017],
-        "es2018" => return vec![EsVersion::Es2018],
-        "es2019" => return vec![EsVersion::Es2019],
-        "es2020" => return vec![EsVersion::Es2020],
-        "es2021" => return vec![EsVersion::Es2021],
-        "es2022" => return vec![EsVersion::Es2022],
-        "esnext" => return vec![EsVersion::latest()],
-        _ => {}
+fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
+    fn parse_target_inner(s: &str) -> Vec<EsVersion> {
+        match s {
+            "es3" => return vec![EsVersion::Es3],
+            "es5" => return vec![EsVersion::Es5],
+            "es2015" => return vec![EsVersion::Es2015],
+            "es6" => return vec![EsVersion::Es2015],
+            "es2016" => return vec![EsVersion::Es2016],
+            "es2017" => return vec![EsVersion::Es2017],
+            "es2018" => return vec![EsVersion::Es2018],
+            "es2019" => return vec![EsVersion::Es2019],
+            "es2020" => return vec![EsVersion::Es2020],
+            "es2021" => return vec![EsVersion::Es2021],
+            "es2022" => return vec![EsVersion::Es2022],
+            // TODO(upstream): enable es2023
+            // "es2023" => return vec![EsVersion::Es2023],
+            "esnext" => return vec![EsVersion::EsNext],
+            _ => {}
+        }
+        if !s.contains(',') {
+            panic!("failed to parse `{}` as targets", s)
+        }
+        s.split(',').map(|s| s.trim()).flat_map(parse_target_inner).collect()
     }
+
     if !s.contains(',') {
-        panic!("failed to parse `{}` as targets", s)
+        return vec![(s.into(), parse_target_inner(s)[0])];
     }
     s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
 }
@@ -389,7 +384,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
-        let mut targets = vec![(EsVersion::default(), false)];
+        let mut targets = vec![("".into(), EsVersion::default(), false)];
 
         let program = parser.parse_program().map_err(|e| {
             e.into_diagnostic(handler).emit();
@@ -455,7 +450,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
                 if s.starts_with("target:") || s.starts_with("Target:") {
                     let s = s["target:".len()..].trim().to_lowercase();
-                    targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
+                    targets = parse_targets(&s).into_iter().map(|v| (v.0, v.1, true)).collect();
                 } else if s.starts_with("strict:") {
                     let strict = s["strict:".len()..].trim().parse().unwrap();
                     rule.no_implicit_any = strict;
@@ -519,10 +514,9 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     // Ignored as we don't generate them.
                 } else if s.to_lowercase().starts_with("usedefineforclassfields") {
                     rule.use_define_property_for_class_fields = true;
-                } else if s.to_lowercase().starts_with("noemit")
-                    || s.to_lowercase().starts_with("jsx")
-                    || s.to_lowercase().starts_with("preserveconstenums")
-                {
+                } else if s.to_lowercase().starts_with("jsx") {
+                    rule.jsx = s["jsx:".len()..].trim().to_lowercase().parse().unwrap();
+                } else if s.to_lowercase().starts_with("noemit") || s.to_lowercase().starts_with("preserveconstenums") {
                     // Ignored as we only checks type.
                 } else if s.starts_with("strict") {
                     let strict = true;
@@ -544,7 +538,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         Ok(targets
             .into_iter()
-            .map(|(target, specified)| {
+            .map(|(raw_target, target, specified)| {
                 let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
                         EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
@@ -553,10 +547,11 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2017 => Lib::load("es2017.full"),
                         EsVersion::Es2018 => Lib::load("es2018.full"),
                         EsVersion::Es2019 => Lib::load("es2019.full"),
-                        _ => Lib::load("es2020.full"),
-                        // TODO(kdy1): Enable when we support es2021
-                        // EsVersion::Es2021 => Lib::load("es2021.full"),
-                        // EsVersion::Es2022 => Lib::load("es2022.full"),
+                        EsVersion::Es2021 => Lib::load("es2021.full"),
+                        EsVersion::Es2022 => Lib::load("es2022.full"),
+                        // TODO(upstream): enable es2023
+                        // EsVersion::Es2023 => Lib::load("es2023.full"),
+                        _ => Lib::load("es2022.full"),
                     }
                 } else if specified {
                     libs_with_deps(&libs)
@@ -570,6 +565,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     rule,
                     ts_config,
                     target,
+                    raw_target,
                     module_config,
                 }
             })
@@ -592,6 +588,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         ts_config,
         target,
         module_config,
+        raw_target: _,
     } = spec;
 
     let stat_guard = RecordOnPanic {
@@ -636,8 +633,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let tester = Tester::new();
     let diagnostics = tester
         .errors(|cm, handler| {
-            cm.new_source_file(FileName::Anon, "".into());
-
             let handler = Arc::new(handler);
             let mut checker = Checker::new(
                 cm,
@@ -849,46 +844,73 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
 
         match l {
             Lib::Es5 | Lib::Es5Full => {}
-            Lib::Es2015
+
+            Lib::Es2015Collection
             | Lib::Es2015Core
+            | Lib::Es2015
             | Lib::Es2015Full
-            | Lib::Es2015Collection
-            | Lib::Es2015SymbolWellknown
             | Lib::Es2015Generator
             | Lib::Es2015Iterable
             | Lib::Es2015Promise
             | Lib::Es2015Proxy
             | Lib::Es2015Reflect
-            | Lib::Es2015Symbol => add(libs, Lib::Es5Full),
-            Lib::Es2016 | Lib::Es2016ArrayInclude | Lib::Es2016Full => add(libs, Lib::Es2015Full),
+            | Lib::Es2015Symbol
+            | Lib::Es2015SymbolWellknown => add(libs, Lib::Es2015Full),
+
+            Lib::Es2016ArrayInclude | Lib::Es2016 | Lib::Es2016Full => add(libs, Lib::Es2016Full),
             Lib::Es2017
-            | Lib::Es2017Sharedmemory
             | Lib::Es2017Full
             | Lib::Es2017Intl
             | Lib::Es2017Object
+            | Lib::Es2017Sharedmemory
             | Lib::Es2017String
-            | Lib::Es2017Typedarrays => add(libs, Lib::Es2016Full),
-            Lib::Es2018
-            | Lib::Es2018Asyncgenerator
+            | Lib::Es2017Typedarrays => add(libs, Lib::Es2017Full),
+
+            Lib::Es2018Asyncgenerator
             | Lib::Es2018Asynciterable
+            | Lib::Es2018
+            | Lib::Es2018Full
             | Lib::Es2018Intl
             | Lib::Es2018Promise
-            | Lib::Es2018Regexp
-            | Lib::Es2018Full => add(libs, Lib::Es2017Full),
-            Lib::Es2019 | Lib::Es2019Array | Lib::Es2019Full | Lib::Es2019Object | Lib::Es2019String | Lib::Es2019Symbol => {
-                add(libs, Lib::Es2018Full)
-            }
-            Lib::Es2020
-            | Lib::Es2020Bigint
+            | Lib::Es2018Regexp => add(libs, Lib::Es2018Full),
+
+            Lib::Es2019Array
+            | Lib::Es2019
+            | Lib::Es2019Full
+            | Lib::Es2019Object
+            | Lib::Es2019String
+            | Lib::Es2019Symbol
+            | Lib::Es2019Intl => add(libs, Lib::Es2019Full),
+
+            Lib::Es2020Bigint
+            | Lib::Es2020
             | Lib::Es2020Full
             | Lib::Es2020Intl
             | Lib::Es2020Promise
             | Lib::Es2020Sharedmemory
             | Lib::Es2020String
-            | Lib::Es2020SymbolWellknown => add(libs, Lib::Es2019Full),
+            | Lib::Es2020SymbolWellknown
+            | Lib::Es2020Date
+            | Lib::Es2020Number => add(libs, Lib::Es2020Full),
 
-            Lib::Esnext | Lib::EsnextIntl | Lib::EsnextPromise | Lib::EsnextString | Lib::EsnextWeakref | Lib::EsnextFull => {
-                add(libs, Lib::Es2020Full)
+            Lib::Es2021 | Lib::Es2021Full | Lib::Es2021Weakref | Lib::Es2021Intl | Lib::Es2021Promise | Lib::Es2021String => {
+                add(libs, Lib::Es2021Full)
+            }
+
+            Lib::Es2022
+            | Lib::Es2022Array
+            | Lib::Es2022Error
+            | Lib::Es2022Object
+            | Lib::Es2022Full
+            | Lib::Es2022Intl
+            | Lib::Es2022Sharedmemory
+            | Lib::Es2022String
+            | Lib::Es2022Regexp => add(libs, Lib::Es2022Full),
+
+            Lib::Es2023 | Lib::Es2023Array | Lib::Es2023Full => add(libs, Lib::Es2023Full),
+
+            Lib::Esnext | Lib::EsnextFull | Lib::EsnextIntl | Lib::EsnextPromise | Lib::EsnextString | Lib::EsnextWeakref => {
+                add(libs, Lib::Es2022Full)
             }
 
             Lib::Dom
@@ -898,7 +920,9 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
             | Lib::Scripthost
             | Lib::WebworkerGenerated
             | Lib::WebworkerImportscripts
-            | Lib::WebworkerIterableGenerated => {}
+            | Lib::WebworkerIterableGenerated
+            | Lib::Decorators
+            | Lib::DecoratorsLegacy => {}
         }
 
         for l in l.deps() {

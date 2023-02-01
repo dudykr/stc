@@ -1,5 +1,5 @@
 use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
-use stc_ts_errors::{ctx, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq};
@@ -134,8 +134,10 @@ impl Analyzer<'_, '_> {
             }) if type_name.sym == *"ReadonlyArray" => {
                 if type_args.params.len() == 1 {
                     if let Type::Array(Array { elem_type, .. }) = r.normalize() {
-                        let _ctx = ctx!("tried to assign an array to a readonly array (builtin)");
-                        return Some(self.assign_inner(data, &type_args.params[0], elem_type, opts));
+                        return Some(
+                            self.assign_inner(data, &type_args.params[0], elem_type, opts)
+                                .context("tried to assign an array to a readonly array (builtin)"),
+                        );
                     }
                 }
             }
@@ -149,8 +151,10 @@ impl Analyzer<'_, '_> {
                     .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
                     .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
                 {
-                    let _ctx = ctx!("tried fast-path assignment to an array");
-                    return Some(self.assign_with_opts(data, &l.elem_type, r_elem, opts));
+                    return Some(
+                        self.assign_with_opts(data, &l.elem_type, r_elem, opts)
+                            .context("tried fast-path assignment to an array"),
+                    );
                 }
             }
         }
@@ -249,8 +253,10 @@ impl Analyzer<'_, '_> {
 
         if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
             if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
-                let _ctx = ctx!("tried to assign a promise to another using optimized algorithm");
-                return Some(self.assign_with_opts(data, l, r, opts));
+                return Some(
+                    self.assign_with_opts(data, l, r, opts)
+                        .context("tried to assign a promise to another using optimized algorithm"),
+                );
             }
         }
 

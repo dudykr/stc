@@ -2,7 +2,7 @@ use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use rnode::{NodeId, VisitMutWith, VisitWith};
+use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
@@ -13,7 +13,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
+use stc_ts_type_ops::{tuple_normalization::normalize_tuples, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Interface,
@@ -24,7 +24,6 @@ use stc_ts_types::{
 use stc_ts_utils::run;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx,
     ext::{SpanExt, TypeVecExt},
     stack,
 };
@@ -110,7 +109,6 @@ impl Analyzer<'_, '_> {
             | Type::TypeLit(..)
             | Type::Class(..)
             | Type::ClassDef(..)
-            | Type::Tuple(..)
             | Type::Function(..)
             | Type::Constructor(..)
             | Type::EnumVariant(..)
@@ -140,7 +138,6 @@ impl Analyzer<'_, '_> {
 
         let res = (|| {
             let _stack = stack::track(actual_span)?;
-            let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&ty)));
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -152,7 +149,7 @@ impl Analyzer<'_, '_> {
                 ty.normalize(),
                 Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..) | Type::Union(..)
             ) {
-                ty.make_clone_cheap();
+                ty.freeze();
             }
 
             {
@@ -179,7 +176,7 @@ impl Analyzer<'_, '_> {
 
                         new_ty.assert_valid();
 
-                        new_ty.make_clone_cheap();
+                        new_ty.freeze();
 
                         return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
                     }
@@ -361,7 +358,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = self
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
-                                ty.make_clone_cheap();
+                                ty.freeze();
                                 let mut ty = ty.into_owned();
 
                                 if let Some(u) = ty.as_union_type_mut() {
@@ -426,7 +423,7 @@ impl Analyzer<'_, '_> {
                             .into_owned()
                             .freezed();
 
-                        if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type, Default::default()) {
+                        if let Some(v) = self.extends(actual_span, &c.check_type, &c.extends_type, Default::default()) {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
                             let ty = self
@@ -616,7 +613,7 @@ impl Analyzer<'_, '_> {
                         ty.assert_valid();
 
                         let mut ty = self.normalize(span, Cow::Owned(ty), opts)?;
-                        ty.make_clone_cheap();
+                        ty.freeze();
                         let ty = ty.into_owned();
 
                         return Ok(Cow::Owned(ty));
@@ -661,8 +658,6 @@ impl Analyzer<'_, '_> {
                             if ty.type_eq(&prop_ty) {
                                 return Ok(ty);
                             }
-
-                            let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&prop_ty)));
 
                             let ty = self
                                 .normalize(span, Cow::Owned(prop_ty), opts)
@@ -753,6 +748,8 @@ impl Analyzer<'_, '_> {
                     Type::Operator(_) => {
                         // TODO(kdy1):
                     }
+
+                    Type::Tuple(tuple) => {}
 
                     Type::Tpl(tpl) => {
                         if tpl.quasis.len() == 2
@@ -941,6 +938,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
+        let is_lit = normalized_types.iter().any(|ty| ty.is_lit());
         let is_symbol = normalized_types.iter().any(|ty| ty.is_symbol());
         let is_str = normalized_types.iter().any(|ty| ty.is_str());
         let is_num = normalized_types.iter().any(|ty| ty.is_num());
@@ -950,6 +948,14 @@ impl Analyzer<'_, '_> {
         let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
         let is_function = normalized_types.iter().any(|ty| ty.is_fn_type());
+        let is_non_empty_type_lit = normalized_types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(ty) => !ty.members.is_empty(),
+            _ => false,
+        });
+
+        if is_lit && is_non_empty_type_lit {
+            return never!();
+        }
 
         let sum = u32::from(is_symbol)
             + u32::from(is_str)
@@ -986,6 +992,9 @@ impl Analyzer<'_, '_> {
         let enum_variant_len = enum_variant_iter.len();
 
         if enum_variant_len > 0 {
+            if normalized_types.iter().any(|ty| matches!(ty, Type::Lit(..))) {
+                return never!();
+            }
             if let Some(first_enum) = enum_variant_iter.first() {
                 let mut enum_temp = first_enum.normalize();
                 for elem in enum_variant_iter.into_iter() {
@@ -1137,7 +1146,7 @@ impl Analyzer<'_, '_> {
 
         {
             let normalized_len = normalized_types.len();
-            normalized_types.make_clone_cheap();
+            normalized_types.freeze();
             let mut type_iter = normalized_types.clone().into_iter();
             let mut acc_type = type_iter
                 .next()
@@ -1306,8 +1315,8 @@ impl Analyzer<'_, '_> {
             ..
         }) = ty
         {
-            extends_type.make_clone_cheap();
-            check_type.make_clone_cheap();
+            extends_type.freeze();
+            check_type.freeze();
 
             // We need to handle infer type.
             let type_params = self.infer_ts_infer_types(span, &extends_type, &check_type, Default::default()).ok();
@@ -1344,6 +1353,14 @@ impl Analyzer<'_, '_> {
 
     // This is part of normalization.
     fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            let ty_str = force_dump_type_as_string(ty);
+
+            Some(span!(Level::ERROR, "instantiate_for_normalization", ty = &*ty_str).entered())
+        } else {
+            None
+        };
+
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
@@ -1352,7 +1369,7 @@ impl Analyzer<'_, '_> {
                 ..opts
             },
         )?;
-        ty.make_clone_cheap();
+        ty.freeze();
         let metadata = ty.metadata();
         let actual_span = ty.span();
 
@@ -1501,7 +1518,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(match &*ty {
+        Ok(match ty.normalize() {
             Type::Class(..)
             | Type::ClassDef(..)
             | Type::Enum(..)
@@ -1683,11 +1700,16 @@ impl Analyzer<'_, '_> {
     pub(crate) fn convert_type_to_type_lit<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = debug_ctx!(format!("type_to_type_lit: {:?}", ty));
-
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
-        let ty = self.normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })?;
+        let ty = self.normalize(
+            Some(span),
+            ty,
+            NormalizeTypeOpts {
+                preserve_union: true,
+                ..Default::default()
+            },
+        )?;
 
         if ty.is_type_lit() {
             match ty {
@@ -1981,6 +2003,7 @@ impl Analyzer<'_, '_> {
                 return Ok(els);
             }
 
+            els.freeze();
             // For (ai, bi) in `merged`, we can assume ai < bi because we only store in that
             // case
             for (ai, bi) in merged.iter().copied() {
@@ -2004,42 +2027,16 @@ impl Analyzer<'_, '_> {
             (TypeElement::Property(to), TypeElement::Property(from)) => {
                 if let Some(to_type) = &to.type_ann {
                     if let Some(from_type) = from.type_ann {
-                        let to_type_lit = self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
-                        let from = self.convert_type_to_type_lit(span, Cow::Borrowed(&from_type))?;
-
-                        match (to_type_lit, from) {
-                            (Some(to_type_lit), Some(from)) => {
-                                let mut to_type_lit = to_type_lit.into_owned();
-                                to_type_lit.members.extend(from.into_owned().members);
-
-                                let members = self.merge_type_elements(span, to_type_lit.members)?;
-
-                                to.type_ann = Some(
-                                    box Type::TypeLit(TypeLit {
-                                        span,
-                                        members,
-                                        metadata: TypeLitMetadata {
-                                            common: to_type.metadata(),
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    })
-                                    .freezed(),
-                                )
-                            }
-                            _ => {
-                                to.type_ann = Some(
-                                    box Type::Intersection(Intersection {
-                                        span: to_type.span(),
-                                        types: vec![*to_type.clone(), *from_type],
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })
-                                    .fixed()
-                                    .freezed(),
-                                );
-                            }
-                        }
+                        to.type_ann = Some(
+                            box Type::Intersection(Intersection {
+                                span: to_type.span(),
+                                types: vec![*to_type.clone(), *from_type],
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                            .fixed()
+                            .freezed(),
+                        );
                     }
                 }
 
@@ -2098,9 +2095,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
-        let marks = self.marks();
-
-        ty.visit_mut_with(&mut TupleNormalizer);
+        normalize_tuples(ty);
         ty.fix();
     }
 
@@ -2522,7 +2517,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
-        ty.make_clone_cheap();
+        ty.freeze();
 
         let mapped_ty = self.normalize(
             Some(span),

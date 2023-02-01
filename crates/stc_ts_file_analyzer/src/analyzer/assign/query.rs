@@ -1,4 +1,4 @@
-use stc_ts_errors::{ctx, DebugExt, ErrorKind};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{
@@ -15,8 +15,9 @@ impl Analyzer<'_, '_> {
 
         match &*to.expr {
             QueryExpr::TsEntityName(e) => {
-                let _ctx = ctx!("tried to resolve typeof for assignment");
-                let to = self.resolve_typeof(opts.span, e)?;
+                let to = self
+                    .resolve_typeof(opts.span, e)
+                    .context("tried to resolve typeof for assignment")?;
 
                 if to.is_global_this() {
                     return Err(ErrorKind::SimpleAssignFailed {
@@ -28,9 +29,11 @@ impl Analyzer<'_, '_> {
 
                 self.assign_with_opts(data, &to, rhs, opts)
             }
-            QueryExpr::Import(_) => {
-                unimplemented!("assignment of query type with import")
+            QueryExpr::Import(_) => Err(ErrorKind::Unimplemented {
+                span: opts.span,
+                msg: "assignment of query type with import".to_string(),
             }
+            .into()),
         }
     }
 

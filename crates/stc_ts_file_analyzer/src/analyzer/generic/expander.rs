@@ -1,7 +1,10 @@
 use fxhash::FxHashMap;
 use rnode::FoldWith;
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_generics::{expander::GenericExpander, ExpandGenericOpts};
+use stc_ts_generics::{
+    expander::{GenericExpander, GENERIC_CACHE},
+    ExpandGenericOpts,
+};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, ext::SpanExt};
@@ -10,7 +13,7 @@ use swc_ecma_ast::*;
 use tracing::debug;
 
 use crate::{
-    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer},
     ty::Type,
     VResult,
 };
@@ -94,17 +97,19 @@ impl Analyzer<'_, '_> {
             debug_assert!(param.is_clone_cheap());
         }
 
-        let ty = ty
-            .fold_with(&mut GenericExpander {
-                cm: self.cm.clone(),
-                params,
-                fully: false,
-                dejavu: Default::default(),
-                opts,
-            })
-            .fixed();
+        GENERIC_CACHE.configure(|| {
+            let ty = ty
+                .fold_with(&mut GenericExpander {
+                    cm: self.cm.clone(),
+                    params,
+                    fully: false,
+                    dejavu: Default::default(),
+                    opts,
+                })
+                .fixed();
 
-        Ok(ty)
+            Ok(ty)
+        })
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
@@ -139,22 +144,16 @@ impl Analyzer<'_, '_> {
         match child {
             Type::Param(..) | Type::Infer(..) => return None,
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ignore_expand_prevention_for_all: false,
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
                 let child = self
-                    .with_ctx(ctx)
                     .expand(
                         child.span(),
                         child.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )
@@ -187,29 +186,27 @@ impl Analyzer<'_, '_> {
 
                 return prev;
             }
-
+            // `never` extends all types because it's bottom type in TypeScript
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                ..
+            }) => return Some(true),
             _ => {}
         }
 
         match parent {
             Type::Param(..) | Type::Infer(..) => return None,
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ignore_expand_prevention_for_all: false,
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
                 let mut parent = self
-                    .with_ctx(ctx)
                     .expand(
                         parent.span().or_else(|| span),
                         parent.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ignore_expand_prevention_for_all: false,
                             ..Default::default()
                         },
                     )
@@ -217,7 +214,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Ref(..) = parent.normalize() {
                     return None;
                 }
-                parent.make_clone_cheap();
+                parent.freeze();
 
                 return self.extends(span, child, &parent, opts);
             }
@@ -227,6 +224,10 @@ impl Analyzer<'_, '_> {
         match parent {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
+                ..
+            })
+            | Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => return Some(false),
             Type::Union(parent) => {

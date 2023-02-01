@@ -7,3 +7,21 @@
 
 Error: 
   > 1
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/11.ts:9:1]
+ 9 | s2 = 1 as never;
+   :      ^^^^^^^^^^
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/11.ts:9:1]
+ 9 | s2 = 1 as never;
+   : ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > never

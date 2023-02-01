@@ -1077,7 +1077,7 @@ Error:
      `----
 
 Error: 
-  > "22px"
+  > `22px`
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:109:1]

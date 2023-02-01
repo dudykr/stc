@@ -6,7 +6,6 @@
     "**/CVS": true,
     "**/.DS_Store": true,
     "**/*.bk": true,
-    "**/node_modules": true,
     "**/target": true
   },
   "[rust]": {
@@ -40,7 +39,7 @@
     "workbench.action.debug.start",
     "workbench.action.debug.run"
   ],
-  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.check.command": "clippy",
   "debug.allowBreakpointsEverywhere": true,
-  "rust-analyzer.debug.openDebugPane": true
+  "rust-analyzer.debug.openDebugPane": true,
 }

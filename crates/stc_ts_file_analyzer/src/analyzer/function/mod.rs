@@ -5,8 +5,9 @@ use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RPara
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
+    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Id, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
 };
+use stc_ts_utils::find_ids_in_pat;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -47,6 +48,9 @@ impl Analyzer<'_, '_> {
             child.ctx.in_fn_with_return_type = f.return_type.is_some();
             child.ctx.in_async = f.is_async;
             child.ctx.in_generator = f.is_generator;
+            child.ctx.in_static_method = false;
+            child.ctx.in_static_property_initializer = false;
+            child.ctx.in_static_block = false;
 
             let mut errors = Errors::default();
 
@@ -83,7 +87,11 @@ impl Analyzer<'_, '_> {
 
             let type_params = try_opt!(f.type_params.validate_with(child));
 
-            let mut params = {
+            let params = {
+                let prev_len = child.scope.declaring_parameters.len();
+                let ids: Vec<Id> = find_ids_in_pat(&f.params);
+                child.scope.declaring_parameters.extend(ids);
+
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
                     in_fn_without_body: f.body.is_none(),
@@ -91,18 +99,12 @@ impl Analyzer<'_, '_> {
                     is_fn_param: true,
                     ..child.ctx
                 };
-                f.params.validate_with(&mut *child.with_ctx(ctx))?
-            };
+                let res = f.params.validate_with(&mut *child.with_ctx(ctx));
 
-            if !child.is_builtin {
-                params = params
-                    .into_iter()
-                    .map(|param: FnParam| -> VResult<_> {
-                        let ty = box child.expand(param.span, *param.ty, Default::default())?;
-                        Ok(FnParam { ty, ..param })
-                    })
-                    .collect::<Result<_, _>>()?;
-            }
+                child.scope.declaring_parameters.truncate(prev_len);
+
+                res?
+            };
 
             let mut declared_ret_ty = {
                 let ctx = Ctx {
@@ -116,7 +118,7 @@ impl Analyzer<'_, '_> {
             child.scope.declared_return_type = declared_ret_ty.clone();
 
             if let Some(ty) = &mut declared_ret_ty {
-                ty.make_clone_cheap();
+                ty.freeze();
 
                 child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
@@ -232,7 +234,7 @@ impl Analyzer<'_, '_> {
                 None => Type::any(f.span, Default::default()),
             };
 
-            inferred_return_type.make_clone_cheap();
+            inferred_return_type.freeze();
 
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {
@@ -441,7 +443,7 @@ impl Analyzer<'_, '_> {
 
         let mut a = self.with_ctx(ctx);
         match a.declare_var(f.span(), VarKind::Fn, f.ident.clone().into(), Some(fn_ty), None, true, true, false) {
-            Ok(()) => {}
+            Ok(..) => {}
             Err(err) => {
                 a.storage.report(err);
             }

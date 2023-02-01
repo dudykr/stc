@@ -1,6 +1,9 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
+#[doc(hidden)]
+pub extern crate scoped_tls;
+
 use num_bigint::BigInt;
 pub use stc_visit_macros::Visit;
 use swc_atoms::{Atom, JsWord};
@@ -15,6 +18,7 @@ pub use self::{
 
 mod fold;
 mod visit;
+pub mod visit_cache;
 mod visit_mut;
 mod visitable;
 

@@ -89,14 +89,12 @@ impl Analyzer<'_, '_> {
 
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let mut check_for_validity = true;
-            let mut check_for_symbol_form = true;
 
             let mut errors = Errors::default();
 
             let mut ty = match node.expr.validate_with_default(analyzer) {
                 Ok(ty) => ty,
                 Err(err) => {
-                    check_for_symbol_form = false;
                     if let ErrorKind::TS2585 { span } = *err {
                         Err(ErrorKind::TS2585 { span })?
                     }
@@ -106,7 +104,7 @@ impl Analyzer<'_, '_> {
                     Type::unknown(span, Default::default())
                 }
             };
-            ty.make_clone_cheap();
+            ty.freeze();
 
             if match mode {
                 ComputedPropMode::Class { has_body } => errors.is_empty(),
@@ -142,7 +140,6 @@ impl Analyzer<'_, '_> {
                                 _ => {
                                     if let ComputedPropMode::Interface = mode {
                                         errors.push(ErrorKind::TS1169 { span: node.span }.into());
-                                        check_for_symbol_form = false;
                                     }
                                 }
                             }
@@ -150,27 +147,6 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {}
-                }
-            }
-
-            if check_for_validity && check_for_symbol_form && is_symbol_access {
-                match ty.normalize_instance() {
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    })
-                    | Type::Symbol(..) => {}
-                    Type::Operator(Operator {
-                        op: TsTypeOperatorOp::Unique,
-                        ty,
-                        ..
-                    }) if ty.normalize_instance().is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
-                    _ => {
-                        //
-                        analyzer
-                            .storage
-                            .report(ErrorKind::NonSymbolComputedPropInFormOfSymbol { span }.into());
-                    }
                 }
             }
 
@@ -486,7 +462,7 @@ impl Analyzer<'_, '_> {
                                         tracker: Default::default(),
                                     })
                                 });
-                            inferred_ret_ty.make_clone_cheap();
+                            inferred_ret_ty.freeze();
 
                             // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {

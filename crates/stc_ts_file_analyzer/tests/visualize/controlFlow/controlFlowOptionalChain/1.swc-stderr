@@ -1,0 +1,89 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:8:5]
+ 8 | switch (o?.foo) {
+   :         ^
+   `----
+
+Error: 
+  > ({
+  |     foo: (string | number);
+  |     bar(): number;
+  |     baz: object;
+  | } | undefined)
+
+  x Type
+   ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:8:5]
+ 8 | switch (o?.foo) {
+   :         ^^^^^^
+   `----
+
+Error: 
+  > (undefined | string | number)
+
+  x Type
+    ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:13:9]
+ 13 | case undefined:
+    :      ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:9:9]
+ 9 | case "abc":
+   :      ^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:11:9]
+ 11 | case 42:
+    :      ^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:13:9]
+ 13 | case undefined:
+    :      ^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:14:13]
+ 14 | o.foo;  // Error
+    : ^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:17:13]
+ 17 | o.foo;  // Error
+    : ^
+    `----
+
+Error: 
+  > {
+  |     foo: (string | number);
+  |     bar(): number;
+  |     baz: object;
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:17:13]
+ 17 | o.foo;  // Error
+    : ^^^^^
+    `----
+
+Error: 
+  > (string | number)

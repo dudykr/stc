@@ -90,7 +90,6 @@ impl Analyzer<'_, '_> {
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
-                    preserve_ref: true,
                     cannot_fallback_to_iterable_iterator,
                     ..self.ctx
                 };
@@ -111,18 +110,14 @@ impl Analyzer<'_, '_> {
                         .into_iter()
                         .map(|ty| {
                             debug_assert_ne!(ty.span(), DUMMY_SP);
-                            let ctx = Ctx {
-                                preserve_ref: true,
-                                ignore_expand_prevention_for_top: false,
-                                ignore_expand_prevention_for_all: false,
-                                ..self.ctx
-                            };
-                            self.with_ctx(ctx).expand(
+
+                            self.expand(
                                 ty.span(),
                                 ty,
                                 ExpandOpts {
                                     full: true,
                                     expand_union: true,
+                                    preserve_ref: true,
                                     ..Default::default()
                                 },
                             )
@@ -288,7 +283,7 @@ impl Analyzer<'_, '_> {
 
             Ok(Some(ty))
         })()?;
-        ret_ty.make_clone_cheap();
+        ret_ty.freeze();
 
         if self.is_builtin {
             return Ok(ret_ty);
@@ -346,7 +341,7 @@ impl Analyzer<'_, '_> {
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
-        ty.make_clone_cheap();
+        ty.freeze();
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             match (self.ctx.in_async, self.ctx.in_generator) {
@@ -596,22 +591,17 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
             ..
         }) = ty
         {
-            let ctx = Ctx {
-                preserve_ref: false,
-                ignore_expand_prevention_for_top: true,
-                ..self.analyzer.ctx
-            };
-
             // TODO(kdy1): Handle error.
             let index_ty = self
                 .analyzer
-                .with_ctx(ctx)
                 .expand(
                     span,
                     *index_type.clone(),
                     ExpandOpts {
                         full: true,
                         expand_union: true,
+                        preserve_ref: false,
+                        ignore_expand_prevention_for_top: true,
                         ..Default::default()
                     },
                 )

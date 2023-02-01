@@ -317,7 +317,7 @@ impl Analyzer<'_, '_> {
             }
 
             let rhs_ctx = Ctx {
-                cannot_be_tuple: true,
+                array_lit_cannot_be_tuple: true,
                 // use_undefined_for_empty_tuple: true,
                 ..child.ctx
             };
@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|| Type::any(span, Default::default())),
                 ),
             };
-            elem_ty.make_clone_cheap();
+            elem_ty.freeze();
 
             child.scope.declaring.clear();
 

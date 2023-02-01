@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
@@ -198,4 +198,31 @@ pub struct Rule {
     pub no_unused_locals: bool,
     pub no_unused_parameters: bool,
     pub use_define_property_for_class_fields: bool,
+
+    pub jsx: JsxMode,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub enum JsxMode {
+    #[default]
+    Preserve,
+    React,
+    ReactNative,
+    ReactJsx,
+    ReactJsxdev,
+}
+
+impl FromStr for JsxMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "preserve" => Ok(JsxMode::Preserve),
+            "react" => Ok(JsxMode::React),
+            "react-native" => Ok(JsxMode::ReactNative),
+            "react-jsx" => Ok(JsxMode::ReactJsx),
+            "react-jsxdev" => Ok(JsxMode::ReactJsxdev),
+            _ => Err(()),
+        }
+    }
 }

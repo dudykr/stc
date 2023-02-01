@@ -1,5 +1,5 @@
 {
-  "name": "file_analyzer",
+  "name": "stc_ts_file_analyzer",
   "private": true,
   "version": "1.0.0",
   "description": "The typescript type checker.",

@@ -4,16 +4,17 @@ use std::{
     convert::{TryFrom, TryInto},
 };
 
+use fxhash::FxHashMap;
 use stc_ts_ast_rnode::{
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RBindingIdent, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat,
+    RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, TypeParam, Union,
-    UnionMetadata,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple, TypeElement, TypeLit, TypeParam,
+    TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -43,6 +44,12 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
+        self.validate_bin_expr(e, type_ann)
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn validate_bin_expr(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let RBinExpr {
             span,
             op,
@@ -82,17 +89,14 @@ impl Analyzer<'_, '_> {
         }
         .and_then(|mut ty| {
             if ty.is_ref_type() {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                ty = self.with_ctx(ctx).expand(
+                ty = self.expand(
                     span,
                     ty,
                     ExpandOpts {
                         full: true,
                         expand_union: true,
+                        preserve_ref: false,
+                        ignore_expand_prevention_for_top: true,
                         ..Default::default()
                     },
                 )?;
@@ -103,7 +107,7 @@ impl Analyzer<'_, '_> {
             Ok(ty)
         })
         .store(&mut errors);
-        lt.make_clone_cheap();
+        lt.freeze();
 
         let true_facts_for_rhs = if op == op!("&&") {
             // We need a new virtual scope.
@@ -132,10 +136,20 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Flow, true_facts_for_rhs.clone(), |child: &mut Analyzer| -> VResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
 
+                let any_type_param = TypeParamInstantiation {
+                    span,
+                    params: vec![Type::any(span, Default::default())],
+                };
+                let type_args = if let RExpr::Ident(..) = &**right {
+                    Some(&any_type_param)
+                } else {
+                    None
+                };
+
                 let truthy_lt;
                 let child_ctxt = (
                     TypeOfMode::RValue,
-                    None,
+                    type_args,
                     match op {
                         op!("??") | op!("&&") | op!("||") => match type_ann {
                             Some(ty) => Some(ty),
@@ -153,17 +167,14 @@ impl Analyzer<'_, '_> {
 
                 let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
                     if ty.is_ref_type() {
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..child.ctx
-                        };
-                        ty = child.with_ctx(ctx).expand(
+                        ty = child.expand(
                             span,
                             ty,
                             ExpandOpts {
                                 full: true,
                                 expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
                                 ..Default::default()
                             },
                         )?;
@@ -210,7 +221,7 @@ impl Analyzer<'_, '_> {
                 self.cur_facts.true_facts += true_facts_for_rhs;
 
                 for (k, v) in additional_false_facts.facts.drain() {
-                    *self.cur_facts.false_facts.facts.entry(k.clone()).or_insert(TypeFacts::None) &= v;
+                    *self.cur_facts.false_facts.facts.entry(k.clone()).or_default() &= v;
                 }
             }
 
@@ -223,8 +234,14 @@ impl Analyzer<'_, '_> {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(ErrorKind::Errors { span, errors }.into()),
         };
-        lt.make_clone_cheap();
-        rt.make_clone_cheap();
+        if self.ctx.in_switch_case_test {
+            if lt.is_tpl() {
+                lt = lt.generalize_lit();
+            }
+        }
+
+        lt.freeze();
+        rt.freeze();
 
         if !self.is_builtin {
             debug_assert!(!lt.span().is_dummy());
@@ -284,12 +301,8 @@ impl Analyzer<'_, '_> {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
                 let is_eq = op == op!("===") || op == op!("==");
 
-                let c = Comparator {
-                    left: &**left,
-                    right: &**right,
-                };
-
-                self.add_type_facts_for_typeof(span, left, right, is_eq).report(&mut self.storage);
+                self.add_type_facts_for_typeof(span, left, right, is_eq, &lt, &rt)
+                    .report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -355,8 +368,10 @@ impl Analyzer<'_, '_> {
 
                     (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
-                    if self.ctx.in_cond {
-                        let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                    // === with an unknown does not narrow type
+                    if self.ctx.in_cond && !r_ty.is_unknown() {
+                        let (name, mut r, exclude) = self.calc_type_facts_for_equality(l, r_ty)?;
+
                         r = if has_switch_case_test_not_compatible {
                             Type::Keyword(KeywordType {
                                 span,
@@ -366,28 +381,67 @@ impl Analyzer<'_, '_> {
                             })
                         } else {
                             prevent_generalize(&mut r);
-                            r.make_clone_cheap();
+                            r.freeze();
                             r
                         };
 
-                        let mut is_loose_comparison = false;
-                        if let op!("==") | op!("!=") = op {
-                            if r.is_null() | r.is_undefined() {
-                                is_loose_comparison = true;
-                                let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
-                                let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
+                        let mut is_loose_comparison_with_null_or_undefined = false;
+                        match op {
+                            op!("==") | op!("!=") => {
+                                if r.is_null() | r.is_undefined() {
+                                    is_loose_comparison_with_null_or_undefined = true;
+                                    let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
+                                    let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
-                                if op == op!("==") {
-                                    self.cur_facts.true_facts.facts.insert(name.clone(), eq);
-                                    self.cur_facts.false_facts.facts.insert(name.clone(), neq);
-                                } else {
-                                    self.cur_facts.true_facts.facts.insert(name.clone(), neq);
-                                    self.cur_facts.false_facts.facts.insert(name.clone(), eq);
+                                    if op == op!("==") {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    } else {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    }
                                 }
                             }
-                        }
+                            op!("===") => {
+                                if r.is_null() {
+                                    let eq = TypeFacts::EQNull;
+                                    let neq = TypeFacts::NENull;
 
-                        let exclude_types = if is_loose_comparison {
+                                    if op == op!("===") {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    } else {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    }
+                                } else if r.is_undefined() {
+                                    let eq = TypeFacts::EQUndefined;
+                                    let neq = TypeFacts::NEUndefined;
+
+                                    if op == op!("===") {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
+                                    } else {
+                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
+                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
+                                    }
+                                }
+                            }
+                            _ => (),
+                        }
+                        let additional_target = if lt.metadata().destructure_key.0 > 0 {
+                            let origin_ty = self.find_destructor(lt.metadata().destructure_key);
+                            if let Some(ty) = origin_ty {
+                                let ty = ty.into_owned();
+                                self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
+                            } else {
+                                Default::default()
+                            }
+                        } else {
+                            Default::default()
+                        };
+
+                        let exclude_types = if is_loose_comparison_with_null_or_undefined {
                             vec![
                                 Type::Keyword(KeywordType {
                                     span,
@@ -403,7 +457,7 @@ impl Analyzer<'_, '_> {
                                 }),
                             ]
                         } else {
-                            vec![r.clone()]
+                            exclude.freezed()
                         };
 
                         if is_eq {
@@ -413,6 +467,14 @@ impl Analyzer<'_, '_> {
                                 .entry(name.clone())
                                 .or_default()
                                 .extend(exclude_types);
+                            for (name, exclude_type) in additional_target.iter() {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .extend(exclude_type.clone());
+                            }
                         } else {
                             self.cur_facts
                                 .true_facts
@@ -420,6 +482,14 @@ impl Analyzer<'_, '_> {
                                 .entry(name.clone())
                                 .or_default()
                                 .extend(exclude_types);
+                            for (name, exclude_type) in additional_target.iter() {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .extend(exclude_type.clone());
+                            }
                         }
 
                         r = if let Type::Param(TypeParam {
@@ -452,6 +522,11 @@ impl Analyzer<'_, '_> {
                             r
                         };
                         self.add_deep_type_fact(span, name, r, is_eq);
+                        for (name, exclude_type) in additional_target.iter() {
+                            for exclude in exclude_type.iter() {
+                                self.add_deep_type_fact(span, name.clone(), exclude.clone(), is_eq);
+                            }
+                        }
                     }
                 }
             }
@@ -462,7 +537,7 @@ impl Analyzer<'_, '_> {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let mut orig_ty = self.type_of_name(span, name.as_ids(), TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_name(span, &name, TypeOfMode::RValue, None)?;
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
                             self.storage.report(
                                 ErrorKind::InvalidLhsInInstanceOf {
@@ -472,10 +547,20 @@ impl Analyzer<'_, '_> {
                                 .into(),
                             )
                         }
-                        orig_ty.make_clone_cheap();
+
+                        orig_ty.freeze();
 
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
+
+                        // `o` cannot be null in the following code
+                        // if (o?.baz instanceof Error) {
+                        //     o.baz;
+                        // }
+                        for len in 1..=name.len() {
+                            *self.cur_facts.true_facts.facts.entry(name.slice_to(len)).or_default() |=
+                                TypeFacts::NENull & TypeFacts::NEUndefined & TypeFacts::NEUndefinedOrNull;
+                        }
 
                         // typeGuardsWithInstanceOfByConstructorSignature.ts
                         //
@@ -501,7 +586,9 @@ impl Analyzer<'_, '_> {
                                 .context("tried to narrow type with instanceof")?
                                 .freezed();
 
-                            narrowed_ty.assert_valid();
+                            let filtered_ty = if narrowed_ty.is_any() { orig_ty.clone() } else { narrowed_ty };
+
+                            filtered_ty.assert_valid();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
@@ -509,7 +596,7 @@ impl Analyzer<'_, '_> {
                                     name,
                                     Type::Intersection(Intersection {
                                         span,
-                                        types: vec![orig_ty, narrowed_ty],
+                                        types: vec![orig_ty, filtered_ty],
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
@@ -517,9 +604,9 @@ impl Analyzer<'_, '_> {
                                     .freezed(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(name.clone(), narrowed_ty.clone());
+                                self.cur_facts.true_facts.vars.insert(name.clone(), filtered_ty.clone());
 
-                                self.cur_facts.false_facts.excludes.entry(name).or_default().push(narrowed_ty);
+                                self.cur_facts.false_facts.excludes.entry(name).or_default().push(filtered_ty);
                             }
                         }
                     }
@@ -908,10 +995,8 @@ impl Analyzer<'_, '_> {
             }
         }
     }
-}
 
-impl Analyzer<'_, '_> {
-    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool) -> VResult<()> {
+    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool, l_ty: &Type, r_ty: &Type) -> VResult<()> {
         if !self.ctx.in_cond {
             return Ok(());
         }
@@ -941,14 +1026,76 @@ impl Analyzer<'_, '_> {
                             },
                         ))
                     }
-                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
-                        name,
-                        if is_eq {
-                            (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value))
-                        } else {
-                            (TypeFacts::typeof_neq(value), TypeFacts::typeof_eq(value))
-                        },
-                    )),
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => match (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value)) {
+                        (Some(t), Some(f)) => Some((name, if is_eq { (Some(t), Some(f)) } else { (Some(f), Some(t)) })),
+                        (None, None) => {
+                            self.storage.report(
+                                ErrorKind::NoOverlap {
+                                    span,
+                                    value: true,
+                                    left: box l_ty.clone(),
+                                    right: box r_ty.clone(),
+                                }
+                                .into(),
+                            );
+                            // A type guard of the form typeof x === s and typeof x !== s,
+                            // where s is a string literal with any value but 'string', 'number' or
+                            // 'boolean'
+                            let name = Name::try_from(&**arg).unwrap();
+
+                            if is_eq {
+                                //  - typeof x === s
+                                //  removes the primitive types string, number, and boolean from
+                                //  the type of x in true facts.
+                                self.cur_facts.true_facts.excludes.entry(name).or_default().extend(vec![
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                ]);
+                            } else {
+                                //  - typeof x !== s
+                                //  removes the primitive types string, number, and boolean from
+                                //  the type of x in false facts.
+                                self.cur_facts.false_facts.excludes.entry(name).or_default().extend(vec![
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsStringKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                ]);
+                            }
+                            None
+                        }
+                        _ => None,
+                    },
                     _ => None,
                 }
             } else {
@@ -957,10 +1104,18 @@ impl Analyzer<'_, '_> {
         }) {
             // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
             if t != TypeFacts::EQUndefined {
-                for idx in 1..name.as_ids().len() {
-                    let sub = Name::from(&name.as_ids()[..idx]);
+                for idx in 1..name.len() {
+                    let sub = name.slice_to(idx);
 
                     self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                }
+            }
+
+            if f != TypeFacts::EQUndefined {
+                for idx in 1..name.len() {
+                    let sub = name.slice_to(idx);
+
+                    self.cur_facts.false_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
                 }
             }
 
@@ -1129,26 +1284,44 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        orig_ty.make_clone_cheap();
+        orig_ty.freeze();
 
         let _stack = stack::track(span)?;
 
         if let Type::Union(orig) = orig_ty.normalize() {
-            let mut new_types = orig
+            if ty.is_interface() || ty.is_type_lit() {
+                if let Ok(out_result) = self.access_property(
+                    span,
+                    &ty,
+                    &Key::Normal {
+                        span,
+                        sym: "prototype".into(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    Default::default(),
+                ) {
+                    if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(&out_result), Default::default()) {
+                        let result = result.normalize();
+                        if orig.types.iter().any(|ty| ty.type_eq(result)) {
+                            return Ok(out_result.freezed());
+                        }
+                    }
+                }
+            }
+            let new_types = orig
                 .types
                 .iter()
                 .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
                 .collect::<Result<Vec<_>, _>>()?;
 
-            new_types.retain(|ty| !ty.is_never());
+            for elem in new_types.iter() {
+                if orig.types.iter().any(|o_ty| elem.type_eq(o_ty)) {
+                    return Ok(elem.to_owned());
+                }
+            }
 
-            return Ok(Type::Union(Union {
-                span: orig.span,
-                types: new_types,
-                metadata: orig.metadata,
-                tracker: Default::default(),
-            })
-            .fixed());
+            return Ok(Type::new_union(orig.span, new_types).fixed());
         }
 
         if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
@@ -1158,6 +1331,30 @@ impl Analyzer<'_, '_> {
             if ty.is_interface() {
                 return Ok(Type::never(span, Default::default()));
             }
+        }
+
+        if orig_ty.is_any() {
+            if ty.is_interface() || ty.is_type_lit() {
+                if let Ok(result) = self.access_property(
+                    span,
+                    &ty,
+                    &Key::Normal {
+                        span,
+                        sym: "prototype".into(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    Default::default(),
+                ) {
+                    if !result.is_any() {
+                        return Ok(result);
+                    }
+                }
+                if let Ok(result) = self.make_instance(span, &ty) {
+                    return Ok(result);
+                }
+            }
+            return Ok(ty.into_owned());
         }
 
         match ty.normalize() {
@@ -1179,6 +1376,9 @@ impl Analyzer<'_, '_> {
                     for m in &ty.members {
                         if let TypeElement::Constructor(c) = m {
                             if let Some(ret_ty) = &c.ret_ty {
+                                if ret_ty.is_any() {
+                                    return Ok(*ret_ty.clone());
+                                }
                                 return self
                                     .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
                                     .context("tried to narrow constructor return type");
@@ -1629,10 +1829,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
-    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type)> {
+    ///
+    /// Returns `(name, true_fact, false_fact)`.
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
         let span = equals_to.span();
 
-        let mut id: RIdent = name.as_ids()[0].clone().into();
+        let mut id: RIdent = name.top().into();
         id.span.lo = span.lo;
         id.span.hi = span.hi;
 
@@ -1641,29 +1843,38 @@ impl Analyzer<'_, '_> {
 
             let narrowed = self
                 .narrow_with_equality(&orig_ty, equals_to)
-                .context("tried to narrow type with equality")?;
+                .context("tried to narrow type with equality")?
+                .freezed();
 
-            return Ok((name, narrowed));
+            return Ok((name, narrowed.clone(), vec![narrowed]));
         }
 
         let eq_ty = equals_to.normalize();
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 
-        let ids = name.as_ids();
+        let ids = name.inner();
 
         let prop = Key::Normal {
             span,
-            sym: ids[ids.len() - 1].sym().clone(),
+            sym: name.last().clone(),
         };
 
-        let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
+        let ty = self.type_of_name(span, &name.slice_to(name.len() - 1), TypeOfMode::RValue, None)?;
 
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
         if let Type::Union(u) = ty.normalize() {
+            let mut has_undefined = false;
             let mut candidates = vec![];
+            let mut excluded = vec![];
             for ty in &u.types {
+                // TODO(kdy1): Enable this logic iff it's an optional chaining
+                if ty.is_undefined() {
+                    has_undefined = true;
+                    continue;
+                }
+
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                 if let Ok(prop_ty) = prop_res {
@@ -1681,16 +1892,33 @@ impl Analyzer<'_, '_> {
                         }
                     };
                     if possible {
+                        if prop_ty.iter_union().any(|prop_ty| prop_ty.type_eq(equals_to)) {
+                            excluded.push(ty.clone())
+                        }
+
                         candidates.push(ty.clone())
                     }
                 }
             }
-            let actual = Name::from(&name.as_ids()[..name.len() - 1]);
+            let actual = name.slice_to(name.len() - 1);
 
-            return Ok((actual, Type::union(candidates)));
+            if has_undefined && candidates.is_empty() {
+                return Ok((
+                    actual,
+                    Type::Keyword(KeywordType {
+                        span: u.span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                    excluded.freezed(),
+                ));
+            }
+            let ty = Type::new_union(span, candidates).freezed();
+            return Ok((actual, ty, excluded.freezed()));
         }
 
-        Ok((name, eq_ty.clone()))
+        Ok((name, equals_to.clone(), vec![equals_to.clone()]))
     }
 
     /// Returns new type of the variable after comparison with `===`.
@@ -2054,6 +2282,115 @@ impl Analyzer<'_, '_> {
 
         search(e.span, e.op, &e.left)?;
         search(e.span, e.op, &e.right)?;
+    }
+
+    fn get_additional_exclude_target(
+        &mut self,
+        span: Span,
+        origin_ty: Type,
+        r: &Type,
+        name: Name,
+        is_loose_comparison: bool,
+    ) -> FxHashMap<Name, Vec<Type>> {
+        let mut additional_target: FxHashMap<Name, Vec<Type>> = Default::default();
+
+        if let Type::Union(Union { types, .. }) = origin_ty.normalize() {
+            for ty in types {
+                match ty.normalize() {
+                    Type::TypeLit(tl @ TypeLit { members, .. }) => {
+                        if let Ok(property) = self.access_property(
+                            span,
+                            ty.normalize(),
+                            &Key::Normal {
+                                span,
+                                sym: name.top().sym().clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                            Default::default(),
+                        ) {
+                            if property.type_eq(r) {
+                                for m in members {
+                                    if let Some(key) = m.non_computed_key() {
+                                        let l_name = Name::new(key.clone(), name.get_ctxt());
+                                        if name == l_name {
+                                            continue;
+                                        }
+                                        if let Some(act_ty) = m.get_type().cloned() {
+                                            let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
+                                                temp_vec.clone()
+                                            } else {
+                                                if is_loose_comparison {
+                                                    vec![
+                                                        Type::Keyword(KeywordType {
+                                                            span,
+                                                            kind: TsKeywordTypeKind::TsNullKeyword,
+                                                            metadata: Default::default(),
+                                                            tracker: Default::default(),
+                                                        }),
+                                                        Type::Keyword(KeywordType {
+                                                            span,
+                                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                            metadata: Default::default(),
+                                                            tracker: Default::default(),
+                                                        }),
+                                                    ]
+                                                } else {
+                                                    vec![]
+                                                }
+                                            };
+                                            temp_vec.push(act_ty.freezed());
+                                            additional_target.insert(l_name, temp_vec);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Type::Tuple(tu @ Tuple { elems, .. }) => {
+                        if elems.iter().any(|elem| (*elem.ty).type_eq(r)) {
+                            for elem in tu.elems.iter() {
+                                if let Some(RPat::Ident(RBindingIdent {
+                                    id: RIdent { sym, .. }, ..
+                                })) = &elem.label
+                                {
+                                    let l_name = Name::new(sym.clone(), name.get_ctxt());
+                                    if name == l_name {
+                                        continue;
+                                    }
+                                    let mut temp_vec = if let Some(temp_vec) = additional_target.get(&l_name) {
+                                        temp_vec.clone()
+                                    } else {
+                                        if is_loose_comparison {
+                                            vec![
+                                                Type::Keyword(KeywordType {
+                                                    span,
+                                                    kind: TsKeywordTypeKind::TsNullKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                Type::Keyword(KeywordType {
+                                                    span,
+                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                            ]
+                                        } else {
+                                            vec![]
+                                        }
+                                    };
+                                    temp_vec.push((*elem.ty).clone().freezed());
+                                    additional_target.insert(l_name, temp_vec);
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        additional_target
     }
 }
 

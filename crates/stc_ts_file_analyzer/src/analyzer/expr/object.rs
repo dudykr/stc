@@ -5,9 +5,9 @@ use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
-use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union, UnionMetadata};
+use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, TypeParam, Union, UnionMetadata};
 use stc_utils::cache::Freeze;
-use swc_common::{Spanned, SyntaxContext, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
@@ -16,6 +16,11 @@ use crate::{
     validator::ValidateWith,
     VResult,
 };
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct AppendTypeOpts {
+    pub do_not_check_for_undefined: bool,
+}
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -104,9 +109,9 @@ impl Analyzer<'_, '_> {
         object_type: Option<&Type>,
     ) -> VResult<Type> {
         match prop {
-            RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
+            RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
-                self.append_type(to, prop_ty)
+                self.append_type(*dot3_token, to, prop_ty, Default::default())
             }
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
@@ -154,12 +159,27 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(crate) fn is_always_undefined(&mut self, ty: &Type) -> bool {
+        if ty.is_undefined() {
+            return true;
+        }
+        match ty.normalize() {
+            Type::Union(ty) => ty.types.iter().all(|ty| self.is_always_undefined(ty)),
+            Type::Intersection(ty) => ty.types.iter().any(|ty| self.is_always_undefined(ty)),
+            Type::Param(TypeParam {
+                constraint: Some(constraint),
+                ..
+            }) => self.is_always_undefined(constraint),
+            _ => false,
+        }
+    }
+
     /// If rhs is an union type, return type will be union.
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn append_type(&mut self, to: Type, rhs: Type) -> VResult<Type> {
+    pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -174,7 +194,7 @@ impl Analyzer<'_, '_> {
 
         let mut rhs = self
             .normalize(
-                Some(rhs.span()),
+                Some(span),
                 Cow::Owned(rhs),
                 NormalizeTypeOpts {
                     preserve_intersection: true,
@@ -204,11 +224,17 @@ impl Analyzer<'_, '_> {
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
                 if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {
-                    return self.append_type(to, Type::TypeLit(rhs.into_owned()));
+                    return self.append_type(span, to, Type::TypeLit(rhs.into_owned()), opts);
                 }
             }
 
             _ => {}
+        }
+
+        if !opts.do_not_check_for_undefined && self.is_always_undefined(&rhs) {
+            self.storage
+                .report(ErrorKind::NonObjectInSpread { span, ty: box rhs.clone() }.into());
+            return Ok(Type::any(to.span(), Default::default()));
         }
 
         let mut to = to.foldable();
@@ -232,7 +258,17 @@ impl Analyzer<'_, '_> {
                             types: rhs
                                 .types
                                 .into_iter()
-                                .map(|rhs| self.append_type(to.clone(), rhs))
+                                .map(|rhs| {
+                                    self.append_type(
+                                        span,
+                                        to.clone(),
+                                        rhs,
+                                        AppendTypeOpts {
+                                            do_not_check_for_undefined: true,
+                                            ..opts
+                                        },
+                                    )
+                                })
                                 .collect::<Result<_, _>>()?,
                             metadata: UnionMetadata {
                                 common: common_metadata,
@@ -252,7 +288,17 @@ impl Analyzer<'_, '_> {
                     types: to
                         .types
                         .into_iter()
-                        .map(|to| self.append_type(to, rhs.clone()))
+                        .map(|to| {
+                            self.append_type(
+                                span,
+                                to,
+                                rhs.clone(),
+                                AppendTypeOpts {
+                                    do_not_check_for_undefined: true,
+                                    ..opts
+                                },
+                            )
+                        })
                         .collect::<Result<_, _>>()?,
                     metadata: to.metadata,
                     tracker: Default::default(),
@@ -263,15 +309,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(ErrorKind::Unimplemented {
-            span: to.span(),
-            msg: format!("append_type:\n{:?}\n{:?}", to, rhs),
-        }
-        .into())
+        Ok(Type::new_intersection(span, vec![to, rhs]))
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
+    pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -280,15 +322,16 @@ impl Analyzer<'_, '_> {
         }
 
         let mut to = if let Some(key) = rhs.key() {
-            match key {
-                Key::Computed(..) => to.foldable(),
-                _ => self
-                    .exclude_props(rhs.span(), &to, &[key.clone()])
-                    .context("tried to exclude properties before appending a type element")?,
+            if to.is_type_lit() && !key.is_computed() {
+                self.exclude_props(rhs.span(), &to, &[key.clone()])
+                    .context("tried to exclude properties before appending a type element")?
+            } else {
+                to
             }
         } else {
-            to.foldable()
+            to
         };
+        to.normalize_mut();
 
         match to {
             Type::TypeLit(ref mut lit) => {
@@ -308,6 +351,23 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
             .fixed()),
+            Type::Intersection(ref mut to_intersection) => {
+                for to_ty in to_intersection.types.iter_mut().rev() {
+                    if to_ty.is_type_lit() {
+                        *to_ty = self.append_type_element(to_ty.clone(), rhs)?;
+                        return Ok(to);
+                    }
+                }
+
+                to_intersection.types.push(Type::TypeLit(TypeLit {
+                    span: rhs.span(),
+                    members: vec![rhs],
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }));
+
+                Ok(to)
+            }
             _ => Err(ErrorKind::Unimplemented {
                 span: to.span(),
                 msg: format!("append_type_element\n{:?}\n{:?}", to, rhs),

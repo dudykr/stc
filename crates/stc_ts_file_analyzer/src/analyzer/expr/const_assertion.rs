@@ -24,8 +24,8 @@ impl Analyzer<'_, '_> {
         if mode == TypeOfMode::RValue {
             let ctx = Ctx {
                 in_const_assertion: true,
-                cannot_be_tuple: false,
-                prefer_tuple: true,
+                array_lit_cannot_be_tuple: false,
+                prefer_tuple_for_array_lit: true,
                 ..self.ctx
             };
             let mut a = self.with_ctx(ctx);

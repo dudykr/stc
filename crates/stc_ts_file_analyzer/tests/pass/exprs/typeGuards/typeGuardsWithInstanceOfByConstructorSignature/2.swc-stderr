@@ -1,0 +1,90 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:11:1]
+ 11 | if (obj4 instanceof B) {
+    :     ^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:11:1]
+ 11 | if (obj4 instanceof B) {
+    :                     ^
+    `----
+
+Error: 
+  > BConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:11:1]
+ 11 | if (obj4 instanceof B) {
+    :     ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:12:3]
+ 12 | obj4; // B<any>
+    : ^^^^
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
+ 13 | obj4.foo = "str";
+    : ^^^^
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
+ 13 | obj4.foo = "str";
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:13:3]
+ 13 | obj4.foo = "str";
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "str"
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
+ 14 | obj4.foo = 1;
+    : ^^^^
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
+ 14 | obj4.foo = 1;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/2.ts:14:3]
+ 14 | obj4.foo = 1;
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 1

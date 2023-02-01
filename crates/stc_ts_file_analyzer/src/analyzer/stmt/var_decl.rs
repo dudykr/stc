@@ -23,7 +23,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         pat::PatMode,
-        scope::VarKind,
+        scope::{vars::DeclareVarsOpts, ExpandOpts, VarKind},
         types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
         Analyzer, Ctx,
@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
                         Some(Type::any(v_span, Default::default())),
                         None,
                     ) {
-                        Ok(()) => {}
+                        Ok(..) => {}
                         Err(err) => {
                             self.storage.report(err);
                         }
@@ -238,7 +238,7 @@ impl Analyzer<'_, '_> {
                             })
                         })();
                         ty.assert_valid();
-                        ty.make_clone_cheap();
+                        ty.freeze();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
@@ -248,7 +248,7 @@ impl Analyzer<'_, '_> {
                         value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
-                        value_ty.make_clone_cheap();
+                        value_ty.freeze();
 
                         let opts = AssignOpts {
                             span: v_span,
@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                             Ok(()) => {
                                 let mut ty = ty;
                                 prevent_generalize(&mut ty);
-                                ty.make_clone_cheap();
+                                ty.freeze();
 
                                 let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?.freezed();
 
@@ -277,7 +277,7 @@ impl Analyzer<'_, '_> {
 
                                 // let ty = ty.fold_with(&mut Generalizer::default());
                                 match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, Some(actual_ty), None) {
-                                    Ok(()) => {}
+                                    Ok(..) => {}
                                     Err(err) => {
                                         self.storage.report(err);
                                     }
@@ -289,7 +289,7 @@ impl Analyzer<'_, '_> {
                                 self.storage.report(err);
 
                                 match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, None, None) {
-                                    Ok(()) => {}
+                                    Ok(..) => {}
                                     Err(err) => {
                                         self.storage.report(err);
                                     }
@@ -300,7 +300,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     None => {
-                        self.ctx.prefer_tuple = matches!(v.name, RPat::Array(_) | RPat::Object(..));
+                        self.ctx.prefer_tuple_for_array_lit = matches!(v.name, RPat::Array(_) | RPat::Object(..));
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             ty.assert_valid();
-                            ty.make_clone_cheap();
+                            ty.freeze();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
@@ -364,20 +364,21 @@ impl Analyzer<'_, '_> {
                         debug!("[vars]: Type after normalization: {}", dump_type_as_string(&ty));
 
                         if let Type::Ref(..) = ty.normalize() {
-                            let ctx = Ctx {
-                                preserve_ref: true,
-                                ignore_expand_prevention_for_all: false,
-                                ignore_expand_prevention_for_top: false,
-                                ..self.ctx
-                            };
-                            ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                            ty = self.expand(
+                                span,
+                                ty,
+                                ExpandOpts {
+                                    preserve_ref: true,
+                                    ..Default::default()
+                                },
+                            )?;
                             ty.assert_valid();
 
                             debug!("[vars]: Type after expansion: {}", dump_type_as_string(&ty));
                         }
 
                         ty.assert_valid();
-                        ty.make_clone_cheap();
+                        ty.freeze();
 
                         if self.scope.is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
@@ -536,15 +537,14 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Ref(..) => {}
                             _ => {
-                                let ctx = Ctx {
-                                    preserve_ref: true,
-                                    ignore_expand_prevention_for_all: false,
-                                    ignore_expand_prevention_for_top: false,
-                                    preserve_params: true,
-                                    preserve_ret_ty: true,
-                                    ..self.ctx
-                                };
-                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                                ty = self.expand(
+                                    span,
+                                    ty,
+                                    ExpandOpts {
+                                        preserve_ref: true,
+                                        ..Default::default()
+                                    },
+                                )?;
                             }
                         }
                         ty.assert_valid();
@@ -660,7 +660,7 @@ impl Analyzer<'_, '_> {
                             self.prevent_expansion(&mut *ty);
                         }
 
-                        ty.make_clone_cheap();
+                        ty.freeze();
 
                         if !self.is_builtin {
                             // Report error if type is not found.
@@ -689,7 +689,7 @@ impl Analyzer<'_, '_> {
                             kind == VarDeclKind::Var,
                             false,
                         ) {
-                            Ok(()) => {}
+                            Ok(..) => {}
                             Err(err) => {
                                 self.storage.report(err);
                             }
@@ -698,8 +698,17 @@ impl Analyzer<'_, '_> {
                     _ => {
                         // For ambient contexts and loops, we add variables to the scope.
 
-                        match self.declare_vars(VarKind::Var(kind), &v.name) {
-                            Ok(()) => {}
+                        match self.add_vars(
+                            &v.name,
+                            None,
+                            None,
+                            None,
+                            DeclareVarsOpts {
+                                kind: VarKind::Var(kind),
+                                use_iterator_for_array: false,
+                            },
+                        ) {
+                            Ok(..) => {}
                             Err(err) => {
                                 self.storage.report(err);
                             }
@@ -712,7 +721,17 @@ impl Analyzer<'_, '_> {
 
             debug_assert!(self.ctx.allow_ref_declaring);
             if v.name.get_ty().is_none() {
-                self.declare_vars(VarKind::Var(kind), &v.name).report(&mut self.storage);
+                self.add_vars(
+                    &v.name,
+                    None,
+                    None,
+                    None,
+                    DeclareVarsOpts {
+                        kind: VarKind::Var(kind),
+                        use_iterator_for_array: false,
+                    },
+                )
+                .report(&mut self.storage);
             }
 
             remove_declaring!();

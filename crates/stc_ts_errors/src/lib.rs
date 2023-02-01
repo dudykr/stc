@@ -7,6 +7,7 @@ use std::{
     fmt,
     fmt::{Debug, Display},
     ops::RangeInclusive,
+    panic::Location,
     path::PathBuf,
 };
 
@@ -25,22 +26,15 @@ use swc_common::{
 use swc_ecma_ast::{AssignOp, BinaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
-#[cfg(debug_assertions)]
-use crate::context::with_ctx;
 
-pub mod context;
 pub mod debug;
 mod result_ext;
-#[cfg(debug_assertions)]
-type Contexts = Vec<String>;
-
-#[cfg(not(debug_assertions))]
-type Contexts = ();
 
 /// [ErrorKind] with debug contexts attached.
 #[derive(Clone, PartialEq, Spanned)]
 pub struct Error {
-    contexts: Contexts,
+    #[cfg(debug_assertions)]
+    contexts: Vec<String>,
     #[span]
     inner: Box<ErrorKind>,
 }
@@ -57,18 +51,25 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             #[cfg(debug_assertions)]
-            contexts: with_ctx(|contexts| contexts.iter().rev().map(|v| v()).collect()),
-            #[cfg(not(debug_assertions))]
-            contexts: (),
+            contexts: Default::default(),
             inner: Box::new(kind),
         }
     }
 }
 
 impl Error {
-    pub fn context(mut self, context: impl Display) -> Error {
+    #[track_caller]
+    pub fn context(self, context: impl Display) -> Error {
+        return self.context_impl(Location::caller(), context);
+    }
+
+    #[cfg_attr(not(debug_assertions), attr)]
+    pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
-        self.contexts.push(context.to_string());
+        {
+            self.contexts
+                .push(format!("{} (at {}:{}:{})", context, loc.file(), loc.line(), loc.column()));
+        }
         self
     }
 
@@ -129,6 +130,12 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS2698
+    NonObjectInSpread {
+        span: Span,
+        ty: Box<Type>,
+    },
+
     /// TS2312
     NotExtendableType {
         span: Span,
@@ -1367,11 +1374,6 @@ pub enum ErrorKind {
         op: AssignOp,
     },
 
-    /// TS2471
-    NonSymbolComputedPropInFormOfSymbol {
-        span: Span,
-    },
-
     ExpectedNArgsButGotM {
         span: Span,
         min: usize,
@@ -1474,6 +1476,11 @@ pub enum ErrorKind {
 
     /// TS2675
     InvalidExtendDueToConstructorPrivate {
+        span: Span,
+    },
+
+    /// TS2804
+    DuplicatePrivateStaticInstance {
         span: Span,
     },
 }
@@ -1615,9 +1622,10 @@ impl ErrorKind {
                 }
             }
         }
+        let loc = Location::caller();
 
         let err: Error = self.into();
-        err.context(context.to_string())
+        err.context_impl(loc, context)
     }
 
     /// Split error into causes.
@@ -1691,7 +1699,6 @@ impl ErrorKind {
             | ErrorKind::NoSuchPropertyInModule { .. } => 2339,
 
             ErrorKind::AssignOpCannotBeApplied { .. } => 2365,
-            ErrorKind::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             ErrorKind::TypeUsedAsVar { .. } => 2693,
             ErrorKind::TypeNotFound { .. } => 2304,
 
@@ -2022,6 +2029,8 @@ impl ErrorKind {
 
             ErrorKind::NotExtendableType { .. } => 2312,
 
+            ErrorKind::NonObjectInSpread { .. } => 2698,
+
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
             ErrorKind::ClassConstructorProtected { .. } => 2674,
@@ -2029,6 +2038,8 @@ impl ErrorKind {
             ErrorKind::InvalidExtendDueToConstructorPrivate { .. } => 2675,
 
             ErrorKind::SuperCanOnlyAccessMethod { .. } => 2340,
+
+            ErrorKind::DuplicatePrivateStaticInstance { .. } => 2804,
 
             _ => 0,
         }
@@ -2069,15 +2080,17 @@ impl ErrorKind {
 
         for e in vec {
             match *e.inner {
-                ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
-                _ => {
-                    if let Some(idx) = buf.iter().position(|prev| prev.inner == e.inner) {
+                ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => {
+                    buf.extend(Self::flatten(errors).into_iter().map(|mut err| {
                         #[cfg(debug_assertions)]
-                        buf[idx].contexts.push(format!("duplicate: {}", e.contexts.join("\n")));
-                        continue;
-                    }
-                    buf.push(e)
+                        for context in &e.contexts {
+                            err.contexts.push(context.clone());
+                        }
+
+                        err
+                    }))
                 }
+                _ => buf.push(e),
             }
         }
 

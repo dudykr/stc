@@ -10,7 +10,8 @@ use stc_ts_types::{
     InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, debug_ctx, stack};
+use stc_utils::{cache::Freeze, stack};
+use stc_visit::visit_cache;
 use swc_atoms::js_word;
 use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -145,7 +146,7 @@ impl GenericExpander<'_> {
             }
 
             Type::Mapped(mut m @ Mapped { ty: Some(..), .. }) => {
-                m.make_clone_cheap();
+                m.freeze();
 
                 if let Some(constraint) = &m.type_param.constraint {
                     if let Type::Operator(
@@ -466,6 +467,8 @@ impl GenericExpander<'_> {
     }
 }
 
+visit_cache!(pub static GENERIC_CACHE: bool);
+
 impl Fold<Type> for GenericExpander<'_> {
     fn fold(&mut self, ty: Type) -> Type {
         let _stack = match stack::track(ty.span()) {
@@ -475,7 +478,6 @@ impl Fold<Type> for GenericExpander<'_> {
                 return ty;
             }
         };
-        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&ty)));
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
@@ -595,6 +597,25 @@ impl Fold<Method> for GenericExpander<'_> {
 struct GenericChecker<'a> {
     params: &'a FxHashMap<Id, Type>,
     found: bool,
+}
+
+impl Visit<Type> for GenericChecker<'_> {
+    fn visit(&mut self, ty: &Type) {
+        if self.found {
+            return;
+        }
+
+        let key = ty as *const Type as *const ();
+
+        if let Some(v) = GENERIC_CACHE.get_copied(key) {
+            self.found |= v;
+            return;
+        }
+
+        ty.visit_children_with(self);
+
+        GENERIC_CACHE.insert(key, self.found);
+    }
 }
 
 impl Visit<TypeParam> for GenericChecker<'_> {
