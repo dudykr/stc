@@ -16,7 +16,7 @@ use stc_utils::{
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 use crate::{
     analyzer::{
@@ -55,7 +55,6 @@ impl AddAssign for ReturnValues {
 
 impl Analyzer<'_, '_> {
     /// This method returns `Generator` if `yield` is found.
-    #[instrument(skip(self, span, is_async, is_generator, stmts))]
     pub(in crate::analyzer) fn visit_stmts_for_return(
         &mut self,
         span: Span,
@@ -63,6 +62,12 @@ impl Analyzer<'_, '_> {
         is_generator: bool,
         stmts: &Vec<RStmt>,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "visit_stmts_for_return").entered())
+        } else {
+            None
+        };
+
         let marks = self.marks();
 
         debug_assert_eq!(span.ctxt, SyntaxContext::empty());

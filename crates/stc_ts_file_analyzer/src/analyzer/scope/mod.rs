@@ -540,7 +540,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    #[instrument(name = "Scope::register_type", skip(self, name, ty, should_override))]
+    #[instrument(name = "Scope::register_type", skip_all)]
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
