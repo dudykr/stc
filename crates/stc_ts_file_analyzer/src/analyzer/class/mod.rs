@@ -667,13 +667,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 let params = {
-                    let prev_len = child.scope.declaring_but_free_to_ref.len();
+                    let prev_len = child.scope.declaring_parameters.len();
                     let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
-                    child.scope.declaring_but_free_to_ref.extend(ids);
+                    child.scope.declaring_parameters.extend(ids);
 
                     let res = c.function.params.validate_with(child);
 
-                    child.scope.declaring_but_free_to_ref.truncate(prev_len);
+                    child.scope.declaring_parameters.truncate(prev_len);
 
                     res?
                 };

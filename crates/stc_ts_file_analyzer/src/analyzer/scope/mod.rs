@@ -70,7 +70,7 @@ pub(crate) struct Scope<'a> {
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
     pub declaring: Vec<Id>,
-    pub declaring_but_free_to_ref: Vec<Id>,
+    pub declaring_parameters: Vec<Id>,
 
     pub declared_return_type: Option<Type>,
 
@@ -183,7 +183,7 @@ impl Scope<'_> {
     }
 
     pub fn is_declaring(&self, id: &Id) -> bool {
-        if self.declaring.contains(id) || self.declaring_but_free_to_ref.contains(id) {
+        if self.declaring.contains(id) || self.declaring_parameters.contains(id) {
             return true;
         }
 
@@ -194,7 +194,7 @@ impl Scope<'_> {
     }
 
     pub fn can_access_declaring_regardless_of_context(&self, id: &Id) -> bool {
-        if self.declaring_but_free_to_ref.contains(id) {
+        if self.declaring_parameters.contains(id) {
             return true;
         }
 
@@ -369,7 +369,7 @@ impl Scope<'_> {
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
-            declaring_but_free_to_ref: self.declaring_but_free_to_ref,
+            declaring_parameters: self.declaring_parameters,
             declared_return_type: self.declared_return_type,
             declaring_type_params: self.declaring_type_params,
             vars: self.vars,
@@ -1763,7 +1763,7 @@ impl<'a> Scope<'a> {
             parent,
             kind,
             declaring: Default::default(),
-            declaring_but_free_to_ref: Default::default(),
+            declaring_parameters: Default::default(),
             declared_return_type: None,
             declaring_type_params: Default::default(),
             vars: Default::default(),
