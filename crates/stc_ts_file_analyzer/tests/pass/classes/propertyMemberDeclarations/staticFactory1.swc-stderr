@@ -1,0 +1,63 @@
+
+  x Type
+   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:4:9]
+ 4 | return new this();
+   :            ^^^^
+   `----
+
+Error: 
+  > this
+
+  x Type
+   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:4:9]
+ 4 | return new this();
+   :        ^^^^^^^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:8:1]
+ 8 | class Derived extends Base {
+   :                       ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:11:1]
+ 11 | var d = Derived.create();
+    :         ^^^^^^^
+    `----
+
+Error: 
+  > typeof Derived
+
+  x Type
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:11:1]
+ 11 | var d = Derived.create();
+    :         ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > typeof Base
+
+  x Type
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:13:1]
+ 13 | d.foo();
+    : ^
+    `----
+
+Error: 
+  > typeof Base
+
+  x Type
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:13:1]
+ 13 | d.foo();
+    : ^^^^^^^
+    `----
+
+Error: 
+  > number
