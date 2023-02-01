@@ -26,3 +26,5 @@ cat "$GIST_DIR/.stc/dedup.txt" \
     | xargs grep 'extra_error: [1-9][0-9]*' \
     | sort -n -k 3 -t ":" -r \
     > "$GIST_DIR/list.txt"
+
+(cd $GIST_DIR && git commit -am "Update" && git push)
