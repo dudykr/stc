@@ -7,7 +7,7 @@ function sortFile {
     mv .stc/tmp.txt $1
 }
 
-GIST_DIR="$(cd stc-issue-split && pwd)"
+GIST_DIR="$HOME/projects/stc-issue-split"
 echo "Gist dir: $GIST_DIR"
 
 # Clone git@github.com:dudykr/stc-issue-split.git to your CDPATH
@@ -16,16 +16,12 @@ echo "Gist dir: $GIST_DIR"
 echo "Sorting done.txt"
 (cd $GIST_DIR && sortFile done.txt)
 
-echo "Copying done.txt"
-cp $GIST_DIR/done.txt .stc
-
-echo "Find"
-find crates/* -name "*.stats.rust-debug" > .stc/all-tests.txt
+find crates/* -name "*.stats.rust-debug" > "$GIST_DIR/.stc/all.txt"
 
 echo "comm"
-comm -23 .stc/all-tests.txt .stc/done.txt > .stc/tests-to-split.txt
+comm -23 "$GIST_DIR/.stc/all.txt" "$GIST_DIR/done.txt" > .stc/dedup.txt
 
-cat .stc/tests-to-split.txt | \
+cat .stc/dedup.txt \
     | xargs grep 'extra_error: [1-9][0-9]*' \
     | sort -n -k 3 -t ":" -r \
-    > .stc/all-tests-to-split.txt
+    > "$GIST_DIR/list.txt"
