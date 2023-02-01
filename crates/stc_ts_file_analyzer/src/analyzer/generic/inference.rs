@@ -199,7 +199,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `tsc`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_type_using_union(
         &mut self,
         span: Span,
@@ -208,6 +207,12 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "infer_type_using_union").entered())
+        } else {
+            None
+        };
+
         let (temp_sources, temp_targets) = self.infer_from_matching_types(
             span,
             inferred,

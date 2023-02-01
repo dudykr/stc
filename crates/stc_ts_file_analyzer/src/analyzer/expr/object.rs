@@ -57,8 +57,13 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "normalize_union").entered())
+        } else {
+            None
+        };
+
         let start = Instant::now();
         ty.visit_mut_with(&mut ObjectUnionNormalizer { preserve_specified });
 
@@ -100,7 +105,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn append_prop_or_spread_to_type(
         &mut self,
         known_keys: &mut Vec<Key>,
@@ -108,6 +112,12 @@ impl Analyzer<'_, '_> {
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "append_prop_or_spread_to_type").entered())
+        } else {
+            None
+        };
+
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
@@ -178,8 +188,13 @@ impl Analyzer<'_, '_> {
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "append_type").entered())
+        } else {
+            None
+        };
+
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -312,8 +327,13 @@ impl Analyzer<'_, '_> {
         Ok(Type::new_intersection(span, vec![to, rhs]))
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "append_type_element").entered())
+        } else {
+            None
+        };
+
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }

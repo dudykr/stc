@@ -635,8 +635,13 @@ impl Analyzer<'_, '_> {
         true
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> VResult<Key> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "validate_key").entered())
+        } else {
+            None
+        };
+
         if computed {
             prop.validate_with_default(self)
                 .and_then(|ty| {
@@ -683,8 +688,13 @@ impl Analyzer<'_, '_> {
     /// # Parameters
     ///
     /// - `declared`: Key of declared property.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "key_matches").entered())
+        } else {
+            None
+        };
+
         match declared {
             Key::Computed(..) => {}
             _ => {
@@ -809,7 +819,6 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn access_property_of_type_elements(
         &mut self,
         span: Span,
@@ -819,6 +828,12 @@ impl Analyzer<'_, '_> {
         members: &[TypeElement],
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "access_property_of_type_elements").entered())
+        } else {
+            None
+        };
+
         let mut matching_elements = vec![];
         let mut read_only_flag = false;
         for el in members.iter() {
@@ -3206,8 +3221,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand type parameters using `type_args`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "expand_generics_with_type_args").entered())
+        } else {
+            None
+        };
+
         match ty.normalize() {
             Type::Interface(Interface { type_params, body, .. }) => {
                 let mut params = HashMap::default();
@@ -3260,7 +3280,6 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn type_of_name(
         &mut self,
         span: Span,
@@ -3268,6 +3287,12 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "type_of_name").entered())
+        } else {
+            None
+        };
+
         assert!(!name.is_empty(), "Cannot determine type of empty name");
 
         let (top, symbols) = name.inner();
@@ -3313,8 +3338,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returned type reflects conditional type facts.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "type_of_var").entered())
+        } else {
+            None
+        };
+
         let span = i.span();
         let id: Id = i.into();
         let name: Name = i.into();
@@ -3820,8 +3850,13 @@ impl Analyzer<'_, '_> {
         self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "type_of_ts_entity_name_inner").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolved_type(span, n, type_args);
