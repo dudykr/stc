@@ -90,7 +90,7 @@ impl Analyzer<'_, '_> {
             let params = {
                 let prev_len = child.scope.declaring.len();
                 let ids: Vec<Id> = find_ids_in_pat(&f.params);
-                child.scope.declaring.extend(ids);
+                child.scope.declaring_but_free_to_ref.extend(ids);
 
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
