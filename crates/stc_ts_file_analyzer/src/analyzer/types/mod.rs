@@ -122,7 +122,13 @@ impl Analyzer<'_, '_> {
         let input = dump_type_as_string(&ty);
 
         let res = (|| {
-            let _stack = stack::track(actual_span)?;
+            let _stack = match stack::track(actual_span) {
+                Ok(v) => v,
+                Err(err) => {
+                    // print_backtrace();
+                    return Err(err.into());
+                }
+            };
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -593,11 +599,29 @@ impl Analyzer<'_, '_> {
 
                     Type::Instance(ty) => {
                         let ty = self
-                            .instantiate_for_normalization(span, &ty.ty, opts)
+                            .instantiate_for_normalization(
+                                span,
+                                &ty.ty,
+                                NormalizeTypeOpts {
+                                    preserve_global_this: true,
+                                    ..opts
+                                },
+                            )
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
 
-                        let mut ty = self.normalize(span, Cow::Owned(ty), opts)?;
+                        if ty.is_query() || ty.is_instance() || ty.is_ref_type() {
+                            return Ok(Cow::Owned(ty));
+                        }
+
+                        let mut ty = self.normalize(
+                            span,
+                            Cow::Owned(ty),
+                            NormalizeTypeOpts {
+                                preserve_global_this: true,
+                                ..opts
+                            },
+                        )?;
                         ty.freeze();
                         let ty = ty.into_owned();
 
@@ -1364,7 +1388,7 @@ impl Analyzer<'_, '_> {
 
         Ok(match ty {
             // For self-references in classes, we preserve `instanceof` type.
-            Type::Ref(..) => Type::Instance(Instance {
+            Type::Ref(..) | Type::Query(..) => Type::Instance(Instance {
                 span: actual_span,
                 ty: box ty,
                 metadata: InstanceMetadata {

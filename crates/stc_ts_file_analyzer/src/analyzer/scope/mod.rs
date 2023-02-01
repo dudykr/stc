@@ -630,6 +630,14 @@ impl Scope<'_> {
         self.parent?.this()
     }
 
+    pub fn this_class_name(&self) -> Option<Id> {
+        if let Some(ref id) = self.this_class_name {
+            return Some(id.clone());
+        }
+
+        self.parent?.this_class_name()
+    }
+
     pub fn get_var(&self, sym: &Id) -> Option<&VarInfo> {
         if let Some(v) = self.vars.get(sym) {
             return Some(v);
