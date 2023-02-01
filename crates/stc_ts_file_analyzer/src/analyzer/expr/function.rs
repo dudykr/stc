@@ -1,7 +1,9 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
-use stc_ts_types::{Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type};
+use stc_ts_types::{
+    type_id::DestructureId, Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type, TypeParam, Union,
+};
 use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
@@ -39,10 +41,8 @@ impl Analyzer<'_, '_> {
                 for p in &f.params {
                     child.default_any_pat(p);
                 }
-
                 f.params.validate_with(&mut *child.with_ctx(ctx))?
             };
-
             let declared_ret_ty = match f.return_type.validate_with(child) {
                 Some(Ok(ty)) => Some(ty),
                 Some(Err(err)) => {
@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
             // We do it by creating a tuple and calling access_property
             // TODO(kdy1): This is not efficient.
             let mut params_tuple_els = vec![];
-
+            let mut temp_els = vec![];
             for param in candidates[0].params.iter() {
                 match param.pat {
                     RPat::Rest(..) => {
@@ -179,16 +179,56 @@ impl Analyzer<'_, '_> {
                         });
                     }
                 }
+                match param.ty.normalize() {
+                    ty @ Type::Union(..) => {
+                        temp_els.push(TupleElement {
+                            span: param.span,
+                            label: None,
+                            ty: Box::new(ty.clone().freezed()),
+                            tracker: Default::default(),
+                        });
+                    }
+                    Type::Param(TypeParam {
+                        constraint: Some(box ty), ..
+                    }) => {
+                        if let ty @ Type::Union(..) = ty.normalize() {
+                            temp_els.push(TupleElement {
+                                span: param.span,
+                                label: None,
+                                ty: Box::new(ty.clone().freezed()),
+                                tracker: Default::default(),
+                            });
+                        }
+                    }
+                    _ => {}
+                }
             }
 
-            let params_tuple = Type::Tuple(Tuple {
+            let mut params_tuple = Type::Tuple(Tuple {
                 span,
                 elems: params_tuple_els,
                 metadata: Default::default(),
                 tracker: Default::default(),
             });
+            params_tuple.freeze();
+
+            let destructure_key = self.get_destructor_unique_key();
 
             for (idx, param) in params.enumerate() {
+                if temp_els.len() == 1 {
+                    if let Some(TupleElement { ty: box ty, .. }) = temp_els.first_mut() {
+                        if let Some(Union { types, .. }) = ty.as_union_type_mut() {
+                            for ty in types {
+                                if let Some(Tuple { elems, .. }) = ty.as_tuple_mut() {
+                                    if idx < elems.len() {
+                                        elems[idx].label = Some(param.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if param.get_ty().is_some() {
                     continue;
                 }
@@ -206,7 +246,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                if let Ok(ty) = self.access_property(
+                if let Ok(mut ty) = self.access_property(
                     param.span(),
                     &params_tuple,
                     &Key::Num(RNumber {
@@ -221,6 +261,7 @@ impl Analyzer<'_, '_> {
                     // Store type information, so the pattern
                     // validator can use a correct
                     // type.
+                    add_destructure_sign(&mut ty, destructure_key);
                     if let Some(pat_node_id) = param.node_id() {
                         if let Some(m) = &mut self.mutations {
                             m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.clone());
@@ -228,6 +269,25 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+
+            self.regist_destructure(
+                span,
+                Some(
+                    Type::Tuple(Tuple {
+                        span,
+                        elems: temp_els,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .freezed(),
+                ),
+                Some(destructure_key),
+            );
         }
     }
+}
+
+fn add_destructure_sign(ty: &mut Type, key: DestructureId) {
+    ty.metadata_mut().destructure_key = key;
+    ty.freeze();
 }

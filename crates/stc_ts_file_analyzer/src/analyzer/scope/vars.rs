@@ -1058,7 +1058,7 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
+    pub fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
@@ -1082,6 +1082,18 @@ impl Analyzer<'_, '_> {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
                     return self.regist_destructure(span, Some(result.into_owned()), des_key);
                 }
+            }
+
+            Some(Type::Tuple(Tuple { elems, .. })) => {
+                if elems.len() == 1 {
+                    if let Some(TupleElement { ty: box ty, .. }) = elems.first() {
+                        return self.regist_destructure(span, Some(ty.clone()), des_key);
+                    }
+                }
+            }
+
+            Some(Type::Rest(RestType { ty: box ty, .. })) => {
+                return self.regist_destructure(span, Some(ty.clone()), des_key);
             }
             _ => {}
         }
