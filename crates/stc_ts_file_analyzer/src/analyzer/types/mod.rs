@@ -127,7 +127,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 for parent in extends {
                     let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
-                    if let Type::Array(_) = &parent {
+                    if let Type::Array(_) | Type::Tpl(_) = &parent {
                         return Ok(Cow::Owned(parent));
                     }
                 }
