@@ -33,7 +33,6 @@ impl Analyzer<'_, '_> {
     /// let a: A = foo;
     /// let b: { key: string } = foo;
     /// ```
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn assign_to_type_elements(
         &mut self,
         data: &mut AssignData,
@@ -43,6 +42,12 @@ impl Analyzer<'_, '_> {
         lhs_metadata: TypeLitMetadata,
         opts: AssignOpts,
     ) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_to_type_elements").entered())
+        } else {
+            None
+        };
+
         let span = opts.span.with_ctxt(SyntaxContext::empty());
         // debug_assert!(!span.is_dummy());
 

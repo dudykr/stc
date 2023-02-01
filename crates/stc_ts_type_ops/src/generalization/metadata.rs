@@ -2,7 +2,7 @@ use stc_ts_types::{replace::replace_type, LitType, Type};
 use stc_ts_utils::MapWithMut;
 use tracing::instrument;
 
-#[instrument(skip(ty))]
+#[instrument(skip_all)]
 pub fn prevent_generalize(ty: &mut Type) {
     replace_type(
         ty,

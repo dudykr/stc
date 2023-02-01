@@ -540,7 +540,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    #[instrument(name = "Scope::register_type", skip(self, name, ty, should_override))]
+    #[instrument(name = "Scope::register_type", skip_all)]
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
@@ -692,8 +692,13 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "expand").entered())
+        } else {
+            None
+        };
+
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
         }
@@ -769,8 +774,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "register_type").entered())
+        } else {
+            None
+        };
+
         if cfg!(debug_assertions) {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
         }
@@ -1091,8 +1101,13 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "find_local_type").entered())
+        } else {
+            None
+        };
+
         #[allow(dead_code)]
         static ANY: Lazy<Type> = Lazy::new(|| {
             Type::Keyword(KeywordType {
@@ -1601,7 +1616,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Merge with declare_vars_*
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_complex_vars(
         &mut self,
         kind: VarKind,
@@ -1610,6 +1624,12 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "declare_complex_vars").entered())
+        } else {
+            None
+        };
+
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
                 pat,

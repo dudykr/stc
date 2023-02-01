@@ -892,8 +892,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "exclude_props").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let ty = (|| -> VResult<_> {

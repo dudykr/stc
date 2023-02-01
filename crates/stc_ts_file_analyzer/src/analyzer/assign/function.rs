@@ -27,7 +27,6 @@ use crate::{
 
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
@@ -40,6 +39,12 @@ impl Analyzer<'_, '_> {
         r_ret_ty: Option<&Type>,
         opts: AssignOpts,
     ) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_to_fn_like").entered())
+        } else {
+            None
+        };
+
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
         if let Some(r_ret_ty) = r_ret_ty {
@@ -402,8 +407,13 @@ impl Analyzer<'_, '_> {
     /// a = b;
     /// b = a; // error
     /// ```
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn assign_to_function(&mut self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_to_function").entered())
+        } else {
+            None
+        };
+
         let span = opts.span;
         let r = r.normalize();
 
@@ -507,7 +517,6 @@ impl Analyzer<'_, '_> {
     /// a18 = b18; // ok
     /// b18 = a18; // ok
     /// ```
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
@@ -516,6 +525,12 @@ impl Analyzer<'_, '_> {
         r: &Type,
         opts: AssignOpts,
     ) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_to_constructor").entered())
+        } else {
+            None
+        };
+
         let span = opts.span;
         let r = r.normalize();
 
@@ -636,8 +651,13 @@ impl Analyzer<'_, '_> {
     /// # Notes
     ///
     ///  - `string` is assignable to `...args: any[]`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_param").entered())
+        } else {
+            None
+        };
+
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
 
@@ -659,8 +679,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Implementation of `assign_param`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn assign_param_type(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_param_type").entered())
+        } else {
+            None
+        };
+
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
 
@@ -798,8 +823,13 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_params").entered())
+        } else {
+            None
+        };
+
         let span = opts.span;
 
         let mut li = l.iter().filter(|p| {

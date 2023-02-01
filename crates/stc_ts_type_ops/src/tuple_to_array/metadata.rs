@@ -3,7 +3,7 @@ use stc_ts_utils::MapWithMut;
 use tracing::instrument;
 
 /// TODO(kdy1): Optimize by visiting only tuple types.
-#[instrument(skip(ty))]
+#[instrument(skip_all)]
 pub fn prevent_tuple_to_array(ty: &mut Type) {
     replace_type(
         ty,
