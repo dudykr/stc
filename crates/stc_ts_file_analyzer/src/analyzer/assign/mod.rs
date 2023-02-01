@@ -7,9 +7,9 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement,
-    TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple,
+    Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -1410,7 +1410,6 @@ impl Analyzer<'_, '_> {
                     .assign_with_opts(data, ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
             }
-
             _ => {}
         }
 
@@ -1421,6 +1420,22 @@ impl Analyzer<'_, '_> {
         }
 
         match rhs {
+            Type::Interface(Interface {
+                span,
+                name,
+                type_params,
+                extends,
+                body,
+                metadata: InterfaceMetadata { common },
+                tracker,
+            }) => {
+                for parent in extends {
+                    let ty = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
+                    if let Type::Array(_) = &ty {
+                        return self.assign_with_opts(data, &ty, rhs, opts);
+                    }
+                }
+            }
             Type::Ref(..) => {
                 let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
                 new_rhs.freeze();
