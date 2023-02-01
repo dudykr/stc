@@ -1550,6 +1550,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::StaticThis(..) => {
+                    dbg!("STATIC", self.scope.this());
                     return Ok(Type::Instance(Instance {
                         span,
                         ty: box Type::StaticThis(StaticThis {
@@ -1559,7 +1560,7 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }))
+                    }));
                 }
 
                 Type::Function(..) if self.rule().no_implicit_any => {
