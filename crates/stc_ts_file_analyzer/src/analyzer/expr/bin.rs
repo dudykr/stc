@@ -1111,6 +1111,14 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            if f != TypeFacts::EQUndefined {
+                for idx in 1..name.len() {
+                    let sub = name.slice_to(idx);
+
+                    self.cur_facts.false_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                }
+            }
+
             // Add type facts
             self.cur_facts.true_facts.facts.insert(name.clone(), t);
             self.cur_facts.false_facts.facts.insert(name, f);
