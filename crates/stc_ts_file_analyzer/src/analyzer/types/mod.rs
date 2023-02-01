@@ -114,22 +114,7 @@ impl Analyzer<'_, '_> {
             | Type::EnumVariant(..)
             | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
-            Type::Interface(Interface {
-                span,
-                name,
-                type_params,
-                extends,
-                body,
-                metadata: InterfaceMetadata { common },
-                tracker,
-            }) => {
-                for parent in extends {
-                    let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
-                    if let Type::Array(_) | Type::Tpl(_) = &parent {
-                        return Ok(Cow::Owned(parent));
-                    }
-                }
-            }
+
             _ => {}
         }
 
