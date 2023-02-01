@@ -1364,7 +1364,7 @@ impl Analyzer<'_, '_> {
 
         Ok(match ty {
             // For self-references in classes, we preserve `instanceof` type.
-            Type::Ref(..) => Type::Instance(Instance {
+            Type::Ref(..) | Type::Query(..) => Type::Instance(Instance {
                 span: actual_span,
                 ty: box ty,
                 metadata: InstanceMetadata {
