@@ -33,7 +33,7 @@ impl ModuleItemOrStmt for RStmt {
 }
 
 /// Check if `ty` stores infer type in it.
-#[instrument(skip(n))]
+#[instrument(skip_all)]
 pub(crate) fn contains_infer_type<T>(n: &T) -> bool
 where
     T: VisitWith<TypeFinder>,

@@ -2221,7 +2221,7 @@ impl Type {
     }
 
     /// `Type::Static` is normalized.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub fn normalize_mut(&mut self) -> &mut Type {
         if let Type::Arc(Freezed { ty }) = self {
             let ty = Arc::make_mut(ty);
@@ -2825,7 +2825,7 @@ impl TypeEq for Accessor {
 }
 
 pub trait Valid: Sized + VisitWith<ValidityChecker> {
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     fn is_valid(&self) -> bool {
         let mut v = ValidityChecker { valid: true };
         self.visit_with(&mut v);
@@ -2934,7 +2934,7 @@ macro_rules! impl_freeze {
             }
 
             #[inline]
-            #[instrument(skip(self))]
+            #[instrument(skip_all)]
             fn freeze(&mut self) {
                 self.visit_mut_with(&mut Freezer);
             }
