@@ -838,9 +838,6 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            let old_this = self.scope.this.take();
-            self.scope.this = Some(this.clone());
-
             let ctx = Ctx {
                 disallow_unknown_object_property: true,
                 ..self.ctx
@@ -849,11 +846,7 @@ impl Analyzer<'_, '_> {
             let callee = self
                 .with_ctx(ctx)
                 .access_property(span, &obj_type, prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
-                .context("tried to access property to call it");
-
-            self.scope.this = old_this;
-
-            let callee = callee?;
+                .context("tried to access property to call it")?;
 
             let callee_before_expanding = force_dump_type_as_string(&callee);
             let callee = self
