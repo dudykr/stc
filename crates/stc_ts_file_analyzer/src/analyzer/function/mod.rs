@@ -88,7 +88,7 @@ impl Analyzer<'_, '_> {
             let type_params = try_opt!(f.type_params.validate_with(child));
 
             let params = {
-                let prev_len = child.scope.declaring.len();
+                let prev_len = child.scope.declaring_but_free_to_ref.len();
                 let ids: Vec<Id> = find_ids_in_pat(&f.params);
                 child.scope.declaring_but_free_to_ref.extend(ids);
 
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
                 };
                 let res = f.params.validate_with(&mut *child.with_ctx(ctx));
 
-                child.scope.declaring.truncate(prev_len);
+                child.scope.declaring_but_free_to_ref.truncate(prev_len);
 
                 res?
             };
