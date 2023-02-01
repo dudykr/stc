@@ -3662,6 +3662,10 @@ impl Analyzer<'_, '_> {
                 self.storage.report(ErrorKind::BlockScopedVarUsedBeforeInit { span }.into())
             })();
 
+            if self.scope.can_access_declaring_regardless_of_context(&i.into()) {
+                return Ok(Type::any(span, Default::default()));
+            }
+
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
                     self.storage.report(ErrorKind::ImplicitAnyBecauseOfSelfRef { span }.into());

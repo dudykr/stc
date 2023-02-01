@@ -5,8 +5,9 @@ use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RPara
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
+    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Id, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
 };
+use stc_ts_utils::find_ids_in_pat;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -86,7 +87,11 @@ impl Analyzer<'_, '_> {
 
             let type_params = try_opt!(f.type_params.validate_with(child));
 
-            let mut params = {
+            let params = {
+                let prev_len = child.scope.declaring_parameters.len();
+                let ids: Vec<Id> = find_ids_in_pat(&f.params);
+                child.scope.declaring_parameters.extend(ids);
+
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
                     in_fn_without_body: f.body.is_none(),
@@ -94,18 +99,12 @@ impl Analyzer<'_, '_> {
                     is_fn_param: true,
                     ..child.ctx
                 };
-                f.params.validate_with(&mut *child.with_ctx(ctx))?
-            };
+                let res = f.params.validate_with(&mut *child.with_ctx(ctx));
 
-            if !child.is_builtin {
-                params = params
-                    .into_iter()
-                    .map(|param: FnParam| -> VResult<_> {
-                        let ty = box child.expand(param.span, *param.ty, Default::default())?;
-                        Ok(FnParam { ty, ..param })
-                    })
-                    .collect::<Result<_, _>>()?;
-            }
+                child.scope.declaring_parameters.truncate(prev_len);
+
+                res?
+            };
 
             let mut declared_ret_ty = {
                 let ctx = Ctx {

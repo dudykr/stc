@@ -70,6 +70,7 @@ pub(crate) struct Scope<'a> {
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
     pub declaring: Vec<Id>,
+    pub declaring_parameters: Vec<Id>,
 
     pub declared_return_type: Option<Type>,
 
@@ -182,12 +183,23 @@ impl Scope<'_> {
     }
 
     pub fn is_declaring(&self, id: &Id) -> bool {
-        if self.declaring.contains(id) {
+        if self.declaring.contains(id) || self.declaring_parameters.contains(id) {
             return true;
         }
 
         match self.parent {
             Some(s) => s.is_declaring(id),
+            None => false,
+        }
+    }
+
+    pub fn can_access_declaring_regardless_of_context(&self, id: &Id) -> bool {
+        if self.declaring_parameters.contains(id) {
+            return true;
+        }
+
+        match self.parent {
+            Some(s) => s.can_access_declaring_regardless_of_context(id),
             None => false,
         }
     }
@@ -357,6 +369,7 @@ impl Scope<'_> {
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
+            declaring_parameters: self.declaring_parameters,
             declared_return_type: self.declared_return_type,
             declaring_type_params: self.declaring_type_params,
             vars: self.vars,
@@ -1750,6 +1763,7 @@ impl<'a> Scope<'a> {
             parent,
             kind,
             declaring: Default::default(),
+            declaring_parameters: Default::default(),
             declared_return_type: None,
             declaring_type_params: Default::default(),
             vars: Default::default(),

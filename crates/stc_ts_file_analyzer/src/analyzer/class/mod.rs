@@ -15,6 +15,7 @@ use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
     Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
+use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -665,7 +666,17 @@ impl Analyzer<'_, '_> {
                     child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
                 }
 
-                let params = c.function.params.validate_with(child)?;
+                let params = {
+                    let prev_len = child.scope.declaring_parameters.len();
+                    let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
+                    child.scope.declaring_parameters.extend(ids);
+
+                    let res = c.function.params.validate_with(child);
+
+                    child.scope.declaring_parameters.truncate(prev_len);
+
+                    res?
+                };
                 child.ctx.is_fn_param = false;
 
                 // c.function.visit_children_with(child);
