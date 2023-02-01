@@ -7,14 +7,19 @@ function sortFile {
     mv .stc/tmp.txt $1
 }
 
-export GIST_DIR="$(cd 8198130f16e42514b22656c57690b124 && pwd)"
+GIST_DIR="$(cd 8198130f16e42514b22656c57690b124 && pwd)"
 echo "Gist dir: $GIST_DIR"
 
 # Clone https://gist.github.com/kdy1/8198130f16e42514b22656c57690b124 to your CDPATH
 (cd $GIST_DIR && git pull || true)
 (cd $GIST_DIR && sortFile done.txt)
 
-find crates/* -name "*.stats.rust-debug" \
+
+find crates/* -name "*.stats.rust-debug" > $GIST_DIR/.stc/all-tests.txt
+
+comm -23 $GIST_DIR/.stc/all-tests.txt $GIST_DIR/done.txt > $GIST_DIR/list.txt
+
+cat $GIST_DIR/list.txt | \
     | xargs grep 'extra_error: [1-9][0-9]*' \
     | sort -n -k 3 -t ":" -r \
     > .stc/all-tests-to-split.txt
