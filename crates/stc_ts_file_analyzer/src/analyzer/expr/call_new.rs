@@ -956,7 +956,6 @@ impl Analyzer<'_, '_> {
         Ok(candidates)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_property_of_class(
         &mut self,
         span: Span,
@@ -973,6 +972,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_class").entered())
+        } else {
+            None
+        };
+
         let candidates = {
             // TODO(kdy1): Deduplicate.
             // This is duplicated intentionally because of regressions.
@@ -1147,7 +1152,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
@@ -1163,6 +1167,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_type_elements").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // Candidates of the method call.
@@ -1775,7 +1785,6 @@ impl Analyzer<'_, '_> {
 
     /// Search for members and returns if there's a match
     #[inline(never)]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_type_element(
         &mut self,
         span: Span,
@@ -1790,6 +1799,12 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_type_element").entered())
+        } else {
+            None
+        };
+
         let callee_span = callee_ty.span();
 
         let candidates = members
@@ -2289,7 +2304,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [None] if nothing matched.
-    #[cfg_attr(not(debug_assertions), tracing::instrument(skip_all))]
     fn select_and_invoke(
         &mut self,
         span: Span,
@@ -2303,6 +2317,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: SelectOpts,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "select_and_invoke").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let mut callable = candidates
