@@ -1479,8 +1479,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, span, ty))]
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "can_be_undefined", include_null = include_null).entered())
+        } else {
+            None
+        };
+
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -1524,8 +1529,13 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    #[instrument(skip(self, span, ty))]
     pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "expand_type_ann").entered())
+        } else {
+            None
+        };
+
         let ty = match ty {
             Some(v) => v,
             None => return Ok(None),
