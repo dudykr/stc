@@ -593,11 +593,25 @@ impl Analyzer<'_, '_> {
 
                     Type::Instance(ty) => {
                         let ty = self
-                            .instantiate_for_normalization(span, &ty.ty, opts)
+                            .instantiate_for_normalization(
+                                span,
+                                &ty.ty,
+                                NormalizeTypeOpts {
+                                    preserve_global_this: true,
+                                    ..opts
+                                },
+                            )
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
 
-                        let mut ty = self.normalize(span, Cow::Owned(ty), opts)?;
+                        let mut ty = self.normalize(
+                            span,
+                            Cow::Owned(ty),
+                            NormalizeTypeOpts {
+                                preserve_global_this: true,
+                                ..opts
+                            },
+                        )?;
                         ty.freeze();
                         let ty = ty.into_owned();
 
