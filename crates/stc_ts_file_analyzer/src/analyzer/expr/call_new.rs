@@ -2405,7 +2405,6 @@ impl Analyzer<'_, '_> {
     ///  8. Type of the arrow function is `(a: number) => [number]`.
     ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
     /// and B = `[number]`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn get_return_type(
         &mut self,
         span: Span,
@@ -2420,6 +2419,12 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "get_return_type").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
