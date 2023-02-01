@@ -220,7 +220,6 @@ impl Analyzer<'_, '_> {
     /// Calculates the return type of a new /call expression.
     ///
     /// This method check arguments
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
@@ -231,6 +230,12 @@ impl Analyzer<'_, '_> {
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "extract_call_new_expr_member").entered())
+        } else {
+            None
+        };
+
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
         let marks = self.marks();
@@ -528,7 +533,6 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `expr`: Can be default if argument does not include an arrow
     ///    expression nor a function expression.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn call_property(
         &mut self,
         span: Span,
@@ -544,6 +548,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_property").entered())
+        } else {
+            None
+        };
+
         obj_type.assert_valid();
 
         let span = span.with_ctxt(SyntaxContext::empty());
