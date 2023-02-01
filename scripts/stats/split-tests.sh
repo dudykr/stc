@@ -7,6 +7,8 @@ function sortFile {
     mv .stc/tmp.txt $1
 }
 
+git pull || true
+
 # Clone git@github.com:dudykr/stc-issue-split.git to ~/projects
 
 GIST_DIR="$HOME/projects/8198130f16e42514b22656c57690b124"
