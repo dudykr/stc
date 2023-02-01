@@ -2050,6 +2050,15 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    TsKeywordTypeKind::TsBigIntKeyword => {
+                        if let Type::Lit(LitType {
+                            lit: RTsLit::BigInt(..), ..
+                        }) = *rhs
+                        {
+                            return Ok(());
+                        }
+                    }
+
                     TsKeywordTypeKind::TsSymbolKeyword => {
                         //
 
