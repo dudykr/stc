@@ -27,7 +27,6 @@ use crate::{
 
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
@@ -40,6 +39,12 @@ impl Analyzer<'_, '_> {
         r_ret_ty: Option<&Type>,
         opts: AssignOpts,
     ) -> VResult<()> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "assign_to_fn_like").entered())
+        } else {
+            None
+        };
+
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
         if let Some(r_ret_ty) = r_ret_ty {
