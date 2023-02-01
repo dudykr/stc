@@ -7,10 +7,10 @@ function sortFile {
     mv .stc/tmp.txt $1
 }
 
-GIST_DIR="$HOME/projects/stc-issue-split"
-echo "Gist dir: $GIST_DIR"
+# Clone git@github.com:dudykr/stc-issue-split.git to ~/projects
 
-# Clone git@github.com:dudykr/stc-issue-split.git to your CDPATH
+GIST_DIR="$HOME/projects/8198130f16e42514b22656c57690b124"
+echo "Gist dir: $GIST_DIR"
 (cd $GIST_DIR && git pull || true)
 
 echo "Sorting done.txt"
