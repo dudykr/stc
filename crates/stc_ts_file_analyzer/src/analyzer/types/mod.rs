@@ -122,7 +122,13 @@ impl Analyzer<'_, '_> {
         let input = dump_type_as_string(&ty);
 
         let res = (|| {
-            let _stack = stack::track(actual_span)?;
+            let _stack = match stack::track(actual_span) {
+                Ok(v) => v,
+                Err(err) => {
+                    // print_backtrace();
+                    return Err(err.into());
+                }
+            };
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -603,6 +609,10 @@ impl Analyzer<'_, '_> {
                             )
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
+
+                        if ty.is_query() || ty.is_instance() || ty.is_ref_type() {
+                            return Ok(Cow::Owned(ty));
+                        }
 
                         let mut ty = self.normalize(
                             span,
