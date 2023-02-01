@@ -1702,7 +1702,10 @@ impl ErrorKind {
             ErrorKind::TypeUsedAsVar { .. } => 2693,
             ErrorKind::TypeNotFound { .. } => 2304,
 
-            ErrorKind::NotVariable { .. } => 2539,
+            ErrorKind::NotVariable { ty, .. } => match ty.as_deref().map(Type::normalize) {
+                Some(Type::Module(..)) => 2631,
+                _ => 2539,
+            },
 
             ErrorKind::NoInitAndNoDefault { .. } => 2525,
 
