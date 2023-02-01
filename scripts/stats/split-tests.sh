@@ -19,6 +19,7 @@ echo "Sorting done.txt"
 find crates/* -name "*.stats.rust-debug" > "$GIST_DIR/.stc/all.txt"
 
 echo "comm"
+sortFile "$GIST_DIR/.stc/all.txt"
 comm -23 "$GIST_DIR/.stc/all.txt" "$GIST_DIR/done.txt" > "$GIST_DIR/.stc/dedup.txt"
 
 cat "$GIST_DIR/.stc/dedup.txt" \
