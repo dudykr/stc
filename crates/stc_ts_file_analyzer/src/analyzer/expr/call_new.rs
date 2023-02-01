@@ -19,8 +19,8 @@ use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
-    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, StaticThis, Symbol, Union,
-    UnionMetadata,
+    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
+    StaticThis, Symbol, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -1550,6 +1550,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::StaticThis(..) => {
+                    if let Some(class_name) = self.scope.this_class_name() {
+                        return Ok(Type::Instance(Instance {
+                            span,
+                            ty: box Type::Query(QueryType {
+                                span,
+                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(class_name.into())),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }));
+                    }
                     return Ok(Type::Instance(Instance {
                         span,
                         ty: box Type::StaticThis(StaticThis {
