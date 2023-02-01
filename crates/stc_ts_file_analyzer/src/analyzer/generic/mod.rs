@@ -305,7 +305,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handles `infer U`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_ts_infer_types(
         &mut self,
         span: Span,
@@ -313,6 +312,12 @@ impl Analyzer<'_, '_> {
         concrete: &Type,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "infer_ts_infer_types").entered())
+        } else {
+            None
+        };
+
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
         let mut map = self.finalize_inference(span, &[], inferred);

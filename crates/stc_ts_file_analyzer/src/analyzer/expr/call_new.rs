@@ -220,7 +220,6 @@ impl Analyzer<'_, '_> {
     /// Calculates the return type of a new /call expression.
     ///
     /// This method check arguments
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
@@ -231,6 +230,12 @@ impl Analyzer<'_, '_> {
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "extract_call_new_expr_member").entered())
+        } else {
+            None
+        };
+
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
         let marks = self.marks();
@@ -528,7 +533,6 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `expr`: Can be default if argument does not include an arrow
     ///    expression nor a function expression.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn call_property(
         &mut self,
         span: Span,
@@ -544,6 +548,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_property").entered())
+        } else {
+            None
+        };
+
         obj_type.assert_valid();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -946,7 +956,6 @@ impl Analyzer<'_, '_> {
         Ok(candidates)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_property_of_class(
         &mut self,
         span: Span,
@@ -963,6 +972,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_class").entered())
+        } else {
+            None
+        };
+
         let candidates = {
             // TODO(kdy1): Deduplicate.
             // This is duplicated intentionally because of regressions.
@@ -1137,7 +1152,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
@@ -1153,6 +1167,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_type_elements").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // Candidates of the method call.
@@ -1765,7 +1785,6 @@ impl Analyzer<'_, '_> {
 
     /// Search for members and returns if there's a match
     #[inline(never)]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_type_element(
         &mut self,
         span: Span,
@@ -1780,6 +1799,12 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "call_type_element").entered())
+        } else {
+            None
+        };
+
         let callee_span = callee_ty.span();
 
         let candidates = members
@@ -2279,7 +2304,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [None] if nothing matched.
-    #[cfg_attr(not(debug_assertions), tracing::instrument(skip_all))]
     fn select_and_invoke(
         &mut self,
         span: Span,
@@ -2293,6 +2317,12 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: SelectOpts,
     ) -> VResult<Option<Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "select_and_invoke").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let mut callable = candidates
@@ -2405,7 +2435,6 @@ impl Analyzer<'_, '_> {
     ///  8. Type of the arrow function is `(a: number) => [number]`.
     ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
     /// and B = `[number]`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn get_return_type(
         &mut self,
         span: Span,
@@ -2420,6 +2449,12 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "get_return_type").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
@@ -3172,8 +3207,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "narrow_with_predicate").entered())
+        } else {
+            None
+        };
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self
@@ -3309,8 +3349,13 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "is_subtype_in_fn_call").entered())
+        } else {
+            None
+        };
+
         if arg.type_eq(param) {
             return true;
         }
@@ -3334,7 +3379,6 @@ impl Analyzer<'_, '_> {
     /// `anyAssignabilityInInheritance.ts` says `any, not a subtype of number so
     /// it skips that overload, is a subtype of itself so it picks second (if
     /// truly ambiguous it would pick first overload)`
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn check_call_args(
         &mut self,
         span: Span,
@@ -3345,6 +3389,12 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ArgCheckResult {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "check_call_args").entered())
+        } else {
+            None
+        };
+
         if self.validate_type_args_count(span, type_params, type_args).is_err() {
             return ArgCheckResult::WrongArgCount;
         }

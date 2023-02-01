@@ -1479,8 +1479,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, span, ty))]
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "can_be_undefined", include_null = include_null).entered())
+        } else {
+            None
+        };
+
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -1524,8 +1529,13 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    #[instrument(skip(self, span, ty))]
     pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "expand_type_ann").entered())
+        } else {
+            None
+        };
+
         let ty = match ty {
             Some(v) => v,
             None => return Ok(None),
@@ -1537,7 +1547,7 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
-    #[instrument(skip(self, def))]
+    #[instrument(skip_all)]
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> VResult<TypeLit> {
         let mut members = vec![];
 
@@ -1592,8 +1602,13 @@ impl Analyzer<'_, '_> {
 
     /// Exclude types from `ty` using type facts with key `name`, for
     /// the current scope.
-    #[instrument(skip(self, span, name, ty))]
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "exclude_types_using_fact").entered())
+        } else {
+            None
+        };
+
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
         let mut types_to_exclude = vec![];
@@ -1613,8 +1628,13 @@ impl Analyzer<'_, '_> {
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
-    #[instrument(skip(self, name, ty))]
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "apply_type_facts", name = tracing::field::debug(name)).entered())
+        } else {
+            None
+        };
+
         let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
 
         debug!("[types/fact] Facts for {:?} is {:?}", name, type_facts);
@@ -1629,11 +1649,15 @@ impl Analyzer<'_, '_> {
     /// ## excluded
     ///
     /// Members of base class.
-    #[instrument(skip(self, excluded, ty))]
     pub(crate) fn collect_class_members(&mut self, excluded: &[&ClassMember], ty: &Type) -> VResult<Option<Vec<ClassMember>>> {
         if self.is_builtin {
             return Ok(None);
         }
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "collect_class_members").entered())
+        } else {
+            None
+        };
 
         let ty = ty.normalize();
         match ty {
@@ -2252,7 +2276,6 @@ impl Analyzer<'_, '_> {
         Ok(Type::StringMapping(ty.clone()))
     }
 
-    #[instrument(skip(self, span, type_name, type_args))]
     pub(crate) fn report_error_for_unresolved_type(
         &mut self,
         span: Span,
@@ -2262,6 +2285,12 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(());
         }
+
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "report_error_for_unresolved_type").entered())
+        } else {
+            None
+        };
 
         let l = left_of_expr(type_name);
         let l = match l {

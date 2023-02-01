@@ -113,8 +113,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "extends").entered())
+        } else {
+            None
+        };
+
         let child = child.normalize();
         let parent = parent.normalize();
 

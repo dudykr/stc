@@ -206,8 +206,13 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "has_overlap").entered())
+        } else {
+            None
+        };
+
         let l = l.normalize();
         let r = r.normalize();
 
@@ -222,8 +227,13 @@ impl Analyzer<'_, '_> {
     ///
     /// - `l`: from
     /// - `r`: to
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type, opts: CastableOpts) -> VResult<bool> {
+        let _tracing = if cfg!(debug_assertions) {
+            Some(tracing::span!(tracing::Level::ERROR, "castable").entered())
+        } else {
+            None
+        };
+
         let from = self
             .normalize(
                 Some(span),

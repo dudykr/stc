@@ -6,12 +6,12 @@ use tracing::instrument;
 pub mod type_facts;
 
 pub trait TypeExt: Into<Type> {
-    #[instrument(skip(self,))]
+    #[instrument(skip_all)]
     fn generalize_lit(self) -> Type {
         self.into().fold_with(&mut LitGeneralizer).fixed()
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     fn generalize_tuple(self) -> Type {
         self.into().fold_with(&mut TupleToArray)
     }
