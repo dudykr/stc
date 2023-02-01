@@ -1550,7 +1550,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::StaticThis(..) => {
-                    dbg!("STATIC", self.scope.this());
                     return Ok(Type::Instance(Instance {
                         span,
                         ty: box Type::StaticThis(StaticThis {
