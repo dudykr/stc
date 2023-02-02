@@ -52,7 +52,7 @@ fn run_tests_for_types_pkg(module_specifier: &str) {
         }
 
         if handler.has_errors() {
-            return Err(());
+            panic!()
         }
 
         Ok(())
