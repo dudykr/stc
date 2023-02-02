@@ -464,9 +464,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             prepend_stmts: Default::default(),
             append_stmts: Default::default(),
             scope,
+            config: InnerConfig { is_builtin, is_dts },
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
-                is_dts,
                 in_class_member: false,
                 in_const_assertion: false,
                 in_constructor_param: false,
@@ -524,7 +524,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 use_properties_of_this_implicitly: false,
             },
             loader,
-            is_builtin,
             cur_facts: Default::default(),
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),

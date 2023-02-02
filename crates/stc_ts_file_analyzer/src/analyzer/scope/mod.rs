@@ -2566,7 +2566,7 @@ impl Fold<ClassProperty> for Expander<'_, '_, '_> {
 
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if !self.opts.expand_params || self.analyzer.is_builtin {
+        if !self.opts.expand_params || self.analyzer.config.is_builtin {
             return param;
         }
 
@@ -2589,7 +2589,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         let expanded = self.expand_type(ty).fixed();
         let end = Instant::now();
 
-        if !self.analyzer.is_builtin {
+        if !self.analyzer.config.is_builtin {
             expanded.assert_valid();
         }
 
