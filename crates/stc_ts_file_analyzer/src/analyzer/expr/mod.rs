@@ -789,8 +789,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
-                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty), Default::default());
             }
 
             Type::Enum(e) if allow_union => {
@@ -1470,16 +1468,6 @@ impl Analyzer<'_, '_> {
                                 ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
                                     if !is_static && member.key.type_eq(prop) {
                                         let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
-                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty), Default::default()) {
-                                            Ok(new_ty) => {
-                                                if new_ty.is_any() {
-                                                    new_ty.into_owned()
-                                                } else {
-                                                    ty
-                                                }
-                                            }
-                                            Err(..) => Type::any(span, Default::default()),
-                                        };
 
                                         return Ok(ty);
                                     }
@@ -1491,20 +1479,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if let Some(super_class) = self.scope.get_super_class() {
-                            let super_class = super_class.clone();
-                            let super_class = self.expand(
-                                span,
-                                super_class,
-                                ExpandOpts {
-                                    full: true,
-                                    preserve_ref: false,
-                                    ignore_expand_prevention_for_top: true,
-                                    expand_union: true,
-                                    ..Default::default()
-                                },
-                            )?;
-
+                        if let Some(super_class) = self.scope.get_super_class().cloned() {
                             if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                                 return Ok(v);
                             }
@@ -1518,20 +1493,7 @@ impl Analyzer<'_, '_> {
                         .into());
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class() {
-                        let super_class = super_class.clone();
-                        let super_class = self.expand(
-                            span,
-                            super_class,
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..Default::default()
-                            },
-                        )?;
-
+                    if let Some(super_class) = self.scope.get_super_class().cloned() {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }

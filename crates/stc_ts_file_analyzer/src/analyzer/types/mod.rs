@@ -2451,18 +2451,6 @@ impl Analyzer<'_, '_> {
             Err(..) => Cow::Borrowed(excluded),
         };
 
-        if let Type::Ref(..) = ty.normalize() {
-            // We ignore errors.
-            if let Ok(mut expanded_ty) = self
-                .expand_top_ref(ty.span(), Cow::Borrowed(&*ty), Default::default())
-                .map(Cow::into_owned)
-            {
-                self.exclude_type(span, &mut expanded_ty, &excluded);
-                *ty = expanded_ty;
-                return;
-            }
-        }
-
         if let Type::Union(excluded) = excluded.normalize() {
             //
             for excluded in &excluded.types {
