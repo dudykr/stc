@@ -789,8 +789,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
-                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty), Default::default());
             }
 
             Type::Enum(e) if allow_union => {
