@@ -12,7 +12,6 @@ use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
 
 #[test]
-#[ignore = "Cross-file namespace is not implemented yet"]
 fn test_node() {
     run_tests_for_types_pkg("@types/node/index.d.ts");
 }
