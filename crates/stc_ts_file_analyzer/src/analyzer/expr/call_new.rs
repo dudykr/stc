@@ -35,7 +35,6 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         generic::InferTypeOpts,
-        scope::ExpandOpts,
         types::NormalizeTypeOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,
@@ -491,16 +490,6 @@ impl Analyzer<'_, '_> {
                     callee_ty = analyzer.expand_type_params(&params, callee_ty, Default::default())?;
                 }
             }
-
-            callee_ty = analyzer.expand(
-                span,
-                callee_ty,
-                ExpandOpts {
-                    full: true,
-                    expand_union: false,
-                    ..Default::default()
-                },
-            )?;
 
             callee_ty.freeze();
 
