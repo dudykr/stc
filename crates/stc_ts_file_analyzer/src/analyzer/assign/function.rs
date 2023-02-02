@@ -605,6 +605,12 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an expanded type to a constructor type");
                 }
             }
+
+            Type::ClassDef(rhs) => {
+                // TODO(kdy1): Implement validation rules
+                return Ok(());
+            }
+
             _ => {}
         }
 
