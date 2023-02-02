@@ -83,11 +83,6 @@ pub struct CommonTypeMetadata {
 
     pub prevent_converting_to_children: bool,
 
-    /// This can be ignored based on the context.
-    pub no_expand: bool,
-    /// This can be ignored based on the context.
-    pub ignore_no_expand: bool,
-
     pub contains_infer_type: bool,
 
     /// If this mark is applied, type will not be inferred (based on constraint)
@@ -226,6 +221,11 @@ impl_traits!(IndexedAccessTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RefMetadata {
+    /// This can be ignored based on the context.
+    pub no_expand: bool,
+    /// This can be ignored based on the context.
+    pub ignore_no_expand: bool,
+
     pub common: CommonTypeMetadata,
 }
 
