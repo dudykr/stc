@@ -2219,8 +2219,6 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        // ty = self.expand(span, ty)?;
-
         let mut usage_visitor = TypeParamUsageFinder::default();
         ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
