@@ -487,28 +487,37 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
-        let param = param.normalize();
-        let arg = arg.normalize();
-
-        if let Type::Instance(..) = param {
-            let mut param = self.normalize(Some(span), Cow::Borrowed(param), Default::default())?;
-            param.freeze();
-            return self.infer_type(span, inferred, &param, arg, opts);
-        }
-
-        if let Type::Instance(..) = arg {
-            let mut arg = self.normalize(Some(span), Cow::Borrowed(arg), Default::default())?;
-            arg.freeze();
-
-            return self.infer_type(span, inferred, param, &arg, opts);
-        }
-
         if param.type_eq(arg) {
             return Ok(());
         }
 
         if param.is_keyword() {
             return Ok(());
+        }
+
+        let param = param.normalize();
+        let arg = arg.normalize();
+
+        /// Returns true if we can unconditionally delegate to `infer_type`.
+        fn should_delegate(ty: &Type) -> bool {
+            match ty {
+                Type::Instance(..) => true,
+                Type::IndexedAccessType(t) => matches!(t.index_type.normalize(), Type::Lit(..)),
+                _ => false,
+            }
+        }
+
+        if should_delegate(param) {
+            let mut param = self.normalize(Some(span), Cow::Borrowed(param), Default::default())?;
+            param.freeze();
+            return self.infer_type(span, inferred, &param, arg, opts);
+        }
+
+        if should_delegate(arg) {
+            let mut arg = self.normalize(Some(span), Cow::Borrowed(arg), Default::default())?;
+            arg.freeze();
+
+            return self.infer_type(span, inferred, param, &arg, opts);
         }
 
         let p;
