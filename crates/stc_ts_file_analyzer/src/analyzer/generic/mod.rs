@@ -255,12 +255,10 @@ impl Analyzer<'_, '_> {
                 continue;
             }
 
-            if type_param.constraint.is_some()
-                && matches!(
-                    type_param.constraint.as_deref().map(Type::normalize).unwrap(),
-                    Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..)
-                )
-            {
+            if matches!(
+                type_param.constraint.as_deref().map(Type::normalize),
+                Some(Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..))
+            ) {
                 let ty = self.expand(
                     span,
                     *type_param.constraint.clone().unwrap(),
