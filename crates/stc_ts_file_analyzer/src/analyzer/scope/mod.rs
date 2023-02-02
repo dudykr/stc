@@ -1363,30 +1363,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = match &ty {
-            Some(..) if self.is_builtin => ty,
-            Some(t) => {
-                // If type is not found, we use `any`.
-                match self.expand_top_ref(ty.span(), Cow::Borrowed(t), Default::default()) {
-                    Ok(new_ty) => {
-                        if new_ty.is_any() {
-                            Some(new_ty.into_owned())
-                        } else {
-                            ty
-                        }
-                    }
-                    Err(..) => Some(Type::any(
-                        ty.span(),
-                        KeywordTypeMetadata {
-                            common: ty.as_ref().map(|ty| ty.metadata()).unwrap_or_default(),
-                            ..Default::default()
-                        },
-                    )),
-                }
-            }
-            None => None,
-        };
-
         if let Some(ty) = &ty {
             debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(ty));
         }
