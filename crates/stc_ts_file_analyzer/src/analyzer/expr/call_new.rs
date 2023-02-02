@@ -3371,7 +3371,17 @@ impl Analyzer<'_, '_> {
             return false;
         }
 
-        self.assign(span, &mut Default::default(), arg, param).is_ok()
+        let res = self.assign_with_opts(
+            &mut Default::default(),
+            arg,
+            param,
+            AssignOpts {
+                span,
+                for_castablity: true,
+                ..Default::default()
+            },
+        );
+        res.is_ok()
     }
 
     /// This method return [Err] if call is invalid
