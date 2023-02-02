@@ -1505,20 +1505,7 @@ impl Analyzer<'_, '_> {
                         .into());
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class() {
-                        let super_class = super_class.clone();
-                        let super_class = self.expand(
-                            span,
-                            super_class,
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..Default::default()
-                            },
-                        )?;
-
+                    if let Some(super_class) = self.scope.get_super_class().cloned() {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
