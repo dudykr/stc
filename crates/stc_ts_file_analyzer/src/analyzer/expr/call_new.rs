@@ -3381,7 +3381,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         );
-        dbg!(res).is_ok()
+        res.is_ok()
     }
 
     /// This method return [Err] if call is invalid
