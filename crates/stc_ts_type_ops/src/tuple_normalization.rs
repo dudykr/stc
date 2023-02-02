@@ -8,7 +8,7 @@ pub fn normalize_tuples(ty: &mut Type) {
         ty,
         |ty| {
             if let Type::Tuple(tuple) = ty.normalize() {
-                if tuple.metadata.common.prevent_tuple_to_array {
+                if tuple.metadata.prevent_tuple_to_array {
                     return false;
                 }
 
