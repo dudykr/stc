@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let mut rhs_errored = false;
+        let mut skip_check_null_or_undefined_of_rhs = false;
         match op {
             op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
                 if let Type::Keyword(KeywordType {
@@ -267,10 +267,14 @@ impl Analyzer<'_, '_> {
                 }) = rhs
                 {
                     if op == op!("**=") {
-                        rhs_errored = true;
+                        skip_check_null_or_undefined_of_rhs = true;
                     }
-                    self.storage
-                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: rhs.span() }.into());
+                    if op != op!("**=") && !self.rule().strict_null_checks && (l.is_num() || l.is_enum_variant()) {
+                        skip_check_null_or_undefined_of_rhs = true;
+                    } else {
+                        self.storage
+                            .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: rhs.span() }.into());
+                    }
                 } else {
                     self.deny_null_or_undefined(rhs.span(), rhs)
                         .context("tried to check operands of a numeric assignment")?;
@@ -338,7 +342,7 @@ impl Analyzer<'_, '_> {
                 || rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
             {
-                if rhs_errored {
+                if skip_check_null_or_undefined_of_rhs {
                     return Ok(());
                 }
                 return Err(ErrorKind::AssignOpCannotBeApplied { span, op }.into());
@@ -415,7 +419,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if rhs_errored {
+        if skip_check_null_or_undefined_of_rhs {
             return Ok(());
         }
 
