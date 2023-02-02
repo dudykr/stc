@@ -81,8 +81,6 @@ mod visit_mut;
 pub(crate) struct Ctx {
     module_id: ModuleId,
 
-    is_dts: bool,
-
     /// `true` for the **body** of class members. This is false for class keys
     /// of a non-nested class declaration.
     in_class_member: bool,
@@ -241,7 +239,7 @@ pub struct Analyzer<'scope, 'b> {
 
     loader: &'b dyn Load,
 
-    pub(crate) is_builtin: bool,
+    pub(crate) config: InnerConfig,
 
     cur_facts: Facts,
 
@@ -254,6 +252,7 @@ pub struct Analyzer<'scope, 'b> {
 
     destructure_count: Rc<Cell<DestructureId>>,
 }
+
 #[derive(Debug, Default)]
 struct AnalyzerData {
     unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
@@ -292,6 +291,13 @@ struct AnalyzerData {
     cache: TypeCache,
 
     checked_for_async_iterator: bool,
+}
+
+#[derive(Debug, Default)]
+struct InnerConfig {
+    pub is_builtin: bool,
+
+    pub is_dts: bool,
 }
 
 #[derive(Debug, Default)]
