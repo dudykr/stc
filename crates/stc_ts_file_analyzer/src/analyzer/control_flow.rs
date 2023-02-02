@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -472,6 +472,13 @@ impl Analyzer<'_, '_> {
                 .freezed();
             }
         });
+
+        if types.iter().all(|ty| ty.normalize_instance().is_lit()) {
+            types.iter_mut().for_each(|ty| {
+                prevent_generalize(ty);
+            });
+            return Ok(types);
+        }
 
         let should_preserve = types
             .iter()
@@ -1412,8 +1419,7 @@ impl Analyzer<'_, '_> {
         } else {
             vec![cons, alt]
         };
-        let mut ty = Type::union(new_types).fixed();
-        ty.reposition(span);
+        let ty = Type::new_union(span, new_types).fixed();
         ty.assert_valid();
         Ok(ty)
     }
