@@ -35,7 +35,6 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         generic::InferTypeOpts,
-        scope::ExpandOpts,
         types::NormalizeTypeOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,
