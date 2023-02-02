@@ -105,9 +105,6 @@ pub struct CommonTypeMetadata {
     /// generalized.
     pub prevent_generalization: bool,
 
-    /// TODO(kdy1): Move this to [TupleMetadata]
-    pub prevent_tuple_to_array: bool,
-
     pub destructure_key: DestructureId,
 }
 
@@ -143,6 +140,8 @@ impl_traits!(LitTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TupleMetadata {
+    pub prevent_tuple_to_array: bool,
+
     pub common: CommonTypeMetadata,
 }
 
