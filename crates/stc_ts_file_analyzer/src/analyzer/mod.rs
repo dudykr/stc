@@ -293,8 +293,9 @@ struct AnalyzerData {
     checked_for_async_iterator: bool,
 }
 
+/// Configuration for the analyzer.
 #[derive(Debug, Default)]
-struct InnerConfig {
+pub(crate) struct InnerConfig {
     pub is_builtin: bool,
 
     pub is_dts: bool,
