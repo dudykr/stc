@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                     RTsType::TsKeywordType(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
-                    }) if !child.is_builtin => {
+                    }) if !child.config.is_builtin => {
                         let span = *span;
                         child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
                         Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
@@ -712,7 +712,7 @@ impl Analyzer<'_, '_> {
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
-            if !child.is_builtin {
+            if !child.config.is_builtin {
                 for param in params.iter() {
                     child
                         .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
@@ -1050,7 +1050,7 @@ impl Analyzer<'_, '_> {
                 }
                 RTsType::TsKeywordType(ty) => {
                     if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
-                        if !a.is_builtin {
+                        if !a.config.is_builtin {
                             let span = ty.span;
 
                             a.storage.report(

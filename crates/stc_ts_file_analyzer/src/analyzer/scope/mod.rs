@@ -835,7 +835,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.config.is_builtin || self.ctx.is_dts {
+        if self.config.is_builtin || self.config.is_dts {
             let ty = ty.freezed();
 
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty.clone(), false);

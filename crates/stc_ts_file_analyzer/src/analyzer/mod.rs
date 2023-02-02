@@ -754,7 +754,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RModule) {
         self.ctx.in_module = true;
-        let is_dts = self.ctx.is_dts;
+        let is_dts = self.config.is_dts;
 
         debug_assert!(GLOBALS.is_set(), "Analyzer requires swc_common::GLOBALS");
 
