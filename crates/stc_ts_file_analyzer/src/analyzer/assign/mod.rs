@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                     if op == op!("**=") {
                         skip_check_null_or_undefined_of_rhs = true;
                     }
-                    if (l.is_num() || l.is_enum_variant()) && !self.rule().strict_null_checks {
+                    if op != op!("**=") && !self.rule().strict_null_checks && (l.is_num() || l.is_enum_variant()) {
                         skip_check_null_or_undefined_of_rhs = true;
                     } else {
                         self.storage
