@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     pub(super) fn load_normal_imports(&mut self, module_spans: Vec<(ModuleId, Span)>, items: &Vec<&RModuleItem>) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
         // We first load non-circular imports.

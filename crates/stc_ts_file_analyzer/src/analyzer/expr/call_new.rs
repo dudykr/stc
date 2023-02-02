@@ -1307,7 +1307,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             ty.assert_valid();
         }
 

@@ -434,7 +434,7 @@ impl Analyzer<'_, '_> {
     /// arr([{}, u]) // Ok
     /// ```
     fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 
@@ -463,7 +463,7 @@ impl Analyzer<'_, '_> {
     ///
     /// TODO(kdy1): Optimize
     fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 
@@ -2208,7 +2208,7 @@ impl Analyzer<'_, '_> {
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
     pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(ty);
         }
 

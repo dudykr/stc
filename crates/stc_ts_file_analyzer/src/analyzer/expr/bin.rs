@@ -243,7 +243,7 @@ impl Analyzer<'_, '_> {
         lt.freeze();
         rt.freeze();
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert!(!lt.span().is_dummy());
 
             debug_assert!(!rt.span().is_dummy());
@@ -532,7 +532,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("instanceof") => {
-                if !self.is_builtin {
+                if !self.config.is_builtin {
                     if let Ok(name) = Name::try_from(&**left) {
                         // typeGuardsTypeParameters.ts says
                         //

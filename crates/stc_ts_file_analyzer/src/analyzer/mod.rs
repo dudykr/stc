@@ -433,7 +433,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             None,
             self.loader,
             scope,
-            self.is_builtin,
+            self.config.is_builtin,
             self.debugger.clone(),
             data,
         )
@@ -804,7 +804,7 @@ impl Analyzer<'_, '_> {
             self.report_error_for_wrong_top_level_ambient_fns(&m.body);
         }
 
-        if self.is_builtin {
+        if self.config.is_builtin {
             m.body.visit_children_with(self);
         } else {
             self.validate_stmts_and_collect(&items_ref);
@@ -939,7 +939,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
-        let is_builtin = self.is_builtin;
+        let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
 
@@ -974,7 +974,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsModuleDecl) -> VResult<Option<Type>> {
-        let is_builtin = self.is_builtin;
+        let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;

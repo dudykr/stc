@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
     #[instrument(skip_all)]
     pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs], is_for_interface: bool) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
