@@ -492,16 +492,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            callee_ty = analyzer.expand(
-                span,
-                callee_ty,
-                ExpandOpts {
-                    full: true,
-                    expand_union: false,
-                    ..Default::default()
-                },
-            )?;
-
             callee_ty.freeze();
 
             analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
