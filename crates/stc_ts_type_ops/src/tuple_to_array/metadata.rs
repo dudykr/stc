@@ -10,7 +10,9 @@ pub fn prevent_tuple_to_array(ty: &mut Type) {
         |ty| ty.is_tuple(),
         |ty| {
             let mut ty = ty.take();
-            ty.metadata_mut().prevent_tuple_to_array = true;
+            if let Some(tuple) = ty.as_tuple_mut() {
+                tuple.metadata.prevent_tuple_to_array = true;
+            }
             Some(ty)
         },
     )

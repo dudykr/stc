@@ -1662,11 +1662,13 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn is_expansion_prevented(&self, ty: &Type) -> bool {
-        if ty.metadata().ignore_no_expand {
-            return false;
-        }
-        if ty.metadata().no_expand {
-            return true;
+        if let Type::Ref(r) = ty.normalize() {
+            if r.metadata.ignore_no_expand {
+                return false;
+            }
+            if r.metadata.no_expand {
+                return true;
+            }
         }
 
         false

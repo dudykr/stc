@@ -588,10 +588,7 @@ impl Analyzer<'_, '_> {
             span,
             elems: t.elem_types.validate_with(self)?,
             metadata: TupleMetadata {
-                common: CommonTypeMetadata {
-                    prevent_tuple_to_array: true,
-                    ..Default::default()
-                },
+                prevent_tuple_to_array: true,
                 ..Default::default()
             },
             tracker: Default::default(),

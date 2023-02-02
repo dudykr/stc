@@ -83,11 +83,6 @@ pub struct CommonTypeMetadata {
 
     pub prevent_converting_to_children: bool,
 
-    /// This can be ignored based on the context.
-    pub no_expand: bool,
-    /// This can be ignored based on the context.
-    pub ignore_no_expand: bool,
-
     pub contains_infer_type: bool,
 
     /// If this mark is applied, type will not be inferred (based on constraint)
@@ -104,9 +99,6 @@ pub struct CommonTypeMetadata {
     /// If the mark is applied, it means that the literal should not be
     /// generalized.
     pub prevent_generalization: bool,
-
-    /// TODO(kdy1): Move this to [TupleMetadata]
-    pub prevent_tuple_to_array: bool,
 
     pub destructure_key: DestructureId,
 }
@@ -143,6 +135,8 @@ impl_traits!(LitTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TupleMetadata {
+    pub prevent_tuple_to_array: bool,
+
     pub common: CommonTypeMetadata,
 }
 
@@ -227,6 +221,11 @@ impl_traits!(IndexedAccessTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RefMetadata {
+    /// This can be ignored based on the context.
+    pub no_expand: bool,
+    /// This can be ignored based on the context.
+    pub ignore_no_expand: bool,
+
     pub common: CommonTypeMetadata,
 }
 
