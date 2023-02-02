@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn validate_pat(&mut self, p: &RPat) -> VResult<ty::FnParam> {
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
 
@@ -264,7 +264,7 @@ impl Analyzer<'_, '_> {
 
                 self.scope.declaring.extend(names.clone());
 
-                if !self.is_builtin {
+                if !self.config.is_builtin {
                     ty = match self.add_vars(
                         p,
                         ty.clone(),

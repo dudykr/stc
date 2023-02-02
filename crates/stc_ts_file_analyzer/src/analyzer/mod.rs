@@ -81,8 +81,6 @@ mod visit_mut;
 pub(crate) struct Ctx {
     module_id: ModuleId,
 
-    is_dts: bool,
-
     /// `true` for the **body** of class members. This is false for class keys
     /// of a non-nested class declaration.
     in_class_member: bool,
@@ -241,7 +239,7 @@ pub struct Analyzer<'scope, 'b> {
 
     loader: &'b dyn Load,
 
-    pub(crate) is_builtin: bool,
+    pub(crate) config: InnerConfig,
 
     cur_facts: Facts,
 
@@ -254,6 +252,7 @@ pub struct Analyzer<'scope, 'b> {
 
     destructure_count: Rc<Cell<DestructureId>>,
 }
+
 #[derive(Debug, Default)]
 struct AnalyzerData {
     unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
@@ -292,6 +291,14 @@ struct AnalyzerData {
     cache: TypeCache,
 
     checked_for_async_iterator: bool,
+}
+
+/// Configuration for the analyzer.
+#[derive(Debug, Default)]
+pub(crate) struct InnerConfig {
+    pub is_builtin: bool,
+
+    pub is_dts: bool,
 }
 
 #[derive(Debug, Default)]
@@ -427,7 +434,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             None,
             self.loader,
             scope,
-            self.is_builtin,
+            self.config.is_builtin,
             self.debugger.clone(),
             data,
         )
@@ -458,9 +465,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             prepend_stmts: Default::default(),
             append_stmts: Default::default(),
             scope,
+            config: InnerConfig { is_builtin, is_dts },
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
-                is_dts,
                 in_class_member: false,
                 in_const_assertion: false,
                 in_constructor_param: false,
@@ -518,7 +525,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 use_properties_of_this_implicitly: false,
             },
             loader,
-            is_builtin,
             cur_facts: Default::default(),
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
@@ -748,7 +754,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RModule) {
         self.ctx.in_module = true;
-        let is_dts = self.ctx.is_dts;
+        let is_dts = self.config.is_dts;
 
         debug_assert!(GLOBALS.is_set(), "Analyzer requires swc_common::GLOBALS");
 
@@ -798,7 +804,7 @@ impl Analyzer<'_, '_> {
             self.report_error_for_wrong_top_level_ambient_fns(&m.body);
         }
 
-        if self.is_builtin {
+        if self.config.is_builtin {
             m.body.visit_children_with(self);
         } else {
             self.validate_stmts_and_collect(&items_ref);
@@ -933,7 +939,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
-        let is_builtin = self.is_builtin;
+        let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
 
@@ -968,7 +974,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsModuleDecl) -> VResult<Option<Type>> {
-        let is_builtin = self.is_builtin;
+        let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;

@@ -49,7 +49,7 @@ mod interface;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsTypeParamDecl) -> VResult<TypeParamDecl> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             Ok(TypeParamDecl {
                 span: decl.span,
                 params: decl.params.validate_with(self)?,
@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                     RTsType::TsKeywordType(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
-                    }) if !child.is_builtin => {
+                    }) if !child.config.is_builtin => {
                         let span = *span;
                         child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
                         Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
@@ -433,7 +433,7 @@ impl Analyzer<'_, '_> {
         let type_params = try_opt!(d.type_params.validate_with(self));
 
         let key = self.validate_key(&d.key, d.computed)?;
-        if !self.is_builtin && d.computed {
+        if !self.config.is_builtin && d.computed {
             RComputedPropName {
                 node_id: NodeId::invalid(),
                 span: d.key.span(),
@@ -450,7 +450,7 @@ impl Analyzer<'_, '_> {
                 Some(v) => match v {
                     Ok(mut ty) => {
                         // Handle some symbol types.
-                        if self.is_builtin {
+                        if self.config.is_builtin {
                             if ty.is_unique_symbol() || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
                                 let key = match &key {
                                     Key::Normal { sym, .. } => sym,
@@ -712,7 +712,7 @@ impl Analyzer<'_, '_> {
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
-            if !child.is_builtin {
+            if !child.config.is_builtin {
                 for param in params.iter() {
                     child
                         .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
@@ -800,7 +800,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if !self.is_builtin && !found && self.ctx.in_actual_type {
+                    if !self.config.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
@@ -808,7 +808,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 } else {
-                    if !self.is_builtin && self.ctx.in_actual_type {
+                    if !self.config.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             if !cfg!(feature = "profile") {
                 warn!("Creating a ref from TsTypeRef: {:?}", t.type_name);
             }
@@ -958,7 +958,7 @@ impl Analyzer<'_, '_> {
         let obj_type = box t.obj_type.validate_with(self)?;
         let index_type = box t.index_type.validate_with(self)?.freezed();
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             let ctx = Ctx {
                 disallow_unknown_object_property: true,
                 ..self.ctx
@@ -1050,7 +1050,7 @@ impl Analyzer<'_, '_> {
                 }
                 RTsType::TsKeywordType(ty) => {
                     if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
-                        if !a.is_builtin {
+                        if !a.config.is_builtin {
                             let span = ty.span;
 
                             a.storage.report(
@@ -1107,7 +1107,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_type_elements(&mut self, elems: &[TypeElement]) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
@@ -1145,7 +1145,7 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 

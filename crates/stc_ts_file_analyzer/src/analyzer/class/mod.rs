@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
             try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
         };
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             // Disabled because of false positives when the constructor initializes the
             // field.
             #[allow(clippy::overly_complex_bool_expr)]
@@ -255,7 +255,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RConstructor, super_class: Option<&Type>) -> VResult<ConstructorSignature> {
         let c_span = c.span();
 
-        if !self.is_builtin
+        if !self.config.is_builtin
             && !self.ctx.ignore_errors
             && self.ctx.in_class_with_super
             && c.body.is_some()
@@ -814,7 +814,7 @@ impl Analyzer<'_, '_> {
             }
 
             RClassMember::Constructor(v) => {
-                if self.is_builtin {
+                if self.config.is_builtin {
                     Some(v.validate_with_default(self).map(From::from)?)
                 } else {
                     unreachable!("constructors should be handled by class handler")
@@ -1014,7 +1014,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn report_errors_for_wrong_ambient_methods_of_class(&mut self, c: &RClass, declare: bool) -> VResult<()> {
-        if self.ctx.in_declare || self.is_builtin {
+        if self.ctx.in_declare || self.config.is_builtin {
             return Ok(());
         }
 
@@ -1254,7 +1254,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             // We don't need to validate builtin
             return Ok(());
         }
@@ -1316,7 +1316,7 @@ impl Analyzer<'_, '_> {
     fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
     fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
@@ -2222,7 +2222,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_super_class(&mut self, span: Span, ty: &Type) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 

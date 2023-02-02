@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
 
         let res: Result<_, _> = try {
             let v_span = v.span();
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 debug_assert!(!v_span.is_dummy());
             }
 
@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                                 if creates_new_this {
                                     self.scope.this = old_this;
                                 }
-                                if self.is_builtin {
+                                if self.config.is_builtin {
                                     unreachable!("failed to assign builtin: \nError: {:?}", err)
                                 } else {
                                     self.storage.report(err);
@@ -662,7 +662,7 @@ impl Analyzer<'_, '_> {
 
                         ty.freeze();
 
-                        if !self.is_builtin {
+                        if !self.config.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
                                 self.normalize(

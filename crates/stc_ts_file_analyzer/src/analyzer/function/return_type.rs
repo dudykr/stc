@@ -9,7 +9,7 @@ use crate::{
 
 impl Analyzer<'_, '_> {
     pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 

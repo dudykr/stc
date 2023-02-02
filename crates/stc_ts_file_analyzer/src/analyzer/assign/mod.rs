@@ -437,7 +437,7 @@ impl Analyzer<'_, '_> {
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
     pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 
@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
     fn assign_without_wrapping(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
-        if !self.is_builtin && span.is_dummy() {
+        if !self.config.is_builtin && span.is_dummy() {
             unreachable!("cannot assign with dummy span")
         }
 

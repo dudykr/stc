@@ -707,7 +707,7 @@ impl Analyzer<'_, '_> {
             None
         };
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
         }
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -768,7 +768,7 @@ impl Analyzer<'_, '_> {
     /// This should be called after calling `register_type`.
 
     pub(crate) fn store_unmergable_type_span(&mut self, id: Id, span: Span) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
@@ -793,7 +793,7 @@ impl Analyzer<'_, '_> {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
         }
 
-        let should_check_for_mixed = !self.is_builtin && !matches!(ty.normalize(), Type::Param(..));
+        let should_check_for_mixed = !self.config.is_builtin && !matches!(ty.normalize(), Type::Param(..));
         if should_check_for_mixed {
             // Report an error for
             //
@@ -835,12 +835,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.is_builtin || self.ctx.is_dts {
+        if self.config.is_builtin || self.config.is_dts {
             let ty = ty.freezed();
 
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty.clone(), false);
 
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 self.storage.export_type(ty.span(), self.ctx.module_id, name.clone());
             }
 
@@ -892,7 +892,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }
 
@@ -1146,7 +1146,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut src = vec![];
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
@@ -1173,7 +1173,7 @@ impl Analyzer<'_, '_> {
             return Some(ItemRef::Owned(vec![ty].into_iter()));
         }
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             if cfg!(debug_assertions) {
                 debug!("Scope.find_type: failed to find type '{}'", name);
             }
@@ -1307,7 +1307,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        if !self.is_builtin
+        if !self.config.is_builtin
             && !is_override
             && !allow_multiple
             && !self.ctx.ignore_errors
@@ -1420,18 +1420,18 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ty) = &v.ty {
                     ty.assert_valid();
-                    if !self.is_builtin {
+                    if !self.config.is_builtin {
                         ty.assert_clone_cheap();
                     }
                 }
                 if let Some(ty) = &v.actual_ty {
                     ty.assert_valid();
-                    if !self.is_builtin {
+                    if !self.config.is_builtin {
                         ty.assert_clone_cheap();
                     }
                 }
 
-                if !self.is_builtin && is_override {
+                if !self.config.is_builtin && is_override {
                     v.ty = ty.clone();
                     return Ok(ty);
                 }
@@ -1525,13 +1525,13 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
-                    if !self.is_builtin {
+                    if !self.config.is_builtin {
                         ty.assert_clone_cheap();
                     }
                 }
                 if let Some(ty) = &v.ty {
                     ty.assert_valid();
-                    if !self.is_builtin {
+                    if !self.config.is_builtin {
                         ty.assert_clone_cheap();
                     }
                 }
@@ -1572,7 +1572,7 @@ impl Analyzer<'_, '_> {
         // We validates using the signature of implementing function.
         // TODO(kdy1): Validate using last element, when there's a no function decl with
         // body.
-        if self.is_builtin || self.ctx.in_declare {
+        if self.config.is_builtin || self.ctx.in_declare {
             return Ok(());
         }
 
@@ -1641,7 +1641,7 @@ impl Analyzer<'_, '_> {
     where
         T: VisitMutWith<ExpansionPreventer>,
     {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
@@ -1654,7 +1654,7 @@ impl Analyzer<'_, '_> {
     where
         T: VisitMutWith<ExpansionPreventer>,
     {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
@@ -2566,7 +2566,7 @@ impl Fold<ClassProperty> for Expander<'_, '_, '_> {
 
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if !self.opts.expand_params || self.analyzer.is_builtin {
+        if !self.opts.expand_params || self.analyzer.config.is_builtin {
             return param;
         }
 
@@ -2589,7 +2589,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         let expanded = self.expand_type(ty).fixed();
         let end = Instant::now();
 
-        if !self.analyzer.is_builtin {
+        if !self.analyzer.config.is_builtin {
             expanded.assert_valid();
         }
 

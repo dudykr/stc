@@ -434,7 +434,7 @@ impl Analyzer<'_, '_> {
     /// arr([{}, u]) // Ok
     /// ```
     fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 
@@ -463,7 +463,7 @@ impl Analyzer<'_, '_> {
     ///
     /// TODO(kdy1): Optimize
     fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 
@@ -487,28 +487,33 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
+        if param.is_keyword() || param.type_eq(arg) {
+            return Ok(());
+        }
+
         let param = param.normalize();
         let arg = arg.normalize();
 
-        if let Type::Instance(..) = param {
+        /// Returns true if we can unconditionally delegate to `infer_type`.
+        fn should_delegate(ty: &Type) -> bool {
+            match ty {
+                Type::Instance(..) => true,
+                Type::IndexedAccessType(t) => matches!(t.index_type.normalize(), Type::Lit(..)),
+                _ => false,
+            }
+        }
+
+        if should_delegate(param) {
             let mut param = self.normalize(Some(span), Cow::Borrowed(param), Default::default())?;
             param.freeze();
             return self.infer_type(span, inferred, &param, arg, opts);
         }
 
-        if let Type::Instance(..) = arg {
+        if should_delegate(arg) {
             let mut arg = self.normalize(Some(span), Cow::Borrowed(arg), Default::default())?;
             arg.freeze();
 
             return self.infer_type(span, inferred, param, &arg, opts);
-        }
-
-        if param.type_eq(arg) {
-            return Ok(());
-        }
-
-        if param.is_keyword() {
-            return Ok(());
         }
 
         let p;
@@ -2203,7 +2208,7 @@ impl Analyzer<'_, '_> {
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
     pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(ty);
         }
 

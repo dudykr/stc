@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
                             let mut ty = ty.into_owned();
                             let name = Name::from(Id::word(js_word!("this")));
 
-                            if !self.is_builtin {
+                            if !self.config.is_builtin {
                                 ty = self.apply_type_facts(&name, ty);
 
                                 ty.assert_valid();
@@ -284,7 +284,7 @@ impl Analyzer<'_, '_> {
             }
         })()?;
 
-        if self.is_builtin {
+        if self.config.is_builtin {
             // `Symbol.iterator` is defined multiple times, and it results in union of
             // `symbol`s.
             if let Type::Union(u) = &mut ty {
@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             // TODO(kdy1): Normalize?
             if ty.is_never() {
                 self.ctx.in_unreachable = true;
@@ -312,7 +312,7 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts.assert_clone_cheap();
 
-        if !self.is_builtin && !ty.is_any() {
+        if !self.config.is_builtin && !ty.is_any() {
             debug_assert_ne!(
                 ty.span(),
                 DUMMY_SP,
@@ -1053,7 +1053,7 @@ impl Analyzer<'_, '_> {
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
     ) -> VResult<Type> {
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
@@ -1187,7 +1187,7 @@ impl Analyzer<'_, '_> {
             Ok(ty)
         });
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             res = res.with_context(|| {
                 format!(
                     "tried to access property of an object ({}, id_ctx = {:?})\nProp={:?}",
@@ -1222,7 +1222,7 @@ impl Analyzer<'_, '_> {
             obj_str, ty_str, type_mode
         );
 
-        if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
+        if !self.config.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
             ty.reposition(span);
         }
 
@@ -1238,7 +1238,7 @@ impl Analyzer<'_, '_> {
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
     ) -> VResult<Type> {
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert!(!span.is_dummy());
 
             debug!("access_property: obj = {}", dump_type_as_string(obj));
@@ -1620,7 +1620,7 @@ impl Analyzer<'_, '_> {
             )?,
             _ => Cow::Borrowed(obj),
         };
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             obj.freeze();
         }
         let mut obj = self.expand(
@@ -1633,7 +1633,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             obj.freeze();
         }
 
@@ -2131,7 +2131,7 @@ impl Analyzer<'_, '_> {
                 return Err(ErrorKind::Unknown { span }.into());
             }
 
-            Type::Keyword(KeywordType { kind, .. }) if !self.is_builtin => {
+            Type::Keyword(KeywordType { kind, .. }) if !self.config.is_builtin => {
                 if let Key::Computed(prop) = prop {
                     if let (
                         TsKeywordTypeKind::TsObjectKeyword,
@@ -3400,7 +3400,7 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             ty = self.apply_type_facts(&name, ty);
         }
 
@@ -3410,7 +3410,7 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             self.exclude_types_using_fact(span, &name, &mut ty);
         }
 
@@ -3609,7 +3609,7 @@ impl Analyzer<'_, '_> {
             return Ok(Type::any(span, Default::default()));
         }
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
                 if self.ctx.report_error_for_non_local_vars {
                     self.storage.report(ErrorKind::CannotExportNonLocalVar { span: i.span }.into());
@@ -3767,7 +3767,7 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            if self.is_builtin {
+            if self.config.is_builtin {
                 // TODO: Remove this code after fixing a resolution bug
                 if i.sym == js_word!("Symbol") {
                     return Ok(Type::Query(QueryType {
@@ -4110,7 +4110,7 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to access property of an object to calculate type of a member expression")?;
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             if let Some(name) = name {
                 debug_assert_ne!(ty.span(), DUMMY_SP);
 
@@ -4169,7 +4169,7 @@ impl Analyzer<'_, '_> {
         if should_be_optional && include_optional_chaining_undefined {
             Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
         } else {
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 debug_assert_ne!(ty.span(), DUMMY_SP);
             }
             Ok(ty)

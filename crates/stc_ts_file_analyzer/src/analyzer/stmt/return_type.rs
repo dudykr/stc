@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
 
         debug_assert_eq!(span.ctxt, SyntaxContext::empty());
         debug!("visit_stmts_for_return()");
-        debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
+        debug_assert!(!self.config.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         let mut unconditional_throw = None;
         for stmt in stmts {
@@ -290,7 +290,7 @@ impl Analyzer<'_, '_> {
         })()?;
         ret_ty.freeze();
 
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(ret_ty);
         }
 
@@ -323,7 +323,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RReturnStmt) {
-        debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
+        debug_assert!(!self.config.is_builtin, "builtin: return statement is not supported");
         debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
 
         let mut ty = if let Some(res) = {

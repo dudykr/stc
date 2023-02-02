@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let actual_span = span.unwrap_or_else(|| ty.span());
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
         }
 
@@ -1674,7 +1674,7 @@ impl Analyzer<'_, '_> {
     ///
     /// Members of base class.
     pub(crate) fn collect_class_members(&mut self, excluded: &[&ClassMember], ty: &Type) -> VResult<Option<Vec<ClassMember>>> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(None);
         }
         let _tracing = if cfg!(debug_assertions) {
@@ -2306,7 +2306,7 @@ impl Analyzer<'_, '_> {
         type_name: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(());
         }
 
@@ -2578,7 +2578,7 @@ impl Analyzer<'_, '_> {
     where
         N: Send + Sync + for<'aa> VisitWith<BindingCollector<'aa>> + VisitWith<KnownTypeVisitor>,
     {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
         if self.data.bindings.collected {
