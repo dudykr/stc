@@ -132,7 +132,7 @@ where
 
         let is_first_run = self.started.insert(id);
 
-        if is_first_run {
+        if is_first_run && modules_in_group.modules.len() > 1 {
             {
                 // Mark all modules in the circular group as in-progress.
                 let shards = self.started.shards();
