@@ -135,6 +135,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "auto_impl"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a8c1df849285fbacd587de7818cc7d13be6cd2cbcd47a04fb1801b0e2706e33"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2133,7 +2145,7 @@ name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
- "auto_impl",
+ "auto_impl 0.5.0",
  "backtrace",
  "bitflags",
  "dashmap 3.11.10",
@@ -2249,7 +2261,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
  "anyhow",
- "auto_impl",
+ "auto_impl 0.5.0",
  "dashmap 3.11.10",
  "fxhash",
  "log",
@@ -2332,7 +2344,7 @@ dependencies = [
 name = "stc_ts_storage"
 version = "0.1.0"
 dependencies = [
- "auto_impl",
+ "auto_impl 0.5.0",
  "fxhash",
  "stc_ts_errors",
  "stc_ts_types",
@@ -2387,6 +2399,7 @@ name = "stc_ts_type_checker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "auto_impl 1.0.1",
  "dashmap 3.11.10",
  "fxhash",
  "ignore",
@@ -2838,7 +2851,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63b62c9ad9d603ed820c36d62c956c3dc6d30ab321f9a9af345c23638b4cca42"
 dependencies = [
  "ahash 0.7.6",
- "auto_impl",
+ "auto_impl 0.5.0",
  "petgraph",
  "swc_fast_graph",
  "tracing",
@@ -3143,7 +3156,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43e094780b4447366c59f79acfd65b1375ecaa84e61dddbde1421aa506334024"
 dependencies = [
  "async-trait",
- "auto_impl",
+ "auto_impl 0.5.0",
  "bytes",
  "dashmap 5.4.0",
  "futures",
