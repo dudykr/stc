@@ -27,6 +27,9 @@ use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
+use crate::store::ModuleStore;
+
+mod store;
 mod typings;
 
 /// Onc instance per swc::Compiler
@@ -41,7 +44,7 @@ pub struct Checker {
     /// Information required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
-    module_graph: Arc<ModuleGraph<StcComments, Arc<dyn Resolve>>>,
+    store: ModuleStore,
 
     /// Modules which are being processed or analyzed.
     started: Arc<DashSet<ModuleId, FxBuildHasher>>,
@@ -70,7 +73,6 @@ impl Checker {
             handler,
             module_types: Default::default(),
             dts_modules: Default::default(),
-            module_graph: Arc::new(ModuleGraph::new(cm, Default::default(), resolver, parser_config, env.target())),
             started: Default::default(),
             errors: Default::default(),
             debugger,
