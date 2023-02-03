@@ -2305,7 +2305,7 @@ impl Analyzer<'_, '_> {
                     Type::Interface(interface) => {
                         if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(ty)) {
                             let tl = tl.into_owned();
-                            self.get_additional_exclude_target_for_typelit(
+                            self.get_additional_exclude_target_for_type_lit(
                                 span,
                                 ty,
                                 &tl,
@@ -2317,7 +2317,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Type::TypeLit(tl) => {
-                        self.get_additional_exclude_target_for_typelit(
+                        self.get_additional_exclude_target_for_type_lit(
                             span,
                             ty,
                             tl,
@@ -2373,7 +2373,7 @@ impl Analyzer<'_, '_> {
         additional_target
     }
 
-    fn get_additional_exclude_target_for_typelit(
+    fn get_additional_exclude_target_for_type_lit(
         &mut self,
         span: Span,
         origin_ty: &Type,
