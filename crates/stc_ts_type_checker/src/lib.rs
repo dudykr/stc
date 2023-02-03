@@ -150,11 +150,11 @@ where
                 // Mark all modules in the circular group as in-progress.
                 let shards = self.started.shards();
 
-                for &dep_id in set {
-                    let idx = self.started.determine_map(&dep_id);
+                for record in circular_set {
+                    let idx = self.started.determine_map(&record.id);
 
                     let mut lock = shards[idx].write();
-                    lock.insert(dep_id, SharedValue::new(()));
+                    lock.insert(record.id, SharedValue::new(()));
                 }
             }
 
@@ -163,8 +163,8 @@ where
                 let mut storage = Group {
                     parent: None,
                     files: Arc::new(
-                        set.iter()
-                            .copied()
+                        circular_set
+                            .iter()
                             .map(|id| {
                                 let path = self.module_graph.path(id);
                                 let stmt_count = self.module_graph.stmt_count_of(id);
