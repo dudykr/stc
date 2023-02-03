@@ -22,6 +22,7 @@ pub trait LoadModule: 'static + Send + Sync {
     ///
     /// - Return **all modules in a cycle**.
     /// - Handle `declare module "foo"`.
+    /// - Apply `resolver`.
     ///
     /// ## Tip
     ///
