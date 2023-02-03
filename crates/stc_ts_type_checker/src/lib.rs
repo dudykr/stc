@@ -29,6 +29,7 @@ use tracing::{info, warn};
 
 use crate::store::ModuleStore;
 
+pub mod resolver;
 pub mod store;
 mod typings;
 
