@@ -2,12 +2,14 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
+use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
 use swc_common::{FileName, SourceMap, SyntaxContext};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_visit::VisitMutWith;
 
 pub mod resolver;
 pub mod store;
@@ -51,6 +53,7 @@ where
     R: 'static + Sync + Send + Resolve,
 {
     cm: Arc<SourceMap>,
+    env: Env,
     resolver: R,
 
     ids: ModuleIdGenerator,
@@ -61,20 +64,19 @@ impl<R> ModuleLoader<R>
 where
     R: Resolve,
 {
-    pub fn new(cm: Arc<SourceMap>, resolver: R) -> Self {
+    pub fn new(cm: Arc<SourceMap>, env: Env, resolver: R) -> Self {
         Self {
             cm,
+            env,
             resolver,
+
+            ids: Default::default(),
             parsing_errors: Default::default(),
         }
     }
-}
 
-impl<R> LoadModule for ModuleLoader<R>
-where
-    R: 'static + Sync + Send + Resolve,
-{
-    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
+    /// This does not perform caching
+    fn parse(&self, filename: &Arc<FileName>) -> Result<ModuleRecord> {
         let comments = StcComments::default();
 
         let (fm, syntax) = match &**filename {
@@ -104,7 +106,7 @@ where
         let mut parser = Parser::new_from(lexer);
         let result = parser.parse_module();
 
-        let module = match result {
+        let ast = match result {
             Ok(v) => v,
             Err(err) => {
                 let mut errors = self.parsing_errors.lock().unwrap();
@@ -118,7 +120,30 @@ where
             let mut errors = self.parsing_errors.lock().unwrap();
             errors.extend(extra_errors);
         }
+
+        let (id, top_level_mark) = self.ids.generate(&filename);
+        let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
+
+        ast.visit_mut_with(&mut swc_ecma_transforms_base::resolver(
+            self.env.shared().marks().unresolved_mark(),
+            top_level_mark,
+            true,
+        ));
+
+        Ok(ModuleRecord {
+            id,
+            filename: filename.clone(),
+            top_level_ctxt,
+            ast,
+        })
     }
+}
+
+impl<R> LoadModule for ModuleLoader<R>
+where
+    R: 'static + Sync + Send + Resolve,
+{
+    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {}
 
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records> {
         let filename = self
