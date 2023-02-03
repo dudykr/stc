@@ -104,7 +104,7 @@ where
 
         let (entry, comments) = self.parse(filename)?;
 
-        let (declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
+        let (_declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
 
         let deps = GLOBALS.with(|globals| {
             deps.par_iter()
