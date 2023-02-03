@@ -82,7 +82,7 @@ where
             errors: Default::default(),
             debugger,
             declared_modules: Default::default(),
-            store: Default::default(),
+            module_loader,
         }
     }
 }
@@ -375,7 +375,10 @@ where
     }
 }
 
-impl Load for Checker {
+impl<L> Load for Checker<L>
+where
+    L: LoadModule,
+{
     fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
         let path = self.module_graph.resolve(base, src).ok()?;
         let id = self.module_graph.id(&path);
