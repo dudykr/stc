@@ -62,6 +62,8 @@ where
     env: Env,
     resolver: R,
 
+    /// TODO(kdu1): Split the
+    comments: StcComments,
     loading_started: DashSet<Arc<FileName>, FxBuildHasher>,
 
     ids: ModuleIdGenerator,
@@ -79,6 +81,7 @@ where
             env,
             resolver,
 
+            comments: Default::default(),
             loading_started: Default::default(),
 
             parse_cache: Default::default(),
@@ -125,7 +128,7 @@ where
 
     /// This does not perform caching
     fn parse_inner(&self, filename: &Arc<FileName>) -> Result<(Arc<ModuleRecord>, StcComments)> {
-        let comments = StcComments::default();
+        let comments = self.comments.clone();
 
         let (fm, syntax) = match &**filename {
             FileName::Real(path) => {
