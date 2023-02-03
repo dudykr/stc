@@ -19,6 +19,7 @@ pub struct ModuleRecord {
 #[auto_impl(&, Box, Arc)]
 pub trait LoadModule: 'static + Send + Sync {
     /// This method should return **all modules in a cycle**.
+    /// Also, this method handle `declare module "foo"`.
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Vec<Arc<ModuleRecord>>>;
 }
 
@@ -38,3 +39,5 @@ where
         Self { resolver }
     }
 }
+
+impl<R> LoadModule for ModuleLoader<R> {}
