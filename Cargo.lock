@@ -2434,6 +2434,7 @@ dependencies = [
  "swc_ecma_transforms_base",
  "swc_ecma_utils",
  "swc_ecma_visit",
+ "swc_fast_graph",
  "testing",
  "testing_macros",
  "tracing",
