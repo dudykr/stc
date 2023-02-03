@@ -1,6 +1,5 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
@@ -23,7 +22,7 @@ impl ModuleId {
 
 #[derive(Default)]
 pub struct ModuleIdGenerator {
-    cache: Mutex<Data>,
+    cache: RwLock<Data>,
 }
 
 #[derive(Default)]
@@ -36,7 +35,7 @@ struct Data {
 impl ModuleIdGenerator {
     /// Returns `(module_id, top_level_mark)`
     pub fn generate(&self, path: &Arc<FileName>) -> (ModuleId, Mark) {
-        let mut data = self.cache.lock();
+        let mut data = self.cache.write().unwrap();
         if let Some(v) = data.modules.get(path) {
             return *v;
         }
@@ -55,10 +54,10 @@ impl ModuleIdGenerator {
     }
 
     pub fn path(&self, module_id: ModuleId) -> Arc<FileName> {
-        self.cache.lock().paths.get(&module_id).cloned().unwrap().0
+        self.cache.read().unwrap().paths.get(&module_id).cloned().unwrap().0
     }
 
     pub fn top_level_mark(&self, module_id: ModuleId) -> Mark {
-        self.cache.lock().paths.get(&module_id).cloned().unwrap().1
+        self.cache.read().unwrap().paths.get(&module_id).cloned().unwrap().1
     }
 }
