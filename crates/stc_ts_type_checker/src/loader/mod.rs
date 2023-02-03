@@ -106,7 +106,7 @@ where
 
         let (declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
 
-        let deps: Vec<ModuleId> = GLOBALS.with(|globals| {
+        let deps = GLOBALS.with(|globals| {
             deps.par_iter()
                 .map(|dep| {
                     GLOBALS.set(globals, || {
@@ -115,15 +115,15 @@ where
                         self.load_recursively(&dep_path, false)
                     })
                 })
-                .collect::<Result<Vec<_>>>()
-        })?;
+                .collect::<Vec<_>>()
+        });
 
         {
             // Add to the dependency graph
 
             let mut g = self.dep_graph.write().unwrap();
 
-            for dep in deps.iter() {
+            for dep in deps.iter().flatten() {
                 g.add_edge(id, *dep, ());
             }
         }
