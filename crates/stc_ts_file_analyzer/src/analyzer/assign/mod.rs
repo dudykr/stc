@@ -1463,11 +1463,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsVoidKeyword,
-                ..
-            }) => fail!(),
-
             Type::Intersection(Intersection { types, .. }) => {
                 if !opts.do_not_normalize_intersection_on_rhs {
                     // Filter out `never` types
@@ -2681,6 +2676,15 @@ impl Analyzer<'_, '_> {
                     .assign_with_opts(data, &l.ty, &r.ty, opts)
                     .context("tried to assign to a rest type")
             }
+
+            (
+                _,
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }),
+            ) => fail!(),
+
             _ => {}
         }
 
