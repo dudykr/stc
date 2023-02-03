@@ -2135,17 +2135,6 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn can_be_void(&mut self, ty: &Type) -> bool {
-        match ty.normalize_instance() {
-            Type::Union(v) => v.types.iter().any(|v| self.can_be_void(v)),
-            Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsVoidKeyword,
-                ..
-            }) => true,
-            _ => false,
-        }
-    }
-
     fn validate_arg_count(
         &mut self,
         span: Span,
