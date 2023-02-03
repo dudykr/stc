@@ -122,7 +122,7 @@ where
         let end = Instant::now();
         log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
-        modules[0].id
+        modules.modules[0].id
     }
 
     pub fn take_errors(&mut self) -> Vec<Error> {
@@ -131,9 +131,9 @@ where
 
     /// Analyzes one module.
     fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Type {
-        let circular_set = self.module_loader.load_module(&path).expect("failed to load module? (cycle)");
+        let modules_in_group = self.module_loader.load_module(&path).expect("failed to load module? (cycle)");
 
-        let id = circular_set[0].id;
+        let id = modules_in_group.modules[0].id;
         {
             let lock = self.module_types.read();
             // If a circular chunks are fully analyzed, used them.
@@ -149,7 +149,7 @@ where
                 // Mark all modules in the circular group as in-progress.
                 let shards = self.started.shards();
 
-                for record in circular_set {
+                for record in modules_in_group.modules.iter() {
                     let idx = self.started.determine_map(&record.id);
 
                     let mut lock = shards[idx].write();
@@ -162,7 +162,8 @@ where
                 let mut storage = Group {
                     parent: None,
                     files: Arc::new(
-                        circular_set
+                        modules_in_group
+                            .modules
                             .iter()
                             .map(|record| File {
                                 id,
@@ -175,7 +176,7 @@ where
                     errors: Default::default(),
                     info: Default::default(),
                 };
-                let modules = circular_set
+                let modules = modules_in_group
                     .iter()
                     .map(|record| RModule::from_orig(&mut node_id_gen, record.ast))
                     .collect::<Vec<_>>();
@@ -241,7 +242,10 @@ where
             let lock = self.module_types.read();
             return lock.get(&id).and_then(|cell| cell.get().cloned()).unwrap();
         }
-        info!("Request: {}\nRequested by {:?}\nCircular set: {:?}", path, starter, circular_set);
+        info!(
+            "Request: {}\nRequested by {:?}\nCircular set: {:?}",
+            path, starter, modules_in_group
+        );
 
         {
             // With write lock, we ensure that OnceCell is inserted.
