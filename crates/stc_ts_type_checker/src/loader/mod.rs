@@ -12,7 +12,7 @@ pub mod store;
 #[derive(Debug)]
 pub struct ModuleRecord {
     pub top_level_mark: Mark,
-    pub data: Module,
+    pub ast: Module,
 }
 
 /// A module loader.
