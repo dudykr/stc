@@ -131,8 +131,9 @@ where
 
     /// Analyzes one module.
     fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Type {
-        let id = self.module_graph.id(&path);
+        let circular_set = self.module_loader.load_module(&path).expect("failed to load module? (cycle)");
 
+        let id = circular_set[0].id;
         {
             let lock = self.module_types.read();
             // If a circular chunks are fully analyzed, used them.
@@ -142,8 +143,6 @@ where
         }
 
         let is_first_run = self.started.insert(id);
-
-        let circular_set = self.module_loader.load_module(path).expect("failed to load module? (cycle)");
 
         if is_first_run {
             {
