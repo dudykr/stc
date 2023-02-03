@@ -197,7 +197,12 @@ impl<R> LoadModule for ModuleLoader<R>
 where
     R: 'static + Sync + Send + Resolve,
 {
-    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {}
+    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
+        self.load_recursively(filename)
+            .with_context(|| format!("failed to load `{}` recursively", filename))?;
+
+        let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
+    }
 
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records> {
         let filename = self
