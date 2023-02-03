@@ -24,6 +24,8 @@ pub struct ModuleRecord {
 pub trait LoadModule: 'static + Send + Sync {
     /// This method should
     ///
+    /// - Should never return empty vector.
+    /// - The first item should be the file for `filename`.
     /// - Return **all modules in a cycle**.
     /// - Handle `declare module "foo"`.
     /// - Apply `resolver`.
