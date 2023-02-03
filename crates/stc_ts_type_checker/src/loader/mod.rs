@@ -102,7 +102,7 @@ where
             return Ok(id);
         }
 
-        let (entry, comments) = self.parse(filename).with_context(|| format!("failed to parse `{}`", filename))?;
+        let (entry, comments) = self.parse(filename)?;
 
         let (declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
 
@@ -150,7 +150,9 @@ where
             return Ok(cached);
         }
 
-        let record = self.parse_inner(filename)?;
+        let record = self
+            .parse_inner(filename)
+            .with_context(|| format!("failed to parse `{}`", filename))?;
         self.parse_cache.insert(filename.clone(), record.clone());
 
         Ok(record)
