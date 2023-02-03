@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
@@ -13,6 +13,7 @@ use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_visit::VisitMutWith;
+use swc_fast_graph::digraph::FastDiGraphMap;
 
 use self::analyzer::find_modules_and_deps;
 
@@ -65,6 +66,7 @@ where
     /// TODO(kdu1): Split the
     comments: StcComments,
     loading_started: DashSet<Arc<FileName>, FxBuildHasher>,
+    dep_graph: RwLock<FastDiGraphMap<ModuleId, ()>>,
 
     ids: ModuleIdGenerator,
     parse_cache: DashMap<Arc<FileName>, (Arc<ModuleRecord>, StcComments), FxBuildHasher>,
@@ -83,6 +85,7 @@ where
 
             comments: Default::default(),
             loading_started: Default::default(),
+            dep_graph: Default::default(),
 
             parse_cache: Default::default(),
             ids: Default::default(),
@@ -90,17 +93,19 @@ where
         }
     }
 
-    fn load_recursively(&self, filename: &Arc<FileName>) -> Result<()> {
+    fn load_recursively(&self, filename: &Arc<FileName>) -> Result<ModuleId> {
+        let (id, _) = self.ids.generate(filename);
+
         // This function works only once per file.
         if !self.loading_started.insert(filename.clone()) {
-            return Ok(());
+            return Ok(id);
         }
 
         let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
 
         let (declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
 
-        GLOBALS.with(|globals| {
+        let deps: Vec<ModuleId> = GLOBALS.with(|globals| {
             deps.par_iter()
                 .map(|dep| {
                     GLOBALS.set(globals, || {
@@ -112,7 +117,7 @@ where
                 .collect::<Result<Vec<_>>>()
         })?;
 
-        Ok(())
+        Ok(id)
     }
 
     fn parse(&self, filename: &Arc<FileName>) -> Result<(Arc<ModuleRecord>, StcComments)> {
