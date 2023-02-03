@@ -15,7 +15,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::Checker;
+use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use swc_common::{
     errors::{ColorConfig, Handler},
     FileName,
@@ -70,7 +70,7 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 ),
                 TsConfig { ..Default::default() },
                 None,
-                Arc::new(NodeResolver),
+                ModuleLoader::new(NodeResolver),
             );
 
             let id = checker.check(Arc::new(FileName::Real(path.to_path_buf())));

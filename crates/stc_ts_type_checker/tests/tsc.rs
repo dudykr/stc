@@ -29,7 +29,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::Checker;
+use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use stc_ts_utils::StcComments;
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
@@ -643,7 +643,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                     ..ts_config
                 },
                 None,
-                Arc::new(NodeResolver),
+                ModuleLoader::new(NodeResolver),
             );
 
             // Install a logger

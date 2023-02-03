@@ -5,7 +5,7 @@ use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::Checker;
+use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::resolve::Resolve;
@@ -41,7 +41,7 @@ fn run_tests_for_types_pkg(module_specifier: &str) {
             Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es2020")),
             TsConfig { ..Default::default() },
             None,
-            Arc::new(NodeResolver),
+            ModuleLoader::new(NodeResolver),
         );
 
         checker.check(Arc::new(path));
