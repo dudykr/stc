@@ -2135,6 +2135,17 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    pub(crate) fn can_be_void(&mut self, ty: &Type) -> bool {
+        match ty.normalize_instance() {
+            Type::Union(v) => v.types.iter().any(|v| self.can_be_void(v)),
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => true,
+            _ => false,
+        }
+    }
+
     fn validate_arg_count(
         &mut self,
         span: Span,
@@ -2191,7 +2202,12 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let mut min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
+        let mut min_param: usize = params
+            .iter()
+            .filter(|param| !self.can_be_void(&param.ty))
+            .map(|v| &v.pat)
+            .map(count_required_pat)
+            .sum();
 
         let mut max_param = Some(params.len());
         for (index, param) in params.iter().enumerate() {
