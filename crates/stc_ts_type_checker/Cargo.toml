@@ -13,6 +13,7 @@ perf = ["tracing/release_max_level_off"]
 
 [dependencies]
 anyhow = "1"
+auto_impl = "1"
 dashmap = {version = "3", features = ["raw-api"]}
 fxhash = "0.2.1"
 log = "0.4.14"
