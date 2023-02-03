@@ -1014,18 +1014,21 @@ impl Analyzer<'_, '_> {
             candidates
         };
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts { ..Default::default() },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts { ..Default::default() },
+            )
+            .context("tried to select a callable property of a class")?
+        {
             return Ok(Some(v));
         }
 
@@ -1197,18 +1200,21 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts { ..Default::default() },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts { ..Default::default() },
+            )
+            .context("tried to select a callable property of type elements")?
+        {
             return Ok(v);
         }
 
