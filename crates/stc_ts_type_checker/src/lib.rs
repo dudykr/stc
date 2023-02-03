@@ -363,16 +363,15 @@ impl<L> Load for Checker<L>
 where
     L: LoadModule,
 {
-    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
-        let path = self.module_graph.resolve(base, src).ok()?;
-        let id = self.module_graph.id(&path);
-        Some(id)
+    fn module_id(&self, base: &Arc<FileName>, module_specifier: &str) -> Option<ModuleId> {
+        let records = self.module_loader.load_dep(base, module_specifier).ok()?;
+        Some(records.modules[0].id)
     }
 
-    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
-        let circular_set = self.module_graph.get_circular(base);
+    fn is_in_same_circular_group(&self, base: &Arc<FileName>, module_specifier: &str) -> bool {
+        let records = self.module_loader.load_dep(base, module_specifier).ok();
 
-        match circular_set {
+        match records {
             Some(set) => set.contains(&dep),
             None => false,
         }

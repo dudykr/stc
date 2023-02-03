@@ -95,11 +95,11 @@ impl Analyzer<'_, '_> {
                 }
             };
 
-            if loader.is_in_same_circular_group(ctxt, dep_id) {
+            if loader.is_in_same_circular_group(&base, &import.src) {
                 continue;
             }
 
-            normal_imports.push((ctxt, dep_id, import));
+            normal_imports.push((ctxt, base.clone(), dep_id, import.src.clone(), import));
         }
 
         #[cfg(feature = "no-threading")]
@@ -108,9 +108,9 @@ impl Analyzer<'_, '_> {
         let iter = normal_imports.into_par_iter();
 
         let import_results = GLOBALS.with(|globals| {
-            iter.map(|(ctxt, dep_id, import)| {
+            iter.map(|(ctxt, base, dep_id, module_specifier, import)| {
                 GLOBALS.set(globals, || {
-                    let res = loader.load_non_circular_dep(ctxt, dep_id);
+                    let res = loader.load_non_circular_dep(&base, &module_specifier);
                     (ctxt, dep_id, import, res)
                 })
             })
