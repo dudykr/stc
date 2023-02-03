@@ -2235,8 +2235,7 @@ impl Analyzer<'_, '_> {
             if param.required {
                 if !param.ty.is_any()
                     && self
-                        .assign(
-                            span,
+                        .assign_with_opts(
                             &mut Default::default(),
                             &param.ty,
                             &Type::Keyword(KeywordType {
@@ -2245,6 +2244,10 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }),
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
                         )
                         .is_ok()
                 {
