@@ -4,6 +4,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
 use stc_ts_errors::{ErrorKind, Errors};
+use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
     Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
 };
@@ -15,7 +16,8 @@ use swc_ecma_ast::*;
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
     ty::{Enum, EnumMember, Type},
-    validator, VResult,
+    validator::ValidateWith,
+    VResult,
 };
 
 /// Value does not contain RTsLit::Bool
@@ -256,7 +258,14 @@ impl Evaluator<'_> {
                     }
                 }
 
-                _ => {}
+                _ => {
+                    let res = expr.validate_with_default(analyzer)?;
+                    let res = analyzer.expand_enum_variant(res)?;
+
+                    if let Type::Lit(ty) = res.normalize() {
+                        return Ok(ty.lit.clone());
+                    }
+                }
             }
         } else {
             if let Some(value) = default {
