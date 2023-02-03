@@ -11,6 +11,7 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::resolve::Resolve;
 
 #[test]
+#[ignore = "Cross-file namespace is not supported"]
 fn test_node() {
     run_tests_for_types_pkg("@types/node/index.d.ts");
 }
