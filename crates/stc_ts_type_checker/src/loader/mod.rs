@@ -18,8 +18,10 @@ pub struct ModuleRecord {
 /// A module loader.
 #[auto_impl(&, Box, Arc)]
 pub trait LoadModule: 'static + Send + Sync {
-    /// This method should return **all modules in a cycle**.
-    /// Also, this method handle `declare module "foo"`.
+    /// This method should
+    ///
+    /// - Return **all modules in a cycle**.
+    /// - Handle `declare module "foo"`.
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Vec<Arc<ModuleRecord>>>;
 }
 
