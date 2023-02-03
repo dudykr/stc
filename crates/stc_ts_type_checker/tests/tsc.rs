@@ -29,7 +29,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::Checker;
+use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use stc_ts_utils::StcComments;
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
@@ -324,6 +324,7 @@ struct TestSpec {
     err_shift_n: usize,
     libs: Vec<Lib>,
     rule: Rule,
+    #[allow(unused)]
     ts_config: TsConfig,
     target: EsVersion,
     raw_target: String,
@@ -575,7 +576,6 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
     let (file_stem, mut expected_errors) = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
     expected_errors.sort();
 
@@ -585,10 +585,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         err_shift_n,
         libs,
         rule,
-        ts_config,
         target,
         module_config,
         raw_target: _,
+        ..
     } = spec;
 
     let stat_guard = RecordOnPanic {
@@ -634,16 +634,13 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let diagnostics = tester
         .errors(|cm, handler| {
             let handler = Arc::new(handler);
+            let env = Env::simple(rule, target, module_config, &libs);
             let mut checker = Checker::new(
-                cm,
+                cm.clone(),
                 handler.clone(),
-                Env::simple(rule, target, module_config, &libs),
-                TsConfig {
-                    tsx: fname.contains("tsx"),
-                    ..ts_config
-                },
+                env.clone(),
                 None,
-                Arc::new(NodeResolver),
+                ModuleLoader::new(cm, env, NodeResolver),
             );
 
             // Install a logger

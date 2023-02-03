@@ -9,9 +9,12 @@ use rayon::prelude::*;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use swc_common::FileName;
 
-use crate::Checker;
+use crate::{loader::LoadModule, Checker};
 
-impl Checker {
+impl<L> Checker<L>
+where
+    L: LoadModule,
+{
     fn try_loading_typing_of_one_package(&self, dir: &Path) {
         if !dir.is_dir() {
             return;
@@ -24,7 +27,6 @@ impl Checker {
         if let Ok(entry) = result {
             let entry = Arc::new(FileName::Real(entry));
             let start = Instant::now();
-            self.module_graph.load_all(&entry).unwrap();
 
             self.analyze_module(None, entry);
 

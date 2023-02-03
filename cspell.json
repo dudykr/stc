@@ -41,6 +41,7 @@
     "jemalloc",
     "Jsxdev",
     "keyof",
+    "kosaraju",
     "libcore",
     "libpanic",
     "libstd",
