@@ -26,7 +26,7 @@ pub trait LoadModule: 'static + Send + Sync {
 /// A simple implementation of [LoadModule].
 pub struct ModuleLoader<R>
 where
-    R: Resolve,
+    R: 'static + Sync + Send + Resolve,
 {
     resolver: R,
 }
@@ -40,4 +40,4 @@ where
     }
 }
 
-impl<R> LoadModule for ModuleLoader<R> {}
+impl<R> LoadModule for ModuleLoader<R> where R: 'static + Sync + Send + Resolve {}
