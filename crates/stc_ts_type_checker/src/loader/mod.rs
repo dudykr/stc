@@ -28,6 +28,9 @@ pub trait LoadModule: 'static + Send + Sync {
     /// Because of the cycles, this method would load all dependencies
     /// recursively.
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Vec<Arc<ModuleRecord>>>;
+
+    /// Same constraints for [`LoadModule::load_module`] applies.
+    fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Vec<Arc<ModuleRecord>>>;
 }
 
 /// A simple implementation of [LoadModule].
