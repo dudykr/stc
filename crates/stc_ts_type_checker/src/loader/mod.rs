@@ -126,11 +126,11 @@ where
             let mut g = self.dep_graph.write().unwrap();
 
             for (dep, is_normal_dep) in deps.iter().flatten() {
-                if *is_normal_dep {
-                    g.add_edge(id, *dep, ());
-                } else {
+                g.add_edge(id, *dep, ());
+
+                if !*is_normal_dep {
                     // Treat d.ts references as a cycle.
-                    g.add_edge(*dep, id, ());
+                    // g.add_edge(*dep, id, ());
                     g.add_edge(id, *dep, ());
                 }
             }
