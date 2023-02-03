@@ -4,6 +4,7 @@ use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
 use dashmap::{DashMap, DashSet};
 use fxhash::FxBuildHasher;
+use petgraph::algo::kosaraju_scc;
 use rayon::prelude::*;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
@@ -67,6 +68,7 @@ where
     comments: StcComments,
     loading_started: DashSet<Arc<FileName>, FxBuildHasher>,
     dep_graph: RwLock<FastDiGraphMap<ModuleId, ()>>,
+    cycles: RwLock<Vec<Vec<ModuleId>>>,
 
     ids: ModuleIdGenerator,
     parse_cache: DashMap<Arc<FileName>, (Arc<ModuleRecord>, StcComments), FxBuildHasher>,
@@ -86,14 +88,14 @@ where
             comments: Default::default(),
             loading_started: Default::default(),
             dep_graph: Default::default(),
-
+            cycles: Default::default(),
             parse_cache: Default::default(),
             ids: Default::default(),
             parsing_errors: Default::default(),
         }
     }
 
-    fn load_recursively(&self, filename: &Arc<FileName>) -> Result<ModuleId> {
+    fn load_recursively(&self, filename: &Arc<FileName>, calc_cycles: bool) -> Result<ModuleId> {
         let (id, _) = self.ids.generate(filename);
 
         // This function works only once per file.
@@ -111,7 +113,7 @@ where
                     GLOBALS.set(globals, || {
                         let dep_path = Arc::new(self.resolver.resolve(filename, &dep)?);
 
-                        self.load_recursively(&dep_path)
+                        self.load_recursively(&dep_path, false)
                     })
                 })
                 .collect::<Result<Vec<_>>>()
@@ -124,6 +126,20 @@ where
 
             for dep in deps.iter() {
                 g.add_edge(id, *dep, ());
+            }
+        }
+
+        if calc_cycles {
+            let new = {
+                let mut g = self.dep_graph.read().unwrap();
+                kosaraju_scc(&*g)
+            };
+
+            let mut cycles = self.cycles.write().unwrap();
+            for cycle in new {
+                if cycle.len() > 1 {
+                    cycles.push(cycle);
+                }
             }
         }
 
@@ -213,7 +229,8 @@ where
     R: 'static + Sync + Send + Resolve,
 {
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
-        self.load_recursively(filename)
+        let entry_id = self
+            .load_recursively(filename, true)
             .with_context(|| format!("failed to load `{}` recursively", filename))?;
 
         let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
