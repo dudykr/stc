@@ -4,10 +4,11 @@ use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
 use dashmap::{DashMap, DashSet};
 use fxhash::FxBuildHasher;
+use rayon::prelude::*;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, SourceMap, SyntaxContext};
+use swc_common::{FileName, SourceMap, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -94,7 +95,21 @@ where
 
         let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
 
-        let (declared_modules, deps) = find_modules_and_deps(entry, m);
+        let (declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
+
+        GLOBALS.with(|globals| {
+            deps.par_iter()
+                .map(|dep| {
+                    GLOBALS.set(globals, || {
+                        let dep_path = Arc::new(self.resolver.resolve(filename, &dep)?);
+
+                        self.load_recursively(&dep_path)
+                    })
+                })
+                .collect::<Result<Vec<_>>>()
+        })?;
+
+        Ok(())
     }
 
     fn parse(&self, filename: &Arc<FileName>) -> Result<(Arc<ModuleRecord>, StcComments)> {
