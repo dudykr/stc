@@ -372,39 +372,23 @@ where
         let records = self.module_loader.load_dep(base, module_specifier).ok();
 
         match records {
-            Some(set) => set.contains(&dep),
+            Some(set) => set.modules.iter().any(|record| record.filename == *base),
             None => false,
         }
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
-        let base_path = self.module_graph.path(base);
-        let dep_path = self.module_graph.path(dep);
+    fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, _partial: &ModuleTypeData) -> VResult<Type> {
+        let records = self.module_loader.load_dep(base, dep).unwrap();
 
-        let data = self.analyze_module(Some(base_path), dep_path);
+        let data = self.analyze_module(Some(base.clone()), records.modules[0].filename.clone());
 
         Ok(data)
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
-        let base_path = self.module_graph.path(base);
-        let dep_path = self.module_graph.path(dep);
+    fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
+        let records = self.module_loader.load_dep(base, dep).unwrap();
 
-        if matches!(&*dep_path, FileName::Custom(..)) {
-            let ty = self
-                .declared_modules
-                .read()
-                .iter()
-                .find_map(|(v, ty)| if *v == dep { Some(ty.clone()) } else { None });
-
-            if let Some(ty) = ty {
-                return Ok(ty);
-            }
-        }
-
-        info!("({}): Loading {}", base_path, dep_path);
-
-        let data = self.analyze_module(Some(base_path), dep_path);
+        let data = self.analyze_module(Some(base.clone()), records.modules[0].filename.clone());
 
         Ok(data)
     }
