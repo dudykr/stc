@@ -324,6 +324,7 @@ struct TestSpec {
     err_shift_n: usize,
     libs: Vec<Lib>,
     rule: Rule,
+    #[allow(unused)]
     ts_config: TsConfig,
     target: EsVersion,
     raw_target: String,
@@ -575,7 +576,6 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
     let (file_stem, mut expected_errors) = load_expected_errors(file_name, if use_target { Some(&spec) } else { None });
     expected_errors.sort();
 
@@ -585,10 +585,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         err_shift_n,
         libs,
         rule,
-        ts_config,
         target,
         module_config,
         raw_target: _,
+        ..
     } = spec;
 
     let stat_guard = RecordOnPanic {

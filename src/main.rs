@@ -15,7 +15,6 @@ use swc_common::{
     FileName, SourceMap,
 };
 use swc_ecma_ast::EsVersion;
-use swc_ecma_parser::TsConfig;
 use tracing_subscriber::EnvFilter;
 
 use crate::check::TestCommand;
