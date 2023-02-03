@@ -42,7 +42,7 @@ pub trait LoadModule: 'static + Send + Sync {
     /// - Should never return empty vector.
     /// - Return **all modules in a cycle**.
     /// - Handle `declare module "foo"`.
-    /// - Apply `resolver`.
+    /// - Apply `swc_ecma_transforms_base::resolver`.
     ///
     /// ## Tip
     ///
