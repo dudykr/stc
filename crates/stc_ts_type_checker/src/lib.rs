@@ -117,7 +117,7 @@ where
         let end = Instant::now();
         log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
-        modules.modules[0].id
+        modules.entry.id
     }
 
     pub fn take_errors(&mut self) -> Vec<Error> {
@@ -131,7 +131,7 @@ where
             .load_module(&path, false)
             .expect("failed to load module? (cycle)");
 
-        let id = modules_in_group.modules[0].id;
+        let id = modules_in_group.entry.id;
         {
             let lock = self.module_types.read();
             // If a circular chunks are fully analyzed, used them.
@@ -363,7 +363,7 @@ where
 {
     fn module_id(&self, base: &Arc<FileName>, module_specifier: &str) -> Option<ModuleId> {
         let records = self.module_loader.load_dep(base, module_specifier).ok()?;
-        Some(records.modules[0].id)
+        Some(records.entry.id)
     }
 
     fn is_in_same_circular_group(&self, base: &Arc<FileName>, module_specifier: &str) -> bool {
@@ -378,7 +378,7 @@ where
     fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, _partial: &ModuleTypeData) -> VResult<Type> {
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
-        let data = self.analyze_module(Some(base.clone()), records.modules[0].filename.clone());
+        let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
 
         Ok(data)
     }
@@ -386,7 +386,7 @@ where
     fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
-        let data = self.analyze_module(Some(base.clone()), records.modules[0].filename.clone());
+        let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
 
         Ok(data)
     }
@@ -398,7 +398,7 @@ where
             .module_loader
             .load_module(&Arc::new(FileName::Custom(name.to_string())), false)
             .unwrap()
-            .modules[0]
+            .entry
             .id;
 
         info!("Declaring module with type `{}`", name);

@@ -31,6 +31,7 @@ pub struct ModuleRecord {
 
 pub struct Records {
     pub modules: Vec<Arc<ModuleRecord>>,
+    pub entry: Arc<ModuleRecord>,
     pub comments: StcComments,
 }
 
@@ -40,7 +41,6 @@ pub trait LoadModule: 'static + Send + Sync {
     /// This method should
     ///
     /// - Should never return empty vector.
-    /// - The first item should be the file for `filename`.
     /// - Return **all modules in a cycle**.
     /// - Handle `declare module "foo"`.
     /// - Apply `resolver`.
@@ -188,7 +188,7 @@ where
         let mut parser = Parser::new_from(lexer);
         let result = parser.parse_module();
 
-        let ast = match result {
+        let mut ast = match result {
             Ok(v) => v,
             Err(err) => {
                 let mut errors = self.parsing_errors.lock().unwrap();
@@ -233,12 +233,35 @@ where
             .load_recursively(filename, is_entry)
             .with_context(|| format!("failed to load `{}` recursively", filename))?;
 
-        let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
-
         let cycle = {
             let cycles = self.cycles.read().unwrap();
             cycles.iter().find(|c| c.contains(&entry_id)).cloned()
         };
+
+        let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
+
+        match cycle {
+            Some(cycle) => {
+                let modules = cycle
+                    .iter()
+                    .copied()
+                    .map(|id| {
+                        let path = self.ids.path(id);
+
+                        let (entry, _) = self.parse(&path)?;
+
+                        Ok(entry)
+                    })
+                    .collect::<Result<_>>()?;
+
+                Ok(Records { modules, entry, comments })
+            }
+            None => Ok(Records {
+                modules: vec![entry.clone()],
+                entry,
+                comments,
+            }),
+        }
     }
 
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records> {
