@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use auto_impl::auto_impl;
 use stc_ts_types::ModuleId;
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, SyntaxContext};
+use swc_common::{FileName, SourceMap, SyntaxContext};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 
@@ -49,6 +49,7 @@ pub struct ModuleLoader<R>
 where
     R: 'static + Sync + Send + Resolve,
 {
+    cm: Arc<SourceMap>,
     resolver: R,
 }
 
@@ -56,8 +57,8 @@ impl<R> ModuleLoader<R>
 where
     R: Resolve,
 {
-    pub fn new(resolver: R) -> Self {
-        Self { resolver }
+    pub fn new(cm: Arc<SourceMap>, resolver: R) -> Self {
+        Self { cm, resolver }
     }
 }
 
@@ -66,10 +67,18 @@ where
     R: 'static + Sync + Send + Resolve,
 {
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
-        todo!()
+        match *filename {
+            FileName::Real(path) => {}
+            _ => {}
+        }
     }
 
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records> {
-        todo!()
+        let filename = self
+            .resolver
+            .resolve(base, module_specifier)
+            .with_context(|| format!("failed to resolve `{}` from `{}`", module_specifier, base))?;
+
+        self.load_module(&Arc::new(filename))
     }
 }

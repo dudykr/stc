@@ -69,7 +69,7 @@ where
 
         Checker {
             env: env.clone(),
-            cm: cm.clone(),
+            cm,
             handler,
             module_types: Default::default(),
             dts_modules: Default::default(),
