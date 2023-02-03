@@ -35,13 +35,14 @@ fn run_tests_for_types_pkg(module_specifier: &str) {
             .resolve(&FileName::Real(current_dir().unwrap()), module_specifier)
             .expect("failed to resolve entry");
 
+        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es2020"));
         let mut checker = Checker::new(
-            cm,
+            cm.clone(),
             handler.clone(),
-            Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es2020")),
+            env.clone(),
             TsConfig { ..Default::default() },
             None,
-            ModuleLoader::new(NodeResolver),
+            ModuleLoader::new(cm, env, NodeResolver),
         );
 
         checker.check(Arc::new(path));

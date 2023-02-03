@@ -634,16 +634,17 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let diagnostics = tester
         .errors(|cm, handler| {
             let handler = Arc::new(handler);
+            let env = Env::simple(rule, target, module_config, &libs);
             let mut checker = Checker::new(
-                cm,
+                cm.clone(),
                 handler.clone(),
-                Env::simple(rule, target, module_config, &libs),
+                env.clone(),
                 TsConfig {
                     tsx: fname.contains("tsx"),
                     ..ts_config
                 },
                 None,
-                ModuleLoader::new(NodeResolver),
+                ModuleLoader::new(cm, env, NodeResolver),
             );
 
             // Install a logger

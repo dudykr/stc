@@ -58,19 +58,20 @@ fn run_bench(b: &mut Bencher, path: &Path) {
 
         let handler = Arc::new(handler);
 
+        let env = Env::simple(
+            Default::default(),
+            EsVersion::latest(),
+            ModuleConfig::None,
+            &Lib::load("es2020.full"),
+        );
         b.iter(|| {
             let mut checker = Checker::new(
                 cm.clone(),
                 handler.clone(),
-                Env::simple(
-                    Default::default(),
-                    EsVersion::latest(),
-                    ModuleConfig::None,
-                    &Lib::load("es2020.full"),
-                ),
+                env.clone(),
                 TsConfig { ..Default::default() },
                 None,
-                ModuleLoader::new(NodeResolver),
+                ModuleLoader::new(cm.clone(), env.clone(), NodeResolver),
             );
 
             let id = checker.check(Arc::new(FileName::Real(path.to_path_buf())));

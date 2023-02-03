@@ -93,7 +93,7 @@ async fn main() -> Result<(), Error> {
                     env.clone(),
                     TsConfig { ..Default::default() },
                     None,
-                    ModuleLoader::new(NodeResolver),
+                    ModuleLoader::new(cm.clone(), env.clone(), NodeResolver),
                 );
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
@@ -110,10 +110,10 @@ async fn main() -> Result<(), Error> {
                 let mut checker = Checker::new(
                     cm.clone(),
                     handler.clone(),
-                    env,
+                    env.clone(),
                     TsConfig { ..Default::default() },
                     None,
-                    ModuleLoader::new(NodeResolver),
+                    ModuleLoader::new(cm, env, NodeResolver),
                 );
 
                 checker.check(Arc::new(FileName::Real(path)));
