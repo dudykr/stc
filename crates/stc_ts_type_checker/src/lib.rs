@@ -110,7 +110,7 @@ where
     pub fn check(&self, entry: Arc<FileName>) -> ModuleId {
         let start = Instant::now();
 
-        let id = self.module_graph.load_all(&entry);
+        let modules = self.module_loader.load_module(&entry).expect("failed to load entry");
 
         let end = Instant::now();
         log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
@@ -122,7 +122,7 @@ where
         let end = Instant::now();
         log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
-        id.unwrap_or_else(|(id, _)| id)
+        modules[0].id
     }
 
     pub fn take_errors(&mut self) -> Vec<Error> {
@@ -164,37 +164,20 @@ where
                     files: Arc::new(
                         circular_set
                             .iter()
-                            .map(|id| {
-                                let path = self.module_graph.path(id);
-                                let stmt_count = self.module_graph.stmt_count_of(id);
-                                let top_level_mark = self.module_graph.top_level_mark(id);
-                                File {
-                                    id,
-                                    path,
-                                    stmt_count,
-                                    top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
-                                }
+                            .map(|record| File {
+                                id,
+                                path: record.filename.clone(),
+                                stmt_count: record.ast.body.len(),
+                                top_level_ctxt: record.top_level_ctxt,
                             })
                             .collect(),
                     ),
                     errors: Default::default(),
                     info: Default::default(),
                 };
-                let ids = set.to_vec();
-                let modules = ids
+                let modules = circular_set
                     .iter()
-                    .map(|&id| (id, self.module_graph.clone_module(id)))
-                    .filter_map(|m| m.1.map(|v| (m.0, v)))
-                    .map(|(module_id, module)| {
-                        RModule::from_orig(
-                            &mut node_id_gen,
-                            module.fold_with(&mut resolver(
-                                self.env.shared().marks().unresolved_mark(),
-                                self.module_graph.top_level_mark(module_id),
-                                true,
-                            )),
-                        )
-                    })
+                    .map(|record| RModule::from_orig(&mut node_id_gen, record.ast))
                     .collect::<Vec<_>>();
                 let mut mutations;
                 {
