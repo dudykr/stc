@@ -20,7 +20,6 @@ use stc_utils::{cache::Freeze, early_error};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::Module;
-use swc_ecma_parser::TsConfig;
 use tracing::{info, warn};
 
 pub mod loader;
@@ -57,18 +56,9 @@ impl<L> Checker<L>
 where
     L: LoadModule,
 {
-    pub fn new(
-        cm: Arc<SourceMap>,
-        handler: Arc<Handler>,
-        env: Env,
-        parser_config: TsConfig,
-        debugger: Option<Debugger>,
-        module_loader: L,
-    ) -> Self {
-        cm.new_source_file(FileName::Anon, "".into());
-
+    pub fn new(cm: Arc<SourceMap>, handler: Arc<Handler>, env: Env, debugger: Option<Debugger>, module_loader: L) -> Self {
         Checker {
-            env: env.clone(),
+            env,
             cm,
             handler,
             module_types: Default::default(),

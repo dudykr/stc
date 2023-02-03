@@ -9,7 +9,6 @@ use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::resolve::Resolve;
-use swc_ecma_parser::TsConfig;
 
 #[test]
 fn test_node() {
@@ -40,7 +39,6 @@ fn run_tests_for_types_pkg(module_specifier: &str) {
             cm.clone(),
             handler.clone(),
             env.clone(),
-            TsConfig { ..Default::default() },
             None,
             ModuleLoader::new(cm, env, NodeResolver),
         );

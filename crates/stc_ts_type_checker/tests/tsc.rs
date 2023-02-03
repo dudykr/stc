@@ -639,10 +639,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 cm.clone(),
                 handler.clone(),
                 env.clone(),
-                TsConfig {
-                    tsx: fname.contains("tsx"),
-                    ..ts_config
-                },
                 None,
                 ModuleLoader::new(cm, env, NodeResolver),
             );

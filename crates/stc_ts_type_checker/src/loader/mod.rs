@@ -19,7 +19,6 @@ use swc_fast_graph::digraph::FastDiGraphMap;
 use self::analyzer::find_modules_and_deps;
 
 mod analyzer;
-pub mod resolver;
 pub mod store;
 
 pub struct ModuleRecord {
@@ -111,7 +110,7 @@ where
             deps.par_iter()
                 .map(|dep| {
                     GLOBALS.set(globals, || {
-                        let dep_path = Arc::new(self.resolver.resolve(filename, &dep)?);
+                        let dep_path = Arc::new(self.resolver.resolve(filename, dep)?);
 
                         self.load_recursively(&dep_path, false)
                     })
@@ -131,7 +130,7 @@ where
 
         if calc_cycles {
             let new = {
-                let mut g = self.dep_graph.read().unwrap();
+                let g = self.dep_graph.read().unwrap();
                 kosaraju_scc(&*g)
             };
 
@@ -181,7 +180,6 @@ where
                 bail!("failed to load module `{}`", filename);
             }
         };
-        let (id, top_level_mark) = self.ids.generate(&filename);
 
         let lexer = Lexer::new(syntax, EsVersion::latest(), StringInput::from(&*fm), Some(&comments));
 
@@ -203,7 +201,7 @@ where
             errors.extend(extra_errors);
         }
 
-        let (id, top_level_mark) = self.ids.generate(&filename);
+        let (id, top_level_mark) = self.ids.generate(filename);
         let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
 
         ast.visit_mut_with(&mut swc_ecma_transforms_base::resolver(

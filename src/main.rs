@@ -91,7 +91,6 @@ async fn main() -> Result<(), Error> {
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
-                    TsConfig { ..Default::default() },
                     None,
                     ModuleLoader::new(cm.clone(), env.clone(), NodeResolver),
                 );
@@ -111,7 +110,6 @@ async fn main() -> Result<(), Error> {
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
-                    TsConfig { ..Default::default() },
                     None,
                     ModuleLoader::new(cm, env, NodeResolver),
                 );

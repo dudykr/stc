@@ -21,7 +21,6 @@ use swc_common::{
     FileName,
 };
 use swc_ecma_ast::EsVersion;
-use swc_ecma_parser::TsConfig;
 use test::Bencher;
 
 #[bench]
@@ -69,7 +68,6 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 cm.clone(),
                 handler.clone(),
                 env.clone(),
-                TsConfig { ..Default::default() },
                 None,
                 ModuleLoader::new(cm.clone(), env.clone(), NodeResolver),
             );
