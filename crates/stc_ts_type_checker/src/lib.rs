@@ -143,123 +143,121 @@ where
 
         let is_first_run = self.started.insert(id);
 
-        let circular_set = self.module_graph.get_circular(id);
+        let circular_set = self.module_loader.load_module(path).expect("failed to load module? (cycle)");
 
         if is_first_run {
-            if let Some(set) = &circular_set {
+            {
+                // Mark all modules in the circular group as in-progress.
+                let shards = self.started.shards();
+
+                for &dep_id in set {
+                    let idx = self.started.determine_map(&dep_id);
+
+                    let mut lock = shards[idx].write();
+                    lock.insert(dep_id, SharedValue::new(()));
+                }
+            }
+
+            {
+                let mut node_id_gen = NodeIdGenerator::default();
+                let mut storage = Group {
+                    parent: None,
+                    files: Arc::new(
+                        set.iter()
+                            .copied()
+                            .map(|id| {
+                                let path = self.module_graph.path(id);
+                                let stmt_count = self.module_graph.stmt_count_of(id);
+                                let top_level_mark = self.module_graph.top_level_mark(id);
+                                File {
+                                    id,
+                                    path,
+                                    stmt_count,
+                                    top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
+                                }
+                            })
+                            .collect(),
+                    ),
+                    errors: Default::default(),
+                    info: Default::default(),
+                };
+                let ids = set.to_vec();
+                let modules = ids
+                    .iter()
+                    .map(|&id| (id, self.module_graph.clone_module(id)))
+                    .filter_map(|m| m.1.map(|v| (m.0, v)))
+                    .map(|(module_id, module)| {
+                        RModule::from_orig(
+                            &mut node_id_gen,
+                            module.fold_with(&mut resolver(
+                                self.env.shared().marks().unresolved_mark(),
+                                self.module_graph.top_level_mark(module_id),
+                                true,
+                            )),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                let mut mutations;
                 {
-                    // Mark all modules in the circular group as in-progress.
-                    let shards = self.started.shards();
+                    let mut a = Analyzer::root(
+                        self.env.clone(),
+                        self.cm.clone(),
+                        self.module_graph.comments().clone(),
+                        box &mut storage,
+                        self,
+                        self.debugger.clone(),
+                    );
+                    let _ = modules.validate_with(&mut a);
+                    mutations = a.mutations.unwrap();
+                }
 
-                    for &dep_id in set {
-                        let idx = self.started.determine_map(&dep_id);
+                for (id, mut dts_module) in ids.iter().zip(modules) {
+                    let type_data = storage.info.entry(*id).or_default();
 
-                        let mut lock = shards[idx].write();
-                        lock.insert(dep_id, SharedValue::new(()));
+                    {
+                        apply_mutations(&mut mutations, &mut dts_module);
+                        cleanup_module_for_dts(&mut dts_module.body, type_data);
+                    }
+
+                    // TODO(kdy1): Prevent duplicate work.
+                    if let Some(..) = self.dts_modules.insert(*id, dts_module) {
+                        warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                     }
                 }
 
                 {
-                    let mut node_id_gen = NodeIdGenerator::default();
-                    let mut storage = Group {
-                        parent: None,
-                        files: Arc::new(
-                            set.iter()
-                                .copied()
-                                .map(|id| {
-                                    let path = self.module_graph.path(id);
-                                    let stmt_count = self.module_graph.stmt_count_of(id);
-                                    let top_level_mark = self.module_graph.top_level_mark(id);
-                                    File {
-                                        id,
-                                        path,
-                                        stmt_count,
-                                        top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
-                                    }
-                                })
-                                .collect(),
-                        ),
-                        errors: Default::default(),
-                        info: Default::default(),
-                    };
-                    let ids = set.to_vec();
-                    let modules = ids
-                        .iter()
-                        .map(|&id| (id, self.module_graph.clone_module(id)))
-                        .filter_map(|m| m.1.map(|v| (m.0, v)))
-                        .map(|(module_id, module)| {
-                            RModule::from_orig(
-                                &mut node_id_gen,
-                                module.fold_with(&mut resolver(
-                                    self.env.shared().marks().unresolved_mark(),
-                                    self.module_graph.top_level_mark(module_id),
-                                    true,
-                                )),
-                            )
-                        })
-                        .collect::<Vec<_>>();
-                    let mut mutations;
-                    {
-                        let mut a = Analyzer::root(
-                            self.env.clone(),
-                            self.cm.clone(),
-                            self.module_graph.comments().clone(),
-                            box &mut storage,
-                            self,
-                            self.debugger.clone(),
-                        );
-                        let _ = modules.validate_with(&mut a);
-                        mutations = a.mutations.unwrap();
-                    }
-
-                    for (id, mut dts_module) in ids.iter().zip(modules) {
-                        let type_data = storage.info.entry(*id).or_default();
-
-                        {
-                            apply_mutations(&mut mutations, &mut dts_module);
-                            cleanup_module_for_dts(&mut dts_module.body, type_data);
-                        }
-
-                        // TODO(kdy1): Prevent duplicate work.
-                        if let Some(..) = self.dts_modules.insert(*id, dts_module) {
-                            warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
-                        }
-                    }
-
-                    {
-                        let mut lock = self.errors.lock();
-                        lock.extend(storage.take_errors());
-                    }
-                    {
-                        let mut lock = self.module_types.write();
-                        for (module_id, data) in storage.info {
-                            let type_info = Type::Module(stc_ts_types::Module {
+                    let mut lock = self.errors.lock();
+                    lock.extend(storage.take_errors());
+                }
+                {
+                    let mut lock = self.module_types.write();
+                    for (module_id, data) in storage.info {
+                        let type_info = Type::Module(stc_ts_types::Module {
+                            span: DUMMY_SP,
+                            name: RTsModuleName::Str(RStr {
                                 span: DUMMY_SP,
-                                name: RTsModuleName::Str(RStr {
-                                    span: DUMMY_SP,
-                                    value: format!("{:?}", module_id).into(),
-                                    raw: None,
-                                }),
-                                exports: box data,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed();
+                                value: format!("{:?}", module_id).into(),
+                                raw: None,
+                            }),
+                            exports: box data,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })
+                        .freezed();
 
-                            let res = lock.entry(module_id).or_default().set(type_info);
-                            match res {
-                                Ok(()) => {}
-                                Err(..) => {
-                                    warn!("Duplicated work: `{}`: (type info is already cached)", path);
-                                }
+                        let res = lock.entry(module_id).or_default().set(type_info);
+                        match res {
+                            Ok(()) => {}
+                            Err(..) => {
+                                warn!("Duplicated work: `{}`: (type info is already cached)", path);
                             }
                         }
                     }
                 }
-
-                let lock = self.module_types.read();
-                return lock.get(&id).and_then(|cell| cell.get().cloned()).unwrap();
             }
+
+            let lock = self.module_types.read();
+            return lock.get(&id).and_then(|cell| cell.get().cloned()).unwrap();
         }
         info!("Request: {}\nRequested by {:?}\nCircular set: {:?}", path, starter, circular_set);
 
@@ -321,7 +319,7 @@ where
             let mut a = Analyzer::root(
                 self.env.clone(),
                 self.cm.clone(),
-                self.module_graph.comments().clone(),
+                record.comments,
                 box &mut storage,
                 self,
                 self.debugger.clone(),
