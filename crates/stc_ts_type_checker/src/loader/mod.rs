@@ -128,7 +128,7 @@ where
             for (dep, is_normal_dep) in deps.iter().flatten() {
                 g.add_edge(id, *dep, ());
 
-                if !*is_normal_dep {
+                if entry.is_dts && !*is_normal_dep {
                     // Treat d.ts references as a cycle.
                     g.add_edge(*dep, id, ());
                 }
