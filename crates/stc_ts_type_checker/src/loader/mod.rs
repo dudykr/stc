@@ -16,7 +16,10 @@ pub struct ModuleRecord {
     pub filename: Arc<FileName>,
     pub top_level_ctxt: SyntaxContext,
     pub ast: Module,
-    /// **All modules in one cycle should share same instance**.
+}
+
+pub struct Records {
+    pub modules: Vec<Arc<ModuleRecord>>,
     pub comments: StcComments,
 }
 
@@ -35,10 +38,10 @@ pub trait LoadModule: 'static + Send + Sync {
     ///
     /// Because of the cycles, this method would load all dependencies
     /// recursively.
-    fn load_module(&self, filename: &Arc<FileName>) -> Result<Vec<Arc<ModuleRecord>>>;
+    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records>;
 
     /// Same constraints for [`LoadModule::load_module`] applies.
-    fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Vec<Arc<ModuleRecord>>>;
+    fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records>;
 }
 
 /// A simple implementation of [LoadModule].
