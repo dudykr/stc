@@ -1014,18 +1014,21 @@ impl Analyzer<'_, '_> {
             candidates
         };
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts { ..Default::default() },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts { ..Default::default() },
+            )
+            .context("tried to select a callable property of a class")?
+        {
             return Ok(Some(v));
         }
 
@@ -1197,18 +1200,21 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts { ..Default::default() },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts { ..Default::default() },
+            )
+            .context("tried to select a callable property of type elements")?
+        {
             return Ok(v);
         }
 
@@ -1763,21 +1769,24 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                if let Some(v) = self.select_and_invoke(
-                    span,
-                    kind,
-                    expr,
-                    &candidates,
-                    type_args,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                    type_ann,
-                    SelectOpts {
-                        skip_check_for_overloads: true,
-                        ..Default::default()
-                    },
-                )? {
+                if let Some(v) = self
+                    .select_and_invoke(
+                        span,
+                        kind,
+                        expr,
+                        &candidates,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                        SelectOpts {
+                            skip_check_for_overloads: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to extract")?
+                {
                     return Ok(v);
                 }
 
@@ -1846,18 +1855,29 @@ impl Analyzer<'_, '_> {
             })
             .collect::<Vec<_>>();
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts { ..Default::default() },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts { ..Default::default() },
+            )
+            .or_else(|err| {
+                // If user selected type arguments, we should not report no matching overload.
+                if type_args.is_some() && matches!(&*err, ErrorKind::NoMatchingOverload { .. }) {
+                    Ok(Some(Type::any(span, Default::default())))
+                } else {
+                    Err(err)
+                }
+            })
+            .context("tried to call a type element")?
+        {
             return Ok(v);
         }
 
@@ -2088,21 +2108,24 @@ impl Analyzer<'_, '_> {
 
         info!("get_best_return_type: {} candidates", candidates.len());
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts {
-                skip_check_for_overloads: true,
-                ..Default::default()
-            },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts {
+                    skip_check_for_overloads: true,
+                    ..Default::default()
+                },
+            )
+            .context("tried to get a best return type")?
+        {
             return Ok(v);
         }
 
@@ -2478,16 +2501,16 @@ impl Analyzer<'_, '_> {
             .collect_vec();
         self.expand_this_in_type(&mut ret_ty);
 
-        {
+        let is_type_arg_count_fine = {
+            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+
+            type_arg_check_res.report(&mut self.storage) == Some(())
+        };
+
+        if is_type_arg_count_fine {
             let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
 
             arg_check_res.report(&mut self.storage);
-        }
-
-        {
-            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
-
-            type_arg_check_res.report(&mut self.storage);
         }
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
