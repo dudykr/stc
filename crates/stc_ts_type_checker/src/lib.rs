@@ -396,7 +396,12 @@ where
     fn declare_module(&self, name: &JsWord, module: Type) {
         module.assert_clone_cheap();
 
-        let module_id = self.module_graph.id_for_declare_module(name);
+        let module_id = self
+            .module_loader
+            .load_module(&Arc::new(FileName::Custom(name.to_string())))
+            .unwrap()
+            .modules[0]
+            .id;
 
         info!("Declaring module with type `{}`", name);
         self.declared_modules.write().push((module_id, module));
