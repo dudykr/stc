@@ -27,7 +27,6 @@ where
         if let Ok(entry) = result {
             let entry = Arc::new(FileName::Real(entry));
             let start = Instant::now();
-            self.module_graph.load_all(&entry).unwrap();
 
             self.analyze_module(None, entry);
 
