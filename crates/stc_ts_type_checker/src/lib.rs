@@ -27,10 +27,7 @@ use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
-use crate::store::ModuleStore;
-
-pub mod resolver;
-pub mod store;
+pub mod loader;
 mod typings;
 
 /// Onc instance per swc::Compiler
