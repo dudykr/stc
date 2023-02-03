@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use auto_impl::auto_impl;
-use swc_common::{FileName, Mark};
+use swc_common::{FileName, SyntaxContext};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 
@@ -11,7 +11,7 @@ pub mod store;
 
 #[derive(Debug)]
 pub struct ModuleRecord {
-    pub top_level_mark: Mark,
+    pub top_level_ctxt: SyntaxContext,
     pub ast: Module,
 }
 
