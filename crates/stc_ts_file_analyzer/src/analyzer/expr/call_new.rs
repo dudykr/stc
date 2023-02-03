@@ -1868,6 +1868,14 @@ impl Analyzer<'_, '_> {
                 type_ann,
                 SelectOpts { ..Default::default() },
             )
+            .or_else(|err| {
+                // If user selected type arguments, we should not report no matching overload.
+                if type_args.is_some() && matches!(&*err, ErrorKind::NoMatchingOverload { .. }) {
+                    Ok(Some(Type::any(span, Default::default())))
+                } else {
+                    Err(err)
+                }
+            })
             .context("tried to call a type element")?
         {
             return Ok(v);
