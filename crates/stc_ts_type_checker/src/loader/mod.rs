@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, SourceMap, SyntaxContext, GLOBALS};
+use swc_common::{FileName, SourceMap, Span, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -176,6 +176,26 @@ where
                 });
 
                 (fm, syntax)
+            }
+
+            FileName::Custom(..) => {
+                let fm = self.cm.new_source_file((**filename).clone(), String::new());
+
+                let (id, top_level_mark) = self.ids.generate(filename);
+
+                return Ok((
+                    Arc::new(ModuleRecord {
+                        id,
+                        filename: filename.clone(),
+                        top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
+                        ast: Module {
+                            span: Span::new(fm.start_pos, fm.end_pos, Default::default()),
+                            body: Default::default(),
+                            shebang: Default::default(),
+                        },
+                    }),
+                    self.comments.clone(),
+                ));
             }
 
             _ => {
