@@ -13,6 +13,7 @@ pub mod store;
 
 pub struct ModuleRecord {
     pub id: ModuleId,
+    pub filename: Arc<FileName>,
     pub top_level_ctxt: SyntaxContext,
     pub ast: Module,
     /// **All modules in one cycle should share same instance**.
