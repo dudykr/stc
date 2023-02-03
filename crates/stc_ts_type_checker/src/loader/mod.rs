@@ -102,7 +102,7 @@ where
             return Ok(id);
         }
 
-        let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
+        let (entry, comments) = self.parse(filename).with_context(|| format!("failed to parse `{}`", filename))?;
 
         let (declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
 
