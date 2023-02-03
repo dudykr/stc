@@ -22,6 +22,11 @@ pub trait LoadModule: 'static + Send + Sync {
     ///
     /// - Return **all modules in a cycle**.
     /// - Handle `declare module "foo"`.
+    ///
+    /// ## Tip
+    ///
+    /// Because of the cycles, this method would load all dependencies
+    /// recursively.
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Vec<Arc<ModuleRecord>>>;
 }
 
