@@ -2377,7 +2377,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         origin_ty: &Type,
-        type_lit: &TypeLit,
+        tl: &TypeLit,
         r: &Type,
         name: Name,
         additional_target: &mut FxHashMap<Name, Vec<Type>>,
@@ -2395,7 +2395,7 @@ impl Analyzer<'_, '_> {
             Default::default(),
         ) {
             if property.type_eq(r) {
-                for m in type_lit.members.iter() {
+                for m in tl.members.iter() {
                     if let Some(key) = m.non_computed_key() {
                         let l_name = Name::new(key.clone(), name.get_ctxt());
                         if name == l_name {
