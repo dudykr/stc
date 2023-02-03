@@ -2501,16 +2501,16 @@ impl Analyzer<'_, '_> {
             .collect_vec();
         self.expand_this_in_type(&mut ret_ty);
 
-        {
+        let is_type_arg_count_fine = {
+            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+
+            type_arg_check_res.report(&mut self.storage) == Some(())
+        };
+
+        if is_type_arg_count_fine {
             let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
 
             arg_check_res.report(&mut self.storage);
-        }
-
-        {
-            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
-
-            type_arg_check_res.report(&mut self.storage);
         }
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
