@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use auto_impl::auto_impl;
+use stc_ts_utils::StcComments;
 use swc_common::{FileName, SyntaxContext};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
@@ -9,10 +10,11 @@ use swc_ecma_loader::resolve::Resolve;
 pub mod resolver;
 pub mod store;
 
-#[derive(Debug)]
 pub struct ModuleRecord {
     pub top_level_ctxt: SyntaxContext,
     pub ast: Module,
+    /// **All modules in one cycle should share same instance**.
+    pub comments: StcComments,
 }
 
 /// A module loader.

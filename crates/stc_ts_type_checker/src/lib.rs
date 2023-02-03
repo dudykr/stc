@@ -300,19 +300,17 @@ where
         };
 
         let mut node_id_gen = NodeIdGenerator::default();
-        let mut module = self
-            .module_graph
-            .clone_module(module_id)
-            .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", module_id, path));
-        let top_level_mark = self.module_graph.top_level_mark(module_id);
-        module = module.fold_with(&mut resolver(self.env.shared().marks().unresolved_mark(), top_level_mark, true));
+        let module = self.module_loader.load_module(&path).expect("failed to load module?");
+        assert_eq!(module.len(), 1, "analyze_non_circular_module should be called with a single module");
 
-        let mut module = RModule::from_orig(&mut node_id_gen, module);
+        let record = module.into_iter().next().unwrap();
+
+        let mut module = RModule::from_orig(&mut node_id_gen, record.ast);
 
         let mut storage = Single {
             parent: None,
             id: module_id,
-            top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
+            top_level_ctxt: record.top_level_ctxt,
             path: path.clone(),
             is_dts,
             info: Default::default(),
