@@ -1,1 +1,2 @@
-pub(crate) struct ModuleStore {}
+#[derive(Default)]
+pub struct ModuleStore {}

@@ -29,7 +29,7 @@ use tracing::{info, warn};
 
 use crate::store::ModuleStore;
 
-mod store;
+pub mod store;
 mod typings;
 
 /// Onc instance per swc::Compiler
@@ -77,6 +77,7 @@ impl Checker {
             errors: Default::default(),
             debugger,
             declared_modules: Default::default(),
+            store: Default::default(),
         }
     }
 }
@@ -93,8 +94,8 @@ impl Checker {
         self.dts_modules.remove(&id).map(|v| v.1.into_orig())
     }
 
-    pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
-        self.module_graph.id(path)
+    pub fn store(&self) -> &ModuleStore {
+        &self.store
     }
 
     /// After calling this method, you can get errors using `.take_errors()`
