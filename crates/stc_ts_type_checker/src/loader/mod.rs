@@ -2,6 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
+use dashmap::DashMap;
+use fxhash::FxBuildHasher;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
@@ -57,6 +59,7 @@ where
     resolver: R,
 
     ids: ModuleIdGenerator,
+    parse_cache: DashMap<Arc<FileName>, Arc<ModuleRecord>, FxBuildHasher>,
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
 }
 
@@ -70,13 +73,26 @@ where
             env,
             resolver,
 
+            parse_cache: Default::default(),
             ids: Default::default(),
             parsing_errors: Default::default(),
         }
     }
 
+    fn parse(&self, filename: &Arc<FileName>) -> Result<Arc<ModuleRecord>> {
+        if let Some(cached) = self.parse_cache.get(filename).as_deref().cloned() {
+            return Ok(cached);
+        }
+
+        let record = self.parse_inner(filename)?;
+        let record = Arc::new(record);
+        self.parse_cache.insert(filename.clone(), record.clone());
+
+        Ok(record)
+    }
+
     /// This does not perform caching
-    fn parse(&self, filename: &Arc<FileName>) -> Result<ModuleRecord> {
+    fn parse_inner(&self, filename: &Arc<FileName>) -> Result<ModuleRecord> {
         let comments = StcComments::default();
 
         let (fm, syntax) = match &**filename {
