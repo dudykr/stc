@@ -1769,21 +1769,24 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                if let Some(v) = self.select_and_invoke(
-                    span,
-                    kind,
-                    expr,
-                    &candidates,
-                    type_args,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                    type_ann,
-                    SelectOpts {
-                        skip_check_for_overloads: true,
-                        ..Default::default()
-                    },
-                )? {
+                if let Some(v) = self
+                    .select_and_invoke(
+                        span,
+                        kind,
+                        expr,
+                        &candidates,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                        SelectOpts {
+                            skip_check_for_overloads: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to extract")?
+                {
                     return Ok(v);
                 }
 
@@ -1852,18 +1855,21 @@ impl Analyzer<'_, '_> {
             })
             .collect::<Vec<_>>();
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts { ..Default::default() },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts { ..Default::default() },
+            )
+            .context("tried to call a type element")?
+        {
             return Ok(v);
         }
 
@@ -2094,21 +2100,24 @@ impl Analyzer<'_, '_> {
 
         info!("get_best_return_type: {} candidates", candidates.len());
 
-        if let Some(v) = self.select_and_invoke(
-            span,
-            kind,
-            expr,
-            &candidates,
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-            SelectOpts {
-                skip_check_for_overloads: true,
-                ..Default::default()
-            },
-        )? {
+        if let Some(v) = self
+            .select_and_invoke(
+                span,
+                kind,
+                expr,
+                &candidates,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts {
+                    skip_check_for_overloads: true,
+                    ..Default::default()
+                },
+            )
+            .context("tried to get a best return type")?
+        {
             return Ok(v);
         }
 
