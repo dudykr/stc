@@ -177,6 +177,7 @@ where
                     info: Default::default(),
                 };
                 let modules = modules_in_group
+                    .modules
                     .iter()
                     .map(|record| RModule::from_orig(&mut node_id_gen, record.ast))
                     .collect::<Vec<_>>();
@@ -185,7 +186,7 @@ where
                     let mut a = Analyzer::root(
                         self.env.clone(),
                         self.cm.clone(),
-                        self.module_graph.comments().clone(),
+                        modules_in_group.comments.clone(),
                         box &mut storage,
                         self,
                         self.debugger.clone(),
@@ -242,10 +243,7 @@ where
             let lock = self.module_types.read();
             return lock.get(&id).and_then(|cell| cell.get().cloned()).unwrap();
         }
-        info!(
-            "Request: {}\nRequested by {:?}\nCircular set: {:?}",
-            path, starter, modules_in_group
-        );
+        info!("Request: {}\nRequested by {:?}", path, starter);
 
         {
             // With write lock, we ensure that OnceCell is inserted.
@@ -284,10 +282,14 @@ where
         };
 
         let mut node_id_gen = NodeIdGenerator::default();
-        let module = self.module_loader.load_module(&path).expect("failed to load module?");
-        assert_eq!(module.len(), 1, "analyze_non_circular_module should be called with a single module");
+        let records = self.module_loader.load_module(&path).expect("failed to load module?");
+        assert_eq!(
+            records.modules.len(),
+            1,
+            "analyze_non_circular_module should be called with a single module"
+        );
 
-        let record = module.into_iter().next().unwrap();
+        let record = records.into_iter().next().unwrap();
 
         let mut module = RModule::from_orig(&mut node_id_gen, record.ast);
 
