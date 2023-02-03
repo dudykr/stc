@@ -5,6 +5,7 @@ use std::{mem::take, sync::Arc, time::Instant};
 
 use dashmap::{DashMap, DashSet, SharedValue};
 use fxhash::{FxBuildHasher, FxHashMap};
+use loader::LoadModule;
 use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, RwLock};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
@@ -31,7 +32,10 @@ pub mod loader;
 mod typings;
 
 /// Onc instance per swc::Compiler
-pub struct Checker {
+pub struct Checker<L>
+where
+    L: LoadModule,
+{
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
     /// Cache
@@ -42,7 +46,7 @@ pub struct Checker {
     /// Information required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
-    store: ModuleStore,
+    module_loader: L,
 
     /// Modules which are being processed or analyzed.
     started: Arc<DashSet<ModuleId, FxBuildHasher>>,
@@ -54,14 +58,17 @@ pub struct Checker {
     debugger: Option<Debugger>,
 }
 
-impl Checker {
+impl<L> Checker<L>
+where
+    L: LoadModule,
+{
     pub fn new(
         cm: Arc<SourceMap>,
         handler: Arc<Handler>,
         env: Env,
         parser_config: TsConfig,
         debugger: Option<Debugger>,
-        resolver: Arc<dyn Resolve>,
+        module_loader: L,
     ) -> Self {
         cm.new_source_file(FileName::Anon, "".into());
 
@@ -80,7 +87,10 @@ impl Checker {
     }
 }
 
-impl Checker {
+impl<L> Checker<L>
+where
+    L: LoadModule,
+{
     /// Get type information of a module.
     pub fn get_types(&self, id: ModuleId) -> Option<Type> {
         let lock = self.module_types.read();
@@ -92,8 +102,8 @@ impl Checker {
         self.dts_modules.remove(&id).map(|v| v.1.into_orig())
     }
 
-    pub fn store(&self) -> &ModuleStore {
-        &self.store
+    pub fn module_loader(&self) -> &L {
+        &self.module_loader
     }
 
     /// After calling this method, you can get errors using `.take_errors()`
