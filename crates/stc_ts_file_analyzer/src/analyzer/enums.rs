@@ -4,6 +4,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
 use stc_ts_errors::{ErrorKind, Errors};
+use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
     Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
 };
@@ -15,7 +16,8 @@ use swc_ecma_ast::*;
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
     ty::{Enum, EnumMember, Type},
-    validator, VResult,
+    validator::ValidateWith,
+    VResult,
 };
 
 /// Value does not contain RTsLit::Bool
@@ -59,7 +61,7 @@ impl Analyzer<'_, '_> {
                 .map(|m| -> VResult<_> {
                     let id_span = m.id.span();
                     let val = eval
-                        .compute(id_span, Some(default), m.init.as_deref())
+                        .compute(self, id_span, Some(default), m.init.as_deref())
                         .map(|val| {
                             if let RTsLit::Number(n) = &val {
                                 default = n.value + 1.0;
@@ -173,13 +175,13 @@ impl Evaluator<'_> {
     ///
     /// If both of the default value and the initialization is None, this method
     /// returns [Err].
-    fn compute(&mut self, span: Span, default: Option<f64>, init: Option<&RExpr>) -> VResult<RTsLit> {
+    fn compute(&mut self, analyzer: &mut Analyzer, span: Span, default: Option<f64>, init: Option<&RExpr>) -> VResult<RTsLit> {
         if let Some(expr) = init {
             match expr {
                 RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
                 RExpr::Lit(RLit::Num(s)) => return Ok(RTsLit::Number(s.clone())),
                 RExpr::Bin(ref bin) => {
-                    let v = self.compute_bin(span, bin)?;
+                    let v = self.compute_bin(analyzer, span, bin)?;
 
                     match &v {
                         RTsLit::Number(n) => {
@@ -194,7 +196,7 @@ impl Evaluator<'_> {
                         _ => return Ok(v),
                     }
                 }
-                RExpr::Paren(ref paren) => return self.compute(span, default, Some(&paren.expr)),
+                RExpr::Paren(ref paren) => return self.compute(analyzer, span, default, Some(&paren.expr)),
 
                 RExpr::Ident(ref id) => {
                     if self.e.is_const {
@@ -214,7 +216,7 @@ impl Evaluator<'_> {
                         match m.id {
                             RTsEnumMemberId::Str(RStr { value: ref sym, .. }) | RTsEnumMemberId::Ident(RIdent { ref sym, .. }) => {
                                 if *sym == id.sym {
-                                    return self.compute(span, None, m.init.as_deref());
+                                    return self.compute(analyzer, span, None, m.init.as_deref());
                                 }
                             }
                         }
@@ -222,7 +224,7 @@ impl Evaluator<'_> {
                     return Err(ErrorKind::InvalidEnumInit { span }.into());
                 }
                 RExpr::Unary(ref expr) => {
-                    let v = self.compute(span, None, Some(&expr.arg))?;
+                    let v = self.compute(analyzer, span, None, Some(&expr.arg))?;
                     match v {
                         RTsLit::Number(RNumber { value: v, .. }) => {
                             return Ok(RTsLit::Number(RNumber {
@@ -256,7 +258,14 @@ impl Evaluator<'_> {
                     }
                 }
 
-                _ => {}
+                _ => {
+                    let res = expr.validate_with_default(analyzer)?;
+                    let res = analyzer.expand_enum_variant(res)?;
+
+                    if let Type::Lit(ty) = res.normalize() {
+                        return Ok(ty.lit.clone());
+                    }
+                }
             }
         } else {
             if let Some(value) = default {
@@ -271,9 +280,9 @@ impl Evaluator<'_> {
         Err(ErrorKind::InvalidEnumInit { span }.into())
     }
 
-    fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> VResult<RTsLit> {
-        let l = self.compute(span, None, Some(&expr.left))?;
-        let r = self.compute(span, None, Some(&expr.right))?;
+    fn compute_bin(&mut self, analyzer: &mut Analyzer, span: Span, expr: &RBinExpr) -> VResult<RTsLit> {
+        let l = self.compute(analyzer, span, None, Some(&expr.left))?;
+        let r = self.compute(analyzer, span, None, Some(&expr.right))?;
 
         Ok(match (l, r) {
             (RTsLit::Number(RNumber { value: l, .. }), RTsLit::Number(RNumber { value: r, .. })) => {
