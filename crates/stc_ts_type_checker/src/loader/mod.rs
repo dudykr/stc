@@ -130,8 +130,7 @@ where
 
                 if !*is_normal_dep {
                     // Treat d.ts references as a cycle.
-                    // g.add_edge(*dep, id, ());
-                    g.add_edge(id, *dep, ());
+                    g.add_edge(*dep, id, ());
                 }
             }
         }
