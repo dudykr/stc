@@ -15,5 +15,6 @@ pub struct ModuleRecord {
 
 /// A module loader.
 pub trait LoadModule: 'static + Send + Sync {
-    fn load(&self, filename: &Arc<FileName>) -> Result<Arc<ModuleRecord>>;
+    /// This method should return **all modules in a cycle**.
+    fn load_module(&self, filename: &Arc<FileName>) -> Result<Vec<Arc<ModuleRecord>>>;
 }
