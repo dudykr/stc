@@ -61,4 +61,15 @@ where
     }
 }
 
-impl<R> LoadModule for ModuleLoader<R> where R: 'static + Sync + Send + Resolve {}
+impl<R> LoadModule for ModuleLoader<R>
+where
+    R: 'static + Sync + Send + Resolve,
+{
+    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
+        todo!()
+    }
+
+    fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records> {
+        todo!()
+    }
+}

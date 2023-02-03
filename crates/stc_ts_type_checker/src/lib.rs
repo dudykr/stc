@@ -174,7 +174,7 @@ where
                 let modules = modules_in_group
                     .modules
                     .iter()
-                    .map(|record| RModule::from_orig(&mut node_id_gen, record.ast))
+                    .map(|record| RModule::from_orig(&mut node_id_gen, record.ast.clone()))
                     .collect::<Vec<_>>();
                 let mut mutations;
                 {
@@ -286,7 +286,7 @@ where
 
         let record = records.modules.into_iter().next().unwrap();
 
-        let mut module = RModule::from_orig(&mut node_id_gen, record.ast);
+        let mut module = RModule::from_orig(&mut node_id_gen, record.ast.clone());
 
         let mut storage = Single {
             parent: None,
