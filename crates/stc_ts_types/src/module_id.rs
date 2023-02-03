@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use parking_lot::Mutex;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
-use swc_common::{collections::AHashMap, EqIgnoreSpan, FileName, Mark, TypeEq};
+use swc_common::{EqIgnoreSpan, FileName, Mark, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ModuleId(u32);
@@ -28,8 +29,8 @@ pub struct ModuleIdGenerator {
 #[derive(Default)]
 struct Data {
     cur: u32,
-    modules: AHashMap<Arc<FileName>, (ModuleId, Mark)>,
-    paths: AHashMap<ModuleId, (Arc<FileName>, Mark)>,
+    modules: FxHashMap<Arc<FileName>, (ModuleId, Mark)>,
+    paths: FxHashMap<ModuleId, (Arc<FileName>, Mark)>,
 }
 
 impl ModuleIdGenerator {
