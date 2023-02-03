@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use fxhash::FxBuildHasher;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
@@ -13,6 +13,9 @@ use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_visit::VisitMutWith;
 
+use self::analyzer::find_modules_and_deps;
+
+mod analyzer;
 pub mod resolver;
 pub mod store;
 
@@ -58,8 +61,10 @@ where
     env: Env,
     resolver: R,
 
+    loading_started: DashSet<Arc<FileName>, FxBuildHasher>,
+
     ids: ModuleIdGenerator,
-    parse_cache: DashMap<Arc<FileName>, Arc<ModuleRecord>, FxBuildHasher>,
+    parse_cache: DashMap<Arc<FileName>, (Arc<ModuleRecord>, StcComments), FxBuildHasher>,
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
 }
 
@@ -73,26 +78,38 @@ where
             env,
             resolver,
 
+            loading_started: Default::default(),
+
             parse_cache: Default::default(),
             ids: Default::default(),
             parsing_errors: Default::default(),
         }
     }
 
-    fn parse(&self, filename: &Arc<FileName>) -> Result<Arc<ModuleRecord>> {
+    fn load_recursively(&self, filename: &Arc<FileName>) -> Result<()> {
+        // This function works only once per file.
+        if !self.loading_started.insert(filename.clone()) {
+            return Ok(());
+        }
+
+        let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
+
+        let (declared_modules, deps) = find_modules_and_deps(entry, m);
+    }
+
+    fn parse(&self, filename: &Arc<FileName>) -> Result<(Arc<ModuleRecord>, StcComments)> {
         if let Some(cached) = self.parse_cache.get(filename).as_deref().cloned() {
             return Ok(cached);
         }
 
         let record = self.parse_inner(filename)?;
-        let record = Arc::new(record);
         self.parse_cache.insert(filename.clone(), record.clone());
 
         Ok(record)
     }
 
     /// This does not perform caching
-    fn parse_inner(&self, filename: &Arc<FileName>) -> Result<ModuleRecord> {
+    fn parse_inner(&self, filename: &Arc<FileName>) -> Result<(Arc<ModuleRecord>, StcComments)> {
         let comments = StcComments::default();
 
         let (fm, syntax) = match &**filename {
@@ -146,12 +163,15 @@ where
             true,
         ));
 
-        Ok(ModuleRecord {
-            id,
-            filename: filename.clone(),
-            top_level_ctxt,
-            ast,
-        })
+        Ok((
+            Arc::new(ModuleRecord {
+                id,
+                filename: filename.clone(),
+                top_level_ctxt,
+                ast,
+            }),
+            comments,
+        ))
     }
 }
 
