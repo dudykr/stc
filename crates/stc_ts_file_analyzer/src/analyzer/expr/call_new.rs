@@ -2202,12 +2202,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let mut min_param: usize = params
-            .iter()
-            .filter(|param| !self.can_be_void(&param.ty))
-            .map(|v| &v.pat)
-            .map(count_required_pat)
-            .sum();
+        let mut min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
 
         let mut max_param = Some(params.len());
         for (index, param) in params.iter().enumerate() {
@@ -2251,8 +2246,7 @@ impl Analyzer<'_, '_> {
             if param.required {
                 if !param.ty.is_any()
                     && self
-                        .assign(
-                            span,
+                        .assign_with_opts(
                             &mut Default::default(),
                             &param.ty,
                             &Type::Keyword(KeywordType {
@@ -2261,6 +2255,10 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }),
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
                         )
                         .is_ok()
                 {
