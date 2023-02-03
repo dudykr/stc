@@ -200,6 +200,19 @@ impl Analyzer<'_, '_> {
                             });
                         }
                     }
+                    ty @ Type::Ref(..) => {
+                        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+                        if let Ok(ty) = ty {
+                            if let ty @ Type::Union(..) = ty.normalize() {
+                                temp_els.push(TupleElement {
+                                    span: param.span,
+                                    label: None,
+                                    ty: Box::new(ty.clone().freezed()),
+                                    tracker: Default::default(),
+                                });
+                            }
+                        }
+                    }
                     _ => {}
                 }
             }
