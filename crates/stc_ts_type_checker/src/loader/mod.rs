@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use auto_impl::auto_impl;
-use stc_ts_types::ModuleId;
+use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
 use swc_common::{FileName, SourceMap, SyntaxContext};
-use swc_ecma_ast::Module;
+use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 
 pub mod resolver;
 pub mod store;
@@ -51,6 +52,9 @@ where
 {
     cm: Arc<SourceMap>,
     resolver: R,
+
+    ids: ModuleIdGenerator,
+    parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
 }
 
 impl<R> ModuleLoader<R>
@@ -58,7 +62,11 @@ where
     R: Resolve,
 {
     pub fn new(cm: Arc<SourceMap>, resolver: R) -> Self {
-        Self { cm, resolver }
+        Self {
+            cm,
+            resolver,
+            parsing_errors: Default::default(),
+        }
     }
 }
 
@@ -67,9 +75,48 @@ where
     R: 'static + Sync + Send + Resolve,
 {
     fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
-        match *filename {
-            FileName::Real(path) => {}
-            _ => {}
+        let comments = StcComments::default();
+
+        let (fm, syntax) = match &**filename {
+            FileName::Real(path) => {
+                let fm = self
+                    .cm
+                    .load_file(path)
+                    .with_context(|| format!("failed to load module `{}`", path.display()))?;
+
+                let syntax = Syntax::Typescript(TsConfig {
+                    dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
+                    tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
+                    ..Default::default()
+                });
+
+                (fm, syntax)
+            }
+
+            _ => {
+                bail!("failed to load module `{}`", filename);
+            }
+        };
+        let (id, top_level_mark) = self.ids.generate(&filename);
+
+        let lexer = Lexer::new(syntax, EsVersion::latest(), StringInput::from(&*fm), Some(&comments));
+
+        let mut parser = Parser::new_from(lexer);
+        let result = parser.parse_module();
+
+        let module = match result {
+            Ok(v) => v,
+            Err(err) => {
+                let mut errors = self.parsing_errors.lock().unwrap();
+                errors.push(err);
+
+                bail!("Failed to parse {}", filename)
+            }
+        };
+        let extra_errors = parser.take_errors();
+        if !extra_errors.is_empty() {
+            let mut errors = self.parsing_errors.lock().unwrap();
+            errors.extend(extra_errors);
         }
     }
 
