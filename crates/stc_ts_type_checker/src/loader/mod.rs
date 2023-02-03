@@ -49,7 +49,7 @@ pub trait LoadModule: 'static + Send + Sync {
     ///
     /// Because of the cycles, this method would load all dependencies
     /// recursively.
-    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records>;
+    fn load_module(&self, filename: &Arc<FileName>, is_entry: bool) -> Result<Records>;
 
     /// Same constraints for [`LoadModule::load_module`] applies.
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records>;
@@ -228,12 +228,17 @@ impl<R> LoadModule for ModuleLoader<R>
 where
     R: 'static + Sync + Send + Resolve,
 {
-    fn load_module(&self, filename: &Arc<FileName>) -> Result<Records> {
+    fn load_module(&self, filename: &Arc<FileName>, is_entry: bool) -> Result<Records> {
         let entry_id = self
-            .load_recursively(filename, true)
+            .load_recursively(filename, is_entry)
             .with_context(|| format!("failed to load `{}` recursively", filename))?;
 
         let (entry, comments) = self.parse(filename).context("failed to parse entry")?;
+
+        let cycle = {
+            let cycles = self.cycles.read().unwrap();
+            cycles.iter().find(|c| c.contains(&entry_id)).cloned()
+        };
     }
 
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records> {
@@ -242,6 +247,6 @@ where
             .resolve(base, module_specifier)
             .with_context(|| format!("failed to resolve `{}` from `{}`", module_specifier, base))?;
 
-        self.load_module(&Arc::new(filename))
+        self.load_module(&Arc::new(filename), false)
     }
 }

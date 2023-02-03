@@ -105,7 +105,7 @@ where
     pub fn check(&self, entry: Arc<FileName>) -> ModuleId {
         let start = Instant::now();
 
-        let modules = self.module_loader.load_module(&entry).expect("failed to load entry");
+        let modules = self.module_loader.load_module(&entry, true).expect("failed to load entry");
 
         let end = Instant::now();
         log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
@@ -126,7 +126,10 @@ where
 
     /// Analyzes one module.
     fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Type {
-        let modules_in_group = self.module_loader.load_module(&path).expect("failed to load module? (cycle)");
+        let modules_in_group = self
+            .module_loader
+            .load_module(&path, false)
+            .expect("failed to load module? (cycle)");
 
         let id = modules_in_group.modules[0].id;
         {
@@ -277,7 +280,7 @@ where
         };
 
         let mut node_id_gen = NodeIdGenerator::default();
-        let records = self.module_loader.load_module(&path).expect("failed to load module?");
+        let records = self.module_loader.load_module(&path, false).expect("failed to load module?");
         assert_eq!(
             records.modules.len(),
             1,
@@ -393,7 +396,7 @@ where
 
         let module_id = self
             .module_loader
-            .load_module(&Arc::new(FileName::Custom(name.to_string())))
+            .load_module(&Arc::new(FileName::Custom(name.to_string())), false)
             .unwrap()
             .modules[0]
             .id;
