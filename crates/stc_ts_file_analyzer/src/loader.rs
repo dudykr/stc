@@ -14,7 +14,7 @@ pub struct ModuleInfo {
     pub data: Type,
 }
 
-///
+/// TODO(kdy1): Refactor after merging https://github.com/dudykr/stc/pull/601
 ///
 /// Group of circular imports are handled by one thread. This
 

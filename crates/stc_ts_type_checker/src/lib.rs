@@ -195,8 +195,8 @@ where
                     mutations = a.mutations.unwrap();
                 }
 
-                for (id, mut dts_module) in ids.iter().zip(modules) {
-                    let type_data = storage.info.entry(*id).or_default();
+                for (record, mut dts_module) in modules_in_group.modules.iter().zip(modules) {
+                    let type_data = storage.info.entry(record.id).or_default();
 
                     {
                         apply_mutations(&mut mutations, &mut dts_module);
@@ -204,7 +204,7 @@ where
                     }
 
                     // TODO(kdy1): Prevent duplicate work.
-                    if let Some(..) = self.dts_modules.insert(*id, dts_module) {
+                    if let Some(..) = self.dts_modules.insert(record.id, dts_module) {
                         warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                     }
                 }
@@ -289,7 +289,7 @@ where
             "analyze_non_circular_module should be called with a single module"
         );
 
-        let record = records.into_iter().next().unwrap();
+        let record = records.modules.into_iter().next().unwrap();
 
         let mut module = RModule::from_orig(&mut node_id_gen, record.ast);
 
@@ -307,7 +307,7 @@ where
             let mut a = Analyzer::root(
                 self.env.clone(),
                 self.cm.clone(),
-                record.comments,
+                records.comments,
                 box &mut storage,
                 self,
                 self.debugger.clone(),
