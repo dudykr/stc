@@ -117,6 +117,16 @@ where
                 .collect::<Result<Vec<_>>>()
         })?;
 
+        {
+            // Add to the dependency graph
+
+            let mut g = self.dep_graph.write().unwrap();
+
+            for dep in deps.iter() {
+                g.add_edge(id, *dep, ());
+            }
+        }
+
         Ok(id)
     }
 
