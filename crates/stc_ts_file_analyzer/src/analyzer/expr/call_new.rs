@@ -424,19 +424,21 @@ impl Analyzer<'_, '_> {
             };
 
             let mut callee_ty = {
-                let callee_ty = callee.validate_with_default(analyzer).unwrap_or_else(|err| {
-                    analyzer.storage.report(err);
-                    Type::any(
-                        span,
-                        KeywordTypeMetadata {
-                            common: CommonTypeMetadata {
-                                implicit: true,
+                let callee_ty = callee
+                    .validate_with_args(analyzer, (TypeOfMode::RValue, type_args.as_ref(), None))
+                    .unwrap_or_else(|err| {
+                        analyzer.storage.report(err);
+                        Type::any(
+                            span,
+                            KeywordTypeMetadata {
+                                common: CommonTypeMetadata {
+                                    implicit: true,
+                                    ..Default::default()
+                                },
                                 ..Default::default()
                             },
-                            ..Default::default()
-                        },
-                    )
-                });
+                        )
+                    });
                 match callee_ty.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
