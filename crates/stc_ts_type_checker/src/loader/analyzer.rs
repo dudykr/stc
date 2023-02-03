@@ -4,19 +4,21 @@ use swc_common::{comments::Comments, Span, Spanned};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
 
-pub(crate) fn find_modules_and_deps<C>(comments: &C, m: &Module) -> (Vec<JsWord>, Vec<JsWord>)
+/// Returns `(declared modules, references ,dependencies)`
+pub(crate) fn find_modules_and_deps<C>(comments: &C, m: &Module) -> (Vec<JsWord>, Vec<JsWord>, Vec<JsWord>)
 where
     C: Comments,
 {
     let mut v = DepFinder {
         comments,
         declared_modules: Default::default(),
+        references: Default::default(),
         deps: Default::default(),
     };
 
     m.visit_with(&mut v);
 
-    (v.declared_modules, v.deps)
+    (v.declared_modules, v.references, v.deps)
 }
 
 struct DepFinder<C>
@@ -25,6 +27,7 @@ where
 {
     comments: C,
     declared_modules: Vec<JsWord>,
+    references: Vec<JsWord>,
     deps: Vec<JsWord>,
 }
 
@@ -35,7 +38,7 @@ where
     fn check_comments(&mut self, span: Span) {
         let deps = find_imports_in_comments(&self.comments, span);
 
-        self.deps.extend(deps.into_iter().map(|i| i.to_path()));
+        self.references.extend(deps.into_iter().map(|i| i.to_path()));
     }
 }
 

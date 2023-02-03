@@ -23,6 +23,7 @@ pub mod store;
 
 pub struct ModuleRecord {
     pub id: ModuleId,
+    pub is_dts: bool,
     pub filename: Arc<FileName>,
     pub top_level_ctxt: SyntaxContext,
     pub ast: Module,
@@ -104,15 +105,16 @@ where
 
         let (entry, comments) = self.parse(filename)?;
 
-        let (_declared_modules, deps) = find_modules_and_deps(&comments, &entry.ast);
+        let (_declared_modules, references, deps) = find_modules_and_deps(&comments, &entry.ast);
 
         let deps = GLOBALS.with(|globals| {
-            deps.par_iter()
-                .map(|dep| {
+            (references.par_iter().map(|v| (v, false)))
+                .chain(deps.par_iter().map(|v| (v, true)))
+                .map(|(dep, is_normal_dep)| {
                     GLOBALS.set(globals, || {
                         let dep_path = Arc::new(self.resolver.resolve(filename, dep)?);
 
-                        self.load_recursively(&dep_path, false)
+                        self.load_recursively(&dep_path, false).map(|v| (v, is_normal_dep))
                     })
                 })
                 .collect::<Vec<_>>()
@@ -123,8 +125,13 @@ where
 
             let mut g = self.dep_graph.write().unwrap();
 
-            for dep in deps.iter().flatten() {
+            for (dep, is_normal_dep) in deps.iter().flatten() {
                 g.add_edge(id, *dep, ());
+
+                if entry.is_dts && !*is_normal_dep {
+                    // Treat d.ts references as a cycle.
+                    g.add_edge(*dep, id, ());
+                }
             }
         }
 
@@ -169,11 +176,11 @@ where
                     .load_file(path)
                     .with_context(|| format!("failed to load module `{}`", path.display()))?;
 
-                let syntax = Syntax::Typescript(TsConfig {
+                let syntax = TsConfig {
                     dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
                     tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
                     ..Default::default()
-                });
+                };
 
                 (fm, syntax)
             }
@@ -187,6 +194,7 @@ where
                     Arc::new(ModuleRecord {
                         id,
                         filename: filename.clone(),
+                        is_dts: false,
                         top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
                         ast: Module {
                             span: Span::new(fm.start_pos, fm.end_pos, Default::default()),
@@ -203,7 +211,12 @@ where
             }
         };
 
-        let lexer = Lexer::new(syntax, EsVersion::latest(), StringInput::from(&*fm), Some(&comments));
+        let lexer = Lexer::new(
+            Syntax::Typescript(syntax),
+            EsVersion::latest(),
+            StringInput::from(&*fm),
+            Some(&comments),
+        );
 
         let mut parser = Parser::new_from(lexer);
         let result = parser.parse_module();
@@ -235,6 +248,7 @@ where
         Ok((
             Arc::new(ModuleRecord {
                 id,
+                is_dts: syntax.dts,
                 filename: filename.clone(),
                 top_level_ctxt,
                 ast,
