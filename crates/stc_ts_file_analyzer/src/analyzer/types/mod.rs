@@ -783,7 +783,7 @@ impl Analyzer<'_, '_> {
             let output = dump_type_as_string(res);
 
             #[cfg(debug_assertions)]
-            debug!("normalize: {} -> {}", input, output);
+            debug!("normalize: {}\n===== ===== ===== ===== =====\n{}", input, output);
         }
 
         res
