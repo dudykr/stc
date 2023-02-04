@@ -1687,7 +1687,7 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => self.get_best_return_type(
+            Type::Union(u) => self.get_best_return_type(
                 span,
                 expr,
                 ty.clone(),
@@ -1698,7 +1698,16 @@ impl Analyzer<'_, '_> {
                 spread_arg_types,
                 type_ann,
                 SelectOpts {
-                    skip_check_for_overloads: true,
+                    skip_check_for_overloads: u.types.iter().any(|ty| match ty.normalize_instance() {
+                        Type::TypeLit(lit) => {
+                            //
+                            match kind {
+                                ExtractKind::New => lit.members.iter().filter(|m| matches!(m, TypeElement::Constructor(..))).count() <= 1,
+                                ExtractKind::Call => lit.members.iter().filter(|m| matches!(m, TypeElement::Call(..))).count() <= 1,
+                            }
+                        }
+                        _ => true,
+                    }),
                     ..Default::default()
                 },
             ),
