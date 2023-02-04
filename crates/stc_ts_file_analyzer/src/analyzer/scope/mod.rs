@@ -2453,7 +2453,15 @@ impl Expander<'_, '_, '_> {
                                     }
                                     let type_params = self
                                         .analyzer
-                                        .infer_ts_infer_types(span, extends_type, &element.ty, Default::default())
+                                        .infer_ts_infer_types(
+                                            span,
+                                            extends_type,
+                                            &element.ty,
+                                            InferTypeOpts {
+                                                exclude_null_and_undefined: true,
+                                                ..Default::default()
+                                            },
+                                        )
                                         .ok();
                                     if let Some(type_params) = type_params {
                                         ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();

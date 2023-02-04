@@ -32,6 +32,7 @@ use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
 
+use super::generic::InferTypeOpts;
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
@@ -90,9 +91,9 @@ impl Analyzer<'_, '_> {
     /// method. Otherwise the span of the original type is used.
     pub(crate) fn normalize<'a>(&mut self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
-            let ty_str = force_dump_type_as_string(&ty);
+            let ty = force_dump_type_as_string(&ty);
 
-            Some(span!(Level::ERROR, "normalize", ty = &*ty_str).entered())
+            Some(span!(Level::ERROR, "normalize", ty = tracing::field::display(&ty)).entered())
         } else {
             None
         };
@@ -399,6 +400,12 @@ impl Analyzer<'_, '_> {
                             Type::Conditional(c) => c,
                             ty => return Ok(Cow::Owned(ty)),
                         };
+
+                        ALLOW_DEEP_CLONE.set(&(), || {
+                            let ty = dump_type_as_string(&Type::Conditional(c.clone()));
+
+                            debug!("normalize: conditional: {}", ty)
+                        });
 
                         c.check_type = box self
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
@@ -783,7 +790,7 @@ impl Analyzer<'_, '_> {
             let output = dump_type_as_string(res);
 
             #[cfg(debug_assertions)]
-            debug!("normalize: {} -> {}", input, output);
+            debug!("normalize: {}\n===== ===== ===== ===== =====\n{}", input, output);
         }
 
         res
@@ -1328,7 +1335,17 @@ impl Analyzer<'_, '_> {
             check_type.freeze();
 
             // We need to handle infer type.
-            let type_params = self.infer_ts_infer_types(span, &extends_type, &check_type, Default::default()).ok();
+            let type_params = self
+                .infer_ts_infer_types(
+                    span,
+                    &extends_type,
+                    &check_type,
+                    InferTypeOpts {
+                        exclude_null_and_undefined: true,
+                        ..Default::default()
+                    },
+                )
+                .ok();
 
             if let Some(type_params) = type_params {
                 check_type = box self.expand_type_params(&type_params, *check_type, Default::default()).unwrap();
