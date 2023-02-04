@@ -779,6 +779,13 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let arg = match arg.normalize() {
+            Type::Union(arg) if opts.exclude_null_and_undefined => {
+                Cow::Owned(Type::new_union(arg.span, arg.types.iter().filter(|ty| !ty.is_null_or_undefined()).cloned()).freezed())
+            }
+            _ => Cow::Borrowed(arg),
+        };
+
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 if e.get().is_fixed {
@@ -789,7 +796,7 @@ impl Analyzer<'_, '_> {
                     Level::ERROR,
                     "infer_type: type param",
                     name = name.as_str(),
-                    new = tracing::field::display(&dump_type_as_string(arg)),
+                    new = tracing::field::display(&dump_type_as_string(&arg)),
                     prev = tracing::field::display(&dump_type_as_string(&e.get().inferred_type))
                 )
                 .entered();
@@ -803,7 +810,7 @@ impl Analyzer<'_, '_> {
 
                 if opts.priority == e.get().priority {
                     // Identical
-                    if e.get().inferred_type.type_eq(arg) {
+                    if e.get().inferred_type.type_eq(&*arg) {
                         return Ok(());
                     }
 
@@ -811,7 +818,7 @@ impl Analyzer<'_, '_> {
                         || self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                &arg.clone().generalize_lit(),
+                                &arg.clone().into_owned().generalize_lit(),
                                 &e.get().inferred_type.clone().generalize_lit(),
                                 AssignOpts {
                                     span,
@@ -835,7 +842,7 @@ impl Analyzer<'_, '_> {
                         let new = if self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                arg,
+                                &arg,
                                 &e.get().inferred_type,
                                 AssignOpts {
                                     span,
@@ -845,7 +852,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            arg.clone()
+                            arg.into_owned()
                         } else if opts.is_inferring_rest_type
                             && match e.get().inferred_type.normalize() {
                                 Type::Tuple(tuple) => tuple.elems.len() == 1,
@@ -874,7 +881,7 @@ impl Analyzer<'_, '_> {
                             })
                             .freezed()
                         } else {
-                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.clone()].freezed())
+                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
                         };
                         e.get_mut().inferred_type = new;
                         return Ok(());
@@ -885,7 +892,7 @@ impl Analyzer<'_, '_> {
                         .assign_with_opts(
                             &mut Default::default(),
                             &e.get().inferred_type.clone().generalize_lit(),
-                            &arg.clone().generalize_lit(),
+                            &arg.clone().into_owned().generalize_lit(),
                             AssignOpts {
                                 span,
                                 ..Default::default()
@@ -913,7 +920,7 @@ impl Analyzer<'_, '_> {
                     type_param: name,
                     candidates: Default::default(),
                     contra_candidates: Default::default(),
-                    inferred_type: arg,
+                    inferred_type: arg.into_owned(),
                     priority: opts.priority,
                     top_level: true,
                     is_fixed: false,
