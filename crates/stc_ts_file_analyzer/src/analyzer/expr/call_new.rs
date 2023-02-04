@@ -2992,9 +2992,12 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
-                                    .convert_err(|err| ErrorKind::WrongArgType {
-                                        span: arg.span(),
-                                        inner: box err.into(),
+                                    .map_err(|err| {
+                                        ErrorKind::WrongArgType {
+                                            span: arg.span(),
+                                            inner: box err,
+                                        }
+                                        .into()
                                     })
                                     .context("tried to assign to first element of a tuple type of a parameter");
 
