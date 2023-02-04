@@ -400,6 +400,16 @@ impl Analyzer<'_, '_> {
                             ty => return Ok(Cow::Owned(ty)),
                         };
 
+                        let _tracing = if cfg!(debug_assertions) {
+                            ALLOW_DEEP_CLONE.set(&(), || {
+                                let ty = force_dump_type_as_string(&Type::Conditional(c.clone()));
+
+                                Some(span!(Level::ERROR, "normalize after expanding", ty = tracing::field::display(&ty)).entered())
+                            })
+                        } else {
+                            None
+                        };
+
                         c.check_type = box self
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
