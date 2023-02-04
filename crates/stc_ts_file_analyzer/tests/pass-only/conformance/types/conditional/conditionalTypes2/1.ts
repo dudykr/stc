@@ -13,6 +13,5 @@ interface Invariant<T> {
 }
 
 export function f2<A, B extends A>(a: Contravariant<A>, b: Contravariant<B>) {
-    a = b;  // Error
     b = a;
 }
