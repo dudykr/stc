@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/2.ts:6:5]
- 6 | set [n](v) { },
-   :      ^
+   ,-[$DIR/tests/pass/exprs/object/key/2.ts:5:1]
+ 5 | var v = {
+ 6 |     set [n](v) { },
+   :          ^
+ 7 | }
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/2.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/object/key/2.ts:4:1]
+ 4 |     var a: any;
  5 | ,-> var v = {
  6 | |       set [n](v) { },
  7 | `-> }

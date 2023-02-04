@@ -3,15 +3,18 @@
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:1:1]
  1 | for (let v of ['a', 'b', 'c']) {
    :               ^^^^^^^^^^^^^^^
+ 2 |     var x = v;
    `----
 
 Error: 
   > string[]
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:2:5]
- 2 | var x = v;
-   :         ^
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:1:1]
+ 1 | for (let v of ['a', 'b', 'c']) {
+ 2 |     var x = v;
+   :             ^
+ 3 | }
    `----
 
 Error: 

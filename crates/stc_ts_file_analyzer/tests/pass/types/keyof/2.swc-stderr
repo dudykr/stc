@@ -1,8 +1,21 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/keyof/2.ts:19:1]
+    ,-[$DIR/tests/pass/types/keyof/2.ts:18:1]
+ 18 | 
  19 | c = keys
     :     ^^^^
+ 20 | keys = c
+    `----
+
+Error: 
+  > "c"
+
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/2.ts:18:1]
+ 18 | 
+ 19 | c = keys
+    : ^^^^^^^^
+ 20 | keys = c
     `----
 
 Error: 
@@ -11,14 +24,6 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/keyof/2.ts:19:1]
  19 | c = keys
-    : ^^^^^^^^
-    `----
-
-Error: 
-  > "c"
-
-  x Type
-    ,-[$DIR/tests/pass/types/keyof/2.ts:20:1]
  20 | keys = c
     :        ^
     `----
@@ -27,7 +32,8 @@ Error:
   > 'c'
 
   x Type
-    ,-[$DIR/tests/pass/types/keyof/2.ts:20:1]
+    ,-[$DIR/tests/pass/types/keyof/2.ts:19:1]
+ 19 | c = keys
  20 | keys = c
     : ^^^^^^^^
     `----

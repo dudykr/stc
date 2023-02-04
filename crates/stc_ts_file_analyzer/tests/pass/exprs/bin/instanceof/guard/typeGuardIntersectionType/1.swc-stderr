@@ -1,71 +1,87 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
- 11 | return toTest && toTest.b;
-    :        ^^^^^^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:10:1]
+ 10 | function isB(toTest: any): toTest is B {
+ 11 |     return toTest && toTest.b;
+    :            ^^^^^^
+ 12 | }
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
- 11 | return toTest && toTest.b;
-    :                  ^^^^^^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:10:1]
+ 10 | function isB(toTest: any): toTest is B {
+ 11 |     return toTest && toTest.b;
+    :                      ^^^^^^
+ 12 | }
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
- 11 | return toTest && toTest.b;
-    :                  ^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:10:1]
+ 10 | function isB(toTest: any): toTest is B {
+ 11 |     return toTest && toTest.b;
+    :                      ^^^^^^^^
+ 12 | }
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:11:5]
- 11 | return toTest && toTest.b;
-    :        ^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:10:1]
+ 10 | function isB(toTest: any): toTest is B {
+ 11 |     return toTest && toTest.b;
+    :            ^^^^^^^^^^^^^^^^^^
+ 12 | }
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:5]
- 16 | if (isB(a)) {
-    :     ^^^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:15:1]
+ 15 | function union(a: A): A & B | null {
+ 16 |     if (isB(a)) {
+    :         ^^^
+ 17 |         return a;
     `----
 
 Error: 
   > (toTest: any) => toTest is B
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:5]
- 16 | if (isB(a)) {
-    :         ^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:15:1]
+ 15 | function union(a: A): A & B | null {
+ 16 |     if (isB(a)) {
+    :             ^
+ 17 |         return a;
     `----
 
 Error: 
   > A
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:5]
- 16 | if (isB(a)) {
-    :     ^^^^^^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:15:1]
+ 15 | function union(a: A): A & B | null {
+ 16 |     if (isB(a)) {
+    :         ^^^^^^
+ 17 |         return a;
     `----
 
 Error: 
   > toTest is B
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:17:9]
- 17 | return a;
-    :        ^
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/guard/typeGuardIntersectionType/1.ts:16:1]
+ 16 |     if (isB(a)) {
+ 17 |         return a;
+    :                ^
+ 18 |     } else {
     `----
 
 Error: 

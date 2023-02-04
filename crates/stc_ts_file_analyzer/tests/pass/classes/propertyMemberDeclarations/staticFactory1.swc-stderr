@@ -1,34 +1,41 @@
 
   x Type
-   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:4:9]
- 4 | return new this();
-   :            ^^^^
+   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:3:1]
+ 3 |     static create() {
+ 4 |         return new this();
+   :                    ^^^^
+ 5 |     }
    `----
 
 Error: 
   > this
 
   x Type
-   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:4:9]
- 4 | return new this();
-   :        ^^^^^^^^^^
+   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:3:1]
+ 3 |     static create() {
+ 4 |         return new this();
+   :                ^^^^^^^^^^
+ 5 |     }
    `----
 
 Error: 
   > typeof Base
 
   x Type
-   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:8:1]
+   ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:7:1]
+ 7 | 
  8 | class Derived extends Base {
    :                       ^^^^
+ 9 |     foo() { return 2; }
    `----
 
 Error: 
   > typeof Base
 
   x Type
-    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:11:1]
- 11 | var d = Derived.create();
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:10:1]
+ 10 | }
+ 11 | var d = Derived.create(); 
     :         ^^^^^^^
     `----
 
@@ -36,8 +43,9 @@ Error:
   > typeof Derived
 
   x Type
-    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:11:1]
- 11 | var d = Derived.create();
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:10:1]
+ 10 | }
+ 11 | var d = Derived.create(); 
     :         ^^^^^^^^^^^^^^^^
     `----
 
@@ -45,8 +53,9 @@ Error:
   > typeof Base
 
   x Type
-    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:13:1]
- 13 | d.foo();
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:12:1]
+ 12 | 
+ 13 | d.foo();  
     : ^
     `----
 
@@ -54,8 +63,9 @@ Error:
   > typeof Base
 
   x Type
-    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:13:1]
- 13 | d.foo();
+    ,-[$DIR/tests/pass/classes/propertyMemberDeclarations/staticFactory1.ts:12:1]
+ 12 | 
+ 13 | d.foo();  
     : ^^^^^^^
     `----
 

@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:8:5]
- 8 | switch (x.kind) {
-   :         ^
+   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:7:1]
+ 7 | export function f20(x: Item) {
+ 8 |     switch (x.kind) {
+   :             ^
+ 9 |         case 0: return x.a;
    `----
 
 Error: 
@@ -18,28 +20,34 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:8:5]
- 8 | switch (x.kind) {
-   :         ^^^^^^
+   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:7:1]
+ 7 | export function f20(x: Item) {
+ 8 |     switch (x.kind) {
+   :             ^^^^^^
+ 9 |         case 0: return x.a;
    `----
 
 Error: 
   > (0 | 1 | 2)
 
   x Type
-   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:9:9]
- 9 | case 0: return x.a;
-   :      ^
-   `----
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case 0: return x.a;
+    :              ^
+ 10 |         case 1: return x.b;
+    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:9:9]
- 9 | case 0: return x.a;
-   :                ^
-   `----
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case 0: return x.a;
+    :                        ^
+ 10 |         case 1: return x.b;
+    `----
 
 Error: 
   > {
@@ -48,27 +56,33 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:9:9]
- 9 | case 0: return x.a;
-   :                ^^^
-   `----
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case 0: return x.a;
+    :                        ^^^
+ 10 |         case 1: return x.b;
+    `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:10:9]
- 10 | case 1: return x.b;
-    :      ^
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:9:1]
+  9 |         case 0: return x.a;
+ 10 |         case 1: return x.b;
+    :              ^
+ 11 |         case 2: return x.c;
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:10:9]
- 10 | case 1: return x.b;
-    :                ^
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:9:1]
+  9 |         case 0: return x.a;
+ 10 |         case 1: return x.b;
+    :                        ^
+ 11 |         case 2: return x.c;
     `----
 
 Error: 
@@ -78,27 +92,33 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:10:9]
- 10 | case 1: return x.b;
-    :                ^^^
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:9:1]
+  9 |         case 0: return x.a;
+ 10 |         case 1: return x.b;
+    :                        ^^^
+ 11 |         case 2: return x.c;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:11:9]
- 11 | case 2: return x.c;
-    :      ^
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:10:1]
+ 10 |         case 1: return x.b;
+ 11 |         case 2: return x.c;
+    :              ^
+ 12 |     }
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:11:9]
- 11 | case 2: return x.c;
-    :                ^
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:10:1]
+ 10 |         case 1: return x.b;
+ 11 |         case 2: return x.c;
+    :                        ^
+ 12 |     }
     `----
 
 Error: 
@@ -108,9 +128,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:11:9]
- 11 | case 2: return x.c;
-    :                ^^^
+    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:10:1]
+ 10 |         case 1: return x.b;
+ 11 |         case 2: return x.c;
+    :                        ^^^
+ 12 |     }
     `----
 
 Error: 

@@ -1,33 +1,40 @@
 
   x Type
-   ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:6:1]
+   ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:5:1]
+ 5 | 
  6 | class Child extends BaseClass {
    :                     ^^^^^^^^^
+ 7 |     classNumber: number;
    `----
 
 Error: 
   > typeof BaseClass
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:17:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:16:1]
+ 16 | declare var a: IChild;
  17 | a.baseNumber
     : ^
+ 18 | a.classNumber
     `----
 
 Error: 
   > IChild
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:17:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:16:1]
+ 16 | declare var a: IChild;
  17 | a.baseNumber
     : ^^^^^^^^^^^^
+ 18 | a.classNumber
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:18:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:17:1]
+ 17 | a.baseNumber
  18 | a.classNumber
     : ^
     `----
@@ -36,7 +43,8 @@ Error:
   > IChild
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:18:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/4.ts:17:1]
+ 17 | a.baseNumber
  18 | a.classNumber
     : ^^^^^^^^^^^^^
     `----

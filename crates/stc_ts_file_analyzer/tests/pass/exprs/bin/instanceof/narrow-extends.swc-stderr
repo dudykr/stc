@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:6:1]
+ 6 | }
  7 | export class D1 extends C1 {
    :                         ^^
+ 8 |     p3: number;
    `----
 
 Error: 
   > typeof C1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:11:1]
+ 11 | export declare var ctor2: C2 | D1;
  12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
     :                                    ^^^^^
     `----
@@ -18,7 +21,8 @@ Error:
   > (C2 | D1)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:11:1]
+ 11 | export declare var ctor2: C2 | D1;
  12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
     :                                                     ^^
     `----
@@ -27,7 +31,8 @@ Error:
   > typeof C1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:11:1]
+ 11 | export declare var ctor2: C2 | D1;
  12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
     :                                    ^^^^^^^^^^^^^^^^^^^
     `----
@@ -36,7 +41,8 @@ Error:
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:11:1]
+ 11 | export declare var ctor2: C2 | D1;
  12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
     :                                                           ^^^^^
     `----
@@ -45,7 +51,8 @@ Error:
   > D1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:11:1]
+ 11 | export declare var ctor2: C2 | D1;
  12 | export var r2: D1 | C2 | boolean = ctor2 instanceof C1 && ctor2; // C2 | D1
     :                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----

@@ -1,44 +1,54 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:5:1]
+ 5 | let value: string = "asdf";
  6 | if (isNonBlank(value)) {
    :     ^^^^^^^^^^
+ 7 |   doThis(value);
    `----
 
 Error: 
   > (value: string) => value is (string & Tag)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:5:1]
+ 5 | let value: string = "asdf";
  6 | if (isNonBlank(value)) {
    :                ^^^^^
+ 7 |   doThis(value);
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:5:1]
+ 5 | let value: string = "asdf";
  6 | if (isNonBlank(value)) {
    :     ^^^^^^^^^^^^^^^^^
+ 7 |   doThis(value);
    `----
 
 Error: 
   > value is (string & Tag)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:7:3]
- 7 | doThis(value);
-   : ^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:6:1]
+ 6 | if (isNonBlank(value)) {
+ 7 |   doThis(value);
+   :   ^^^^^^
+ 8 | } else {
    `----
 
 Error: 
   > (value: (string & Tag)) => void
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:7:3]
- 7 | doThis(value);
-   :        ^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:6:1]
+ 6 | if (isNonBlank(value)) {
+ 7 |   doThis(value);
+   :          ^^^^^
+ 8 | } else {
    `----
 
 Error: 
@@ -47,37 +57,45 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:7:3]
- 7 | doThis(value);
-   : ^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:6:1]
+ 6 | if (isNonBlank(value)) {
+ 7 |   doThis(value);
+   :   ^^^^^^^^^^^^^
+ 8 | } else {
    `----
 
 Error: 
   > void
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:9:3]
- 9 | doThat(value);
-   : ^^^^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:8:1]
+  8 | } else {
+  9 |   doThat(value);
+    :   ^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > (value: string) => void
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:9:3]
- 9 | doThat(value);
-   :        ^^^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:8:1]
+  8 | } else {
+  9 |   doThat(value);
+    :          ^^^^^
+ 10 | }
+    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:9:3]
- 9 | doThat(value);
-   : ^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:8:1]
+  8 | } else {
+  9 |   doThat(value);
+    :   ^^^^^^^^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > void

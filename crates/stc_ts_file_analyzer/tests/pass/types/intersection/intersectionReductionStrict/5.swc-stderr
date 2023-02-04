@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:9:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:8:1]
+ 8 |   t: Container<"a"> | (Container<"b"> & Container<"c">)
  9 | ): Container<"a"> => t;
    :                      ^
    `----
@@ -11,7 +12,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:7:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:6:1]
+ 6 |     
  7 | ,-> const f2 = (
  8 | |     t: Container<"a"> | (Container<"b"> & Container<"c">)
  9 | `-> ): Container<"a"> => t;

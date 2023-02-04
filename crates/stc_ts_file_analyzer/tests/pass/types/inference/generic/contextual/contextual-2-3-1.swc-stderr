@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                       ^^
     `----
@@ -9,7 +10,8 @@ Error:
   > <T>(a: T) => T
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                               ^^^^^
     `----
@@ -18,7 +20,8 @@ Error:
   > <W>(x: Box<W>) => W
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                                     ^
     `----
@@ -27,7 +30,8 @@ Error:
   > any
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                               ^^^^^^^^
     `----
@@ -36,7 +40,8 @@ Error:
   > W
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                          ^^^^^^^^^^^^^
     `----
@@ -45,7 +50,8 @@ Error:
   > (a: any) => W
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                                     ^
     `----
@@ -56,7 +62,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                          ^^^^^^^^^^^^^
     `----
@@ -65,7 +72,8 @@ Error:
   > (a: Box<W>) => W
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
+  9 | 
  10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
     :                                       ^^^^^^^^^^^^^^^^^
     `----

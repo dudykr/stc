@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:3:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:2:1]
+ 2 |         prop1: number | string;
  3 | ,-> } = {
  4 | |       prop1: "string",
  5 | `-> }
@@ -12,7 +13,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :            ^
    `----
@@ -23,7 +25,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :            ^^^^^^^
    `----
@@ -32,7 +35,8 @@ Error:
   > (number | string)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :     ^^^^^^^^^^^^^^
    `----
@@ -41,7 +45,8 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -50,7 +55,8 @@ Error:
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :                                    ^
    `----
@@ -61,7 +67,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :                                    ^^^^^^^
    `----
@@ -70,7 +77,8 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :                                    ^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -79,7 +87,8 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:6:1]
+ 6 | 
  7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

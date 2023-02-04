@@ -1,37 +1,45 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:5]
- 13 | let z = !!true ? a : b;  // A | B
-    :          ^^^^^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :              ^^^^^
+ 14 |     z.f();
     `----
 
 Error: 
   > false
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:5]
- 13 | let z = !!true ? a : b;  // A | B
-    :         ^^^^^^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :             ^^^^^^
+ 14 |     z.f();
     `----
 
 Error: 
   > true
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:5]
- 13 | let z = !!true ? a : b;  // A | B
-    :                  ^
-    `----
-
-Error: 
-  > {
-  |     f(): void;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:5]
- 13 | let z = !!true ? a : b;  // A | B
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
     :                      ^
+ 14 |     z.f();
+    `----
+
+Error: 
+  > {
+  |     f(): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :                          ^
+ 14 |     z.f();
     `----
 
 Error: 
@@ -41,9 +49,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:5]
- 13 | let z = !!true ? a : b;  // A | B
-    :         ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :             ^^^^^^^^^^^^^^
+ 14 |     z.f();
     `----
 
 Error: 
@@ -55,9 +65,11 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:14:5]
- 14 | z.f();
-    : ^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:1]
+ 13 |     let z = !!true ? a : b;  // A | B
+ 14 |     z.f();
+    :     ^
+ 15 |     z.f('hello');
     `----
 
 Error: 
@@ -69,18 +81,22 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:14:5]
- 14 | z.f();
-    : ^^^^^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:1]
+ 13 |     let z = !!true ? a : b;  // A | B
+ 14 |     z.f();
+    :     ^^^^^
+ 15 |     z.f('hello');
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:15:5]
- 15 | z.f('hello');
-    : ^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:14:1]
+ 14 |     z.f();
+ 15 |     z.f('hello');
+    :     ^
+ 16 | }
     `----
 
 Error: 
@@ -92,9 +108,11 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:15:5]
- 15 | z.f('hello');
-    : ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:14:1]
+ 14 |     z.f();
+ 15 |     z.f('hello');
+    :     ^^^^^^^^^^^^
+ 16 | }
     `----
 
 Error: 

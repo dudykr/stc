@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/1.ts:2:5]
- 2 | ["" || 0]: 0
-   :  ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/object/key/computed/1.ts:1:1]
+ 1 | export var o = {
+ 2 |     ["" || 0]: 0
+   :      ^^^^^^^
+ 3 | };
    `----
 
 Error: 

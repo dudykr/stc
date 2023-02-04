@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:7:9]
- 7 | return p;
-   :        ^
+   ,-[$DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:6:1]
+ 6 |     method2(p: I["readonlyType"]): I["readonlyType"] {
+ 7 |         return p;
+   :                ^
+ 8 |     }
    `----
 
 Error: 
   > unique symbol
 
   x Type
-   ,-[$DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:5:1]
+   ,-[$DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:4:1]
+ 4 |     
  5 | ,-> export const obj = {
  6 | |       method2(p: I["readonlyType"]): I["readonlyType"] {
  7 | |           return p;

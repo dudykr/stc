@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:6:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:5:1]
+ 5 | 
  6 | foo('a', (t) => t, 'b') // string
    : ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: (t: T) => T, b: T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:6:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:5:1]
+ 5 | 
  6 | foo('a', (t) => t, 'b') // string
    :                 ^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:6:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:5:1]
+ 5 | 
  6 | foo('a', (t) => t, 'b') // string
    :          ^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > (t: any) => any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:6:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/literal-2.ts:5:1]
+ 5 | 
  6 | foo('a', (t) => t, 'b') // string
    : ^^^^^^^^^^^^^^^^^^^^^^^
    `----

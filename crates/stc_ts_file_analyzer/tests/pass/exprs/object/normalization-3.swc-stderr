@@ -38,7 +38,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/normalization-3.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/object/normalization-3.ts:2:1]
+ 2 | 
  3 | o;
    : ^
    `----

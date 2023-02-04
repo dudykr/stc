@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:7:1]
+    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:6:1]
+  6 |     
   7 | ,-> const obj: Readonly<ObjType> = {
   8 | |       foo: 'bar',
   9 | |       baz: 'qux',
@@ -16,7 +17,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:13:1]
+    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:12:1]
+ 12 | 
  13 | export const { foo, ...rest } = obj
     :                                 ^^^
     `----
@@ -29,16 +31,19 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:15:1]
+    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:14:1]
+ 14 | 
  15 | foo
     : ^^^
+ 16 | rest
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:16:1]
+    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:15:1]
+ 15 | foo
  16 | rest
     : ^^^^
     `----

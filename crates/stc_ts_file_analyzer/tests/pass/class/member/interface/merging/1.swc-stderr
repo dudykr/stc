@@ -1,17 +1,43 @@
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:15:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:14:1]
+ 14 | 
  15 | class Child extends BaseClass {
     :                     ^^^^^^^^^
+ 16 |     classNumber: number;
     `----
 
 Error: 
   > typeof BaseClass
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:22:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:21:1]
+ 21 | var child: Child;
  22 | child.required;
     : ^^^^^
+ 23 | child.optional;
+    `----
+
+Error: 
+  > Child
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:21:1]
+ 21 | var child: Child;
+ 22 | child.required;
+    : ^^^^^^^^^^^^^^
+ 23 | child.optional;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:22:1]
+ 22 | child.required;
+ 23 | child.optional;
+    : ^^^^^
+ 24 | child.additional;
     `----
 
 Error: 
@@ -20,7 +46,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:22:1]
  22 | child.required;
+ 23 | child.optional;
     : ^^^^^^^^^^^^^^
+ 24 | child.additional;
     `----
 
 Error: 
@@ -29,7 +57,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:23:1]
  23 | child.optional;
+ 24 | child.additional;
     : ^^^^^
+ 25 | child.baseNumber;
     `----
 
 Error: 
@@ -38,7 +68,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:23:1]
  23 | child.optional;
-    : ^^^^^^^^^^^^^^
+ 24 | child.additional;
+    : ^^^^^^^^^^^^^^^^
+ 25 | child.baseNumber;
     `----
 
 Error: 
@@ -47,7 +79,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:24:1]
  24 | child.additional;
+ 25 | child.baseNumber;
     : ^^^^^
+ 26 | child.classNumber;
     `----
 
 Error: 
@@ -56,7 +90,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:24:1]
  24 | child.additional;
+ 25 | child.baseNumber;
     : ^^^^^^^^^^^^^^^^
+ 26 | child.classNumber;
     `----
 
 Error: 
@@ -65,59 +101,50 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:25:1]
  25 | child.baseNumber;
-    : ^^^^^
-    `----
-
-Error: 
-  > Child
-
-  x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:25:1]
- 25 | child.baseNumber;
-    : ^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:26:1]
  26 | child.classNumber;
     : ^^^^^
+ 27 | child.baseMethod();
     `----
 
 Error: 
   > Child
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:26:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:25:1]
+ 25 | child.baseNumber;
  26 | child.classNumber;
     : ^^^^^^^^^^^^^^^^^
+ 27 | child.baseMethod();
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:27:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:26:1]
+ 26 | child.classNumber;
  27 | child.baseMethod();
     : ^^^^^
+ 28 | child.method();
     `----
 
 Error: 
   > Child
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:27:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:26:1]
+ 26 | child.classNumber;
  27 | child.baseMethod();
     : ^^^^^^^^^^^^^^^^^^
+ 28 | child.method();
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:28:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:27:1]
+ 27 | child.baseMethod();
  28 | child.method();
     : ^^^^^
     `----
@@ -126,7 +153,8 @@ Error:
   > Child
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:28:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/1.ts:27:1]
+ 27 | child.baseMethod();
  28 | child.method();
     : ^^^^^^^^^^^^^^
     `----

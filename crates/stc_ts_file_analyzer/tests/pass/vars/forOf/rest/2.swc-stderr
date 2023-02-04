@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:3:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:2:1]
+ 2 | let array: { x: number, y: string }[];
  3 | for (let { x, ...restOf } of array) {
    :                              ^^^^^
+ 4 |     [x, restOf];
    `----
 
 Error: 
@@ -12,18 +14,22 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:4:5]
- 4 | [x, restOf];
-   :  ^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:3:1]
+ 3 | for (let { x, ...restOf } of array) {
+ 4 |     [x, restOf];
+   :      ^
+ 5 | }
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:4:5]
- 4 | [x, restOf];
-   :     ^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:3:1]
+ 3 | for (let { x, ...restOf } of array) {
+ 4 |     [x, restOf];
+   :         ^^^^^^
+ 5 | }
    `----
 
 Error: 
@@ -32,9 +38,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:4:5]
- 4 | [x, restOf];
-   : ^^^^^^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:3:1]
+ 3 | for (let { x, ...restOf } of array) {
+ 4 |     [x, restOf];
+   :     ^^^^^^^^^^^
+ 5 | }
    `----
 
 Error: 
@@ -43,9 +51,11 @@ Error:
   | }))[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                      ^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
@@ -55,45 +65,55 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                           ^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                      ^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
   > (a: any) => any
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                           ^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
@@ -103,9 +123,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                      ^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
@@ -115,9 +137,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
@@ -127,9 +151,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
@@ -142,9 +168,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:6:1]
+ 6 | 
  7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
    :                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     [norest.x, norest.y];
    `----
 
 Error: 
@@ -154,9 +182,11 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:8:5]
- 8 | [norest.x, norest.y];
-   :  ^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+ 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
+ 8 |     [norest.x, norest.y];
+   :      ^^^^^^
+ 9 |     // x is now a string. who knows why.
    `----
 
 Error: 
@@ -166,18 +196,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:8:5]
- 8 | [norest.x, norest.y];
-   :  ^^^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+ 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
+ 8 |     [norest.x, norest.y];
+   :      ^^^^^^^^
+ 9 |     // x is now a string. who knows why.
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:8:5]
- 8 | [norest.x, norest.y];
-   :            ^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+ 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
+ 8 |     [norest.x, norest.y];
+   :                ^^^^^^
+ 9 |     // x is now a string. who knows why.
    `----
 
 Error: 
@@ -187,18 +221,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:8:5]
- 8 | [norest.x, norest.y];
-   :            ^^^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+ 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
+ 8 |     [norest.x, norest.y];
+   :                ^^^^^^^^
+ 9 |     // x is now a string. who knows why.
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:8:5]
- 8 | [norest.x, norest.y];
-   : ^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
+ 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
+ 8 |     [norest.x, norest.y];
+   :     ^^^^^^^^^^^^^^^^^^^^
+ 9 |     // x is now a string. who knows why.
    `----
 
 Error: 

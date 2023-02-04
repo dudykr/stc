@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/multi-interface/2.ts:41:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/multi-interface/2.ts:40:1]
+ 40 | var a: A;
  41 | var r = a.a;
     :         ^
     `----
@@ -9,7 +10,8 @@ Error:
   > A
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/multi-interface/2.ts:41:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/multi-interface/2.ts:40:1]
+ 40 | var a: A;
  41 | var r = a.a;
     :         ^^^
     `----

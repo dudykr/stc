@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:6:1]
+ 6 | declare const someString: string;
  7 | export const t3 = takesLiteral(`foo.bar.${someString}`);  // string
    :                   ^^^^^^^^^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:6:1]
+ 6 | declare const someString: string;
  7 | export const t3 = takesLiteral(`foo.bar.${someString}`);  // string
    :                                           ^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:6:1]
+ 6 | declare const someString: string;
  7 | export const t3 = takesLiteral(`foo.bar.${someString}`);  // string
    :                                ^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > `foo.bar.${string}`
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/3.ts:6:1]
+ 6 | declare const someString: string;
  7 | export const t3 = takesLiteral(`foo.bar.${someString}`);  // string
    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

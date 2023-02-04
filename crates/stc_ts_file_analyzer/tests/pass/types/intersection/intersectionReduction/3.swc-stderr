@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:13:1]
+ 13 | 
  14 | export let r2 = f10(a2);  // string
     :                 ^^^
     `----
@@ -11,7 +12,8 @@ Error:
   | }) => T
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:13:1]
+ 13 | 
  14 | export let r2 = f10(a2);  // string
     :                     ^^
     `----
@@ -23,7 +25,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/3.ts:13:1]
+ 13 | 
  14 | export let r2 = f10(a2);  // string
     :                 ^^^^^^^
     `----

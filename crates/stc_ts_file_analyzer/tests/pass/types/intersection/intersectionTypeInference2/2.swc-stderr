@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:4:1]
+ 4 | declare const obj: { a: string } & { b: string };
  5 | f2(obj, 'a');
    : ^^
+ 6 | f2(obj, 'b');
    `----
 
 Error: 
@@ -11,9 +13,11 @@ Error:
   | }, key: Key) => T[Key]
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:4:1]
+ 4 | declare const obj: { a: string } & { b: string };
  5 | f2(obj, 'a');
    :    ^^^
+ 6 | f2(obj, 'b');
    `----
 
 Error: 
@@ -24,16 +28,19 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:4:1]
+ 4 | declare const obj: { a: string } & { b: string };
  5 | f2(obj, 'a');
    : ^^^^^^^^^^^^
+ 6 | f2(obj, 'b');
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+ 5 | f2(obj, 'a');
  6 | f2(obj, 'b');
    : ^^
    `----
@@ -44,7 +51,8 @@ Error:
   | }, key: Key) => T[Key]
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+ 5 | f2(obj, 'a');
  6 | f2(obj, 'b');
    :    ^^^
    `----
@@ -57,7 +65,8 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:6:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/2.ts:5:1]
+ 5 | f2(obj, 'a');
  6 | f2(obj, 'b');
    : ^^^^^^^^^^^^
    `----

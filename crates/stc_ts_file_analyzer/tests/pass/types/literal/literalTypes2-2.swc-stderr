@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/literal/literalTypes2-2.ts:5:1]
+   ,-[$DIR/tests/pass/types/literal/literalTypes2-2.ts:4:1]
+ 4 | 
  5 | export const x6 = g5(1, 2);  // Type (1 | 2)[]
    :                   ^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T extends number>(x: T, y: T) => T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/literal/literalTypes2-2.ts:5:1]
+   ,-[$DIR/tests/pass/types/literal/literalTypes2-2.ts:4:1]
+ 4 | 
  5 | export const x6 = g5(1, 2);  // Type (1 | 2)[]
    :                   ^^^^^^^^
    `----

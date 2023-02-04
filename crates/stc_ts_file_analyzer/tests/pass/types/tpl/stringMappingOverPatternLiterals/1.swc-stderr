@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:12:1]
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:11:1]
+ 11 | var b: BTemplate;
  12 | b = "AAFOO";
     : ^^^^^^^^^^^
     `----
@@ -9,25 +10,30 @@ Error:
   > "AAFOO"
 
   x Type
-    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:15:1]
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:14:1]
+ 14 | var aTemp: ATemplate;
  15 | aTemp = "aAFoo";
     : ^^^^^^^^^^^^^^^
+ 16 | var bTemp: BTemplate;
     `----
 
 Error: 
   > "aAFoo"
 
   x Type
-    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:17:1]
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:16:1]
+ 16 | var bTemp: BTemplate;
  17 | bTemp = "AAFOO";
     : ^^^^^^^^^^^^^^^
+ 18 | var cTemp: CTemplate;
     `----
 
 Error: 
   > "AAFOO"
 
   x Type
-    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:19:1]
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:18:1]
+ 18 | var cTemp: CTemplate;
  19 | cTemp = "aafoo";
     : ^^^^^^^^^^^^^^^
     `----

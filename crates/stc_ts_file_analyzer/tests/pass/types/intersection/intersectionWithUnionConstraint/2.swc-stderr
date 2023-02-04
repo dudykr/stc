@@ -1,27 +1,33 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:7:3]
- 7 | x; // Error
-   : ^
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:6:1]
+ 6 | >(x: T & U) {
+ 7 |   x; // Error
+   :   ^
+ 8 |   x; // (T & U
    `----
 
 Error: 
   > (string | undefined)
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:8:3]
- 8 | x; // (T & U
-   : ^
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:7:1]
+ 7 |   x; // Error
+ 8 |   x; // (T & U
+   :   ^
+ 9 |   let _: string | undefined | number = x; // stirng | undefined
    `----
 
 Error: 
   > (string | undefined)
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:9:3]
- 9 | let _: string | undefined | number = x; // stirng | undefined
-   :                                      ^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/2.ts:8:1]
+  8 |   x; // (T & U
+  9 |   let _: string | undefined | number = x; // stirng | undefined
+    :                                        ^
+ 10 | }
+    `----
 
 Error: 
   > (string | undefined)

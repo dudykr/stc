@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/visualize/types/union/call-1.ts:11:1]
+    ,-[$DIR/tests/visualize/types/union/call-1.ts:10:1]
+ 10 | 
  11 | fUnion(""); // All constituents can be called by passing a single string.
     : ^^^^^^
     `----
@@ -9,7 +10,8 @@ Error:
   > (typeof f1 | typeof f2 | typeof f3 | typeof f4 | typeof f5 | typeof f6 | typeof f7)
 
   x Type
-    ,-[$DIR/tests/visualize/types/union/call-1.ts:11:1]
+    ,-[$DIR/tests/visualize/types/union/call-1.ts:10:1]
+ 10 | 
  11 | fUnion(""); // All constituents can be called by passing a single string.
     : ^^^^^^^^^^
     `----

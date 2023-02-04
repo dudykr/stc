@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as number | boolean, null as any as string | number | boolean) // string | number | boolean
    : ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: T, b: T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as number | boolean, null as any as string | number | boolean) // string | number | boolean
    :        ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as number | boolean, null as any as string | number | boolean) // string | number | boolean
    :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > (number | boolean)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as number | boolean, null as any as string | number | boolean) // string | number | boolean
    :                                         ^^^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as number | boolean, null as any as string | number | boolean) // string | number | boolean
    :                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -45,7 +50,8 @@ Error:
   > (string | number | boolean)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-partially-assignable-1.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as number | boolean, null as any as string | number | boolean) // string | number | boolean
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

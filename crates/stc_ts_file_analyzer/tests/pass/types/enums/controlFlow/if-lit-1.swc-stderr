@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:5]
- 8 | if (x.kind === Choice.Yes) {
-   :     ^
+   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     if (x.kind === Choice.Yes) {
+   :         ^
+ 9 |         x
    `----
 
 Error: 
@@ -15,46 +17,56 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:5]
- 8 | if (x.kind === Choice.Yes) {
-   :     ^^^^^^
+   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     if (x.kind === Choice.Yes) {
+   :         ^^^^^^
+ 9 |         x
    `----
 
 Error: 
   > (Choice.Yes | Choice.No)
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:5]
- 8 | if (x.kind === Choice.Yes) {
-   :                ^^^^^^
+   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     if (x.kind === Choice.Yes) {
+   :                    ^^^^^^
+ 9 |         x
    `----
 
 Error: 
   > Choice
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:5]
- 8 | if (x.kind === Choice.Yes) {
-   :                ^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     if (x.kind === Choice.Yes) {
+   :                    ^^^^^^^^^^
+ 9 |         x
    `----
 
 Error: 
   > Choice.Yes
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:5]
- 8 | if (x.kind === Choice.Yes) {
-   :     ^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     if (x.kind === Choice.Yes) {
+   :         ^^^^^^^^^^^^^^^^^^^^^
+ 9 |         x
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:9:9]
- 9 | x
-   : ^
-   `----
+    ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:1]
+  8 |     if (x.kind === Choice.Yes) {
+  9 |         x
+    :         ^
+ 10 |     } else {
+    `----
 
 Error: 
   > {
@@ -63,9 +75,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:11:9]
- 11 | x
-    : ^
+    ,-[$DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:10:1]
+ 10 |     } else {
+ 11 |         x
+    :         ^
+ 12 |     }
     `----
 
 Error: 

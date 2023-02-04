@@ -3,6 +3,7 @@
    ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:1:1]
  1 | export const a = ['foo', undefined, null]
    :                          ^^^^^^^^^
+ 2 | a
    `----
 
 Error: 
@@ -12,13 +13,15 @@ Error:
    ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:1:1]
  1 | export const a = ['foo', undefined, null]
    :                  ^^^^^^^^^^^^^^^^^^^^^^^^
+ 2 | a
    `----
 
 Error: 
   > ['foo', undefined, null]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:1:1]
+ 1 | export const a = ['foo', undefined, null]
  2 | a
    : ^
    `----

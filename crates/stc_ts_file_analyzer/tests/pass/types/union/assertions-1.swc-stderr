@@ -1,9 +1,11 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/union/assertions-1.ts:9:1]
- 9 | export var x = { p1: 10, p2: 20 };
-   :                ^^^^^^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:8:1]
+  8 | 
+  9 | export var x = { p1: 10, p2: 20 };
+    :                ^^^^^^^^^^^^^^^^^^
+ 10 | export var y: number | I2 = x;
+    `----
 
 Error: 
   > {
@@ -12,9 +14,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:9:1]
+  9 | export var x = { p1: 10, p2: 20 };
  10 | export var y: number | I2 = x;
     :                             ^
+ 11 | export var z: I1 = x;
     `----
 
 Error: 
@@ -24,7 +28,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:11:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:10:1]
+ 10 | export var y: number | I2 = x;
  11 | export var z: I1 = x;
     :                    ^
     `----
@@ -36,9 +41,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:13:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:12:1]
+ 12 | 
  13 | x;
     : ^
+ 14 | y;
     `----
 
 Error: 
@@ -48,16 +55,19 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:14:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:13:1]
+ 13 | x;
  14 | y;
     : ^
+ 15 | z;
     `----
 
 Error: 
   > I2
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:15:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:14:1]
+ 14 | y;
  15 | z;
     : ^
     `----
@@ -66,43 +76,52 @@ Error:
   > I1
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:17:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:16:1]
+ 16 | 
  17 | export var a = <number | I2>z;
     :                             ^
+ 18 | export var c = <I2>z;
     `----
 
 Error: 
   > I1
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:17:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:16:1]
+ 16 | 
  17 | export var a = <number | I2>z;
     :                ^^^^^^^^^^^^^^
+ 18 | export var c = <I2>z;
     `----
 
 Error: 
   > (number | I2)
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:18:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:17:1]
+ 17 | export var a = <number | I2>z;
  18 | export var c = <I2>z;
     :                    ^
+ 19 | export var d = <I1>y;
     `----
 
 Error: 
   > I1
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:18:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:17:1]
+ 17 | export var a = <number | I2>z;
  18 | export var c = <I2>z;
     :                ^^^^^
+ 19 | export var d = <I1>y;
     `----
 
 Error: 
   > I2
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:19:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:18:1]
+ 18 | export var c = <I2>z;
  19 | export var d = <I1>y;
     :                    ^
     `----
@@ -111,34 +130,40 @@ Error:
   > I2
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:19:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:18:1]
+ 18 | export var c = <I2>z;
  19 | export var d = <I1>y;
     :                ^^^^^
     `----
 
 Error: 
   > I1
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:20:1]
+ 20 | 
+ 21 | a;
+    : ^
+ 22 | c;
+    `----
+
+Error: 
+  > (number | I2)
 
   x Type
     ,-[$DIR/tests/pass/types/union/assertions-1.ts:21:1]
  21 | a;
-    : ^
-    `----
-
-Error: 
-  > (number | I2)
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:22:1]
  22 | c;
     : ^
+ 23 | d;
     `----
 
 Error: 
   > I2
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assertions-1.ts:23:1]
+    ,-[$DIR/tests/pass/types/union/assertions-1.ts:22:1]
+ 22 | c;
  23 | d;
     : ^
     `----

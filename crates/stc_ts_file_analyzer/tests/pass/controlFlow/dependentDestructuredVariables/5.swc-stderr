@@ -1,35 +1,43 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:8:3]
- 8 | switch (op) {
-   :         ^^
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:7:1]
+ 7 | const reducer: (...args: ReducerArgs) => void = (op, args) => {
+ 8 |   switch (op) {
+   :           ^^
+ 9 |     case "add":
    `----
 
 Error: 
   > ("add" | "concat")
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:5]
- 9 | case "add":
-   :      ^^^^^
-   `----
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:8:1]
+  8 |   switch (op) {
+  9 |     case "add":
+    :          ^^^^^
+ 10 |       console.log(args.a + args.b);
+    `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    : ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :       ^^^^^^^
+ 11 |       break;
     `----
 
 Error: 
   > Console
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    :             ^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :                   ^^^^
+ 11 |       break;
     `----
 
 Error: 
@@ -39,18 +47,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    :             ^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :                   ^^^^^^
+ 11 |       break;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    :                      ^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :                            ^^^^
+ 11 |       break;
     `----
 
 Error: 
@@ -60,54 +72,66 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    :                      ^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :                            ^^^^^^
+ 11 |       break;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    :             ^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :                   ^^^^^^^^^^^^^^^
+ 11 |       break;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:10:7]
- 10 | console.log(args.a + args.b);
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:9:1]
+  9 |     case "add":
+ 10 |       console.log(args.a + args.b);
+    :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 11 |       break;
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:5]
- 12 | case "concat":
-    :      ^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:11:1]
+ 11 |       break;
+ 12 |     case "concat":
+    :          ^^^^^^^^
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    : ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :       ^^^^^^^
+ 14 |       break;
     `----
 
 Error: 
   > Console
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    :             ^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :                   ^^^^
+ 14 |       break;
     `----
 
 Error: 
@@ -117,18 +141,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    :             ^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :                   ^^^^^^^^^^^^^
+ 14 |       break;
     `----
 
 Error: 
   > any[]
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    :                                  ^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :                                        ^^^^
+ 14 |       break;
     `----
 
 Error: 
@@ -138,34 +166,41 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    :                                  ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :                                        ^^^^^^^^^^^^^^
+ 14 |       break;
     `----
 
 Error: 
   > any[]
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    :             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 14 |       break;
     `----
 
 Error: 
   > any[]
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:13:7]
- 13 | console.log(args.firstArr.concat(args.secondArr));
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:12:1]
+ 12 |     case "concat":
+ 13 |       console.log(args.firstArr.concat(args.secondArr));
+    :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 14 |       break;
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:7:1]
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:6:1]
+  6 |     
   7 | ,-> const reducer: (...args: ReducerArgs) => void = (op, args) => {
   8 | |     switch (op) {
   9 | |       case "add":

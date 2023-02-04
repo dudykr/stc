@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:2:5]
- 2 | if ("a" in x) {
-   :            ^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:1:1]
+ 1 | export function anonymousClasses(x: { a: string; } | { b: number; }) {
+ 2 |     if ("a" in x) {
+   :                ^
+ 3 |         let y: string = x.a;
    `----
 
 Error: 
@@ -13,18 +15,22 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:2:5]
- 2 | if ("a" in x) {
-   :     ^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:1:1]
+ 1 | export function anonymousClasses(x: { a: string; } | { b: number; }) {
+ 2 |     if ("a" in x) {
+   :         ^^^^^^^^
+ 3 |         let y: string = x.a;
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:3:9]
- 3 | let y: string = x.a;
-   :                 ^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:2:1]
+ 2 |     if ("a" in x) {
+ 3 |         let y: string = x.a;
+   :                         ^
+ 4 |     } else {
    `----
 
 Error: 
@@ -33,18 +39,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:3:9]
- 3 | let y: string = x.a;
-   :                 ^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:2:1]
+ 2 |     if ("a" in x) {
+ 3 |         let y: string = x.a;
+   :                         ^^^
+ 4 |     } else {
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:5:9]
- 5 | let z: number = x.b;
-   :                 ^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:4:1]
+ 4 |     } else {
+ 5 |         let z: number = x.b;
+   :                         ^
+ 6 |     }
    `----
 
 Error: 
@@ -53,9 +63,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:5:9]
- 5 | let z: number = x.b;
-   :                 ^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/3.ts:4:1]
+ 4 |     } else {
+ 5 |         let z: number = x.b;
+   :                         ^^^
+ 6 |     }
    `----
 
 Error: 

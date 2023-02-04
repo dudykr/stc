@@ -1,37 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:5:1]
+   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:4:1]
+ 4 | 
  5 | class D extends C {
    :                 ^
+ 6 |     bar: string;
    `----
 
 Error: 
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:9:1]
- 9 | var r = C.prototype;
-   :         ^
-   `----
-
-Error: 
-  > typeof C
-
-  x Type
-   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:9:1]
- 9 | var r = C.prototype;
-   :         ^^^^^^^^^^^
-   `----
-
-Error: 
-  > {
-  |     foo: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:10:1]
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:8:1]
+  8 | 
+  9 | var r = C.prototype;
+    :         ^
  10 | r.foo;
-    : ^
+    `----
+
+Error: 
+  > typeof C
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:8:1]
+  8 | 
+  9 | var r = C.prototype;
+    :         ^^^^^^^^^^^
+ 10 | r.foo;
     `----
 
 Error: 
@@ -40,27 +35,46 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:10:1]
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:9:1]
+  9 | var r = C.prototype;
+ 10 | r.foo;
+    : ^
+ 11 | var r2 = D.prototype;
+    `----
+
+Error: 
+  > {
+  |     foo: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:9:1]
+  9 | var r = C.prototype;
  10 | r.foo;
     : ^^^^^
+ 11 | var r2 = D.prototype;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:11:1]
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:10:1]
+ 10 | r.foo;
  11 | var r2 = D.prototype;
     :          ^
+ 12 | r2.bar;
     `----
 
 Error: 
   > typeof D
 
   x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:11:1]
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:10:1]
+ 10 | r.foo;
  11 | var r2 = D.prototype;
     :          ^^^^^^^^^^^
+ 12 | r2.bar;
     `----
 
 Error: 
@@ -69,7 +83,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:12:1]
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:11:1]
+ 11 | var r2 = D.prototype;
  12 | r2.bar;
     : ^^
     `----
@@ -80,7 +95,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:12:1]
+    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:11:1]
+ 11 | var r2 = D.prototype;
  12 | r2.bar;
     : ^^^^^^
     `----

@@ -1,62 +1,76 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:7:5]
- 7 | if (typeof x === "string") {
-   :            ^
+   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:6:1]
+ 6 | function f2<T>(x: T) {
+ 7 |     if (typeof x === "string") {
+   :                ^
+ 8 |         let v1: T = x;
    `----
 
 Error: 
   > T
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:7:5]
- 7 | if (typeof x === "string") {
-   :     ^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:6:1]
+ 6 | function f2<T>(x: T) {
+ 7 |     if (typeof x === "string") {
+   :         ^^^^^^^^
+ 8 |         let v1: T = x;
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:7:5]
- 7 | if (typeof x === "string") {
-   :     ^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:6:1]
+ 6 | function f2<T>(x: T) {
+ 7 |     if (typeof x === "string") {
+   :         ^^^^^^^^^^^^^^^^^^^^^
+ 8 |         let v1: T = x;
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:8:9]
- 8 | let v1: T = x;
-   :             ^
+   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:7:1]
+ 7 |     if (typeof x === "string") {
+ 8 |         let v1: T = x;
+   :                     ^
+ 9 |         let v2: string = x;
    `----
 
 Error: 
   > (T & string)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:9:9]
- 9 | let v2: string = x;
-   :                  ^
-   `----
-
-Error: 
-  > (T & string)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:10:9]
- 10 | x.length;
-    : ^
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:8:1]
+  8 |         let v1: T = x;
+  9 |         let v2: string = x;
+    :                          ^
+ 10 |         x.length;
     `----
 
 Error: 
   > (T & string)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:10:9]
- 10 | x.length;
-    : ^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:9:1]
+  9 |         let v2: string = x;
+ 10 |         x.length;
+    :         ^
+ 11 |     }
+    `----
+
+Error: 
+  > (T & string)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/2.ts:9:1]
+  9 |         let v2: string = x;
+ 10 |         x.length;
+    :         ^^^^^^^^
+ 11 |     }
     `----
 
 Error: 

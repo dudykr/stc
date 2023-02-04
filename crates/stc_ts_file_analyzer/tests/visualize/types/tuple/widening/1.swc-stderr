@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:3:1]
+   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:2:1]
+ 2 | 
  3 | export var b = a = [undefined, null];
    :                     ^^^^^^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:3:1]
+   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:2:1]
+ 2 | 
  3 | export var b = a = [undefined, null];
    :                    ^^^^^^^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > [any, any]
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:3:1]
+   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:2:1]
+ 2 | 
  3 | export var b = a = [undefined, null];
    :                ^^^^^^^^^^^^^^^^^^^^^
    `----

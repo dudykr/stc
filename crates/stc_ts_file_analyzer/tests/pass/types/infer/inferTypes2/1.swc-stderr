@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
- 3 | return foo(obj);
-   :        ^^^
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:2:1]
+ 2 | export function bar<T>(obj: T) {
+ 3 |     return foo(obj);
+   :            ^^^
+ 4 | }
    `----
 
 Error: 
   > <T>(obj: T) => T extends () => infer P ? P : never
 
   x Type
-   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
- 3 | return foo(obj);
-   :            ^^^
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:2:1]
+ 2 | export function bar<T>(obj: T) {
+ 3 |     return foo(obj);
+   :                ^^^
+ 4 | }
    `----
 
 Error: 
   > T
 
   x Type
-   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
- 3 | return foo(obj);
-   :        ^^^^^^^^
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:2:1]
+ 2 | export function bar<T>(obj: T) {
+ 3 |     return foo(obj);
+   :            ^^^^^^^^
+ 4 | }
    `----
 
 Error: 

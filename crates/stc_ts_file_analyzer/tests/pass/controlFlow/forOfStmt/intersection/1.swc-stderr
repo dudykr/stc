@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:5:1]
+ 5 | 
  6 | for (const item of arr) {
    :                    ^^^
+ 7 |     item.x;
    `----
 
 Error: 
@@ -13,9 +15,11 @@ Error:
   | }[])
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:7:5]
- 7 | item.x;
-   : ^^^^
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:6:1]
+ 6 | for (const item of arr) {
+ 7 |     item.x;
+   :     ^^^^
+ 8 |     item.y;
    `----
 
 Error: 
@@ -26,18 +30,22 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:7:5]
- 7 | item.x;
-   : ^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:6:1]
+ 6 | for (const item of arr) {
+ 7 |     item.x;
+   :     ^^^^^^
+ 8 |     item.y;
    `----
 
 Error: 
   > 'x'
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:8:5]
- 8 | item.y;
-   : ^^^^
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:7:1]
+ 7 |     item.x;
+ 8 |     item.y;
+   :     ^^^^
+ 9 | }
    `----
 
 Error: 
@@ -48,9 +56,11 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:8:5]
- 8 | item.y;
-   : ^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:7:1]
+ 7 |     item.x;
+ 8 |     item.y;
+   :     ^^^^^^
+ 9 | }
    `----
 
 Error: 

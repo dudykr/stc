@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:3:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:2:1]
+ 2 | 
  3 | const f1 = (t: "a" | ("b" & "c")): "a" => t;
    :                                           ^
    `----
@@ -9,7 +10,8 @@ Error:
   > "a"
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:3:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:2:1]
+ 2 | 
  3 | const f1 = (t: "a" | ("b" & "c")): "a" => t;
    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/variance/contravariance/1.ts:6:1]
+   ,-[$DIR/tests/pass/variance/contravariance/1.ts:5:1]
+ 5 | 
  6 | let func2: Func2 = func1;  // Ok
    :                    ^^^^^
    `----

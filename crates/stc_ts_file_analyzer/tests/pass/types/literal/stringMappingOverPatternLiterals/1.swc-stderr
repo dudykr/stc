@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:8:5]
- 8 | x1 = x2;
-   :      ^^
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:7:1]
+ 7 |     // Should both work
+ 8 |     x1 = x2;
+   :          ^^
+ 9 | }
    `----
 
 Error: 
   > `AA${intrinsic}${intrinsic}${intrinsic}`
 
   x Type
-   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:8:5]
- 8 | x1 = x2;
-   : ^^^^^^^
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:7:1]
+ 7 |     // Should both work
+ 8 |     x1 = x2;
+   :     ^^^^^^^
+ 9 | }
    `----
 
 Error: 

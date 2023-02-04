@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:6:1]
+ 6 | declare const someUnion: 'abc' | 'def' | 'ghi';
  7 | export const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
    :                   ^^^^^^^^^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:6:1]
+ 6 | declare const someUnion: 'abc' | 'def' | 'ghi';
  7 | export const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
    :                                           ^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > ('abc' | 'def' | 'ghi')
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:6:1]
+ 6 | declare const someUnion: 'abc' | 'def' | 'ghi';
  7 | export const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
    :                                ^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > `foo.bar.${('abc' | 'def' | 'ghi')}`
 
   x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:7:1]
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/5.ts:6:1]
+ 6 | declare const someUnion: 'abc' | 'def' | 'ghi';
  7 | export const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

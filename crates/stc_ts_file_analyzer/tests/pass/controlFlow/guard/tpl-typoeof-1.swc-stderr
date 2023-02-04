@@ -1,53 +1,65 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]
+   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:1:1]
+ 1 | declare const envVar: string | undefined;
  2 | if (typeof envVar === `string`) {
    :            ^^^^^^
+ 3 |     envVar.slice(0)
    `----
 
 Error: 
   > (string | undefined)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]
+   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:1:1]
+ 1 | declare const envVar: string | undefined;
  2 | if (typeof envVar === `string`) {
    :     ^^^^^^^^^^^^^
+ 3 |     envVar.slice(0)
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]
+   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:1:1]
+ 1 | declare const envVar: string | undefined;
  2 | if (typeof envVar === `string`) {
    :                       ^^^^^^^^
+ 3 |     envVar.slice(0)
    `----
 
 Error: 
   > `string`
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]
+   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:1:1]
+ 1 | declare const envVar: string | undefined;
  2 | if (typeof envVar === `string`) {
    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 3 |     envVar.slice(0)
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:3:5]
- 3 | envVar.slice(0)
-   : ^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]
+ 2 | if (typeof envVar === `string`) {
+ 3 |     envVar.slice(0)
+   :     ^^^^^^
+ 4 | }
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:3:5]
- 3 | envVar.slice(0)
-   : ^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/guard/tpl-typoeof-1.ts:2:1]
+ 2 | if (typeof envVar === `string`) {
+ 3 |     envVar.slice(0)
+   :     ^^^^^^^^^^^^^^^
+ 4 | }
    `----
 
 Error: 
