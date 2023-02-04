@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, force_dump_type_as_string},
+    DebugExt, ErrorKind, Errors,
+};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType,
@@ -200,13 +203,13 @@ impl Analyzer<'_, '_> {
                     .with_context(|| {
                         format!(
                             "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
-                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                            force_dump_type_as_string(&Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
                                 members: lhs.to_vec(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })),
-                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                            force_dump_type_as_string(&Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
                                 members: rhs_members.to_vec(),
                                 metadata: Default::default(),
