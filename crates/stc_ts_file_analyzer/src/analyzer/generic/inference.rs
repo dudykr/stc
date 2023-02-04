@@ -97,6 +97,8 @@ pub(crate) struct InferTypeOpts {
 
     /// If true, we are inferring a type from [Type::Rest]
     pub is_inferring_rest_type: bool,
+
+    pub exclude_null_and_undefined: bool,
 }
 
 bitflags! {

@@ -32,6 +32,7 @@ use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
 
+use super::generic::InferTypeOpts;
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
@@ -1334,7 +1335,17 @@ impl Analyzer<'_, '_> {
             check_type.freeze();
 
             // We need to handle infer type.
-            let type_params = self.infer_ts_infer_types(span, &extends_type, &check_type, Default::default()).ok();
+            let type_params = self
+                .infer_ts_infer_types(
+                    span,
+                    &extends_type,
+                    &check_type,
+                    InferTypeOpts {
+                        exclude_null_and_undefined: true,
+                        ..Default::default()
+                    },
+                )
+                .ok();
 
             if let Some(type_params) = type_params {
                 check_type = box self.expand_type_params(&type_params, *check_type, Default::default()).unwrap();
