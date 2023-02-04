@@ -1,4 +1,4 @@
-
+//@strict: true
 
 export type Foo = Awaited<Promise<{ x: number }>>
 
