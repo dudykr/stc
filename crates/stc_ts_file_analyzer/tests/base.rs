@@ -280,6 +280,8 @@ fn pass_only(input: PathBuf) {
         Ok(())
     })
     .unwrap();
+
+    testing::unignore_fixture(&input);
 }
 
 // This invokes `tsc` to get expected result.
@@ -311,6 +313,8 @@ fn compare(input: PathBuf) {
     expected.sort();
 
     assert_eq!(actual, expected);
+
+    testing::unignore_fixture(&input);
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
