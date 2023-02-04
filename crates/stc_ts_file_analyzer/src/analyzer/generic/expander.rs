@@ -371,6 +371,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if child.is_null_or_undefined() && (parent.is_fn_type() || parent.is_constructor()) {
+            return Some(false);
+        }
+
         let res = self.assign_with_opts(
             &mut Default::default(),
             parent,
