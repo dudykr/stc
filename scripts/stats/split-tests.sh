@@ -17,6 +17,8 @@ echo "Gist dir: $GIST_DIR"
 
 echo "Sorting done.txt"
 (cd $GIST_DIR && sortFile done.txt)
+echo "Sorting issue-required.txt"
+(cd $GIST_DIR && sortFile issue-required.txt)
 
 find crates/* -name "*.stats.rust-debug" > "$GIST_DIR/.stc/all.txt"
 
