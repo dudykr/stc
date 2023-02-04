@@ -1573,6 +1573,10 @@ impl Analyzer<'_, '_> {
                         let super_ty = expr
                             .validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))
                             .context("tried to validate super class")
+                            .convert_err(|err| match err {
+                                ErrorKind::TypeUsedAsVar { span, name } => ErrorKind::CannotExtendTypeOnlyItem { span, name },
+                                _ => err,
+                            })
                             .report(&mut child.storage)
                             .unwrap_or_else(|| Type::any(expr.span(), Default::default()));
                         child.validate_with(|a| match super_ty.normalize() {
