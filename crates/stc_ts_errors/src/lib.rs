@@ -931,6 +931,12 @@ pub enum ErrorKind {
         name: Id,
     },
 
+    /// TS2689
+    CannotExtendTypeOnlyItem {
+        span: Span,
+        name: Id,
+    },
+
     /// TS2693
     TypeUsedAsVar {
         span: Span,
@@ -1700,6 +1706,7 @@ impl ErrorKind {
 
             ErrorKind::AssignOpCannotBeApplied { .. } => 2365,
             ErrorKind::TypeUsedAsVar { .. } => 2693,
+            ErrorKind::CannotExtendTypeOnlyItem { .. } => 2689,
             ErrorKind::TypeNotFound { .. } => 2304,
 
             ErrorKind::NotVariable { ty, .. } => match ty.as_deref().map(Type::normalize) {
