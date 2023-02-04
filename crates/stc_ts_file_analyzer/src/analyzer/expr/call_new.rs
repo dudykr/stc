@@ -2412,7 +2412,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Check if all candidates are failed.
-        if type_args.is_none()
+        if !args.is_empty()
+            && type_args.is_none()
             && !opts.skip_check_for_overloads
             && callable.len() > 1
             && callable
