@@ -1570,7 +1570,11 @@ impl Analyzer<'_, '_> {
                 match &c.super_class {
                     Some(box expr) => {
                         let need_base_class = !matches!(expr, RExpr::Ident(..));
-                        let super_ty = expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
+                        let super_ty = expr
+                            .validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))
+                            .context("tried to validate super class")
+                            .report(&mut child.storage)
+                            .unwrap_or_else(|| Type::any(expr.span(), Default::default()));
                         child.validate_with(|a| match super_ty.normalize() {
                             Type::Lit(..)
                             | Type::Keyword(KeywordType {
