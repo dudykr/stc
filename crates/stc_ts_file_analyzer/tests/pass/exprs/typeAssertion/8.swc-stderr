@@ -1,287 +1,351 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:7:5]
- 7 | x!.slice();
-   : ^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:6:1]
+ 6 |     let x: string | undefined | null;
+ 7 |     x!.slice();
+   :     ^
+ 8 |     x = "";
    `----
 
 Error: 
   > (string | undefined | null)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:7:5]
- 7 | x!.slice();
-   : ^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:6:1]
+ 6 |     let x: string | undefined | null;
+ 7 |     x!.slice();
+   :     ^^
+ 8 |     x = "";
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:7:5]
- 7 | x!.slice();
-   : ^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:6:1]
+ 6 |     let x: string | undefined | null;
+ 7 |     x!.slice();
+   :     ^^^^^^^^^^
+ 8 |     x = "";
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:8:5]
- 8 | x = "";
-   : ^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:7:1]
+ 7 |     x!.slice();
+ 8 |     x = "";
+   :     ^^^^^^
+ 9 |     x!.slice();
    `----
 
 Error: 
   > ""
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:9:5]
- 9 | x!.slice();
-   : ^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:8:1]
+  8 |     x = "";
+  9 |     x!.slice();
+    :     ^
+ 10 |     x = undefined;
+    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:9:5]
- 9 | x!.slice();
-   : ^^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:8:1]
+  8 |     x = "";
+  9 |     x!.slice();
+    :     ^^
+ 10 |     x = undefined;
+    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:9:5]
- 9 | x!.slice();
-   : ^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:8:1]
+  8 |     x = "";
+  9 |     x!.slice();
+    :     ^^^^^^^^^^
+ 10 |     x = undefined;
+    `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:10:5]
- 10 | x = undefined;
-    :     ^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:9:1]
+  9 |     x!.slice();
+ 10 |     x = undefined;
+    :         ^^^^^^^^^
+ 11 |     x!.slice();
     `----
 
 Error: 
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:10:5]
- 10 | x = undefined;
-    : ^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:9:1]
+  9 |     x!.slice();
+ 10 |     x = undefined;
+    :     ^^^^^^^^^^^^^
+ 11 |     x!.slice();
     `----
 
 Error: 
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:11:5]
- 11 | x!.slice();
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:10:1]
+ 10 |     x = undefined;
+ 11 |     x!.slice();
+    :     ^
+ 12 |     x = null;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:11:5]
- 11 | x!.slice();
-    : ^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:10:1]
+ 10 |     x = undefined;
+ 11 |     x!.slice();
+    :     ^^
+ 12 |     x = null;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:11:5]
- 11 | x!.slice();
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:10:1]
+ 10 |     x = undefined;
+ 11 |     x!.slice();
+    :     ^^^^^^^^^^
+ 12 |     x = null;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:12:5]
- 12 | x = null;
-    : ^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:11:1]
+ 11 |     x!.slice();
+ 12 |     x = null;
+    :     ^^^^^^^^
+ 13 |     x!.slice();
     `----
 
 Error: 
   > null
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:13:5]
- 13 | x!.slice();
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:12:1]
+ 12 |     x = null;
+ 13 |     x!.slice();
+    :     ^
+ 14 |     x = <undefined | null>undefined;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:13:5]
- 13 | x!.slice();
-    : ^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:12:1]
+ 12 |     x = null;
+ 13 |     x!.slice();
+    :     ^^
+ 14 |     x = <undefined | null>undefined;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:13:5]
- 13 | x!.slice();
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:12:1]
+ 12 |     x = null;
+ 13 |     x!.slice();
+    :     ^^^^^^^^^^
+ 14 |     x = <undefined | null>undefined;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:14:5]
- 14 | x = <undefined | null>undefined;
-    :                       ^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:13:1]
+ 13 |     x!.slice();
+ 14 |     x = <undefined | null>undefined;
+    :                           ^^^^^^^^^
+ 15 |     x!.slice();
     `----
 
 Error: 
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:14:5]
- 14 | x = <undefined | null>undefined;
-    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:13:1]
+ 13 |     x!.slice();
+ 14 |     x = <undefined | null>undefined;
+    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 |     x!.slice();
     `----
 
 Error: 
   > (undefined | null)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:14:5]
- 14 | x = <undefined | null>undefined;
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:13:1]
+ 13 |     x!.slice();
+ 14 |     x = <undefined | null>undefined;
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 |     x!.slice();
     `----
 
 Error: 
   > (undefined | null)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:15:5]
- 15 | x!.slice();
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:14:1]
+ 14 |     x = <undefined | null>undefined;
+ 15 |     x!.slice();
+    :     ^
+ 16 |     x = <string | undefined>"";
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:15:5]
- 15 | x!.slice();
-    : ^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:14:1]
+ 14 |     x = <undefined | null>undefined;
+ 15 |     x!.slice();
+    :     ^^
+ 16 |     x = <string | undefined>"";
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:15:5]
- 15 | x!.slice();
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:14:1]
+ 14 |     x = <undefined | null>undefined;
+ 15 |     x!.slice();
+    :     ^^^^^^^^^^
+ 16 |     x = <string | undefined>"";
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:16:5]
- 16 | x = <string | undefined>"";
-    :     ^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:15:1]
+ 15 |     x!.slice();
+ 16 |     x = <string | undefined>"";
+    :         ^^^^^^^^^^^^^^^^^^^^^^
+ 17 |     x!.slice();
     `----
 
 Error: 
   > (string | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:16:5]
- 16 | x = <string | undefined>"";
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:15:1]
+ 15 |     x!.slice();
+ 16 |     x = <string | undefined>"";
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 17 |     x!.slice();
     `----
 
 Error: 
   > (string | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:17:5]
- 17 | x!.slice();
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:16:1]
+ 16 |     x = <string | undefined>"";
+ 17 |     x!.slice();
+    :     ^
+ 18 |     x = <string | null>"";
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:17:5]
- 17 | x!.slice();
-    : ^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:16:1]
+ 16 |     x = <string | undefined>"";
+ 17 |     x!.slice();
+    :     ^^
+ 18 |     x = <string | null>"";
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:17:5]
- 17 | x!.slice();
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:16:1]
+ 16 |     x = <string | undefined>"";
+ 17 |     x!.slice();
+    :     ^^^^^^^^^^
+ 18 |     x = <string | null>"";
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:18:5]
- 18 | x = <string | null>"";
-    :     ^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:17:1]
+ 17 |     x!.slice();
+ 18 |     x = <string | null>"";
+    :         ^^^^^^^^^^^^^^^^^
+ 19 |     x!.slice();
     `----
 
 Error: 
   > (string | null)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:18:5]
- 18 | x = <string | null>"";
-    : ^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:17:1]
+ 17 |     x!.slice();
+ 18 |     x = <string | null>"";
+    :     ^^^^^^^^^^^^^^^^^^^^^
+ 19 |     x!.slice();
     `----
 
 Error: 
   > (string | null)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:19:5]
- 19 | x!.slice();
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:18:1]
+ 18 |     x = <string | null>"";
+ 19 |     x!.slice();
+    :     ^
+ 20 | }
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:19:5]
- 19 | x!.slice();
-    : ^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:18:1]
+ 18 |     x = <string | null>"";
+ 19 |     x!.slice();
+    :     ^^
+ 20 | }
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:19:5]
- 19 | x!.slice();
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/8.ts:18:1]
+ 18 |     x = <string | null>"";
+ 19 |     x!.slice();
+    :     ^^^^^^^^^^
+ 20 | }
     `----
 
 Error: 

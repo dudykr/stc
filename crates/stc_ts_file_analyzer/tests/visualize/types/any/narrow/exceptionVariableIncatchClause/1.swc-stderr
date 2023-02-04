@@ -1,9 +1,11 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:9:5]
- 9 | if (isFooError(err)) {
-   :     ^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:8:1]
+  8 | 
+  9 |     if (isFooError(err)) {
+    :         ^^^^^^^^^^
+ 10 |       err.dontPanic(); // OK
+    `----
 
 Error: 
   > (x: any) => x is {
@@ -12,19 +14,23 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:9:5]
- 9 | if (isFooError(err)) {
-   :                ^^^
-   `----
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:8:1]
+  8 | 
+  9 |     if (isFooError(err)) {
+    :                    ^^^
+ 10 |       err.dontPanic(); // OK
+    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:9:5]
- 9 | if (isFooError(err)) {
-   :     ^^^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:8:1]
+  8 | 
+  9 |     if (isFooError(err)) {
+    :         ^^^^^^^^^^^^^^^
+ 10 |       err.dontPanic(); // OK
+    `----
 
 Error: 
   > x is {
@@ -33,9 +39,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:10:7]
- 10 | err.dontPanic(); // OK
-    : ^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:9:1]
+  9 |     if (isFooError(err)) {
+ 10 |       err.dontPanic(); // OK
+    :       ^^^
+ 11 |       err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
     `----
 
 Error: 
@@ -45,18 +53,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:10:7]
- 10 | err.dontPanic(); // OK
-    : ^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:9:1]
+  9 |     if (isFooError(err)) {
+ 10 |       err.dontPanic(); // OK
+    :       ^^^^^^^^^^^^^^^
+ 11 |       err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:11:7]
- 11 | err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
-    : ^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:10:1]
+ 10 |       err.dontPanic(); // OK
+ 11 |       err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
+    :       ^^^
+ 12 |     } else if (err instanceof Error) {
     `----
 
 Error: 
@@ -66,63 +78,77 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:12:5]
- 12 | } else if (err instanceof Error) {
-    :            ^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:11:1]
+ 11 |       err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
+ 12 |     } else if (err instanceof Error) {
+    :                ^^^
+ 13 |       err.message;
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:12:5]
- 12 | } else if (err instanceof Error) {
-    :                           ^^^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:11:1]
+ 11 |       err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
+ 12 |     } else if (err instanceof Error) {
+    :                               ^^^^^
+ 13 |       err.message;
     `----
 
 Error: 
   > ErrorConstructor
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:12:5]
- 12 | } else if (err instanceof Error) {
-    :            ^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:11:1]
+ 11 |       err.doPanic(); // ERROR: Property 'doPanic' does not exist on type '{...}'
+ 12 |     } else if (err instanceof Error) {
+    :                ^^^^^^^^^^^^^^^^^^^^
+ 13 |       err.message;
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:13:7]
- 13 | err.message;
-    : ^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:12:1]
+ 12 |     } else if (err instanceof Error) {
+ 13 |       err.message;
+    :       ^^^
+ 14 |       err.massage; // ERROR: Property 'massage' does not exist on type 'Error'
     `----
 
 Error: 
   > Error
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:13:7]
- 13 | err.message;
-    : ^^^^^^^^^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:12:1]
+ 12 |     } else if (err instanceof Error) {
+ 13 |       err.message;
+    :       ^^^^^^^^^^^
+ 14 |       err.massage; // ERROR: Property 'massage' does not exist on type 'Error'
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:14:7]
- 14 | err.massage; // ERROR: Property 'massage' does not exist on type 'Error'
-    : ^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:13:1]
+ 13 |       err.message;
+ 14 |       err.massage; // ERROR: Property 'massage' does not exist on type 'Error'
+    :       ^^^
+ 15 |     } else {
     `----
 
 Error: 
   > Error
 
   x Type
-    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:16:7]
- 16 | throw err;
-    :       ^^^
+    ,-[$DIR/tests/visualize/types/any/narrow/exceptionVariableIncatchClause/1.ts:15:1]
+ 15 |     } else {
+ 16 |       throw err;
+    :             ^^^
+ 17 |     }
     `----
 
 Error: 

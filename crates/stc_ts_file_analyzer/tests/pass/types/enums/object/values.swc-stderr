@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/object/values.ts:2:1]
+   ,-[$DIR/tests/pass/types/enums/object/values.ts:1:1]
+ 1 | enum E { A, B }
  2 | export var values5 = Object.values(E); // string | E
    :                      ^^^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > ObjectConstructor
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/object/values.ts:2:1]
+   ,-[$DIR/tests/pass/types/enums/object/values.ts:1:1]
+ 1 | enum E { A, B }
  2 | export var values5 = Object.values(E); // string | E
    :                                    ^
    `----
@@ -18,7 +20,8 @@ Error:
   > E
 
   x Type
-   ,-[$DIR/tests/pass/types/enums/object/values.ts:2:1]
+   ,-[$DIR/tests/pass/types/enums/object/values.ts:1:1]
+ 1 | enum E { A, B }
  2 | export var values5 = Object.values(E); // string | E
    :                      ^^^^^^^^^^^^^^^^
    `----

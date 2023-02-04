@@ -1,17 +1,43 @@
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:13:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:12:1]
+ 12 | }
  13 | class Grandchild extends ChildNoBaseClass {
     :                          ^^^^^^^^^^^^^^^^
+ 14 | }
     `----
 
 Error: 
   > typeof ChildNoBaseClass
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:17:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:16:1]
+ 16 | var grandchild: Grandchild;
  17 | grandchild.required;
     : ^^^^^^^^^^
+ 18 | grandchild.optional;
+    `----
+
+Error: 
+  > Grandchild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:16:1]
+ 16 | var grandchild: Grandchild;
+ 17 | grandchild.required;
+    : ^^^^^^^^^^^^^^^^^^^
+ 18 | grandchild.optional;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:17:1]
+ 17 | grandchild.required;
+ 18 | grandchild.optional;
+    : ^^^^^^^^^^
+ 19 | grandchild.additional2;
     `----
 
 Error: 
@@ -20,7 +46,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:17:1]
  17 | grandchild.required;
+ 18 | grandchild.optional;
     : ^^^^^^^^^^^^^^^^^^^
+ 19 | grandchild.additional2;
     `----
 
 Error: 
@@ -29,7 +57,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:18:1]
  18 | grandchild.optional;
+ 19 | grandchild.additional2;
     : ^^^^^^^^^^
+ 20 | grandchild.classString;
     `----
 
 Error: 
@@ -38,16 +68,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:18:1]
  18 | grandchild.optional;
-    : ^^^^^^^^^^^^^^^^^^^
+ 19 | grandchild.additional2;
+    : ^^^^^^^^^^^^^^^^^^^^^^
+ 20 | grandchild.classString;
     `----
 
 Error: 
-  > number
+  > string
 
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:19:1]
  19 | grandchild.additional2;
+ 20 | grandchild.classString;
     : ^^^^^^^^^^
+ 21 | grandchild.method2();
     `----
 
 Error: 
@@ -56,7 +90,9 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:19:1]
  19 | grandchild.additional2;
+ 20 | grandchild.classString;
     : ^^^^^^^^^^^^^^^^^^^^^^
+ 21 | grandchild.method2();
     `----
 
 Error: 
@@ -65,23 +101,6 @@ Error:
   x Type
     ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:20:1]
  20 | grandchild.classString;
-    : ^^^^^^^^^^
-    `----
-
-Error: 
-  > Grandchild
-
-  x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:20:1]
- 20 | grandchild.classString;
-    : ^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:21:1]
  21 | grandchild.method2();
     : ^^^^^^^^^^
     `----
@@ -90,7 +109,8 @@ Error:
   > Grandchild
 
   x Type
-    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:21:1]
+    ,-[$DIR/tests/pass/class/member/interface/merging/2.ts:20:1]
+ 20 | grandchild.classString;
  21 | grandchild.method2();
     : ^^^^^^^^^^^^^^^^^^^^
     `----

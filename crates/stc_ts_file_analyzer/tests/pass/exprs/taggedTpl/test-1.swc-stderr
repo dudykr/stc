@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/taggedTpl/test-1.ts:3:5]
- 3 | return a
-   :        ^
+   ,-[$DIR/tests/pass/exprs/taggedTpl/test-1.ts:2:1]
+ 2 | function foo(a: TemplateStringsArray, b: string) {
+ 3 |     return a
+   :            ^
+ 4 | }
    `----
 
 Error: 
   > TemplateStringsArray
 
   x Type
-   ,-[$DIR/tests/pass/exprs/taggedTpl/test-1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/taggedTpl/test-1.ts:5:1]
+ 5 | 
  6 | export const a = foo`my${'test'}`
    :                  ^^^
    `----
@@ -18,7 +21,8 @@ Error:
   > (a: TemplateStringsArray, b: string) => TemplateStringsArray
 
   x Type
-   ,-[$DIR/tests/pass/exprs/taggedTpl/test-1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/taggedTpl/test-1.ts:5:1]
+ 5 | 
  6 | export const a = foo`my${'test'}`
    :                  ^^^^^^^^^^^^^^^^
    `----

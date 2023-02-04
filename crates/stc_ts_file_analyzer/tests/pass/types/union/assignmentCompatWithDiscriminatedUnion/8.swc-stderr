@@ -1,27 +1,33 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:13]
- 16 | type: obj1.type
-    :       ^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:15:1]
+ 15 |         const obj2: AU = {
+ 16 |             type: obj1.type
+    :                   ^^^^
+ 17 |         };
     `----
 
 Error: 
   > (A1 | A2)
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:13]
- 16 | type: obj1.type
-    :       ^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:15:1]
+ 15 |         const obj2: AU = {
+ 16 |             type: obj1.type
+    :                   ^^^^^^^^^
+ 17 |         };
     `----
 
 Error: 
   > ("A1" | "A2")
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:15:9]
- 15 | ,-> const obj2: AU = {
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:14:1]
+ 14 |         function foo(obj1: AU) {
+ 15 | ,->         const obj2: AU = {
  16 | |               type: obj1.type
  17 | `->         };
+ 18 |         }
     `----
 
 Error: 

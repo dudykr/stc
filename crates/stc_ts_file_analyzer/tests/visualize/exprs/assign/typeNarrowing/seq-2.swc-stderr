@@ -1,53 +1,65 @@
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:5:1]
+ 5 | let o: D;
  6 | if ((o = fn()).done) {
    :          ^^
+ 7 |     const y: 1 = o.value;
    `----
 
 Error: 
   > () => D
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:5:1]
+ 5 | let o: D;
  6 | if ((o = fn()).done) {
    :          ^^^^
+ 7 |     const y: 1 = o.value;
    `----
 
 Error: 
   > D
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:5:1]
+ 5 | let o: D;
  6 | if ((o = fn()).done) {
    :      ^^^^^^^^
+ 7 |     const y: 1 = o.value;
    `----
 
 Error: 
   > D
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:5:1]
+ 5 | let o: D;
  6 | if ((o = fn()).done) {
    :     ^^^^^^^^^^
+ 7 |     const y: 1 = o.value;
    `----
 
 Error: 
   > D
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:5:1]
+ 5 | let o: D;
  6 | if ((o = fn()).done) {
    :     ^^^^^^^^^^^^^^^
+ 7 |     const y: 1 = o.value;
    `----
 
 Error: 
   > (true | false)
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:5]
- 7 | const y: 1 = o.value;
-   :              ^
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+ 7 |     const y: 1 = o.value;
+   :                  ^
+ 8 | }
    `----
 
 Error: 
@@ -57,9 +69,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:5]
- 7 | const y: 1 = o.value;
-   :              ^^^^^^^
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+ 7 |     const y: 1 = o.value;
+   :                  ^^^^^^^
+ 8 | }
    `----
 
 Error: 

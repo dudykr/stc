@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:9:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:8:1]
+ 8 | 
  9 | let a: A = x;
    :            ^
    `----

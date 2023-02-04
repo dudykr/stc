@@ -1,33 +1,40 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:3:1]
+ 3 | }
  4 | var y = [C, C];
    :          ^
+ 5 | var r3 = new y[0]();
    `----
 
 Error: 
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:3:1]
+ 3 | }
  4 | var y = [C, C];
    :             ^
+ 5 | var r3 = new y[0]();
    `----
 
 Error: 
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:3:1]
+ 3 | }
  4 | var y = [C, C];
    :         ^^^^^^
+ 5 | var r3 = new y[0]();
    `----
 
 Error: 
   > [typeof C, typeof C]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
+ 4 | var y = [C, C];
  5 | var r3 = new y[0]();
    :              ^
    `----
@@ -36,7 +43,8 @@ Error:
   > typeof C[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
+ 4 | var y = [C, C];
  5 | var r3 = new y[0]();
    :              ^^^^
    `----
@@ -45,7 +53,8 @@ Error:
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
+ 4 | var y = [C, C];
  5 | var r3 = new y[0]();
    :          ^^^^^^^^^^
    `----

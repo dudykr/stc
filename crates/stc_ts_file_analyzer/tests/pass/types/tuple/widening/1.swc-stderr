@@ -1,53 +1,65 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:2:5]
- 2 | let intermediate = bar();
-   :                    ^^^
+   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:1:1]
+ 1 | export var foo: () => [any] = function bar() {
+ 2 |     let intermediate = bar();
+   :                        ^^^
+ 3 |     intermediate = [""];
    `----
 
 Error: 
   > typeof bar
 
   x Type
-   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:2:5]
- 2 | let intermediate = bar();
-   :                    ^^^^^
+   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:1:1]
+ 1 | export var foo: () => [any] = function bar() {
+ 2 |     let intermediate = bar();
+   :                        ^^^^^
+ 3 |     intermediate = [""];
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:3:5]
- 3 | intermediate = [""];
-   :                ^^^^
+   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:2:1]
+ 2 |     let intermediate = bar();
+ 3 |     intermediate = [""];
+   :                    ^^^^
+ 4 |     return [undefined];
    `----
 
 Error: 
   > [""]
 
   x Type
-   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:3:5]
- 3 | intermediate = [""];
-   : ^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:2:1]
+ 2 |     let intermediate = bar();
+ 3 |     intermediate = [""];
+   :     ^^^^^^^^^^^^^^^^^^^
+ 4 |     return [undefined];
    `----
 
 Error: 
   > [""]
 
   x Type
-   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:4:5]
- 4 | return [undefined];
-   :         ^^^^^^^^^
+   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:3:1]
+ 3 |     intermediate = [""];
+ 4 |     return [undefined];
+   :             ^^^^^^^^^
+ 5 | };
    `----
 
 Error: 
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:4:5]
- 4 | return [undefined];
-   :        ^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/tuple/widening/1.ts:3:1]
+ 3 |     intermediate = [""];
+ 4 |     return [undefined];
+   :            ^^^^^^^^^^^
+ 5 | };
    `----
 
 Error: 

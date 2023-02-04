@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:4:1]
+   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:3:1]
+ 3 | declare function stringifyArray<T extends readonly any[]>(arr: T): { -readonly [K in keyof T]: string };
  4 | export let abc: any[] = stringifyArray(void 0 as any);
    :                         ^^^^^^^^^^^^^^
    `----
@@ -11,7 +12,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:4:1]
+   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:3:1]
+ 3 | declare function stringifyArray<T extends readonly any[]>(arr: T): { -readonly [K in keyof T]: string };
  4 | export let abc: any[] = stringifyArray(void 0 as any);
    :                                        ^^^^^^
    `----
@@ -20,7 +22,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:4:1]
+   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:3:1]
+ 3 | declare function stringifyArray<T extends readonly any[]>(arr: T): { -readonly [K in keyof T]: string };
  4 | export let abc: any[] = stringifyArray(void 0 as any);
    :                                        ^^^^^^^^^^^^^
    `----
@@ -29,7 +32,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:4:1]
+   ,-[$DIR/tests/pass/types/mapped/mappedTypeWithAny/1.ts:3:1]
+ 3 | declare function stringifyArray<T extends readonly any[]>(arr: T): { -readonly [K in keyof T]: string };
  4 | export let abc: any[] = stringifyArray(void 0 as any);
    :                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

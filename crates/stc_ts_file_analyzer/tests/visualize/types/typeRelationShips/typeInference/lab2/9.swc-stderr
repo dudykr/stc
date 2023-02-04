@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/9.ts:3:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/9.ts:2:1]
+ 2 | 
  3 | export const res = test('foo') // [string]
    :                    ^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(a: T) => [T]
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/9.ts:3:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/9.ts:2:1]
+ 2 | 
  3 | export const res = test('foo') // [string]
    :                    ^^^^^^^^^^^
    `----

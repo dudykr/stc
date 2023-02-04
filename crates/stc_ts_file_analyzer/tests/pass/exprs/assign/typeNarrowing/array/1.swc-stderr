@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:1:1]
+ 1 | type AOrArrA<T> = T | T[];
  2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
    :                                     ^^^^^^^^^^^
+ 3 | arr.push({ x: "ok" });
    `----
 
 Error: 
@@ -11,9 +13,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:1:1]
+ 1 | type AOrArrA<T> = T | T[];
  2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
    :                                    ^^^^^^^^^^^^^
+ 3 | arr.push({ x: "ok" });
    `----
 
 Error: 
@@ -22,7 +26,8 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+ 2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
  3 | arr.push({ x: "ok" });
    : ^^^
    `----
@@ -33,7 +38,8 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+ 2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
  3 | arr.push({ x: "ok" });
    :          ^^^^^^^^^^^
    `----
@@ -44,7 +50,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/assign/typeNarrowing/array/1.ts:2:1]
+ 2 | const arr: AOrArrA<{ x?: "ok" }> = [{ x: "ok" }]; // weak type
  3 | arr.push({ x: "ok" });
    : ^^^^^^^^^^^^^^^^^^^^^
    `----

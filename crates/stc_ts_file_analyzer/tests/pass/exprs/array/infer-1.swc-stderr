@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:1:1]
+ 1 | declare function foo<T>(...args: T[]): T[];
  2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
    :                                   ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(...args: T[]) => T[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:1:1]
+ 1 | declare function foo<T>(...args: T[]): T[];
  2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
    :                                       ^^^^^^^^^^^
    `----
@@ -20,7 +22,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:1:1]
+ 1 | declare function foo<T>(...args: T[]): T[];
  2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
    :                                                    ^^^^^^^^^^^^
    `----
@@ -31,7 +34,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/array/infer-1.ts:1:1]
+ 1 | declare function foo<T>(...args: T[]): T[];
  2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
    :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

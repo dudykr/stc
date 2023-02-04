@@ -1,44 +1,54 @@
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
- 6 | if (v instanceof C) {
-   :     ^
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:5:1]
+ 5 | function f2<T extends C, U extends D>(v: T | U) {
+ 6 |     if (v instanceof C) {
+   :         ^
+ 7 |         const x: T = v;
    `----
 
 Error: 
   > (T | U)
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
- 6 | if (v instanceof C) {
-   :                  ^
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:5:1]
+ 5 | function f2<T extends C, U extends D>(v: T | U) {
+ 6 |     if (v instanceof C) {
+   :                      ^
+ 7 |         const x: T = v;
    `----
 
 Error: 
   > typeof C
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
- 6 | if (v instanceof C) {
-   :     ^^^^^^^^^^^^^^
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:5:1]
+ 5 | function f2<T extends C, U extends D>(v: T | U) {
+ 6 |     if (v instanceof C) {
+   :         ^^^^^^^^^^^^^^
+ 7 |         const x: T = v;
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:7:9]
- 7 | const x: T = v;
-   :              ^
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:1]
+ 6 |     if (v instanceof C) {
+ 7 |         const x: T = v;
+   :                      ^
+ 8 |     }
    `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:10:9]
- 10 | const y: U = v;
-    :              ^
+    ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:9:1]
+  9 |     else {
+ 10 |         const y: U = v;
+    :                      ^
+ 11 |     }
     `----
 
 Error: 

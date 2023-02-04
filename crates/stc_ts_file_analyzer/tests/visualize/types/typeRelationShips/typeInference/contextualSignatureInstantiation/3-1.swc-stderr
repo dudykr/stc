@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:14:1]
+ 14 | var d: number[] | string[];
  15 | foo(h); // Should be number[] | string[]
     : ^^^
     `----
@@ -9,7 +10,8 @@ Error:
   > <T>(cb: (x: number, y: string) => T) => T
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:14:1]
+ 14 | var d: number[] | string[];
  15 | foo(h); // Should be number[] | string[]
     :     ^
     `----
@@ -18,7 +20,8 @@ Error:
   > <T, U>(x: T, y: U) => (T[] | U[])
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:14:1]
+ 14 | var d: number[] | string[];
  15 | foo(h); // Should be number[] | string[]
     : ^^^^^^
     `----

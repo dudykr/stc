@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:5:1]
+   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:4:1]
+ 4 | }
  5 | export function f({ show = v => v.toString() }: Show) { }
    :                                 ^
    `----
@@ -9,7 +10,8 @@ Error:
   > number
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:5:1]
+   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:4:1]
+ 4 | }
  5 | export function f({ show = v => v.toString() }: Show) { }
    :                                 ^^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:5:1]
+   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:4:1]
+ 4 | }
  5 | export function f({ show = v => v.toString() }: Show) { }
    :                            ^^^^^^^^^^^^^^^^^
    `----

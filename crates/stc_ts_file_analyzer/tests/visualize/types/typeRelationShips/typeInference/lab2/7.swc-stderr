@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:4:1]
+ 4 | 
  5 | f3('a', () => null as any as string | number) // string | number
    : ^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(a: T, b: () => T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:4:1]
+ 4 | 
  5 | f3('a', () => null as any as string | number) // string | number
    :               ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:4:1]
+ 4 | 
  5 | f3('a', () => null as any as string | number) // string | number
    :               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > (string | number)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:4:1]
+ 4 | 
  5 | f3('a', () => null as any as string | number) // string | number
    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > () => (string | number)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/7.ts:4:1]
+ 4 | 
  5 | f3('a', () => null as any as string | number) // string | number
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:8:1]
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:7:1]
+ 7 | 
  8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
    :                                                        ^
    `----
@@ -9,7 +10,8 @@ Error:
   > T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:8:1]
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:7:1]
+ 7 | 
  8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
    :                                                              ^
    `----
@@ -18,7 +20,8 @@ Error:
   > (x: T) => U
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:8:1]
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:7:1]
+ 7 | 
  8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
    :                                                        ^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > U[]
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:8:1]
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:7:1]
+ 7 | 
  8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
    :                                            ^^^^^^^^^^^^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > (a: T[]) => U[]
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:8:1]
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:7:1]
+ 7 | 
  8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
    :                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -45,7 +50,8 @@ Error:
   > <T, U>(f: (x: T) => U) => (a: T[]) => U[]
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:9:1]
+  9 | 
  10 | export const f22: <A>(a: A[]) => A[] = arrayMap(identity);
     :                                        ^^^^^^^^
     `----
@@ -54,7 +60,8 @@ Error:
   > <T, U>(f: (x: T) => U) => <T, U>(a: T[]) => U[]
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:9:1]
+  9 | 
  10 | export const f22: <A>(a: A[]) => A[] = arrayMap(identity);
     :                                                 ^^^^^^^^
     `----
@@ -63,7 +70,8 @@ Error:
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-3-3.ts:9:1]
+  9 | 
  10 | export const f22: <A>(a: A[]) => A[] = arrayMap(identity);
     :                                        ^^^^^^^^^^^^^^^^^^
     `----

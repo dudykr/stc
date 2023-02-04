@@ -1,35 +1,43 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:11:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:10:1]
+ 10 | var obj11: F | string;
  11 | if (obj11 instanceof F) {
     :     ^^^^^
+ 12 |   // can't type narrowing, construct signature returns any.
     `----
 
 Error: 
   > (F | string)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:11:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:10:1]
+ 10 | var obj11: F | string;
  11 | if (obj11 instanceof F) {
     :                      ^
+ 12 |   // can't type narrowing, construct signature returns any.
     `----
 
 Error: 
   > FConstructor
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:11:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:10:1]
+ 10 | var obj11: F | string;
  11 | if (obj11 instanceof F) {
     :     ^^^^^^^^^^^^^^^^^^
+ 12 |   // can't type narrowing, construct signature returns any.
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:13:3]
- 13 | obj11; // F | string Because F constructor is any
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/14.ts:12:1]
+ 12 |   // can't type narrowing, construct signature returns any.
+ 13 |   obj11; // F | string Because F constructor is any
+    :   ^^^^^
+ 14 | }
     `----
 
 Error: 

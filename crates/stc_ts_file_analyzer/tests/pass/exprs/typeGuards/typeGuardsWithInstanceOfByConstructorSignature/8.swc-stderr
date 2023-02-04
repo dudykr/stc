@@ -1,53 +1,65 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:11:1]
+ 11 | var obj16: any;
  12 | if (obj16 instanceof H) {
     :     ^^^^^
+ 13 |   obj16; // H
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:11:1]
+ 11 | var obj16: any;
  12 | if (obj16 instanceof H) {
     :                      ^
+ 13 |   obj16; // H
     `----
 
 Error: 
   > HConstructor
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:11:1]
+ 11 | var obj16: any;
  12 | if (obj16 instanceof H) {
     :     ^^^^^^^^^^^^^^^^^^
+ 13 |   obj16; // H
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:13:3]
- 13 | obj16; // H
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:12:1]
+ 12 | if (obj16 instanceof H) {
+ 13 |   obj16; // H
+    :   ^^^^^
+ 14 |   obj16.foo;
     `----
 
 Error: 
   > H
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:14:3]
- 14 | obj16.foo;
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:13:1]
+ 13 |   obj16; // H
+ 14 |   obj16.foo;
+    :   ^^^^^
+ 15 | }
     `----
 
 Error: 
   > H
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:14:3]
- 14 | obj16.foo;
-    : ^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/8.ts:13:1]
+ 13 |   obj16; // H
+ 14 |   obj16.foo;
+    :   ^^^^^^^^^
+ 15 | }
     `----
 
 Error: 

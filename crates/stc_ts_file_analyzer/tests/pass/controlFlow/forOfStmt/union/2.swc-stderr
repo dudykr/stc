@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:2:1]
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:1:1]
+ 1 | var union: string | string[];
  2 | for (const v of union) {
    :                 ^^^^^
+ 3 |     v
    `----
 
 Error: 
   > (string | string[])
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:3:5]
- 3 | v
-   : ^
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:2:1]
+ 2 | for (const v of union) {
+ 3 |     v
+   :     ^
+ 4 | }
    `----
 
 Error: 

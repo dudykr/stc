@@ -1,33 +1,40 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:6:1]
+ 6 | 
  7 | Function.prototype.now = function () {
    : ^^^^^^^^
+ 8 |     return "now"
    `----
 
 Error: 
   > FunctionConstructor
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:6:1]
+ 6 | 
  7 | Function.prototype.now = function () {
    : ^^^^^^^^^^^^^^^^^^
+ 8 |     return "now"
    `----
 
 Error: 
   > (Function & Function)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:6:1]
+ 6 | 
  7 | Function.prototype.now = function () {
    : ^^^^^^^^^^^^^^^^^^^^^^
+ 8 |     return "now"
    `----
 
 Error: 
   > () => string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:6:1]
+ 6 |     
  7 | ,-> Function.prototype.now = function () {
  8 | |       return "now"
  9 | `-> }
@@ -37,7 +44,8 @@ Error:
   > () => string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:7:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:6:1]
+ 6 |     
  7 | ,-> Function.prototype.now = function () {
  8 | |       return "now"
  9 | `-> }
@@ -47,9 +55,11 @@ Error:
   > () => string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:13:9]
- 13 | return {}
-    :        ^^
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:12:1]
+ 12 |     static now() {
+ 13 |         return {}
+    :                ^^
+ 14 |     }
     `----
 
 Error: 
@@ -57,27 +67,33 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:24:1]
+ 24 | 
  25 | console.log(X.now()) // works as expected
     : ^^^^^^^
+ 26 | console.log(Y.now()) // works as expected
     `----
 
 Error: 
   > Console
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:24:1]
+ 24 | 
  25 | console.log(X.now()) // works as expected
     :             ^
+ 26 | console.log(Y.now()) // works as expected
     `----
 
 Error: 
   > typeof X
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:24:1]
+ 24 | 
  25 | console.log(X.now()) // works as expected
     :             ^^^^^^^
+ 26 | console.log(Y.now()) // works as expected
     `----
 
 Error: 
@@ -85,16 +101,19 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:24:1]
+ 24 | 
  25 | console.log(X.now()) // works as expected
     : ^^^^^^^^^^^^^^^^^^^^
+ 26 | console.log(Y.now()) // works as expected
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:26:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+ 25 | console.log(X.now()) // works as expected
  26 | console.log(Y.now()) // works as expected
     : ^^^^^^^
     `----
@@ -103,7 +122,8 @@ Error:
   > Console
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:26:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+ 25 | console.log(X.now()) // works as expected
  26 | console.log(Y.now()) // works as expected
     :             ^
     `----
@@ -112,7 +132,8 @@ Error:
   > typeof Y
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:26:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+ 25 | console.log(X.now()) // works as expected
  26 | console.log(Y.now()) // works as expected
     :             ^^^^^^^
     `----
@@ -121,7 +142,8 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:26:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:25:1]
+ 25 | console.log(X.now()) // works as expected
  26 | console.log(Y.now()) // works as expected
     : ^^^^^^^^^^^^^^^^^^^^
     `----
@@ -130,7 +152,8 @@ Error:
   > void
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:28:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:27:1]
+ 27 | 
  28 | export const x: X | number = Math.random() > 0.5 ? new X() : 1
     :                              ^^^^
     `----
@@ -139,7 +162,8 @@ Error:
   > Math
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:28:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:27:1]
+ 27 | 
  28 | export const x: X | number = Math.random() > 0.5 ? new X() : 1
     :                              ^^^^^^^^^^^^^
     `----
@@ -148,7 +172,8 @@ Error:
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:28:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:27:1]
+ 27 | 
  28 | export const x: X | number = Math.random() > 0.5 ? new X() : 1
     :                              ^^^^^^^^^^^^^^^^^^^
     `----
@@ -157,7 +182,8 @@ Error:
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:28:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:27:1]
+ 27 | 
  28 | export const x: X | number = Math.random() > 0.5 ? new X() : 1
     :                                                        ^
     `----
@@ -166,7 +192,8 @@ Error:
   > typeof X
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:28:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:27:1]
+ 27 | 
  28 | export const x: X | number = Math.random() > 0.5 ? new X() : 1
     :                                                    ^^^^^^^
     `----
@@ -175,7 +202,8 @@ Error:
   > X
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:28:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:27:1]
+ 27 | 
  28 | export const x: X | number = Math.random() > 0.5 ? new X() : 1
     :                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----
@@ -184,45 +212,55 @@ Error:
   > (X | 1)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:30:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:29:1]
+ 29 | 
  30 | if (x instanceof X) {
     :     ^
+ 31 |     x.why() // should compile
     `----
 
 Error: 
   > (X | number)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:30:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:29:1]
+ 29 | 
  30 | if (x instanceof X) {
     :                  ^
+ 31 |     x.why() // should compile
     `----
 
 Error: 
   > typeof X
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:30:1]
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:29:1]
+ 29 | 
  30 | if (x instanceof X) {
     :     ^^^^^^^^^^^^^^
+ 31 |     x.why() // should compile
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:31:5]
- 31 | x.why() // should compile
-    : ^
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:30:1]
+ 30 | if (x instanceof X) {
+ 31 |     x.why() // should compile
+    :     ^
+ 32 | }
     `----
 
 Error: 
   > X
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:31:5]
- 31 | x.why() // should compile
-    : ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof/extends-fn-1.ts:30:1]
+ 30 | if (x instanceof X) {
+ 31 |     x.why() // should compile
+    :     ^^^^^^^
+ 32 | }
     `----
 
 Error: 

@@ -1,89 +1,109 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :            ^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :                ^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > (string | number)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :     ^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :         ^^^^^^^^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :     ^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :         ^^^^^^^^^^^^^^^^^^^^^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :                                     ^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :                                         ^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :                              ^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :                                  ^^^^^^^^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :                              ^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :                                  ^^^^^^^^^^^^^^^^^^^^^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:5]
- 6 | if (typeof x === "string" && typeof x === "number") {
-   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:5:1]
+ 5 | export function f5(x: string | number) {
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |         x;  // number (guard as assertion)
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:7:9]
- 7 | x;  // number (guard as assertion)
-   : ^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:6:1]
+ 6 |     if (typeof x === "string" && typeof x === "number") {
+ 7 |         x;  // number (guard as assertion)
+   :         ^
+ 8 |     }
    `----
 
 Error: 
   > never
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:10:9]
- 10 | x;  // string | number
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:9:1]
+  9 |     else {
+ 10 |         x;  // string | number
+    :         ^
+ 11 |     }
     `----
 
 Error: 
   > (string | number)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:12:5]
- 12 | x;  // string | number
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/7.ts:11:1]
+ 11 |     }
+ 12 |     x;  // string | number
+    :     ^
+ 13 | }
     `----
 
 Error: 

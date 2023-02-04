@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:4:1]
+ 4 | 
  5 | if (typeof config['works'] !== 'boolean') {
    :            ^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
    `----
 
 Error: 
@@ -13,9 +15,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:4:1]
+ 4 | 
  5 | if (typeof config['works'] !== 'boolean') {
    :            ^^^^^^^^^^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
    `----
 
 Error: 
@@ -24,27 +28,33 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:4:1]
+ 4 | 
  5 | if (typeof config['works'] !== 'boolean') {
    :     ^^^^^^^^^^^^^^^^^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:4:1]
+ 4 | 
  5 | if (typeof config['works'] !== 'boolean') {
    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:5]
- 6 | config.works.prop = 'test'; // ok
-   : ^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    `----
 
 Error: 
@@ -55,9 +65,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:5]
- 6 | config.works.prop = 'test'; // ok
-   : ^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    `----
 
 Error: 
@@ -66,27 +78,33 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:5]
- 6 | config.works.prop = 'test'; // ok
-   : ^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^^^^^^^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:5]
- 6 | config.works.prop = 'test'; // ok
-   : ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    `----
 
 Error: 
   > 'test'
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:7:5]
- 7 | config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
-   : ^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^
+ 8 | }
    `----
 
 Error: 
@@ -97,9 +115,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:7:5]
- 7 | config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
-   : ^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^^^^^^^^^^
+ 8 | }
    `----
 
 Error: 
@@ -108,18 +128,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:7:5]
- 7 | config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
-   : ^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^^^^^^^^^^^^^^^
+ 8 | }
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:7:5]
- 7 | config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
-   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | }
    `----
 
 Error: 

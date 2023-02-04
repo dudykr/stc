@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:7:3]
- 7 | return num;
-   :        ^^^
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:6:1]
+ 6 | const funcUnionTupleNoRest: TupleUnionFunc = (num, strOrErr) => {
+ 7 |   return num;
+   :          ^^^
+ 8 | };
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:6:1]
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:5:1]
+ 5 |     
  6 | ,-> const funcUnionTupleNoRest: TupleUnionFunc = (num, strOrErr) => {
  7 | |     return num;
  8 | `-> };

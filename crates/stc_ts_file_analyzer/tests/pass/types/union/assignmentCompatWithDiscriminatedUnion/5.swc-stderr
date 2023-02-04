@@ -1,35 +1,43 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:13:9]
- 13 | if (1 == 1) {
-    :     ^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:12:1]
+ 12 |     function getAxisType(): IAxisType {
+ 13 |         if (1 == 1) {
+    :             ^^^^^^
+ 14 |             return "categorical";
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:5]
- 20 | const bad: IAxis = { type: getAxisType() };
-    :                            ^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:19:1]
+ 19 | 
+ 20 |     const bad: IAxis = { type: getAxisType() };
+    :                                ^^^^^^^^^^^
+ 21 |     const good: IAxis = { type: undefined };
     `----
 
 Error: 
   > () => IAxisType
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:5]
- 20 | const bad: IAxis = { type: getAxisType() };
-    :                            ^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:19:1]
+ 19 | 
+ 20 |     const bad: IAxis = { type: getAxisType() };
+    :                                ^^^^^^^^^^^^^
+ 21 |     const good: IAxis = { type: undefined };
     `----
 
 Error: 
   > IAxisType
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:5]
- 20 | const bad: IAxis = { type: getAxisType() };
-    :                    ^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:19:1]
+ 19 | 
+ 20 |     const bad: IAxis = { type: getAxisType() };
+    :                        ^^^^^^^^^^^^^^^^^^^^^^^
+ 21 |     const good: IAxis = { type: undefined };
     `----
 
 Error: 
@@ -38,18 +46,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:5]
- 21 | const good: IAxis = { type: undefined };
-    :                             ^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:1]
+ 20 |     const bad: IAxis = { type: getAxisType() };
+ 21 |     const good: IAxis = { type: undefined };
+    :                                 ^^^^^^^^^
+ 22 |     good.type = getAxisType();
     `----
 
 Error: 
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:5]
- 21 | const good: IAxis = { type: undefined };
-    :                     ^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:1]
+ 20 |     const bad: IAxis = { type: getAxisType() };
+ 21 |     const good: IAxis = { type: undefined };
+    :                         ^^^^^^^^^^^^^^^^^^^
+ 22 |     good.type = getAxisType();
     `----
 
 Error: 
@@ -58,45 +70,55 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5]
- 22 | good.type = getAxisType();
-    : ^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:1]
+ 21 |     const good: IAxis = { type: undefined };
+ 22 |     good.type = getAxisType();
+    :     ^^^^
+ 23 | }
     `----
 
 Error: 
   > (ILinearAxis | ICategoricalAxis)
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5]
- 22 | good.type = getAxisType();
-    : ^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:1]
+ 21 |     const good: IAxis = { type: undefined };
+ 22 |     good.type = getAxisType();
+    :     ^^^^^^^^^
+ 23 | }
     `----
 
 Error: 
   > ("linear" | "categorical")
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5]
- 22 | good.type = getAxisType();
-    :             ^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:1]
+ 21 |     const good: IAxis = { type: undefined };
+ 22 |     good.type = getAxisType();
+    :                 ^^^^^^^^^^^
+ 23 | }
     `----
 
 Error: 
   > () => IAxisType
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5]
- 22 | good.type = getAxisType();
-    :             ^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:1]
+ 21 |     const good: IAxis = { type: undefined };
+ 22 |     good.type = getAxisType();
+    :                 ^^^^^^^^^^^^^
+ 23 | }
     `----
 
 Error: 
   > IAxisType
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5]
- 22 | good.type = getAxisType();
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:1]
+ 21 |     const good: IAxis = { type: undefined };
+ 22 |     good.type = getAxisType();
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 23 | }
     `----
 
 Error: 

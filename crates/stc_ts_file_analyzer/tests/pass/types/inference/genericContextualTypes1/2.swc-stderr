@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:1]
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:2:1]
+ 2 | 
  3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
    :                                                                     ^
    `----
@@ -9,7 +10,8 @@ Error:
   > T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:1]
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:2:1]
+ 2 | 
  3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
    :                                                                              ^
    `----
@@ -18,7 +20,8 @@ Error:
   > (x: T) => boolean
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:1]
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:2:1]
+ 2 | 
  3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
    :                                                                     ^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:1]
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:2:1]
+ 2 | 
  3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
    :                                                         ^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > (a: T[]) => T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:1]
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:2:1]
+ 2 | 
  3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
    :                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

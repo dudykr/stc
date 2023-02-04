@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as string | number | boolean, null as any as unknown) // unknown
    : ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: T, b: T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as string | number | boolean, null as any as unknown) // unknown
    :        ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as string | number | boolean, null as any as unknown) // unknown
    :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > (string | number | boolean)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as string | number | boolean, null as any as unknown) // unknown
    :                                                  ^^^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as string | number | boolean, null as any as unknown) // unknown
    :                                                  ^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -45,7 +50,8 @@ Error:
   > unknown
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-with-unknown.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as string | number | boolean, null as any as unknown) // unknown
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

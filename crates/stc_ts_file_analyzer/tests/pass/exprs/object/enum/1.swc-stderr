@@ -1,24 +1,29 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/enum/1.ts:5:5]
- 5 | [E.member]: 0
-   :  ^
+   ,-[$DIR/tests/pass/exprs/object/enum/1.ts:4:1]
+ 4 | var v = {
+ 5 |     [E.member]: 0
+   :      ^
+ 6 | }
    `----
 
 Error: 
   > E
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/enum/1.ts:5:5]
- 5 | [E.member]: 0
-   :  ^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/object/enum/1.ts:4:1]
+ 4 | var v = {
+ 5 |     [E.member]: 0
+   :      ^^^^^^^^
+ 6 | }
    `----
 
 Error: 
   > E.member
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/enum/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/object/enum/1.ts:3:1]
+ 3 |     }
  4 | ,-> var v = {
  5 | |       [E.member]: 0
  6 | `-> }

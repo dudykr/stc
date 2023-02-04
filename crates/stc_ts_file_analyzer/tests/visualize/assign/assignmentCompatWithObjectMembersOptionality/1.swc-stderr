@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:4:1]
+   ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:3:1]
+ 3 | class Base { foo: string; }
  4 | class Derived extends Base { bar: string; }
    :                       ^^^^
    `----
@@ -9,36 +10,44 @@ Error:
   > typeof Base
 
   x Type
-    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:25:1]
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:24:1]
+ 24 | 
  25 | c = d; // error
     :     ^
+ 26 | c = e; // error
     `----
 
 Error: 
   > D
 
   x Type
-    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:25:1]
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:24:1]
+ 24 | 
  25 | c = d; // error
     : ^^^^^
+ 26 | c = e; // error
     `----
 
 Error: 
   > D
 
   x Type
-    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:26:1]
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:25:1]
+ 25 | c = d; // error
  26 | c = e; // error
     :     ^
+ 27 | export { }
     `----
 
 Error: 
   > E
 
   x Type
-    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:26:1]
+    ,-[$DIR/tests/visualize/assign/assignmentCompatWithObjectMembersOptionality/1.ts:25:1]
+ 25 | c = d; // error
  26 | c = e; // error
     : ^^^^^
+ 27 | export { }
     `----
 
 Error: 

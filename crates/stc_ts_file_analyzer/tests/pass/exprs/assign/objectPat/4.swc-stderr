@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:6:5]
- 6 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-   :                                     ^^^
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:5:1]
+ 5 | function f4<K1 extends keyof Item, K2 extends keyof Item>(obj: Item, k1: K1, k2: K2) {
+ 6 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                                         ^^^
+ 7 | }
    `----
 
 Error: 
@@ -13,18 +15,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:6:5]
- 6 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-   :        ^^
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:5:1]
+ 5 | function f4<K1 extends keyof Item, K2 extends keyof Item>(obj: Item, k1: K1, k2: K2) {
+ 6 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :            ^^
+ 7 | }
    `----
 
 Error: 
   > K1
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:6:5]
- 6 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-   :                  ^^
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:5:1]
+ 5 | function f4<K1 extends keyof Item, K2 extends keyof Item>(obj: Item, k1: K1, k2: K2) {
+ 6 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                      ^^
+ 7 | }
    `----
 
 Error: 

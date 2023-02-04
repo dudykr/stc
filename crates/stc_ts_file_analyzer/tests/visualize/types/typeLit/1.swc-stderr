@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeLit/1.ts:6:1]
+   ,-[$DIR/tests/visualize/types/typeLit/1.ts:5:1]
+ 5 | 
  6 | let data: Data = { foo: 'test', bar: null }
    :                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 | data.bar
    `----
 
 Error: 
@@ -12,7 +14,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeLit/1.ts:7:1]
+   ,-[$DIR/tests/visualize/types/typeLit/1.ts:6:1]
+ 6 | let data: Data = { foo: 'test', bar: null }
  7 | data.bar
    : ^^^^
    `----
@@ -24,7 +27,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeLit/1.ts:7:1]
+   ,-[$DIR/tests/visualize/types/typeLit/1.ts:6:1]
+ 6 | let data: Data = { foo: 'test', bar: null }
  7 | data.bar
    : ^^^^^^^^
    `----

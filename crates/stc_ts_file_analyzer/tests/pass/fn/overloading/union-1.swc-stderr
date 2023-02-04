@@ -1,42 +1,51 @@
 
   x Type
-    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:21:5]
- 21 | return entity.kind === kind;
-    :        ^^^^^^
+    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :            ^^^^^^
+ 22 | }
     `----
 
 Error: 
   > Entity
 
   x Type
-    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:21:5]
- 21 | return entity.kind === kind;
-    :        ^^^^^^^^^^^
+    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :            ^^^^^^^^^^^
+ 22 | }
     `----
 
 Error: 
   > ("A" | "B")
 
   x Type
-    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:21:5]
- 21 | return entity.kind === kind;
-    :                        ^^^^
+    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :                            ^^^^
+ 22 | }
     `----
 
 Error: 
   > ("A" | "B")
 
   x Type
-    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:21:5]
- 21 | return entity.kind === kind;
-    :        ^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :            ^^^^^^^^^^^^^^^^^^^^
+ 22 | }
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:25:1]
+    ,-[$DIR/tests/pass/fn/overloading/union-1.ts:24:1]
+ 24 | 
  25 | hasKind
     : ^^^^^^^
     `----

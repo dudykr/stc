@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :              ^
    `----
@@ -9,7 +10,8 @@ Error:
   > ("a" | "b" | "c")
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :              ^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :                           ^
    `----
@@ -27,7 +30,8 @@ Error:
   > ("b" | "c")
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :                           ^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :              ^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -45,7 +50,8 @@ Error:
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :                                        ^
    `----
@@ -54,7 +60,8 @@ Error:
   > ("b" | "a")
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :                                       ^^^^^^
    `----
@@ -63,7 +70,8 @@ Error:
   > [("b" | "a"), 1]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :                                                ^^^^^^^^^
    `----
@@ -72,7 +80,8 @@ Error:
   > ["c", ""]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/assign/compat/union/assignmentCompatWithDiscriminatedUnion/1.ts:3:1]
+ 3 | declare const b: B;
  4 | const a: A = b === "a" || b === "b" ? [b, 1] : ["c", ""];
    :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

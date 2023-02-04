@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:4:1]
+ 4 | 
  5 | foo(1, null as any, null as any as {}) // any
    : ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: T, b: T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:4:1]
+ 4 | 
  5 | foo(1, null as any, null as any as {}) // any
    :        ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:4:1]
+ 4 | 
  5 | foo(1, null as any, null as any as {}) // any
    :                     ^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:4:1]
+ 4 | 
  5 | foo(1, null as any, null as any as {}) // any
    :                     ^^^^^^^^^^^^^^^^^
    `----
@@ -37,7 +41,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/any-with-empty-object.ts:4:1]
+ 4 | 
  5 | foo(1, null as any, null as any as {}) // any
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

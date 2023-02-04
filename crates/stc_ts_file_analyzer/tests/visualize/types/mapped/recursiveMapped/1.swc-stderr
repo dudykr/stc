@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:19:1]
+    ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:18:1]
+ 18 | declare let x: ListChild;
  19 | x.type;
     : ^
     `----
@@ -14,7 +15,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:19:1]
+    ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:18:1]
+ 18 | declare let x: ListChild;
  19 | x.type;
     : ^^^^^^
     `----

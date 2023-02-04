@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:8:5]
- 8 | x2 = x1;
-   :      ^^
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:7:1]
+ 7 |     // Should both work
+ 8 |     x2 = x1;
+   :          ^^
+ 9 | }
    `----
 
 Error: 
   > `AA${number}${bigint}${boolean}`
 
   x Type
-   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:8:5]
- 8 | x2 = x1;
-   : ^^^^^^^
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:7:1]
+ 7 |     // Should both work
+ 8 |     x2 = x1;
+   :     ^^^^^^^
+ 9 | }
    `----
 
 Error: 

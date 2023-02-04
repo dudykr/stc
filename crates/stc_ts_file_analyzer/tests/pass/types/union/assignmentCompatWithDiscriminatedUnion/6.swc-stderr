@@ -1,18 +1,22 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:20:13]
- 20 | type: thingType
-    :       ^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:19:1]
+ 19 |         return {
+ 20 |             type: thingType
+    :                   ^^^^^^^^^
+ 21 |         };
     `----
 
 Error: 
   > ('one' | 'two')
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:19:9]
- 19 | ,-> return {
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:18:1]
+ 18 |         function makeNewThing(thingType: ThingType): Thing {
+ 19 | ,->         return {
  20 | |               type: thingType
  21 | `->         };
+ 22 |         }
     `----
 
 Error: 

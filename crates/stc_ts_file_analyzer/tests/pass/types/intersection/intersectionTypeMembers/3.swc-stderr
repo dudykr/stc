@@ -1,10 +1,12 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:12:9]
- 12 | ,-> doublyNested: {
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:11:1]
+ 11 |         nested: {
+ 12 | ,->         doublyNested: {
  13 | |               d: 'yes',
  14 | |               f: 'no'
  15 | `->         },
+ 16 |             different: { e: 12 },
     `----
 
 Error: 
@@ -14,9 +16,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:16:9]
- 16 | different: { e: 12 },
-    :            ^^^^^^^^^
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:15:1]
+ 15 |         },
+ 16 |         different: { e: 12 },
+    :                    ^^^^^^^^^
+ 17 |         other: { g: 101 }
     `----
 
 Error: 
@@ -25,9 +29,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:17:9]
- 17 | other: { g: 101 }
-    :        ^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:16:1]
+ 16 |         different: { e: 12 },
+ 17 |         other: { g: 101 }
+    :                ^^^^^^^^^^
+ 18 |     }
     `----
 
 Error: 
@@ -36,8 +42,9 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:11:5]
- 11 | ,-> nested: {
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:10:1]
+ 10 |     const de: D & E = {
+ 11 | ,->     nested: {
  12 | |           doublyNested: {
  13 | |               d: 'yes',
  14 | |               f: 'no'
@@ -45,6 +52,7 @@ Error:
  16 | |           different: { e: 12 },
  17 | |           other: { g: 101 }
  18 | `->     }
+ 19 |     }
     `----
 
 Error: 
@@ -62,7 +70,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:9:1]
+  9 |     }
  10 | ,-> const de: D & E = {
  11 | |       nested: {
  12 | |           doublyNested: {

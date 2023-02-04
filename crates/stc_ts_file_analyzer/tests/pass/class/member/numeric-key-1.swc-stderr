@@ -1,60 +1,73 @@
 
   x Type
-   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:7:1]
+   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:6:1]
+ 6 | var c: C;
  7 | export var r1 = c[1];
    :                 ^
+ 8 | export var r2 = c[1.1];
    `----
 
 Error: 
   > C
 
   x Type
-   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:7:1]
+   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:6:1]
+ 6 | var c: C;
  7 | export var r1 = c[1];
    :                 ^^^^
+ 8 | export var r2 = c[1.1];
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:8:1]
+   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:7:1]
+ 7 | export var r1 = c[1];
  8 | export var r2 = c[1.1];
    :                 ^
+ 9 | export var r3 = c['1'];
    `----
 
 Error: 
   > C
 
   x Type
-   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:8:1]
+   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:7:1]
+ 7 | export var r1 = c[1];
  8 | export var r2 = c[1.1];
    :                 ^^^^^^
+ 9 | export var r3 = c['1'];
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:9:1]
- 9 | export var r3 = c['1'];
-   :                 ^
-   `----
+    ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:8:1]
+  8 | export var r2 = c[1.1];
+  9 | export var r3 = c['1'];
+    :                 ^
+ 10 | export var r4 = c['1.1'];
+    `----
 
 Error: 
   > C
 
   x Type
-   ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:9:1]
- 9 | export var r3 = c['1'];
-   :                 ^^^^^^
-   `----
+    ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:8:1]
+  8 | export var r2 = c[1.1];
+  9 | export var r3 = c['1'];
+    :                 ^^^^^^
+ 10 | export var r4 = c['1.1'];
+    `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:10:1]
+    ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:9:1]
+  9 | export var r3 = c['1'];
  10 | export var r4 = c['1.1'];
     :                 ^
     `----
@@ -63,7 +76,8 @@ Error:
   > C
 
   x Type
-    ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:10:1]
+    ,-[$DIR/tests/pass/class/member/numeric-key-1.ts:9:1]
+  9 | export var r3 = c['1'];
  10 | export var r4 = c['1.1'];
     :                 ^^^^^^^^
     `----
