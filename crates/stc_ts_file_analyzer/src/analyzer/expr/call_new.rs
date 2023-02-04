@@ -851,48 +851,62 @@ impl Analyzer<'_, '_> {
             }
             let callee_str = force_dump_type_as_string(&callee);
 
-            self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
-                .or_else(|err| {
-                    if obj_type.is_type_param() {
-                        if prop.is_computed() {
-                            return Ok(Type::any(span, Default::default()));
-                        }
+            self.get_best_return_type(
+                span,
+                expr,
+                callee,
+                kind,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts {
+                    skip_check_for_overloads: true,
+                    ..Default::default()
+                },
+            )
+            .or_else(|err| {
+                if obj_type.is_type_param() {
+                    if prop.is_computed() {
+                        return Ok(Type::any(span, Default::default()));
                     }
+                }
 
-                    Err(err)
-                })
-                .convert_err(|err| {
-                    if obj_type.is_type_param() {
-                        return ErrorKind::NoSuchProperty {
-                            span,
-                            obj: Some(box obj_type.clone()),
-                            prop: Some(box prop.clone()),
-                        };
-                    }
+                Err(err)
+            })
+            .convert_err(|err| {
+                if obj_type.is_type_param() {
+                    return ErrorKind::NoSuchProperty {
+                        span,
+                        obj: Some(box obj_type.clone()),
+                        prop: Some(box prop.clone()),
+                    };
+                }
 
-                    match err {
-                        ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
-                            span,
-                            obj: box obj_type.clone(),
-                            key: box prop.clone(),
-                        },
-                        ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
-                            span,
-                            obj: box obj_type.clone(),
-                            key: box prop.clone(),
-                        },
-                        _ => err,
-                    }
-                })
-                .with_context(|| {
-                    format!(
-                        "tried to call property by using access_property because the object type is not handled by call_property: \nobj = \
-                         {}\ncallee = {}\ncallee (before expanding): {}",
-                        force_dump_type_as_string(&obj_type),
-                        callee_str,
-                        callee_before_expanding,
-                    )
-                })
+                match err {
+                    ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
+                        span,
+                        obj: box obj_type.clone(),
+                        key: box prop.clone(),
+                    },
+                    ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
+                        span,
+                        obj: box obj_type.clone(),
+                        key: box prop.clone(),
+                    },
+                    _ => err,
+                }
+            })
+            .with_context(|| {
+                format!(
+                    "tried to call property by using access_property because the object type is not handled by call_property: \nobj = \
+                     {}\ncallee = {}\ncallee (before expanding): {}",
+                    force_dump_type_as_string(&obj_type),
+                    callee_str,
+                    callee_before_expanding,
+                )
+            })
         })()
         .with_context(|| format!("tried to call a property of an object ({})", force_dump_type_as_string(obj_type)));
         self.scope.this = old_this;
@@ -1673,9 +1687,21 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => {
-                self.get_best_return_type(span, expr, ty.clone(), kind, type_args, args, arg_types, spread_arg_types, type_ann)
-            }
+            Type::Union(..) => self.get_best_return_type(
+                span,
+                expr,
+                ty.clone(),
+                kind,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+                SelectOpts {
+                    skip_check_for_overloads: true,
+                    ..Default::default()
+                },
+            ),
 
             Type::Interface(ref i) => {
                 if kind == ExtractKind::New && &**i.name.sym() == "ArrayConstructor" {
@@ -2096,6 +2122,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: SelectOpts,
     ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -2119,10 +2146,7 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
-                SelectOpts {
-                    skip_check_for_overloads: true,
-                    ..Default::default()
-                },
+                opts,
             )
             .context("tried to get a best return type")?
         {
