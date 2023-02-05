@@ -9,7 +9,8 @@ use std::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RMemberExpr, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
+    RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -1110,16 +1111,16 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
-                                RPat::Expr(box RExpr::SuperProp(..)) => {}
-
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(expr) {
                                         return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span }.into());
                                     }
 
-                                    self.storage
-                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
+                                    if !is_expr_correct_binding_pat(expr, true) {
+                                        self.storage
+                                            .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
+                                    }
                                 }
 
                                 RPat::Invalid(_) => {
@@ -1370,6 +1371,16 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(None)
+    }
+}
+
+fn is_expr_correct_binding_pat(e: &RExpr, is_top_level: bool) -> bool {
+    match e {
+        RExpr::This(..) => !is_top_level,
+        RExpr::Ident(..) => true,
+        RExpr::SuperProp(..) => true,
+        RExpr::Member(RMemberExpr { obj, .. }) => is_expr_correct_binding_pat(obj, false),
+        _ => false,
     }
 }
 
