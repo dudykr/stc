@@ -632,6 +632,11 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2660
+    SuperCanBeOnlyReferencedInDerivedClass {
+        span: Span,
+    },
+
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -1698,6 +1703,8 @@ impl ErrorKind {
             ErrorKind::NonOverlappingTypeCast { .. } => 2352,
 
             ErrorKind::SuperInClassWithoutSuper { .. } => 2335,
+
+            ErrorKind::SuperCanBeOnlyReferencedInDerivedClass { .. } => 2660,
 
             ErrorKind::NoSuchProperty { .. }
             | ErrorKind::NoSuchPropertyInThis { .. }

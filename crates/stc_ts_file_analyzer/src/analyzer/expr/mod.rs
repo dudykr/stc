@@ -4223,10 +4223,16 @@ impl Analyzer<'_, '_> {
 
             self.report_error_for_super_reference_in_compute_keys(span, false);
 
-            if let Some(v) = self.scope.get_super_class(self.ctx.is_static()) {
-                v
+            if self.ctx.super_references_super_class {
+                if let Some(v) = self.scope.get_super_class(self.ctx.is_static()) {
+                    v
+                } else {
+                    self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
+                    Type::any(span, Default::default())
+                }
             } else {
-                self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
+                self.storage
+                    .report(ErrorKind::SuperCanBeOnlyReferencedInDerivedClass { span }.into());
                 Type::any(span, Default::default())
             }
         };
