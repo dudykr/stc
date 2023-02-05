@@ -1376,6 +1376,7 @@ impl Analyzer<'_, '_> {
 
 fn is_expr_correct_binding_pat(e: &RExpr) -> bool {
     match e {
+        RExpr::Ident(..) => true,
         RExpr::SuperProp(..) => true,
         RExpr::Member(RMemberExpr { obj, .. }) => is_expr_correct_binding_pat(obj),
         _ => false,
