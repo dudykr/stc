@@ -33,7 +33,6 @@ use tracing::{debug, info, warn, Level};
 
 use self::bin::extract_name_for_assignment;
 pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
-use super::util::make_instance_type;
 use crate::{
     analyzer::{
         assign::AssignOpts,
