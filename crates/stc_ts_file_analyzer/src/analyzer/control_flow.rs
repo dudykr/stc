@@ -1111,13 +1111,7 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
-                                RPat::Expr(
-                                    box RExpr::SuperProp(..)
-                                    | box RExpr::Member(RMemberExpr {
-                                        prop: RMemberProp::PrivateName(..),
-                                        ..
-                                    }),
-                                ) => {}
+                                RPat::Expr(e) if is_expr_correct_binding_pat(e) => {}
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
@@ -1377,6 +1371,14 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(None)
+    }
+}
+
+fn is_expr_correct_binding_pat(e: &RExpr) -> bool {
+    match e {
+        RExpr::SuperProp(..) => true,
+        RExpr::Member(RMemberExpr { obj, .. }) => is_expr_correct_binding_pat(obj),
+        _ => false,
     }
 }
 
