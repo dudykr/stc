@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
         let type_ann = self.expand_type_ann(f.span, type_ann)?;
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
-            if child.env.target() <= EsVersion::Es5 {
+            if child.env.target() <= EsVersion::Es5 && child.ctx.in_static_property_initializer {
                 child.ctx.super_references_super_class = false;
             }
 
