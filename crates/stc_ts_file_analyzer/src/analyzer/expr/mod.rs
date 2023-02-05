@@ -1428,6 +1428,72 @@ impl Analyzer<'_, '_> {
             }
 
             match &obj {
+                Type::This(ThisType { span, metadata, .. }) if self.ctx.is_static() => {
+                    // Handle static access to class itself while *declaring* the class.
+                    for (_, member) in self.scope.class_members() {
+                        match member {
+                            ClassMember::Method(member @ Method { is_static: true, .. }) => {
+                                if member.key.type_eq(prop) {
+                                    return Ok(Type::Function(ty::Function {
+                                        span: member.span,
+                                        type_params: member.type_params.clone(),
+                                        params: member.params.clone(),
+                                        ret_ty: member.ret_ty.clone(),
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }));
+                                }
+                            }
+
+                            ClassMember::Property(property) => {
+                                if property.key.type_eq(prop) {
+                                    return Ok(*property.value.clone().unwrap_or_else(|| {
+                                        box Type::any(
+                                            *span,
+                                            KeywordTypeMetadata {
+                                                common: metadata.common,
+                                                ..Default::default()
+                                            },
+                                        )
+                                    }));
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+
+                    if let Some(super_class) = self.scope.get_super_class() {
+                        let super_class = super_class.clone();
+                        let super_class = self.expand(
+                            *span,
+                            super_class,
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
+                                ..Default::default()
+                            },
+                        )?;
+
+                        if let Type::Class(Class { def, .. }) = super_class {
+                            if let Ok(v) = self.access_property(*span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
+                                return Ok(v);
+                            }
+                        }
+                    }
+
+                    dbg!();
+
+                    return Err(ErrorKind::NoSuchProperty {
+                        span: *span,
+                        obj: Some(box obj.clone()),
+                        prop: Some(box prop.clone()),
+                    }
+                    .context("tried to access this in a static class member"));
+                }
+
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
