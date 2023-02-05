@@ -8,7 +8,7 @@ export RUST_BACKTRACE=1
 export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 function deleteCache {
-    find tests/tsc -name '\.*.tsc-errors.json' - -delete
+    find ./tests/tsc -name '\.*.tsc-errors.json' -type f -delete
 }
 
 deleteCache
