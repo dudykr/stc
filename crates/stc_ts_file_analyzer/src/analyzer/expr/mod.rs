@@ -2155,6 +2155,7 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsBooleanKeyword => js_word!("Boolean"),
                     TsKeywordTypeKind::TsObjectKeyword => js_word!("Object"),
                     TsKeywordTypeKind::TsSymbolKeyword => js_word!("Symbol"),
+                    TsKeywordTypeKind::TsBigIntKeyword => js_word!("BigInt"),
                     _ => {
                         return Err(ErrorKind::NoSuchProperty {
                             span: prop.span(),

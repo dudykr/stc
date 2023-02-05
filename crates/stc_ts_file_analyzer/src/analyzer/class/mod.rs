@@ -1287,18 +1287,12 @@ impl Analyzer<'_, '_> {
             }
         };
 
+        let ty = self.expand_enum_variant(ty)?;
+
         match *ty.normalize() {
             Type::Lit(..) => {}
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ty:
-                    box Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    }),
-                ..
-            }) => {}
-            _ if is_symbol_access => {}
+
+            _ if is_symbol_access || ty.is_symbol_like() => {}
             _ => errors.push(ErrorKind::TS1166 { span }.into()),
         }
 
