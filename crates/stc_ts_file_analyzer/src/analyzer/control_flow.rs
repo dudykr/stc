@@ -1117,7 +1117,7 @@ impl Analyzer<'_, '_> {
                                         return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span }.into());
                                     }
 
-                                    if !is_expr_correct_binding_pat(expr) {
+                                    if !is_expr_correct_binding_pat(expr, true) {
                                         self.storage
                                             .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                     }
@@ -1374,11 +1374,12 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn is_expr_correct_binding_pat(e: &RExpr) -> bool {
+fn is_expr_correct_binding_pat(e: &RExpr, is_top_level: bool) -> bool {
     match e {
+        RExpr::This(..) => !is_top_level,
         RExpr::Ident(..) => true,
         RExpr::SuperProp(..) => true,
-        RExpr::Member(RMemberExpr { obj, .. }) => is_expr_correct_binding_pat(obj),
+        RExpr::Member(RMemberExpr { obj, .. }) => is_expr_correct_binding_pat(obj, false),
         _ => false,
     }
 }
