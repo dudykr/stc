@@ -2694,6 +2694,14 @@ impl Analyzer<'_, '_> {
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
+                                if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
+                                    if !p.accessor.getter && !p.accessor.setter {
+                                        if p.key.type_eq(prop) {
+                                            return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                        };
+                                    }
+                                }
+
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
                                 }
