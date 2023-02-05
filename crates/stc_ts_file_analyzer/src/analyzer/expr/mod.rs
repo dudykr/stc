@@ -1458,7 +1458,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class().cloned() {
+                    if let Some(super_class) = self.scope.get_super_class(true) {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1526,7 +1526,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if let Some(super_class) = self.scope.get_super_class().cloned() {
+                        if let Some(super_class) = self.scope.get_super_class(false) {
                             if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                                 return Ok(v);
                             }
@@ -1540,7 +1540,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to access this in class"));
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class().cloned() {
+                    if let Some(super_class) = self.scope.get_super_class(false) {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1598,24 +1598,9 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class() {
-                        let super_class = super_class.clone();
-                        let super_class = self.expand(
-                            *span,
-                            super_class,
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..Default::default()
-                            },
-                        )?;
-
-                        if let Type::Class(Class { def, .. }) = super_class {
-                            if let Ok(v) = self.access_property(*span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
-                                return Ok(v);
-                            }
+                    if let Some(super_class) = self.scope.get_super_class(true) {
+                        if let Ok(v) = self.access_property(*span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                            return Ok(v);
                         }
                     }
 
@@ -4239,12 +4224,8 @@ impl Analyzer<'_, '_> {
 
             self.report_error_for_super_reference_in_compute_keys(span, false);
 
-            if let Some(v) = self.scope.get_super_class() {
-                if self.ctx.is_static() {
-                    v.clone()
-                } else {
-                    make_instance_type(v.clone()).freezed()
-                }
+            if let Some(v) = self.scope.get_super_class(self.ctx.is_static()) {
+                v
             } else {
                 self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
                 Type::any(span, Default::default())
