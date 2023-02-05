@@ -1428,7 +1428,7 @@ impl Analyzer<'_, '_> {
             }
 
             match &obj {
-                Type::This(ThisType { span, metadata, .. }) if self.ctx.is_static() => {
+                Type::This(..) | Type::StaticThis(..) if self.ctx.is_static() => {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
@@ -1447,15 +1447,10 @@ impl Analyzer<'_, '_> {
 
                             ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
-                                    return Ok(*property.value.clone().unwrap_or_else(|| {
-                                        box Type::any(
-                                            *span,
-                                            KeywordTypeMetadata {
-                                                common: metadata.common,
-                                                ..Default::default()
-                                            },
-                                        )
-                                    }));
+                                    return Ok(*property
+                                        .value
+                                        .clone()
+                                        .unwrap_or_else(|| box Type::any(span, KeywordTypeMetadata { ..Default::default() })));
                                 }
                             }
 
@@ -1466,7 +1461,7 @@ impl Analyzer<'_, '_> {
                     if let Some(super_class) = self.scope.get_super_class() {
                         let super_class = super_class.clone();
                         let super_class = self.expand(
-                            *span,
+                            span,
                             super_class,
                             ExpandOpts {
                                 full: true,
@@ -1478,7 +1473,7 @@ impl Analyzer<'_, '_> {
                         )?;
 
                         if let Type::Class(Class { def, .. }) = super_class {
-                            if let Ok(v) = self.access_property(*span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
+                            if let Ok(v) = self.access_property(span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
                                 return Ok(v);
                             }
                         }
@@ -1487,7 +1482,7 @@ impl Analyzer<'_, '_> {
                     dbg!();
 
                     return Err(ErrorKind::NoSuchProperty {
-                        span: *span,
+                        span,
                         obj: Some(box obj.clone()),
                         prop: Some(box prop.clone()),
                     }
