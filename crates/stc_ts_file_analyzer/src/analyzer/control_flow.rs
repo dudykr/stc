@@ -1111,16 +1111,16 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
-                                RPat::Expr(e) if is_expr_correct_binding_pat(e) => {}
-
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(expr) {
                                         return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span }.into());
                                     }
 
-                                    self.storage
-                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
+                                    if !is_expr_correct_binding_pat(expr) {
+                                        self.storage
+                                            .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
+                                    }
                                 }
 
                                 RPat::Invalid(_) => {
