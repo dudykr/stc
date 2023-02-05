@@ -2774,8 +2774,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx, opts) {
-                        return Ok(v);
+                    match self.access_property(span, super_ty, prop, type_mode, id_ctx, opts) {
+                        Ok(v) => return Ok(v),
+                        Err(err) => {
+                            if let ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } = &*err {
+                                return Err(err);
+                            }
+                        }
                     }
                 }
 
