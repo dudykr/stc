@@ -1491,7 +1491,7 @@ impl Analyzer<'_, '_> {
                             class_name: self.scope.get_this_class_name(),
                             prop: prop.clone(),
                         }
-                        .into());
+                        .context("tried to access this in class"));
                     }
 
                     if let Some(super_class) = self.scope.get_super_class().cloned() {
@@ -2001,7 +2001,7 @@ impl Analyzer<'_, '_> {
                     class_name: c.def.name.clone(),
                     prop: prop.clone(),
                 }
-                .into());
+                .context("tried to access property of a Type::Class"));
             }
 
             Type::Param(TypeParam {
@@ -2764,7 +2764,7 @@ impl Analyzer<'_, '_> {
                     class_name: cls.name.clone(),
                     prop: prop.clone(),
                 }
-                .into());
+                .context("tried to access property of a Type::ClassDef"));
             }
 
             Type::Module(ty::Module { name, ref exports, .. }) => {
