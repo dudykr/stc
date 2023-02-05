@@ -9,7 +9,8 @@ use std::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RMemberExpr, RMemberProp, RObjectPatProp, RPat, RPatOrExpr, RStmt,
+    RSwitchCase, RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -1110,7 +1111,13 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
-                                RPat::Expr(box RExpr::SuperProp(..)) => {}
+                                RPat::Expr(
+                                    box RExpr::SuperProp(..)
+                                    | box RExpr::Member(RMemberExpr {
+                                        prop: RMemberProp::PrivateName(..),
+                                        ..
+                                    }),
+                                ) => {}
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
