@@ -33,6 +33,7 @@ use tracing::{debug, info, warn, Level};
 
 use self::bin::extract_name_for_assignment;
 pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
+use super::util::make_instance_type;
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -4193,7 +4194,11 @@ impl Analyzer<'_, '_> {
             self.report_error_for_super_reference_in_compute_keys(span, false);
 
             if let Some(v) = self.scope.get_super_class() {
-                v.clone()
+                if self.ctx.is_static() {
+                    v.clone()
+                } else {
+                    make_instance_type(v.clone()).freezed()
+                }
             } else {
                 self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
                 Type::any(span, Default::default())

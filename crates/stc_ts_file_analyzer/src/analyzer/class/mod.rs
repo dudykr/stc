@@ -30,7 +30,7 @@ use crate::{
         expr::TypeOfMode,
         props::ComputedPropMode,
         scope::VarKind,
-        util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
+        util::{is_prop_name_eq, ResultExt, VarVisitor},
         Analyzer, Ctx, ScopeKind,
     },
     ty::TypeExt,
