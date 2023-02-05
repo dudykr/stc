@@ -1904,7 +1904,7 @@ impl Analyzer<'_, '_> {
                                 if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
                                     if !class_prop.accessor.getter && !class_prop.accessor.setter {
                                         if class_prop.key.type_eq(prop) {
-                                            return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                            return Err(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span }.into());
                                         };
                                     }
                                 }
@@ -1994,7 +1994,7 @@ impl Analyzer<'_, '_> {
                     match self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
                         Ok(v) => return Ok(v),
                         Err(err) => {
-                            if let ErrorKind::SuperCanOnlyAccessMethod { .. } = &*err {
+                            if let ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } = &*err {
                                 return Err(err);
                             }
                         }
@@ -2697,7 +2697,7 @@ impl Analyzer<'_, '_> {
                                 if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
                                     if !p.accessor.getter && !p.accessor.setter {
                                         if p.key.type_eq(prop) {
-                                            return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                            return Err(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span }.into());
                                         };
                                     }
                                 }

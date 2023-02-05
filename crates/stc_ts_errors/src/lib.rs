@@ -1456,7 +1456,7 @@ pub enum ErrorKind {
     },
 
     /// TS2340
-    SuperCanOnlyAccessMethod {
+    SuperCanOnlyAccessPublicAndProtectedMethod {
         span: Span,
     },
 
@@ -2058,7 +2058,7 @@ impl ErrorKind {
 
             ErrorKind::InvalidExtendDueToConstructorPrivate { .. } => 2675,
 
-            ErrorKind::SuperCanOnlyAccessMethod { .. } => 2340,
+            ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } => 2340,
 
             ErrorKind::DuplicatePrivateStaticInstance { .. } => 2804,
 
