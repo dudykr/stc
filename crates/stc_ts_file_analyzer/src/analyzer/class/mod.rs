@@ -1287,6 +1287,8 @@ impl Analyzer<'_, '_> {
             }
         };
 
+        let ty = self.expand_enum_variant(ty)?;
+
         match *ty.normalize() {
             Type::Lit(..) => {}
 
