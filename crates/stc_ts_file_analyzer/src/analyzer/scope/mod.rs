@@ -100,7 +100,7 @@ pub(crate) struct Scope<'a> {
 
     pub(super) this_object_members: Vec<TypeElement>,
 
-    pub(super) super_class: Option<Type>,
+    pub(super) super_class: Option<Box<Type>>,
 
     pub(super) return_values: ReturnValues,
 
@@ -358,7 +358,7 @@ impl Scope<'_> {
 
     pub fn get_super_class(&self) -> Option<&Type> {
         if let ScopeKind::Class = self.kind {
-            return self.super_class.as_ref();
+            return self.super_class.as_deref();
         }
 
         self.parent?.get_super_class()
