@@ -207,6 +207,10 @@ impl Ctx {
     pub fn can_generalize_literals(self) -> bool {
         !self.in_const_assertion && !self.in_argument && !self.in_cond
     }
+
+    fn is_static(&self) -> bool {
+        self.in_static_block || self.in_static_method || self.in_static_property_initializer
+    }
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.

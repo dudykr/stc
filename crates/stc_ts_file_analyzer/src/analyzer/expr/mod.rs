@@ -1427,6 +1427,52 @@ impl Analyzer<'_, '_> {
             }
 
             match &obj {
+                Type::This(..) | Type::StaticThis(..) if self.ctx.is_static() => {
+                    // Handle static access to class itself while *declaring* the class.
+                    for (_, member) in self.scope.class_members() {
+                        match member {
+                            ClassMember::Method(member @ Method { is_static: true, .. }) => {
+                                if member.key.type_eq(prop) {
+                                    return Ok(Type::Function(ty::Function {
+                                        span: member.span,
+                                        type_params: member.type_params.clone(),
+                                        params: member.params.clone(),
+                                        ret_ty: member.ret_ty.clone(),
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }));
+                                }
+                            }
+
+                            ClassMember::Property(property) => {
+                                if property.key.type_eq(prop) {
+                                    return Ok(*property
+                                        .value
+                                        .clone()
+                                        .unwrap_or_else(|| box Type::any(span, KeywordTypeMetadata { ..Default::default() })));
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+
+                    if let Some(super_class) = self.scope.get_super_class(true) {
+                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                            return Ok(v);
+                        }
+                    }
+
+                    dbg!();
+
+                    return Err(ErrorKind::NoSuchProperty {
+                        span,
+                        obj: Some(box obj.clone()),
+                        prop: Some(box prop.clone()),
+                    }
+                    .context("tried to access this in a static class member"));
+                }
+
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
@@ -1479,7 +1525,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if let Some(super_class) = self.scope.get_super_class().cloned() {
+                        if let Some(super_class) = self.scope.get_super_class(false) {
                             if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                                 return Ok(v);
                             }
@@ -1490,10 +1536,10 @@ impl Analyzer<'_, '_> {
                             class_name: self.scope.get_this_class_name(),
                             prop: prop.clone(),
                         }
-                        .into());
+                        .context("tried to access this in class"));
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class().cloned() {
+                    if let Some(super_class) = self.scope.get_super_class(false) {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1551,24 +1597,9 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class() {
-                        let super_class = super_class.clone();
-                        let super_class = self.expand(
-                            *span,
-                            super_class,
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..Default::default()
-                            },
-                        )?;
-
-                        if let Type::Class(Class { def, .. }) = super_class {
-                            if let Ok(v) = self.access_property(*span, &Type::ClassDef(*def), prop, type_mode, IdCtx::Var, opts) {
-                                return Ok(v);
-                            }
+                    if let Some(super_class) = self.scope.get_super_class(true) {
+                        if let Ok(v) = self.access_property(*span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                            return Ok(v);
                         }
                     }
 
@@ -1873,7 +1904,7 @@ impl Analyzer<'_, '_> {
                                 if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
                                     if !class_prop.accessor.getter && !class_prop.accessor.setter {
                                         if class_prop.key.type_eq(prop) {
-                                            return Err(ErrorKind::SuperCanOnlyAccessMethod { span }.into());
+                                            return Err(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span }.into());
                                         };
                                     }
                                 }
@@ -1963,7 +1994,7 @@ impl Analyzer<'_, '_> {
                     match self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
                         Ok(v) => return Ok(v),
                         Err(err) => {
-                            if let ErrorKind::SuperCanOnlyAccessMethod { .. } = &*err {
+                            if let ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } = &*err {
                                 return Err(err);
                             }
                         }
@@ -2000,7 +2031,7 @@ impl Analyzer<'_, '_> {
                     class_name: c.def.name.clone(),
                     prop: prop.clone(),
                 }
-                .into());
+                .context("tried to access property of a Type::Class"));
             }
 
             Type::Param(TypeParam {
@@ -2663,6 +2694,14 @@ impl Analyzer<'_, '_> {
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
+                                if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
+                                    if !p.accessor.getter && !p.accessor.setter {
+                                        if p.key.type_eq(prop) {
+                                            return Err(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span }.into());
+                                        };
+                                    }
+                                }
+
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
                                 }
@@ -2735,8 +2774,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx, opts) {
-                        return Ok(v);
+                    match self.access_property(span, super_ty, prop, type_mode, id_ctx, opts) {
+                        Ok(v) => return Ok(v),
+                        Err(err) => {
+                            if let ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } = &*err {
+                                return Err(err);
+                            }
+                        }
                     }
                 }
 
@@ -2763,7 +2807,7 @@ impl Analyzer<'_, '_> {
                     class_name: cls.name.clone(),
                     prop: prop.clone(),
                 }
-                .into());
+                .context("tried to access property of a Type::ClassDef"));
             }
 
             Type::Module(ty::Module { name, ref exports, .. }) => {
@@ -4192,10 +4236,16 @@ impl Analyzer<'_, '_> {
 
             self.report_error_for_super_reference_in_compute_keys(span, false);
 
-            if let Some(v) = self.scope.get_super_class() {
-                v.clone()
+            if self.ctx.super_references_super_class {
+                if let Some(v) = self.scope.get_super_class(self.ctx.is_static()) {
+                    v
+                } else {
+                    self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
+                    Type::any(span, Default::default())
+                }
             } else {
-                self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
+                self.storage
+                    .report(ErrorKind::SuperCanBeOnlyReferencedInDerivedClass { span }.into());
                 Type::any(span, Default::default())
             }
         };

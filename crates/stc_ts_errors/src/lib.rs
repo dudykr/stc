@@ -632,6 +632,11 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2660
+    SuperCanBeOnlyReferencedInDerivedClass {
+        span: Span,
+    },
+
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -1451,7 +1456,7 @@ pub enum ErrorKind {
     },
 
     /// TS2340
-    SuperCanOnlyAccessMethod {
+    SuperCanOnlyAccessPublicAndProtectedMethod {
         span: Span,
     },
 
@@ -1698,6 +1703,8 @@ impl ErrorKind {
             ErrorKind::NonOverlappingTypeCast { .. } => 2352,
 
             ErrorKind::SuperInClassWithoutSuper { .. } => 2335,
+
+            ErrorKind::SuperCanBeOnlyReferencedInDerivedClass { .. } => 2660,
 
             ErrorKind::NoSuchProperty { .. }
             | ErrorKind::NoSuchPropertyInThis { .. }
@@ -2051,7 +2058,7 @@ impl ErrorKind {
 
             ErrorKind::InvalidExtendDueToConstructorPrivate { .. } => 2675,
 
-            ErrorKind::SuperCanOnlyAccessMethod { .. } => 2340,
+            ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } => 2340,
 
             ErrorKind::DuplicatePrivateStaticInstance { .. } => 2804,
 

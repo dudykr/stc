@@ -51,6 +51,7 @@ impl Analyzer<'_, '_> {
             child.ctx.in_static_method = false;
             child.ctx.in_static_property_initializer = false;
             child.ctx.in_static_block = false;
+            child.ctx.super_references_super_class = false;
 
             let mut errors = Errors::default();
 

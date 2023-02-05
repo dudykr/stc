@@ -34,6 +34,7 @@ use swc_ecma_ast::*;
 use tracing::{debug, error, info, instrument};
 
 pub(crate) use self::vars::VarKind;
+use super::util::make_instance_type;
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -100,7 +101,7 @@ pub(crate) struct Scope<'a> {
 
     pub(super) this_object_members: Vec<TypeElement>,
 
-    pub(super) super_class: Option<Type>,
+    pub(super) super_class: Option<Box<Type>>,
 
     pub(super) return_values: ReturnValues,
 
@@ -356,12 +357,16 @@ impl Scope<'_> {
         }
     }
 
-    pub fn get_super_class(&self) -> Option<&Type> {
+    pub fn get_super_class(&self, is_static: bool) -> Option<Type> {
         if let ScopeKind::Class = self.kind {
-            return self.super_class.as_ref();
+            if is_static {
+                return self.super_class.as_deref().cloned();
+            } else {
+                return self.super_class.clone().as_deref().cloned().map(make_instance_type);
+            }
         }
 
-        self.parent?.get_super_class()
+        self.parent?.get_super_class(is_static)
     }
 
     pub fn remove_parent(self) -> Scope<'static> {

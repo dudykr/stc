@@ -7,7 +7,7 @@ use stc_ts_types::{
 use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{EsVersion, TsKeywordTypeKind};
 
 use super::call_new::ExtractKind;
 use crate::{
@@ -26,6 +26,10 @@ impl Analyzer<'_, '_> {
         let type_ann = self.expand_type_ann(f.span, type_ann)?;
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
+            if child.env.target() <= EsVersion::Es5 && child.ctx.in_static_property_initializer {
+                child.ctx.super_references_super_class = false;
+            }
+
             let type_params = try_opt!(f.type_params.validate_with(child));
 
             let params = {
