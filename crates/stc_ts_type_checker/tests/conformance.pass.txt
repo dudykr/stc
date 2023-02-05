@@ -1401,6 +1401,7 @@ expressions/optionalChaining/propertyAccessChain/propertyAccessChain.ts
 expressions/propertyAccess/propertyAccessNumericLiterals.ts
 expressions/propertyAccess/propertyAccessStringIndexSignature.ts
 expressions/superCalls/superCalls.ts
+expressions/superPropertyAccess/superPropertyAccessNoError.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess1.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess2.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess4.ts
