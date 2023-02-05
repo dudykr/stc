@@ -9,8 +9,8 @@ use std::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RMemberExpr, RMemberProp, RObjectPatProp, RPat, RPatOrExpr, RStmt,
-    RSwitchCase, RSwitchStmt,
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RMemberExpr, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
+    RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
