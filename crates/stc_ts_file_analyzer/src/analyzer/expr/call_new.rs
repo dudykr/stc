@@ -889,13 +889,6 @@ impl Analyzer<'_, '_> {
             })
             .convert_err(|err| {
                 if obj_type.is_type_param() {
-                    if callee.is_indexed_access_type() {
-                        return ErrorKind::NoCallSignature {
-                            span,
-                            callee: box callee.clone(),
-                        };
-                    }
-
                     return ErrorKind::NoSuchProperty {
                         span,
                         obj: Some(box obj_type.clone()),
