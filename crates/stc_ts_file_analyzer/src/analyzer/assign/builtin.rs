@@ -181,10 +181,7 @@ impl Analyzer<'_, '_> {
             // lhs: (TResult1#0#0 | PromiseLike<TResult1>);
             // rhs: Promise<boolean>
             if let Type::Union(l) = l.normalize() {
-                if l.types.len() == 2
-                    && l.types[0].is_type_param()
-                    && unwrap_builtin_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
-                {
+                if l.types.len() == 2 && unwrap_builtin_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0])) {
                     return Some(Ok(()));
                 }
             }
