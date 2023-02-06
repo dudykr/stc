@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/conformance/types/typeParameters/typeParameterList/propertyAccessOnTypeParameterWithConstraints5/1.ts",
+    "line": 15,
+    "col": 23,
+    "code": 2339
+  }
+]
