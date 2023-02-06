@@ -1,7 +1,8 @@
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
-use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Ref};
+use stc_ts_types::{Interface, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Ref, TypeElement};
+use swc_atoms::js_word;
 use swc_ecma_ast::*;
 use tracing::instrument;
 
@@ -314,6 +315,31 @@ pub(crate) fn unwrap_builtin_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: 
         }) if n.sym == *wanted_ref_name => {
             if type_args.params.len() == 1 {
                 return Some(&type_args.params[0]);
+            }
+        }
+
+        _ => {}
+    }
+
+    match wanted_ref_name {
+        "Promise" | "PromiseLike" => {
+            if let Type::Interface(ty) = ty.normalize() {
+                if &**ty.name.sym() == wanted_ref_name {
+                    for member in &ty.body {
+                        match member {
+                            TypeElement::Method(MethodSignature {
+                                key: Key::Normal { sym: then_sym, .. },
+                                type_params: Some(type_params_of_then),
+                                ..
+                            }) if &**then_sym == "then" => {
+                                if !type_params_of_then.params.is_empty() {
+                                    return type_params_of_then.params[0].default.as_deref();
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
             }
         }
 
