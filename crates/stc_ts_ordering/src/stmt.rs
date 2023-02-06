@@ -3,8 +3,8 @@
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, ROptChainBase,
-    ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl,
-    RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
+    ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName,
+    RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
@@ -334,6 +334,12 @@ impl Visit<RTsTypeRef> for DepAnalyzer {
             kind: IdCtx::Type,
             id: id.into(),
         });
+    }
+}
+
+impl Visit<RTsFnType> for DepAnalyzer {
+    fn visit(&mut self, t: &RTsFnType) {
+        t.type_ann.visit_with(self);
     }
 }
 
