@@ -1,8 +1,7 @@
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
-use stc_ts_types::{Interface, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Ref, TypeElement};
-use swc_atoms::js_word;
+use stc_ts_types::{Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Ref, TypeElement};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
