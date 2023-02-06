@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
@@ -215,12 +217,12 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.may_unwrap_promise {
-            if let Some(l) = unwrap_builtin_with_single_arg(l, "Promise") {
+            if let Ok(l) = self.get_awaited_type(span, Cow::Borrowed(l)) {
                 // We are in return type of an async function.
 
                 if let Ok(()) = self.assign_with_opts(
                     data,
-                    l,
+                    &l,
                     r,
                     AssignOpts {
                         may_unwrap_promise: false,
@@ -230,12 +232,12 @@ impl Analyzer<'_, '_> {
                     return Some(Ok(()));
                 }
 
-                if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
-                    let r = self.normalize_promise_arg(r);
+                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r)) {
+                    let r = self.normalize_promise_arg(&r);
 
                     if let Ok(()) = self.assign_with_opts(
                         data,
-                        l,
+                        &l,
                         &r,
                         AssignOpts {
                             may_unwrap_promise: false,
