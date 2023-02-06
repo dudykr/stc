@@ -901,48 +901,69 @@ impl Analyzer<'_, '_> {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }
 
-        let mut ty = match name {
-            RTsEntityName::Ident(i) => {
-                if i.sym == js_word!("undefined") {
-                    return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+        let mut ty = (|| -> VResult<_> {
+            let mut ty = match name {
+                RTsEntityName::Ident(i) => {
+                    if i.sym == js_word!("undefined") {
+                        return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                    }
+                    let mut i = i.clone();
+                    if i.span.is_dummy() {
+                        i.span = span.with_ctxt(i.span.ctxt);
+                    }
+
+                    let ctx = Ctx {
+                        disallow_suggesting_property_on_no_var: true,
+                        ..self.ctx
+                    };
+
+                    self.with_ctx(ctx).type_of_var(&i, TypeOfMode::RValue, None)?
                 }
-                let mut i = i.clone();
-                if i.span.is_dummy() {
-                    i.span = span.with_ctxt(i.span.ctxt);
+                RTsEntityName::TsQualifiedName(n) => {
+                    let ctx = Ctx {
+                        allow_module_var: true,
+                        ..self.ctx
+                    };
+                    let obj = self
+                        .with_ctx(ctx)
+                        .resolve_typeof(span, &n.left)
+                        .context("tried to resolve lhs of typeof")?;
+                    let i = &n.right;
+
+                    self.access_property(
+                        span,
+                        &obj,
+                        &Key::Normal {
+                            span: i.span,
+                            sym: i.sym.clone(),
+                        },
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                        Default::default(),
+                    )
+                    .context("tried to access property to resolve `typeof`")?
                 }
+            };
 
-                let ctx = Ctx {
-                    disallow_suggesting_property_on_no_var: true,
-                    ..self.ctx
-                };
+            // Prevent stack overflow
+            if let Some(u) = ty.as_union_type_mut() {
+                u.types.retain(|ty| {
+                    if let Type::Query(QueryType {
+                        expr: box QueryExpr::TsEntityName(q),
+                        ..
+                    }) = ty.normalize()
+                    {
+                        if q.type_eq(name) {
+                            return false;
+                        }
+                    }
 
-                self.with_ctx(ctx).type_of_var(&i, TypeOfMode::RValue, None)?
+                    true
+                });
             }
-            RTsEntityName::TsQualifiedName(n) => {
-                let ctx = Ctx {
-                    allow_module_var: true,
-                    ..self.ctx
-                };
-                let obj = self
-                    .with_ctx(ctx)
-                    .resolve_typeof(span, &n.left)
-                    .context("tried to resolve lhs of typeof")?;
-                let i = &n.right;
 
-                self.access_property(
-                    span,
-                    &obj,
-                    &Key::Normal {
-                        span: i.span,
-                        sym: i.sym.clone(),
-                    },
-                    TypeOfMode::RValue,
-                    IdCtx::Var,
-                    Default::default(),
-                )
-                .context("tried to access property to resolve `typeof`")?
-            }
-        };
+            Ok(ty)
+        })()?;
         ty.reposition(span);
         Ok(ty)
     }
