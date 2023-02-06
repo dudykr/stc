@@ -36,7 +36,7 @@ use super::generic::InferTypeOpts;
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -2123,7 +2123,7 @@ impl Analyzer<'_, '_> {
     /// - `Promise<T>` => `T`
     /// - `T | PromiseLike<T>` => `T`
     pub(crate) fn normalize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
-        if let Some(arg) = unwrap_ref_with_single_arg(arg, "Promise") {
+        if let Some(arg) = unwrap_builtin_with_single_arg(arg, "Promise") {
             return self.normalize_promise_arg(arg);
         }
 
@@ -2133,7 +2133,7 @@ impl Analyzer<'_, '_> {
                 let first = u.types[0].normalize();
                 let second = u.types[1].normalize();
 
-                if let Some(second_arg) = unwrap_ref_with_single_arg(second, "PromiseLike") {
+                if let Some(second_arg) = unwrap_builtin_with_single_arg(second, "PromiseLike") {
                     if second_arg.type_eq(first) {
                         return Cow::Borrowed(first);
                     }

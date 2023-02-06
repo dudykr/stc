@@ -9,7 +9,7 @@ use crate::{
         assign::{AssignData, AssignOpts},
         Analyzer,
     },
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -147,9 +147,9 @@ impl Analyzer<'_, '_> {
 
         if cfg!(feature = "fastpath") {
             if let Type::Array(l) = l {
-                if let Some(r_elem) = unwrap_ref_with_single_arg(r, "TemplateStringArray")
-                    .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
-                    .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
+                if let Some(r_elem) = unwrap_builtin_with_single_arg(r, "TemplateStringArray")
+                    .or_else(|| unwrap_builtin_with_single_arg(r, "Array"))
+                    .or_else(|| unwrap_builtin_with_single_arg(r, "ReadonlyArray"))
                 {
                     return Some(
                         self.assign_with_opts(data, &l.elem_type, r_elem, opts)
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(feature = "fastpath") {
-            if let Some(r_elem) = unwrap_ref_with_single_arg(r, "ReadonlyArray") {
+            if let Some(r_elem) = unwrap_builtin_with_single_arg(r, "ReadonlyArray") {
                 return Some(self.assign_with_opts(
                     data,
                     l,
@@ -183,7 +183,7 @@ impl Analyzer<'_, '_> {
             if let Type::Union(l) = l.normalize() {
                 if l.types.len() == 2
                     && l.types[0].is_type_param()
-                    && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
+                    && unwrap_builtin_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
                 {
                     return Some(Ok(()));
                 }
@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
 
         if cfg!(feature = "fastpath") {
             if let Type::Union(l) = l.normalize() {
-                if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+                if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
                     // Fast path for
                     //
                     // (Promise<number> | Promise<string> | Promise<boolean> |
@@ -200,7 +200,7 @@ impl Analyzer<'_, '_> {
                     // Promise<boolean>)>); = Promise<boolean>;
                     let mut done = true;
                     for l in &l.types {
-                        if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+                        if let Some(l) = unwrap_builtin_with_single_arg(l, "Promise") {
                             if let Ok(()) = self.assign_with_opts(data, l, r, opts) {
                                 return Some(Ok(()));
                             }
@@ -218,7 +218,7 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.may_unwrap_promise {
-            if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+            if let Some(l) = unwrap_builtin_with_single_arg(l, "Promise") {
                 // We are in return type of an async function.
 
                 if let Ok(()) = self.assign_with_opts(
@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
                     return Some(Ok(()));
                 }
 
-                if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+                if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
                     let r = self.normalize_promise_arg(r);
 
                     if let Ok(()) = self.assign_with_opts(
@@ -251,8 +251,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
-            if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+        if let Some(l) = unwrap_builtin_with_single_arg(l, "Promise") {
+            if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
                 return Some(
                     self.assign_with_opts(data, l, r, opts)
                         .context("tried to assign a promise to another using optimized algorithm"),

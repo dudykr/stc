@@ -34,7 +34,7 @@ pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use super::expr::{AccessPropertyOpts, TypeOfMode};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
-    util::{unwrap_ref_with_single_arg, RemoveTypes},
+    util::{unwrap_builtin_with_single_arg, RemoveTypes},
     VResult,
 };
 
@@ -531,17 +531,17 @@ impl Analyzer<'_, '_> {
                 append_type_as_union: true,
                 ..opts
             };
-            if let Some(param_elem) = unwrap_ref_with_single_arg(param, "Array")
-                .or_else(|| unwrap_ref_with_single_arg(param, "ArrayLike"))
-                .or_else(|| unwrap_ref_with_single_arg(param, "ReadonlyArray"))
+            if let Some(param_elem) = unwrap_builtin_with_single_arg(param, "Array")
+                .or_else(|| unwrap_builtin_with_single_arg(param, "ArrayLike"))
+                .or_else(|| unwrap_builtin_with_single_arg(param, "ReadonlyArray"))
             {
                 if let Type::Array(arg) = arg {
                     return self.infer_type(span, inferred, param_elem, &arg.elem_type, opts);
                 }
 
-                if let Some(arg_elem) = unwrap_ref_with_single_arg(arg, "Array")
-                    .or_else(|| unwrap_ref_with_single_arg(arg, "ArrayLike"))
-                    .or_else(|| unwrap_ref_with_single_arg(arg, "ReadonlyArray"))
+                if let Some(arg_elem) = unwrap_builtin_with_single_arg(arg, "Array")
+                    .or_else(|| unwrap_builtin_with_single_arg(arg, "ArrayLike"))
+                    .or_else(|| unwrap_builtin_with_single_arg(arg, "ReadonlyArray"))
                 {
                     return self.infer_type(span, inferred, param_elem, arg_elem, opts);
                 }

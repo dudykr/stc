@@ -21,7 +21,7 @@ use crate::{
         generic::InferTypeOpts,
         Analyzer,
     },
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -58,12 +58,12 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath") && l_params.len() == 1 && l_params[0].ty.is_type_param() && l_params[0].ty.span().is_dummy() {
                 if let Some(l_ret_ty) = l_ret_ty {
-                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(r_ret_ty, "Promise") {
+                    if let Some(r_ret_ty) = unwrap_builtin_with_single_arg(r_ret_ty, "Promise") {
                         if let Type::Union(l_ret_ty) = l_ret_ty.normalize() {
                             // Exact match
                             if l_ret_ty.types.len() == 4
                                 && l_ret_ty.types[0].is_type_param()
-                                && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
+                                && unwrap_builtin_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
                                 && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                                 && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
                             {
