@@ -1370,10 +1370,19 @@ impl Analyzer<'_, '_> {
                                 .collect(),
                         }
                     } else {
-                        if let ErrorKind::MissingFields { .. } = err {
-                            return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() };
+                        match err {
+                            ErrorKind::Errors { errors, span } => {
+                                for e in &errors {
+                                    if let ErrorKind::MissingFields { .. } = **e {
+                                        return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() };
+                                    }
+                                }
+
+                                ErrorKind::Errors { errors, span }
+                            }
+                            ErrorKind::MissingFields { .. } => ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() },
+                            _ => err,
                         }
-                        err
                     }
                 })?;
             };
