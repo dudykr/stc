@@ -948,16 +948,14 @@ impl Analyzer<'_, '_> {
             // Prevent stack overflow
             if let Some(u) = ty.as_union_type_mut() {
                 u.types.retain(|ty| {
-                    match ty.normalize() {
-                        Type::Query(QueryType {
-                            expr: box QueryExpr::TsEntityName(q),
-                            ..
-                        }) => {
-                            if q.type_eq(name) {
-                                return false;
-                            }
+                    if let Type::Query(QueryType {
+                        expr: box QueryExpr::TsEntityName(q),
+                        ..
+                    }) = ty.normalize()
+                    {
+                        if q.type_eq(name) {
+                            return false;
                         }
-                        _ => {}
                     }
 
                     true
