@@ -8,8 +8,8 @@ use stc_ts_errors::{
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple,
-    Type, TypeElement, TypeLit, TypeParam,
+    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType,
+    TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -1031,6 +1031,51 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
+            (
+                Type::Tuple(Tuple {
+                    span: tspan,
+                    elems,
+                    metadata,
+                    tracker,
+                }),
+                Type::Interface(Interface {
+                    span: ispan,
+                    name,
+                    type_params,
+                    extends,
+                    body,
+                    metadata: imetadata,
+                    tracker: itracker,
+                }),
+            ) => {
+                let lhs = elems.iter().map(|TupleElement { span, label, ty, tracker }| ty);
+                for parent in extends {
+                    let params = parent.type_args.clone().unwrap().params;
+                    let rhs = self
+                        .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
+                        .freezed();
+                    match rhs {
+                        Type::Array(_) | Type::Tuple(_) | Type::Tpl(_) => {
+                            for (a, b) in lhs.clone().zip(params) {
+                                self.assign_with_opts(data, a, &b, opts).context("%%%%test context")?;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                return Ok(());
+                // let tys2 = extends.iter().map(|parent| {
+                //     self.type_of_ts_entity_name(span, &parent.expr,
+                // parent.type_args.as_deref())
+                //         .unwrap()
+                //         .freezed()
+                // });
+                // for (a, b) in tys.zip(tys2) {
+                //     self.assign_with_opts(data, a, &b, opts)
+                //         .context("tried to assign to the true type")?;
+                // }
+            }
             _ => {}
         }
 
@@ -1421,20 +1466,60 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Interface(Interface {
-                span,
+                // span,
                 name,
                 type_params,
                 extends,
                 body,
                 metadata: InterfaceMetadata { common },
                 tracker,
+                ..
             }) => {
-                for parent in extends {
-                    let ty = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
-                    if let Type::Array(_) = &ty {
-                        return self.assign_with_opts(data, &ty, rhs, opts);
-                    }
-                }
+                // for parent in extends {
+                //     let ty = self.type_of_ts_entity_name(parent.span(),
+                // &parent.expr, parent.type_args.as_deref())?;
+                // if let Type::Array(_) | Type::Tpl(_) = &ty {
+                // return self.assign_with_opts(data, &ty, rhs,
+                // opts);     } }
+
+                // let mut errors = vec![];
+                // for parent in extends {
+                //     let parent = self
+                //         .type_of_ts_entity_name(span, &parent.expr,
+                // parent.type_args.as_deref())?         .freezed();
+
+                //     // An interface can extend a class.
+                //     let parent = self.instantiate_class(span, &parent)?;
+
+                //     let res = self.assign_with_opts(
+                //         data,
+                //         &parent,
+                //         rhs,
+                //         AssignOpts {
+                //             allow_unknown_rhs: Some(true),
+                //             ..opts
+                //         },
+                //     );
+
+                //     errors.extend(res.err());
+                // }
+
+                // if !extends.is_empty() && errors.is_empty() {
+                //     return Ok(());
+                // }
+
+                // if !errors.is_empty() {
+                //     return Err(ErrorKind::AssignFailed {
+                //         span,
+                //         left: box to.clone(),
+                //         right: box rhs.clone(),
+                //         right_ident: opts.right_ident_span,
+                //         cause: errors,
+                //     }
+                //     .into());
+                // }
+
+                // return Ok(());
             }
             Type::Ref(..) => {
                 let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
