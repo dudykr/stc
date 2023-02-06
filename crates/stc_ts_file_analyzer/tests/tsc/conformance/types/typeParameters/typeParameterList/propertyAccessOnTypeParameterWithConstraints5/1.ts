@@ -8,11 +8,6 @@ class B extends A {
     }
 }
 
-class C<U extends T, T extends A> {
-}
-
-var r = (new C<B, A>()).f();
-
 interface I<U extends T, T extends A> {
     foo: U;
 }
