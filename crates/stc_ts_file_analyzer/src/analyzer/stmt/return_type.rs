@@ -368,9 +368,11 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            may_unwrap_promise: true,
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of an async generator")
                     .report(&mut self.storage);
                 }
 
@@ -420,6 +422,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of a generator")
                     .report(&mut self.storage);
                 }
 
