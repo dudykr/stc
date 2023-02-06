@@ -835,7 +835,10 @@ impl Analyzer<'_, '_> {
 
                     if !opts.for_fn_assignment {
                         if let Some(arg_type_params) = &a.type_params {
-                            let mut data = InferData::default();
+                            let mut data = InferData {
+                                dejavu: inferred.dejavu.clone(),
+                                ..Default::default()
+                            };
                             self.infer_type_of_fn_params(span, &mut data, &a.params, &p.params, InferTypeOpts { use_error: true, ..opts })?;
 
                             for name in data.errored {
@@ -1255,7 +1258,10 @@ impl Analyzer<'_, '_> {
                 let mut data = vec![];
 
                 for ty in &arg.types {
-                    let mut inferred = InferData::default();
+                    let mut inferred = InferData {
+                        dejavu: inferred.dejavu.clone(),
+                        ..Default::default()
+                    };
                     self.infer_type(span, &mut inferred, param, ty, opts)
                         .context("failed to in infer element type of an intersection type")?;
                     data.push(inferred);
@@ -1537,7 +1543,10 @@ impl Analyzer<'_, '_> {
                                             let old = take(&mut self.mapped_type_param_name);
                                             self.mapped_type_param_name = vec![name.clone()];
 
-                                            let mut data = InferData::default();
+                                            let mut data = InferData {
+                                                dejavu: inferred.dejavu.clone(),
+                                                ..Default::default()
+                                            };
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
                                             let inferred_ty = data.type_params.remove(&name).map(|v| v.inferred_type).freezed();
 
@@ -1614,7 +1623,10 @@ impl Analyzer<'_, '_> {
                                         let old = take(&mut self.mapped_type_param_name);
                                         self.mapped_type_param_name = vec![name.clone()];
 
-                                        let mut data = InferData::default();
+                                        let mut data = InferData {
+                                            dejavu: inferred.dejavu.clone(),
+                                            ..Default::default()
+                                        };
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
                                         let mut defaults = take(&mut data.defaults);
                                         let mut map = self.finalize_inference(span, &[], data);
@@ -1686,7 +1698,10 @@ impl Analyzer<'_, '_> {
                             let old = take(&mut self.mapped_type_param_name);
                             self.mapped_type_param_name = vec![name.clone()];
 
-                            let mut data = InferData::default();
+                            let mut data = InferData {
+                                dejavu: inferred.dejavu.clone(),
+                                ..Default::default()
+                            };
                             self.infer_type(span, &mut data, param_ty, &arg.elem_type, opts)?;
                             let mut map = self.finalize_inference(span, &[], data);
                             let mut inferred_ty = map.types.remove(&name);
