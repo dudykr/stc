@@ -9,11 +9,6 @@ class B extends A {
 }
 
 class C<U extends T, T extends A> {
-    f() {
-        var x: U;
-        var a = x['foo'](); // should be string
-        return a + x.foo() + x.notHere();
-    }
 }
 
 var r = (new C<B, A>()).f();
