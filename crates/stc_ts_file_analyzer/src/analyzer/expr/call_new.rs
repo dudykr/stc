@@ -853,7 +853,6 @@ impl Analyzer<'_, '_> {
             let callee_before_expanding = force_dump_type_as_string(&callee);
             let callee = self
                 .normalize(Some(span), Cow::Owned(callee), NormalizeTypeOpts { ..Default::default() })?
-                .freezed()
                 .into_owned();
 
             if let Type::ClassDef(cls) = callee.normalize() {
@@ -866,7 +865,7 @@ impl Analyzer<'_, '_> {
             self.get_best_return_type(
                 span,
                 expr,
-                callee.clone(),
+                callee,
                 kind,
                 type_args,
                 args,
