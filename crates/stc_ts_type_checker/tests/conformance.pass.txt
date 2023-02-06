@@ -2033,6 +2033,7 @@ scanner/ecmascript5/scannertest1.ts
 statements/VariableStatements/everyTypeWithAnnotationAndInitializer.ts
 statements/VariableStatements/everyTypeWithInitializer.ts
 statements/VariableStatements/recursiveInitializer.ts
+statements/VariableStatements/validMultipleVariableDeclarations.ts
 statements/breakStatements/doWhileBreakStatements.ts
 statements/breakStatements/forBreakStatements.ts
 statements/breakStatements/forInBreakStatements.ts
@@ -2100,6 +2101,7 @@ statements/for-ofStatements/ES5For-ofTypeCheck8.ts
 statements/for-ofStatements/ES5For-ofTypeCheck9.ts
 statements/for-ofStatements/ES5for-of32.ts
 statements/forStatements/forStatements.ts
+statements/forStatements/forStatementsMultipleValidDecl.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
 statements/switchStatements/switchStatements.ts
