@@ -30,6 +30,7 @@ use swc_ecma_ast::{Accessibility, TsKeywordTypeKind};
 use tracing::{debug, info, warn};
 use ty::TypeExt;
 
+use super::AccessPropertyOpts;
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -836,12 +837,23 @@ impl Analyzer<'_, '_> {
 
             let callee = self
                 .with_ctx(ctx)
-                .access_property(span, &obj_type, prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                .access_property(
+                    span,
+                    &obj_type,
+                    prop,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    AccessPropertyOpts {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        ..Default::default()
+                    },
+                )
                 .context("tried to access property to call it")?;
 
             let callee_before_expanding = force_dump_type_as_string(&callee);
             let callee = self
                 .normalize(Some(span), Cow::Owned(callee), NormalizeTypeOpts { ..Default::default() })?
+                .freezed()
                 .into_owned();
 
             if let Type::ClassDef(cls) = callee.normalize() {
@@ -854,7 +866,7 @@ impl Analyzer<'_, '_> {
             self.get_best_return_type(
                 span,
                 expr,
-                callee,
+                callee.clone(),
                 kind,
                 type_args,
                 args,
@@ -877,6 +889,13 @@ impl Analyzer<'_, '_> {
             })
             .convert_err(|err| {
                 if obj_type.is_type_param() {
+                    if callee.is_indexed_access_type() {
+                        return ErrorKind::NoCallSignature {
+                            span,
+                            callee: box callee.clone(),
+                        };
+                    }
+
                     return ErrorKind::NoSuchProperty {
                         span,
                         obj: Some(box obj_type.clone()),
