@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         span,
                         allow_unknown_rhs: Some(true),
-                        may_unwrap_promise: true,
+                        may_unwrap_promise: is_async,
                         ..Default::default()
                     },
                 )
