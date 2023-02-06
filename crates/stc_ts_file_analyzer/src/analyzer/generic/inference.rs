@@ -26,7 +26,7 @@ use tracing::{debug, error, info, Level};
 use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
     ty::TypeExt,
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -971,7 +971,7 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        if let Some(elem_type) = unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
+        if let Some(elem_type) = unwrap_builtin_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
             Type::Interface(Interface { name, body, .. }) => {
                 if name == "ReadonlyArray" {
                     body.iter()
