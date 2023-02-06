@@ -10,7 +10,7 @@ use swc_common::{Span, SyntaxContext};
 
 use crate::{
     analyzer::{expr::TypeOfMode, Analyzer},
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     validator::ValidateWith,
     VResult,
 };
@@ -76,7 +76,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
-        if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
+        if let Some(arg) = unwrap_builtin_with_single_arg(&ty, "Promise") {
             return self.get_awaited_type(span, Cow::Borrowed(arg)).map(Cow::into_owned).map(Cow::Owned);
         }
 
