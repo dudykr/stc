@@ -1031,23 +1031,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            (
-                Type::Tuple(Tuple {
-                    span: tspan,
-                    elems,
-                    metadata,
-                    tracker,
-                }),
-                Type::Interface(Interface {
-                    span: ispan,
-                    name,
-                    type_params,
-                    extends,
-                    body,
-                    metadata: imetadata,
-                    tracker: itracker,
-                }),
-            ) => {
+            (Type::Tuple(Tuple { elems, .. }), Type::Interface(Interface { extends, .. })) => {
                 let lhs = elems.iter().map(|TupleElement { ty, .. }| ty);
                 for parent in extends {
                     let params = parent.type_args.clone().unwrap().params;
