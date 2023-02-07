@@ -1048,30 +1048,16 @@ impl Analyzer<'_, '_> {
                     tracker: itracker,
                 }),
             ) => {
-                let lhs = elems.iter().map(|TupleElement { span, label, ty, tracker }| ty);
+                let lhs = elems.iter().map(|TupleElement { ty, .. }| ty);
                 for parent in extends {
                     let params = parent.type_args.clone().unwrap().params;
                     let rhs = self
                         .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
                         .freezed();
-                    if let Some(Array {
-                        span,
-                        elem_type,
-                        metadata,
-                        tracker,
-                    }) = rhs.array()
-                    {
-                        if let Some(Union {
-                            span,
-                            types,
-                            metadata,
-                            tracker,
-                        }) = elem_type.union_type()
-                        {
+                    if let Some(Array { elem_type, .. }) = rhs.array() {
+                        if let Some(Union { types, .. }) = elem_type.union_type() {
                             for (lhs, rhs) in lhs.clone().zip(types) {
-                                if let (Some(KeywordType { kind: lkind, .. }), Some(KeywordType { kind: rkind, .. })) =
-                                    (lhs.to_owned().keyword(), rhs.clone().keyword())
-                                {
+                                if let (Some(_), Some(_)) = (lhs.to_owned().keyword(), rhs.clone().keyword()) {
                                     return self.assign_with_opts(data, lhs, &rhs, opts);
                                 }
                             }
