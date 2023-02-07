@@ -434,9 +434,11 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of a function")
                     .report(&mut self.storage);
                 }
             }
