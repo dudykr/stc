@@ -117,6 +117,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span,
                             allow_assignment_of_void: Some(true),
+                            may_unwrap_promise: f.is_async,
                             ..Default::default()
                         },
                     )?;
