@@ -7,9 +7,9 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple,
-    TupleElement, Type, TypeElement, TypeLit, TypeParam, Union,
+    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, TypeParam, Union,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
