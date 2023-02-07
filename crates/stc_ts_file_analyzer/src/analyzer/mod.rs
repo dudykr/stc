@@ -466,9 +466,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             storage,
             mutations,
             export_equals_span: DUMMY_SP,
-            imports: Default::default(),
-            prepend_stmts: Default::default(),
-            append_stmts: Default::default(),
             scope,
             config: InnerConfig { is_builtin, is_dts },
             ctx: Ctx {
@@ -532,7 +529,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             loader,
             cur_facts: Default::default(),
             mapped_type_param_name: vec![],
-            imports_by_id: Default::default(),
             debugger,
             data,
             destructure_count: Default::default(),
@@ -575,8 +571,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         H: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>),
     {
         let ctx = self.ctx;
-        let imports = take(&mut self.imports);
-        let imports_by_id = take(&mut self.imports_by_id);
         let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
         let module_data = if kind == ScopeKind::Module {
@@ -587,10 +581,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
-        let (ret, errors, imports, imports_by_id, cur_facts, mut child_scope, prepend_stmts, append_stmts, mutations, data) = {
+        let (ret, errors, cur_facts, mut child_scope, mutations, data) = {
             let mut child = self.new(child_scope, data);
-            child.imports = imports;
-            child.imports_by_id = imports_by_id;
             child.mutations = mutations;
             child.cur_facts = cur_facts;
             child.ctx = ctx;
@@ -606,20 +598,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             (
                 ret,
                 errors,
-                child.imports,
-                child.imports_by_id,
                 child.cur_facts,
                 child.scope.remove_parent(),
-                child.prepend_stmts,
-                child.append_stmts,
                 child.mutations.take(),
                 take(&mut child.data),
             )
         };
         self.storage.report_all(errors);
 
-        self.imports = imports;
-        self.imports_by_id = imports_by_id;
         self.cur_facts = cur_facts;
         self.mutations = mutations;
         self.data = data;
@@ -628,8 +614,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         self.scope.move_types_from_child(&mut child_scope);
         self.scope.move_vars_from_child(&mut child_scope);
-        self.prepend_stmts.extend(prepend_stmts);
-        self.append_stmts.extend(append_stmts);
         if kind == ScopeKind::Module {
             self.data.for_module = module_data;
         }
@@ -880,6 +864,7 @@ impl Analyzer<'_, '_> {
                     // Import successful
                     if ctxt != dep {
                         analyzer
+                            .data
                             .imports
                             .get(&(ctxt, dep))
                             .cloned()
