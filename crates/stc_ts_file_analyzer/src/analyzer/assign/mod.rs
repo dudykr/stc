@@ -2,14 +2,14 @@ use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
+    Array, Conditional, EnumVariant, Freezed, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
     KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType,
-    TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, Union,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -1054,27 +1054,32 @@ impl Analyzer<'_, '_> {
                     let rhs = self
                         .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
                         .freezed();
-                    match rhs {
-                        Type::Array(_) | Type::Tuple(_) | Type::Tpl(_) => {
-                            for (a, b) in lhs.clone().zip(params) {
-                                self.assign_with_opts(data, a, &b, opts).context("%%%%test context")?;
+                    if let Some(Array {
+                        span,
+                        elem_type,
+                        metadata,
+                        tracker,
+                    }) = rhs.array()
+                    {
+                        if let Some(Union {
+                            span,
+                            types,
+                            metadata,
+                            tracker,
+                        }) = elem_type.union_type()
+                        {
+                            for (lhs, ty) in lhs.clone().zip(types) {
+                                if let (Some(KeywordType { kind: lkind, .. }), Some(KeywordType { kind: rkind, .. })) =
+                                    (lhs.to_owned().keyword(), ty.keyword())
+                                {
+                                    println!("@@@\n{lkind:#?}:{rkind:#?}");
+                                    let diff = lkind == rkind;
+                                    println!("@@@\n{diff}");
+                                }
                             }
                         }
-                        _ => {}
-                    }
+                    };
                 }
-
-                return Ok(());
-                // let tys2 = extends.iter().map(|parent| {
-                //     self.type_of_ts_entity_name(span, &parent.expr,
-                // parent.type_args.as_deref())
-                //         .unwrap()
-                //         .freezed()
-                // });
-                // for (a, b) in tys.zip(tys2) {
-                //     self.assign_with_opts(data, a, &b, opts)
-                //         .context("tried to assign to the true type")?;
-                // }
             }
             _ => {}
         }
