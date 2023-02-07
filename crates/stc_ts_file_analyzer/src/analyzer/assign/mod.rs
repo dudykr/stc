@@ -1265,7 +1265,17 @@ impl Analyzer<'_, '_> {
                 // This is required to handle intersections of function-like types.
                 if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
                     if self
-                        .assign_to_type_elements(data, li.span, &l_type_lit.members, rhs, l_type_lit.metadata, opts)
+                        .assign_to_type_elements(
+                            data,
+                            li.span,
+                            &l_type_lit.members,
+                            rhs,
+                            l_type_lit.metadata,
+                            AssignOpts {
+                                is_assigning_to_class_members: true,
+                                ..opts
+                            },
+                        )
                         .is_ok()
                     {
                         return Ok(());

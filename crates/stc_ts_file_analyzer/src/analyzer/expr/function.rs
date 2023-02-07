@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
+use stc_ts_errors::DebugExt;
 use stc_ts_types::{
     type_id::DestructureId, Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type, TypeParam, Union,
 };
@@ -11,7 +12,7 @@ use swc_ecma_ast::{EsVersion, TsKeywordTypeKind};
 
 use super::call_new::ExtractKind;
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, pat::PatMode, Analyzer, Ctx, ScopeKind},
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, pat::PatMode, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty::TypeExt,
     validator,
     validator::ValidateWith,
@@ -110,16 +111,20 @@ impl Analyzer<'_, '_> {
             if let Some(ref declared) = declared_ret_ty {
                 let span = inferred_return_type.span();
                 if let Some(ref inferred) = inferred_return_type {
-                    child.assign_with_opts(
-                        &mut Default::default(),
-                        declared,
-                        inferred,
-                        AssignOpts {
-                            span,
-                            allow_assignment_of_void: Some(true),
-                            ..Default::default()
-                        },
-                    )?;
+                    child
+                        .assign_with_opts(
+                            &mut Default::default(),
+                            declared,
+                            inferred,
+                            AssignOpts {
+                                span,
+                                allow_assignment_of_void: Some(true),
+                                may_unwrap_promise: f.is_async,
+                                ..Default::default()
+                            },
+                        )
+                        .context("tried to assign inferred return type to declared return type of an arrow")
+                        .report(&mut child.storage);
                 }
             }
 
