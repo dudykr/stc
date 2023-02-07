@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
                 init: None,
                 definite: false,
             };
-            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+            self.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
@@ -450,7 +450,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        if let Some(data) = self.imports.get(&(ctxt, from)) {
+        if let Some(data) = self.data.imports.get(&(ctxt, from)) {
             match data.normalize() {
                 Type::Module(data) => {
                     if let Some(ty) = data.exports.vars.get(orig.sym()) {

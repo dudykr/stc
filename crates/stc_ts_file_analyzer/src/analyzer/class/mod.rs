@@ -1643,7 +1643,7 @@ impl Analyzer<'_, '_> {
                                 });
 
                                 if has_class_in_super {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
@@ -1665,7 +1665,7 @@ impl Analyzer<'_, '_> {
                                         }],
                                     })));
                                 } else {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
+                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         declare: false,

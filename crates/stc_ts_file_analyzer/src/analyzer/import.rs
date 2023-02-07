@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
                 return (ctxt, Type::any(span, Default::default()));
             }
         };
-        let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
+        let data = match self.data.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
