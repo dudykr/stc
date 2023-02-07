@@ -1030,7 +1030,7 @@ impl Analyzer<'_, '_> {
 
             {
                 // Imported variables
-                if let Some(info) = self.imports_by_id.get(name) {
+                if let Some(info) = self.data.imports_by_id.get(name) {
                     match info.data.normalize() {
                         Type::Module(data) => {
                             if let Some(var_ty) = data.exports.vars.get(name.sym()) {
@@ -1114,7 +1114,7 @@ impl Analyzer<'_, '_> {
             return Ok(Some(v));
         }
 
-        if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
+        if let Some(ModuleInfo { data, .. }) = self.data.imports_by_id.get(name) {
             match data.normalize() {
                 Type::Module(data) => {
                     if let Some(types) = data.exports.types.get(name.sym()) {

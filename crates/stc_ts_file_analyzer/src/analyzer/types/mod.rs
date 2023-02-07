@@ -2341,7 +2341,7 @@ impl Analyzer<'_, '_> {
         let top_id: Id = l.into();
 
         let is_resolved = self.data.bindings.types.contains(&top_id)
-            || self.imports_by_id.contains_key(&top_id)
+            || self.data.imports_by_id.contains_key(&top_id)
             || self.data.unresolved_imports.contains(&top_id)
             || self.env.get_global_type(l.span, top_id.sym()).is_ok();
 

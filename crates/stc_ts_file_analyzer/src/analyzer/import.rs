@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
                 return (ctxt, Type::any(span, Default::default()));
             }
         };
-        let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
+        let data = match self.data.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
-        if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(id) {
+        if let Some(ModuleInfo { module_id, data }) = self.data.imports_by_id.get(id) {
             match data.normalize() {
                 Type::Module(data) => {
                     if let Some(dep) = data.exports.vars.get(id.sym()).cloned() {
@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
-        self.imports.entry((ctxt, dep_module_id)).or_insert(ty);
+        self.data.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
     }
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
 
         // Check for entry only if import was successful.
         if ctxt != target {
-            if let Some(data) = self.imports.get(&(ctxt, target)) {
+            if let Some(data) = self.data.imports.get(&(ctxt, target)) {
                 match data.normalize() {
                     Type::Module(data) => {
                         for (i, ty) in &data.exports.vars {
