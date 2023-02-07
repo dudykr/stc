@@ -2,14 +2,14 @@ use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
+    debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Freezed, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType,
-    TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, Union,
+    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, InterfaceMetadata, Intersection, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple,
+    TupleElement, Type, TypeElement, TypeLit, TypeParam, Union,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -1068,13 +1068,11 @@ impl Analyzer<'_, '_> {
                             tracker,
                         }) = elem_type.union_type()
                         {
-                            for (lhs, ty) in lhs.clone().zip(types) {
+                            for (lhs, rhs) in lhs.clone().zip(types) {
                                 if let (Some(KeywordType { kind: lkind, .. }), Some(KeywordType { kind: rkind, .. })) =
-                                    (lhs.to_owned().keyword(), ty.keyword())
+                                    (lhs.to_owned().keyword(), rhs.clone().keyword())
                                 {
-                                    println!("@@@\n{lkind:#?}:{rkind:#?}");
-                                    let diff = lkind == rkind;
-                                    println!("@@@\n{diff}");
+                                    return self.assign_with_opts(data, lhs, &rhs, opts);
                                 }
                             }
                         }
@@ -1470,62 +1468,6 @@ impl Analyzer<'_, '_> {
         }
 
         match rhs {
-            Type::Interface(Interface {
-                // span,
-                name,
-                type_params,
-                extends,
-                body,
-                metadata: InterfaceMetadata { common },
-                tracker,
-                ..
-            }) => {
-                // for parent in extends {
-                //     let ty = self.type_of_ts_entity_name(parent.span(),
-                // &parent.expr, parent.type_args.as_deref())?;
-                // if let Type::Array(_) | Type::Tpl(_) = &ty {
-                // return self.assign_with_opts(data, &ty, rhs,
-                // opts);     } }
-
-                // let mut errors = vec![];
-                // for parent in extends {
-                //     let parent = self
-                //         .type_of_ts_entity_name(span, &parent.expr,
-                // parent.type_args.as_deref())?         .freezed();
-
-                //     // An interface can extend a class.
-                //     let parent = self.instantiate_class(span, &parent)?;
-
-                //     let res = self.assign_with_opts(
-                //         data,
-                //         &parent,
-                //         rhs,
-                //         AssignOpts {
-                //             allow_unknown_rhs: Some(true),
-                //             ..opts
-                //         },
-                //     );
-
-                //     errors.extend(res.err());
-                // }
-
-                // if !extends.is_empty() && errors.is_empty() {
-                //     return Ok(());
-                // }
-
-                // if !errors.is_empty() {
-                //     return Err(ErrorKind::AssignFailed {
-                //         span,
-                //         left: box to.clone(),
-                //         right: box rhs.clone(),
-                //         right_ident: opts.right_ident_span,
-                //         cause: errors,
-                //     }
-                //     .into());
-                // }
-
-                // return Ok(());
-            }
             Type::Ref(..) => {
                 let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
                 new_rhs.freeze();
