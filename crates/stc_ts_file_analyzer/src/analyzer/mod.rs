@@ -252,11 +252,12 @@ pub struct Analyzer<'scope, 'b> {
 
     debugger: Option<Debugger>,
 
-    data: AnalyzerData,
+    data: Box<AnalyzerData>,
 
     destructure_count: Rc<Cell<DestructureId>>,
 }
 
+/// This type **should be boxed** for performance.
 #[derive(Debug, Default)]
 struct AnalyzerData {
     unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
@@ -429,7 +430,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     }
 
     #[allow(clippy::wrong_self_convention)]
-    fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
+    fn new(&'b self, scope: Scope<'scope>, data: Box<AnalyzerData>) -> Self {
         Self::new_inner(
             self.env.clone(),
             self.cm.clone(),
@@ -454,7 +455,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         scope: Scope<'scope>,
         is_builtin: bool,
         debugger: Option<Debugger>,
-        data: AnalyzerData,
+        data: Box<AnalyzerData>,
     ) -> Self {
         let is_dts = storage.is_dts();
 
