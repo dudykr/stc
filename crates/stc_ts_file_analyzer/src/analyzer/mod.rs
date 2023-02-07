@@ -227,16 +227,6 @@ pub struct Analyzer<'scope, 'b> {
 
     export_equals_span: Span,
 
-    imports_by_id: FxHashMap<Id, ModuleInfo>,
-
-    /// Value should [Type::Arc] of [Type::Module]
-    imports: FxHashMap<(ModuleId, ModuleId), Type>,
-    /// See docs of ModuleItemMut for documentation.
-    prepend_stmts: Vec<RStmt>,
-
-    /// See docs of ModuleItemMut for documentation.
-    append_stmts: Vec<RStmt>,
-
     scope: Scope<'scope>,
 
     ctx: Ctx,
@@ -260,6 +250,16 @@ pub struct Analyzer<'scope, 'b> {
 /// This type **should be boxed** for performance.
 #[derive(Debug, Default)]
 struct AnalyzerData {
+    imports_by_id: FxHashMap<Id, ModuleInfo>,
+
+    /// Value should [Type::Arc] of [Type::Module]
+    imports: FxHashMap<(ModuleId, ModuleId), Type>,
+    /// See docs of ModuleItemMut for documentation.
+    prepend_stmts: Vec<RStmt>,
+
+    /// See docs of ModuleItemMut for documentation.
+    append_stmts: Vec<RStmt>,
+
     unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
 
     /// Used to check mixed exports.
