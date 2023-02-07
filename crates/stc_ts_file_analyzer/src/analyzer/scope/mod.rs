@@ -47,7 +47,7 @@ use crate::{
         Analyzer, Ctx, ResultExt,
     },
     loader::ModuleInfo,
-    ty::{self, Alias, Interface, Ref, Tuple, Type, TypeExt, TypeLit, Union},
+    ty::{self, Alias, Interface, Ref, Tuple, Type, TypeLit, Union},
     type_facts::TypeFacts,
     util::contains_infer_type,
     VResult,
@@ -1487,8 +1487,6 @@ impl Analyzer<'_, '_> {
                             }
                             Type::Query(..) | Type::Function(..) => {}
                             _ => {
-                                let generalized_var_ty = var_ty.clone().generalize_lit();
-
                                 match var_ty.normalize() {
                                     // Allow overriding query type.
                                     Type::Query(..) => {}
@@ -1506,7 +1504,7 @@ impl Analyzer<'_, '_> {
                                             .assign_with_opts(
                                                 &mut Default::default(),
                                                 &ty,
-                                                &generalized_var_ty,
+                                                &var_ty,
                                                 AssignOpts {
                                                     span,
                                                     for_overload: true,
