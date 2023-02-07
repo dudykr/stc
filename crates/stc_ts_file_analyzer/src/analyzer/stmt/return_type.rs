@@ -368,6 +368,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
                             may_unwrap_promise: true,
                             ..Default::default()
                         },
@@ -385,6 +386,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
                             may_unwrap_promise: true,
                             ..Default::default()
                         },
@@ -419,6 +421,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
                             ..Default::default()
                         },
                     )
@@ -434,9 +437,12 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
+
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of a function")
                     .report(&mut self.storage);
                 }
             }
