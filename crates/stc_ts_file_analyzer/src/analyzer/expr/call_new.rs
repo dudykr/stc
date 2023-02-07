@@ -3545,13 +3545,6 @@ impl Analyzer<'_, '_> {
 
         let c = c.into_iter().next().unwrap();
 
-        // TODO(kdy1): Refactor generic inference logic to use this function.
-        // Currently, the reevaluation logic in get_return_type interferes with this
-        // function
-        if c.type_params.is_some() {
-            return Ok(());
-        }
-
         for (arg, param) in args.iter().zip(c.params.iter()) {
             // TODO(kdy1):  Handle rest
             if arg.spread.is_some() || matches!(param.pat, RPat::Rest(..)) {
