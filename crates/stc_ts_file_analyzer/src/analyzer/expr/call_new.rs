@@ -18,7 +18,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Constructor, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
     StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
@@ -2406,6 +2406,32 @@ impl Analyzer<'_, '_> {
 
         let (c, _) = callable.into_iter().next().unwrap();
 
+        let type_ann = match type_ann {
+            Some(v) => Some(Cow::Borrowed(v)),
+            None => match expr {
+                ReEvalMode::NoReEval => None,
+                _ => Some(match kind {
+                    ExtractKind::New => Cow::Owned(Type::Constructor(Constructor {
+                        span,
+                        type_params: c.type_params.clone(),
+                        params: c.params.clone(),
+                        type_ann: c.ret_ty.clone(),
+                        is_abstract: false,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })),
+                    ExtractKind::Call => Cow::Owned(Type::Function(Function {
+                        span,
+                        type_params: c.type_params.clone(),
+                        params: c.params.clone(),
+                        ret_ty: c.ret_ty.clone(),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })),
+                }),
+            },
+        };
+
         if candidates.len() == 1 {
             return self
                 .get_return_type(
@@ -2419,7 +2445,7 @@ impl Analyzer<'_, '_> {
                     args,
                     arg_types,
                     spread_arg_types,
-                    type_ann,
+                    type_ann.as_deref(),
                 )
                 .map(Some);
         }
@@ -2435,7 +2461,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
-            type_ann,
+            type_ann.as_deref(),
         )
         .map(Some)
     }
