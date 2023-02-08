@@ -76,9 +76,7 @@ impl Analyzer<'_, '_> {
                         a.storage.export_type(span, a.ctx.module_id, id.clone().into());
                     }
                     RTsModuleName::Str(..) => {
-                        dbg!(&module);
                         let module: Option<Type> = module.validate_with(a)?;
-                        dbg!(&module);
                         let module = match module {
                             Some(v) => v,
                             None => {
@@ -87,11 +85,7 @@ impl Analyzer<'_, '_> {
                         };
                         // a.storage.export_wildcard_module(s.span, s.value,
                         // module);
-                        return Err(ErrorKind::Unimplemented {
-                            span,
-                            msg: format!("Exporting module with a wildcard: {:?}", module),
-                        }
-                        .into());
+                        return Err(ErrorKind::ExportAmbientModule { span }.into());
                     }
                 },
                 RDecl::TsTypeAlias(ref decl) => {
