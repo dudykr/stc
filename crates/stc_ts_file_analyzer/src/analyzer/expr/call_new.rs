@@ -495,6 +495,7 @@ impl Analyzer<'_, '_> {
 
             callee_ty.freeze();
 
+            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.freeze();
 
@@ -3526,6 +3527,11 @@ impl Analyzer<'_, '_> {
         }
 
         let c = c.into_iter().next().unwrap();
+
+        // TODO: Move this logic to get_return_type
+        if c.type_params.is_some() {
+            return Ok(());
+        }
 
         for (arg, param) in args.iter().zip(c.params.iter()) {
             // TODO(kdy1):  Handle rest
