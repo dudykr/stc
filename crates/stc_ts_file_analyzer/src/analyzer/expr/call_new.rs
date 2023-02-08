@@ -2608,7 +2608,7 @@ impl Analyzer<'_, '_> {
                 None,
                 Some(&ret_ty),
                 InferTypeOpts {
-                    is_type_ann: !is_type_ann_chosen_from_overload && type_ann.is_some(),
+                    is_type_ann: type_ann.is_some(),
                     ..Default::default()
                 },
             )?;
