@@ -2461,46 +2461,6 @@ impl Analyzer<'_, '_> {
 
     /// Returns the return type of function. This method should be called only
     /// for final step because it emits errors instead of returning them.
-    ///
-    /// ## Note
-    ///
-    /// We should evaluate two time because of code like below.
-    ///
-    ///
-    /// ```ts
-    /// declare function getType<T>(arr: T[]): string;
-    /// declare function getType(obj: { foo(n: number): number[] }): string;
-    /// declare function wrap<A, B>(f: (a: A) => B): (a: A) => B;
-    ///
-    /// getType({
-    ///    foo: wrap((a) => [a.toExponential()]),
-    /// })
-    /// ```
-    ///
-    /// In this example,
-    ///
-    ///  - we can't calculate the type of `a.toExponential()` because we don't
-    ///    know the type of `a`
-    ///  - we can't use type annotation because of `wrap`
-    ///  - we can't determine the function to call before validating arguments
-    ///  - we can't use type annotation of the function because we cannot
-    ///    determine the function to call because of `wrap`
-    ///
-    /// To fix this problem, we evaluate calls twice.
-    ///
-    /// If then, the logic becomes simple.
-    ///
-    ///  1. We set type of `a` to `any`.
-    ///  2. Type of `a.toExponential()` is `any`.
-    ///  3. Type of the arrow function is `(a: any) => [any]`.
-    ///  4. Type of the property `foo` is `<A, B>(a: A) => B` where A = `any`
-    /// and B = `[any]`.
-    ///  5. We select appropriate function to call.
-    ///  6. Type of `a` is now number.
-    ///  7. Type of `a.toExponential()` is `number`.
-    ///  8. Type of the arrow function is `(a: number) => [number]`.
-    ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
-    /// and B = `[number]`.
     fn get_return_type(
         &mut self,
         span: Span,
