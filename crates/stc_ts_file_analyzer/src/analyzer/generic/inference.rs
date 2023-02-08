@@ -1441,11 +1441,14 @@ impl Analyzer<'_, '_> {
         type_params: &[TypeParam],
         ret_ty: Option<&Type>,
         inferred: &mut InferData,
+        is_from_type_ann: bool,
     ) {
-        if let Some(ret_ty) = ret_ty {
-            if let Type::Param(ret_ry) = ret_ty.normalize() {
-                if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
-                    // prevent_generalize(&mut ty.inferred_type);
+        if is_from_type_ann {
+            if let Some(ret_ty) = ret_ty {
+                if let Type::Param(ret_ry) = ret_ty.normalize() {
+                    if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
+                        prevent_generalize(&mut ty.inferred_type);
+                    }
                 }
             }
         }
@@ -1462,8 +1465,6 @@ impl Analyzer<'_, '_> {
             if !inferred.skip_generalization {
                 match type_param.constraint.as_deref() {
                     Some(Type::Lit(..)) => {}
-
-                    _ if is_from_type_ann => {}
 
                     Some(ty) => {
                         if !should_prevent_generalization(ty) {
