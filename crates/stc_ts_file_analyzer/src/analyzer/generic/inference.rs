@@ -1445,10 +1445,22 @@ impl Analyzer<'_, '_> {
     ) {
         if is_from_type_ann {
             if let Some(ret_ty) = ret_ty {
-                if let Type::Param(ret_ry) = ret_ty.normalize() {
-                    if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
-                        prevent_generalize(&mut ty.inferred_type);
+                if let Some(ret_ty) = unwrap_builtin_with_single_arg(ret_ty, "Promise") {
+                    self.prevent_generalization_of_top_level_types(type_params, Some(ret_ty), inferred, is_from_type_ann)
+                }
+
+                match ret_ty.normalize() {
+                    Type::Param(ret_ry) => {
+                        if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
+                            prevent_generalize(&mut ty.inferred_type);
+                        }
                     }
+                    Type::Union(ret_ty) => {
+                        for ty in &ret_ty.types {
+                            self.prevent_generalization_of_top_level_types(type_params, Some(ty), inferred, is_from_type_ann)
+                        }
+                    }
+                    _ => (),
                 }
             }
         }
