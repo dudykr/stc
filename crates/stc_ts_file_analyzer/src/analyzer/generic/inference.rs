@@ -1476,6 +1476,11 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword | TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword,
             ..
         }) => true,
+        Type::Operator(Operator {
+            op: TsTypeOperatorOp::KeyOf,
+            ..
+        }) => true,
+
         Type::Union(Union { ref types, .. }) => types.iter().all(should_prevent_generalization),
         _ => false,
     }
