@@ -1470,6 +1470,7 @@ impl Analyzer<'_, '_> {
                                 arg_types,
                                 spread_arg_types,
                                 type_ann,
+                                false,
                             )
                             .context("tried to instantiate a class using constructor");
                     }
@@ -1528,6 +1529,7 @@ impl Analyzer<'_, '_> {
                             arg_types,
                             spread_arg_types,
                             type_ann,
+                            false,
                         )
                         .context("tried to instantiate a class without any constructor with call");
                 }
@@ -1545,6 +1547,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        false,
                     )
                 }
 
@@ -1635,6 +1638,7 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
+                false,
             ),
 
             // new fn()
@@ -1650,6 +1654,7 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
+                false,
             ),
 
             Type::Param(TypeParam {
@@ -1943,6 +1948,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
+            false,
         )
     }
 
@@ -2161,6 +2167,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_ann,
+                    false,
                 )?;
                 return Ok(ret_ty);
             }
@@ -2405,29 +2412,33 @@ impl Analyzer<'_, '_> {
         }
 
         let (c, _) = callable.into_iter().next().unwrap();
+        let mut is_type_ann_chosen_from_overload = false;
 
         let type_ann = match type_ann {
             Some(v) => Some(Cow::Borrowed(v)),
             None => match expr {
                 ReEvalMode::NoReEval => None,
-                _ => Some(match kind {
-                    ExtractKind::New => Cow::Owned(Type::Constructor(Constructor {
-                        span,
-                        type_params: c.type_params.clone(),
-                        params: c.params.clone(),
-                        type_ann: c.ret_ty.clone(),
-                        is_abstract: false,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    })),
-                    ExtractKind::Call => Cow::Owned(Type::Function(Function {
-                        span,
-                        type_params: c.type_params.clone(),
-                        params: c.params.clone(),
-                        ret_ty: c.ret_ty.clone(),
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    })),
+                _ => Some({
+                    is_type_ann_chosen_from_overload = true;
+                    match kind {
+                        ExtractKind::New => Cow::Owned(Type::Constructor(Constructor {
+                            span,
+                            type_params: c.type_params.clone(),
+                            params: c.params.clone(),
+                            type_ann: c.ret_ty.clone(),
+                            is_abstract: false,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })),
+                        ExtractKind::Call => Cow::Owned(Type::Function(Function {
+                            span,
+                            type_params: c.type_params.clone(),
+                            params: c.params.clone(),
+                            ret_ty: c.ret_ty.clone(),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })),
+                    }
                 }),
             },
         };
@@ -2446,6 +2457,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_ann.as_deref(),
+                    is_type_ann_chosen_from_overload,
                 )
                 .map(Some);
         }
@@ -2462,6 +2474,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann.as_deref(),
+            is_type_ann_chosen_from_overload,
         )
         .map(Some)
     }
@@ -2481,6 +2494,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        is_type_ann_chosen_from_overload: bool,
     ) -> VResult<Type> {
         let _tracing = if cfg!(debug_assertions) {
             Some(tracing::span!(tracing::Level::ERROR, "get_return_type").entered())
@@ -2593,7 +2607,7 @@ impl Analyzer<'_, '_> {
                 None,
                 Some(&ret_ty),
                 InferTypeOpts {
-                    // is_type_ann: type_ann.is_some(),
+                    is_type_ann: !is_type_ann_chosen_from_overload && type_ann.is_some(),
                     ..Default::default()
                 },
             )?;
