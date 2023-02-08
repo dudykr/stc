@@ -2591,6 +2591,7 @@ impl Analyzer<'_, '_> {
                 &params,
                 spread_arg_types,
                 None,
+                Some(&ret_ty),
                 InferTypeOpts {
                     // is_type_ann: type_ann.is_some(),
                     ..Default::default()

@@ -1436,6 +1436,14 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(super) fn prevent_generalization_of_top_level_types(
+        &self,
+        type_params: &[TypeParam],
+        ret_ty: Option<&Type>,
+        inferred: &mut InferData,
+    ) {
+    }
+
     /// Prevent generalizations if a type parameter extends literal.
     pub(super) fn prevent_generalization_of_inferred_types(
         &mut self,

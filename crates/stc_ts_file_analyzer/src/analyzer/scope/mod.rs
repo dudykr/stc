@@ -2084,6 +2084,7 @@ impl Expander<'_, '_, '_> {
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })),
+                                        None,
                                         InferTypeOpts { ..Default::default() },
                                     )?;
                                     inferred.types.iter_mut().for_each(|(_, ty)| {
