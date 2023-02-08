@@ -269,12 +269,12 @@ fn pass_only(input: PathBuf) {
         let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
         let ok = errors.is_empty();
 
-        for e in errors {
+        for e in &errors {
             e.emit(&handler);
         }
 
         if !ok {
-            panic!()
+            return Err(());
         }
 
         Ok(())
