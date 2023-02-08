@@ -20,7 +20,7 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
-    StaticThis, Symbol, Union, UnionMetadata,
+    StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -495,7 +495,6 @@ impl Analyzer<'_, '_> {
 
             callee_ty.freeze();
 
-            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.freeze();
 
@@ -935,9 +934,9 @@ impl Analyzer<'_, '_> {
                 }) if *is_static == is_static_call => {
                     if self.key_matches(span, key, prop, false) {
                         candidates.push(CallCandidate {
-                            type_params: type_params.as_ref().map(|v| v.params.clone()),
+                            type_params: type_params.clone(),
                             params: params.clone(),
-                            ret_ty: *ret_ty.clone(),
+                            ret_ty: ret_ty.clone(),
                         });
                     }
                 }
@@ -1001,9 +1000,9 @@ impl Analyzer<'_, '_> {
                     }) if *is_static == is_static_call => {
                         if self.key_matches(span, key, prop, false) {
                             candidates.push(CallCandidate {
-                                type_params: type_params.as_ref().map(|v| v.params.clone()),
+                                type_params: type_params.clone(),
                                 params: params.clone(),
-                                ret_ty: *ret_ty.clone(),
+                                ret_ty: ret_ty.clone(),
                             });
                         }
                     }
@@ -1100,13 +1099,9 @@ impl Analyzer<'_, '_> {
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(span, &mut Default::default(), &m.key.ty(), &prop.ty()) {
                     candidates.push(CallCandidate {
-                        type_params: m.type_params.as_ref().map(|v| v.params.clone()),
+                        type_params: m.type_params.clone(),
                         params: m.params.clone(),
-                        ret_ty: m
-                            .ret_ty
-                            .clone()
-                            .map(|v| *v)
-                            .unwrap_or_else(|| Type::any(m.span, Default::default())),
+                        ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
                     });
                 }
             }
@@ -1136,15 +1131,15 @@ impl Analyzer<'_, '_> {
                         }) => candidates.push(CallCandidate {
                             // TODO(kdy1): Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Type::any(span, Default::default()),
+                            ret_ty: box Type::any(span, Default::default()),
                             type_params: Default::default(),
                         }),
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
                                 params: f.params,
-                                ret_ty: *f.ret_ty,
-                                type_params: f.type_params.clone().map(|v| v.params),
+                                ret_ty: f.ret_ty,
+                                type_params: f.type_params,
                             });
                         }
 
@@ -1731,7 +1726,7 @@ impl Analyzer<'_, '_> {
                     span,
                     expr,
                     ty,
-                    i.type_params.as_ref().map(|v| &*v.params),
+                    i.type_params.as_deref(),
                     &i.body,
                     kind,
                     args,
@@ -1839,7 +1834,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         expr: ReEvalMode,
         callee_ty: &Type,
-        type_params_of_type: Option<&[TypeParam]>,
+        type_params_of_type: Option<&TypeParamDecl>,
         members: &[TypeElement],
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -1866,11 +1861,8 @@ impl Analyzer<'_, '_> {
                     ret_ty,
                 }) if kind == ExtractKind::Call => Some(CallCandidate {
                     params: params.clone(),
-                    type_params: type_params
-                        .clone()
-                        .map(|v| v.params)
-                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span, Default::default())),
+                    type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1880,11 +1872,8 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if kind == ExtractKind::New => Some(CallCandidate {
                     params: params.clone(),
-                    type_params: type_params
-                        .clone()
-                        .map(|v| v.params)
-                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span, Default::default())),
+                    type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
                 }),
                 _ => None,
             })
@@ -1978,27 +1967,27 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(c) if kind == ExtractKind::New => {
                 let candidate = CallCandidate {
-                    type_params: c.type_params.clone().map(|v| v.params),
+                    type_params: c.type_params.clone(),
                     params: c.params.clone(),
-                    ret_ty: *c.type_ann.clone(),
+                    ret_ty: c.type_ann.clone(),
                 };
                 return Ok(vec![candidate]);
             }
 
             Type::Function(f) if kind == ExtractKind::Call => {
                 let candidate = CallCandidate {
-                    type_params: f.type_params.clone().map(|v| v.params),
+                    type_params: f.type_params.clone(),
                     params: f.params.clone(),
-                    ret_ty: *f.ret_ty.clone(),
+                    ret_ty: f.ret_ty.clone(),
                 };
                 return Ok(vec![candidate]);
             }
 
             Type::Function(f) => {
                 let candidate = CallCandidate {
-                    type_params: f.type_params.clone().map(|v| v.params),
+                    type_params: f.type_params.clone(),
                     params: f.params.clone(),
-                    ret_ty: Type::any(span, Default::default()),
+                    ret_ty: box Type::any(span, Default::default()),
                 };
                 return Ok(vec![candidate]);
             }
@@ -2041,25 +2030,17 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Call(m) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
-                                type_params: m.type_params.clone().map(|v| v.params),
+                                type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m
-                                    .ret_ty
-                                    .clone()
-                                    .map(|v| *v)
-                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
                             });
                         }
 
                         TypeElement::Constructor(m) if kind == ExtractKind::New => {
                             candidates.push(CallCandidate {
-                                type_params: m.type_params.clone().map(|v| v.params),
+                                type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m
-                                    .ret_ty
-                                    .clone()
-                                    .map(|v| *v)
-                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
                             });
                         }
                         _ => {}
@@ -2078,10 +2059,10 @@ impl Analyzer<'_, '_> {
                 for body in &cls.body {
                     if let ClassMember::Constructor(c) = body {
                         candidates.push(CallCandidate {
-                            type_params: c.type_params.clone().map(|v| v.params),
+                            type_params: c.type_params.clone(),
                             params: c.params.clone(),
-                            ret_ty: c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| {
-                                Type::Class(Class {
+                            ret_ty: c.ret_ty.clone().unwrap_or_else(|| {
+                                box Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
@@ -2102,7 +2083,7 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: Default::default(),
                         params: Default::default(),
-                        ret_ty: Type::Class(Class {
+                        ret_ty: box Type::Class(Class {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
@@ -2394,7 +2375,7 @@ impl Analyzer<'_, '_> {
             .map(|c| {
                 let res = self.check_call_args(
                     span,
-                    c.type_params.as_deref(),
+                    c.type_params.as_ref().map(|v| &*v.params),
                     &c.params,
                     type_args,
                     args,
@@ -2431,9 +2412,9 @@ impl Analyzer<'_, '_> {
                     span,
                     kind,
                     expr,
-                    c.type_params.as_deref(),
+                    c.type_params.as_ref().map(|v| &*v.params),
                     &c.params,
-                    c.ret_ty.clone(),
+                    *c.ret_ty.clone(),
                     type_args,
                     args,
                     arg_types,
@@ -2447,9 +2428,9 @@ impl Analyzer<'_, '_> {
             span,
             kind,
             expr,
-            c.type_params.as_deref(),
+            c.type_params.as_ref().map(|v| &*v.params),
             &c.params,
-            c.ret_ty.clone(),
+            *c.ret_ty.clone(),
             type_args,
             args,
             arg_types,
@@ -3766,7 +3747,7 @@ fn test_arg_check_result_order() {
 
 /// TODO(kdy1): Use cow
 pub(super) struct CallCandidate {
-    pub type_params: Option<Vec<TypeParam>>,
+    pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Type,
+    pub ret_ty: Box<Type>,
 }
