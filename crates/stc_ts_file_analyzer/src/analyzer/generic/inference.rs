@@ -1443,6 +1443,9 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         is_from_type_ann: bool,
     ) {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::span!(Level::ERROR, "prevent_generalization_of_top_level_types").entered();
+
         if is_from_type_ann {
             if let Some(ret_ty) = ret_ty {
                 if let Some(ret_ty) = unwrap_builtin_with_single_arg(ret_ty, "Promise") {
@@ -1473,6 +1476,9 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         is_from_type_ann: bool,
     ) {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::span!(Level::ERROR, "prevent_generalization_of_inferred_types").entered();
+
         for type_param in type_params {
             if !inferred.skip_generalization {
                 match type_param.constraint.as_deref() {
