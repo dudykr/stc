@@ -1442,6 +1442,13 @@ impl Analyzer<'_, '_> {
         ret_ty: Option<&Type>,
         inferred: &mut InferData,
     ) {
+        if let Some(ret_ty) = ret_ty {
+            if let Type::Param(ret_ry) = ret_ty.normalize() {
+                if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
+                    prevent_generalize(&mut ty.inferred_type);
+                }
+            }
+        }
     }
 
     /// Prevent generalizations if a type parameter extends literal.
