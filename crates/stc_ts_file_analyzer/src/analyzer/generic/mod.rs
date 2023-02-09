@@ -1353,6 +1353,9 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<bool> {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::error_span!("infer_type_using_mapped_type").entered();
+
         match arg.normalize() {
             Type::Ref(arg) => {
                 let arg = self
