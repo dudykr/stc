@@ -1389,7 +1389,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Tuple(..) | Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+            Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
                 let arg = self
                     .convert_type_to_type_lit(span, Cow::Borrowed(arg))
                     .context("tried to convert a type into a type literal to infer mapped type")?
