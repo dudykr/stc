@@ -1540,22 +1540,6 @@ impl Analyzer<'_, '_> {
                     name, key_name
                 );
 
-                if let Some(keys) = self.get_property_names_for_mapped_type(span, arg)? {
-                    let key_ty = keys.into_iter().filter_map(|name| match name {
-                        PropertyName::Key(key) => {
-                            if key.is_private() || key.is_computed() {
-                                None
-                            } else {
-                                Some(key.ty().into_owned())
-                            }
-                        }
-                        PropertyName::IndexSignature { span, params, readonly } => Some(*params[0].ty.clone()),
-                    });
-                    let mut key_ty = Type::new_union(span, key_ty);
-                    prevent_generalize(&mut key_ty);
-                    self.insert_inferred_raw(span, inferred, key_name, Cow::Owned(key_ty), opts)?;
-                }
-
                 match arg {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
