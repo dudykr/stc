@@ -1549,7 +1549,7 @@ impl Analyzer<'_, '_> {
                                 Some(key.ty().into_owned())
                             }
                         }
-                        PropertyName::IndexSignature { span, params, readonly } => None,
+                        PropertyName::IndexSignature { span, params, readonly } => Some(*params[0].ty.clone()),
                     });
                     let mut key_ty = Type::new_union(span, key_ty);
                     prevent_generalize(&mut key_ty);
