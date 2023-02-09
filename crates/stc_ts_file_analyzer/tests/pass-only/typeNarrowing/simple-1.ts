@@ -4,4 +4,5 @@ do {
     x; // number
     x = "";
 } while (x = x.length)
-x.toExponential(); // number
+declare function assertNumber(n: number): void;
+assertNumber(x)
