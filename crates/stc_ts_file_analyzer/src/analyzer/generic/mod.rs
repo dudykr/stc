@@ -1871,65 +1871,62 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    match arg.normalize() {
-                        Type::TypeLit(arg) => {
-                            let mut type_elements = FxHashMap::<_, Vec<_>>::default();
+                    if let Type::TypeLit(arg) = arg.normalize() {
+                        let mut type_elements = FxHashMap::<_, Vec<_>>::default();
 
-                            if let Some(param_ty) = &param.ty {
-                                for m in &arg.members {
-                                    match m {
-                                        TypeElement::Property(p) => {
-                                            //
-                                            if let Some(ref type_ann) = p.type_ann {
-                                                self.infer_type(span, inferred, param_ty, type_ann, opts)?;
-                                            }
-
-                                            for name in &names {
-                                                if *name == type_param.name {
-                                                    continue;
-                                                }
-
-                                                let ty = inferred.type_params.remove(name).map(|v| box v.inferred_type);
-
-                                                type_elements.entry(name.clone()).or_default().push(TypeElement::Property(
-                                                    PropertySignature {
-                                                        optional: calc_true_plus_minus_in_param(param.optional, p.optional),
-                                                        readonly: calc_true_plus_minus_in_param(param.readonly, p.readonly),
-                                                        type_ann: ty,
-                                                        ..p.clone()
-                                                    },
-                                                ));
-                                            }
+                        if let Some(param_ty) = &param.ty {
+                            for m in &arg.members {
+                                match m {
+                                    TypeElement::Property(p) => {
+                                        //
+                                        if let Some(ref type_ann) = p.type_ann {
+                                            self.infer_type(span, inferred, param_ty, type_ann, opts)?;
                                         }
 
-                                        _ => {
-                                            unimplemented!("infer_type: Mapped <- Assign: TypeElement({:?})", m)
+                                        for name in &names {
+                                            if *name == type_param.name {
+                                                continue;
+                                            }
+
+                                            let ty = inferred.type_params.remove(name).map(|v| box v.inferred_type);
+
+                                            type_elements
+                                                .entry(name.clone())
+                                                .or_default()
+                                                .push(TypeElement::Property(PropertySignature {
+                                                    optional: calc_true_plus_minus_in_param(param.optional, p.optional),
+                                                    readonly: calc_true_plus_minus_in_param(param.readonly, p.readonly),
+                                                    type_ann: ty,
+                                                    ..p.clone()
+                                                }));
                                         }
                                     }
-                                }
 
-                                for name in names {
-                                    if name == type_param.name {
-                                        continue;
+                                    _ => {
+                                        unimplemented!("infer_type: Mapped <- Assign: TypeElement({:?})", m)
                                     }
-
-                                    let list_ty = Type::TypeLit(TypeLit {
-                                        span: arg.span,
-                                        members: type_elements.remove(&name).unwrap_or_default(),
-                                        metadata: arg.metadata,
-                                        tracker: Default::default(),
-                                    })
-                                    .freezed();
-
-                                    self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
                                 }
                             }
 
-                            self.mapped_type_param_name = old;
-                            return Ok(true);
+                            for name in names {
+                                if name == type_param.name {
+                                    continue;
+                                }
+
+                                let list_ty = Type::TypeLit(TypeLit {
+                                    span: arg.span,
+                                    members: type_elements.remove(&name).unwrap_or_default(),
+                                    metadata: arg.metadata,
+                                    tracker: Default::default(),
+                                })
+                                .freezed();
+
+                                self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
+                            }
                         }
 
-                        _ => (),
+                        self.mapped_type_param_name = old;
+                        return Ok(true);
                     }
 
                     self.mapped_type_param_name = old;
