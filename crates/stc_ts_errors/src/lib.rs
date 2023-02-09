@@ -1494,6 +1494,11 @@ pub enum ErrorKind {
     DuplicatePrivateStaticInstance {
         span: Span,
     },
+
+    /// TS2668
+    ExportAmbientModule {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2061,6 +2066,8 @@ impl ErrorKind {
             ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } => 2340,
 
             ErrorKind::DuplicatePrivateStaticInstance { .. } => 2804,
+
+            ErrorKind::ExportAmbientModule { .. } => 2668,
 
             _ => 0,
         }
