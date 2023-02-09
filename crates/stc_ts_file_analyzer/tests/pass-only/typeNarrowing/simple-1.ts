@@ -4,4 +4,5 @@ do {
     x; // number
     x = "";
 } while (x = x.length)
-x; // number
+declare function assertNumber(n: number): void;
+assertNumber(x)
