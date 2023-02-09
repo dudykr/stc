@@ -17,7 +17,6 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
-use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
@@ -890,10 +889,10 @@ impl Analyzer<'_, '_> {
                         }],
                         readonly: false,
                     },
-                    PropertyName::Key(Key::Normal {
-                        span: array.span,
-                        sym: js_word!("length"),
-                    }),
+                    // PropertyName::Key(Key::Normal {
+                    //     span: array.span,
+                    //     sym: js_word!("length"),
+                    // }),
                 ]));
             }
 
