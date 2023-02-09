@@ -2,7 +2,7 @@ use std::{borrow::Cow, collections::HashMap};
 
 use itertools::Itertools;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
@@ -17,6 +17,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
+use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
@@ -847,6 +848,10 @@ impl Analyzer<'_, '_> {
                 //     span: tuple.span,
                 //     sym: js_word!("length"),
                 // }));
+                keys.push(PropertyName::Key(Key::Normal {
+                    span: tuple.span,
+                    sym: js_word!("length"),
+                }));
 
                 return Ok(Some(keys));
             }
@@ -878,6 +883,17 @@ impl Analyzer<'_, '_> {
                     //     span: array.span,
                     //     sym: js_word!("length"),
                     // }),
+                                id: RIdent::new("__key".into(), array.span.with_ctxt(SyntaxContext::empty())),
+                                type_ann: None,
+                            }),
+                            ty: array.elem_type.clone(),
+                        }],
+                        readonly: false,
+                    },
+                    PropertyName::Key(Key::Normal {
+                        span: array.span,
+                        sym: js_word!("length"),
+                    }),
                 ]));
             }
 
