@@ -347,7 +347,13 @@ impl Analyzer<'_, '_> {
                                     |_| {
                                         Some(Type::Mapped(Mapped {
                                             type_param: TypeParam {
-                                                constraint: Some(elem_rest_ty.ty.clone()),
+                                                constraint: Some(box Type::Operator(Operator {
+                                                    span: elem.span,
+                                                    op: TsTypeOperatorOp::KeyOf,
+                                                    ty: elem_rest_ty.ty.clone(),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                })),
                                                 tracker: Default::default(),
                                                 ..m.type_param.clone()
                                             },
