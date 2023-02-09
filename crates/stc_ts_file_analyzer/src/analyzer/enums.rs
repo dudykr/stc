@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
                     if let Some(box (RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Member(..))) = m.init {
                         if let Some(box RExpr::Bin(bin)) = &m.init {
                             if bin.op == op!(bin, "+") {
-                                if has_not_str_and_not_plus(bin) {
+                                if non_str_nor_plus(bin) {
                                     continue;
                                 }
                             }
@@ -672,11 +672,11 @@ impl Visit<RExpr> for LitValidator<'_> {
     }
 }
 
-fn has_not_str_and_not_plus(bin: &RBinExpr) -> bool {
+fn non_str_nor_plus(bin: &RBinExpr) -> bool {
     if bin.op == op!(bin, "+") {
         match (&bin.left, &bin.right) {
             (box RExpr::Lit(RLit::Str(..)), box RExpr::Lit(RLit::Str(..))) => return true,
-            (box RExpr::Bin(bin), box RExpr::Lit(RLit::Str(..))) => return has_not_str_and_not_plus(bin),
+            (box RExpr::Bin(bin), box RExpr::Lit(RLit::Str(..))) => return non_str_nor_plus(bin),
             _ => {}
         }
     }
