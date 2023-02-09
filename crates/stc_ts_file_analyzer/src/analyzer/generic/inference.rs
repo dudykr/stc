@@ -1455,7 +1455,7 @@ impl Analyzer<'_, '_> {
                 match ret_ty.normalize() {
                     Type::Param(ret_ry) => {
                         if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
-                            prevent_generalize(&mut ty.inferred_type);
+                            // prevent_generalize(&mut ty.inferred_type);
                         }
                     }
                     Type::Union(ret_ty) => {

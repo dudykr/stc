@@ -2859,10 +2859,6 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, simplified again", &ty);
 
-            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
-
-            print_type("Return, generalized", &ty);
-
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &ty);
@@ -3596,25 +3592,6 @@ pub(crate) enum ReEvalMode<'a> {
 impl Default for ReEvalMode<'_> {
     fn default() -> Self {
         Self::NoReEval
-    }
-}
-
-struct ReturnTypeGeneralizer<'a, 'b, 'c> {
-    analyzer: &'a mut Analyzer<'b, 'c>,
-}
-
-impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
-    fn fold(&mut self, mut ty: Type) -> Type {
-        if !self.analyzer.may_generalize(&ty) {
-            return ty;
-        }
-
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
-        ty = ty.fold_children_with(self);
-
-        ty.generalize_lit()
     }
 }
 
