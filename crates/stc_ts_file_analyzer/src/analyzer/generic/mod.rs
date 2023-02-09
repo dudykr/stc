@@ -1784,6 +1784,19 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
+                        if let Some(param_ty) = &param.ty {
+                            self.infer_type(
+                                span,
+                                inferred,
+                                param_ty,
+                                arg,
+                                InferTypeOpts {
+                                    index_tuple_with_param: true,
+                                    ..opts
+                                },
+                            )?;
+                        }
+
                         dbg!();
                     }
                 }
