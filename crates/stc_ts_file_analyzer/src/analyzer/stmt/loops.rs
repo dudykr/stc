@@ -27,12 +27,20 @@ enum ForHeadKind {
     Of { is_awaited: bool },
 }
 
+#[derive(Debug, Clone, Copy)]
+enum LoopKind {
+    While,
+    DoWhile,
+    ForIn,
+    ForOf { is_awaited: bool },
+}
+
 impl Analyzer<'_, '_> {
     /// We evaluate loop bodies multiple time.
     /// But actually we don't report errors
     ///
     /// If type does not change due to a loop, we evaluate
-    fn validate_loop_body_with_scope(&mut self, test: Option<&RExpr>, body: &RStmt) -> VResult<()> {
+    fn validate_loop_body_with_scope(&mut self, test: Option<&RExpr>, body: &RStmt, kind: LoopKind) -> VResult<()> {
         let mut orig_facts = self.cur_facts.take();
 
         let mut prev_facts = orig_facts.true_facts.take();
@@ -373,7 +381,16 @@ impl Analyzer<'_, '_> {
 
             child.validate_lhs_of_for_loop(left, &elem_ty, kind);
 
-            child.validate_loop_body_with_scope(None, body).report(&mut child.storage);
+            child
+                .validate_loop_body_with_scope(
+                    None,
+                    body,
+                    match kind {
+                        ForHeadKind::Of { is_awaited } => LoopKind::ForOf { is_awaited },
+                        ForHeadKind::In => LoopKind::ForIn,
+                    },
+                )
+                .report(&mut child.storage);
 
             Ok(())
         })?;
@@ -409,7 +426,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
-        self.validate_loop_body_with_scope(Some(&node.test), &node.body)
+        self.validate_loop_body_with_scope(Some(&node.test), &node.body, LoopKind::While)
             .report(&mut self.storage);
 
         Ok(())
@@ -421,7 +438,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RDoWhileStmt) {
         node.body.visit_with(self);
 
-        self.validate_loop_body_with_scope(Some(&node.test), &node.body)
+        self.validate_loop_body_with_scope(Some(&node.test), &node.body, LoopKind::DoWhile)
             .report(&mut self.storage);
 
         Ok(())
