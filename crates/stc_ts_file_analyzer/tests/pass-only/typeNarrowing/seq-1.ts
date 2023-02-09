@@ -3,6 +3,6 @@ let obj: any;
 
 x = true;
 (x = "", obj).foo = (x = x.length);
-x; // number
+x.toExponential(); // number
 
 export { }

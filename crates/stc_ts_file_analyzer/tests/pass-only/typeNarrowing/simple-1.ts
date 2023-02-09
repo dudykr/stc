@@ -4,4 +4,4 @@ do {
     x; // number
     x = "";
 } while (x = x.length)
-x; // number
+x.toExponential(); // number
