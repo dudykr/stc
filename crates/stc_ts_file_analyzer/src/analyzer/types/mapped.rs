@@ -835,6 +835,7 @@ impl Analyzer<'_, '_> {
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 }),
+                                ty: elem.ty.clone(),
                             }],
                             readonly: false,
                         });
