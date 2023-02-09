@@ -1,9 +1,12 @@
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{replace::replace_type, LitType, Type};
 use stc_ts_utils::MapWithMut;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub fn prevent_generalize(ty: &mut Type) {
+    debug!("Prevent generalize: {}", dump_type_as_string(ty));
+
     replace_type(
         ty,
         |ty| {

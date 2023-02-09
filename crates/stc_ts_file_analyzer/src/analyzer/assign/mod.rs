@@ -2542,7 +2542,8 @@ impl Analyzer<'_, '_> {
                             for (i, elem) in lhs_elems.iter().enumerate() {
                                 let r_ty = self
                                     .get_element_from_iterator(span, Cow::Borrowed(&r), i)
-                                    .context("tried to get an element of type to assign to a tuple element")?;
+                                    .context("tried to get an element of type to assign to a tuple element")?
+                                    .freezed();
 
                                 self.assign_with_opts(
                                     data,

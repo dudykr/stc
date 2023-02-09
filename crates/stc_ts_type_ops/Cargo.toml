@@ -12,6 +12,7 @@ rnode = {path = "../rnode"}
 rustc-hash = "1.1.0"
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_base_type_ops = {path = "../stc_ts_base_type_ops"}
+stc_ts_errors = {path = "../stc_ts_errors"}
 stc_ts_generics = {path = "../stc_ts_generics"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}

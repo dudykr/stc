@@ -18,9 +18,9 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Constructor, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
-    StaticThis, Symbol, Union, UnionMetadata,
+    StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -935,9 +935,9 @@ impl Analyzer<'_, '_> {
                 }) if *is_static == is_static_call => {
                     if self.key_matches(span, key, prop, false) {
                         candidates.push(CallCandidate {
-                            type_params: type_params.as_ref().map(|v| v.params.clone()),
+                            type_params: type_params.clone(),
                             params: params.clone(),
-                            ret_ty: *ret_ty.clone(),
+                            ret_ty: ret_ty.clone(),
                         });
                     }
                 }
@@ -1001,9 +1001,9 @@ impl Analyzer<'_, '_> {
                     }) if *is_static == is_static_call => {
                         if self.key_matches(span, key, prop, false) {
                             candidates.push(CallCandidate {
-                                type_params: type_params.as_ref().map(|v| v.params.clone()),
+                                type_params: type_params.clone(),
                                 params: params.clone(),
-                                ret_ty: *ret_ty.clone(),
+                                ret_ty: ret_ty.clone(),
                             });
                         }
                     }
@@ -1100,13 +1100,9 @@ impl Analyzer<'_, '_> {
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(span, &mut Default::default(), &m.key.ty(), &prop.ty()) {
                     candidates.push(CallCandidate {
-                        type_params: m.type_params.as_ref().map(|v| v.params.clone()),
+                        type_params: m.type_params.clone(),
                         params: m.params.clone(),
-                        ret_ty: m
-                            .ret_ty
-                            .clone()
-                            .map(|v| *v)
-                            .unwrap_or_else(|| Type::any(m.span, Default::default())),
+                        ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
                     });
                 }
             }
@@ -1136,15 +1132,15 @@ impl Analyzer<'_, '_> {
                         }) => candidates.push(CallCandidate {
                             // TODO(kdy1): Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Type::any(span, Default::default()),
+                            ret_ty: box Type::any(span, Default::default()),
                             type_params: Default::default(),
                         }),
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
                                 params: f.params,
-                                ret_ty: *f.ret_ty,
-                                type_params: f.type_params.clone().map(|v| v.params),
+                                ret_ty: f.ret_ty,
+                                type_params: f.type_params,
                             });
                         }
 
@@ -1731,7 +1727,7 @@ impl Analyzer<'_, '_> {
                     span,
                     expr,
                     ty,
-                    i.type_params.as_ref().map(|v| &*v.params),
+                    i.type_params.as_deref(),
                     &i.body,
                     kind,
                     args,
@@ -1839,7 +1835,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         expr: ReEvalMode,
         callee_ty: &Type,
-        type_params_of_type: Option<&[TypeParam]>,
+        type_params_of_type: Option<&TypeParamDecl>,
         members: &[TypeElement],
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -1866,11 +1862,8 @@ impl Analyzer<'_, '_> {
                     ret_ty,
                 }) if kind == ExtractKind::Call => Some(CallCandidate {
                     params: params.clone(),
-                    type_params: type_params
-                        .clone()
-                        .map(|v| v.params)
-                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span, Default::default())),
+                    type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1880,11 +1873,8 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if kind == ExtractKind::New => Some(CallCandidate {
                     params: params.clone(),
-                    type_params: type_params
-                        .clone()
-                        .map(|v| v.params)
-                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span, Default::default())),
+                    type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
                 }),
                 _ => None,
             })
@@ -1978,27 +1968,27 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(c) if kind == ExtractKind::New => {
                 let candidate = CallCandidate {
-                    type_params: c.type_params.clone().map(|v| v.params),
+                    type_params: c.type_params.clone(),
                     params: c.params.clone(),
-                    ret_ty: *c.type_ann.clone(),
+                    ret_ty: c.type_ann.clone(),
                 };
                 return Ok(vec![candidate]);
             }
 
             Type::Function(f) if kind == ExtractKind::Call => {
                 let candidate = CallCandidate {
-                    type_params: f.type_params.clone().map(|v| v.params),
+                    type_params: f.type_params.clone(),
                     params: f.params.clone(),
-                    ret_ty: *f.ret_ty.clone(),
+                    ret_ty: f.ret_ty.clone(),
                 };
                 return Ok(vec![candidate]);
             }
 
             Type::Function(f) => {
                 let candidate = CallCandidate {
-                    type_params: f.type_params.clone().map(|v| v.params),
+                    type_params: f.type_params.clone(),
                     params: f.params.clone(),
-                    ret_ty: Type::any(span, Default::default()),
+                    ret_ty: box Type::any(span, Default::default()),
                 };
                 return Ok(vec![candidate]);
             }
@@ -2041,25 +2031,17 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Call(m) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
-                                type_params: m.type_params.clone().map(|v| v.params),
+                                type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m
-                                    .ret_ty
-                                    .clone()
-                                    .map(|v| *v)
-                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
                             });
                         }
 
                         TypeElement::Constructor(m) if kind == ExtractKind::New => {
                             candidates.push(CallCandidate {
-                                type_params: m.type_params.clone().map(|v| v.params),
+                                type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m
-                                    .ret_ty
-                                    .clone()
-                                    .map(|v| *v)
-                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
                             });
                         }
                         _ => {}
@@ -2078,10 +2060,10 @@ impl Analyzer<'_, '_> {
                 for body in &cls.body {
                     if let ClassMember::Constructor(c) = body {
                         candidates.push(CallCandidate {
-                            type_params: c.type_params.clone().map(|v| v.params),
+                            type_params: c.type_params.clone(),
                             params: c.params.clone(),
-                            ret_ty: c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| {
-                                Type::Class(Class {
+                            ret_ty: c.ret_ty.clone().unwrap_or_else(|| {
+                                box Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
@@ -2102,7 +2084,7 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: Default::default(),
                         params: Default::default(),
-                        ret_ty: Type::Class(Class {
+                        ret_ty: box Type::Class(Class {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
@@ -2394,7 +2376,7 @@ impl Analyzer<'_, '_> {
             .map(|c| {
                 let res = self.check_call_args(
                     span,
-                    c.type_params.as_deref(),
+                    c.type_params.as_ref().map(|v| &*v.params),
                     &c.params,
                     type_args,
                     args,
@@ -2424,83 +2406,80 @@ impl Analyzer<'_, '_> {
         }
 
         let (c, _) = callable.into_iter().next().unwrap();
+        let mut is_type_ann_chosen_from_overload = false;
 
+        let type_ann = match type_ann {
+            Some(v) => Some(Cow::Borrowed(v)),
+            None => match expr {
+                ReEvalMode::NoReEval => None,
+                _ => Some({
+                    is_type_ann_chosen_from_overload = true;
+                    match kind {
+                        ExtractKind::New => Cow::Owned(Type::Constructor(Constructor {
+                            span,
+                            type_params: c.type_params.clone(),
+                            params: c.params.clone(),
+                            type_ann: c.ret_ty.clone(),
+                            is_abstract: false,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })),
+                        ExtractKind::Call => Cow::Owned(Type::Function(Function {
+                            span,
+                            type_params: c.type_params.clone(),
+                            params: c.params.clone(),
+                            ret_ty: c.ret_ty.clone(),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })),
+                    }
+                }),
+            },
+        };
+
+        let ctx = Ctx {
+            is_type_ann_for_call_reeval_chosen_from_overload: self.ctx.is_type_ann_for_call_reeval_chosen_from_overload
+                || is_type_ann_chosen_from_overload,
+            ..self.ctx
+        };
         if candidates.len() == 1 {
             return self
+                .with_ctx(ctx)
                 .get_return_type(
                     span,
                     kind,
                     expr,
-                    c.type_params.as_deref(),
+                    c.type_params.as_ref().map(|v| &*v.params),
                     &c.params,
-                    c.ret_ty.clone(),
+                    *c.ret_ty.clone(),
                     type_args,
                     args,
                     arg_types,
                     spread_arg_types,
-                    type_ann,
+                    type_ann.as_deref(),
                 )
                 .map(Some);
         }
 
-        self.get_return_type(
-            span,
-            kind,
-            expr,
-            c.type_params.as_deref(),
-            &c.params,
-            c.ret_ty.clone(),
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann,
-        )
-        .map(Some)
+        self.with_ctx(ctx)
+            .get_return_type(
+                span,
+                kind,
+                expr,
+                c.type_params.as_ref().map(|v| &*v.params),
+                &c.params,
+                *c.ret_ty.clone(),
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann.as_deref(),
+            )
+            .map(Some)
     }
 
     /// Returns the return type of function. This method should be called only
     /// for final step because it emits errors instead of returning them.
-    ///
-    /// ## Note
-    ///
-    /// We should evaluate two time because of code like below.
-    ///
-    ///
-    /// ```ts
-    /// declare function getType<T>(arr: T[]): string;
-    /// declare function getType(obj: { foo(n: number): number[] }): string;
-    /// declare function wrap<A, B>(f: (a: A) => B): (a: A) => B;
-    ///
-    /// getType({
-    ///    foo: wrap((a) => [a.toExponential()]),
-    /// })
-    /// ```
-    ///
-    /// In this example,
-    ///
-    ///  - we can't calculate the type of `a.toExponential()` because we don't
-    ///    know the type of `a`
-    ///  - we can't use type annotation because of `wrap`
-    ///  - we can't determine the function to call before validating arguments
-    ///  - we can't use type annotation of the function because we cannot
-    ///    determine the function to call because of `wrap`
-    ///
-    /// To fix this problem, we evaluate calls twice.
-    ///
-    /// If then, the logic becomes simple.
-    ///
-    ///  1. We set type of `a` to `any`.
-    ///  2. Type of `a.toExponential()` is `any`.
-    ///  3. Type of the arrow function is `(a: any) => [any]`.
-    ///  4. Type of the property `foo` is `<A, B>(a: A) => B` where A = `any`
-    /// and B = `[any]`.
-    ///  5. We select appropriate function to call.
-    ///  6. Type of `a` is now number.
-    ///  7. Type of `a.toExponential()` is `number`.
-    ///  8. Type of the arrow function is `(a: number) => [number]`.
-    ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
-    /// and B = `[number]`.
     fn get_return_type(
         &mut self,
         span: Span,
@@ -2624,6 +2603,7 @@ impl Analyzer<'_, '_> {
                 &params,
                 spread_arg_types,
                 None,
+                Some(&ret_ty),
                 InferTypeOpts {
                     is_type_ann: type_ann.is_some(),
                     ..Default::default()
@@ -2876,9 +2856,11 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, simplified again", &ty);
 
-            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
+            if self.ctx.is_type_ann_for_call_reeval_chosen_from_overload || type_ann.is_none() {
+                ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
-            print_type("Return, generalized", &ty);
+                print_type("Return, generalized", &ty);
+            }
 
             self.add_required_type_params(&mut ty);
 
@@ -3545,9 +3527,7 @@ impl Analyzer<'_, '_> {
 
         let c = c.into_iter().next().unwrap();
 
-        // TODO(kdy1): Refactor generic inference logic to use this function.
-        // Currently, the reevaluation logic in get_return_type interferes with this
-        // function
+        // TODO: Move this logic to get_return_type
         if c.type_params.is_some() {
             return Ok(());
         }
@@ -3813,7 +3793,7 @@ fn test_arg_check_result_order() {
 
 /// TODO(kdy1): Use cow
 pub(super) struct CallCandidate {
-    pub type_params: Option<Vec<TypeParam>>,
+    pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Type,
+    pub ret_ty: Box<Type>,
 }
