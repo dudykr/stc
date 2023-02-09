@@ -32,6 +32,7 @@ use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
 
+pub(crate) use self::mapped::*;
 use super::generic::InferTypeOpts;
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
