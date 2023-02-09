@@ -1827,7 +1827,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let mut type_elements = FxHashMap::<_, Vec<_>>::default();
-                    if let Type::TypeLit(arg) = arg {
+                    if let Type::TypeLit(arg) = arg.normalize() {
                         //
                         if let Some(param_ty) = &param.ty {
                             for m in &arg.members {
