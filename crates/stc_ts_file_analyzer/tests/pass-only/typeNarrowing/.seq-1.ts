@@ -3,6 +3,8 @@ let obj: any;
 
 x = true;
 (x = "", obj).foo = (x = x.length);
-x; // number
+
+declare function assertNumber(n: number): void;
+assertNumber(x)
 
 export { }
