@@ -16,7 +16,7 @@ use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
     KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, RestType, Tuple, TupleElement, TupleMetadata,
-    Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -32,7 +32,7 @@ use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use super::expr::{AccessPropertyOpts, TypeOfMode};
 use crate::{
-    analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
+    analyzer::{scope::ExpandOpts, types::PropertyName, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_builtin_with_single_arg, RemoveTypes},
     VResult,
 };
@@ -1539,10 +1539,26 @@ impl Analyzer<'_, '_> {
                     "[generic/inference] Found form of `P in keyof T` where T = {}, P = {}",
                     name, key_name
                 );
+
+                if let Some(keys) = self.get_property_names_for_mapped_type(span, arg)? {
+                    let key_ty = keys.into_iter().filter_map(|name| match name {
+                        PropertyName::Key(key) => {
+                            if key.is_private() || key.is_computed() {
+                                None
+                            } else {
+                                Some(key.ty().into_owned())
+                            }
+                        }
+                        PropertyName::IndexSignature { span, params, readonly } => None,
+                    });
+                    let mut key_ty = Type::new_union(span, key_ty);
+                    prevent_generalize(&mut key_ty);
+                    self.insert_inferred_raw(span, inferred, key_name, Cow::Owned(key_ty), opts)?;
+                }
+
                 match arg {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
-                        let mut key_types = vec![];
                         let mut new_members = Vec::<TypeElement>::with_capacity(arg.members.len());
 
                         // In the code below, we are given Box<R[P]> and keys of R.
@@ -1559,17 +1575,6 @@ impl Analyzer<'_, '_> {
                         // };
                         // let v = unbox(b);
                         for arg_member in &arg.members {
-                            if let Some(key) = arg_member.key() {
-                                match key {
-                                    Key::Num(..) | Key::Normal { .. } => {
-                                        key_types.push(key.ty().into_owned());
-                                    }
-                                    _ => {
-                                        unimplemented!("Inference of keys except ident in mapped type.\nKey: {:?}", key)
-                                    }
-                                }
-                            }
-
                             match arg_member {
                                 TypeElement::Property(arg_prop) => {
                                     let type_ann: Option<_> = if let Some(arg_prop_ty) = &arg_prop.type_ann {
@@ -1713,20 +1718,6 @@ impl Analyzer<'_, '_> {
                             })),
                             opts,
                         )?;
-
-                        let mut keys = Type::Union(Union {
-                            span: param.span,
-                            types: key_types,
-                            metadata: UnionMetadata {
-                                common: param.metadata.common,
-                                ..Default::default()
-                            },
-                            tracker: Default::default(),
-                        })
-                        .fixed();
-                        prevent_generalize(&mut keys);
-
-                        self.insert_inferred_raw(span, inferred, key_name, Cow::Owned(keys), opts)?;
 
                         return Ok(true);
                     }
