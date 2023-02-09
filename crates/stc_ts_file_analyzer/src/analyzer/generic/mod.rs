@@ -1889,7 +1889,20 @@ impl Analyzer<'_, '_> {
 
                             if let Some(param_ty) = &param.ty {
                                 for elem in &arg.elems {
-                                    self.infer_type(span, inferred, param_ty, &elem.ty, opts)?;
+                                    let arg_ty = Type::Tuple(Tuple {
+                                        span,
+                                        elems: vec![TupleElement {
+                                            span: elem.span,
+                                            label: elem.label.clone(),
+                                            ty: elem.ty.clone(),
+                                            tracker: Default::default(),
+                                        }],
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    })
+                                    .freezed();
+
+                                    self.infer_type(span, inferred, param_ty, &arg_ty, opts)?;
 
                                     for name in &names {
                                         if *name == type_param.name {
