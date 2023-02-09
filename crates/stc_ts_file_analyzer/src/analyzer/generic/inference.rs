@@ -99,6 +99,8 @@ pub(crate) struct InferTypeOpts {
     pub is_inferring_rest_type: bool,
 
     pub exclude_null_and_undefined: bool,
+
+    pub index_tuple_with_param: bool,
 }
 
 bitflags! {

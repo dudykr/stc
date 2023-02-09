@@ -15,8 +15,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, RestType, Tuple, TupleElement, TupleMetadata,
+    Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -1114,6 +1114,60 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                if opts.index_tuple_with_param {
+                    if let (
+                        Type::Tuple(obj_tuple),
+                        Type::Param(TypeParam {
+                            constraint: Some(index_param_constraint),
+                            ..
+                        }),
+                    ) = (param.obj_type.normalize(), param.index_type.normalize())
+                    {
+                        // param  = [string, number, ...T][P];
+                        // arg = true;
+                        //
+                        // where P is keyof T
+                        //
+                        // =>
+                        //
+                        // T = true
+
+                        if let Type::Operator(Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ty: keyof_ty,
+                            ..
+                        }) = index_param_constraint.normalize()
+                        {
+                            return self.infer_type(
+                                span,
+                                inferred,
+                                &param.obj_type,
+                                &Type::Tuple(Tuple {
+                                    span,
+                                    elems: vec![TupleElement {
+                                        span,
+                                        label: None,
+                                        ty: box Type::Rest(RestType {
+                                            span,
+                                            ty: box arg.clone(),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        tracker: Default::default(),
+                                    }],
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .freezed(),
+                                InferTypeOpts {
+                                    append_type_as_union: true,
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                    }
+                }
             }
 
             Type::Constructor(param) => {
@@ -1902,7 +1956,16 @@ impl Analyzer<'_, '_> {
                                     })
                                     .freezed();
 
-                                    self.infer_type(span, inferred, param_ty, &arg_ty, opts)?;
+                                    self.infer_type(
+                                        span,
+                                        inferred,
+                                        param_ty,
+                                        &arg_ty,
+                                        InferTypeOpts {
+                                            index_tuple_with_param: true,
+                                            ..opts
+                                        },
+                                    )?;
 
                                     for name in &names {
                                         if *name == type_param.name {
@@ -1932,7 +1995,16 @@ impl Analyzer<'_, '_> {
                                     })
                                     .freezed();
 
-                                    self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
+                                    self.insert_inferred_raw(
+                                        span,
+                                        inferred,
+                                        name.clone(),
+                                        Cow::Owned(list_ty),
+                                        InferTypeOpts {
+                                            index_tuple_with_param: true,
+                                            ..opts
+                                        },
+                                    )?;
                                 }
                             }
 
