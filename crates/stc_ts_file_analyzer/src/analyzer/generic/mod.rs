@@ -1114,55 +1114,6 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
-
-                if opts.index_tuple_with_param {
-                    if let (
-                        Type::Tuple(obj_tuple),
-                        Type::Param(TypeParam {
-                            constraint: Some(index_param_constraint),
-                            ..
-                        }),
-                    ) = (param.obj_type.normalize(), param.index_type.normalize())
-                    {
-                        // param  = [string, number, ...T][P];
-                        // arg = true;
-                        //
-                        // where P is keyof T
-                        //
-                        // =>
-                        //
-                        // T = true
-
-                        if let Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty: keyof_ty,
-                            ..
-                        }) = index_param_constraint.normalize()
-                        {
-                            for elem in obj_tuple.elems.iter() {
-                                self.infer_type(
-                                    span,
-                                    inferred,
-                                    &elem.ty,
-                                    &Type::Array(Array {
-                                        span,
-                                        elem_type: box arg.clone(),
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })
-                                    .freezed(),
-                                    InferTypeOpts {
-                                        append_type_as_union: true,
-                                        is_inferring_rest_type: true,
-                                        ..Default::default()
-                                    },
-                                )?;
-                            }
-
-                            return Ok(());
-                        }
-                    }
-                }
             }
 
             Type::Constructor(param) => {
