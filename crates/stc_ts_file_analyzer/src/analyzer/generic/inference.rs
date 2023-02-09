@@ -1436,6 +1436,39 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(super) fn prevent_generalization_of_top_level_types(
+        &self,
+        type_params: &[TypeParam],
+        ret_ty: Option<&Type>,
+        inferred: &mut InferData,
+        is_from_type_ann: bool,
+    ) {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::span!(Level::ERROR, "prevent_generalization_of_top_level_types").entered();
+
+        if is_from_type_ann {
+            if let Some(ret_ty) = ret_ty {
+                if let Some(ret_ty) = unwrap_builtin_with_single_arg(ret_ty, "Promise") {
+                    self.prevent_generalization_of_top_level_types(type_params, Some(ret_ty), inferred, is_from_type_ann)
+                }
+
+                match ret_ty.normalize() {
+                    Type::Param(ret_ry) => {
+                        if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
+                            // prevent_generalize(&mut ty.inferred_type);
+                        }
+                    }
+                    Type::Union(ret_ty) => {
+                        for ty in &ret_ty.types {
+                            self.prevent_generalization_of_top_level_types(type_params, Some(ty), inferred, is_from_type_ann)
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+    }
+
     /// Prevent generalizations if a type parameter extends literal.
     pub(super) fn prevent_generalization_of_inferred_types(
         &mut self,
@@ -1443,12 +1476,13 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         is_from_type_ann: bool,
     ) {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::span!(Level::ERROR, "prevent_generalization_of_inferred_types").entered();
+
         for type_param in type_params {
             if !inferred.skip_generalization {
                 match type_param.constraint.as_deref() {
                     Some(Type::Lit(..)) => {}
-
-                    _ if is_from_type_ann => {}
 
                     Some(ty) => {
                         if !should_prevent_generalization(ty) {
@@ -1476,6 +1510,11 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword | TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword,
             ..
         }) => true,
+        Type::Operator(Operator {
+            op: TsTypeOperatorOp::KeyOf,
+            ..
+        }) => true,
+
         Type::Union(Union { ref types, .. }) => types.iter().all(should_prevent_generalization),
         _ => false,
     }
