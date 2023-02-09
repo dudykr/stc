@@ -15,8 +15,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, RestType, Tuple, TupleElement, TupleMetadata,
-    Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -1139,32 +1139,27 @@ impl Analyzer<'_, '_> {
                             ..
                         }) = index_param_constraint.normalize()
                         {
-                            return self.infer_type(
-                                span,
-                                inferred,
-                                &param.obj_type,
-                                &Type::Tuple(Tuple {
+                            for elem in obj_tuple.elems.iter() {
+                                self.infer_type(
                                     span,
-                                    elems: vec![TupleElement {
+                                    inferred,
+                                    &elem.ty,
+                                    &Type::Array(Array {
                                         span,
-                                        label: None,
-                                        ty: box Type::Rest(RestType {
-                                            span,
-                                            ty: box arg.clone(),
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
+                                        elem_type: box arg.clone(),
+                                        metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }],
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                })
-                                .freezed(),
-                                InferTypeOpts {
-                                    append_type_as_union: true,
-                                    ..Default::default()
-                                },
-                            );
+                                    })
+                                    .freezed(),
+                                    InferTypeOpts {
+                                        append_type_as_union: true,
+                                        is_inferring_rest_type: true,
+                                        ..Default::default()
+                                    },
+                                )?;
+                            }
+
+                            return Ok(());
                         }
                     }
                 }
