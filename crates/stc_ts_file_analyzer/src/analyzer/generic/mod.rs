@@ -1774,20 +1774,8 @@ impl Analyzer<'_, '_> {
                     if let Type::TypeLit(arg) = arg {
                         let key_ty = arg.members.iter().filter_map(|element| match element {
                             TypeElement::Property(p) => match &p.key {
-                                Key::Normal { span: i_span, sym: i_sym } => Some(Type::Lit(LitType {
-                                    span: param.span,
-                                    lit: RTsLit::Str(RStr {
-                                        span: *i_span,
-                                        value: i_sym.clone(),
-                                        raw: None,
-                                    }),
-                                    metadata: LitTypeMetadata {
-                                        common: param.metadata.common,
-                                        ..Default::default()
-                                    },
-                                    tracker: Default::default(),
-                                })),
-                                _ => None,
+                                Key::Private(..) => None,
+                                _ => Some(p.key.ty().into_owned()),
                             }, // TODO(kdy1): Handle method element
                             _ => None,
                         });
