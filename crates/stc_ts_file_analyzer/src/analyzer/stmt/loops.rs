@@ -50,10 +50,8 @@ impl Analyzer<'_, '_> {
         let mut orig_vars = Some(self.scope.vars.clone());
 
         loop {
-            let mut facts_from_body: CondFacts = self.with_child_with_hook(
-                ScopeKind::LoopBody { last },
-                prev_facts.clone(),
-                |child: &mut Analyzer| {
+            let facts_from_cond: CondFacts =
+                self.with_child(ScopeKind::LoopBody { last }, prev_facts.clone(), |child: &mut Analyzer| {
                     child.ctx.ignore_errors |= !last;
 
                     {
@@ -63,6 +61,18 @@ impl Analyzer<'_, '_> {
                         };
                         test.visit_with(&mut *child.with_ctx(ctx));
                     }
+
+                    Ok(child.cur_facts.true_facts.take())
+                })?;
+
+            let mut facts_for_body = prev_facts.clone();
+            facts_for_body += facts_from_cond.clone();
+
+            let mut facts_from_body: CondFacts = self.with_child_with_hook(
+                ScopeKind::LoopBody { last },
+                facts_from_cond.clone(),
+                |child: &mut Analyzer| {
+                    child.ctx.ignore_errors |= !last;
 
                     body.visit_with(child);
 
@@ -78,7 +88,22 @@ impl Analyzer<'_, '_> {
             facts_from_body.excludes.clear();
 
             if last {
-                prev_facts += facts_from_body;
+                match kind {
+                    LoopKind::DoWhile => {
+                        prev_facts += facts_from_body;
+                        prev_facts += facts_from_cond;
+                    }
+
+                    LoopKind::While => {
+                        prev_facts += facts_from_cond;
+                        prev_facts += facts_from_body;
+                    }
+
+                    _ => {
+                        prev_facts += facts_from_body;
+                    }
+                }
+
                 break;
             }
 
