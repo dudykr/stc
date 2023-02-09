@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -15,9 +15,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple,
-    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation,
-    TypeParamMetadata, Union, UnionMetadata,
+    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -1508,29 +1507,8 @@ impl Analyzer<'_, '_> {
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
-                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(LitType {
-                                        span: param.span,
-                                        lit: RTsLit::Str(RStr {
-                                            span: *i_span,
-                                            value: sym.clone(),
-                                            raw: None,
-                                        }),
-                                        metadata: LitTypeMetadata {
-                                            common: param.metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    })),
-                                    Key::Num(n) => {
-                                        key_types.push(Type::Lit(LitType {
-                                            span: param.span,
-                                            lit: RTsLit::Number(n.clone()),
-                                            metadata: LitTypeMetadata {
-                                                common: param.metadata.common,
-                                                ..Default::default()
-                                            },
-                                            tracker: Default::default(),
-                                        }));
+                                    Key::Num(..) | Key::Normal { .. } => {
+                                        key_types.push(key.ty().into_owned());
                                     }
                                     _ => {
                                         unimplemented!("Inference of keys except ident in mapped type.\nKey: {:?}", key)
@@ -1774,7 +1752,7 @@ impl Analyzer<'_, '_> {
                     if let Type::TypeLit(arg) = arg {
                         let key_ty = arg.members.iter().filter_map(|element| match element {
                             TypeElement::Property(p) => match &p.key {
-                                Key::Private(..) => None,
+                                Key::Private(..) | Key::Computed(..) => None,
                                 _ => Some(p.key.ty().into_owned()),
                             }, // TODO(kdy1): Handle method element
                             _ => None,
