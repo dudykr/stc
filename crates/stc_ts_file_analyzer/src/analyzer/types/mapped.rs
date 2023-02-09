@@ -892,7 +892,12 @@ impl Analyzer<'_, '_> {
                                 id: RIdent::new("__key".into(), array.span.with_ctxt(SyntaxContext::empty())),
                                 type_ann: None,
                             }),
-                            ty: array.elem_type.clone(),
+                            ty: box Type::Keyword(KeywordType {
+                                span: array.span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
                         }],
                         readonly: false,
                     },
