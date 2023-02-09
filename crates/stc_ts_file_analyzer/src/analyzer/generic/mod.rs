@@ -491,11 +491,6 @@ impl Analyzer<'_, '_> {
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
         if param.is_keyword() || param.type_eq(arg) {
-        if param.type_eq(arg) {
-            return Ok(());
-        }
-
-        if param.is_keyword() {
             return Ok(());
         }
 
