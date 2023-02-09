@@ -1749,7 +1749,7 @@ impl Analyzer<'_, '_> {
                         type_param.name, param.type_param.name
                     );
 
-                    if let Type::TypeLit(arg) = arg {
+                    if let Type::TypeLit(arg) = arg.normalize() {
                         let key_ty = arg.members.iter().filter_map(|element| match element {
                             TypeElement::Property(p) => match &p.key {
                                 Key::Private(..) | Key::Computed(..) => None,
