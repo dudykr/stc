@@ -9,6 +9,7 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
+use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
@@ -245,6 +246,7 @@ impl Analyzer<'_, '_> {
                 // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
 
                 let ty = Type::Tuple(Tuple {
+                let mut ty = Type::Tuple(Tuple {
                     span,
                     elems: tuple
                         .elems
@@ -409,6 +411,41 @@ impl Analyzer<'_, '_> {
             return Ok(Some(ty));
                 })
                 .freezed();
+                {
+                    // Replace P in [..][P]
+
+                    let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
+                    if let Some(keys) = keys {
+                        let mut keys = Type::new_union(
+                            span,
+                            keys.into_iter().filter_map(|key| match key {
+                                PropertyName::Key(key) => {
+                                    if key.is_private() || key.is_computed() {
+                                        None
+                                    } else {
+                                        Some(key.ty().into_owned())
+                                    }
+                                }
+                                PropertyName::IndexSignature { params, .. } => Some(*params[0].ty.clone()),
+                            }),
+                        );
+
+                        prevent_generalize(&mut keys);
+                        keys.freeze();
+
+                        replace_type(
+                            &mut ty,
+                            |ty| {
+                                if let Type::Param(index_type) = ty.normalize() {
+                                    return index_type.name == m.type_param.name;
+                                }
+
+                                false
+                            },
+                            |_| Some(keys.clone()),
+                        );
+                    }
+                }
                 return Ok(Some(ty));
             }
             _ => (),
