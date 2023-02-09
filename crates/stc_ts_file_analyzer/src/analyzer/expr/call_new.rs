@@ -1471,7 +1471,6 @@ impl Analyzer<'_, '_> {
                                 arg_types,
                                 spread_arg_types,
                                 type_ann,
-                                false,
                             )
                             .context("tried to instantiate a class using constructor");
                     }
@@ -1530,7 +1529,6 @@ impl Analyzer<'_, '_> {
                             arg_types,
                             spread_arg_types,
                             type_ann,
-                            false,
                         )
                         .context("tried to instantiate a class without any constructor with call");
                 }
@@ -1548,7 +1546,6 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
-                        false,
                     )
                 }
 
@@ -1639,7 +1636,6 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
-                false,
             ),
 
             // new fn()
@@ -1655,7 +1651,6 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
-                false,
             ),
 
             Type::Param(TypeParam {
@@ -1949,7 +1944,6 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
-            false,
         )
     }
 
@@ -2168,7 +2162,6 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_ann,
-                    false,
                 )?;
                 return Ok(ret_ty);
             }
@@ -2444,8 +2437,14 @@ impl Analyzer<'_, '_> {
             },
         };
 
+        let ctx = Ctx {
+            is_type_ann_for_call_reeval_chosen_from_overload: self.ctx.is_type_ann_for_call_reeval_chosen_from_overload
+                || is_type_ann_chosen_from_overload,
+            ..self.ctx
+        };
         if candidates.len() == 1 {
             return self
+                .with_ctx(ctx)
                 .get_return_type(
                     span,
                     kind,
@@ -2458,26 +2457,25 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_ann.as_deref(),
-                    is_type_ann_chosen_from_overload,
                 )
                 .map(Some);
         }
 
-        self.get_return_type(
-            span,
-            kind,
-            expr,
-            c.type_params.as_ref().map(|v| &*v.params),
-            &c.params,
-            *c.ret_ty.clone(),
-            type_args,
-            args,
-            arg_types,
-            spread_arg_types,
-            type_ann.as_deref(),
-            is_type_ann_chosen_from_overload,
-        )
-        .map(Some)
+        self.with_ctx(ctx)
+            .get_return_type(
+                span,
+                kind,
+                expr,
+                c.type_params.as_ref().map(|v| &*v.params),
+                &c.params,
+                *c.ret_ty.clone(),
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann.as_deref(),
+            )
+            .map(Some)
     }
 
     /// Returns the return type of function. This method should be called only
@@ -2495,7 +2493,6 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-        is_type_ann_chosen_from_overload: bool,
     ) -> VResult<Type> {
         let _tracing = if cfg!(debug_assertions) {
             Some(tracing::span!(tracing::Level::ERROR, "get_return_type").entered())
@@ -2859,7 +2856,7 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, simplified again", &ty);
 
-            if type_ann.is_none() {
+            if self.ctx.is_type_ann_for_call_reeval_chosen_from_overload || type_ann.is_none() {
                 ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
                 print_type("Return, generalized", &ty);
