@@ -12,8 +12,6 @@ use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
-    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
-    RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -147,20 +145,6 @@ impl Analyzer<'_, '_> {
             None
         };
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn expand_mapped_type_with_keyof(
-        &mut self,
-        span: Span,
-        keyof_operand: &Type,
-        original_keyof_operand: &Type,
-        m: &Mapped,
-    ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_mapped_type_with_keyof").entered())
-        } else {
-            None
-        };
-
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
             .context("tried to normalize the operand of `in keyof`")?;
@@ -186,7 +170,6 @@ impl Analyzer<'_, '_> {
         match keyof_operand.normalize() {
             Type::Array(array) => {
                 let mut ty = Type::Array(Array {
-                let ty = Type::Array(Array {
                     span,
                     elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                     metadata: array.metadata,
@@ -220,31 +203,6 @@ impl Analyzer<'_, '_> {
 
                 // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
 
-                let ty = {
-                    let mut type_params = HashMap::default();
-                    type_params.insert(
-                        m.type_param.name.clone(),
-                        Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }),
-                    );
-                    self.expand_type_params(&type_params, ty, Default::default())
-                }?;
-                return Ok(Some(ty));
-            }
-            Type::Tuple(tuple) => {
-                // type Arrayify<T> = { [P in keyof T]: T[P][] };
-                // type F<T extends unknown[]> = Arrayify<[string, number, ...T]>
-
-                // =>
-
-                // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
-
-                let ty = Type::Tuple(Tuple {
-                let mut ty = Type::Tuple(Tuple {
                 let ty = Type::Tuple(Tuple {
                     span,
                     elems: tuple
@@ -261,9 +219,6 @@ impl Analyzer<'_, '_> {
                                 // type ToArray<T> = { [P in keyof T]: T[P][] };
                                 //
                                 //  declare function fm1<N extends unknown[]>(t: ToArray<[string, number,
-                                // type Arrayify<T> = { [P in keyof T]: T[P][] };
-                                //
-                                //  declare function fm1<N extends unknown[]>(t: ToArray<[string, number,
                                 // ...N]>): N;
 
                                 if let Some(mapped_ty) = &mut mapped_ty {
@@ -272,8 +227,6 @@ impl Analyzer<'_, '_> {
                                         |ty| {
                                             if original_keyof_operand.type_eq(ty) {
                                                 return true;
-                                            if let Type::Param(original_param) = ty.normalize() {
-                                                return original_param.name == m.type_param.name;
                                             }
 
                                             false
@@ -283,92 +236,6 @@ impl Analyzer<'_, '_> {
                                 }
                                 mapped_ty.freeze();
 
-                                *ty = Type::Rest(RestType {
-                                    span,
-                                    ty: box Type::Mapped(Mapped {
-                                        type_param: TypeParam {
-                                            constraint: Some(box Type::Operator(Operator {
-                                                span: elem.span,
-                                                op: TsTypeOperatorOp::KeyOf,
-                                                ty: elem_rest_ty.ty.clone(),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })),
-                                            tracker: Default::default(),
-                                            ..m.type_param.clone()
-                                        },
-                                        ty: mapped_ty.clone(),
-                                        tracker: Default::default(),
-                                        ..m.clone()
-                                    }),
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                });
-                            } else {
-                                replace_type(
-                                    &mut ty,
-                                    |ty| {
-                                        // Check for indexed access type
-                                        if let Type::IndexedAccessType(iat) = ty.normalize() {
-                                            if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
-                                                if let Type::Param(index_type) = iat.index_type.normalize() {
-                                                    return index_type.name == m.type_param.name;
-                                                }
-                                            }
-                                        }
-
-                                        false
-                                    },
-                                    |_| Some(*elem.ty.clone()),
-                                );
-                            }
-                        .map(|elem| {
-                            let ty = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
-
-                            let ty = {
-                                match elem.ty.normalize() {
-                                    Type::Rest(_) => {
-                                        replace_type(
-                                            &mut ty,
-                                            |ty| {
-                                                // Check for indexed access type
-                                                if let Type::IndexedAccessType(iat) = ty.normalize() {
-                                                    if let Type::Param(index_type) = iat.index_type.normalize() {
-                                                        return index_type.name == m.type_param.name;
-                                                    }
-                                                }
-                            replace_type(
-                                &mut ty,
-                                |ty| {
-                                    // Check for indexed access type
-                                    if let Type::IndexedAccessType(iat) = ty.normalize() {
-                                        if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
-                                            if let Type::Param(index_type) = iat.index_type.normalize() {
-                                                return index_type.name == m.type_param.name;
-                                            }
-                                        }
-
-                                        false
-                                    },
-                                    |_| {
-                                        Some(Type::Mapped(Mapped {
-                                            type_param: TypeParam {
-                                                constraint: Some(box Type::Operator(Operator {
-                                                    span: elem.span,
-                                                    op: TsTypeOperatorOp::KeyOf,
-                                                    ty: elem_rest_ty.ty.clone(),
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                })),
-                                                tracker: Default::default(),
-                                                ..m.type_param.clone()
-                                            },
-                                            ty: mapped_ty.clone(),
-                                            tracker: Default::default(),
-                                            ..m.clone()
-                                        }))
-                                    },
-                                );
                                 *ty = Type::Rest(RestType {
                                     span,
                                     ty: box Type::Mapped(Mapped {
@@ -419,56 +286,6 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(ty));
             }
             _ => (),
-        if let Some(array) = keyof_operand.as_array() {
-        if let Type::Array(array) = keyof_operand.normalize() {
-            let ty = Type::Array(Array {
-                span,
-                elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
-                metadata: array.metadata,
-                tracker: Default::default(),
-            })
-            .freezed();
-            return Ok(Some(ty));
-                })
-                .freezed();
-                {
-                    // Replace P in [..][P]
-
-                    let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
-                    if let Some(keys) = keys {
-                        let mut keys = Type::new_union(
-                            span,
-                            keys.into_iter().filter_map(|key| match key {
-                                PropertyName::Key(key) => {
-                                    if key.is_private() || key.is_computed() {
-                                        None
-                                    } else {
-                                        Some(key.ty().into_owned())
-                                    }
-                                }
-                                PropertyName::IndexSignature { params, .. } => Some(*params[0].ty.clone()),
-                            }),
-                        );
-
-                        prevent_generalize(&mut keys);
-                        keys.freeze();
-
-                        replace_type(
-                            &mut ty,
-                            |ty| {
-                                if let Type::Param(index_type) = ty.normalize() {
-                                    return index_type.name == m.type_param.name;
-                                }
-
-                                false
-                            },
-                            |_| Some(keys.clone()),
-                        );
-                    }
-                }
-                return Ok(Some(ty));
-            }
-            _ => (),
         }
 
         match keyof_operand.normalize() {
@@ -479,7 +296,6 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Some(v) = self
                     .expand_mapped_type_with_keyof(span, ty, original_keyof_operand, m)
-                    .expand_mapped_type_with_keyof(span, ty, m)
                     .context("tried to expand mapped type using a readonly operator")?
                 {
                     return Ok(Some(v));
@@ -492,7 +308,6 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Some(v) = self
                     .expand_mapped_type_with_keyof(span, constraint, original_keyof_operand, m)
-                    .expand_mapped_type_with_keyof(span, constraint, m)
                     .context("tried to expand mapped type using a constraint")?
                 {
                     return Ok(Some(v));
@@ -892,7 +707,6 @@ impl Analyzer<'_, '_> {
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 }),
-                                ty: elem.ty.clone(),
                             }],
                             readonly: false,
                         });
@@ -911,10 +725,6 @@ impl Analyzer<'_, '_> {
                 //     span: tuple.span,
                 //     sym: js_word!("length"),
                 // }));
-                keys.push(PropertyName::Key(Key::Normal {
-                    span: tuple.span,
-                    sym: js_word!("length"),
-                }));
 
                 return Ok(Some(keys));
             }
@@ -931,22 +741,6 @@ impl Analyzer<'_, '_> {
                             pat: RPat::Ident(RBindingIdent {
                                 node_id: NodeId::invalid(),
                                 id: RIdent::new("__array_key".into(), array.span.with_ctxt(SyntaxContext::empty())),
-                                type_ann: None,
-                            }),
-                            ty: box Type::Keyword(KeywordType {
-                                span: array.span,
-                                kind: TsKeywordTypeKind::TsNumberKeyword,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            }),
-                        }],
-                        readonly: false,
-                    },
-                    // PropertyName::Key(Key::Normal {
-                    //     span: array.span,
-                    //     sym: js_word!("length"),
-                    // }),
-                                id: RIdent::new("__key".into(), array.span.with_ctxt(SyntaxContext::empty())),
                                 type_ann: None,
                             }),
                             ty: box Type::Keyword(KeywordType {
