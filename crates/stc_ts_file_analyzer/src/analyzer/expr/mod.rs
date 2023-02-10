@@ -551,6 +551,9 @@ pub(crate) struct AccessPropertyOpts {
 
     /// `true` means that the provided [Key] is crated from a computed key.
     pub is_key_computed: bool,
+
+    /// `true` means parent type is union
+    pub is_in_union: bool,
 }
 
 #[validator]
@@ -983,6 +986,9 @@ impl Analyzer<'_, '_> {
                     || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
 
                 if indexed {
+                    if *readonly && type_mode == TypeOfMode::LValue {
+                        return Err(ErrorKind::ReadOnly { span }.into());
+                    }
                     if let Some(type_ann) = type_ann {
                         return Ok(Some(*type_ann.clone()));
                     }
@@ -2371,6 +2377,12 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if self.rule().no_implicit_any && opts.is_in_union {
+                    if !matches!(prop, Key::Normal { .. }) {
+                        self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
+                    }
+                }
+
                 if type_mode == TypeOfMode::LValue {
                     return Ok(Type::any(span, Default::default()));
                 }
@@ -2450,6 +2462,7 @@ impl Analyzer<'_, '_> {
                         AccessPropertyOpts {
                             use_undefined_for_tuple_index_error,
                             disallow_creating_indexed_type_from_ty_els: true,
+                            is_in_union: true,
                             ..opts
                         },
                     ) {

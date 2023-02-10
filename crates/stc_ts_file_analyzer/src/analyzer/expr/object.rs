@@ -263,7 +263,8 @@ impl Analyzer<'_, '_> {
                 rhs = rhs.foldable();
 
                 match rhs {
-                    Type::TypeLit(rhs) => {
+                    Type::TypeLit(mut rhs) => {
+                        remove_readonly(&mut rhs.members);
                         lit.members.extend(rhs.members);
                         return Ok(to);
                     }
@@ -393,6 +394,24 @@ impl Analyzer<'_, '_> {
                 msg: format!("append_type_element\n{:?}\n{:?}", to, rhs),
             }
             .into()),
+        }
+    }
+}
+
+fn remove_readonly(members: &mut [TypeElement]) {
+    for member in members {
+        match member {
+            TypeElement::Property(el) => {
+                el.readonly = false;
+            }
+            TypeElement::Method(el) => {
+                el.readonly = false;
+            }
+            TypeElement::Index(el) => {
+                el.readonly = false;
+            }
+
+            _ => {}
         }
     }
 }
