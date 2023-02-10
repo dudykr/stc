@@ -1,15 +1,5 @@
 # Contributing to stc
 
-## Configuring development environment
-
-1. Clone stc.
-2. Run `yarn` in the cloned directory.
-3. (mac only) Install zld
-
-```sh
-brew install michaeleisel/zld/zld
-```
-
 ## New, faster workflow
 
 ## Typical workflow
