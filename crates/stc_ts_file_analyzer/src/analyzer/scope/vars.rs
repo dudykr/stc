@@ -513,7 +513,9 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(ty) = &ty {
-                        if ty.normalize_instance().is_array() {
+                        let t = ty.normalize_instance();
+
+                        if t.is_array() || (t.is_tuple() && arr.type_ann.is_none() && self.ctx.is_calling_iife) {
                             real_ty = real_ty.fold_with(&mut TupleToArray);
                             real_ty.fix();
                         }

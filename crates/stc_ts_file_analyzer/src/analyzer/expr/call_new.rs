@@ -3200,6 +3200,12 @@ impl Analyzer<'_, '_> {
                                 _ => {}
                             }
 
+                            if let RPat::Array(array_pat) = &param.pat {
+                                if param.ty.is_array() && array_pat.type_ann.is_none() && !arg.ty.is_array() {
+                                    return ErrorKind::NotArrayType { span: param.span() };
+                                }
+                            }
+
                             ErrorKind::WrongArgType {
                                 span: arg.span(),
                                 inner: box err.into(),
