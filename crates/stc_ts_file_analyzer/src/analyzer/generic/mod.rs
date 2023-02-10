@@ -15,8 +15,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, RestType, Tuple, TupleElement, TupleMetadata,
+    Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -970,14 +970,9 @@ impl Analyzer<'_, '_> {
                     span,
                     inferred,
                     &param_rest.ty,
-                    &Type::Tuple(Tuple {
+                    &Type::Array(Array {
                         span,
-                        elems: vec![TupleElement {
-                            span,
-                            label: None,
-                            ty: box arg.clone(),
-                            tracker: Default::default(),
-                        }],
+                        elem_type: box arg.clone(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
@@ -1757,7 +1752,7 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
 
-                    Type::Tuple(..) => {
+                    _ => {
                         if let Some(param_ty) = &param.ty {
                             self.infer_type(
                                 span,
@@ -1770,9 +1765,7 @@ impl Analyzer<'_, '_> {
                                 },
                             )?;
                         }
-                    }
 
-                    _ => {
                         dbg!();
                     }
                 }
