@@ -1116,28 +1116,50 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.index_tuple_with_param {
-                    if let (Type::Tuple(obj_tuple), key) = (param.obj_type.normalize(), param.index_type.normalize()) {
-                        // param  = [string, number, ...T][0 | 1 | number];
+                    if let (
+                        Type::Param(obj_param),
+                        Type::Param(TypeParam {
+                            constraint: Some(index_param_constraint),
+                            ..
+                        }),
+                    ) = (param.obj_type.normalize(), param.index_type.normalize())
+                    {
+                        // param  = [string, number, ...T][P];
                         // arg = true;
+                        //
+                        // where P is keyof T
                         //
                         // =>
                         //
                         // T = true
 
-                        for (elem, key) in obj_tuple.elems.iter().zip(key.iter_union()) {
-                            if key.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                                self.infer_type(
+                        if let Type::Operator(Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ty: keyof_ty,
+                            ..
+                        }) = index_param_constraint.normalize()
+                        {
+                            return self.infer_type(
+                                span,
+                                inferred,
+                                &param.obj_type,
+                                &Type::Tuple(Tuple {
                                     span,
-                                    inferred,
-                                    &elem.ty,
-                                    arg,
-                                    InferTypeOpts {
-                                        append_type_as_union: true,
-                                        ..Default::default()
-                                    },
-                                )?;
-                                return Ok(());
-                            }
+                                    elems: vec![TupleElement {
+                                        span,
+                                        label: None,
+                                        ty: box arg.clone(),
+                                        tracker: Default::default(),
+                                    }],
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .freezed(),
+                                InferTypeOpts {
+                                    append_type_as_union: true,
+                                    ..Default::default()
+                                },
+                            );
                         }
                     }
                 }
@@ -1767,7 +1789,16 @@ impl Analyzer<'_, '_> {
                                     dejavu: inferred.dejavu.clone(),
                                     ..Default::default()
                                 };
-                                self.infer_type(span, &mut data, param_ty, &elem.ty, opts)?;
+                                self.infer_type(
+                                    span,
+                                    &mut data,
+                                    param_ty,
+                                    &elem.ty,
+                                    InferTypeOpts {
+                                        index_tuple_with_param: true,
+                                        ..opts
+                                    },
+                                )?;
                                 let mut map = self.finalize_inference(span, &[], data);
                                 let mut inferred_ty = map.types.remove(&name);
 
