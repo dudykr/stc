@@ -2143,14 +2143,13 @@ impl Analyzer<'_, '_> {
 
         let len = param.elems.len().max(arg.elems.len());
 
+        let mut is_l_rest = false;
+        let mut is_r_rest = false;
         let mut li = 0;
         let mut ri = 0;
 
         for index in 0..len {
-            let l_dist = param.elems.len() - li;
-            let r_dist = arg.elems.len() - ri;
-
-            if l_dist < ri || r_dist < li {
+            if (is_l_rest && param.elems.len() < ri + li) || (is_r_rest && arg.elems.len() < li + ri) {
                 break;
             }
 
@@ -2196,11 +2195,15 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            if !l_elem_type.is_rest() {
+            if l_elem_type.is_rest() {
+                is_l_rest = true;
+            } else {
                 li += 1;
             }
 
-            if !r_elem_type.is_rest() {
+            if r_elem_type.is_rest() {
+                is_r_rest = true;
+            } else {
                 ri += 1;
             }
 
@@ -2218,7 +2221,7 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            if l_elem_type.is_rest() && r_elem_type.is_rest() {
+            if is_l_rest && is_r_rest {
                 break;
             }
         }
