@@ -868,7 +868,10 @@ impl Analyzer<'_, '_> {
                             // ['a'] [1] => ['a', 1]
                             let mut prev = e.get().inferred_type.clone().expect_tuple();
                             prev.metadata.prevent_tuple_to_array = true;
-                            prev.elems.push(arg.as_tuple().unwrap().elems[0].clone());
+
+                            let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
+                            new_elem.ty = box new_elem.ty.generalize_lit();
+                            prev.elems.push(new_elem);
 
                             Type::Tuple(prev).freezed()
                         } else {
@@ -905,7 +908,11 @@ impl Analyzer<'_, '_> {
                 }
             }
             Entry::Vacant(e) => {
-                let arg = arg.clone();
+                let mut arg = arg.clone();
+
+                if opts.is_inferring_rest_type {
+                    arg = Cow::Owned(arg.into_owned().generalize_lit());
+                }
 
                 e.insert(InferenceInfo {
                     type_param: name,
