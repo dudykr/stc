@@ -246,6 +246,7 @@ impl Analyzer<'_, '_> {
 
                 let ty = Type::Tuple(Tuple {
                 let mut ty = Type::Tuple(Tuple {
+                let ty = Type::Tuple(Tuple {
                     span,
                     elems: tuple
                         .elems
