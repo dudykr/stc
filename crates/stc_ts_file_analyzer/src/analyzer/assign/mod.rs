@@ -536,7 +536,6 @@ impl Analyzer<'_, '_> {
             | Type::Alias(..)
             | Type::Instance(..)
             | Type::StringMapping(..)
-            | Type::Mapped(..)
             | Type::Enum(..)
             | Type::Tuple(..)
             | Type::Union(..)
@@ -911,6 +910,26 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {}
+        }
+
+        if rhs.is_mapped() {
+            let rhs = self
+                .normalize(
+                    Some(opts.span),
+                    Cow::Borrowed(rhs),
+                    NormalizeTypeOpts {
+                        preserve_typeof: true,
+                        preserve_global_this: true,
+                        preserve_intersection: true,
+                        preserve_union: true,
+                        ..Default::default()
+                    },
+                )?
+                .freezed();
+
+            if let Ok(()) = self.assign_with_opts(data, to, &rhs, opts) {
+                return Ok(());
+            }
         }
 
         if to.is_str_lit() || to.is_num_lit() || to.is_bool_lit() {
