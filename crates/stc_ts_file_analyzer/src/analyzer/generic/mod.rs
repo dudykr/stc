@@ -1143,18 +1143,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 inferred,
                                 &param.obj_type,
-                                &Type::Tuple(Tuple {
-                                    span,
-                                    elems: vec![TupleElement {
-                                        span,
-                                        label: None,
-                                        ty: box arg.clone(),
-                                        tracker: Default::default(),
-                                    }],
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                })
-                                .freezed(),
+                                arg,
                                 InferTypeOpts {
                                     append_type_as_union: true,
                                     ..Default::default()
