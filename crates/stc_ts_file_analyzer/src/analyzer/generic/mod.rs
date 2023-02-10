@@ -2140,9 +2140,10 @@ impl Analyzer<'_, '_> {
 
             match rest_pos {
                 Some(rest_pos) => {
+                    dbg!(rest_pos);
                     // If the rest is not the last, we should return the index of rest
                     if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
-                        t.elems.len() - rest_pos
+                        dbg!(t.elems.len() - 1 - rest_pos)
                     } else {
                         0
                     }
@@ -2162,8 +2163,6 @@ impl Analyzer<'_, '_> {
 
         let len = param.elems.len().max(arg.elems.len());
 
-        let mut is_l_rest = false;
-        let mut is_r_rest = false;
         let mut li = 0;
         let mut ri = 0;
 
@@ -2213,14 +2212,7 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            if l_elem_type.is_rest() {
-                is_l_rest = true;
-            }
             li = min(index, l_max);
-
-            if r_elem_type.is_rest() {
-                is_r_rest = true;
-            }
             ri = min(index, r_max);
 
             #[cfg(debug_assertions)]
@@ -2236,10 +2228,6 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             )?;
-
-            if is_l_rest && is_r_rest {
-                break;
-            }
         }
 
         Ok(())
