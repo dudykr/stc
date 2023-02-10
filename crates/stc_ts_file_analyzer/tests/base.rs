@@ -363,7 +363,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let mut rule = Rule {
                 allow_unreachable_code: true,
                 always_strict: false,
-                no_implicit_any: true,
+                no_implicit_any: false,
                 allow_unused_labels: true,
                 no_fallthrough_cases_in_switch: false,
                 no_implicit_returns: false,
@@ -388,11 +388,15 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                     let value = line["strict:".len()..].trim().parse::<bool>().unwrap();
                     rule.strict_function_types = value;
                     rule.strict_null_checks = value;
+                    rule.no_implicit_any = value;
                     continue;
-                }
-                if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
+                } else if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
                     let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
                     rule.allow_unreachable_code = value;
+                    continue;
+                } else if line.starts_with("noImplicitAny:") {
+                    let v = line["noImplicitAny:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_any = v;
                     continue;
                 }
 
