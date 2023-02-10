@@ -2135,21 +2135,21 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        fn max_index(t: &Tuple) -> usize {
+        fn subtract_count(t: &Tuple) -> usize {
             let rest_pos = t.elems.iter().position(|e| e.ty.is_rest());
 
             match rest_pos {
                 Some(rest_pos) => {
                     // If the rest is not the last, we should return the index of rest
                     if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
-                        rest_pos
+                        t.elems.len() - rest_pos
                     } else {
-                        t.elems.len()
+                        0
                     }
                 }
                 None => {
                     // No rest means we can iterate over whole tuple.
-                    t.elems.len()
+                    0
                 }
             }
         }
@@ -2167,8 +2167,8 @@ impl Analyzer<'_, '_> {
         let mut li = 0;
         let mut ri = 0;
 
-        let l_max = max_index(param);
-        let r_max = max_index(arg);
+        let l_max = param.elems.len() - subtract_count(arg);
+        let r_max = arg.elems.len() - subtract_count(param);
 
         for index in 0..len {
             let l_elem_type = self.access_property(
