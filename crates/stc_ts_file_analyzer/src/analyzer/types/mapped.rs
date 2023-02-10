@@ -372,7 +372,22 @@ impl Analyzer<'_, '_> {
                                 );
                                 *ty = Type::Rest(RestType {
                                     span,
-                                    ty: box ty.take(),
+                                    ty: box Type::Mapped(Mapped {
+                                        type_param: TypeParam {
+                                            constraint: Some(box Type::Operator(Operator {
+                                                span: elem.span,
+                                                op: TsTypeOperatorOp::KeyOf,
+                                                ty: elem_rest_ty.ty.clone(),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })),
+                                            tracker: Default::default(),
+                                            ..m.type_param.clone()
+                                        },
+                                        ty: mapped_ty.clone(),
+                                        tracker: Default::default(),
+                                        ..m.clone()
+                                    }),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 });
