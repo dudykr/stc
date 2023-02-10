@@ -861,12 +861,12 @@ impl Analyzer<'_, '_> {
                         {
                             // If both are tuples with length is 1, we merge
                             // them.
-                            let prev = e.get().inferred_type.as_array().unwrap().elem_type.clone();
-                            let new = arg.as_array().unwrap().elem_type.clone();
+                            let prev = e.get().inferred_type.as_array().unwrap().elem_type.clone().generalize_lit();
+                            let new = arg.as_array().unwrap().elem_type.clone().generalize_lit();
 
                             Type::Array(Array {
                                 span,
-                                elem_type: box Type::new_union(span, vec![*prev, *new]),
+                                elem_type: box Type::new_union(span, vec![prev, new]),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
