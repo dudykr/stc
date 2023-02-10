@@ -10,6 +10,8 @@
 brew install michaeleisel/zld/zld
 ```
 
+## New, faster workflow
+
 ## Typical workflow
 
 Basically all work starts from `./crates/stc_ts_type_checker`.
