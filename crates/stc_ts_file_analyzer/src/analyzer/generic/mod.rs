@@ -2140,10 +2140,9 @@ impl Analyzer<'_, '_> {
 
             match rest_pos {
                 Some(rest_pos) => {
-                    dbg!(rest_pos);
                     // If the rest is not the last, we should return the index of rest
                     if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
-                        dbg!(t.elems.len() - 1 - rest_pos)
+                        t.elems.len() - 1 - rest_pos
                     } else {
                         0
                     }
@@ -2170,6 +2169,9 @@ impl Analyzer<'_, '_> {
         };
 
         for index in 0..len {
+            li = min(index, l_max);
+            ri = min(index, r_max);
+
             #[cfg(debug_assertions)]
             let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
 
@@ -2192,7 +2194,7 @@ impl Analyzer<'_, '_> {
                     return_rest_tuple_element_as_is: true,
                     ..Default::default()
                 },
-            )?;
+            );
 
             let r_elem_type = self.access_property(
                 span,
@@ -2213,21 +2215,22 @@ impl Analyzer<'_, '_> {
                     return_rest_tuple_element_as_is: true,
                     ..Default::default()
                 },
-            )?;
+            );
 
-            li = min(index, l_max);
-            ri = min(index, r_max);
-
-            self.infer_type(
-                span,
-                inferred,
-                &l_elem_type,
-                &r_elem_type,
-                InferTypeOpts {
-                    append_type_as_union: true,
-                    ..opts
-                },
-            )?;
+            if let Ok(l_elem_type) = l_elem_type {
+                if let Ok(r_elem_type) = r_elem_type {
+                    self.infer_type(
+                        span,
+                        inferred,
+                        &l_elem_type,
+                        &r_elem_type,
+                        InferTypeOpts {
+                            append_type_as_union: true,
+                            ..opts
+                        },
+                    )?;
+                }
+            }
         }
 
         Ok(())
