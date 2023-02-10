@@ -970,9 +970,14 @@ impl Analyzer<'_, '_> {
                     span,
                     inferred,
                     &param_rest.ty,
-                    &Type::Array(Array {
+                    &Type::Tuple(Tuple {
                         span,
-                        elem_type: box arg.clone(),
+                        elems: vec![TupleElement {
+                            span,
+                            label: None,
+                            ty: box arg.clone(),
+                            tracker: Default::default(),
+                        }],
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })

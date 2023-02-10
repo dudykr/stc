@@ -856,21 +856,20 @@ impl Analyzer<'_, '_> {
                         {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
-                            && matches!(e.get().inferred_type.normalize(), Type::Array(..))
-                            && matches!(arg.normalize(), Type::Array(..))
+                            && matches!(e.get().inferred_type.normalize(), Type::Tuple(..))
+                            && match arg.normalize() {
+                                Type::Tuple(tuple) => tuple.elems.len() == 1,
+                                _ => false,
+                            }
                         {
                             // If both are tuples with length is 1, we merge
                             // them.
-                            let prev = e.get().inferred_type.as_array().unwrap().elem_type.clone().generalize_lit();
-                            let new = arg.as_array().unwrap().elem_type.clone().generalize_lit();
+                            //
+                            // ['a'] [1] => ['a', 1]
+                            let mut prev = e.get().inferred_type.clone().expect_tuple();
+                            prev.elems.push(arg.as_tuple().unwrap().elems[0].clone());
 
-                            Type::Array(Array {
-                                span,
-                                elem_type: box Type::new_union(span, vec![prev, new]),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed()
+                            Type::Tuple(prev).freezed()
                         } else {
                             Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
                         };
