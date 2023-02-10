@@ -1756,6 +1756,55 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
 
+                    Type::Tuple(arg) => {
+                        let mut new_elems = vec![];
+                        if let Some(param_ty) = &param.ty {
+                            for elem in arg.elems.iter() {
+                                let old = take(&mut self.mapped_type_param_name);
+                                self.mapped_type_param_name = vec![name.clone()];
+
+                                let mut data = InferData {
+                                    dejavu: inferred.dejavu.clone(),
+                                    ..Default::default()
+                                };
+                                self.infer_type(span, &mut data, param_ty, &elem.ty, opts)?;
+                                let mut map = self.finalize_inference(span, &[], data);
+                                let mut inferred_ty = map.types.remove(&name);
+
+                                self.mapped_type_param_name = old;
+
+                                match &mut inferred_ty {
+                                    Some(ty) => {
+                                        handle_optional_for_element(ty, optional);
+                                    }
+                                    None => {}
+                                }
+
+                                new_elems.push(TupleElement {
+                                    span: elem.span,
+                                    label: elem.label.clone(),
+                                    ty: box inferred_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                    tracker: Default::default(),
+                                });
+                            }
+                        }
+
+                        self.insert_inferred_raw(
+                            span,
+                            inferred,
+                            name.clone(),
+                            Cow::Owned(Type::Tuple(Tuple {
+                                span: arg.span,
+                                elems: new_elems,
+                                metadata: arg.metadata,
+                                tracker: Default::default(),
+                            })),
+                            opts,
+                        )?;
+
+                        return Ok(true);
+                    }
+
                     _ => {
                         dbg!();
                     }
