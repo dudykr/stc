@@ -2155,12 +2155,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let _tracing = if cfg!(debug_assertions) {
-            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple").entered())
-        } else {
-            None
-        };
-
         let len = param.elems.len().max(arg.elems.len());
 
         let mut li = 0;
@@ -2168,6 +2162,12 @@ impl Analyzer<'_, '_> {
 
         let l_max = param.elems.len() - subtract_count(arg);
         let r_max = arg.elems.len() - subtract_count(param);
+
+        let _tracing = if cfg!(debug_assertions) {
+            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple", l_max = l_max, r_max = r_max).entered())
+        } else {
+            None
+        };
 
         for index in 0..len {
             let l_elem_type = self.access_property(
