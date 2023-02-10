@@ -1128,7 +1128,6 @@ impl Analyzer<'_, '_> {
                                     arg,
                                     InferTypeOpts {
                                         append_type_as_union: true,
-                                        is_inferring_rest_type: true,
                                         ..Default::default()
                                     },
                                 )?;
