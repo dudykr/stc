@@ -864,14 +864,9 @@ impl Analyzer<'_, '_> {
                             let prev = e.get().inferred_type.as_array().unwrap().elem_type.clone();
                             let new = arg.as_array().unwrap().elem_type.clone();
 
-                            Type::Tuple(Tuple {
+                            Type::Array(Array {
                                 span,
-                                elems: vec![TupleElement {
-                                    span,
-                                    label: None,
-                                    ty: box Type::new_union(span, vec![*prev, *new]),
-                                    tracker: Default::default(),
-                                }],
+                                elem_type: box Type::new_union(span, vec![*prev, *new]),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
