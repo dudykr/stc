@@ -2170,6 +2170,9 @@ impl Analyzer<'_, '_> {
         };
 
         for index in 0..len {
+            #[cfg(debug_assertions)]
+            let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
+
             let l_elem_type = self.access_property(
                 span,
                 param_ty,
@@ -2214,9 +2217,6 @@ impl Analyzer<'_, '_> {
 
             li = min(index, l_max);
             ri = min(index, r_max);
-
-            #[cfg(debug_assertions)]
-            let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
 
             self.infer_type(
                 span,
