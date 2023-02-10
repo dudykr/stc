@@ -1114,6 +1114,34 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                if opts.index_tuple_with_param {
+                    if let (Type::Tuple(obj_tuple), key) = (param.obj_type.normalize(), param.index_type.normalize()) {
+                        // param  = [string, number, ...T][0 | 1 | number];
+                        // arg = true;
+                        //
+                        // =>
+                        //
+                        // T = true
+
+                        for (elem, key) in obj_tuple.elems.iter().zip(key.iter_union()) {
+                            if key.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                                self.infer_type(
+                                    span,
+                                    inferred,
+                                    &elem.ty,
+                                    arg,
+                                    InferTypeOpts {
+                                        append_type_as_union: true,
+                                        is_inferring_rest_type: true,
+                                        ..Default::default()
+                                    },
+                                )?;
+                                return Ok(());
+                            }
+                        }
+                    }
+                }
             }
 
             Type::Constructor(param) => {
@@ -1729,7 +1757,7 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
 
-                    _ => {
+                    Type::Tuple(..) => {
                         if let Some(param_ty) = &param.ty {
                             self.infer_type(
                                 span,
@@ -1742,7 +1770,9 @@ impl Analyzer<'_, '_> {
                                 },
                             )?;
                         }
+                    }
 
+                    _ => {
                         dbg!();
                     }
                 }
