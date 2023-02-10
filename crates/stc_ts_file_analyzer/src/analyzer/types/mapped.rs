@@ -9,7 +9,6 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
-use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
@@ -262,6 +261,9 @@ impl Analyzer<'_, '_> {
                                 // type ToArray<T> = { [P in keyof T]: T[P][] };
                                 //
                                 //  declare function fm1<N extends unknown[]>(t: ToArray<[string, number,
+                                // type Arrayify<T> = { [P in keyof T]: T[P][] };
+                                //
+                                //  declare function fm1<N extends unknown[]>(t: Arrayify<[string, number,
                                 // ...N]>): N;
 
                                 if let Some(mapped_ty) = &mut mapped_ty {
@@ -270,6 +272,8 @@ impl Analyzer<'_, '_> {
                                         |ty| {
                                             if original_keyof_operand.type_eq(ty) {
                                                 return true;
+                                            if let Type::Param(original_param) = ty.normalize() {
+                                                return original_param.name == m.type_param.name;
                                             }
 
                                             false
@@ -359,6 +363,7 @@ impl Analyzer<'_, '_> {
                                                 tracker: Default::default(),
                                                 ..m.type_param.clone()
                                             },
+                                            ty: mapped_ty.clone(),
                                             tracker: Default::default(),
                                             ..m.clone()
                                         }))
