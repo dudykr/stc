@@ -2142,7 +2142,7 @@ impl Analyzer<'_, '_> {
                 Some(rest_pos) => {
                     // If the rest is not the last, we should return the index of rest
                     if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
-                        t.elems.len() - 1 - rest_pos
+                        t.elems.len() - rest_pos
                     } else {
                         0
                     }
