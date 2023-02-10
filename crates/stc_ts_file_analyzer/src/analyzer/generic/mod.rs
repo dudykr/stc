@@ -2191,7 +2191,7 @@ impl Analyzer<'_, '_> {
                     return_rest_tuple_element_as_is: true,
                     ..Default::default()
                 },
-            );
+            )?;
 
             let r_elem_type = self.access_property(
                 span,
@@ -2212,22 +2212,18 @@ impl Analyzer<'_, '_> {
                     return_rest_tuple_element_as_is: true,
                     ..Default::default()
                 },
-            );
+            )?;
 
-            if let Ok(l_elem_type) = l_elem_type {
-                if let Ok(r_elem_type) = r_elem_type {
-                    self.infer_type(
-                        span,
-                        inferred,
-                        &l_elem_type,
-                        &r_elem_type,
-                        InferTypeOpts {
-                            append_type_as_union: true,
-                            ..opts
-                        },
-                    )?;
-                }
-            }
+            self.infer_type(
+                span,
+                inferred,
+                &l_elem_type,
+                &r_elem_type,
+                InferTypeOpts {
+                    append_type_as_union: true,
+                    ..opts
+                },
+            )?;
         }
 
         Ok(())
