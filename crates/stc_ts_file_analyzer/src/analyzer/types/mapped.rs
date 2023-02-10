@@ -15,7 +15,6 @@ use stc_ts_types::{
     Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
     RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
-use stc_ts_utils::MapWithMut;
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -264,7 +263,7 @@ impl Analyzer<'_, '_> {
                                 //  declare function fm1<N extends unknown[]>(t: ToArray<[string, number,
                                 // type Arrayify<T> = { [P in keyof T]: T[P][] };
                                 //
-                                //  declare function fm1<N extends unknown[]>(t: Arrayify<[string, number,
+                                //  declare function fm1<N extends unknown[]>(t: ToArray<[string, number,
                                 // ...N]>): N;
 
                                 if let Some(mapped_ty) = &mut mapped_ty {
