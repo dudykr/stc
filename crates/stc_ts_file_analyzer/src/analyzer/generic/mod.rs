@@ -2143,13 +2143,16 @@ impl Analyzer<'_, '_> {
 
         let len = param.elems.len().max(arg.elems.len());
 
-        for index in 0..len {
+        let mut li = 0;
+        let mut ri = 0;
+
+        for _ in 0..len {
             let l_elem_type = self.access_property(
                 span,
                 param_ty,
                 &Key::Num(RNumber {
                     span,
-                    value: index as _,
+                    value: li as _,
                     raw: None,
                 }),
                 TypeOfMode::RValue,
@@ -2170,7 +2173,7 @@ impl Analyzer<'_, '_> {
                 arg_ty,
                 &Key::Num(RNumber {
                     span,
-                    value: index as _,
+                    value: ri as _,
                     raw: None,
                 }),
                 TypeOfMode::RValue,
@@ -2186,6 +2189,14 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
+            if !l_elem_type.is_rest() {
+                li += 1;
+            }
+
+            if !r_elem_type.is_rest() {
+                ri += 1;
+            }
+
             self.infer_type(
                 span,
                 inferred,
@@ -2196,6 +2207,10 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             )?;
+
+            if l_elem_type.is_rest() && r_elem_type.is_rest() {
+                break;
+            }
         }
 
         Ok(())
