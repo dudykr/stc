@@ -856,19 +856,13 @@ impl Analyzer<'_, '_> {
                         {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
-                            && match e.get().inferred_type.normalize() {
-                                Type::Tuple(tuple) => tuple.elems.len() == 1,
-                                _ => false,
-                            }
-                            && match arg.normalize() {
-                                Type::Tuple(tuple) => tuple.elems.len() == 1,
-                                _ => false,
-                            }
+                            && matches!(e.get().inferred_type.normalize(), Type::Array(..))
+                            && matches!(arg.normalize(), Type::Array(..))
                         {
                             // If both are tuples with length is 1, we merge
                             // them.
-                            let prev = e.get().inferred_type.as_tuple().unwrap().elems[0].ty.clone();
-                            let new = arg.as_tuple().unwrap().elems[0].ty.clone();
+                            let prev = e.get().inferred_type.as_array().unwrap().elem_type.clone();
+                            let new = arg.as_array().unwrap().elem_type.clone();
 
                             Type::Tuple(Tuple {
                                 span,
