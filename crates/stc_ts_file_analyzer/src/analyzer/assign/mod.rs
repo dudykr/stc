@@ -589,7 +589,13 @@ impl Analyzer<'_, '_> {
             let l = force_dump_type_as_string(left);
             let r = force_dump_type_as_string(right);
 
-            format!("\nlhs = {}\nrhs = {}", l, r)
+            let l_final = self.normalize_for_assign(opts.span, left, opts);
+            let r_final = self.normalize_for_assign(opts.span, right, opts);
+
+            let l_final = l_final.map(|v| force_dump_type_as_string(&v)).unwrap_or_default();
+            let r_final = r_final.map(|v| force_dump_type_as_string(&v)).unwrap_or_default();
+
+            format!("\nlhs = {}\nrhs = {}\nlhs (final) = {}\nrhs (final) = {}", l, r, l_final, r_final)
         });
 
         let dejavu = data.dejavu.pop();
@@ -2499,7 +2505,7 @@ impl Analyzer<'_, '_> {
                                         ..opts
                                     },
                                 )
-                                .with_context(|| format!("tried to assign {}th tuple assignment", index))
+                                .with_context(|| format!("tried to assign {}th tuple element", index))
                                 .err(),
                             );
                         }
