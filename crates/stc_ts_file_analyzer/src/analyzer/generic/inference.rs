@@ -867,6 +867,7 @@ impl Analyzer<'_, '_> {
                             //
                             // ['a'] [1] => ['a', 1]
                             let mut prev = e.get().inferred_type.clone().expect_tuple();
+                            prev.metadata.prevent_tuple_to_array = true;
                             prev.elems.push(arg.as_tuple().unwrap().elems[0].clone());
 
                             Type::Tuple(prev).freezed()
