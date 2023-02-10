@@ -1,0 +1,50 @@
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-2.ts:14:1]
+ 14 | var d: number[] | string[];
+ 15 | var d = baz(d, d, g);      // Should be number[] | string[]
+    :         ^^^
+    `----
+
+Error: 
+  > <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-2.ts:14:1]
+ 14 | var d: number[] | string[];
+ 15 | var d = baz(d, d, g);      // Should be number[] | string[]
+    :             ^
+    `----
+
+Error: 
+  > (number[] | string[])
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-2.ts:14:1]
+ 14 | var d: number[] | string[];
+ 15 | var d = baz(d, d, g);      // Should be number[] | string[]
+    :                ^
+    `----
+
+Error: 
+  > (number[] | string[])
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-2.ts:14:1]
+ 14 | var d: number[] | string[];
+ 15 | var d = baz(d, d, g);      // Should be number[] | string[]
+    :                   ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-2.ts:14:1]
+ 14 | var d: number[] | string[];
+ 15 | var d = baz(d, d, g);      // Should be number[] | string[]
+    :         ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (number[] | string[])

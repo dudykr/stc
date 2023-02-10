@@ -97,6 +97,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
+        ret_ty: Option<&Type>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         warn!(
@@ -290,6 +291,8 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        self.prevent_generalization_of_top_level_types(type_params, ret_ty, &mut inferred, opts.is_type_ann);
 
         self.prevent_generalization_of_inferred_types(type_params, &mut inferred, opts.is_type_ann);
 
