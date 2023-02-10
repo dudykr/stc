@@ -2156,9 +2156,6 @@ impl Analyzer<'_, '_> {
 
         let len = param.elems.len().max(arg.elems.len());
 
-        let mut li = 0;
-        let mut ri = 0;
-
         let l_max = param.elems.len() - subtract_count(arg);
         let r_max = arg.elems.len() - subtract_count(param);
 
@@ -2169,8 +2166,8 @@ impl Analyzer<'_, '_> {
         };
 
         for index in 0..len {
-            li = min(index, l_max);
-            ri = min(index, r_max);
+            let li = min(index, l_max);
+            let ri = min(index, r_max);
 
             #[cfg(debug_assertions)]
             let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
