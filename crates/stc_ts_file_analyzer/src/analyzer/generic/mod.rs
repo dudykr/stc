@@ -2197,6 +2197,9 @@ impl Analyzer<'_, '_> {
                 ri += 1;
             }
 
+            #[cfg(debug_assertions)]
+            let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
+
             self.infer_type(
                 span,
                 inferred,
