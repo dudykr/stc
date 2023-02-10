@@ -2146,7 +2146,14 @@ impl Analyzer<'_, '_> {
         let mut li = 0;
         let mut ri = 0;
 
-        for _ in 0..len {
+        for index in 0..len {
+            let l_dist = param.elems.len() - li;
+            let r_dist = arg.elems.len() - ri;
+
+            if l_dist < ri || r_dist < li {
+                break;
+            }
+
             let l_elem_type = self.access_property(
                 span,
                 param_ty,
