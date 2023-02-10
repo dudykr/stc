@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
+use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take, time::Instant};
 
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
@@ -2135,6 +2135,25 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        fn max_index(t: &Tuple) -> usize {
+            let rest_pos = t.elems.iter().position(|e| e.ty.is_rest());
+
+            match rest_pos {
+                Some(rest_pos) => {
+                    // If the rest is not the last, we should return the index of rest
+                    if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
+                        rest_pos
+                    } else {
+                        t.elems.len()
+                    }
+                }
+                None => {
+                    // No rest means we can iterate over whole tuple.
+                    t.elems.len()
+                }
+            }
+        }
+
         let _tracing = if cfg!(debug_assertions) {
             Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple").entered())
         } else {
@@ -2148,11 +2167,10 @@ impl Analyzer<'_, '_> {
         let mut li = 0;
         let mut ri = 0;
 
-        for index in 0..len {
-            if (is_l_rest && param.elems.len() < ri + li) || (is_r_rest && arg.elems.len() < li + ri) {
-                break;
-            }
+        let l_max = max_index(param);
+        let r_max = max_index(arg);
 
+        for index in 0..len {
             let l_elem_type = self.access_property(
                 span,
                 param_ty,
@@ -2197,15 +2215,13 @@ impl Analyzer<'_, '_> {
 
             if l_elem_type.is_rest() {
                 is_l_rest = true;
-            } else {
-                li += 1;
             }
+            li = min(index, l_max);
 
             if r_elem_type.is_rest() {
                 is_r_rest = true;
-            } else {
-                ri += 1;
             }
+            ri = min(index, r_max);
 
             #[cfg(debug_assertions)]
             let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
