@@ -1053,13 +1053,25 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
     Property(PropertySignature),
     Method(MethodSignature),
     Index(IndexSignature),
+}
+
+impl Debug for TypeElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TypeElement::Call(c) => write!(f, "{:?}", c),
+            TypeElement::Constructor(c) => write!(f, "{:?}", c),
+            TypeElement::Property(p) => write!(f, "{:?}", p),
+            TypeElement::Method(m) => write!(f, "{:?}", m),
+            TypeElement::Index(i) => write!(f, "{:?}", i),
+        }
+    }
 }
 
 impl Take for TypeElement {
