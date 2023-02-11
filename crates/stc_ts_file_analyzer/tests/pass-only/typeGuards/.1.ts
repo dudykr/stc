@@ -1,4 +1,4 @@
-// @strict: trie
+// @strict: true
 class A { a: string; }
 class B { b: number; }
 
