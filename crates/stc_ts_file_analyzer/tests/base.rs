@@ -22,7 +22,7 @@ use stc_ts_file_analyzer::{
     validator::ValidateWith,
 };
 use stc_ts_storage::{ErrorStore, Single};
-use stc_ts_testing::tsc::TscError;
+use stc_ts_testing::{conformance::parse_conformance_test, tsc::TscError};
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext};
@@ -272,150 +272,154 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
 }
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
+fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
     let filename = file_name.display().to_string();
     println!("{}", filename);
 
-    let res = testing::Tester::new()
-        .print_errors(|cm, handler| -> Result<(), _> {
-            let handler = Arc::new(handler);
-            let fm = cm.load_file(&file_name).unwrap();
-            let mut libs = vec![];
-            let ls = &[
-                "es2020.full",
-                "es2019.full",
-                "es2018.full",
-                "es2017.full",
-                "es2016.full",
-                "es2015.full",
-            ];
-            for s in ls {
-                libs.extend(Lib::load(s))
-            }
-            libs.sort();
-            libs.dedup();
-            let mut rule = Rule {
-                allow_unreachable_code: true,
-                always_strict: false,
-                no_implicit_any: false,
-                allow_unused_labels: true,
-                no_fallthrough_cases_in_switch: false,
-                no_implicit_returns: false,
-                no_implicit_this: false,
-                no_strict_generic_checks: false,
-                no_unused_locals: false,
-                no_unused_parameters: false,
-                strict_function_types: false,
-                strict_null_checks: false,
-                suppress_excess_property_errors: false,
-                suppress_implicit_any_index_errors: false,
-                use_define_property_for_class_fields: false,
-                jsx: JsxMode::Preserve,
-            };
-
-            for line in fm.src.lines() {
-                if !line.starts_with("//@") {
-                    continue;
+    for test_case in parse_conformance_test(&file_name) {
+        let result = testing::Tester::new()
+            .print_errors(|cm, handler| -> Result<(), _> {
+                let handler = Arc::new(handler);
+                let fm = cm.load_file(&file_name).unwrap();
+                let mut libs = vec![];
+                let ls = &[
+                    "es2020.full",
+                    "es2019.full",
+                    "es2018.full",
+                    "es2017.full",
+                    "es2016.full",
+                    "es2015.full",
+                ];
+                for s in ls {
+                    libs.extend(Lib::load(s))
                 }
-                let line = &line["//@".len()..].trim();
-                if line.starts_with("strict:") {
-                    let value = line["strict:".len()..].trim().parse::<bool>().unwrap();
-                    rule.strict_function_types = value;
-                    rule.strict_null_checks = value;
-                    rule.no_implicit_any = value;
-                    continue;
-                } else if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
-                    let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
-                    rule.allow_unreachable_code = value;
-                    continue;
-                } else if line.starts_with("noImplicitAny:") {
-                    let v = line["noImplicitAny:".len()..].trim().parse().unwrap();
-                    rule.no_implicit_any = v;
-                    continue;
+                libs.sort();
+                libs.dedup();
+                let mut rule = Rule {
+                    allow_unreachable_code: true,
+                    always_strict: false,
+                    no_implicit_any: false,
+                    allow_unused_labels: true,
+                    no_fallthrough_cases_in_switch: false,
+                    no_implicit_returns: false,
+                    no_implicit_this: false,
+                    no_strict_generic_checks: false,
+                    no_unused_locals: false,
+                    no_unused_parameters: false,
+                    strict_function_types: false,
+                    strict_null_checks: false,
+                    suppress_excess_property_errors: false,
+                    suppress_implicit_any_index_errors: false,
+                    use_define_property_for_class_fields: false,
+                    jsx: JsxMode::Preserve,
+                };
+
+                for line in fm.src.lines() {
+                    if !line.starts_with("//@") {
+                        continue;
+                    }
+                    let line = &line["//@".len()..].trim();
+                    if line.starts_with("strict:") {
+                        let value = line["strict:".len()..].trim().parse::<bool>().unwrap();
+                        rule.strict_function_types = value;
+                        rule.strict_null_checks = value;
+                        rule.no_implicit_any = value;
+                        continue;
+                    } else if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
+                        let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
+                        rule.allow_unreachable_code = value;
+                        continue;
+                    } else if line.starts_with("noImplicitAny:") {
+                        let v = line["noImplicitAny:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_any = v;
+                        continue;
+                    }
+
+                    panic!("Invalid directive: {:?}", line)
                 }
 
-                panic!("Invalid directive: {:?}", line)
-            }
+                let env = Env::simple(rule, EsVersion::Es2020, ModuleConfig::None, &libs);
+                let stable_env = env.shared().clone();
+                let generator = module_id::ModuleIdGenerator::default();
+                let path = Arc::new(FileName::Real(file_name.clone()));
 
-            let env = Env::simple(rule, EsVersion::Es2020, ModuleConfig::None, &libs);
-            let stable_env = env.shared().clone();
-            let generator = module_id::ModuleIdGenerator::default();
-            let path = Arc::new(FileName::Real(file_name.clone()));
+                let (module_id, top_level_mark) = generator.generate(&path);
 
-            let (module_id, top_level_mark) = generator.generate(&path);
+                let mut storage = Single {
+                    parent: None,
+                    id: module_id,
+                    top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
+                    path,
+                    is_dts: false,
+                    info: Default::default(),
+                };
 
-            let mut storage = Single {
-                parent: None,
-                id: module_id,
-                top_level_ctxt: SyntaxContext::empty().apply_mark(top_level_mark),
-                path,
-                is_dts: false,
-                info: Default::default(),
-            };
+                let mut node_id_gen = NodeIdGenerator::default();
+                let comments = StcComments::default();
 
-            let mut node_id_gen = NodeIdGenerator::default();
-            let comments = StcComments::default();
-
-            let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig {
-                    tsx: filename.contains("tsx"),
-                    decorators: true,
-                    ..Default::default()
-                }),
-                EsVersion::Es2020,
-                SourceFileInput::from(&*fm),
-                Some(&comments),
-            );
-            let mut parser = Parser::new_from(lexer);
-            let module = parser.parse_module().unwrap();
-            let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
-            let module = RModule::from_orig(&mut node_id_gen, module);
-            {
-                let mut analyzer = Analyzer::root(
-                    env,
-                    cm.clone(),
-                    Default::default(),
-                    box &mut storage,
-                    &NoopLoader,
-                    if for_error {
-                        None
-                    } else {
-                        Some(Debugger {
-                            cm,
-                            handler: handler.clone(),
-                        })
-                    },
+                let lexer = Lexer::new(
+                    Syntax::Typescript(TsConfig {
+                        tsx: filename.contains("tsx"),
+                        decorators: true,
+                        ..Default::default()
+                    }),
+                    EsVersion::Es2020,
+                    SourceFileInput::from(&*fm),
+                    Some(&comments),
                 );
+                let mut parser = Parser::new_from(lexer);
+                let module = parser.parse_module().unwrap();
+                let module = module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true));
+                let module = RModule::from_orig(&mut node_id_gen, module);
+                {
+                    let mut analyzer = Analyzer::root(
+                        env,
+                        cm.clone(),
+                        Default::default(),
+                        box &mut storage,
+                        &NoopLoader,
+                        if want_error {
+                            None
+                        } else {
+                            Some(Debugger {
+                                cm,
+                                handler: handler.clone(),
+                            })
+                        },
+                    );
 
-                let log_sub = logger(Level::DEBUG);
+                    let log_sub = logger(Level::DEBUG);
 
-                let _guard = tracing::subscriber::set_default(log_sub);
+                    let _guard = tracing::subscriber::set_default(log_sub);
 
-                module.validate_with(&mut analyzer).unwrap();
-            }
-
-            if for_error {
-                let errors = storage.take_errors();
-                let errors = ErrorKind::flatten(errors.into());
-
-                for err in errors {
-                    err.emit(&handler);
+                    module.validate_with(&mut analyzer).unwrap();
                 }
+
+                if want_error {
+                    let errors = storage.take_errors();
+                    let errors = ErrorKind::flatten(errors.into());
+
+                    for err in errors {
+                        err.emit(&handler);
+                    }
+                }
+
+                Err(())
+            })
+            .unwrap_err();
+
+        if want_error {
+            if result.trim().is_empty() {
+                return None;
             }
 
-            Err(())
-        })
-        .unwrap_err();
-
-    if for_error {
-        if res.trim().is_empty() {
-            return None;
+            panic!("Failed to validate")
+        } else {
+            return Some(result);
         }
-
-        panic!("Failed to validate")
-    } else {
-        Some(res)
     }
+
+    None
 }
 
 #[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
