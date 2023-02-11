@@ -368,13 +368,25 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
     Num(RNumber),
     BigInt(RBigInt),
     Private(PrivateName),
+}
+
+impl Debug for Key {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Key::Computed(v) => v.fmt(f),
+            Key::Normal { sym, .. } => sym.fmt(f),
+            Key::Num(v) => v.fmt(f),
+            Key::BigInt(v) => v.fmt(f),
+            Key::Private(v) => v.fmt(f),
+        }
+    }
 }
 
 impl TypeEq for Key {
