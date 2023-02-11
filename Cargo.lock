@@ -2367,6 +2367,7 @@ dependencies = [
  "serde_json",
  "stc_testing",
  "stc_ts_ast_rnode",
+ "stc_ts_env",
  "stc_ts_types",
  "swc_atoms",
  "swc_common",
