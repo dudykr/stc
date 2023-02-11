@@ -4,6 +4,6 @@
 macro_rules! dev_span {
     ($($tt:tt)*) => {{
         #[cfg(debug_assertions)]
-        tracing::error_span!($($tt)*).entered();
+        tracing::error_span!($($tt)*).entered()
     }};
 }
