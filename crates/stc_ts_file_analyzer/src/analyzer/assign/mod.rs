@@ -5,16 +5,17 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
+use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, dev_span, stack};
+use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, span, Level};
 
 use crate::{
     analyzer::{
@@ -207,7 +208,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Used to validate assignments like `a += b`.
-    pub(crate) fn assign_with_operator(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.normalize(
@@ -613,7 +614,14 @@ impl Analyzer<'_, '_> {
             unreachable!("cannot assign with dummy span")
         }
 
-        let _tracing = dev_span!("assign", lhs = &*dump_type_as_string(to), rhs = &*dump_type_as_string(rhs));
+        let _tracing = if cfg!(debug_assertions) {
+            let lhs = dump_type_as_string(to);
+            let rhs = dump_type_as_string(rhs);
+
+            Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
+        } else {
+            None
+        };
 
         // It's valid to assign any to everything.
         if rhs.is_any() {
@@ -646,7 +654,11 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
-                .context("fail!() called"));
+                .context(format!(
+                    "LHS (final): {}\nRHS (final): {}",
+                    force_dump_type_as_string(to),
+                    force_dump_type_as_string(rhs)
+                )));
             }};
         }
 
@@ -820,6 +832,24 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if rhs.is_enum_type() {
+            let rhs = self
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(rhs),
+                    NormalizeTypeOpts {
+                        expand_enum_def: true,
+                        ..Default::default()
+                    },
+                )?
+                .freezed()
+                .into_owned()
+                .freezed();
+            if self.assign_inner(data, to, &rhs, opts).is_ok() {
+                return Ok(());
+            }
+        }
+
         match to {
             Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(RIdent {
@@ -903,7 +933,6 @@ impl Analyzer<'_, '_> {
         }
 
         if rhs.is_mapped() {
-        if rhs.is_mapped() || rhs.is_enum_type() {
             let rhs = self
                 .normalize(
                     Some(opts.span),
@@ -913,7 +942,6 @@ impl Analyzer<'_, '_> {
                         preserve_global_this: true,
                         preserve_intersection: true,
                         preserve_union: true,
-                        expand_enum_def: true,
                         ..Default::default()
                     },
                 )?
@@ -1490,10 +1518,10 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Intersection(Intersection { types: rhs_types, .. }) => {
+            Type::Intersection(Intersection { types, .. }) => {
                 if !opts.do_not_normalize_intersection_on_rhs {
                     // Filter out `never` types
-                    if let Some(new) = self.normalize_intersection_types(span, rhs_types, NormalizeTypeOpts { ..Default::default() })? {
+                    if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
                         return self
                             .assign_inner(
                                 data,
@@ -1507,8 +1535,13 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign a normalized intersection type to another type");
                     }
                 }
+                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                    if new.is_never() && to.is_never() {
+                        return Ok(());
+                    }
+                }
 
-                let results = rhs_types
+                let results = types
                     .iter()
                     .map(|rhs| {
                         self.assign_inner(
@@ -1533,7 +1566,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let use_single_error = rhs_types.iter().all(|ty| ty.is_interface());
+                let use_single_error = types.iter().all(|ty| ty.is_interface());
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
 
                 if use_single_error {
@@ -2447,7 +2480,8 @@ impl Analyzer<'_, '_> {
                             let li = index;
                             let ri = min(index, r_max);
 
-                            let _tracing = dev_span!("assign_tuple_to_tuple", li = li, ri = ri);
+                            #[cfg(debug_assertions)]
+                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", li = li, ri = ri).entered();
 
                             let l_elem_type = self.access_property(
                                 span,
@@ -2740,59 +2774,57 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[context("tried to extract keys")]
     fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
-        (|| -> VResult<_> {
-            let ty = self.normalize(
-                Some(span),
-                Cow::Borrowed(ty),
-                NormalizeTypeOpts {
-                    normalize_keywords: true,
-                    process_only_key: true,
-                    ..Default::default()
-                },
-            )?;
-            let ty = ty.normalize();
+        let ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                normalize_keywords: true,
+                process_only_key: true,
+                ..Default::default()
+            },
+        )?;
+        let ty = ty.normalize();
 
-            if let Type::TypeLit(ty) = ty {
-                //
-                let mut keys = vec![];
-                for member in &ty.members {
-                    if let TypeElement::Property(PropertySignature {
-                        span,
-                        key: Key::Normal { sym: key, .. },
-                        ..
-                    }) = member
-                    {
-                        keys.push(Type::Lit(LitType {
+        if let Type::TypeLit(ty) = ty {
+            //
+            let mut keys = vec![];
+            for member in &ty.members {
+                if let TypeElement::Property(PropertySignature {
+                    span,
+                    key: Key::Normal { sym: key, .. },
+                    ..
+                }) = member
+                {
+                    keys.push(Type::Lit(LitType {
+                        span: *span,
+                        lit: RTsLit::Str(RStr {
                             span: *span,
-                            lit: RTsLit::Str(RStr {
-                                span: *span,
-                                value: key.clone(),
-                                raw: None,
-                            }),
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
-                    }
+                            value: key.clone(),
+                            raw: None,
+                        }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
                 }
-
-                return Ok(Type::new_union(span, keys));
             }
 
-            if let Some(ty) = self
-                .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
-                .map(Cow::into_owned)
-                .map(Type::TypeLit)
-            {
-                return self.extract_keys(span, &ty);
-            }
+            return Ok(Type::new_union(span, keys));
+        }
 
-            Err(ErrorKind::Unimplemented {
-                span,
-                msg: "Extract keys".to_string(),
-            })?
-        })()
-        .context("tried to extract keys")
+        if let Some(ty) = self
+            .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
+            .map(Cow::into_owned)
+            .map(Type::TypeLit)
+        {
+            return self.extract_keys(span, &ty);
+        }
+
+        Err(ErrorKind::Unimplemented {
+            span,
+            msg: "Extract keys".to_string(),
+        })?
     }
 
     /// Handles `P in 'foo' | 'bar'`. Note that `'foo' | 'bar'` part should be
