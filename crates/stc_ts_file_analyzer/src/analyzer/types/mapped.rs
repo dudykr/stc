@@ -169,9 +169,23 @@ impl Analyzer<'_, '_> {
 
         match keyof_operand.normalize() {
             Type::Array(array) => {
+                let elem_type = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+                let elem_type = match m.optional {
+                    Some(TruePlusMinus::True) => {
+                        let undefined = Type::Keyword(KeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        });
+                        box Type::new_union(span, vec![*elem_type, undefined])
+                    }
+                    _ => elem_type,
+                };
+
                 let mut ty = Type::Array(Array {
                     span,
-                    elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                    elem_type,
                     metadata: array.metadata,
                     tracker: Default::default(),
                 });
@@ -275,6 +289,19 @@ impl Analyzer<'_, '_> {
                                     |_| Some(*elem.ty.clone()),
                                 );
                             }
+
+                            let ty = match m.optional {
+                                Some(TruePlusMinus::True) => {
+                                    let undefined = Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    });
+                                    box Type::new_union(span, vec![*ty, undefined])
+                                }
+                                _ => ty,
+                            };
 
                             Ok(TupleElement { ty, ..elem.clone() })
                         })
