@@ -40,13 +40,14 @@ pub(crate) struct ExtendsOpts {
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn instantiate_type_params_using_args(
         &mut self,
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
     ) -> VResult<FxHashMap<Id, Type>> {
+        let _tracing = dev_span!("instantiate_type_params_using_args");
+
         let mut params = FxHashMap::default();
 
         for (idx, param) in type_params.params.iter().enumerate() {
