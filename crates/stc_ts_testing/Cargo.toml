@@ -21,6 +21,7 @@ stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_builtin_types = {path = "../stc_ts_builtin_types"}
 stc_ts_env = {path = "../stc_ts_env"}
 stc_ts_types = {path = "../stc_ts_types"}
+stc_ts_utils = {path = "../stc_ts_utils"}
 swc_atoms = "0.4.34"
 swc_common = "0.29.29"
 swc_ecma_ast = "0.96.3"
