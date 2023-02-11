@@ -1,4 +1,3 @@
-// @strict: true
 export let x: string | number;
 x = 1000;
 do {
