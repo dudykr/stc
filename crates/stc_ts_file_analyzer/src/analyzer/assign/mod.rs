@@ -799,6 +799,17 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (Type::Rest(lr), r) => {
+                if r.is_unknown() {
+                    return Err(ErrorKind::AssignFailed {
+                        span,
+                        left: box to.clone(),
+                        right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
+                        cause: vec![],
+                    }
+                    .into());
+                }
+
                 if let Type::Array(la) = lr.ty.normalize() {
                     return self.assign_with_opts(data, &la.elem_type, r, opts);
                 }
