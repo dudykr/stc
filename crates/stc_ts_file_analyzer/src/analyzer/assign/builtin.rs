@@ -222,16 +222,8 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r), true) {
                     return Some(
-                        self.assign_with_opts(
-                            data,
-                            &l,
-                            &r,
-                            AssignOpts {
-                                may_unwrap_promise: false,
-                                ..opts
-                            },
-                        )
-                        .context("tried to assign an awaited type to an awaited type"),
+                        self.assign_with_opts(data, &l, &r, AssignOpts { ..opts })
+                            .context("tried to assign an awaited type to an awaited type"),
                     );
                 }
 
@@ -250,16 +242,8 @@ impl Analyzer<'_, '_> {
             } else {
                 if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r), true) {
                     return Some(
-                        self.assign_with_opts(
-                            data,
-                            l,
-                            &r,
-                            AssignOpts {
-                                may_unwrap_promise: false,
-                                ..opts
-                            },
-                        )
-                        .context("tried to assign an non-waited type to an awaited type"),
+                        self.assign_with_opts(data, l, &r, AssignOpts { ..opts })
+                            .context("tried to assign an non-waited type to an awaited type"),
                     );
                 }
             }
