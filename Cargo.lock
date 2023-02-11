@@ -2363,6 +2363,7 @@ dependencies = [
  "parking_lot",
  "regex",
  "rnode",
+ "rustc-hash",
  "serde",
  "serde_json",
  "stc_testing",
