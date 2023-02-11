@@ -22,7 +22,7 @@ use stc_ts_types::{
     TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, AHashSet};
+use stc_utils::{cache::Freeze, dev_span, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -1102,8 +1102,9 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_type_elements(&mut self, elems: &[TypeElement]) {
+        let _tracing = dev_span!("report_error_for_duplicate_type_elements");
+
         if self.config.is_builtin {
             return;
         }
