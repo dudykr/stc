@@ -12,6 +12,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::Freeze,
+    dev_span,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -62,11 +63,7 @@ impl Analyzer<'_, '_> {
         is_generator: bool,
         stmts: &Vec<RStmt>,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "visit_stmts_for_return").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("visit_stmts_for_return");
 
         let marks = self.marks();
 

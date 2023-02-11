@@ -1667,11 +1667,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "apply_type_facts", name = tracing::field::debug(name)).entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("apply_type_facts", name = tracing::field::debug(name));
 
         let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
 

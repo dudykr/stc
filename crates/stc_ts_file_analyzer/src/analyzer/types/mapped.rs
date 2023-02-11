@@ -13,7 +13,10 @@ use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    dev_span,
+};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
@@ -139,11 +142,7 @@ impl Analyzer<'_, '_> {
         original_keyof_operand: &Type,
         m: &Mapped,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_mapped_type_with_keyof").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand_mapped_type_with_keyof");
 
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())

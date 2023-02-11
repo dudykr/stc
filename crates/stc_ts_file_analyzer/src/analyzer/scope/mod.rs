@@ -1620,11 +1620,7 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "declare_complex_vars").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("declare_complex_vars");
 
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
