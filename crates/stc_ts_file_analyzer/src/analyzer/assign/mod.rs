@@ -1429,19 +1429,11 @@ impl Analyzer<'_, '_> {
                     //
                     // See typeArgumentInferenceWithObjectLiteral.ts
 
-                    let e = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
+                    let rhs = self.expand_enum_variant(rhs.clone())?;
 
-                    if let Some(e) = e {
-                        for e in e {
-                            if let Type::Enum(e) = e.normalize() {
-                                if e.members.len() == 1 {
-                                    return Ok(());
-                                }
-                            }
-                        }
-                    }
-
-                    fail!()
+                    return self
+                        .assign_inner(data, to, &rhs, opts)
+                        .context("tried to assign an enum variant to a literal");
                 }
                 _ => {
                     if let RTsLit::Str(lhs) = &lhs.lit {
