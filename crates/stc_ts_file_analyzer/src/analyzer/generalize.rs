@@ -47,13 +47,15 @@ impl Analyzer<'_, '_> {
         !ty.metadata().prevent_generalization
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
+        let _tracing = dev_span!("prevent_inference_while_simplifying");
+
         ty.visit_mut_with(&mut PreventComplexSimplification);
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
+        let _tracing = dev_span!("simplify");
+
         info!("Simplifying {}", dump_type_as_string(&ty));
         ty.fold_with(&mut Simplifier { env: &self.env })
     }
