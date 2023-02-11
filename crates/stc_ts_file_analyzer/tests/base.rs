@@ -342,8 +342,6 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
     let res = testing::Tester::new()
         .print_errors(|cm, handler| -> Result<(), _> {
-            cm.new_source_file(FileName::Anon, "".to_string());
-
             let handler = Arc::new(handler);
             let fm = cm.load_file(&file_name).unwrap();
             let mut libs = vec![];
