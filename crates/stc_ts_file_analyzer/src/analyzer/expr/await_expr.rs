@@ -76,11 +76,21 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>, error_on_missing_then: bool) -> VResult<Cow<'a, Type>> {
-        if let Some(arg) = unwrap_builtin_with_single_arg(&ty, "Promise") {
+        if let Some(arg) = unwrap_builtin_with_single_arg(&ty, "Promise").or_else(|| unwrap_builtin_with_single_arg(&ty, "PromiseLike")) {
             return self
                 .get_awaited_type(span, Cow::Borrowed(arg), false)
                 .map(Cow::into_owned)
                 .map(Cow::Owned);
+        }
+
+        if let Type::Union(ty) = ty.normalize() {
+            let mut types = Vec::with_capacity(ty.types.len());
+
+            for ty in &ty.types {
+                types.push(self.get_awaited_type(span, Cow::Borrowed(ty), error_on_missing_then)?.into_owned());
+            }
+
+            return Ok(Cow::Owned(Type::new_union(span, types)));
         }
 
         let res = self.access_property(
