@@ -1163,7 +1163,7 @@ pub struct ConstructorSignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct PropertySignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -1178,6 +1178,18 @@ pub struct PropertySignature {
     pub metadata: TypeElMetadata,
 
     pub accessor: Accessor,
+}
+
+impl Debug for PropertySignature {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.key)?;
+
+        if let Some(type_ann) = &self.type_ann {
+            write!(f, ": {:?}", type_ann)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
