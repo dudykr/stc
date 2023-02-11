@@ -753,7 +753,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                     } else {
-                        self.assign_with_op(span, op, &lhs_ty, rhs_ty)?;
+                        self.assign_with_operator(span, op, &lhs_ty, rhs_ty)?;
                     }
 
                     if let RExpr::Ident(left) = &**expr {
@@ -801,7 +801,7 @@ impl Analyzer<'_, '_> {
                                 let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
 
                                 if let Ok(lhs) = lhs {
-                                    self.assign_with_op(span, op, &lhs, rhs_ty)?;
+                                    self.assign_with_operator(span, op, &lhs, rhs_ty)?;
                                 }
                             }
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,

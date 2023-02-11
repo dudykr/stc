@@ -208,7 +208,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Used to validate assignments like `a += b`.
-    pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_operator(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.normalize(
