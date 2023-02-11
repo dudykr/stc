@@ -688,11 +688,7 @@ impl Analyzer<'_, '_> {
     ///
     /// - `declared`: Key of declared property.
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "key_matches").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("key_matches");
 
         match declared {
             Key::Computed(..) => {}
@@ -3850,11 +3846,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "type_of_ts_entity_name_inner").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("type_of_ts_entity_name_inner");
 
         let span = span.with_ctxt(SyntaxContext::empty());
         {

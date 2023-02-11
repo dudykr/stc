@@ -58,11 +58,7 @@ impl Analyzer<'_, '_> {
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "normalize_union").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("normalize_union");
 
         let start = Instant::now();
         ty.visit_mut_with(&mut ObjectUnionNormalizer { preserve_specified });
@@ -112,11 +108,7 @@ impl Analyzer<'_, '_> {
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "append_prop_or_spread_to_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("append_prop_or_spread_to_type");
 
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
