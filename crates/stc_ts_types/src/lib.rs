@@ -772,7 +772,7 @@ impl Debug for Ref {
         write_entity_name(f, &self.type_name)?;
 
         if let Some(type_args) = &self.type_args {
-            write!(f, "<{:?}>", type_args)?
+            write!(f, "{:?}", type_args)?
         }
 
         Ok(())
@@ -1151,12 +1151,25 @@ pub struct TsExpr {
     pub tracker: Tracker<"TsExpr">,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamInstantiation {
     pub span: Span,
 
     /// TODO(kdy1): Rename to `args`.
     pub params: Vec<Type>,
+}
+
+impl Debug for TypeParamInstantiation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ">")
+    }
 }
 
 #[derive(Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
