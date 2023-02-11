@@ -220,31 +220,33 @@ impl Analyzer<'_, '_> {
             if let Ok(l) = self.get_awaited_type(span, Cow::Borrowed(l)) {
                 // We are in return type of an async function.
 
-                if let Ok(()) = self.assign_with_opts(
-                    data,
-                    &l,
-                    r,
-                    AssignOpts {
-                        may_unwrap_promise: false,
-                        ..opts
-                    },
-                ) {
-                    return Some(Ok(()));
+                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r)) {
+                    return Some(
+                        self.assign_with_opts(
+                            data,
+                            &l,
+                            &r,
+                            AssignOpts {
+                                may_unwrap_promise: false,
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign an awaited type to an awaited type"),
+                    );
                 }
 
-                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r)) {
-                    if let Ok(()) = self.assign_with_opts(
+                return Some(
+                    self.assign_with_opts(
                         data,
                         &l,
-                        &r,
+                        r,
                         AssignOpts {
                             may_unwrap_promise: false,
                             ..opts
                         },
-                    ) {
-                        return Some(Ok(()));
-                    }
-                }
+                    )
+                    .context("tried to assign an awaited type to a non-awaited type"),
+                );
             }
         }
 
