@@ -1,3 +1,5 @@
+// @strict: true
+
 // Mapped types applied to variadic tuple types
 
 type Arrayify<T> = { [P in keyof T]: T[P][] };
