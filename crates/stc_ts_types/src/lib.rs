@@ -643,7 +643,7 @@ pub struct LitType {
 impl Debug for LitType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.lit {
-            RTsLit::Str(s) => write!(f, "{:?}", s.value),
+            RTsLit::Str(s) => write!(f, "'{}'", s.value),
             RTsLit::Number(n) => write!(f, "{}", n.value),
             RTsLit::BigInt(n) => write!(f, "{}n", n.value),
             RTsLit::Bool(b) => write!(f, "{}", b.value),
