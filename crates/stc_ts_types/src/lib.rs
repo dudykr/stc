@@ -1112,7 +1112,7 @@ impl Debug for TypeLit {
             if i != 0 {
                 write!(f, ", ")?;
             }
-            writeln!(f, "{:?}", member)?;
+            writeln!(f, "    {:?}", member)?;
         }
 
         write!(f, "}}")
