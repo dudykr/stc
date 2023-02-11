@@ -30,7 +30,10 @@ use tracing::{debug, error, info, span, trace, warn, Level};
 
 use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
-use super::expr::{AccessPropertyOpts, TypeOfMode};
+use super::{
+    assign::get_tuple_subtract_count,
+    expr::{AccessPropertyOpts, TypeOfMode},
+};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_builtin_with_single_arg, RemoveTypes},
@@ -2135,29 +2138,10 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        fn subtract_count(t: &Tuple) -> usize {
-            let rest_pos = t.elems.iter().position(|e| e.ty.is_rest());
-
-            match rest_pos {
-                Some(rest_pos) => {
-                    // If the rest is not the last, we should return the index of rest
-                    if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
-                        t.elems.len() - rest_pos
-                    } else {
-                        0
-                    }
-                }
-                None => {
-                    // No rest means we can iterate over whole tuple.
-                    0
-                }
-            }
-        }
-
         let len = param.elems.len().max(arg.elems.len());
 
-        let l_max = param.elems.len() - subtract_count(arg);
-        let r_max = arg.elems.len() - subtract_count(param);
+        let l_max = param.elems.len() - get_tuple_subtract_count(arg);
+        let r_max = arg.elems.len() - get_tuple_subtract_count(param);
 
         let _tracing = if cfg!(debug_assertions) {
             Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple", l_max = l_max, r_max = r_max).entered())

@@ -3031,3 +3031,22 @@ pub(crate) enum Variance {
 //            .unwrap_or(Type::any(p.span())),
 //    }
 //}
+
+pub(crate) fn get_tuple_subtract_count(t: &Tuple) -> usize {
+    let rest_pos = t.elems.iter().position(|e| e.ty.is_rest());
+
+    match rest_pos {
+        Some(rest_pos) => {
+            // If the rest is not the last, we should return the index of rest
+            if t.elems.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
+                t.elems.len() - rest_pos
+            } else {
+                0
+            }
+        }
+        None => {
+            // No rest means we can iterate over whole tuple.
+            0
+        }
+    }
+}
