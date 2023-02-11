@@ -2514,7 +2514,7 @@ impl Analyzer<'_, '_> {
                                         ..opts
                                     },
                                 )
-                                .with_context(|| format!("tried to assign {}th tuple element", index))
+                                .with_context(|| format!("tried to assign {}th tuple element\nli = {},ri = {}", index, li, ri))
                                 .err(),
                             );
                         }
