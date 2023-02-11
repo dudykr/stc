@@ -2192,6 +2192,7 @@ types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
 types/mapped/mappedTypeConstraints.ts
 types/mapped/mappedTypeModifiers.ts
+types/mapped/mappedTypeOverlappingStringEnumKeys.ts
 types/mapped/mappedTypes1.ts
 types/mapped/mappedTypes2.ts
 types/mapped/mappedTypes3.ts
@@ -2621,6 +2622,7 @@ types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeIndexSignature.ts
 types/union/unionTypeReadonly.ts
 types/union/unionTypeReduction.ts
+types/union/unionTypeWithIndexSignature.ts
 types/uniqueSymbol/uniqueSymbols.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts

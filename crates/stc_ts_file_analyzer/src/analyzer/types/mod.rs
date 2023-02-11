@@ -1318,6 +1318,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {
+        let _tracing = dev_span!("expand_conditional_type");
+
         if !ty.is_conditional() {
             return ty;
         }
