@@ -34,7 +34,6 @@ use stc_ts_ast_rnode::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx,
     ext::TypeVecExt,
     panic_ctx,
 };
@@ -1347,7 +1346,7 @@ impl Type {
             return;
         }
 
-        let _ctx = debug_ctx!(format!("assert_clone_cheap: {:?}", self));
+        let _ctx = panic_ctx!(format!("assert_clone_cheap: {:?}", self));
 
         self.visit_with(&mut AssertCloneCheap);
     }
