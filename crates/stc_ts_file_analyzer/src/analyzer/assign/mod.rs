@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::min, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
@@ -2452,24 +2452,18 @@ impl Analyzer<'_, '_> {
 
                         let len = lhs_elems.len().max(rhs_elems.len());
 
-                        let l_max = lhs_elems.len().saturating_sub(get_tuple_subtract_count(rhs_elems));
-                        let r_max = rhs_elems.len().saturating_sub(get_tuple_subtract_count(lhs_elems));
-
                         let mut errors = vec![];
 
                         for index in 0..len {
-                            let li = min(index, l_max);
-                            let ri = min(index, r_max);
-
                             #[cfg(debug_assertions)]
-                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", li = li, ri = ri).entered();
+                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", index = index).entered();
 
                             let l_elem_type = self.access_property(
                                 span,
                                 to,
                                 &Key::Num(RNumber {
                                     span,
-                                    value: li as _,
+                                    value: index as _,
                                     raw: None,
                                 }),
                                 TypeOfMode::RValue,
@@ -2489,7 +2483,7 @@ impl Analyzer<'_, '_> {
                                 rhs,
                                 &Key::Num(RNumber {
                                     span,
-                                    value: ri as _,
+                                    value: index as _,
                                     raw: None,
                                 }),
                                 TypeOfMode::RValue,
@@ -2514,7 +2508,7 @@ impl Analyzer<'_, '_> {
                                         ..opts
                                     },
                                 )
-                                .with_context(|| format!("tried to assign {}th tuple element\nli = {},ri = {}", index, li, ri))
+                                .with_context(|| format!("tried to assign {}th tuple element", index))
                                 .err(),
                             );
                         }
