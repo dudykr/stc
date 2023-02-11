@@ -1568,11 +1568,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_type_ann").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand_type_ann");
 
         let ty = match ty {
             Some(v) => v,
@@ -1641,11 +1637,7 @@ impl Analyzer<'_, '_> {
     /// Exclude types from `ty` using type facts with key `name`, for
     /// the current scope.
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "exclude_types_using_fact").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("exclude_types_using_fact");
 
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
@@ -1687,11 +1679,7 @@ impl Analyzer<'_, '_> {
         if self.config.is_builtin {
             return Ok(None);
         }
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "collect_class_members").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("collect_class_members");
 
         let ty = ty.normalize();
         match ty {
