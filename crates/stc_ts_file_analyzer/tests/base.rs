@@ -14,7 +14,7 @@ use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
-use stc_ts_env::{Env, ModuleConfig, Rule};
+use stc_ts_env::{Env, JsxMode, ModuleConfig, Rule};
 use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
@@ -276,13 +276,69 @@ fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
     let filename = file_name.display().to_string();
     println!("{}", filename);
 
-    for case in parse_conformance_test(&file_name) {
+    for test_case in parse_conformance_test(&file_name) {
         let result = testing::Tester::new()
             .print_errors(|cm, handler| -> Result<(), _> {
                 let handler = Arc::new(handler);
                 let fm = cm.load_file(&file_name).unwrap();
+                let mut libs = vec![];
+                let ls = &[
+                    "es2020.full",
+                    "es2019.full",
+                    "es2018.full",
+                    "es2017.full",
+                    "es2016.full",
+                    "es2015.full",
+                ];
+                for s in ls {
+                    libs.extend(Lib::load(s))
+                }
+                libs.sort();
+                libs.dedup();
+                let mut rule = Rule {
+                    allow_unreachable_code: true,
+                    always_strict: false,
+                    no_implicit_any: false,
+                    allow_unused_labels: true,
+                    no_fallthrough_cases_in_switch: false,
+                    no_implicit_returns: false,
+                    no_implicit_this: false,
+                    no_strict_generic_checks: false,
+                    no_unused_locals: false,
+                    no_unused_parameters: false,
+                    strict_function_types: false,
+                    strict_null_checks: false,
+                    suppress_excess_property_errors: false,
+                    suppress_implicit_any_index_errors: false,
+                    use_define_property_for_class_fields: false,
+                    jsx: JsxMode::Preserve,
+                };
 
-                let env = Env::simple(case.rule, case.target, case.module_config, &case.libs);
+                for line in fm.src.lines() {
+                    if !line.starts_with("//@") {
+                        continue;
+                    }
+                    let line = &line["//@".len()..].trim();
+                    if line.starts_with("strict:") {
+                        let value = line["strict:".len()..].trim().parse::<bool>().unwrap();
+                        rule.strict_function_types = value;
+                        rule.strict_null_checks = value;
+                        rule.no_implicit_any = value;
+                        continue;
+                    } else if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
+                        let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
+                        rule.allow_unreachable_code = value;
+                        continue;
+                    } else if line.starts_with("noImplicitAny:") {
+                        let v = line["noImplicitAny:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_any = v;
+                        continue;
+                    }
+
+                    panic!("Invalid directive: {:?}", line)
+                }
+
+                let env = Env::simple(rule, EsVersion::Es2020, ModuleConfig::None, &libs);
                 let stable_env = env.shared().clone();
                 let generator = module_id::ModuleIdGenerator::default();
                 let path = Arc::new(FileName::Real(file_name.clone()));
