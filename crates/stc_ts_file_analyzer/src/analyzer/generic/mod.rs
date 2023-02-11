@@ -102,6 +102,9 @@ impl Analyzer<'_, '_> {
         ret_ty: Option<&Type>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::error_span!("infer_arg_types").entered();
+
         warn!(
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
