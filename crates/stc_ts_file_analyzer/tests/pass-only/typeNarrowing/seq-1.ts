@@ -1,3 +1,4 @@
+// @strict: true
 let x: string | boolean | number;
 let obj: any;
 
