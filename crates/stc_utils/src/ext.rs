@@ -1,7 +1,8 @@
 #![allow(clippy::wrong_self_convention)]
 
 use swc_common::{Span, TypeEq};
-use tracing::instrument;
+
+use crate::dev_span;
 
 pub trait ValueExt: Sized {
     fn as_ok<E>(self) -> Result<Self, E> {
@@ -40,8 +41,9 @@ impl<T> TypeVecExt for Vec<T>
 where
     T: TypeEq,
 {
-    #[instrument(skip_all)]
     fn dedup_type(&mut self) {
+        let _tracing = dev_span!("dedup_type");
+
         let mut types: Vec<T> = Vec::with_capacity(self.capacity());
         for ty in self.drain(..) {
             if types.iter().any(|stored| stored.type_eq(&ty)) {

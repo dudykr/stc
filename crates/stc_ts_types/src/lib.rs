@@ -34,6 +34,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
+    dev_span,
     ext::TypeVecExt,
     panic_ctx,
 };
@@ -210,7 +211,7 @@ pub enum Type {
 }
 
 impl Clone for Type {
-    #[instrument(name = "Type::clone", skip(self))]
+    #[instrument(name = "Type::clone", skip_all)]
     fn clone(&self) -> Self {
         match self {
             Type::Arc(ty) => ty.clone().into(),
