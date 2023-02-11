@@ -381,7 +381,7 @@ impl Debug for Key {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Key::Computed(v) => v.fmt(f),
-            Key::Normal { sym, .. } => sym.fmt(f),
+            Key::Normal { sym, .. } => write!(f, "{}", sym),
             Key::Num(v) => v.fmt(f),
             Key::BigInt(v) => v.fmt(f),
             Key::Private(v) => v.fmt(f),
