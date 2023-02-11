@@ -101,6 +101,11 @@ pub(crate) struct InferTypeOpts {
     pub exclude_null_and_undefined: bool,
 
     pub index_tuple_with_param: bool,
+
+    /// If this value is different, `is_inferring_rest_type` behaves
+    /// differently, to avoid inferring `([...T], [...T])` & `(['a', 'b'], ['c',
+    /// ['d'])`  as a tuple with 4 elements.
+    pub arg_index: Option<usize>,
 }
 
 bitflags! {
