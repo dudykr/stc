@@ -31,7 +31,7 @@ use stc_utils::{
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, error, info};
 
 pub(crate) use self::vars::VarKind;
 use super::util::make_instance_type;
@@ -1811,8 +1811,9 @@ impl<'a> Scope<'a> {
     }
 
     /// This method does **not** handle imported types.
-    #[instrument(name = "Scope::find_type", skip(self))]
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
+        let _tracing = dev_span!("Scope::find_type", name = tracing::field::debug(name));
+
         if cfg!(debug_assertions) {
             debug!("Analyzer.find_type('{}')", name);
         }
@@ -2192,8 +2193,9 @@ impl Expander<'_, '_, '_> {
         Ok(Some(Type::any(span, Default::default())))
     }
 
-    #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> VResult<Option<Type>> {
+        let _tracing = dev_span!("Expander::expand_ref");
+
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
         let Ref {
@@ -2227,8 +2229,9 @@ impl Expander<'_, '_, '_> {
         Ok(ty)
     }
 
-    #[instrument(name = "Expander.expand_type", skip(self, ty))]
     fn expand_type(&mut self, mut ty: Type) -> Type {
+        let _tracing = dev_span!("Expander::expand_type");
+
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
