@@ -34,7 +34,6 @@ use stc_ts_ast_rnode::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    dev_span,
     ext::TypeVecExt,
     panic_ctx,
 };

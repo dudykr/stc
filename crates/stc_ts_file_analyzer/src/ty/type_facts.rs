@@ -9,10 +9,10 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{cache::Freeze, stack};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 use crate::{
     analyzer::{Analyzer, NormalizeTypeOpts},
@@ -25,11 +25,12 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    #[instrument(skip_all)]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.config.is_builtin {
             return ty;
         }
+
+        let _tracing = dev_span!("apply_type_facts_to_type");
 
         if facts.contains(TypeFacts::TypeofEQNumber)
             || facts.contains(TypeFacts::TypeofEQString)
