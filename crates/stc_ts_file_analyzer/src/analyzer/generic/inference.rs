@@ -864,25 +864,28 @@ impl Analyzer<'_, '_> {
                         {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
-                            && opts.rest_type_index == e.get().rest_index
                             && matches!(e.get().inferred_type.normalize(), Type::Tuple(..))
                             && match arg.normalize() {
                                 Type::Tuple(tuple) => tuple.elems.len() == 1,
                                 _ => false,
                             }
                         {
-                            // If both are tuples with length is 1, we merge
-                            // them.
-                            //
-                            // ['a'] [1] => ['a', 1]
-                            let mut prev = e.get().inferred_type.clone().expect_tuple();
-                            prev.metadata.prevent_tuple_to_array = true;
+                            if opts.rest_type_index == e.get().rest_index {
+                                // If both are tuples with length is 1, we merge
+                                // them.
+                                //
+                                // ['a'] [1] => ['a', 1]
+                                let mut prev = e.get().inferred_type.clone().expect_tuple();
+                                prev.metadata.prevent_tuple_to_array = true;
 
-                            let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
-                            new_elem.ty = box new_elem.ty.generalize_lit();
-                            prev.elems.push(new_elem);
+                                let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
+                                new_elem.ty = box new_elem.ty.generalize_lit();
+                                prev.elems.push(new_elem);
 
-                            Type::Tuple(prev).freezed()
+                                Type::Tuple(prev).freezed()
+                            } else {
+                                e.get().inferred_type.clone()
+                            }
                         } else {
                             Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
                         };
