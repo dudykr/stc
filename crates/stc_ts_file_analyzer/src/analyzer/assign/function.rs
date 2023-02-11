@@ -8,7 +8,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -39,11 +39,7 @@ impl Analyzer<'_, '_> {
         r_ret_ty: Option<&Type>,
         opts: AssignOpts,
     ) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_fn_like").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_fn_like");
 
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
