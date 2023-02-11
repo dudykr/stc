@@ -23,7 +23,7 @@ use stc_ts_types::{
     StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, ext::TypeVecExt};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind};
@@ -229,11 +229,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "extract_call_new_expr_member").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("extract_call_new_expr_member");
 
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
@@ -539,11 +535,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_property").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_property");
 
         obj_type.assert_valid();
 
