@@ -3120,9 +3120,15 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| ErrorKind::WrongArgType {
-                            span: err.span(),
-                            inner: box err.into(),
+                        .convert_err(|err| {
+                            if matches!(param.pat, RPat::Rest(..)) {
+                                ErrorKind::WrongArgType {
+                                    span: arg.span(),
+                                    inner: box err.into(),
+                                }
+                            } else {
+                                ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() }
+                            }
                         })
                         .context("arg is spread");
                     if let Err(err) = res {
