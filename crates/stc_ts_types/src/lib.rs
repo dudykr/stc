@@ -1377,7 +1377,7 @@ pub struct EnumVariant {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(EnumVariant, [u8; 48]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -1386,6 +1386,26 @@ pub struct Function {
     pub metadata: FunctionMetadata,
 
     pub tracker: Tracker<"Function">,
+}
+
+impl Debug for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        write!(f, "(")?;
+
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, "): {:?}", self.ret_ty)?;
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
