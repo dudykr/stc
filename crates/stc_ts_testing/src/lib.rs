@@ -10,6 +10,7 @@ use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
 use swc_ecma_visit::VisitMutWith;
 
+pub mod conformance;
 pub mod lsp;
 pub mod tsc;
 pub mod visualizer;

@@ -118,6 +118,6 @@
     // Useless
     "config.toml",
     "scripts/npm",
-    "**/stc_ts_type_checker/tests/tsc.rs"
+    "**/stc_ts_testing/src/conformance.rs"
   ]
 }
