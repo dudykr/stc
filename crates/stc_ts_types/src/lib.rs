@@ -1107,7 +1107,7 @@ assert_eq_size!(TypeLit, [u8; 56]);
 
 impl Debug for TypeLit {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{{")?;
+        writeln!(f, "{{")?;
         for (i, member) in self.members.iter().enumerate() {
             if i != 0 {
                 write!(f, ", ")?;
