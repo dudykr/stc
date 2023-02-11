@@ -1293,13 +1293,27 @@ impl Union {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct FnParam {
     pub span: Span,
     pub required: bool,
     #[not_type]
     pub pat: RPat,
     pub ty: Box<Type>,
+}
+
+impl Debug for FnParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        if !self.required {
+            write!(f, "?")?;
+        }
+
+        write!(f, "{:?}", self.ty)?;
+
+        write!(f, ")")
+    }
 }
 
 /// a & b
