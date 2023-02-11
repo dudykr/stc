@@ -664,13 +664,25 @@ pub struct Ref {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Ref, [u8; 72]);
 
+fn write_entity_name(f: &mut Formatter<'_>, name: &RTsEntityName) -> Result<(), fmt::Error> {
+    match name {
+        RTsEntityName::Ident(i) => write!(f, "{}", i.sym),
+        RTsEntityName::TsQualifiedName(q) => {
+            write_entity_name(f, &q.left)?;
+            write!(f, ".{}", q.right.sym)
+        }
+    }
+}
+
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write_entity_name(f, &self.type_name)?;
+
         if let Some(type_args) = &self.type_args {
-            write!(f, "{:?}<{:?}>", self.type_name, type_args)
-        } else {
-            write!(f, "{:?}", self.type_name)
+            write!(f, "<{:?}>", type_args)?
         }
+
+        Ok(())
     }
 }
 
@@ -988,7 +1000,7 @@ pub struct Interface {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Interface, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
@@ -999,6 +1011,20 @@ pub struct TypeLit {
 
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TypeLit, [u8; 56]);
+
+impl Debug for TypeLit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{{")?;
+        for (i, member) in self.members.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            writeln!(f, "{:?}", member)?;
+        }
+
+        write!(f, "}}")
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamDecl {
