@@ -7,8 +7,8 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator, PropertySignature,
-    Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator,
+    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
@@ -297,6 +297,13 @@ impl Analyzer<'_, '_> {
             } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 // We use different error code
             } else if let Some(ret_ty) = &ret_ty {
+                let declared = Type::Instance(Instance {
+                    span: declared.span(),
+                    ty: box declared,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                });
+
                 self.assign_with_opts(
                     &mut Default::default(),
                     &declared,
@@ -346,6 +353,13 @@ impl Analyzer<'_, '_> {
         ty.freeze();
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
+            let declared = Type::Instance(Instance {
+                span: declared.span(),
+                ty: box declared,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            });
+
             match (self.ctx.in_async, self.ctx.in_generator) {
                 // AsyncGenerator
                 (true, true) => {
@@ -486,6 +500,13 @@ impl Analyzer<'_, '_> {
                 .map(Freeze::freezed)
                 {
                     Ok(declared) => {
+                        let declared = Type::Instance(Instance {
+                            span: declared.span(),
+                            ty: box declared,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        });
+
                         match self.assign_with_opts(
                             &mut Default::default(),
                             &declared,
