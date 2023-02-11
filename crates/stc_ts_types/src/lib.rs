@@ -382,8 +382,8 @@ impl Debug for Key {
         match self {
             Key::Computed(v) => v.fmt(f),
             Key::Normal { sym, .. } => write!(f, "{}", sym),
-            Key::Num(v) => v.fmt(f),
-            Key::BigInt(v) => v.fmt(f),
+            Key::Num(v) => write!(f, "{}", v.value),
+            Key::BigInt(v) => write!(f, "{}", v.value),
             Key::Private(v) => v.fmt(f),
         }
     }
