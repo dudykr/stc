@@ -832,24 +832,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if rhs.is_enum_type() {
-            let rhs = self
-                .normalize(
-                    Some(span),
-                    Cow::Borrowed(rhs),
-                    NormalizeTypeOpts {
-                        expand_enum_def: true,
-                        ..Default::default()
-                    },
-                )?
-                .freezed()
-                .into_owned()
-                .freezed();
-            if self.assign_inner(data, to, &rhs, opts).is_ok() {
-                return Ok(());
-            }
-        }
-
         match to {
             Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(RIdent {
@@ -933,6 +915,7 @@ impl Analyzer<'_, '_> {
         }
 
         if rhs.is_mapped() {
+        if rhs.is_mapped() || rhs.is_enum_type() {
             let rhs = self
                 .normalize(
                     Some(opts.span),
@@ -942,6 +925,7 @@ impl Analyzer<'_, '_> {
                         preserve_global_this: true,
                         preserve_intersection: true,
                         preserve_union: true,
+                        expand_enum_def: true,
                         ..Default::default()
                     },
                 )?
