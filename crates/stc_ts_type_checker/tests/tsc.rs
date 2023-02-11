@@ -320,17 +320,6 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
     )
 }
 
-struct TestSpec {
-    err_shift_n: usize,
-    libs: Vec<Lib>,
-    rule: Rule,
-    #[allow(unused)]
-    ts_config: TsConfig,
-    target: EsVersion,
-    raw_target: String,
-    module_config: ModuleConfig,
-}
-
 fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
     fn parse_target_inner(s: &str) -> Vec<EsVersion> {
         match s {
