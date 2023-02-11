@@ -54,6 +54,8 @@ pub(super) struct InferenceInfo {
     pub is_fixed: bool,
     #[allow(unused)]
     pub implied_arity: Option<isize>,
+
+    pub rest_index: Option<usize>,
 }
 
 /// # Default
@@ -813,6 +815,7 @@ impl Analyzer<'_, '_> {
                     e.get_mut().contra_candidates = Default::default();
                     e.get_mut().top_level = true;
                     e.get_mut().priority = opts.priority;
+                    e.get_mut().rest_index = None;
                 }
 
                 if opts.priority == e.get().priority {
@@ -861,6 +864,7 @@ impl Analyzer<'_, '_> {
                         {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
+                            && opts.rest_type_index == e.get().rest_index
                             && matches!(e.get().inferred_type.normalize(), Type::Tuple(..))
                             && match arg.normalize() {
                                 Type::Tuple(tuple) => tuple.elems.len() == 1,
@@ -928,6 +932,7 @@ impl Analyzer<'_, '_> {
                     top_level: true,
                     is_fixed: false,
                     implied_arity: Default::default(),
+                    rest_index: opts.rest_type_index,
                 });
             }
         }

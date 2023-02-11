@@ -128,6 +128,7 @@ impl Analyzer<'_, '_> {
                         top_level: Default::default(),
                         is_fixed: true,
                         implied_arity: Default::default(),
+                        rest_index: Default::default(),
                     },
                 );
             }
@@ -174,6 +175,10 @@ impl Analyzer<'_, '_> {
 
         for (idx, p) in params.iter().skip(skip).enumerate() {
             let is_rest = matches!(&p.pat, RPat::Rest(_));
+            let opts = InferTypeOpts {
+                rest_type_index: Some(idx),
+                ..opts
+            };
 
             if !is_rest {
                 if let Some(arg) = args.get(idx) {
