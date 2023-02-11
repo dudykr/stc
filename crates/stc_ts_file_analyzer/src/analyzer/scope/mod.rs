@@ -26,12 +26,12 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    stack,
+    dev_span, stack,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, error, info};
 
 pub(crate) use self::vars::VarKind;
 use super::util::make_instance_type;
@@ -545,8 +545,9 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    #[instrument(name = "Scope::register_type", skip_all)]
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
+        let _tracing = dev_span!("Scope::register_type");
+
         ty.assert_valid();
 
         let ty = ty.freezed();
@@ -706,11 +707,7 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand");
 
         if !self.config.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
@@ -788,11 +785,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "register_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("register_type");
 
         if cfg!(debug_assertions) {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
@@ -1108,8 +1101,9 @@ impl Analyzer<'_, '_> {
         ty
     }
 
-    #[instrument(skip(self))]
     pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<Type>>> {
+        let _tracing = dev_span!("find_type", name = tracing::field::debug(name));
+
         if let Some(v) = self.find_local_type(name) {
             return Ok(Some(v));
         }
@@ -1136,11 +1130,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "find_local_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("find_local_type", name = tracing::field::debug(name));
 
         #[allow(dead_code)]
         static ANY: Lazy<Type> = Lazy::new(|| {
@@ -1632,11 +1622,7 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "declare_complex_vars").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("declare_complex_vars");
 
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
@@ -1660,11 +1646,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Mark `ty` as not expanded by default.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
     {
+        let _tracing = dev_span!("prevent_expansion");
+
         if self.config.is_builtin {
             return;
         }
@@ -1824,8 +1811,9 @@ impl<'a> Scope<'a> {
     }
 
     /// This method does **not** handle imported types.
-    #[instrument(name = "Scope::find_type", skip(self))]
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
+        let _tracing = dev_span!("Scope::find_type", name = tracing::field::debug(name));
+
         if cfg!(debug_assertions) {
             debug!("Analyzer.find_type('{}')", name);
         }
@@ -2205,8 +2193,9 @@ impl Expander<'_, '_, '_> {
         Ok(Some(Type::any(span, Default::default())))
     }
 
-    #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> VResult<Option<Type>> {
+        let _tracing = dev_span!("Expander::expand_ref");
+
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
         let Ref {
@@ -2240,8 +2229,9 @@ impl Expander<'_, '_, '_> {
         Ok(ty)
     }
 
-    #[instrument(name = "Expander.expand_type", skip(self, ty))]
     fn expand_type(&mut self, mut ty: Type) -> Type {
+        let _tracing = dev_span!("Expander::expand_type");
+
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {

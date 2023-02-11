@@ -13,10 +13,13 @@ use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
     PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    dev_span,
+};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument};
+use tracing::{debug, error};
 
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
@@ -33,8 +36,9 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Handle index signatures.
-    #[instrument(name = "expand_mapped", skip_all)]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+        let _tracing = dev_span!("expand_mapped");
+
         let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
         let ty = self.expand_mapped_inner(span, m)?;
@@ -139,11 +143,7 @@ impl Analyzer<'_, '_> {
         original_keyof_operand: &Type,
         m: &Mapped,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_mapped_type_with_keyof").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand_mapped_type_with_keyof");
 
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())

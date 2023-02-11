@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -207,11 +207,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "has_overlap").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("has_overlap");
 
         let l = l.normalize();
         let r = r.normalize();
@@ -228,11 +224,7 @@ impl Analyzer<'_, '_> {
     /// - `l`: from
     /// - `r`: to
     pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type, opts: CastableOpts) -> VResult<bool> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "castable").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("castable");
 
         let from = self
             .normalize(

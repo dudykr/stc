@@ -16,7 +16,7 @@ use stc_ts_types::{
     name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple, TypeElement, TypeLit, TypeParam,
     TypeParamInstantiation, Union, UnionMetadata,
 };
-use stc_utils::{cache::Freeze, stack};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -1274,11 +1274,7 @@ impl Analyzer<'_, '_> {
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "narrow_with_instanceof").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("narrow_with_instanceof");
 
         let mut orig_ty = self.normalize(
             Some(span),

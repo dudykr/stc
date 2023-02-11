@@ -7,7 +7,7 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
-use stc_utils::{cache::Freeze, ext::SpanExt};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -40,13 +40,14 @@ pub(crate) struct ExtendsOpts {
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn instantiate_type_params_using_args(
         &mut self,
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
     ) -> VResult<FxHashMap<Id, Type>> {
+        let _tracing = dev_span!("instantiate_type_params_using_args");
+
         let mut params = FxHashMap::default();
 
         for (idx, param) in type_params.params.iter().enumerate() {
@@ -87,11 +88,12 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
+        let _tracing = dev_span!("expand_type_params");
+
         for param in params.values() {
             param.assert_valid();
             debug_assert!(param.is_clone_cheap());
@@ -117,15 +119,11 @@ impl Analyzer<'_, '_> {
         let _tracing = if cfg!(debug_assertions) {
             let child = dump_type_as_string(child);
             let parent = dump_type_as_string(parent);
-            Some(
-                tracing::span!(
-                    tracing::Level::ERROR,
-                    "extends",
-                    child = tracing::field::display(&child),
-                    parent = tracing::field::display(&parent)
-                )
-                .entered(),
-            )
+            Some(dev_span!(
+                "extends",
+                child = tracing::field::display(&child),
+                parent = tracing::field::display(&parent)
+            ))
         } else {
             None
         };

@@ -18,6 +18,7 @@ use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, Keywo
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::Freeze,
+    dev_span,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_atoms::JsWord;
@@ -451,8 +452,9 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
+        let _tracing = dev_span!("adjust_ternary_type");
+
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             if let Some(tuple) = ty.as_tuple_mut() {
@@ -493,8 +495,9 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
+        let _tracing = dev_span!("downcast_types");
+
         fn need_work(ty: &Type) -> bool {
             !matches!(
                 ty.normalize(),
@@ -553,8 +556,9 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
+        let _tracing = dev_span!("remove_child_types");
+
         let mut new = vec![];
 
         'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
@@ -753,7 +757,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                     } else {
-                        self.assign_with_op(span, op, &lhs_ty, rhs_ty)?;
+                        self.assign_with_operator(span, op, &lhs_ty, rhs_ty)?;
                     }
 
                     if let RExpr::Ident(left) = &**expr {
@@ -801,7 +805,7 @@ impl Analyzer<'_, '_> {
                                 let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
 
                                 if let Ok(lhs) = lhs {
-                                    self.assign_with_op(span, op, &lhs, rhs_ty)?;
+                                    self.assign_with_operator(span, op, &lhs, rhs_ty)?;
                                 }
                             }
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,

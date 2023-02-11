@@ -5,17 +5,16 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, stack};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
-use tracing::{debug, error, info, span, Level};
+use tracing::{debug, error, info};
 
 use crate::{
     analyzer::{
@@ -208,7 +207,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Used to validate assignments like `a += b`.
-    pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_operator(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.normalize(
@@ -618,7 +617,7 @@ impl Analyzer<'_, '_> {
             let lhs = dump_type_as_string(to);
             let rhs = dump_type_as_string(rhs);
 
-            Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
+            Some(dev_span!("assign", lhs = &*lhs, rhs = &*rhs))
         } else {
             None
         };
@@ -2774,57 +2773,59 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[context("tried to extract keys")]
     fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
-        let ty = self.normalize(
-            Some(span),
-            Cow::Borrowed(ty),
-            NormalizeTypeOpts {
-                normalize_keywords: true,
-                process_only_key: true,
-                ..Default::default()
-            },
-        )?;
-        let ty = ty.normalize();
+        (|| -> VResult<_> {
+            let ty = self.normalize(
+                Some(span),
+                Cow::Borrowed(ty),
+                NormalizeTypeOpts {
+                    normalize_keywords: true,
+                    process_only_key: true,
+                    ..Default::default()
+                },
+            )?;
+            let ty = ty.normalize();
 
-        if let Type::TypeLit(ty) = ty {
-            //
-            let mut keys = vec![];
-            for member in &ty.members {
-                if let TypeElement::Property(PropertySignature {
-                    span,
-                    key: Key::Normal { sym: key, .. },
-                    ..
-                }) = member
-                {
-                    keys.push(Type::Lit(LitType {
-                        span: *span,
-                        lit: RTsLit::Str(RStr {
+            if let Type::TypeLit(ty) = ty {
+                //
+                let mut keys = vec![];
+                for member in &ty.members {
+                    if let TypeElement::Property(PropertySignature {
+                        span,
+                        key: Key::Normal { sym: key, .. },
+                        ..
+                    }) = member
+                    {
+                        keys.push(Type::Lit(LitType {
                             span: *span,
-                            value: key.clone(),
-                            raw: None,
-                        }),
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
+                            lit: RTsLit::Str(RStr {
+                                span: *span,
+                                value: key.clone(),
+                                raw: None,
+                            }),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }));
+                    }
                 }
+
+                return Ok(Type::new_union(span, keys));
             }
 
-            return Ok(Type::new_union(span, keys));
-        }
+            if let Some(ty) = self
+                .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
+                .map(Cow::into_owned)
+                .map(Type::TypeLit)
+            {
+                return self.extract_keys(span, &ty);
+            }
 
-        if let Some(ty) = self
-            .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
-            .map(Cow::into_owned)
-            .map(Type::TypeLit)
-        {
-            return self.extract_keys(span, &ty);
-        }
-
-        Err(ErrorKind::Unimplemented {
-            span,
-            msg: "Extract keys".to_string(),
-        })?
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: "Extract keys".to_string(),
+            })?
+        })()
+        .context("tried to extract keys")
     }
 
     /// Handles `P in 'foo' | 'bar'`. Note that `'foo' | 'bar'` part should be

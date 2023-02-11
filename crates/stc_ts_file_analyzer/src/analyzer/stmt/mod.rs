@@ -4,10 +4,10 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RExpr, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{LitType, Type};
-use stc_utils::stack;
+use stc_utils::{dev_span, stack};
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
-use tracing::{instrument, span, trace, warn, Level};
+use tracing::{trace, warn};
 
 use self::return_type::LoopBreakerFinder;
 use crate::{
@@ -39,8 +39,7 @@ impl Analyzer<'_, '_> {
         let span = s.span();
         let line_col = self.line_col(span);
 
-        let tracing_span = span!(Level::ERROR, "Stmt", line_col = &*line_col);
-        let _tracing_guard = tracing_span.enter();
+        let _tracing = dev_span!("Stmt", line_col = &*line_col);
 
         warn!("Statement start");
         let start = Instant::now();
@@ -142,8 +141,9 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
-    #[instrument(skip_all)]
     pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs], is_for_interface: bool) {
+        let _tracing = dev_span!("resolve_parent_interfaces");
+
         if self.config.is_builtin {
             return;
         }

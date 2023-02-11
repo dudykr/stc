@@ -12,7 +12,7 @@ use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType,
     Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
-use stc_utils::{cache::Freeze, ext::SpanExt};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -45,11 +45,7 @@ impl Analyzer<'_, '_> {
         lhs_metadata: TypeLitMetadata,
         opts: AssignOpts,
     ) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_type_elements").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_type_elements");
 
         let span = opts.span.with_ctxt(SyntaxContext::empty());
         // debug_assert!(!span.is_dummy());

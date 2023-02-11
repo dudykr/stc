@@ -13,7 +13,7 @@ use stc_ts_types::{
     TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
-use stc_utils::{cache::Freeze, TryOpt};
+use stc_utils::{cache::Freeze, dev_span, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
 use tracing::debug;
@@ -882,11 +882,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "exclude_props").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("exclude_props");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
