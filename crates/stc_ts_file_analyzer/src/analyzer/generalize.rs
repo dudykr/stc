@@ -8,7 +8,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
     Union,
 };
-use stc_utils::ext::TypeVecExt;
+use stc_utils::{dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -20,8 +20,9 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Remove this.
     ///
     /// Check if it's okay to generalize `ty`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
+        let _tracing = dev_span!("may_generalize");
+
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
             Type::Function(f) => {
