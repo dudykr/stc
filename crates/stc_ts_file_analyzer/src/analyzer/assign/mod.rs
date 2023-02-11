@@ -1535,11 +1535,6 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign a normalized intersection type to another type");
                     }
                 }
-                if let Some(new_rhs) = self.normalize_intersection_types(span, rhs_types, NormalizeTypeOpts { ..Default::default() })? {
-                    if new_rhs.is_never() && to.is_never() {
-                        return Ok(());
-                    }
-                }
 
                 let results = rhs_types
                     .iter()
