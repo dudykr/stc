@@ -594,7 +594,7 @@ pub struct LitType {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(LitType, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct KeywordType {
     pub span: Span,
 
@@ -603,6 +603,26 @@ pub struct KeywordType {
     pub metadata: KeywordTypeMetadata,
 
     pub tracker: Tracker<"KeywordType">,
+}
+
+impl Debug for KeywordType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TsKeywordTypeKind::TsAnyKeyword => write!(f, "any"),
+            TsKeywordTypeKind::TsUnknownKeyword => write!(f, "unknown"),
+            TsKeywordTypeKind::TsNumberKeyword => write!(f, "number"),
+            TsKeywordTypeKind::TsObjectKeyword => write!(f, "object"),
+            TsKeywordTypeKind::TsBooleanKeyword => write!(f, "boolean"),
+            TsKeywordTypeKind::TsBigIntKeyword => write!(f, "bigint"),
+            TsKeywordTypeKind::TsStringKeyword => write!(f, "string"),
+            TsKeywordTypeKind::TsSymbolKeyword => write!(f, "symbol"),
+            TsKeywordTypeKind::TsVoidKeyword => write!(f, "void"),
+            TsKeywordTypeKind::TsUndefinedKeyword => write!(f, "undefined"),
+            TsKeywordTypeKind::TsNullKeyword => write!(f, "null"),
+            TsKeywordTypeKind::TsNeverKeyword => write!(f, "never"),
+            TsKeywordTypeKind::TsIntrinsicKeyword => write!(f, "intrinsic"),
+        }
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
