@@ -970,11 +970,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_class").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_property_of_class");
 
         let candidates = {
             // TODO(kdy1): Deduplicate.
@@ -1164,11 +1160,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_type_elements").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_property_of_type_elements");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1836,11 +1828,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_type_element").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_type_element");
 
         let callee_span = callee_ty.span();
 
@@ -2355,11 +2343,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: SelectOpts,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "select_and_invoke").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("select_and_invoke");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -2486,11 +2470,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "get_return_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("get_return_type");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -3257,11 +3237,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "narrow_with_predicate").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("narrow_with_predicate");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -3399,11 +3375,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "is_subtype_in_fn_call").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("is_subtype_in_fn_call");
 
         if arg.type_eq(param) {
             return true;
@@ -3448,11 +3420,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ArgCheckResult {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "check_call_args").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("check_call_args");
 
         if self.validate_type_args_count(span, type_params, type_args).is_err() {
             return ArgCheckResult::WrongArgCount;
