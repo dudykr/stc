@@ -1,3 +1,4 @@
+// @strict: trie
 export let x: string | number;
 x = 1000;
 do {
