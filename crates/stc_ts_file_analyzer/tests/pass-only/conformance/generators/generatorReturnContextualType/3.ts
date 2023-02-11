@@ -1,3 +1,4 @@
+// @target: esnext
 //@strict: true
 
 // #35995
