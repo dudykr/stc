@@ -1323,7 +1323,7 @@ impl Intersection {
 }
 
 /// A type parameter
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
@@ -1332,6 +1332,14 @@ pub struct TypeParam {
     pub metadata: TypeParamMetadata,
 
     pub tracker: Tracker<"TypeParam">,
+}
+
+impl Debug for TypeParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+
+        Ok(())
+    }
 }
 
 /// FooEnum.A
