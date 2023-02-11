@@ -68,8 +68,9 @@ impl Analyzer<'_, '_> {
         debug!("Normalized unions (time = {:?})", end - start);
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
+        let _tracing = dev_span!("validate_type_literals");
+
         match ty.normalize() {
             Type::Union(ty) => {
                 for ty in &ty.types {
@@ -83,8 +84,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+        let _tracing = dev_span!("report_errors_for_mixed_optional_method_signatures");
+
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
             if let TypeElement::Method(MethodSignature { key, optional, .. }) = elem {
