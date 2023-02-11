@@ -236,16 +236,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 return Some(
-                    self.assign_with_opts(
-                        data,
-                        &l,
-                        r,
-                        AssignOpts {
-                            may_unwrap_promise: false,
-                            ..opts
-                        },
-                    )
-                    .context("tried to assign an awaited type to a non-awaited type"),
+                    self.assign_with_opts(data, &l, r, AssignOpts { ..opts })
+                        .context("tried to assign an awaited type to a non-awaited type"),
                 );
             }
         }
