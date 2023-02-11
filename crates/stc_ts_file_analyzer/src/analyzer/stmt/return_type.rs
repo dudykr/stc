@@ -304,10 +304,17 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 });
 
+                let ret_ty = Type::Instance(Instance {
+                    span: ret_ty.span(),
+                    ty: box ret_ty.clone(),
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                });
+
                 self.assign_with_opts(
                     &mut Default::default(),
                     &declared,
-                    ret_ty,
+                    &ret_ty,
                     AssignOpts {
                         span,
                         allow_unknown_rhs: Some(true),
