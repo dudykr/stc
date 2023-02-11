@@ -3840,8 +3840,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+        let _tracing = dev_span!("type_of_ts_entity_name");
+
         self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 

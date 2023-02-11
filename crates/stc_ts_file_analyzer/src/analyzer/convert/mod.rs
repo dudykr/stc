@@ -1141,8 +1141,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
+        let _tracing = dev_span!("report_error_for_duplicate_params");
+
         if self.config.is_builtin {
             return;
         }
@@ -1175,8 +1176,9 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
+        let _tracing = dev_span!("report_error_for_type_param_usages_in_static_members");
+
         let span = i.span;
         let id = i.into();
         let static_method = self.scope.first(|scope| {
