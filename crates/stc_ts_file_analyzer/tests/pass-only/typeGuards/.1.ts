@@ -1,3 +1,4 @@
+// @strict: trie
 class A { a: string; }
 class B { b: number; }
 
