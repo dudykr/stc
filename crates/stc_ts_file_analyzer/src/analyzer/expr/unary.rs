@@ -273,7 +273,12 @@ impl Analyzer<'_, '_> {
                 }) => {}
 
                 Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUnknownKeyword,
+                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                    ..
+                }) => errors.push(ErrorKind::IsTypeUnknown { span: arg.span() }.into()),
+
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => errors.push(ErrorKind::TS2531 { span: arg.span() }.into()),
 

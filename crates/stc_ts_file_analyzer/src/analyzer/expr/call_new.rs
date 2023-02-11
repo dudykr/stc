@@ -1605,7 +1605,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                Err(ErrorKind::Unknown { span }.into())
+                Err(ErrorKind::IsTypeUnknown { span }.into())
             }
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
