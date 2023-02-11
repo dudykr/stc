@@ -1148,7 +1148,7 @@ pub struct PropertySignature {
     pub accessor: Accessor,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct MethodSignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -1161,6 +1161,28 @@ pub struct MethodSignature {
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
+}
+
+impl Debug for MethodSignature {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.key)?;
+        if let Some(type_params) = &self.type_params {
+            write!(f, "<{:?}>", type_params)?;
+        }
+        write!(f, "(")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ")")?;
+        if let Some(ret_ty) = &self.ret_ty {
+            write!(f, ": {:?}", ret_ty)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
