@@ -1646,11 +1646,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Mark `ty` as not expanded by default.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
     {
+        let _tracing = dev_span!("prevent_expansion");
+
         if self.config.is_builtin {
             return;
         }
