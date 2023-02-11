@@ -14,7 +14,7 @@ use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
-use tracing::{debug, error, info, span, Level};
+use tracing::{debug, error, info};
 
 use crate::{
     analyzer::{
@@ -613,14 +613,7 @@ impl Analyzer<'_, '_> {
             unreachable!("cannot assign with dummy span")
         }
 
-        let _tracing = if cfg!(debug_assertions) {
-            let lhs = dump_type_as_string(to);
-            let rhs = dump_type_as_string(rhs);
-
-            Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign", lhs = &*dump_type_as_string(to), rhs = &*dump_type_as_string(rhs));
 
         // It's valid to assign any to everything.
         if rhs.is_any() {

@@ -24,6 +24,7 @@ use stc_ts_types::{
 use stc_ts_utils::run;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
+    dev_span,
     ext::{SpanExt, TypeVecExt},
     stack,
 };
@@ -2327,11 +2328,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "report_error_for_unresolved_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("report_error_for_unresolved_type");
 
         let l = left_of_expr(type_name);
         let l = match l {
