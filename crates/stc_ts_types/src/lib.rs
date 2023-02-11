@@ -151,7 +151,7 @@ impl AddAssign for ModuleTypeData {
 /// clone deeply, you have to clone this type in a closure passed to
 /// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
 /// performance.
-#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize, Deserialize)]
+#[derive(PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -207,6 +207,49 @@ pub enum Type {
     Tpl(TplType),
 
     StringMapping(StringMapping),
+}
+
+impl Debug for Type {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Instance(arg0) => write!(f, "{:?}", arg0),
+            Self::StaticThis(arg0) => write!(f, "{:?}", arg0),
+            Self::This(arg0) => write!(f, "{:?}", arg0),
+            Self::Lit(arg0) => write!(f, "{:?}", arg0),
+            Self::Query(arg0) => write!(f, "{:?}", arg0),
+            Self::Infer(arg0) => write!(f, "{:?}", arg0),
+            Self::Import(arg0) => write!(f, "{:?}", arg0),
+            Self::Predicate(arg0) => write!(f, "{:?}", arg0),
+            Self::IndexedAccessType(arg0) => write!(f, "{:?}", arg0),
+            Self::Ref(arg0) => write!(f, "{:?}", arg0),
+            Self::TypeLit(arg0) => write!(f, "{:?}", arg0),
+            Self::Keyword(arg0) => write!(f, "{:?}", arg0),
+            Self::Conditional(arg0) => write!(f, "{:?}", arg0),
+            Self::Tuple(arg0) => write!(f, "{:?}", arg0),
+            Self::Array(arg0) => write!(f, "{:?}", arg0),
+            Self::Union(arg0) => write!(f, "{:?}", arg0),
+            Self::Intersection(arg0) => write!(f, "{:?}", arg0),
+            Self::Function(arg0) => write!(f, "{:?}", arg0),
+            Self::Constructor(arg0) => write!(f, "{:?}", arg0),
+            Self::Operator(arg0) => write!(f, "{:?}", arg0),
+            Self::Param(arg0) => write!(f, "{:?}", arg0),
+            Self::EnumVariant(arg0) => write!(f, "{:?}", arg0),
+            Self::Interface(arg0) => write!(f, "{:?}", arg0),
+            Self::Enum(arg0) => write!(f, "{:?}", arg0),
+            Self::Mapped(arg0) => write!(f, "{:?}", arg0),
+            Self::Alias(arg0) => write!(f, "{:?}", arg0),
+            Self::Namespace(arg0) => write!(f, "{:?}", arg0),
+            Self::Module(arg0) => write!(f, "{:?}", arg0),
+            Self::Class(arg0) => write!(f, "{:?}", arg0),
+            Self::ClassDef(arg0) => write!(f, "{:?}", arg0),
+            Self::Arc(arg0) => write!(f, "{:?}", arg0),
+            Self::Rest(arg0) => write!(f, "{:?}", arg0),
+            Self::Optional(arg0) => write!(f, "{:?}", arg0),
+            Self::Symbol(arg0) => write!(f, "{:?}", arg0),
+            Self::Tpl(arg0) => write!(f, "{:?}", arg0),
+            Self::StringMapping(arg0) => write!(f, "{:?}", arg0),
+        }
+    }
 }
 
 impl Clone for Type {
@@ -368,13 +411,25 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
     Num(RNumber),
     BigInt(RBigInt),
     Private(PrivateName),
+}
+
+impl Debug for Key {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Key::Computed(v) => v.fmt(f),
+            Key::Normal { sym, .. } => write!(f, "{}", sym),
+            Key::Num(v) => write!(f, "{}", v.value),
+            Key::BigInt(v) => write!(f, "{}", v.value),
+            Key::Private(v) => v.fmt(f),
+        }
+    }
 }
 
 impl TypeEq for Key {
@@ -526,11 +581,17 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
+}
+
+impl Debug for ComputedKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{:?}]", self.ty)
+    }
 }
 
 impl TypeEq for ComputedKey {
@@ -569,7 +630,7 @@ pub struct Instance {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Instance, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
     pub span: Span,
 
@@ -579,10 +640,22 @@ pub struct LitType {
     pub tracker: Tracker<"LitType">,
 }
 
+impl Debug for LitType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.lit {
+            RTsLit::Str(s) => write!(f, "'{}'", s.value),
+            RTsLit::Number(n) => write!(f, "{}", n.value),
+            RTsLit::BigInt(n) => write!(f, "{}n", n.value),
+            RTsLit::Bool(b) => write!(f, "{}", b.value),
+            RTsLit::Tpl(..) => write!(f, "`<tpl>`"),
+        }
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(LitType, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct KeywordType {
     pub span: Span,
 
@@ -591,6 +664,26 @@ pub struct KeywordType {
     pub metadata: KeywordTypeMetadata,
 
     pub tracker: Tracker<"KeywordType">,
+}
+
+impl Debug for KeywordType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TsKeywordTypeKind::TsAnyKeyword => write!(f, "any"),
+            TsKeywordTypeKind::TsUnknownKeyword => write!(f, "unknown"),
+            TsKeywordTypeKind::TsNumberKeyword => write!(f, "number"),
+            TsKeywordTypeKind::TsObjectKeyword => write!(f, "object"),
+            TsKeywordTypeKind::TsBooleanKeyword => write!(f, "boolean"),
+            TsKeywordTypeKind::TsBigIntKeyword => write!(f, "bigint"),
+            TsKeywordTypeKind::TsStringKeyword => write!(f, "string"),
+            TsKeywordTypeKind::TsSymbolKeyword => write!(f, "symbol"),
+            TsKeywordTypeKind::TsVoidKeyword => write!(f, "void"),
+            TsKeywordTypeKind::TsUndefinedKeyword => write!(f, "undefined"),
+            TsKeywordTypeKind::TsNullKeyword => write!(f, "null"),
+            TsKeywordTypeKind::TsNeverKeyword => write!(f, "never"),
+            TsKeywordTypeKind::TsIntrinsicKeyword => write!(f, "intrinsic"),
+        }
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -664,13 +757,25 @@ pub struct Ref {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Ref, [u8; 72]);
 
+fn write_entity_name(f: &mut Formatter<'_>, name: &RTsEntityName) -> Result<(), fmt::Error> {
+    match name {
+        RTsEntityName::Ident(i) => write!(f, "{}", i.sym),
+        RTsEntityName::TsQualifiedName(q) => {
+            write_entity_name(f, &q.left)?;
+            write!(f, ".{}", q.right.sym)
+        }
+    }
+}
+
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write_entity_name(f, &self.type_name)?;
+
         if let Some(type_args) = &self.type_args {
-            write!(f, "{:?}<{:?}>", self.type_name, type_args)
-        } else {
-            write!(f, "{:?}", self.type_name)
+            write!(f, "{:?}", type_args)?
         }
+
+        Ok(())
     }
 }
 
@@ -988,7 +1093,7 @@ pub struct Interface {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Interface, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
@@ -1000,12 +1105,39 @@ pub struct TypeLit {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TypeLit, [u8; 56]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+impl Debug for TypeLit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{{")?;
+        for (i, member) in self.members.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            writeln!(f, "    {:?}", member)?;
+        }
+
+        write!(f, "}}")
+    }
+}
+
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
 
     pub tracker: Tracker<"TypeParamDecl">,
+}
+
+impl Debug for TypeParamDecl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ">")
+    }
 }
 
 /// Typescript expression with type arguments
@@ -1019,7 +1151,7 @@ pub struct TsExpr {
     pub tracker: Tracker<"TsExpr">,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamInstantiation {
     pub span: Span,
 
@@ -1027,13 +1159,38 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
+impl Debug for TypeParamInstantiation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ">")
+    }
+}
+
+#[derive(Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
     Property(PropertySignature),
     Method(MethodSignature),
     Index(IndexSignature),
+}
+
+impl Debug for TypeElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TypeElement::Call(c) => write!(f, "{:?}", c),
+            TypeElement::Constructor(c) => write!(f, "{:?}", c),
+            TypeElement::Property(p) => write!(f, "{:?}", p),
+            TypeElement::Method(m) => write!(f, "{:?}", m),
+            TypeElement::Index(i) => write!(f, "{:?}", i),
+        }
+    }
 }
 
 impl Take for TypeElement {
@@ -1093,7 +1250,7 @@ pub struct ConstructorSignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct PropertySignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -1110,7 +1267,19 @@ pub struct PropertySignature {
     pub accessor: Accessor,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+impl Debug for PropertySignature {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.key)?;
+
+        if let Some(type_ann) = &self.type_ann {
+            write!(f, ": {:?}", type_ann)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct MethodSignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -1123,6 +1292,28 @@ pub struct MethodSignature {
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
+}
+
+impl Debug for MethodSignature {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.key)?;
+        if let Some(type_params) = &self.type_params {
+            write!(f, "{:?}", type_params)?;
+        }
+        write!(f, "(")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ")")?;
+        if let Some(ret_ty) = &self.ret_ty {
+            write!(f, ": {:?}", ret_ty)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1201,13 +1392,27 @@ impl Union {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct FnParam {
     pub span: Span,
     pub required: bool,
     #[not_type]
     pub pat: RPat,
     pub ty: Box<Type>,
+}
+
+impl Debug for FnParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        if !self.required {
+            write!(f, "?")?;
+        }
+
+        write!(f, "{:?}", self.ty)?;
+
+        write!(f, ")")
+    }
 }
 
 /// a & b
@@ -1251,7 +1456,7 @@ impl Intersection {
 }
 
 /// A type parameter
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
@@ -1260,6 +1465,14 @@ pub struct TypeParam {
     pub metadata: TypeParamMetadata,
 
     pub tracker: Tracker<"TypeParam">,
+}
+
+impl Debug for TypeParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+
+        Ok(())
+    }
 }
 
 /// FooEnum.A
@@ -1277,7 +1490,7 @@ pub struct EnumVariant {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(EnumVariant, [u8; 48]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -1286,6 +1499,26 @@ pub struct Function {
     pub metadata: FunctionMetadata,
 
     pub tracker: Tracker<"Function">,
+}
+
+impl Debug for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        write!(f, "(")?;
+
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, "): {:?}", self.ret_ty)?;
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2749,9 +2982,15 @@ impl From<RTplElement> for TplElem {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct Freezed {
     ty: Arc<Type>,
+}
+
+impl Debug for Freezed {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.ty)
+    }
 }
 
 impl Spanned for Freezed {
