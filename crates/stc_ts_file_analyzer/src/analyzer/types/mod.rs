@@ -1581,8 +1581,9 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
-    #[instrument(skip_all)]
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> VResult<TypeLit> {
+        let _tracing = dev_span!("create_prototype_of_class_def");
+
         let mut members = vec![];
 
         let type_params = def.type_params.as_ref().map(|decl| {
