@@ -2989,7 +2989,7 @@ pub struct Freezed {
 
 impl Debug for Freezed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({:?}, freezed)", self.ty)
+        write!(f, "{:?}", self.ty)
     }
 }
 
