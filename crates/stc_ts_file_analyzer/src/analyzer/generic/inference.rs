@@ -105,7 +105,7 @@ pub(crate) struct InferTypeOpts {
     /// If this value is different, `is_inferring_rest_type` behaves
     /// differently, to avoid inferring `([...T], [...T])` & `(['a', 'b'], ['c',
     /// ['d'])`  as a tuple with 4 elements.
-    pub arg_index: Option<usize>,
+    pub rest_type_index: Option<usize>,
 }
 
 bitflags! {
