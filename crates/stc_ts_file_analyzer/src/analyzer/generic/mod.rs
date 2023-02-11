@@ -21,7 +21,7 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    stack,
+    dev_span, stack,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
-        let _tracing = tracing::error_span!("infer_arg_types").entered();
+        let _tracing = dev_span!("infer_arg_types");
 
         warn!(
             "infer_arg_types: {:?}",
@@ -1401,8 +1401,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<bool> {
-        #[cfg(debug_assertions)]
-        let _tracing = tracing::error_span!("infer_type_using_mapped_type").entered();
+        let _tracing = dev_span!("infer_type_using_mapped_type");
 
         match arg.normalize() {
             Type::Ref(arg) => {
@@ -2161,8 +2160,7 @@ impl Analyzer<'_, '_> {
             let li = min(index, l_max);
             let ri = min(index, r_max);
 
-            #[cfg(debug_assertions)]
-            let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
+            let _tracing = dev_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri);
 
             let l_elem_type = self.access_property(
                 span,

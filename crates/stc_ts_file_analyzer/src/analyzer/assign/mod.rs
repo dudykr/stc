@@ -10,7 +10,7 @@ use stc_ts_types::{
     LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, stack};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
@@ -2454,8 +2454,7 @@ impl Analyzer<'_, '_> {
                             let li = index;
                             let ri = min(index, r_max);
 
-                            #[cfg(debug_assertions)]
-                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", li = li, ri = ri).entered();
+                            let _tracing = dev_span!("assign_tuple_to_tuple", li = li, ri = ri);
 
                             let l_elem_type = self.access_property(
                                 span,
