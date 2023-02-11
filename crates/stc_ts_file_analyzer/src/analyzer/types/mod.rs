@@ -24,13 +24,14 @@ use stc_ts_types::{
 use stc_ts_utils::run;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
+    dev_span,
     ext::{SpanExt, TypeVecExt},
     stack,
 };
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument, span, Level};
+use tracing::{debug, error};
 
 use super::generic::InferTypeOpts;
 use crate::{
@@ -93,7 +94,7 @@ impl Analyzer<'_, '_> {
         let _tracing = if cfg!(debug_assertions) {
             let ty = force_dump_type_as_string(&ty);
 
-            Some(span!(Level::ERROR, "normalize", ty = tracing::field::display(&ty)).entered())
+            Some(dev_span!("normalize", ty = tracing::field::display(&ty)))
         } else {
             None
         };
@@ -1317,6 +1318,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {
+        let _tracing = dev_span!("expand_conditional_type");
+
         if !ty.is_conditional() {
             return ty;
         }
@@ -1382,7 +1385,7 @@ impl Analyzer<'_, '_> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = force_dump_type_as_string(ty);
 
-            Some(span!(Level::ERROR, "instantiate_for_normalization", ty = &*ty_str).entered())
+            Some(dev_span!("instantiate_for_normalization", ty = &*ty_str))
         } else {
             None
         };
@@ -1521,11 +1524,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "can_be_undefined", include_null = include_null).entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("can_be_undefined", include_null = include_null);
 
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
@@ -1571,11 +1570,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_type_ann").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand_type_ann");
 
         let ty = match ty {
             Some(v) => v,
@@ -1588,8 +1583,9 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
-    #[instrument(skip_all)]
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> VResult<TypeLit> {
+        let _tracing = dev_span!("create_prototype_of_class_def");
+
         let mut members = vec![];
 
         let type_params = def.type_params.as_ref().map(|decl| {
@@ -1644,11 +1640,7 @@ impl Analyzer<'_, '_> {
     /// Exclude types from `ty` using type facts with key `name`, for
     /// the current scope.
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "exclude_types_using_fact").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("exclude_types_using_fact");
 
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
@@ -1670,11 +1662,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "apply_type_facts", name = tracing::field::debug(name)).entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("apply_type_facts", name = tracing::field::debug(name));
 
         let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
 
@@ -1694,11 +1682,7 @@ impl Analyzer<'_, '_> {
         if self.config.is_builtin {
             return Ok(None);
         }
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "collect_class_members").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("collect_class_members");
 
         let ty = ty.normalize();
         match ty {
@@ -2327,11 +2311,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "report_error_for_unresolved_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("report_error_for_unresolved_type");
 
         let l = left_of_expr(type_name);
         let l = match l {

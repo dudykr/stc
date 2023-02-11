@@ -8,7 +8,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
     Union,
 };
-use stc_utils::ext::TypeVecExt;
+use stc_utils::{dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -20,8 +20,9 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Remove this.
     ///
     /// Check if it's okay to generalize `ty`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
+        let _tracing = dev_span!("may_generalize");
+
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
             Type::Function(f) => {
@@ -46,13 +47,15 @@ impl Analyzer<'_, '_> {
         !ty.metadata().prevent_generalization
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
+        let _tracing = dev_span!("prevent_inference_while_simplifying");
+
         ty.visit_mut_with(&mut PreventComplexSimplification);
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
+        let _tracing = dev_span!("simplify");
+
         info!("Simplifying {}", dump_type_as_string(&ty));
         ty.fold_with(&mut Simplifier { env: &self.env })
     }

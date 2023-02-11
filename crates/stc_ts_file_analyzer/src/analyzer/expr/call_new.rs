@@ -23,7 +23,7 @@ use stc_ts_types::{
     StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, ext::TypeVecExt};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind};
@@ -229,11 +229,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "extract_call_new_expr_member").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("extract_call_new_expr_member");
 
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
@@ -539,11 +535,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_property").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_property");
 
         obj_type.assert_valid();
 
@@ -978,11 +970,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_class").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_property_of_class");
 
         let candidates = {
             // TODO(kdy1): Deduplicate.
@@ -1172,11 +1160,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_property_of_type_elements").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_property_of_type_elements");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1844,11 +1828,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "call_type_element").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("call_type_element");
 
         let callee_span = callee_ty.span();
 
@@ -2363,11 +2343,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: SelectOpts,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "select_and_invoke").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("select_and_invoke");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -2494,11 +2470,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "get_return_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("get_return_type");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -3265,11 +3237,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "narrow_with_predicate").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("narrow_with_predicate");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -3407,11 +3375,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "is_subtype_in_fn_call").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("is_subtype_in_fn_call");
 
         if arg.type_eq(param) {
             return true;
@@ -3456,11 +3420,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ArgCheckResult {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "check_call_args").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("check_call_args");
 
         if self.validate_type_args_count(span, type_params, type_args).is_err() {
             return ArgCheckResult::WrongArgCount;

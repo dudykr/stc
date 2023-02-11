@@ -25,11 +25,11 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, info, warn, Level};
+use tracing::{debug, info, warn};
 
 use self::bin::extract_name_for_assignment;
 pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let _stack = stack::start(64);
-        let _ctx = debug_ctx!(format!(
+        let _ctx = panic_ctx!(format!(
             "validate {}\n{}\nExpr: {:?}",
             self.cm.span_to_string(e.span()),
             self.cm.span_to_snippet(e.span()).unwrap_or_else(|_| "no-source".into()),
@@ -639,11 +639,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> VResult<Key> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "validate_key").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("validate_key");
 
         if computed {
             prop.validate_with_default(self)
@@ -692,11 +688,7 @@ impl Analyzer<'_, '_> {
     ///
     /// - `declared`: Key of declared property.
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "key_matches").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("key_matches");
 
         match declared {
             Key::Computed(..) => {}
@@ -829,11 +821,7 @@ impl Analyzer<'_, '_> {
         members: &[TypeElement],
         opts: AccessPropertyOpts,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "access_property_of_type_elements").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("access_property_of_type_elements");
 
         let mut matching_elements = vec![];
         let mut read_only_flag = false;
@@ -1099,9 +1087,8 @@ impl Analyzer<'_, '_> {
 
         let _tracing = if cfg!(debug_assertions) {
             let obj = dump_type_as_string(obj);
-            // let prop_ty = dump_type_as_string( &prop.ty());
 
-            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = tracing::field::debug(&prop)).entered())
+            Some(dev_span!("access_property", obj = &*obj, prop = tracing::field::debug(&prop)))
         } else {
             None
         };
@@ -3276,11 +3263,7 @@ impl Analyzer<'_, '_> {
 
     /// Expand type parameters using `type_args`.
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_generics_with_type_args").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand_generics_with_type_args");
 
         match ty.normalize() {
             Type::Interface(Interface { type_params, body, .. }) => {
@@ -3341,11 +3324,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "type_of_name").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("type_of_name");
 
         assert!(!name.is_empty(), "Cannot determine type of empty name");
 
@@ -3393,11 +3372,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type reflects conditional type facts.
     pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "type_of_var").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("type_of_var");
 
         let span = i.span();
         let id: Id = i.into();
@@ -3899,17 +3874,14 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+        let _tracing = dev_span!("type_of_ts_entity_name");
+
         self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 
     fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "type_of_ts_entity_name_inner").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("type_of_ts_entity_name_inner");
 
         let span = span.with_ctxt(SyntaxContext::empty());
         {

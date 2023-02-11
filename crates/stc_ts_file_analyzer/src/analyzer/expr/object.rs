@@ -6,7 +6,7 @@ use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
 use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, TypeParam, Union, UnionMetadata};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
@@ -58,11 +58,7 @@ impl Analyzer<'_, '_> {
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "normalize_union").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("normalize_union");
 
         let start = Instant::now();
         ty.visit_mut_with(&mut ObjectUnionNormalizer { preserve_specified });
@@ -72,8 +68,9 @@ impl Analyzer<'_, '_> {
         debug!("Normalized unions (time = {:?})", end - start);
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
+        let _tracing = dev_span!("validate_type_literals");
+
         match ty.normalize() {
             Type::Union(ty) => {
                 for ty in &ty.types {
@@ -87,8 +84,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+        let _tracing = dev_span!("report_errors_for_mixed_optional_method_signatures");
+
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
             if let TypeElement::Method(MethodSignature { key, optional, .. }) = elem {
@@ -112,11 +110,7 @@ impl Analyzer<'_, '_> {
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
     ) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "append_prop_or_spread_to_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("append_prop_or_spread_to_type");
 
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
@@ -189,11 +183,7 @@ impl Analyzer<'_, '_> {
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "append_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("append_type");
 
         if to.is_any() || to.is_unknown() {
             return Ok(to);
@@ -329,11 +319,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "append_type_element").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("append_type_element");
 
         if to.is_any() || to.is_unknown() {
             return Ok(to);

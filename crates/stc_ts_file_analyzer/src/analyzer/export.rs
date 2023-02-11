@@ -8,7 +8,7 @@ use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -168,11 +168,12 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Currently noop because we need to know if a function is last item among
     /// overloads
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_errors_for_duplicated_exports_of_var(&mut self, span: Span, sym: JsWord) {
         if self.ctx.reevaluating() {
             return;
         }
+        let _tracing = dev_span!("report_errors_for_duplicated_exports_of_var");
+
         let v = self.data.for_module.exports_spans.entry((sym.clone(), IdCtx::Var)).or_default();
         v.push(span);
 
@@ -189,8 +190,9 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
+        let _tracing = dev_span!("export_var", name = tracing::field::debug(&name));
+
         if check_duplicate {
             self.report_errors_for_duplicated_exports_of_var(span, name.sym().clone());
         }
@@ -207,8 +209,9 @@ impl Analyzer<'_, '_> {
     /// Note: We don't freeze types at here because doing so may prevent proper
     /// finalization.
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
+        let _tracing = dev_span!("export_type", name = tracing::field::debug(&name));
+
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
         let types = match self.find_type(&orig_name) {

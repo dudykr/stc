@@ -21,12 +21,12 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    stack,
+    dev_span, stack,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, span, trace, warn, Level};
+use tracing::{debug, error, info, trace, warn};
 
 use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
-        let _tracing = tracing::error_span!("infer_arg_types").entered();
+        let _tracing = dev_span!("infer_arg_types");
 
         warn!(
             "infer_arg_types: {:?}",
@@ -323,11 +323,7 @@ impl Analyzer<'_, '_> {
         concrete: &Type,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "infer_ts_infer_types").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("infer_ts_infer_types");
 
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
@@ -457,7 +453,7 @@ impl Analyzer<'_, '_> {
             let param_str = force_dump_type_as_string(param);
             let arg_str = force_dump_type_as_string(arg);
 
-            Some(span!(Level::ERROR, "infer_type", param = &*param_str, arg = &*arg_str).entered())
+            Some(dev_span!("infer_type", param = &*param_str, arg = &*arg_str))
         } else {
             None
         };
@@ -1401,8 +1397,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<bool> {
-        #[cfg(debug_assertions)]
-        let _tracing = tracing::error_span!("infer_type_using_mapped_type").entered();
+        let _tracing = dev_span!("infer_type_using_mapped_type");
 
         match arg.normalize() {
             Type::Ref(arg) => {
@@ -2151,18 +2146,13 @@ impl Analyzer<'_, '_> {
         let l_max = param.elems.len().saturating_sub(get_tuple_subtract_count(&arg.elems));
         let r_max = arg.elems.len().saturating_sub(get_tuple_subtract_count(&param.elems));
 
-        let _tracing = if cfg!(debug_assertions) {
-            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple", l_max = l_max, r_max = r_max).entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("infer_type_using_tuple_and_tuple", l_max = l_max, r_max = r_max);
 
         for index in 0..len {
             let li = min(index, l_max);
             let ri = min(index, r_max);
 
-            #[cfg(debug_assertions)]
-            let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
+            let _tracing = dev_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri);
 
             let l_elem_type = self.access_property(
                 span,

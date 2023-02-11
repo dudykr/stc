@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::{RComputedPropName, RExpr, RGetterProp, RIdent, RMemberExp
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
@@ -201,8 +201,9 @@ impl Analyzer<'_, '_> {
     ///
     /// See: `computedPropertyNames32_ES5.ts`
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn report_error_for_usage_of_type_param_of_declaring_class(&mut self, used_type_params: &[TypeParam], span: Span) {
+        let _tracing = dev_span!("report_error_for_usage_of_type_param_of_declaring_class");
+
         debug_assert!(self.ctx.in_computed_prop_name);
 
         for used in used_type_params {
@@ -233,8 +234,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
+        let _tracing = dev_span!("is_type_valid_for_computed_key");
+
         if (ty.metadata().resolved_from_var || ty.metadata().prevent_generalization) && (ty.is_str_lit() || ty.is_num_lit()) {
             return true;
         }
