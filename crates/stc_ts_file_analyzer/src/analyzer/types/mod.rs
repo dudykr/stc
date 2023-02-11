@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
         let _tracing = if cfg!(debug_assertions) {
             let ty = force_dump_type_as_string(&ty);
 
-            Some(span!(Level::ERROR, "normalize", ty = tracing::field::display(&ty)).entered())
+            Some(dev_span!("normalize", ty = tracing::field::display(&ty)))
         } else {
             None
         };
@@ -1383,7 +1383,7 @@ impl Analyzer<'_, '_> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = force_dump_type_as_string(ty);
 
-            Some(span!(Level::ERROR, "instantiate_for_normalization", ty = &*ty_str).entered())
+            Some(dev_span!("instantiate_for_normalization", ty = &*ty_str))
         } else {
             None
         };
