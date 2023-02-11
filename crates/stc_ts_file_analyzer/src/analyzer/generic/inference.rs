@@ -17,7 +17,7 @@ use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -165,8 +165,7 @@ impl Analyzer<'_, '_> {
         matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
         opts: InferTypeOpts,
     ) -> VResult<(Vec<Type>, Vec<Type>)> {
-        #[cfg(debug_assertions)]
-        let _tracing = tracing::span!(Level::ERROR, "infer_from_matching_types").entered();
+        let _tracing = dev_span!("infer_from_matching_types");
 
         let mut matched_sources: Vec<Type> = vec![];
         let mut matched_targets: Vec<Type> = vec![];
@@ -218,11 +217,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "infer_type_using_union").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("infer_type_using_union");
 
         let (temp_sources, temp_targets) = self.infer_from_matching_types(
             span,
@@ -801,14 +796,12 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let _tracing = tracing::span!(
-                    Level::ERROR,
+                let _tracing = dev_span!(
                     "infer_type: type param",
                     name = name.as_str(),
                     new = tracing::field::display(&dump_type_as_string(&arg)),
                     prev = tracing::field::display(&dump_type_as_string(&e.get().inferred_type))
-                )
-                .entered();
+                );
 
                 if opts.priority < e.get().priority {
                     e.get_mut().candidates = Default::default();
