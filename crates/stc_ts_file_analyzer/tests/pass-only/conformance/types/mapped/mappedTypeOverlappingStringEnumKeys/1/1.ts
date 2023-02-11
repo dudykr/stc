@@ -9,8 +9,6 @@ enum AlienAnimalTypes {
   CAT = "cat",
 };
 
-type AnimalTypes = TerrestrialAnimalTypes | AlienAnimalTypes;
-
 interface TerrestrialCat {
   type: TerrestrialAnimalTypes.CAT;
   address: string;
