@@ -11,7 +11,6 @@ extern crate test;
 mod common;
 
 use std::{
-    collections::HashSet,
     env, fs,
     fs::{read_to_string, File},
     mem,
@@ -25,19 +24,16 @@ use anyhow::Context;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
-use stc_ts_builtin_types::Lib;
-use stc_ts_env::{Env, ModuleConfig, Rule};
+use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_test, TestSpec};
 use stc_ts_type_checker::{loader::ModuleLoader, Checker};
-use stc_ts_utils::StcComments;
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
-    BytePos, FileName, SourceMap, Span, Spanned,
+    FileName, SourceMap, Span,
 };
-use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
