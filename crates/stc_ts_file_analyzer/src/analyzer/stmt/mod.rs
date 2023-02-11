@@ -7,7 +7,7 @@ use stc_ts_types::{LitType, Type};
 use stc_utils::{dev_span, stack};
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
-use tracing::{instrument, trace, warn};
+use tracing::{trace, warn};
 
 use self::return_type::LoopBreakerFinder;
 use crate::{
@@ -141,8 +141,9 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
-    #[instrument(skip_all)]
     pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs], is_for_interface: bool) {
+        let _tracing = dev_span!("resolve_parent_interfaces");
+
         if self.config.is_builtin {
             return;
         }
