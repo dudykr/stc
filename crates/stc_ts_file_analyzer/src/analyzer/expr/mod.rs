@@ -25,7 +25,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, ext::TypeVecExt, panic_ctx, stack};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
@@ -3242,11 +3242,7 @@ impl Analyzer<'_, '_> {
 
     /// Expand type parameters using `type_args`.
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "expand_generics_with_type_args").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("expand_generics_with_type_args");
 
         match ty.normalize() {
             Type::Interface(Interface { type_params, body, .. }) => {

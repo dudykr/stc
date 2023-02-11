@@ -1522,11 +1522,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "can_be_undefined", include_null = include_null).entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("can_be_undefined", include_null = include_null);
 
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
