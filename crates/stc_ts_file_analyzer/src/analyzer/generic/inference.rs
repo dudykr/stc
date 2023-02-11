@@ -21,7 +21,7 @@ use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, info, Level};
+use tracing::{debug, error, info};
 
 use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},

@@ -323,11 +323,7 @@ impl Analyzer<'_, '_> {
         concrete: &Type,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "infer_ts_infer_types").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("infer_ts_infer_types");
 
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
