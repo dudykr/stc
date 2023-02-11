@@ -1212,7 +1212,10 @@ impl Analyzer<'_, '_> {
                     }
 
                     (TypeElement::Index(p), TypeElement::Index(a)) => {
-                        if p.params.type_eq(&a.params) {
+                        if p.params.type_eq(&a.params)
+                            || a.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                && p.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+                        {
                             if let Some(pt) = &p.type_ann {
                                 if let Some(at) = &a.type_ann {
                                     self.infer_type(
