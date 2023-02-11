@@ -233,8 +233,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r)) {
-                    let r = self.normalize_promise_arg(&r);
-
                     if let Ok(()) = self.assign_with_opts(
                         data,
                         &l,
