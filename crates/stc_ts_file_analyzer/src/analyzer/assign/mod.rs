@@ -654,11 +654,7 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
-                .context(format!(
-                    "LHS (final): {}\nRHS (final): {}",
-                    force_dump_type_as_string(to),
-                    force_dump_type_as_string(rhs)
-                )));
+                .context("fail!() called"));
             }};
         }
 
