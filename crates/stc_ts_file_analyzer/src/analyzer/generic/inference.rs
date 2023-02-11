@@ -15,7 +15,7 @@ use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
-    TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::Atom;
@@ -54,6 +54,8 @@ pub(super) struct InferenceInfo {
     pub is_fixed: bool,
     #[allow(unused)]
     pub implied_arity: Option<isize>,
+
+    pub rest_index: Option<usize>,
 }
 
 /// # Default
@@ -99,6 +101,13 @@ pub(crate) struct InferTypeOpts {
     pub is_inferring_rest_type: bool,
 
     pub exclude_null_and_undefined: bool,
+
+    pub index_tuple_with_param: bool,
+
+    /// If this value is different, `is_inferring_rest_type` behaves
+    /// differently, to avoid inferring `([...T], [...T])` & `(['a', 'b'], ['c',
+    /// ['d'])`  as a tuple with 4 elements.
+    pub rest_type_index: Option<usize>,
 }
 
 bitflags! {
@@ -806,6 +815,7 @@ impl Analyzer<'_, '_> {
                     e.get_mut().contra_candidates = Default::default();
                     e.get_mut().top_level = true;
                     e.get_mut().priority = opts.priority;
+                    e.get_mut().rest_index = None;
                 }
 
                 if opts.priority == e.get().priority {
@@ -854,32 +864,28 @@ impl Analyzer<'_, '_> {
                         {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
-                            && match e.get().inferred_type.normalize() {
-                                Type::Tuple(tuple) => tuple.elems.len() == 1,
-                                _ => false,
-                            }
+                            && matches!(e.get().inferred_type.normalize(), Type::Tuple(..))
                             && match arg.normalize() {
                                 Type::Tuple(tuple) => tuple.elems.len() == 1,
                                 _ => false,
                             }
                         {
-                            // If both are tuples with length is 1, we merge
-                            // them.
-                            let prev = e.get().inferred_type.as_tuple().unwrap().elems[0].ty.clone();
-                            let new = arg.as_tuple().unwrap().elems[0].ty.clone();
+                            if opts.rest_type_index == e.get().rest_index {
+                                // If both are tuples with length is 1, we merge
+                                // them.
+                                //
+                                // ['a'] [1] => ['a', 1]
+                                let mut prev = e.get().inferred_type.clone().expect_tuple();
+                                prev.metadata.prevent_tuple_to_array = true;
 
-                            Type::Tuple(Tuple {
-                                span,
-                                elems: vec![TupleElement {
-                                    span,
-                                    label: None,
-                                    ty: box Type::new_union(span, vec![*prev, *new]),
-                                    tracker: Default::default(),
-                                }],
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed()
+                                let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
+                                new_elem.ty = box new_elem.ty.generalize_lit();
+                                prev.elems.push(new_elem);
+
+                                Type::Tuple(prev).freezed()
+                            } else {
+                                e.get().inferred_type.clone()
+                            }
                         } else {
                             Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
                         };
@@ -914,7 +920,11 @@ impl Analyzer<'_, '_> {
                 }
             }
             Entry::Vacant(e) => {
-                let arg = arg.clone();
+                let mut arg = arg.clone();
+
+                if opts.is_inferring_rest_type {
+                    arg = Cow::Owned(arg.into_owned().generalize_lit());
+                }
 
                 e.insert(InferenceInfo {
                     type_param: name,
@@ -925,6 +935,7 @@ impl Analyzer<'_, '_> {
                     top_level: true,
                     is_fixed: false,
                     implied_arity: Default::default(),
+                    rest_index: opts.rest_type_index,
                 });
             }
         }

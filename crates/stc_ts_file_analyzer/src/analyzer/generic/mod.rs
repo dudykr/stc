@@ -1,9 +1,9 @@
-use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
+use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take, time::Instant};
 
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -15,9 +15,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple,
-    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation,
-    TypeParamMetadata, Union, UnionMetadata,
+    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -31,7 +30,10 @@ use tracing::{debug, error, info, span, trace, warn, Level};
 
 use self::inference::{InferenceInfo, InferencePriority};
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
-use super::expr::{AccessPropertyOpts, TypeOfMode};
+use super::{
+    assign::get_tuple_subtract_count,
+    expr::{AccessPropertyOpts, TypeOfMode},
+};
 use crate::{
     analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_builtin_with_single_arg, RemoveTypes},
@@ -100,6 +102,9 @@ impl Analyzer<'_, '_> {
         ret_ty: Option<&Type>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::error_span!("infer_arg_types").entered();
+
         warn!(
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
@@ -123,6 +128,7 @@ impl Analyzer<'_, '_> {
                         top_level: Default::default(),
                         is_fixed: true,
                         implied_arity: Default::default(),
+                        rest_index: Default::default(),
                     },
                 );
             }
@@ -169,6 +175,10 @@ impl Analyzer<'_, '_> {
 
         for (idx, p) in params.iter().skip(skip).enumerate() {
             let is_rest = matches!(&p.pat, RPat::Rest(_));
+            let opts = InferTypeOpts {
+                rest_type_index: Some(idx),
+                ..opts
+            };
 
             if !is_rest {
                 if let Some(arg) = args.get(idx) {
@@ -1115,6 +1125,44 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                if opts.index_tuple_with_param {
+                    if let (
+                        Type::Param(obj_param),
+                        Type::Param(TypeParam {
+                            constraint: Some(index_param_constraint),
+                            ..
+                        }),
+                    ) = (param.obj_type.normalize(), param.index_type.normalize())
+                    {
+                        // param  = [string, number, ...T][P];
+                        // arg = true;
+                        //
+                        // where P is keyof T
+                        //
+                        // =>
+                        //
+                        // T = true
+
+                        if let Type::Operator(Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ty: keyof_ty,
+                            ..
+                        }) = index_param_constraint.normalize()
+                        {
+                            return self.infer_type(
+                                span,
+                                inferred,
+                                &param.obj_type,
+                                arg,
+                                InferTypeOpts {
+                                    append_type_as_union: true,
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                    }
+                }
             }
 
             Type::Constructor(param) => {
@@ -1353,6 +1401,9 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<bool> {
+        #[cfg(debug_assertions)]
+        let _tracing = tracing::error_span!("infer_type_using_mapped_type").entered();
+
         match arg.normalize() {
             Type::Ref(arg) => {
                 let arg = self
@@ -1386,7 +1437,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Tuple(..) | Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+            Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
                 let arg = self
                     .convert_type_to_type_lit(span, Cow::Borrowed(arg))
                     .context("tried to convert a type into a type literal to infer mapped type")?
@@ -1483,6 +1534,7 @@ impl Analyzer<'_, '_> {
                     "[generic/inference] Found form of `P in keyof T` where T = {}, P = {}",
                     name, key_name
                 );
+
                 match arg {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
@@ -1505,29 +1557,8 @@ impl Analyzer<'_, '_> {
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
-                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(LitType {
-                                        span: param.span,
-                                        lit: RTsLit::Str(RStr {
-                                            span: *i_span,
-                                            value: sym.clone(),
-                                            raw: None,
-                                        }),
-                                        metadata: LitTypeMetadata {
-                                            common: param.metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    })),
-                                    Key::Num(n) => {
-                                        key_types.push(Type::Lit(LitType {
-                                            span: param.span,
-                                            lit: RTsLit::Number(n.clone()),
-                                            metadata: LitTypeMetadata {
-                                                common: param.metadata.common,
-                                                ..Default::default()
-                                            },
-                                            tracker: Default::default(),
-                                        }));
+                                    Key::Num(..) | Key::Normal { .. } => {
+                                        key_types.push(key.ty().into_owned());
                                     }
                                     _ => {
                                         unimplemented!("Inference of keys except ident in mapped type.\nKey: {:?}", key)
@@ -1747,6 +1778,64 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
 
+                    Type::Tuple(arg) => {
+                        let mut new_elems = vec![];
+                        if let Some(param_ty) = &param.ty {
+                            for elem in arg.elems.iter() {
+                                let old = take(&mut self.mapped_type_param_name);
+                                self.mapped_type_param_name = vec![name.clone()];
+
+                                let mut data = InferData {
+                                    dejavu: inferred.dejavu.clone(),
+                                    ..Default::default()
+                                };
+                                self.infer_type(
+                                    span,
+                                    &mut data,
+                                    param_ty,
+                                    &elem.ty,
+                                    InferTypeOpts {
+                                        index_tuple_with_param: true,
+                                        ..opts
+                                    },
+                                )?;
+                                let mut map = self.finalize_inference(span, &[], data);
+                                let mut inferred_ty = map.types.remove(&name);
+
+                                self.mapped_type_param_name = old;
+
+                                match &mut inferred_ty {
+                                    Some(ty) => {
+                                        handle_optional_for_element(ty, optional);
+                                    }
+                                    None => {}
+                                }
+
+                                new_elems.push(TupleElement {
+                                    span: elem.span,
+                                    label: elem.label.clone(),
+                                    ty: box inferred_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                    tracker: Default::default(),
+                                });
+                            }
+                        }
+
+                        self.insert_inferred_raw(
+                            span,
+                            inferred,
+                            name.clone(),
+                            Cow::Owned(Type::Tuple(Tuple {
+                                span: arg.span,
+                                elems: new_elems,
+                                metadata: arg.metadata,
+                                tracker: Default::default(),
+                            })),
+                            opts,
+                        )?;
+
+                        return Ok(true);
+                    }
+
                     _ => {
                         dbg!();
                     }
@@ -1768,23 +1857,11 @@ impl Analyzer<'_, '_> {
                         type_param.name, param.type_param.name
                     );
 
-                    if let Type::TypeLit(arg) = arg {
+                    if let Type::TypeLit(arg) = arg.normalize() {
                         let key_ty = arg.members.iter().filter_map(|element| match element {
                             TypeElement::Property(p) => match &p.key {
-                                Key::Normal { span: i_span, sym: i_sym } => Some(Type::Lit(LitType {
-                                    span: param.span,
-                                    lit: RTsLit::Str(RStr {
-                                        span: *i_span,
-                                        value: i_sym.clone(),
-                                        raw: None,
-                                    }),
-                                    metadata: LitTypeMetadata {
-                                        common: param.metadata.common,
-                                        ..Default::default()
-                                    },
-                                    tracker: Default::default(),
-                                })),
-                                _ => None,
+                                Key::Private(..) | Key::Computed(..) => None,
+                                _ => Some(p.key.ty().into_owned()),
                             }, // TODO(kdy1): Handle method element
                             _ => None,
                         });
@@ -1857,9 +1934,9 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    let mut type_elements = FxHashMap::<_, Vec<_>>::default();
-                    if let Type::TypeLit(arg) = arg {
-                        //
+                    if let Type::TypeLit(arg) = arg.normalize() {
+                        let mut type_elements = FxHashMap::<_, Vec<_>>::default();
+
                         if let Some(param_ty) = &param.ty {
                             for m in &arg.members {
                                 match m {
@@ -2069,21 +2146,30 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let len = param.elems.len().max(arg.elems.len());
+
+        let l_max = param.elems.len().saturating_sub(get_tuple_subtract_count(&arg.elems));
+        let r_max = arg.elems.len().saturating_sub(get_tuple_subtract_count(&param.elems));
+
         let _tracing = if cfg!(debug_assertions) {
-            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple").entered())
+            Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple", l_max = l_max, r_max = r_max).entered())
         } else {
             None
         };
 
-        let len = param.elems.len().max(arg.elems.len());
-
         for index in 0..len {
+            let li = min(index, l_max);
+            let ri = min(index, r_max);
+
+            #[cfg(debug_assertions)]
+            let _tracing = tracing::error_span!("infer_type_using_tuple_and_tuple", li = li, ri = ri).entered();
+
             let l_elem_type = self.access_property(
                 span,
                 param_ty,
                 &Key::Num(RNumber {
                     span,
-                    value: index as _,
+                    value: li as _,
                     raw: None,
                 }),
                 TypeOfMode::RValue,
@@ -2104,7 +2190,7 @@ impl Analyzer<'_, '_> {
                 arg_ty,
                 &Key::Num(RNumber {
                     span,
-                    value: index as _,
+                    value: ri as _,
                     raw: None,
                 }),
                 TypeOfMode::RValue,

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, cmp::min, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
@@ -8,8 +8,8 @@ use stc_ts_errors::{
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, Type, TypeElement,
-    TypeLit, TypeParam,
+    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
@@ -2452,15 +2452,23 @@ impl Analyzer<'_, '_> {
 
                         let len = lhs_elems.len().max(rhs_elems.len());
 
+                        let r_max = rhs_elems.len().saturating_sub(get_tuple_subtract_count(lhs_elems));
+
                         let mut errors = vec![];
 
                         for index in 0..len {
+                            let li = index;
+                            let ri = min(index, r_max);
+
+                            #[cfg(debug_assertions)]
+                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", li = li, ri = ri).entered();
+
                             let l_elem_type = self.access_property(
                                 span,
                                 to,
                                 &Key::Num(RNumber {
                                     span,
-                                    value: index as _,
+                                    value: li as _,
                                     raw: None,
                                 }),
                                 TypeOfMode::RValue,
@@ -2480,7 +2488,7 @@ impl Analyzer<'_, '_> {
                                 rhs,
                                 &Key::Num(RNumber {
                                     span,
-                                    value: index as _,
+                                    value: ri as _,
                                     raw: None,
                                 }),
                                 TypeOfMode::RValue,
@@ -2505,7 +2513,7 @@ impl Analyzer<'_, '_> {
                                         ..opts
                                     },
                                 )
-                                .with_context(|| format!("tried to assign {}th tuple element", index))
+                                .with_context(|| format!("tried to assign {}th tuple element\nli = {},ri = {}", index, li, ri))
                                 .err(),
                             );
                         }
@@ -3031,3 +3039,22 @@ pub(crate) enum Variance {
 //            .unwrap_or(Type::any(p.span())),
 //    }
 //}
+
+pub(crate) fn get_tuple_subtract_count(t: &[TupleElement]) -> usize {
+    let rest_pos = t.iter().position(|e| e.ty.is_rest());
+
+    match rest_pos {
+        Some(rest_pos) => {
+            // If the rest is not the last, we should return the index of rest
+            if t.iter().skip(rest_pos).any(|e| !e.ty.is_rest()) {
+                t.len() - rest_pos
+            } else {
+                0
+            }
+        }
+        None => {
+            // No rest means we can iterate over whole tuple.
+            0
+        }
+    }
+}
