@@ -25,7 +25,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
+use stc_utils::{cache::Freeze, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         let _stack = stack::start(64);
-        let _ctx = debug_ctx!(format!(
+        let _ctx = panic_ctx!(format!(
             "validate {}\n{}\nExpr: {:?}",
             self.cm.span_to_string(e.span()),
             self.cm.span_to_snippet(e.span()).unwrap_or_else(|_| "no-source".into()),

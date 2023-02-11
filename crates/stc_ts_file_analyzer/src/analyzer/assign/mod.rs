@@ -5,7 +5,6 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
@@ -2749,57 +2748,59 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[context("tried to extract keys")]
     fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
-        let ty = self.normalize(
-            Some(span),
-            Cow::Borrowed(ty),
-            NormalizeTypeOpts {
-                normalize_keywords: true,
-                process_only_key: true,
-                ..Default::default()
-            },
-        )?;
-        let ty = ty.normalize();
+        (|| -> VResult<_> {
+            let ty = self.normalize(
+                Some(span),
+                Cow::Borrowed(ty),
+                NormalizeTypeOpts {
+                    normalize_keywords: true,
+                    process_only_key: true,
+                    ..Default::default()
+                },
+            )?;
+            let ty = ty.normalize();
 
-        if let Type::TypeLit(ty) = ty {
-            //
-            let mut keys = vec![];
-            for member in &ty.members {
-                if let TypeElement::Property(PropertySignature {
-                    span,
-                    key: Key::Normal { sym: key, .. },
-                    ..
-                }) = member
-                {
-                    keys.push(Type::Lit(LitType {
-                        span: *span,
-                        lit: RTsLit::Str(RStr {
+            if let Type::TypeLit(ty) = ty {
+                //
+                let mut keys = vec![];
+                for member in &ty.members {
+                    if let TypeElement::Property(PropertySignature {
+                        span,
+                        key: Key::Normal { sym: key, .. },
+                        ..
+                    }) = member
+                    {
+                        keys.push(Type::Lit(LitType {
                             span: *span,
-                            value: key.clone(),
-                            raw: None,
-                        }),
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
+                            lit: RTsLit::Str(RStr {
+                                span: *span,
+                                value: key.clone(),
+                                raw: None,
+                            }),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }));
+                    }
                 }
+
+                return Ok(Type::new_union(span, keys));
             }
 
-            return Ok(Type::new_union(span, keys));
-        }
+            if let Some(ty) = self
+                .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
+                .map(Cow::into_owned)
+                .map(Type::TypeLit)
+            {
+                return self.extract_keys(span, &ty);
+            }
 
-        if let Some(ty) = self
-            .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
-            .map(Cow::into_owned)
-            .map(Type::TypeLit)
-        {
-            return self.extract_keys(span, &ty);
-        }
-
-        Err(ErrorKind::Unimplemented {
-            span,
-            msg: "Extract keys".to_string(),
-        })?
+            Err(ErrorKind::Unimplemented {
+                span,
+                msg: "Extract keys".to_string(),
+            })?
+        })()
+        .context("tried to extract keys")
     }
 
     /// Handles `P in 'foo' | 'bar'`. Note that `'foo' | 'bar'` part should be
