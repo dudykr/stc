@@ -581,7 +581,7 @@ pub struct Instance {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Instance, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
     pub span: Span,
 
@@ -589,6 +589,18 @@ pub struct LitType {
     pub metadata: LitTypeMetadata,
 
     pub tracker: Tracker<"LitType">,
+}
+
+impl Debug for LitType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.lit {
+            RTsLit::Str(s) => write!(f, "{:?}", s.value),
+            RTsLit::Number(n) => write!(f, "{}", n.value),
+            RTsLit::BigInt(n) => write!(f, "{}n", n.value),
+            RTsLit::Bool(b) => write!(f, "{}", b.value),
+            RTsLit::Tpl(..) => write!(f, "`<tpl>`"),
+        }
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
