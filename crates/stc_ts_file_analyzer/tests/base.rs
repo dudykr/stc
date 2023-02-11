@@ -220,13 +220,6 @@ fn errors(input: PathBuf) {
     .unwrap_err();
 }
 
-#[fixture("tests/pass-only/**/*.ts")]
-fn pass_only(input: PathBuf) {
-    run_test(input.clone(), false).unwrap();
-
-    testing::unignore_fixture(&input);
-}
-
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
@@ -445,4 +438,11 @@ fn pass(file_name: PathBuf) {
     res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
+}
+
+#[fixture("tests/pass-only/**/*.ts")]
+fn pass_only(input: PathBuf) {
+    run_test(input.clone(), false).unwrap();
+
+    testing::unignore_fixture(&input);
 }
