@@ -2140,8 +2140,8 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let len = param.elems.len().max(arg.elems.len());
 
-        let l_max = param.elems.len() - get_tuple_subtract_count(arg);
-        let r_max = arg.elems.len() - get_tuple_subtract_count(param);
+        let l_max = param.elems.len().saturating_sub(get_tuple_subtract_count(&arg.elems));
+        let r_max = arg.elems.len().saturating_sub(get_tuple_subtract_count(&param.elems));
 
         let _tracing = if cfg!(debug_assertions) {
             Some(span!(Level::ERROR, "infer_type_using_tuple_and_tuple", l_max = l_max, r_max = r_max).entered())
