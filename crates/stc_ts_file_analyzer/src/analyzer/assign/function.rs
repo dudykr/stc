@@ -404,11 +404,7 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     pub(super) fn assign_to_function(&mut self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_function").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_function");
 
         let span = opts.span;
         let r = r.normalize();
@@ -521,11 +517,7 @@ impl Analyzer<'_, '_> {
         r: &Type,
         opts: AssignOpts,
     ) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_constructor").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_constructor");
 
         let span = opts.span;
         let r = r.normalize();
@@ -654,11 +646,7 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `string` is assignable to `...args: any[]`.
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_param").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_param");
 
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
@@ -682,11 +670,7 @@ impl Analyzer<'_, '_> {
 
     /// Implementation of `assign_param`.
     fn assign_param_type(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_param_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_param_type");
 
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
@@ -826,11 +810,7 @@ impl Analyzer<'_, '_> {
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_params").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_params");
 
         let span = opts.span;
 
