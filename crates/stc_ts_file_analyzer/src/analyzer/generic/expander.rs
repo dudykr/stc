@@ -7,7 +7,7 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
-use stc_utils::{cache::Freeze, ext::SpanExt};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -117,15 +117,11 @@ impl Analyzer<'_, '_> {
         let _tracing = if cfg!(debug_assertions) {
             let child = dump_type_as_string(child);
             let parent = dump_type_as_string(parent);
-            Some(
-                tracing::span!(
-                    tracing::Level::ERROR,
-                    "extends",
-                    child = tracing::field::display(&child),
-                    parent = tracing::field::display(&parent)
-                )
-                .entered(),
-            )
+            Some(dev_span!(
+                "extends",
+                child = tracing::field::display(&child),
+                parent = tracing::field::display(&parent)
+            ))
         } else {
             None
         };
