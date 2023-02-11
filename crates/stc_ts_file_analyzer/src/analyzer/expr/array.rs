@@ -471,7 +471,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to get the type of `next` of an async iterator")?;
 
             let item = self
-                .get_awaited_type(span, Cow::Owned(item_promise))
+                .get_awaited_type(span, Cow::Owned(item_promise), false)
                 .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
 
             let elem_ty = self
@@ -491,7 +491,7 @@ impl Analyzer<'_, '_> {
                 _ => err,
             })?;
 
-        if let Ok(elem_ty) = self.get_awaited_type(span, Cow::Borrowed(&elem_ty)).map(Cow::into_owned) {
+        if let Ok(elem_ty) = self.get_awaited_type(span, Cow::Borrowed(&elem_ty), false).map(Cow::into_owned) {
             return Ok(Cow::Owned(elem_ty));
         }
 
