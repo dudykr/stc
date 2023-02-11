@@ -1,3 +1,4 @@
+//@strict: true
 
 var b = a
 a;
