@@ -1518,10 +1518,10 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Intersection(Intersection { types, .. }) => {
+            Type::Intersection(Intersection { types: rhs_types, .. }) => {
                 if !opts.do_not_normalize_intersection_on_rhs {
                     // Filter out `never` types
-                    if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                    if let Some(new) = self.normalize_intersection_types(span, rhs_types, NormalizeTypeOpts { ..Default::default() })? {
                         return self
                             .assign_inner(
                                 data,
@@ -1535,13 +1535,13 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign a normalized intersection type to another type");
                     }
                 }
-                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                if let Some(new) = self.normalize_intersection_types(span, rhs_types, NormalizeTypeOpts { ..Default::default() })? {
                     if new.is_never() && to.is_never() {
                         return Ok(());
                     }
                 }
 
-                let results = types
+                let results = rhs_types
                     .iter()
                     .map(|rhs| {
                         self.assign_inner(
@@ -1566,7 +1566,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let use_single_error = types.iter().all(|ty| ty.is_interface());
+                let use_single_error = rhs_types.iter().all(|ty| ty.is_interface());
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
 
                 if use_single_error {
