@@ -37,7 +37,6 @@ use super::generic::InferTypeOpts;
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
-    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -2101,31 +2100,6 @@ impl Analyzer<'_, '_> {
             }
         })
         .context("tried to merge a type element")
-    }
-
-    ///
-    /// - `Promise<T>` => `T`
-    /// - `T | PromiseLike<T>` => `T`
-    pub(crate) fn normalize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
-        if let Some(arg) = unwrap_builtin_with_single_arg(arg, "Promise") {
-            return self.normalize_promise_arg(arg);
-        }
-
-        if let Type::Union(u) = arg.normalize() {
-            // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
-            if u.types.len() == 2 {
-                let first = u.types[0].normalize();
-                let second = u.types[1].normalize();
-
-                if let Some(second_arg) = unwrap_builtin_with_single_arg(second, "PromiseLike") {
-                    if second_arg.type_eq(first) {
-                        return Cow::Borrowed(first);
-                    }
-                }
-            }
-        }
-
-        Cow::Borrowed(arg)
     }
 
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
