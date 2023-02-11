@@ -23,7 +23,7 @@ pub struct TestSpec {
     pub module_config: ModuleConfig,
 }
 
-pub fn parse_test(file_name: &Path) -> Vec<TestSpec> {
+pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
 
@@ -123,7 +123,7 @@ pub fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     if v {
                         libs = vec![];
                     }
-                } else if s.to_lowercase().starts_with("noimplicitany:") {
+                } else if s.to_lowercase().starts_with(&"noImplicitAny:".to_ascii_lowercase()) {
                     let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
                     rule.no_implicit_any = v;
                 } else if s.starts_with("noImplicitReturns:") {

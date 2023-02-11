@@ -27,7 +27,7 @@ use serde::Deserialize;
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_testing::conformance::{parse_test, TestSpec};
+use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
 use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
@@ -223,7 +223,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
-    let specs = catch_unwind(|| parse_test(&path)).ok()?;
+    let specs = catch_unwind(|| parse_conformance_test(&path)).ok()?;
     let use_target = specs.len() > 1;
 
     if use_target {
