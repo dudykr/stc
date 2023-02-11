@@ -317,11 +317,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "append_type_element").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("append_type_element");
 
         if to.is_any() || to.is_unknown() {
             return Ok(to);
