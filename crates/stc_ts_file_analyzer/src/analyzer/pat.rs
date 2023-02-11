@@ -9,7 +9,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, ext::TypeVecExt};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -39,7 +39,6 @@ pub(super) enum PatMode {
 }
 
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
         ty.metadata_mut().implicit = true;
     }
@@ -48,8 +47,9 @@ impl Analyzer<'_, '_> {
         ty.metadata().implicit
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> VResult<Type> {
+        let _tracing = dev_span!("default_type_for_pat");
+
         let span = pat.span();
         match pat {
             RPat::Array(arr) => {
