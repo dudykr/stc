@@ -545,8 +545,9 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    #[instrument(name = "Scope::register_type", skip_all)]
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
+        let _tracing = dev_span!("Scope::register_type");
+
         ty.assert_valid();
 
         let ty = ty.freezed();
