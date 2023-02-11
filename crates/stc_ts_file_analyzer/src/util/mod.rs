@@ -2,8 +2,8 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Ref};
+use stc_utils::dev_span;
 use swc_ecma_ast::*;
-use tracing::instrument;
 
 use crate::ty::{Intersection, Type, Union};
 
@@ -33,7 +33,6 @@ impl ModuleItemOrStmt for RStmt {
 }
 
 /// Check if `ty` stores infer type in it.
-#[instrument(skip_all)]
 pub(crate) fn contains_infer_type<T>(n: &T) -> bool
 where
     T: VisitWith<TypeFinder>,
@@ -41,6 +40,8 @@ where
     fn check(ty: &Type) -> bool {
         ty.is_infer() || ty.metadata().contains_infer_type
     }
+
+    let _tracing = dev_span!("contains_infer_type");
 
     TypeFinder::find(n, check)
 }

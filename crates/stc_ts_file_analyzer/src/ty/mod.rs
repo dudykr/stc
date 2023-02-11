@@ -2,7 +2,6 @@ use rnode::FoldWith;
 use stc_ts_type_ops::{generalization::LitGeneralizer, tuple_to_array::TupleToArray, Fix};
 pub(crate) use stc_ts_types::*;
 use stc_utils::dev_span;
-use tracing::instrument;
 
 pub mod type_facts;
 

@@ -1101,8 +1101,9 @@ impl Analyzer<'_, '_> {
         ty
     }
 
-    #[instrument(skip(self))]
     pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<Type>>> {
+        let _tracing = dev_span!("find_type", name = tracing::field::debug(name));
+
         if let Some(v) = self.find_local_type(name) {
             return Ok(Some(v));
         }
