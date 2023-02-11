@@ -538,11 +538,17 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
+}
+
+impl Debug for ComputedKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{:?}]", self.ty)
+    }
 }
 
 impl TypeEq for ComputedKey {
@@ -1070,12 +1076,25 @@ impl Debug for TypeLit {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
 
     pub tracker: Tracker<"TypeParamDecl">,
+}
+
+impl Debug for TypeParamDecl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ">")
+    }
 }
 
 /// Typescript expression with type arguments
@@ -1223,7 +1242,7 @@ impl Debug for MethodSignature {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", &self.key)?;
         if let Some(type_params) = &self.type_params {
-            write!(f, "<{:?}>", type_params)?;
+            write!(f, "{:?}", type_params)?;
         }
         write!(f, "(")?;
         for (i, param) in self.params.iter().enumerate() {
