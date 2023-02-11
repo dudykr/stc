@@ -29,6 +29,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
+use stc_ts_testing::conformance::TestSpec;
 use stc_ts_type_checker::{loader::ModuleLoader, Checker};
 use stc_ts_utils::StcComments;
 use swc_common::{
