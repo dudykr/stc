@@ -2869,9 +2869,15 @@ impl From<RTplElement> for TplElem {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct Freezed {
     ty: Arc<Type>,
+}
+
+impl Debug for Freezed {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({:?}, freezed)", self.ty)
+    }
 }
 
 impl Spanned for Freezed {
