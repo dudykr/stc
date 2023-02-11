@@ -217,35 +217,34 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.may_unwrap_promise {
-            if let Ok(l) = self.get_awaited_type(span, Cow::Borrowed(l)) {
+            if let Ok(l) = self.get_awaited_type(span, Cow::Borrowed(l), true) {
                 // We are in return type of an async function.
 
-                if let Ok(()) = self.assign_with_opts(
-                    data,
-                    &l,
-                    r,
-                    AssignOpts {
-                        may_unwrap_promise: false,
-                        ..opts
-                    },
-                ) {
-                    return Some(Ok(()));
+                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r), true) {
+                    return Some(
+                        self.assign_with_opts(data, &l, &r, AssignOpts { ..opts })
+                            .context("tried to assign an awaited type to an awaited type"),
+                    );
                 }
 
-                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r)) {
-                    let r = self.normalize_promise_arg(&r);
-
-                    if let Ok(()) = self.assign_with_opts(
+                return Some(
+                    self.assign_with_opts(
                         data,
                         &l,
-                        &r,
+                        r,
                         AssignOpts {
                             may_unwrap_promise: false,
                             ..opts
                         },
-                    ) {
-                        return Some(Ok(()));
-                    }
+                    )
+                    .context("tried to assign an awaited type to a non-awaited type"),
+                );
+            } else {
+                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r), true) {
+                    return Some(
+                        self.assign_with_opts(data, l, &r, AssignOpts { ..opts })
+                            .context("tried to assign an non-waited type to an awaited type"),
+                    );
                 }
             }
         }
