@@ -912,6 +912,26 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if to.is_mapped() {
+            let to = self
+                .normalize(
+                    Some(opts.span),
+                    Cow::Borrowed(rhs),
+                    NormalizeTypeOpts {
+                        preserve_typeof: true,
+                        preserve_global_this: true,
+                        preserve_intersection: true,
+                        preserve_union: true,
+                        ..Default::default()
+                    },
+                )?
+                .freezed();
+
+            if let Ok(()) = self.assign_with_opts(data, &to, rhs, opts) {
+                return Ok(());
+            }
+        }
+
         if rhs.is_mapped() {
             let rhs = self
                 .normalize(
