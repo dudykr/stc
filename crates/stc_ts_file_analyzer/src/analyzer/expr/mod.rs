@@ -952,6 +952,40 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if !matches!(prop, Key::Normal { .. } | Key::Private(..)) {
+            let prop_ty = prop.ty();
+            let prop_is_num = prop_ty.is_num();
+            let prop_is_str = prop_ty.is_str();
+
+            for el in members.iter().rev() {
+                if let TypeElement::Index(IndexSignature {
+                    ref params,
+                    ref type_ann,
+                    readonly,
+                    ..
+                }) = el
+                {
+                    if params.len() != 1 {
+                        unimplemented!("Index signature with multiple parameters")
+                    }
+
+                    let index_ty = &params[0].ty;
+
+                    if (prop_is_num && index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+                        || (prop_is_str && index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword))
+                    {
+                        if *readonly && type_mode == TypeOfMode::LValue {
+                            return Err(ErrorKind::ReadOnly { span }.into());
+                        }
+
+                        if let Some(type_ann) = type_ann {
+                            return Ok(Some(*type_ann.clone()));
+                        }
+                    }
+                }
+            }
+        }
+
         let mut has_index_signature = false;
         for el in members.iter().rev() {
             if let TypeElement::Index(IndexSignature {
