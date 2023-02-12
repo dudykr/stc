@@ -1,0 +1,52 @@
+name: PR Maintenance
+
+on:
+  - pull_request
+
+env:
+  CI: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: "always"
+  DIFF: 0
+  # For faster CI
+  RUST_LOG: "off"
+  # https://github.com/swc-project/swc/pull/3742
+  RUST_MIN_STACK: 4194304
+  CARGO_PROFILE_RELEASE_LTO: false
+
+jobs:
+  check-passing-tests:
+    name: All passing tests should be enabled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Cache rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: cargo-check-tests
+          cache-on-failure: true
+
+      # - run: ./scripts/auto-unignore.sh
+      #   working-directory: crates/stc_ts_file_analyzer
+      #   continue-on-error: true
+
+      # - run: ./scripts/check.sh > /dev/null
+      #   working-directory: crates/stc_ts_type_checker
+      #   continue-on-error: true
+
+      - run: git diff --exit-code
+
+      - name: Save PR number
+        run: |
+          mkdir -p ./pr
+          echo ${{ github.event.number }} > ./pr/NR
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pr
+          path: pr/
