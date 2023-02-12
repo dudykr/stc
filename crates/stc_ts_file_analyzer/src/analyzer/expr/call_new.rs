@@ -2916,11 +2916,13 @@ impl Analyzer<'_, '_> {
                                 report_err!(ErrorKind::ExpectedAtLeastNArgsButGotMOrMore {
                                     span: arg.span(),
                                     min: rest_idx - 1,
-                                })
+                                });
+                                return;
                             }
 
                             _ => {
-                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() })
+                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() });
+                                return;
                             }
                         }
                     }
@@ -2955,7 +2957,7 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         Err(err) => {
                             report_err!(err);
-                            continue;
+                            return;
                         }
                     }
                     .freezed();
@@ -2993,7 +2995,7 @@ impl Analyzer<'_, '_> {
                                     Ok(_) => {}
                                     Err(err) => {
                                         report_err!(err);
-                                        continue;
+                                        return;
                                     }
                                 };
 
@@ -3031,7 +3033,7 @@ impl Analyzer<'_, '_> {
                                         Ok(_) => {}
                                         Err(err) => {
                                             report_err!(err);
-                                            continue;
+                                            return;
                                         }
                                     };
                                 }
@@ -3074,7 +3076,7 @@ impl Analyzer<'_, '_> {
                                 })
                                 .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
                             report_err!(err);
-                            continue;
+                            return;
                         }
                         _ => {
                             if let Ok(()) = self.assign_with_opts(
@@ -3105,7 +3107,7 @@ impl Analyzer<'_, '_> {
                         Err(err) => {
                             if let ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } = &*err {
                                 report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
-                                continue;
+                                return;
                             }
                         }
                     }
@@ -3133,6 +3135,7 @@ impl Analyzer<'_, '_> {
                         .context("arg is spread");
                     if let Err(err) = res {
                         report_err!(err);
+                        return;
                     }
                 } else {
                     let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
@@ -3191,6 +3194,7 @@ impl Analyzer<'_, '_> {
                         });
 
                         report_err!(err);
+                        return;
                     }
                 }
             }
