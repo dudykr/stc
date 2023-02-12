@@ -315,6 +315,7 @@ impl Analyzer<'_, '_> {
             _ => (),
         }
 
+        // Delegate by recursively calling this function.
         match keyof_operand.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
