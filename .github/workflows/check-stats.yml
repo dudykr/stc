@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p ./pr
           echo "<!-- CI Comment -->" >> pr/comment.md
-          echo "Thank you for the PR!\n\n" >> pr/comment.md
+          echo "Thank you for the PR!" >> pr/comment.md
 
       # - run: ./scripts/auto-unignore.sh
       #   working-directory: crates/stc_ts_file_analyzer
