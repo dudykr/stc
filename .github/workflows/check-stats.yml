@@ -50,7 +50,7 @@ jobs:
       - name: Write description
         run: |
           echo '## Files to check' >> pr/comment.md
-          echo -n 'These are files which is affected by the current PR, but not reflected.'  >> pr/comment.md
+          echo -n 'These are files which is affected by the current PR, but not reflected. '  >> pr/comment.md
           echo "If there's no file below this message, please ignore this message."  >> pr/comment.md
           echo '' >> pr/comment.md
           echo -n 'You can run `./scripts/auto-unignore.sh` from `crates/stc_ts_file_analyzer` for typescript files, ' >> pr/comment.md
