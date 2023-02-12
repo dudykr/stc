@@ -1,7 +1,7 @@
 use std::{borrow::Cow, time::Instant};
 
 use rnode::VisitMutWith;
-use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
+use stc_ts_ast_rnode::{RExpr, RObjectLit, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
@@ -12,7 +12,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
 use crate::{
-    analyzer::{Analyzer, NormalizeTypeOpts, ScopeKind},
+    analyzer::{expr::TypeOfMode, Analyzer, NormalizeTypeOpts, ScopeKind},
     validator::ValidateWith,
     VResult,
 };
@@ -40,13 +40,26 @@ impl Analyzer<'_, '_> {
             for prop in node.props.iter() {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
 
-                if ret.is_unknown() {
-                    if let RPropOrSpread::Spread(..) = prop {
-                        return Err(ErrorKind::NonObjectInSpread {
-                            span: ret.span(),
-                            ty: Box::new(ret),
+                if let RPropOrSpread::Spread(element) = prop {
+                    if let RExpr::Ident(some) = &*element.expr {
+                        let ty = a.type_of_raw_var(some, TypeOfMode::RValue);
+
+                        match ty {
+                            Ok(ty) if ty.is_unknown() => {
+                                a.storage.report(
+                                    ErrorKind::NonObjectInSpread {
+                                        span: Span {
+                                            lo: element.dot3_token.span().lo,
+                                            hi: element.span().hi,
+                                            ctxt: SyntaxContext::empty(),
+                                        },
+                                        ty: box ty,
+                                    }
+                                    .into(),
+                                );
+                            }
+                            _ => {}
                         }
-                        .into());
                     }
                 }
             }
