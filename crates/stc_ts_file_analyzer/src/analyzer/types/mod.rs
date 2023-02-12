@@ -33,7 +33,7 @@ use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error};
 
-use super::generic::InferTypeOpts;
+use super::{expr::AccessPropertyOpts, generic::InferTypeOpts};
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
@@ -667,7 +667,12 @@ impl Analyzer<'_, '_> {
                             }),
                             TypeOfMode::RValue,
                             IdCtx::Type,
-                            Default::default(),
+                            AccessPropertyOpts {
+                                disallow_creating_indexed_type_from_ty_els: true,
+                                disallow_inexact: true,
+                                do_not_use_any_for_object: true,
+                                ..Default::default()
+                            },
                         );
 
                         if let Ok(prop_ty) = prop_ty {

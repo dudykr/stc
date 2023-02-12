@@ -155,7 +155,7 @@ impl Analyzer<'_, '_> {
         }
 
         match child {
-            Type::Param(..) | Type::Infer(..) => return None,
+            Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) => return None,
             Type::Ref(..) => {
                 let child = self
                     .expand(
@@ -208,7 +208,7 @@ impl Analyzer<'_, '_> {
         }
 
         match parent {
-            Type::Param(..) | Type::Infer(..) => return None,
+            Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) => return None,
             Type::Ref(..) => {
                 let mut parent = self
                     .expand(

@@ -554,6 +554,8 @@ pub(crate) struct AccessPropertyOpts {
 
     /// `true` means parent type is union
     pub is_in_union: bool,
+
+    pub do_not_use_any_for_object: bool,
 }
 
 #[validator]
@@ -757,7 +759,18 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.assign(span, &mut Default::default(), &declared.ty(), &cur.ty()).is_ok()
+        self.assign_with_opts(
+            &mut Default::default(),
+            &declared.ty(),
+            &cur.ty(),
+            AssignOpts {
+                span,
+                allow_assignment_of_param: false,
+                allow_assignment_to_param: false,
+                ..Default::default()
+            },
+        )
+        .is_ok()
     }
 
     fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
@@ -2361,7 +2374,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if prop.is_computed() {
+                if prop.is_computed() && !opts.do_not_use_any_for_object {
                     return Ok(Type::any(span, Default::default()));
                 }
 
