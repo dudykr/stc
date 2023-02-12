@@ -1442,6 +1442,13 @@ impl Analyzer<'_, '_> {
                                             .report(ErrorKind::DefinedWithAccessorInSuper { span: p.key.span() }.into())
                                     }
 
+                                    if super_property.accessibility == Some(Accessibility::Private)
+                                        && p.accessibility != Some(Accessibility::Private)
+                                    {
+                                        self.storage
+                                            .report(ErrorKind::PrivatePropertyIsDifferent { span: super_ty.span() }.into())
+                                    }
+
                                     continue 'outer;
                                 }
                             }
