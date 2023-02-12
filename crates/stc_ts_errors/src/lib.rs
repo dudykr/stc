@@ -1499,6 +1499,16 @@ pub enum ErrorKind {
     ExportAmbientModule {
         span: Span,
     },
+
+    /// TS18046
+    IsTypeUnknown {
+        span: Span,
+    },
+
+    /// TS2700
+    RestTypeNotFromObject {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1608,8 +1618,7 @@ impl ErrorKind {
             2531 | 18047 => 2531,
 
             // TS2571: Object is of type 'unknown'
-            // TS18046: ${obj} is of type 'unknown'.
-            2571 | 18046 => 2531,
+            2571 => 2531,
 
             // TS2533: Object is possibly 'null' or 'undefined'.
             // TS18049: '{0}' is possibly 'null' or 'undefined'.
@@ -2068,6 +2077,10 @@ impl ErrorKind {
             ErrorKind::DuplicatePrivateStaticInstance { .. } => 2804,
 
             ErrorKind::ExportAmbientModule { .. } => 2668,
+
+            ErrorKind::IsTypeUnknown { .. } => 18046,
+
+            ErrorKind::RestTypeNotFromObject { .. } => 2700,
 
             _ => 0,
         }

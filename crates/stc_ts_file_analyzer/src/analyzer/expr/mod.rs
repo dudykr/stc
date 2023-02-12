@@ -2186,7 +2186,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(ErrorKind::Unknown { span }.into());
+                return Err(ErrorKind::IsTypeUnknown { span }.into());
             }
 
             Type::Keyword(KeywordType { kind, .. }) if !self.config.is_builtin => {

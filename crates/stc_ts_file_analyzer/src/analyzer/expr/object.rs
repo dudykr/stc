@@ -39,6 +39,16 @@ impl Analyzer<'_, '_> {
             let mut known_keys = vec![];
             for prop in node.props.iter() {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
+
+                if ret.is_unknown() {
+                    if let RPropOrSpread::Spread(..) = prop {
+                        return Err(ErrorKind::NonObjectInSpread {
+                            span: ret.span(),
+                            ty: Box::new(ret),
+                        }
+                        .into());
+                    }
+                }
             }
 
             a.validate_type_literals(&ret, false);

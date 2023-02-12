@@ -12,7 +12,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
+use stc_ts_ast_rnode::{RObjectPat, RObjectPatProp, RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
@@ -1623,6 +1623,16 @@ impl Analyzer<'_, '_> {
         default_ty: Option<Type>,
     ) -> VResult<Option<Type>> {
         let _tracing = dev_span!("declare_complex_vars");
+
+        if ty.is_unknown() {
+            if let RPat::Object(RObjectPat { props, .. }) = pat {
+                props.iter().for_each(|prop| {
+                    if matches!(prop, RObjectPatProp::Rest(..)) {
+                        self.storage.report(ErrorKind::RestTypeNotFromObject { span: prop.span() }.into());
+                    }
+                })
+            }
+        }
 
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
