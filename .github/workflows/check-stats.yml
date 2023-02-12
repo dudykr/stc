@@ -41,6 +41,10 @@ jobs:
 
       - run: git diff --exit-code
 
+      - run: echo "<!-- CI Comment -->" >> pr/comment.md
+
+      - run: echo "Thank you for the PR!" >> pr/comment.md
+
       - name: Save PR number
         run: |
           mkdir -p ./pr
