@@ -469,6 +469,8 @@ impl Analyzer<'_, '_> {
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<Key>>> {
+        let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
+
         let ty = ty.normalize();
 
         match ty {
