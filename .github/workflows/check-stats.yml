@@ -47,7 +47,7 @@ jobs:
       #   working-directory: crates/stc_ts_type_checker
       #   continue-on-error: true
 
-      - name: Create file for comment content
+      - name: Write description
         run: |
           echo "## Files to check" >> pr/comment.md
           echo -n "These are files which is affected by the current PR, but not reflected."  >> pr/comment.md
@@ -57,6 +57,8 @@ jobs:
           echo "and ./scripts/check.sh for '*.stats.rust-debug' files"" >> pr/comment.md
           echo "" >> pr/comment.md
 
+      - name: Store changed files
+        run: |
           echo "```" >> pr/comment.md
           git ls-files -m >> pr/comment.md
           echo "```" >> pr/comment.md
