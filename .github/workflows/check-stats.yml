@@ -41,13 +41,12 @@ jobs:
 
       - name: Create file for comment content
         run: |
-          touch pr/comment.md
+          mkdir -p ./pr
           echo "<!-- CI Comment -->" >> pr/comment.md
           echo "Thank you for the PR!" >> pr/comment.md
 
       - name: Save PR number
         run: |
-          mkdir -p ./pr
           echo ${{ github.event.number }} > ./pr/NR
 
       - uses: actions/upload-artifact@v2
