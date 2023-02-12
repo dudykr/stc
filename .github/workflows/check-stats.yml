@@ -37,7 +37,7 @@ jobs:
           echo "<!-- CI Comment -->" >> pr/comment.md
           echo "Thank you for the PR!" >> pr/comment.md
           echo -n "Commit: " >> pr/comment.md
-          git rev-list --no-merges -n 1 HEAD >> pr/comment.md
+          echo '${{ github.event.pull_request.head.sha }}' >> pr/comment.md
 
       # - run: ./scripts/auto-unignore.sh
       #   working-directory: crates/stc_ts_file_analyzer
