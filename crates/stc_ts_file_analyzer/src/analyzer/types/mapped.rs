@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                         })));
                     }
 
-                    if let Some(keys) = self.convert_type_to_keys_for_mapped_type(span, constraint)? {
+                    if let Some(keys) = self.convert_type_to_keys_for_mapped_type(span, constraint, m.name_type.as_deref())? {
                         let members = keys
                             .into_iter()
                             .map(|key| -> VResult<_> {
@@ -468,7 +468,7 @@ impl Analyzer<'_, '_> {
     /// Evaluate a type and convert it to keys.
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
-    fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<Key>>> {
+    fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
 
         let ty = ty.normalize();
@@ -484,7 +484,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                self.convert_type_to_keys_for_mapped_type(span, &ty)
+                self.convert_type_to_keys_for_mapped_type(span, &ty, name_type)
             }
 
             Type::Lit(LitType { lit, .. }) => match lit {
@@ -508,7 +508,7 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for ty in &u.types {
-                    let elem_keys = self.convert_type_to_keys_for_mapped_type(span, ty)?;
+                    let elem_keys = self.convert_type_to_keys_for_mapped_type(span, ty, name_type)?;
                     match elem_keys {
                         Some(v) => keys.extend(v),
                         None => return Ok(None),
@@ -536,7 +536,7 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(&e.enum_name)? {
                     for ty in types.into_iter().map(Cow::into_owned).collect_vec() {
                         if ty.is_enum_type() {
-                            let items = self.convert_type_to_keys_for_mapped_type(span, &ty)?;
+                            let items = self.convert_type_to_keys_for_mapped_type(span, &ty, name_type)?;
                             keys.extend(items.into_iter().flatten());
                         }
                     }
