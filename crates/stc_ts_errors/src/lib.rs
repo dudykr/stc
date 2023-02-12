@@ -1788,6 +1788,8 @@ impl ErrorKind {
             ErrorKind::TypeInvalidForUpdateArg { .. } => 2356,
             ErrorKind::ExprInvalidForUpdateArg { .. } => 2357,
 
+            ErrorKind::PrivatePropertyIsDifferent { .. } => 2415,
+
             ErrorKind::CannotAssignToNonVariable { .. } => 2539,
             ErrorKind::CannotAssignToModule { .. } => 2708,
             ErrorKind::CannotAssignToClass { .. } => 2629,
