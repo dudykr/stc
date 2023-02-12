@@ -102,12 +102,21 @@ jobs:
           RUST_MIN_STACK=16777216 cargo test --all --features tracing/max_level_off
 
   check-passing-tests:
-    name: Ensure that all passing tests are enabled
+    name: All passing tests should be enabled
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      # We explicitly do this to cache properly.
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+  check-stats:
+    name: Stats should be up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
