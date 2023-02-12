@@ -3163,7 +3163,7 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .convert_err(|err| {
-                            // Once a param is not required no further parmams are required
+                            // Once a param is not required no further params are required
                             // Which means you just need to type check the spread
                             if matches!(param.pat, RPat::Rest(..)) || !param.required {
                                 ErrorKind::WrongArgType {
