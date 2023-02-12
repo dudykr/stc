@@ -55,14 +55,12 @@ jobs:
         with:
           issue-number: ${{ steps.find-pr.outputs.result }}
           comment-author: "github-actions[bot]"
-          body-includes: Test status
+          body-includes: <!-- CI Comment -->
 
       - name: Create or update comment
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ steps.find-pr.outputs.result }}
-          body: |
-            Test status
-            Test 2
+          body-file: pr/comment.md
           edit-mode: replace
