@@ -62,5 +62,5 @@ jobs:
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ steps.find-pr.outputs.result }}
-          body-file: pr/comment.md
+          body-file: comment.md
           edit-mode: replace
