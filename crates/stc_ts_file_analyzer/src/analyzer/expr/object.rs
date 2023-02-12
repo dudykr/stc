@@ -39,29 +39,6 @@ impl Analyzer<'_, '_> {
             let mut known_keys = vec![];
             for prop in node.props.iter() {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
-
-                if let RPropOrSpread::Spread(element) = prop {
-                    if let RExpr::Ident(some) = &*element.expr {
-                        let ty = a.type_of_raw_var(some, TypeOfMode::RValue);
-
-                        match ty {
-                            Ok(ty) if ty.is_unknown() => {
-                                a.storage.report(
-                                    ErrorKind::NonObjectInSpread {
-                                        span: Span {
-                                            lo: element.dot3_token.span().lo,
-                                            hi: element.span().hi,
-                                            ctxt: SyntaxContext::empty(),
-                                        },
-                                        ty: box ty,
-                                    }
-                                    .into(),
-                                );
-                            }
-                            _ => {}
-                        }
-                    }
-                }
             }
 
             a.validate_type_literals(&ret, false);
@@ -138,6 +115,21 @@ impl Analyzer<'_, '_> {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
+
+                if prop_ty.normalize().is_unknown() {
+                    self.storage.report(
+                        ErrorKind::NonObjectInSpread {
+                            span: Span {
+                                lo: dot3_token.span().lo,
+                                hi: prop_ty.span().hi,
+                                ctxt: SyntaxContext::empty(),
+                            },
+                            ty: box prop_ty.clone(),
+                        }
+                        .into(),
+                    )
+                }
+
                 self.append_type(*dot3_token, to, prop_ty, Default::default())
             }
             RPropOrSpread::Prop(prop) => {
