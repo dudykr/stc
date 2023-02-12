@@ -31,6 +31,12 @@ jobs:
       #     shared-key: cargo-check-tests
       #     cache-on-failure: true
 
+      - name: Create file for comment content
+        run: |
+          mkdir -p ./pr
+          echo "<!-- CI Comment -->" >> pr/comment.md
+          echo "Thank you for the PR!\n\n" >> pr/comment.md
+
       # - run: ./scripts/auto-unignore.sh
       #   working-directory: crates/stc_ts_file_analyzer
       #   continue-on-error: true
@@ -41,11 +47,8 @@ jobs:
 
       - name: Create file for comment content
         run: |
-          mkdir -p ./pr
-          echo "<!-- CI Comment -->" >> pr/comment.md
-          echo "Thank you for the PR!\n\n" >> pr/comment.md
-          echo "## Output of \`git status\`\n\n" >> pr/comment.md
-          git status >> pr/comment.md
+          echo "## Files to check >> pr/comment.md
+          git ls-files -m >> pr/comment.md
 
       - name: Save PR number
         run: |
