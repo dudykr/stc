@@ -21,15 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
+      # - uses: actions-rs/toolchain@v1
+      #   with:
+      #     profile: minimal
 
-      - name: Cache rust artifacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: cargo-check-tests
-          cache-on-failure: true
+      # - name: Cache rust artifacts
+      #   uses: Swatinem/rust-cache@v2
+      #   with:
+      #     shared-key: cargo-check-tests
+      #     cache-on-failure: true
 
       # - run: ./scripts/auto-unignore.sh
       #   working-directory: crates/stc_ts_file_analyzer
