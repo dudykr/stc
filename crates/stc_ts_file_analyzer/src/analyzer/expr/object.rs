@@ -39,16 +39,6 @@ impl Analyzer<'_, '_> {
             let mut known_keys = vec![];
             for prop in node.props.iter() {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
-
-                if ret.is_unknown() {
-                    if let RPropOrSpread::Spread(..) = prop {
-                        return Err(ErrorKind::NonObjectInSpread {
-                            span: ret.span(),
-                            ty: Box::new(ret),
-                        }
-                        .into());
-                    }
-                }
             }
 
             a.validate_type_literals(&ret, false);
@@ -125,6 +115,21 @@ impl Analyzer<'_, '_> {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
+
+                if prop_ty.normalize().is_unknown() {
+                    self.storage.report(
+                        ErrorKind::NonObjectInSpread {
+                            span: Span {
+                                lo: dot3_token.span().lo,
+                                hi: prop_ty.span().hi,
+                                ctxt: SyntaxContext::empty(),
+                            },
+                            ty: box prop_ty.clone(),
+                        }
+                        .into(),
+                    )
+                }
+
                 self.append_type(*dot3_token, to, prop_ty, Default::default())
             }
             RPropOrSpread::Prop(prop) => {
