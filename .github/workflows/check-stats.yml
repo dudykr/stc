@@ -21,15 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # - uses: actions-rs/toolchain@v1
-      #   with:
-      #     profile: minimal
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
 
-      # - name: Cache rust artifacts
-      #   uses: Swatinem/rust-cache@v2
-      #   with:
-      #     shared-key: cargo-check-tests
-      #     cache-on-failure: true
+      - name: Cache rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: cargo-check-tests
+          cache-on-failure: true
 
       - name: Create file for comment content
         run: |
@@ -39,9 +39,9 @@ jobs:
           echo -n "Commit: " >> pr/comment.md
           git rev-parse --short HEAD >> pr/comment.md
 
-      # - run: ./scripts/auto-unignore.sh
-      #   working-directory: crates/stc_ts_file_analyzer
-      #   continue-on-error: true
+      - run: ./scripts/auto-unignore.sh
+        working-directory: crates/stc_ts_file_analyzer
+        continue-on-error: true
 
       # - run: ./scripts/check.sh > /dev/null
       #   working-directory: crates/stc_ts_type_checker
