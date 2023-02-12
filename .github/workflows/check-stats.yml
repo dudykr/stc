@@ -59,9 +59,9 @@ jobs:
 
       - name: Store changed files
         run: |
-          echo "```" >> pr/comment.md
+          echo '```'' >> pr/comment.md
           git ls-files -m >> pr/comment.md
-          echo "```" >> pr/comment.md
+          echo '```' >> pr/comment.md
 
       - name: Save PR number
         run: |
