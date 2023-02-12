@@ -1503,9 +1503,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    dbg!();
-
-                    return Err(ErrorKind::NoSuchProperty {
+                    return Err(ErrorKind::UsePropBeforeInit {
                         span,
                         obj: Some(box obj.clone()),
                         prop: Some(box prop.clone()),
