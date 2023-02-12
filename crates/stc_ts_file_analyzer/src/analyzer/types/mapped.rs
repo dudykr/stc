@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                         })));
                     }
 
-                    if let Some(keys) = self.convert_type_to_keys_for_mapped_type(span, constraint)? {
+                    if let Some(keys) = self.convert_type_to_keys_for_mapped_type(span, constraint, m.name_type.as_deref())? {
                         let members = keys
                             .into_iter()
                             .map(|key| -> VResult<_> {
@@ -315,6 +315,7 @@ impl Analyzer<'_, '_> {
             _ => (),
         }
 
+        // Delegate by recursively calling this function.
         match keyof_operand.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
@@ -343,7 +344,8 @@ impl Analyzer<'_, '_> {
             _ => (),
         }
 
-        let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
+        let keys =
+            self.get_property_names_for_mapped_type(span, &keyof_operand, &m.type_param, original_keyof_operand, m.name_type.as_deref())?;
         if let Some(keys) = keys {
             let members = keys
                 .into_iter()
@@ -467,7 +469,9 @@ impl Analyzer<'_, '_> {
     /// Evaluate a type and convert it to keys.
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
-    fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<Key>>> {
+    fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
+        let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
+
         let ty = ty.normalize();
 
         match ty {
@@ -481,7 +485,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                self.convert_type_to_keys_for_mapped_type(span, &ty)
+                self.convert_type_to_keys_for_mapped_type(span, &ty, name_type)
             }
 
             Type::Lit(LitType { lit, .. }) => match lit {
@@ -505,7 +509,7 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for ty in &u.types {
-                    let elem_keys = self.convert_type_to_keys_for_mapped_type(span, ty)?;
+                    let elem_keys = self.convert_type_to_keys_for_mapped_type(span, ty, name_type)?;
                     match elem_keys {
                         Some(v) => keys.extend(v),
                         None => return Ok(None),
@@ -533,7 +537,7 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(&e.enum_name)? {
                     for ty in types.into_iter().map(Cow::into_owned).collect_vec() {
                         if ty.is_enum_type() {
-                            let items = self.convert_type_to_keys_for_mapped_type(span, &ty)?;
+                            let items = self.convert_type_to_keys_for_mapped_type(span, &ty, name_type)?;
                             keys.extend(items.into_iter().flatten());
                         }
                     }
@@ -552,7 +556,87 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a property name.
-    pub(crate) fn get_property_names_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<PropertyName>>> {
+    pub(crate) fn get_property_names_for_mapped_type(
+        &mut self,
+        span: Span,
+        ty: &Type,
+        type_param: &TypeParam,
+        original_keyof_operand: &Type,
+        name_type: Option<&Type>,
+    ) -> VResult<Option<Vec<PropertyName>>> {
+        let _tracing = dev_span!("get_property_names_for_mapped_type");
+
+        if let Some(name_type) = name_type {
+            let property_names = self
+                .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, None)
+                .context("tried to get property names from a type to expand a mapper typw with a name type")?;
+
+            let property_names = match property_names {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+
+            let name_type = self
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(name_type),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to normalize a name type to expand a mapper type")?
+                .freezed();
+
+            let mut new_keys = vec![];
+
+            for property_name in property_names {
+                match property_name {
+                    PropertyName::Key(key) => {
+                        let mut new_key = name_type.clone().into_owned();
+
+                        // Replace T with ty
+                        replace_type(&mut new_key, |needle| needle.type_eq(original_keyof_operand), |_| Some(ty.clone()));
+                        // Replace K with key
+                        replace_type(
+                            &mut new_key,
+                            |needle| match needle.normalize() {
+                                Type::Param(needle) => needle.name.sym() == type_param.name.sym(),
+                                _ => false,
+                            },
+                            |_| Some(key.ty().into_owned()),
+                        );
+
+                        let new_key = self
+                            .normalize(
+                                Some(span),
+                                Cow::Owned(new_key),
+                                NormalizeTypeOpts {
+                                    preserve_mapped: true,
+                                    preserve_global_this: true,
+                                    preserve_intersection: true,
+                                    preserve_union: true,
+                                    ..Default::default()
+                                },
+                            )?
+                            .freezed()
+                            .into_owned();
+
+                        new_keys.push(new_key);
+                    }
+
+                    PropertyName::IndexSignature { span, params, readonly } => todo!(),
+                }
+            }
+
+            let keys = self.convert_type_to_keys_for_mapped_type(span, &Type::new_union(span, new_keys), None)?;
+            let keys = match keys {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+            return Ok(Some(keys.into_iter().map(|v| v.into()).collect()));
+        }
+
         let ty = self
             .normalize(
                 Some(span),
@@ -622,7 +706,9 @@ impl Analyzer<'_, '_> {
 
                 for parent in &ty.extends {
                     let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
-                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
+                    if let Some(parent_keys) =
+                        self.get_property_names_for_mapped_type(span, &parent, type_param, original_keyof_operand, name_type)?
+                    {
                         keys.extend(parent_keys);
                     }
                 }
@@ -652,7 +738,9 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
+                    .map(|ty| -> VResult<_> {
+                        self.get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
@@ -690,7 +778,9 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
+                    .map(|ty| -> VResult<_> {
+                        self.get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -794,7 +884,7 @@ impl Analyzer<'_, '_> {
                 })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                 {
                     return self
-                        .get_property_names_for_mapped_type(span, ty)
+                        .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
                         .context("tried to get property names by using `keyof` constraint");
                 }
             }

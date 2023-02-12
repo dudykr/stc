@@ -2192,6 +2192,7 @@ types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
+types/mapped/mappedTypeAsClauses.ts
 types/mapped/mappedTypeConstraints.ts
 types/mapped/mappedTypeModifiers.ts
 types/mapped/mappedTypeOverlappingStringEnumKeys.ts
