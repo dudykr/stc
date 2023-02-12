@@ -2283,8 +2283,11 @@ impl Analyzer<'_, '_> {
 
         let has_spread = args.iter().any(|arg| arg.spread.is_some());
         if has_spread {
-            // TODO
-            Ok(())
+            // TODO: current implementation far from perfect
+            match self.validate_arg_count_spread(args, arg_types, params, min_param) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err),
+            }
         } else {
             if min_param <= args.len() {
                 if let Some(max) = max_param {
@@ -2327,6 +2330,39 @@ impl Analyzer<'_, '_> {
             }
             .into())
         }
+    }
+
+    fn validate_arg_count_spread(
+        &mut self,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        params: &[FnParam],
+        min_param: usize,
+    ) -> VResult<()> {
+        let mut real_idx = 0;
+        let has_rest_param = !params.is_empty() && matches!(params[params.len() - 1].pat, RPat::Rest(_));
+        // non required params can be pushed into
+        let no_longer_required = |index: usize| !params.is_empty() && index < params.len() && !params[index].required;
+
+        for arg_type in arg_types.iter() {
+            let is_spread = arg_type.spread.is_some();
+            if !is_spread {
+                real_idx += 1;
+                continue;
+            }
+            match arg_type.ty.normalize() {
+                Type::Tuple(tuple) => real_idx += tuple.elems.len(),
+                _ => {
+                    // rest params are always at the end so we can check if it
+                    // was passed at least at the end and their must be a rest param
+                    if (real_idx < min_param || !has_rest_param) && !no_longer_required(real_idx) {
+                        return Err(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg_type.span }.into());
+                    }
+                    real_idx += 1
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Returns [None] if nothing matched.
@@ -2492,11 +2528,11 @@ impl Analyzer<'_, '_> {
             type_arg_check_res.report(&mut self.storage) == Some(())
         };
 
-        if is_type_arg_count_fine {
-            let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
-
-            arg_check_res.report(&mut self.storage);
-        }
+        let passed_arity_checks = is_type_arg_count_fine
+            && self
+                .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                .report(&mut self.storage)
+                .is_some();
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
 
@@ -2777,7 +2813,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.validate_arg_types(&expanded_param_types, spread_arg_types, true);
+            if passed_arity_checks {
+                self.validate_arg_types(&expanded_param_types, spread_arg_types, true);
+            }
 
             if self.ctx.is_instantiating_class {
                 for tp in type_params.iter() {
@@ -2854,7 +2892,9 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        self.validate_arg_types(&params, spread_arg_types, type_params.is_some());
+        if passed_arity_checks {
+            self.validate_arg_types(&params, spread_arg_types, type_params.is_some());
+        }
 
         print_type("Return", &ret_ty);
 
@@ -2878,7 +2918,7 @@ impl Analyzer<'_, '_> {
 
         macro_rules! report_err {
             ($err:expr) => {{
-                self.storage.report($err.into());
+                self.storage.report($err.context("tried to validate an argument"));
                 if is_generic {
                     return;
                 }
@@ -2916,11 +2956,13 @@ impl Analyzer<'_, '_> {
                                 report_err!(ErrorKind::ExpectedAtLeastNArgsButGotMOrMore {
                                     span: arg.span(),
                                     min: rest_idx - 1,
-                                })
+                                });
+                                return;
                             }
 
                             _ => {
-                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() })
+                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() });
+                                return;
                             }
                         }
                     }
@@ -2955,7 +2997,7 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         Err(err) => {
                             report_err!(err);
-                            continue;
+                            return;
                         }
                     }
                     .freezed();
@@ -2993,7 +3035,7 @@ impl Analyzer<'_, '_> {
                                     Ok(_) => {}
                                     Err(err) => {
                                         report_err!(err);
-                                        continue;
+                                        return;
                                     }
                                 };
 
@@ -3031,7 +3073,7 @@ impl Analyzer<'_, '_> {
                                         Ok(_) => {}
                                         Err(err) => {
                                             report_err!(err);
-                                            continue;
+                                            return;
                                         }
                                     };
                                 }
@@ -3074,7 +3116,7 @@ impl Analyzer<'_, '_> {
                                 })
                                 .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
                             report_err!(err);
-                            continue;
+                            return;
                         }
                         _ => {
                             if let Ok(()) = self.assign_with_opts(
@@ -3105,7 +3147,7 @@ impl Analyzer<'_, '_> {
                         Err(err) => {
                             if let ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } = &*err {
                                 report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
-                                continue;
+                                return;
                             }
                         }
                     }
@@ -3120,13 +3162,22 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| ErrorKind::WrongArgType {
-                            span: err.span(),
-                            inner: box err.into(),
+                        .convert_err(|err| {
+                            // Once a param is not required no further params are required
+                            // Which means you just need to type check the spread
+                            if matches!(param.pat, RPat::Rest(..)) || !param.required {
+                                ErrorKind::WrongArgType {
+                                    span: arg.span(),
+                                    inner: box err.into(),
+                                }
+                            } else {
+                                ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() }
+                            }
                         })
                         .context("arg is spread");
                     if let Err(err) = res {
                         report_err!(err);
+                        return;
                     }
                 } else {
                     let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
@@ -3185,6 +3236,7 @@ impl Analyzer<'_, '_> {
                         });
 
                         report_err!(err);
+                        return;
                     }
                 }
             }
