@@ -43,8 +43,8 @@ jobs:
         run: |
           mkdir -p ./pr
           echo "<!-- CI Comment -->" >> pr/comment.md
-          echo "Thank you for the PR!" >> pr/comment.md
-          echo "## `git status`" >> pr/comment.md
+          echo "Thank you for the PR!\n\n" >> pr/comment.md
+          echo "## `git status`\n\n" >> pr/comment.md
           git status >> pr/comment.md
 
       - name: Save PR number
