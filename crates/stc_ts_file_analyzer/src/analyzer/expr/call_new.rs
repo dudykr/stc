@@ -2878,7 +2878,7 @@ impl Analyzer<'_, '_> {
 
         macro_rules! report_err {
             ($err:expr) => {{
-                self.storage.report($err.context("tried to validate an argument")));
+                self.storage.report($err.context("tried to validate an argument"));
                 if is_generic {
                     return;
                 }
