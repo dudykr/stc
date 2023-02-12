@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "## Files to check" >> pr/comment.md
           echo "These are files which is affected by the current PR, but not reflected."  >> pr/comment.md
-          echo "If the block is empty, please ignore this message"  >> pr/comment.md
+          echo "If there's no file below this message, please ignore this message"  >> pr/comment.md
           echo "```" >> pr/comment.md
           git ls-files -m >> pr/comment.md
           echo "```" >> pr/comment.md
