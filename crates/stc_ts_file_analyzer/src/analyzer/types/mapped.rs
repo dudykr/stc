@@ -607,6 +607,21 @@ impl Analyzer<'_, '_> {
                             |_| Some(key.ty().into_owned()),
                         );
 
+                        let new_key = self
+                            .normalize(
+                                Some(span),
+                                Cow::Owned(new_key),
+                                NormalizeTypeOpts {
+                                    preserve_mapped: true,
+                                    preserve_global_this: true,
+                                    preserve_intersection: true,
+                                    preserve_union: true,
+                                    ..Default::default()
+                                },
+                            )?
+                            .freezed()
+                            .into_owned();
+
                         new_keys.push(new_key);
                     }
 
