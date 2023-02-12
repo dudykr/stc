@@ -2341,6 +2341,8 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let mut real_idx = 0;
         let has_rest_param = !params.is_empty() && matches!(params[params.len() - 1].pat, RPat::Rest(_));
+        // non required params can be pushed into
+        let no_longer_required = |index: usize| !params.is_empty() && index < params.len() && !params[index].required;
 
         for arg_type in arg_types.iter() {
             let is_spread = arg_type.spread.is_some();
@@ -2353,7 +2355,7 @@ impl Analyzer<'_, '_> {
                 _ => {
                     // rest params are always at the end so we can check if it
                     // was passed at least at the end and their must be a rest param
-                    if real_idx < min_param || !has_rest_param {
+                    if (real_idx < min_param || !has_rest_param) && !no_longer_required(real_idx) {
                         return Err(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg_type.span }.into());
                     }
                     real_idx += 1
@@ -3161,7 +3163,9 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .convert_err(|err| {
-                            if matches!(param.pat, RPat::Rest(..)) {
+                            // Once a param is not required no further parmams are required
+                            // Which means you just need to type check the spread
+                            if matches!(param.pat, RPat::Rest(..)) || !param.required {
                                 ErrorKind::WrongArgType {
                                     span: arg.span(),
                                     inner: box err.into(),

@@ -1354,6 +1354,7 @@ expressions/contextualTyping/taggedTemplateContextualTyping2.ts
 expressions/elementAccess/letIdentifierInElementAccess01.ts
 expressions/elementAccess/stringEnumInElementAccess01.ts
 expressions/functionCalls/callOverload.ts
+expressions/functionCalls/callWithSpread2.ts
 expressions/functionCalls/callWithSpread5.ts
 expressions/functionCalls/forgottenNew.ts
 expressions/functionCalls/grammarAmbiguities.ts
