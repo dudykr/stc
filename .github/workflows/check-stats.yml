@@ -1,0 +1,75 @@
+name: PR Maintenance
+
+on:
+  - pull_request
+
+env:
+  CI: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: "always"
+  DIFF: 0
+  # For faster CI
+  RUST_LOG: "off"
+  # https://github.com/swc-project/swc/pull/3742
+  RUST_MIN_STACK: 4194304
+  CARGO_PROFILE_RELEASE_LTO: false
+
+jobs:
+  check-passing-tests:
+    name: All passing tests should be enabled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Cache rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: cargo-check-tests
+          cache-on-failure: true
+
+      - name: Create file for comment content
+        run: |
+          mkdir -p ./pr
+          echo "<!-- CI Comment -->" >> pr/comment.md
+          echo "Thank you for the PR!" >> pr/comment.md
+          echo -n "Commit: " >> pr/comment.md
+          echo '${{ github.event.pull_request.head.sha }}' >> pr/comment.md
+
+      - run: ./scripts/auto-unignore.sh
+        working-directory: crates/stc_ts_file_analyzer
+        continue-on-error: true
+
+      - run: ./scripts/check.sh > /dev/null
+        working-directory: crates/stc_ts_type_checker
+        continue-on-error: true
+
+      - name: Write description
+        run: |
+          echo '## Files to check' >> pr/comment.md
+          echo -n 'These are files which is affected by the current PR, but not reflected. '  >> pr/comment.md
+          echo "If there's no file below this message, please ignore this message."  >> pr/comment.md
+          echo '' >> pr/comment.md
+          echo -n 'You can run `./scripts/auto-unignore.sh` from `crates/stc_ts_file_analyzer` for typescript files, ' >> pr/comment.md
+          echo 'and `./scripts/check.sh` from `crates/stc_ts_type_checker` for `*.stats.rust-debug` files.' >> pr/comment.md
+          echo '' >> pr/comment.md
+
+      - name: Store changed files
+        run: |
+          echo '```' >> pr/comment.md
+          git ls-files -m >> pr/comment.md
+          echo '```' >> pr/comment.md
+
+      - name: Save PR number
+        run: |
+          echo ${{ github.event.number }} > ./pr/NR
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pr
+          path: pr/
+
+      - run: git diff --exit-code
