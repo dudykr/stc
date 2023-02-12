@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
             _ => (),
         }
 
-        let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
+        let keys = self.get_property_names_for_mapped_type(span, &keyof_operand, m.name_type.as_deref())?;
         if let Some(keys) = keys {
             let members = keys
                 .into_iter()
@@ -553,7 +553,14 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a property name.
-    pub(crate) fn get_property_names_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<PropertyName>>> {
+    pub(crate) fn get_property_names_for_mapped_type(
+        &mut self,
+        span: Span,
+        ty: &Type,
+        name_type: Option<&Type>,
+    ) -> VResult<Option<Vec<PropertyName>>> {
+        let _tracing = dev_span!("get_property_names_for_mapped_type");
+
         let ty = self
             .normalize(
                 Some(span),
@@ -623,7 +630,7 @@ impl Analyzer<'_, '_> {
 
                 for parent in &ty.extends {
                     let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
-                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
+                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent, name_type)? {
                         keys.extend(parent_keys);
                     }
                 }
@@ -653,7 +660,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty, name_type) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
@@ -691,7 +698,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty, name_type) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -795,7 +802,7 @@ impl Analyzer<'_, '_> {
                 })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                 {
                     return self
-                        .get_property_names_for_mapped_type(span, ty)
+                        .get_property_names_for_mapped_type(span, ty, name_type)
                         .context("tried to get property names by using `keyof` constraint");
                 }
             }
