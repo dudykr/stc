@@ -36,7 +36,8 @@ jobs:
           mkdir -p ./pr
           echo "<!-- CI Comment -->" >> pr/comment.md
           echo "Thank you for the PR!" >> pr/comment.md
-          echo "Commit: $(git rev-parse --short HEAD)" >> pr/comment.md
+          echo -n "Commit: " >> pr/comment.md
+          git rev-parse --short HEAD >> pr/comment.md
 
       # - run: ./scripts/auto-unignore.sh
       #   working-directory: crates/stc_ts_file_analyzer
@@ -49,7 +50,7 @@ jobs:
       - name: Create file for comment content
         run: |
           echo "## Files to check" >> pr/comment.md
-          echo "These are files which is affected by the current PR, but not reflected."  >> pr/comment.md
+          echo -n "These are files which is affected by the current PR, but not reflected."  >> pr/comment.md
           echo "If there's no file below this message, please ignore this message"  >> pr/comment.md
           echo "```" >> pr/comment.md
           git ls-files -m >> pr/comment.md
