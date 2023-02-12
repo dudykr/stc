@@ -36,7 +36,7 @@ jobs:
           mkdir -p ./pr
           echo "<!-- CI Comment -->" >> pr/comment.md
           echo "Thank you for the PR!" >> pr/comment.md
-          echo "Commit: ${GITHUB_SHA::7}" >> pr/comment.md
+          echo "Commit: $(git rev-parse --short HEAD)" >> pr/comment.md
 
       # - run: ./scripts/auto-unignore.sh
       #   working-directory: crates/stc_ts_file_analyzer
