@@ -320,6 +320,10 @@ impl Analyzer<'_, '_> {
                                     return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
                                 }
 
+                                if lp.accessibility == Some(Accessibility::Private) && rp.accessibility != Some(Accessibility::Private) {
+                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                }
+
                                 return Ok(());
                             }
                         }

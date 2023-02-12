@@ -594,7 +594,10 @@ impl Analyzer<'_, '_> {
             let l_final = l_final.map(|v| force_dump_type_as_string(&v)).unwrap_or_default();
             let r_final = r_final.map(|v| force_dump_type_as_string(&v)).unwrap_or_default();
 
-            format!("\nlhs = {}\nrhs = {}\nlhs (final) = {}\nrhs (final) = {}", l, r, l_final, r_final)
+            format!(
+                "\nlhs = {}\nrhs = {}\nlhs (normalized) = {}\nrhs (normalized) = {}",
+                l, r, l_final, r_final
+            )
         });
 
         let dejavu = data.dejavu.pop();
