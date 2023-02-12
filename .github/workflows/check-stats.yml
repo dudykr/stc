@@ -47,7 +47,7 @@ jobs:
 
       - name: Create file for comment content
         run: |
-          echo "## Files to check >> pr/comment.md
+          echo "## Files to check" >> pr/comment.md
           git ls-files -m >> pr/comment.md
 
       - name: Save PR number
