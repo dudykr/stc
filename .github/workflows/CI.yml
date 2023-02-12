@@ -111,12 +111,8 @@ jobs:
         with:
           profile: minimal
 
-  check-stats:
-    name: Stats should be up-to-date
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
+      - name: Cache rust artifacts
+        uses: Swatinem/rust-cache@v2
         with:
-          profile: minimal
+          shared-key: cargo-check-tests
+          cache-on-failure: true
