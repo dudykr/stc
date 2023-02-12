@@ -1528,6 +1528,13 @@ pub enum ErrorKind {
     RestTypeNotFromObject {
         span: Span,
     },
+
+    /// TS2729
+    UsePropBeforeInit {
+        span: Span,
+        obj: Option<Box<Type>>,
+        prop: Option<Box<Key>>,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2106,6 +2113,8 @@ impl ErrorKind {
             ErrorKind::IsTypeUnknown { .. } => 18046,
 
             ErrorKind::RestTypeNotFromObject { .. } => 2700,
+
+            ErrorKind::UsePropBeforeInit { .. } => 2729,
 
             _ => 0,
         }
