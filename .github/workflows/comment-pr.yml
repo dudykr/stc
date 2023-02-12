@@ -37,26 +37,23 @@ jobs:
             var fs = require('fs');
             fs.writeFileSync('${{github.workspace}}/pr.zip', Buffer.from(download.data));
       - run: unzip pr.zip
-      - name: "Comment on PR"
+      - name: Find PR
+        id: find-pr
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
           script: |
             var fs = require('fs');
             var issue_number = Number(fs.readFileSync('./NR'));
-            await github.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: 'Everything is OK. Thank you for the PR!'
-            });
+            return issue_number
 
       - name: Find Comment
         uses: peter-evans/find-comment@v2
         id: fc
         continue-on-error: true
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ steps.find-pr.outputs.result }}
           comment-author: "github-actions[bot]"
           body-includes: Test status
 
@@ -64,7 +61,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ steps.find-pr.outputs.result }}
           body: |
             Test status
             Test 2
