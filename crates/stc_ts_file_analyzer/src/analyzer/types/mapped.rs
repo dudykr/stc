@@ -563,6 +563,77 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Option<Vec<PropertyName>>> {
         let _tracing = dev_span!("get_property_names_for_mapped_type");
 
+        if let Some(name_type) = name_type {
+            let property_names = self
+                .get_property_names_for_mapped_type(span, ty, None)
+                .context("tried to get property names from a type to expand a mapper typw with a name type")?;
+
+            let property_names = match property_names {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+
+            let name_type = self
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(name_type),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to normalize a name type to expand a mapper type")?
+                .freezed();
+
+            let mut new_keys = vec![];
+
+            for property_name in property_names {
+                match property_name {
+                    PropertyName::Key(key) => {
+                        let mut new_key = name_type.clone().into_owned();
+
+                        // Replace T with ty
+                        replace_type(
+                            &mut new_key,
+                            |needle| match needle.normalize() {
+                                Type::Param(needle) => {
+                                    // TODO
+
+                                    false
+                                }
+                                _ => false,
+                            },
+                            |_| Some(ty.clone()),
+                        );
+                        // Replace K with key
+                        replace_type(
+                            &mut new_key,
+                            |needle| match needle.normalize() {
+                                Type::Param(needle) => {
+                                    // TODO
+
+                                    false
+                                }
+                                _ => false,
+                            },
+                            |_| Some(key.ty().into_owned()),
+                        );
+
+                        new_keys.push(new_key);
+                    }
+
+                    PropertyName::IndexSignature { span, params, readonly } => todo!(),
+                }
+            }
+
+            let keys = self.convert_type_to_keys_for_mapped_type(span, &Type::new_union(span, new_keys), None)?;
+            let keys = match keys {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+            return Ok(Some(keys.into_iter().map(|v| v.into()).collect()));
+        }
+
         let ty = self
             .normalize(
                 Some(span),
