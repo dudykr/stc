@@ -39,11 +39,10 @@ jobs:
       #   working-directory: crates/stc_ts_type_checker
       #   continue-on-error: true
 
-      - run: git diff --exit-code
-
-      - run: echo "<!-- CI Comment -->" >> pr/comment.md
-
-      - run: echo "Thank you for the PR!" >> pr/comment.md
+      - run: |
+          touch pr/comment.md
+          echo "<!-- CI Comment -->" >> pr/comment.md
+          echo "Thank you for the PR!" >> pr/comment.md
 
       - name: Save PR number
         run: |
@@ -54,3 +53,5 @@ jobs:
         with:
           name: pr
           path: pr/
+
+      - run: git diff --exit-code
