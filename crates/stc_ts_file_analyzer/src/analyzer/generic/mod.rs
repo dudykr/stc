@@ -230,6 +230,21 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if let Some(ret_ty) = ret_ty {
+            if let Some(ret_type_ann) = ret_ty_type_ann {
+                self.infer_type(
+                    span,
+                    &mut inferred,
+                    ret_ty,
+                    ret_type_ann,
+                    InferTypeOpts {
+                        priority: InferencePriority::ReturnType,
+                        ..Default::default()
+                    },
+                )?;
+            }
+        }
+
         info!("infer_type is finished:\n{:?}", &inferred.type_params);
 
         // Defaults
