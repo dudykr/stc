@@ -2216,8 +2216,9 @@ impl Analyzer<'_, '_> {
             .enumerate()
             .filter_map(|(i, v)| {
                 if v.ty.contains_void() {
-                    // Todo: make this code easier to read
-                    if i == params.len() - 1 || !params[i + 1..params.len()].to_vec().iter().any(|v| !(v.ty.contains_void())) {
+                    let next_params = params[i + 1..params.len()].to_vec();
+
+                    if next_params.is_empty() || next_params.iter().all(|v| v.ty.contains_void()) {
                         return None;
                     }
                 }
