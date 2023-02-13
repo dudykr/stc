@@ -2213,9 +2213,13 @@ impl Analyzer<'_, '_> {
 
         let mut min_param: usize = params
             .iter()
-            .filter_map(|v| {
+            .enumerate()
+            .filter_map(|(i, v)| {
                 if v.ty.contains_void() {
-                    return None;
+                    // Todo: make this code easier to read
+                    if i == params.len() - 1 || !params[i + 1..params.len()].to_vec().iter().any(|v| !(v.ty.contains_void())) {
+                        return None;
+                    }
                 }
 
                 Some(&v.pat)
