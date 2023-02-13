@@ -1122,7 +1122,22 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => return Ok(()),
+            }) => {
+                // We need to do this because everything is assignable to unknown.
+                // But if we are in argument, we should not allow void (which means no argument
+                // was passed)
+                if self.ctx.in_argument {
+                    if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                        return Err(ErrorKind::ExpectedNArgsButGotM {
+                            span: to.span(),
+                            min: 1,
+                            max: None,
+                        }
+                        .into());
+                    }
+                }
+                return Ok(());
+            }
 
             // Everything is assignable to Object
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
