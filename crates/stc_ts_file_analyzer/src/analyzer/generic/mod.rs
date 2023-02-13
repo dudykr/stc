@@ -100,6 +100,7 @@ impl Analyzer<'_, '_> {
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
         ret_ty: Option<&Type>,
+        ret_ty_type_ann: Option<&Type>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
