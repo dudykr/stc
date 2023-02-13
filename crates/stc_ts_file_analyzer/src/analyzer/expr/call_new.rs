@@ -2421,7 +2421,11 @@ impl Analyzer<'_, '_> {
         let mut is_type_ann_chosen_from_overload = false;
 
         let type_ann = match type_ann {
-            Some(v) => Some(Cow::Borrowed(v)),
+            Some(v) => {
+                // Using the result type (type_ann) and the parameter declarations (c.params,
+                // c.type_params), we can create a useful type annotation for the function call.
+                Some(Cow::Borrowed(v))
+            }
             None => match expr {
                 ReEvalMode::NoReEval => None,
                 _ => Some({
