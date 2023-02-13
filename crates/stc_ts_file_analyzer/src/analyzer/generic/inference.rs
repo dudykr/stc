@@ -12,7 +12,7 @@ use itertools::Itertools;
 use stc_ts_ast_rnode::{RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
-use stc_ts_type_ops::generalization::prevent_generalize;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
@@ -1396,6 +1396,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            ty.inferred_type.fix();
             ty.inferred_type.freeze();
 
             map.insert(k, ty.inferred_type);
