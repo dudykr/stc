@@ -2568,16 +2568,7 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
-            let inferred_from_return_type = if self.ctx.reevaluating_call_or_new {
-                None
-            } else {
-                match type_ann {
-                    Some(type_ann) => self
-                        .infer_type_with_types(span, type_params, &ret_ty, type_ann, Default::default())
-                        .map(Some)?,
-                    None => None,
-                }
-            };
+            let inferred_from_return_type = if self.ctx.reevaluating_call_or_new { None } else { None };
 
             let mut expanded_params;
             let params = if let Some(map) = &inferred_from_return_type {
