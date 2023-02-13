@@ -462,6 +462,7 @@ es6/Symbols/symbolProperty9.ts
 es6/Symbols/symbolType1.ts
 es6/Symbols/symbolType10.ts
 es6/Symbols/symbolType11.ts
+es6/Symbols/symbolType13.ts
 es6/Symbols/symbolType14.ts
 es6/Symbols/symbolType15.ts
 es6/Symbols/symbolType17.ts

@@ -1437,8 +1437,15 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2488
     MustHaveSymbolIteratorThatReturnsIterator {
         span: Span,
+    },
+
+    /// TS2407
+    RightHandSideMustBeObject {
+        span: Span,
+        ty: Box<Type>,
     },
 
     MustHaveSymbolAsyncIteratorThatReturnsIterator {
@@ -1835,6 +1842,8 @@ impl ErrorKind {
             ErrorKind::MissingFields { .. } => 2741,
 
             ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
+
+            ErrorKind::RightHandSideMustBeObject { .. } => 2407,
 
             ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { .. } => 2504,
 
