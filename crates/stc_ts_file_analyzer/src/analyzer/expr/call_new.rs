@@ -2420,35 +2420,50 @@ impl Analyzer<'_, '_> {
         let (c, _) = callable.into_iter().next().unwrap();
         let mut is_type_ann_chosen_from_overload = false;
 
+        let type_ann_from_callee = match kind {
+            ExtractKind::New => Type::Constructor(Constructor {
+                span,
+                type_params: c.type_params.clone(),
+                params: c.params.clone(),
+                type_ann: c.ret_ty.clone(),
+                is_abstract: false,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }),
+            ExtractKind::Call => Type::Function(Function {
+                span,
+                type_params: c.type_params.clone(),
+                params: c.params.clone(),
+                ret_ty: c.ret_ty.clone(),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }),
+        };
+
         let type_ann = match type_ann {
-            Some(v) => {
+            Some(type_ann) => {
                 // Using the result type (type_ann) and the parameter declarations (c.params,
                 // c.type_params), we can create a useful type annotation for the function call.
-                Some(Cow::Borrowed(v))
+
+                match c.type_params.as_ref() {
+                    Some(type_params) => {
+                        let type_params =
+                            self.infer_type_with_types(span, &type_params.params, &type_ann_from_callee, type_ann, Default::default())?;
+
+                        let expanded_type_ann = self
+                            .expand_type_params(&type_params, type_ann_from_callee, Default::default())?
+                            .freezed();
+
+                        Some(Cow::Owned(expanded_type_ann))
+                    }
+                    None => Some(Cow::Borrowed(type_ann)),
+                }
             }
             None => match expr {
                 ReEvalMode::NoReEval => None,
                 _ => Some({
                     is_type_ann_chosen_from_overload = true;
-                    match kind {
-                        ExtractKind::New => Cow::Owned(Type::Constructor(Constructor {
-                            span,
-                            type_params: c.type_params.clone(),
-                            params: c.params.clone(),
-                            type_ann: c.ret_ty.clone(),
-                            is_abstract: false,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })),
-                        ExtractKind::Call => Cow::Owned(Type::Function(Function {
-                            span,
-                            type_params: c.type_params.clone(),
-                            params: c.params.clone(),
-                            ret_ty: c.ret_ty.clone(),
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })),
-                    }
+                    Cow::Owned(type_ann_from_callee)
                 }),
             },
         };
