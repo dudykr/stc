@@ -2705,7 +2705,7 @@ impl Analyzer<'_, '_> {
                 new_args.push(new_arg);
             }
 
-            if !self.ctx.reevaluating_call_or_new {
+            if !self.ctx.reevaluating_call_or_new && type_ann.is_none() {
                 debug!("Reevaluating a call");
                 let ctx = Ctx {
                     reevaluating_call_or_new: true,
