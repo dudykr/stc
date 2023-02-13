@@ -18,7 +18,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Constructor, Function, Id, IdCtx,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
     StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
@@ -2418,64 +2418,9 @@ impl Analyzer<'_, '_> {
         }
 
         let (c, _) = callable.into_iter().next().unwrap();
-        let mut is_type_ann_chosen_from_overload = false;
 
-        let type_ann_from_callee = match kind {
-            ExtractKind::New => Type::Constructor(Constructor {
-                span,
-                type_params: c.type_params.clone(),
-                params: c.params.clone(),
-                type_ann: c.ret_ty.clone(),
-                is_abstract: false,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
-            ExtractKind::Call => Type::Function(Function {
-                span,
-                type_params: c.type_params.clone(),
-                params: c.params.clone(),
-                ret_ty: c.ret_ty.clone(),
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
-        };
-
-        let type_ann = match type_ann {
-            Some(type_ann) => {
-                // Using the result type (type_ann) and the parameter declarations (c.params,
-                // c.type_params), we can create a useful type annotation for the function call.
-
-                match c.type_params.as_ref() {
-                    Some(type_params) => {
-                        let type_params =
-                            self.infer_type_with_types(span, &type_params.params, &type_ann_from_callee, type_ann, Default::default())?;
-
-                        let expanded_type_ann = self
-                            .expand_type_params(&type_params, type_ann_from_callee, Default::default())?
-                            .freezed();
-
-                        Some(Cow::Owned(expanded_type_ann))
-                    }
-                    None => Some(Cow::Borrowed(type_ann)),
-                }
-            }
-            None => match expr {
-                ReEvalMode::NoReEval => None,
-                _ => Some({
-                    is_type_ann_chosen_from_overload = true;
-                    Cow::Owned(type_ann_from_callee)
-                }),
-            },
-        };
-
-        let ctx = Ctx {
-            is_type_ann_for_call_reeval_chosen_from_overload: self.ctx.is_type_ann_for_call_reeval_chosen_from_overload
-                || is_type_ann_chosen_from_overload,
-            ..self.ctx
-        };
         if candidates.len() == 1 {
             return self
-                .with_ctx(ctx)
                 .get_return_type(
                     span,
                     kind,
@@ -2487,26 +2432,25 @@ impl Analyzer<'_, '_> {
                     args,
                     arg_types,
                     spread_arg_types,
-                    type_ann.as_deref(),
+                    type_ann,
                 )
                 .map(Some);
         }
 
-        self.with_ctx(ctx)
-            .get_return_type(
-                span,
-                kind,
-                expr,
-                c.type_params.as_ref().map(|v| &*v.params),
-                &c.params,
-                *c.ret_ty.clone(),
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-                type_ann.as_deref(),
-            )
-            .map(Some)
+        self.get_return_type(
+            span,
+            kind,
+            expr,
+            c.type_params.as_ref().map(|v| &*v.params),
+            &c.params,
+            *c.ret_ty.clone(),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )
+        .map(Some)
     }
 
     /// Returns the return type of function. This method should be called only
