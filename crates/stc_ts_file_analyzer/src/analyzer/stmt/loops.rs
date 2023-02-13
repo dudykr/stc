@@ -194,17 +194,11 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to normalize a type to handle a for-in loop")?;
         let rhs = rhs.normalize();
-        {
-            let temp_object = Type::Keyword(KeywordType {
-                span,
-                kind: TsKeywordTypeKind::TsObjectKeyword,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            });
-            if let Err(..) = self.assign(span, &mut Default::default(), rhs, &temp_object) {
-                return Err(ErrorKind::RightHandSideMustBeObject { span }.into());
-            }
+
+        if rhs.is_bool() || rhs.is_str() || rhs.is_num() || rhs.is_never() {
+            return Err(ErrorKind::RightHandSideMustBeObject { span }.into());
         }
+
         if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_array() || rhs.is_tuple() {
             return Ok(Type::Keyword(KeywordType {
                 span: rhs.span(),
