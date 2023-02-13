@@ -2211,7 +2211,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let mut min_param: usize = params
+        let min_param: usize = params
             .iter()
             .enumerate()
             .filter_map(|(i, v)| {
@@ -2228,6 +2228,7 @@ impl Analyzer<'_, '_> {
             .sum();
 
         let mut max_param = Some(params.len());
+
         for (index, param) in params.iter().enumerate() {
             match &param.pat {
                 RPat::Rest(..) => match param.ty.normalize_instance() {
@@ -2265,33 +2266,6 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
                 _ => {}
-            }
-            if param.required {
-                if !param.ty.is_any()
-                    && self
-                        .assign_with_opts(
-                            &mut Default::default(),
-                            &param.ty,
-                            &Type::Keyword(KeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsVoidKeyword,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            }),
-                            AssignOpts {
-                                span,
-                                ..Default::default()
-                            },
-                        )
-                        .is_ok()
-                {
-                    // void is the last parameter, reduce min_params.
-                    //
-                    // function foo<A>(a: A, b: void) {}
-                    if index == params.len() - 1 && min_param > 0 {
-                        min_param -= 1;
-                    }
-                }
             }
         }
 
