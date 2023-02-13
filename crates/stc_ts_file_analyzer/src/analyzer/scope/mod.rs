@@ -1456,7 +1456,7 @@ impl Analyzer<'_, '_> {
                     if let Some(orig) = &v.ty {
                         if let Some(ty) = &ty {
                             self.validate_with(|a| {
-                                let res = a.validate_fn_overloads(span, orig, ty);
+                                let res = a.validate_fn_overloads(span, orig, ty, kind);
 
                                 if res.is_err() {
                                     a.data.known_wrong_overloads.insert(name.clone());
@@ -1582,31 +1582,57 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [Err] if overload is wrong.
-    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> VResult<()> {
+    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type, kind: VarKind) -> VResult<()> {
         // We validates using the signature of implementing function.
         // TODO(kdy1): Validate using last element, when there's a no function decl with
         // body.
+
         if self.config.is_builtin || self.ctx.in_declare {
             return Ok(());
         }
 
-        for orig in orig.iter_union() {
-            if let Type::Function(..) = orig.normalize() {
-                self.assign_with_opts(
-                    &mut Default::default(),
-                    new,
-                    orig,
-                    AssignOpts {
-                        span,
-                        for_overload: true,
-                        ..Default::default()
-                    },
-                )
-                .convert_err(|err| ErrorKind::IncompatibleFnOverload {
-                    span: orig.span(),
-                    cause: box err.into(),
-                })
-                .context("tried to validate signatures of overloaded functions")?;
+        match kind {
+            VarKind::Var(..) => {
+                for orig in orig.iter_union() {
+                    if let Type::Function(..) = orig.normalize() {
+                        self.assign_with_opts(
+                            &mut Default::default(),
+                            new,
+                            orig,
+                            AssignOpts {
+                                span,
+                                for_overload: true,
+                                ..Default::default()
+                            },
+                        )
+                        .convert_err(|err| ErrorKind::VarDeclNotCompatible {
+                            span: err.span(),
+                            cause: box err.into(),
+                        })
+                        .context("tried to validate signatures of overloaded functions")?;
+                    }
+                }
+            }
+            _ => {
+                for orig in orig.iter_union() {
+                    if let Type::Function(..) = orig.normalize() {
+                        self.assign_with_opts(
+                            &mut Default::default(),
+                            new,
+                            orig,
+                            AssignOpts {
+                                span,
+                                for_overload: true,
+                                ..Default::default()
+                            },
+                        )
+                        .convert_err(|err| ErrorKind::IncompatibleFnOverload {
+                            span: orig.span(),
+                            cause: box err.into(),
+                        })
+                        .context("tried to validate signatures of overloaded functions")?;
+                    }
+                }
             }
         }
 
