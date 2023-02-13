@@ -2568,24 +2568,6 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
-            let inferred_from_return_type = if self.ctx.reevaluating_call_or_new { None } else { None };
-
-            let mut expanded_params;
-            let params = if let Some(map) = &inferred_from_return_type {
-                expanded_params = params
-                    .into_iter()
-                    .map(|v| -> VResult<_> {
-                        let ty = box self.expand_type_params(map, *v.ty, Default::default())?;
-
-                        Ok(FnParam { ty, ..v })
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-                expanded_params.freeze();
-                expanded_params
-            } else {
-                params
-            };
-
             // Assert deep clone
             if cfg!(debug_assertions) {
                 let _ = type_args.cloned();
