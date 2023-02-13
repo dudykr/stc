@@ -74,13 +74,23 @@ impl Analyzer<'_, '_> {
         debug_assert!(!self.config.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         let mut unconditional_throw = None;
+        let mut never_loop = false;
         for stmt in stmts {
-            if let RStmt::Throw(throws) = stmt {
-                unconditional_throw = Some(throws.span);
-                break;
+            match stmt {
+                RStmt::Throw(throws) => {
+                    unconditional_throw = Some(throws.span);
+                    break;
+                }
+                RStmt::While(RWhileStmt {
+                    test: box RExpr::Lit(RLit::Bool(RBool { value, .. })),
+                    ..
+                }) if *value => {
+                    never_loop = true;
+                    break;
+                }
+                _ => {}
             }
         }
-        let mut never_loop = false;
 
         for stmt in stmts {
             if let RStmt::While(RWhileStmt {
