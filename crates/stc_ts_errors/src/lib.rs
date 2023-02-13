@@ -1445,6 +1445,7 @@ pub enum ErrorKind {
     /// TS2407
     RightHandSideMustBeObject {
         span: Span,
+        ty: Box<Type>,
     },
 
     MustHaveSymbolAsyncIteratorThatReturnsIterator {
