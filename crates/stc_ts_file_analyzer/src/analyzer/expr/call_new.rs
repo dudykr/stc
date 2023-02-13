@@ -2472,6 +2472,8 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("get_return_type");
 
         let span = span.with_ctxt(SyntaxContext::empty());
+        ret_ty.freeze();
+        let type_ann = self.expand_type_ann(span, type_ann)?.freezed();
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
         let params = params
@@ -2548,7 +2550,7 @@ impl Analyzer<'_, '_> {
                 spread_arg_types,
                 None,
                 Some(&ret_ty),
-                type_ann,
+                type_ann.as_deref(),
                 InferTypeOpts {
                     is_type_ann: type_ann.is_some(),
                     ..Default::default()
@@ -2677,10 +2679,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReEvalMode::Call(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
                     }
                     ReEvalMode::New(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
                     }
                     _ => {}
                 }
