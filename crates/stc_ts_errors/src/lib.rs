@@ -189,6 +189,12 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2534
+    /// A function returning 'never' cannot have a reachable end point.
+    CannotFunctionReturningNever {
+        span: Span,
+    },
+
     /// TS2432
     OnlyOneEnumCanOmitInit {
         span: Span,
@@ -2055,7 +2061,7 @@ impl ErrorKind {
             ErrorKind::OnlyOneEnumCanOmitInit { .. } => 2432,
 
             ErrorKind::CannotUseTypeAsIndexIndex { .. } => 2538,
-
+            ErrorKind::CannotFunctionReturningNever { .. } => 2534,
             ErrorKind::InterfaceNotCompatible { .. } => 2320,
 
             ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,

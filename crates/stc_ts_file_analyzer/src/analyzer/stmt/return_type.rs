@@ -3,7 +3,9 @@
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
+use stc_ts_ast_rnode::{
+    RBool, RBreakStmt, RExpr, RIdent, RLit, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RWhileStmt, RYieldExpr,
+};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
@@ -76,6 +78,20 @@ impl Analyzer<'_, '_> {
             if let RStmt::Throw(throws) = stmt {
                 unconditional_throw = Some(throws.span);
                 break;
+            }
+        }
+        let mut never_loop = false;
+
+        for stmt in stmts {
+            if let RStmt::While(RWhileStmt {
+                test: box RExpr::Lit(RLit::Bool(RBool { value, .. })),
+                ..
+            }) = stmt
+            {
+                if *value {
+                    never_loop = true;
+                    break;
+                }
             }
         }
 
@@ -278,6 +294,10 @@ impl Analyzer<'_, '_> {
 
             actual.dedup_type();
 
+            if actual.len() == 1 {
+                return Ok(actual.pop());
+            }
+
             let ty = Type::union(actual);
             let ty = self.simplify(ty);
 
@@ -293,6 +313,9 @@ impl Analyzer<'_, '_> {
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             if !is_async && !is_generator {
+                if declared.is_never() && ret_ty.is_none() && !never_loop {
+                    self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                }
                 // Noop
             } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 // We use different error code
