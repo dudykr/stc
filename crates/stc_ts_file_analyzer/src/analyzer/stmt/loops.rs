@@ -193,10 +193,13 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to normalize a type to handle a for-in loop")?;
-        let rhs = rhs.normalize();
 
         if rhs.is_bool() || rhs.is_str() || rhs.is_num() || rhs.is_never() || rhs.is_symbol() {
-            return Err(ErrorKind::RightHandSideMustBeObject { span }.into());
+            return Err(ErrorKind::RightHandSideMustBeObject {
+                span,
+                ty: box rhs.clone().into_owned(),
+            }
+            .into());
         }
 
         if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_array() || rhs.is_tuple() {
