@@ -20,9 +20,7 @@ function someFrom<b>(some: b) {
 }
 
 export function fn<r>(makeSome: () => r): void {
-    let result: Optional<r> = none;
-    while (cond) {
-        result = someFrom(isSome(result) ? result.some : makeSome());
-    }
+    let result: Optional<r> = null as any;
+    result = someFrom(isSome(result) ? result.some : makeSome());
 }
 
