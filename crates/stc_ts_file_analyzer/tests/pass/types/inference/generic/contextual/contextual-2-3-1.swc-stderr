@@ -27,7 +27,9 @@ Error:
     `----
 
 Error: 
-  > any
+  > {
+  |     value: T;
+  | }
 
   x Type
     ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
@@ -37,7 +39,7 @@ Error:
     `----
 
 Error: 
-  > W
+  > T
 
   x Type
     ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
@@ -47,29 +49,7 @@ Error:
     `----
 
 Error: 
-  > (a: any) => W
-
-  x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
-  9 | 
- 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
-    :                                                     ^
-    `----
-
-Error: 
-  > {
-  |     value: W;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
-  9 | 
- 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
-    :                                          ^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > (a: Box<W>) => W
+  > (a: Box<T>) => T
 
   x Type
     ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
@@ -79,4 +59,4 @@ Error:
     `----
 
 Error: 
-  > <W>(a: Box<W>) => W
+  > <T>(a: Box<T>) => T
