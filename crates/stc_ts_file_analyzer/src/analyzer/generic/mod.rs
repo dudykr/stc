@@ -232,6 +232,8 @@ impl Analyzer<'_, '_> {
 
         if let Some(ret_ty) = ret_ty {
             if let Some(ret_type_ann) = ret_ty_type_ann {
+                let _tracing = dev_span!("infer_arg_types: return type annotation");
+
                 self.infer_type(
                     span,
                     &mut inferred,
