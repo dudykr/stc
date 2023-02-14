@@ -1340,13 +1340,19 @@ impl Take for IndexSignature {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
     pub metadata: ArrayMetadata,
 
     pub tracker: Tracker<"Array">,
+}
+
+impl Debug for Array {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}[]", self.elem_type)
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
