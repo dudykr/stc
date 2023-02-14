@@ -594,6 +594,12 @@ pub enum ErrorKind {
     ExportMixedWithLocal {
         span: Span,
     },
+
+    /// TS2652
+    MixedDefaultExports {
+        span: Span,
+    },
+
     /// TS2420
     ClassIncorrectlyImplementsInterface {
         span: Span,
@@ -1874,6 +1880,8 @@ impl ErrorKind {
             ErrorKind::InvalidImplOfInterface { .. } => 2420,
 
             ErrorKind::ClassIncorrectlyImplementsInterface { .. } => 2420,
+
+            ErrorKind::MixedDefaultExports { .. } => 2652,
 
             ErrorKind::ExportMixedWithLocal { .. } => 2395,
 
