@@ -491,7 +491,9 @@ impl Analyzer<'_, '_> {
 
             callee_ty.freeze();
 
-            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty, type_ann)?;
+            let type_ann = analyzer
+                .apply_type_ann_from_callee(span, kind, args, &callee_ty, type_ann)?
+                .or_else(|| type_ann.cloned());
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.freeze();
 
@@ -506,7 +508,7 @@ impl Analyzer<'_, '_> {
                 &arg_types,
                 &spread_arg_types,
                 type_args.as_ref(),
-                type_ann,
+                type_ann.as_ref(),
                 Default::default(),
             )?;
 
@@ -2679,10 +2681,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReEvalMode::Call(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), None);
                     }
                     ReEvalMode::New(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), None);
                     }
                     _ => {}
                 }
@@ -3482,27 +3484,29 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         callee: &Type,
         type_ann_for_return_type: Option<&Type>,
-    ) -> VResult<()> {
+    ) -> VResult<Option<Type>> {
         let c = self.extract_callee_candidates(span, kind, callee)?;
 
         if c.len() != 1 {
-            return Ok(());
+            return Ok(None);
         }
 
         let c = c.into_iter().next().unwrap();
 
+        let mut ret_ty = c.ret_ty.clone();
         let params = match (&c.type_params, type_ann_for_return_type) {
             (Some(type_params), Some(type_ann)) => {
                 let type_params = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann, Default::default())?;
                 let params = c.params.clone().freezed();
 
                 let params = self.expand_type_params(&type_params, params, Default::default())?;
+                ret_ty = self.expand_type_params(&type_params, ret_ty, Default::default())?;
 
                 Cow::Owned(params)
             }
 
             (Some(..), None) => {
-                return Ok(());
+                return Ok(None);
             }
 
             _ => Cow::Borrowed(&c.params),
@@ -3517,7 +3521,7 @@ impl Analyzer<'_, '_> {
             self.apply_type_ann_to_expr(&arg.expr, &param.ty)?;
         }
 
-        Ok(())
+        Ok(Some(*ret_ty))
     }
 
     pub(crate) fn apply_type_ann_to_expr(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
