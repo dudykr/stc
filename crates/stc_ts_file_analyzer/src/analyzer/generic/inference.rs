@@ -945,6 +945,8 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, Type>> {
+        let _tracing = dev_span!("infer_type_with_types");
+
         if cfg!(debug_assertions) {
             // Assertion for deep clone
             let _ = type_params.to_vec();
