@@ -1517,7 +1517,7 @@ impl Debug for Function {
             }
             write!(f, "{:?}", param)?;
         }
-        write!(f, "): {:?}", self.ret_ty)?;
+        write!(f, ") => {:?}", self.ret_ty)?;
 
         write!(f, ")")?;
 
