@@ -37,7 +37,7 @@ Error:
    `----
 
 Error: 
-  > (x: A) => [A]
+  > <A>(x: A) => [A]
 
   x Type
    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-2.ts:2:1]

@@ -49,7 +49,7 @@ Error:
     `----
 
 Error: 
-  > (a: Box<T>) => T
+  > <T>(a: Box<T>) => T
 
   x Type
     ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:9:1]
