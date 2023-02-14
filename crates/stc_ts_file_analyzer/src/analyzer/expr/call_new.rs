@@ -2679,10 +2679,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReEvalMode::Call(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), None);
                     }
                     ReEvalMode::New(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), None);
                     }
                     _ => {}
                 }
