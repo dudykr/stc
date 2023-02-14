@@ -289,7 +289,7 @@ impl Analyzer<'_, '_> {
             },
             tracker: Default::default(),
         });
-        Ok(Type::union(vec![s, n]))
+        Ok(Type::new_union(span, vec![s, n]))
     }
 
     #[extra_validator]

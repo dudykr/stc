@@ -590,8 +590,9 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+        let span = ty.span();
 
-        let mut ty = Type::union(values);
+        let mut ty = Type::new_union(span, values);
         ty.reposition(e.span);
 
         Ok(ty)

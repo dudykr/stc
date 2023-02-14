@@ -934,7 +934,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if is_str_lit_or_union(&lt) && is_str_lit_or_union(&rt) {
-                            return Ok(Type::union(vec![lt, rt]));
+                            return Ok(Type::new_union(span, vec![lt, rt]));
                         }
 
                         if let Known(v) = lt.as_bool() {
@@ -948,7 +948,7 @@ impl Analyzer<'_, '_> {
                         // Remove falsy types from lhs
                         let lt = lt.remove_falsy();
 
-                        return Ok(Type::union(vec![lt, rt]));
+                        return Ok(Type::new_union(span, vec![lt, rt]));
                     }
 
                     op!("&&") => {
@@ -986,7 +986,7 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                let mut ty = Type::union(vec![lt, rt]);
+                let mut ty = Type::new_union(span, vec![lt, rt]);
                 if !may_generalize_lt {
                     prevent_generalize(&mut ty);
                 }

@@ -364,7 +364,7 @@ impl Analyzer<'_, '_> {
 
                                     ty = Type::Array(Array {
                                         span: tuple.span,
-                                        elem_type: box Type::union(types),
+                                        elem_type: box Type::new_union(tuple.span, types),
                                         metadata: ArrayMetadata {
                                             common: tuple.metadata.common,
                                             ..Default::default()

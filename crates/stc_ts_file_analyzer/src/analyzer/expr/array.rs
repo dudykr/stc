@@ -304,7 +304,7 @@ impl Analyzer<'_, '_> {
                             tracker: Default::default(),
                         }));
                         types.dedup_type();
-                        return Ok(Cow::Owned(Type::union(types)));
+                        return Ok(Cow::Owned(Type::new_union(span, types)));
                     }
 
                     return Err(ErrorKind::NoSuchProperty {
@@ -317,7 +317,7 @@ impl Analyzer<'_, '_> {
 
                 types.dedup_type();
 
-                return Ok(Cow::Owned(Type::union(types)));
+                return Ok(Cow::Owned(Type::new_union(span, types)));
             }
 
             Type::Array(..) | Type::Tuple(..) => {

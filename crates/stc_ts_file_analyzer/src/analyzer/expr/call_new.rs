@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Ok(Type::union(types));
+                    return Ok(Type::new_union(span, types));
                 }
 
                 Type::Interface(ref i) => {
@@ -1985,7 +1985,7 @@ impl Analyzer<'_, '_> {
             //         .collect::<Result<Vec<_>, _>>()?;
 
             //     types.dedup_type();
-            //     return Ok(Type::union(types));
+            //     return Ok(Type::new_union(span, types));
             // }
             Type::Union(ref u) => {
                 let candidates = u
@@ -2679,10 +2679,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReEvalMode::Call(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), None);
                     }
                     ReEvalMode::New(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), None);
                     }
                     _ => {}
                 }
@@ -3727,7 +3727,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                 unreachable!()
                             }
 
-                            *ty = Type::union(types);
+                            *ty = Type::new_union(*span, types);
                             return;
                         }
                     }
