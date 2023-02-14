@@ -790,6 +790,15 @@ impl Analyzer<'_, '_> {
             _ => Cow::Borrowed(arg),
         };
 
+        // TODO(kdy1): Verify if this is correct
+        if let Type::Param(arg) = arg.normalize() {
+            if let Some(inverse) = inferred.type_params.get(&arg.name) {
+                if inverse.priority < opts.priority {
+                    return Ok(());
+                }
+            }
+        }
+
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 if e.get().is_fixed {
