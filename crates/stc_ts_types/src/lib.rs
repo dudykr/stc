@@ -1505,6 +1505,10 @@ impl Debug for Function {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "(")?;
 
+        if let Some(type_params) = &self.type_params {
+            write!(f, "{:?}", type_params)?;
+        }
+
         write!(f, "(")?;
 
         for (i, param) in self.params.iter().enumerate() {
