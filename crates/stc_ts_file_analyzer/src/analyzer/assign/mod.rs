@@ -1123,19 +1123,6 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
-                // We need to do this because everything is assignable to unknown.
-                // But if we are in argument, we should not allow void (which means no argument
-                // was passed)
-                if self.ctx.in_argument {
-                    if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-                        return Err(ErrorKind::ExpectedNArgsButGotM {
-                            span: to.span(),
-                            min: 1,
-                            max: None,
-                        }
-                        .into());
-                    }
-                }
                 return Ok(());
             }
 

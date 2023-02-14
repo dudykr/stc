@@ -3117,6 +3117,7 @@ impl Analyzer<'_, '_> {
                             span: arg.span(),
                             allow_unknown_rhs: Some(allow_unknown_rhs),
                             use_missing_fields_for_class: true,
+                            allow_assignment_to_void: false,
                             ..Default::default()
                         },
                     ) {
