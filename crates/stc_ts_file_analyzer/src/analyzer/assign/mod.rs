@@ -1122,9 +1122,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => {
-                return Ok(());
-            }
+            }) => return Ok(()),
 
             // Everything is assignable to Object
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
