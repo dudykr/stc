@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
-        let mut is_unreachagble = false;
+        let mut is_unreachable = false;
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
-                    is_unreachagble = analyzer.ctx.in_unreachable;
+                    is_unreachable = analyzer.ctx.in_unreachable;
                     take(&mut analyzer.scope.return_values)
                 })
             };
@@ -298,7 +298,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             if !is_async && !is_generator {
-                if ret_ty.is_none() && !is_unreachagble {
+                if ret_ty.is_none() && !is_unreachable {
                     if let Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                         span,
