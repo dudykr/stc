@@ -4,10 +4,10 @@
 
 let cond: boolean;
 
-export type Optional<a> = Some<a> | None;
+export type Optional<c> = Some<c> | None;
 
 export interface None { readonly none: string; }
-export interface Some<a> { readonly some: a; }
+export interface Some<d> { readonly some: d; }
 
 export const none: None = { none: '' };
 
@@ -15,7 +15,7 @@ export function isSome<a>(value: Optional<a>): value is Some<a> {
     return 'some' in value;
 }
 
-function someFrom<a>(some: a) {
+function someFrom<b>(some: b) {
     return { some };
 }
 
