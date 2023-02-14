@@ -14,7 +14,7 @@ impl Analyzer<'_, '_> {
         ty.visit_with(&mut finder);
 
         if finder.used.is_empty() {
-            if let Type::Function(f) = ty {
+            if let Some(f) = ty.as_fn_type_mut() {
                 f.type_params = None;
             }
             return;
@@ -32,7 +32,7 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
             .collect_vec();
-        if let Type::Function(f) = ty {
+        if let Some(f) = ty.as_fn_type_mut() {
             // Create new type param decls if required.
             match &mut f.type_params {
                 Some(v) => {
