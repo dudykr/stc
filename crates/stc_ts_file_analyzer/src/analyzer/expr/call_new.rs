@@ -491,7 +491,7 @@ impl Analyzer<'_, '_> {
 
             callee_ty.freeze();
 
-            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
+            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty, type_ann)?;
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.freeze();
 
@@ -3475,7 +3475,14 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn apply_type_ann_from_callee(&mut self, span: Span, kind: ExtractKind, args: &[RExprOrSpread], callee: &Type) -> VResult<()> {
+    fn apply_type_ann_from_callee(
+        &mut self,
+        span: Span,
+        kind: ExtractKind,
+        args: &[RExprOrSpread],
+        callee: &Type,
+        type_ann_for_return_type: Option<&Type>,
+    ) -> VResult<()> {
         let c = self.extract_callee_candidates(span, kind, callee)?;
 
         if c.len() != 1 {
@@ -3484,12 +3491,24 @@ impl Analyzer<'_, '_> {
 
         let c = c.into_iter().next().unwrap();
 
-        // TODO: Move this logic to get_return_type
-        if c.type_params.is_some() {
-            return Ok(());
-        }
+        let params = match (&c.type_params, type_ann_for_return_type) {
+            (Some(type_params), Some(type_ann)) => {
+                let type_params = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann, Default::default())?;
+                let params = c.params.clone().freezed();
 
-        for (arg, param) in args.iter().zip(c.params.iter()) {
+                let params = self.expand_type_params(&type_params, params, Default::default())?;
+
+                Cow::Owned(params)
+            }
+
+            (Some(..), None) => {
+                return Ok(());
+            }
+
+            _ => Cow::Borrowed(&c.params),
+        };
+
+        for (arg, param) in args.iter().zip(params.iter()) {
             // TODO(kdy1):  Handle rest
             if arg.spread.is_some() || matches!(param.pat, RPat::Rest(..)) {
                 break;
