@@ -2232,6 +2232,8 @@ types/namedTypes/optionalMethods.ts
 types/never/neverInference.ts
 types/never/neverIntersectionNotCallable.ts
 types/never/neverType.ts
+types/never/neverTypeErrors1.ts
+types/never/neverTypeErrors2.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAccessProperty.ts
