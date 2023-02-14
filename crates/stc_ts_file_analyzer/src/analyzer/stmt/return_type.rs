@@ -99,7 +99,6 @@ impl Analyzer<'_, '_> {
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
                     is_unreachagble = analyzer.ctx.in_unreachable;
-                    dbg!(is_unreachagble);
                     take(&mut analyzer.scope.return_values)
                 })
             };

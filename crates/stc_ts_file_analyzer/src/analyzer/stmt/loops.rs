@@ -58,7 +58,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     body.visit_with(child);
-                    dbg!(&child.ctx.in_unreachable);
+
                     Ok(child.cur_facts.true_facts.take())
                 },
                 |analyzer: &mut Analyzer| {
