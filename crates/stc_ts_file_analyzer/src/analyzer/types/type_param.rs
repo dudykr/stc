@@ -9,6 +9,11 @@ use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn add_required_type_params(&self, ty: &mut Type) {
+        if let Some(instance) = ty.as_instance_mut() {
+            self.add_required_type_params(&mut instance.ty);
+            return;
+        }
+
         let mut finder = TypeParamUsageFinder::default();
 
         ty.visit_with(&mut finder);
@@ -32,6 +37,7 @@ impl Analyzer<'_, '_> {
                 tracker: Default::default(),
             })
             .collect_vec();
+
         if let Some(f) = ty.as_fn_type_mut() {
             // Create new type param decls if required.
             match &mut f.type_params {
