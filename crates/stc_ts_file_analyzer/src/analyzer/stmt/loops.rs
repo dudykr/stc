@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat, RWhileStmt,
+    RBool, RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RLit, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat, RWhileStmt,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -12,6 +12,7 @@ use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 
+use super::return_type::LoopBreakerFinder;
 use crate::{
     analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty::Type,
@@ -89,7 +90,16 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts.true_facts += prev_facts;
         self.cur_facts.false_facts += prev_false_facts;
-
+        if !self.scope.return_values.in_conditional {
+            let mut v = LoopBreakerFinder { found: false };
+            body.visit_with(&mut v);
+            let has_break = v.found;
+            if !has_break {
+                if let Some(RExpr::Lit(RLit::Bool(RBool { value, .. }))) = test {
+                    self.ctx.in_unreachable = *value;
+                }
+            }
+        }
         Ok(())
     }
 

@@ -89,6 +89,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
+        let mut is_unreachable = false;
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
@@ -97,7 +98,7 @@ impl Analyzer<'_, '_> {
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
-
+                    is_unreachable = analyzer.ctx.in_unreachable;
                     take(&mut analyzer.scope.return_values)
                 })
             };
@@ -278,6 +279,10 @@ impl Analyzer<'_, '_> {
 
             actual.dedup_type();
 
+            if actual.len() == 1 {
+                return Ok(actual.pop());
+            }
+
             let ty = Type::union(actual);
             let ty = self.simplify(ty);
 
@@ -293,6 +298,16 @@ impl Analyzer<'_, '_> {
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             if !is_async && !is_generator {
+                if ret_ty.is_none() && !is_unreachable {
+                    if let Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                        span,
+                        ..
+                    }) = declared
+                    {
+                        self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                    }
+                }
                 // Noop
             } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 // We use different error code
