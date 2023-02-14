@@ -3,9 +3,7 @@
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{
-    RBool, RBreakStmt, RExpr, RIdent, RLit, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RWhileStmt, RYieldExpr,
-};
+use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
@@ -74,34 +72,10 @@ impl Analyzer<'_, '_> {
         debug_assert!(!self.config.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         let mut unconditional_throw = None;
-        let mut never_loop = false;
         for stmt in stmts {
-            match stmt {
-                RStmt::Throw(throws) => {
-                    unconditional_throw = Some(throws.span);
-                    break;
-                }
-                RStmt::While(RWhileStmt {
-                    test: box RExpr::Lit(RLit::Bool(RBool { value, .. })),
-                    ..
-                }) if *value => {
-                    never_loop = true;
-                    break;
-                }
-                _ => {}
-            }
-        }
-
-        for stmt in stmts {
-            if let RStmt::While(RWhileStmt {
-                test: box RExpr::Lit(RLit::Bool(RBool { value, .. })),
-                ..
-            }) = stmt
-            {
-                if *value {
-                    never_loop = true;
-                    break;
-                }
+            if let RStmt::Throw(throws) = stmt {
+                unconditional_throw = Some(throws.span);
+                break;
             }
         }
 
@@ -115,6 +89,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
+        let mut is_unreachagble = false;
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
@@ -123,7 +98,8 @@ impl Analyzer<'_, '_> {
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
-
+                    is_unreachagble = analyzer.ctx.in_unreachable;
+                    dbg!(is_unreachagble);
                     take(&mut analyzer.scope.return_values)
                 })
             };
@@ -323,8 +299,15 @@ impl Analyzer<'_, '_> {
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             if !is_async && !is_generator {
-                if declared.is_never() && ret_ty.is_none() && !never_loop {
-                    self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                if ret_ty.is_none() && !is_unreachagble {
+                    if let Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                        span,
+                        ..
+                    }) = declared
+                    {
+                        self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                    }
                 }
                 // Noop
             } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
