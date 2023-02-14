@@ -32,7 +32,15 @@ impl Analyzer<'_, '_> {
                 child.ctx.super_references_super_class = false;
             }
 
-            let type_params = try_opt!(f.type_params.validate_with(child));
+            let mut type_params = try_opt!(f.type_params.validate_with(child));
+
+            if type_params.is_none() {
+                if let Some(mutations) = &child.mutations {
+                    if let Some(ann) = mutations.for_callable.get(&f.node_id) {
+                        type_params = ann.type_params.clone();
+                    }
+                }
+            }
 
             let params = {
                 let ctx = Ctx {
