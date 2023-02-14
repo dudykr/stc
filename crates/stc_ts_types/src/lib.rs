@@ -1721,59 +1721,6 @@ impl Type {
         Self::new_union_without_dedup(span, elements)
     }
 
-    /// Creates a new type from `iter`.
-    ///
-    /// Note:
-    ///
-    ///  - never types are excluded.
-    #[deprecated = "Use `new_union` instead"]
-    pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let mut span = DUMMY_SP;
-
-        let mut elements = vec![];
-
-        for ty in iter {
-            let sp = ty.span();
-
-            if sp.lo() < span.lo() {
-                span = span.with_lo(sp.lo());
-            }
-            if sp.hi() > span.hi() {
-                span = span.with_hi(sp.hi());
-            }
-
-            if ty.is_union_type() {
-                let types = ty.expect_union_type().types;
-                for new in types {
-                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
-                        continue;
-                    }
-                    elements.push(new)
-                }
-            } else {
-                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
-                    continue;
-                }
-                elements.push(ty)
-            }
-        }
-        // Drop `never`s.
-        elements.retain(|ty| !ty.is_never());
-
-        let ty = match elements.len() {
-            0 => Type::never(span, Default::default()),
-            1 => elements.into_iter().next().unwrap(),
-            _ => Type::Union(Union {
-                span,
-                types: elements,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
-        };
-        ty.assert_valid();
-        ty
-    }
-
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].
     pub fn force_generalize_top_level_literals(self) -> Self {
         match self {
