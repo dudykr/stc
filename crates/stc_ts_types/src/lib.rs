@@ -1726,6 +1726,7 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
+    #[deprecated = "Use `new_union` instead"]
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
         let mut span = DUMMY_SP;
 
