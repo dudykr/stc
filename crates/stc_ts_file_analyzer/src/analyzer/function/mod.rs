@@ -86,7 +86,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let type_params = try_opt!(f.type_params.validate_with(child));
+            let mut type_params = try_opt!(f.type_params.validate_with(child));
+
+            if type_params.is_none() {
+                if let Some(mutations) = &child.mutations {
+                    if let Some(ann) = mutations.for_callable.get(&f.node_id) {
+                        type_params = ann.type_params.clone();
+                    }
+                }
+            }
 
             let params = {
                 let prev_len = child.scope.declaring_parameters.len();
@@ -330,7 +338,7 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            self.apply_fn_type_ann(f.span, f.params.iter().map(|p| &p.pat), type_ann);
+            self.apply_fn_type_ann(f.span, f.node_id, f.params.iter().map(|p| &p.pat), type_ann);
 
             // if let Some(name) = name {
             //     // We use `typeof function` to infer recursive function's return type.

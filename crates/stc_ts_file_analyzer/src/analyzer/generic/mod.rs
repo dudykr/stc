@@ -100,6 +100,7 @@ impl Analyzer<'_, '_> {
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
         ret_ty: Option<&Type>,
+        ret_ty_type_ann: Option<&Type>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
@@ -123,7 +124,7 @@ impl Analyzer<'_, '_> {
                         type_param: type_param.name.clone(),
                         candidates: Default::default(),
                         contra_candidates: Default::default(),
-                        inferred_type: param.clone(),
+                        inferred_type: param.clone().freezed(),
                         priority: Default::default(),
                         top_level: Default::default(),
                         is_fixed: true,
@@ -226,6 +227,23 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+            }
+        }
+
+        if let Some(ret_ty) = ret_ty {
+            if let Some(ret_type_ann) = ret_ty_type_ann {
+                let _tracing = dev_span!("infer_arg_types: return type annotation");
+
+                self.infer_type(
+                    span,
+                    &mut inferred,
+                    ret_type_ann,
+                    ret_ty,
+                    InferTypeOpts {
+                        priority: InferencePriority::ReturnType,
+                        ..Default::default()
+                    },
+                )?;
             }
         }
 
@@ -810,7 +828,7 @@ impl Analyzer<'_, '_> {
             //
             //             inferred
             //                 .type_elements
-            //                 .insert(name, Type::union(vec![prev_ty, box arg.clone()]))
+            //                 .insert(name, Type::new_union(span, vec![prev_ty, box arg.clone()]))
             //                 .expect_none("Cannot override");
             //         }
             //         Entry::Vacant(e) => {
@@ -1860,7 +1878,7 @@ impl Analyzer<'_, '_> {
                             }, // TODO(kdy1): Handle method element
                             _ => None,
                         });
-                        let mut key_ty = Type::union(key_ty);
+                        let mut key_ty = Type::new_union(span, key_ty);
                         prevent_generalize(&mut key_ty);
                         self.insert_inferred(span, inferred, type_param, Cow::Owned(key_ty), opts)?;
                     }

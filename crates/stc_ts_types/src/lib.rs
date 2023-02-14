@@ -1340,13 +1340,19 @@ impl Take for IndexSignature {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
     pub metadata: ArrayMetadata,
 
     pub tracker: Tracker<"Array">,
+}
+
+impl Debug for Array {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}[]", self.elem_type)
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1505,6 +1511,10 @@ impl Debug for Function {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "(")?;
 
+        if let Some(type_params) = &self.type_params {
+            write!(f, "{:?}", type_params)?;
+        }
+
         write!(f, "(")?;
 
         for (i, param) in self.params.iter().enumerate() {
@@ -1513,7 +1523,7 @@ impl Debug for Function {
             }
             write!(f, "{:?}", param)?;
         }
-        write!(f, "): {:?}", self.ret_ty)?;
+        write!(f, ") => {:?}", self.ret_ty)?;
 
         write!(f, ")")?;
 
@@ -1709,58 +1719,6 @@ impl Type {
         elements.retain(|ty| !ty.is_never());
 
         Self::new_union_without_dedup(span, elements)
-    }
-
-    /// Creates a new type from `iter`.
-    ///
-    /// Note:
-    ///
-    ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let mut span = DUMMY_SP;
-
-        let mut elements = vec![];
-
-        for ty in iter {
-            let sp = ty.span();
-
-            if sp.lo() < span.lo() {
-                span = span.with_lo(sp.lo());
-            }
-            if sp.hi() > span.hi() {
-                span = span.with_hi(sp.hi());
-            }
-
-            if ty.is_union_type() {
-                let types = ty.expect_union_type().types;
-                for new in types {
-                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
-                        continue;
-                    }
-                    elements.push(new)
-                }
-            } else {
-                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
-                    continue;
-                }
-                elements.push(ty)
-            }
-        }
-        // Drop `never`s.
-        elements.retain(|ty| !ty.is_never());
-
-        let ty = match elements.len() {
-            0 => Type::never(span, Default::default()),
-            1 => elements.into_iter().next().unwrap(),
-            _ => Type::Union(Union {
-                span,
-                types: elements,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
-        };
-        ty.assert_valid();
-        ty
     }
 
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].

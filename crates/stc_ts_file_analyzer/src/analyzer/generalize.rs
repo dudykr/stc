@@ -449,7 +449,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 types.dedup_type();
 
-                return Type::union(types);
+                return Type::new_union(span, types);
             }
 
             Type::IndexedAccessType(IndexedAccessType {

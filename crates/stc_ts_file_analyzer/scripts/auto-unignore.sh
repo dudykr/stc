@@ -5,7 +5,7 @@ set -o pipefail
 
 export CARGO_TERM_COLOR=always
 export RUST_BACKTRACE=1
-export RUST_MIN_STACK=$((16 * 1024 * 1024))
+export RUST_MIN_STACK=$((8 * 1024 * 1024))
 
 function cleanup {
     echo "Deleting cache for ignored tests"

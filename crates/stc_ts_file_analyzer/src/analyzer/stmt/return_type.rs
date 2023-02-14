@@ -89,6 +89,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
+        let mut is_unreachable = false;
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
@@ -97,7 +98,7 @@ impl Analyzer<'_, '_> {
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
-
+                    is_unreachable = analyzer.ctx.in_unreachable;
                     take(&mut analyzer.scope.return_values)
                 })
             };
@@ -201,13 +202,13 @@ impl Analyzer<'_, '_> {
                         },
                     )
                 } else {
-                    Type::union(types)
+                    Type::new_union(span, types)
                 };
 
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::union(actual))
+                    self.simplify(Type::new_union(span, actual))
                 };
 
                 let mut metadata = yield_ty.metadata();
@@ -251,7 +252,7 @@ impl Analyzer<'_, '_> {
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::union(actual))
+                    self.simplify(Type::new_union(span, actual))
                 };
 
                 return Ok(Some(Type::Ref(Ref {
@@ -278,7 +279,11 @@ impl Analyzer<'_, '_> {
 
             actual.dedup_type();
 
-            let ty = Type::union(actual);
+            if actual.len() == 1 {
+                return Ok(actual.pop());
+            }
+
+            let ty = Type::new_union(span, actual);
             let ty = self.simplify(ty);
 
             // print_type("Return",  &ty);
@@ -293,6 +298,16 @@ impl Analyzer<'_, '_> {
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             if !is_async && !is_generator {
+                if ret_ty.is_none() && !is_unreachable {
+                    if let Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                        span,
+                        ..
+                    }) = declared
+                    {
+                        self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                    }
+                }
                 // Noop
             } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 // We use different error code
@@ -683,7 +698,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                             }
                         }
                     }
-                    let ty = Type::union(types);
+                    let ty = Type::new_union(span, types);
 
                     return ty;
                 }
@@ -741,7 +756,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         span,
                         readonly,
                         obj_type: obj_type.clone(),
-                        index_type: box Type::union(types),
+                        index_type: box Type::new_union(span, types),
                         metadata,
                         tracker: Default::default(),
                     });

@@ -851,7 +851,7 @@ impl Analyzer<'_, '_> {
                                 if p.optional {
                                     let mut types = vec![Type::undefined(span, Default::default()), *type_ann.clone()];
                                     types.dedup_type();
-                                    matching_elements.push(Type::union(types));
+                                    matching_elements.push(Type::new_union(span, types));
                                 } else {
                                     matching_elements.push(*type_ann.clone());
                                 }
@@ -877,7 +877,7 @@ impl Analyzer<'_, '_> {
                             if m.optional {
                                 let mut types = vec![Type::undefined(span, Default::default()), prop_ty.clone()];
                                 types.dedup_type();
-                                matching_elements.push(Type::union(types));
+                                matching_elements.push(Type::new_union(span, types));
                             } else {
                                 matching_elements.push(prop_ty.clone());
                             }
@@ -2537,7 +2537,7 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             }));
                             tys.dedup_type();
-                            let ty = Type::union(tys);
+                            let ty = Type::new_union(span, tys);
                             ty.assert_valid();
                             return Ok(ty);
                         }
@@ -2554,7 +2554,7 @@ impl Analyzer<'_, '_> {
                 tys.dedup_type();
 
                 // TODO(kdy1): Validate that the ty has same type instead of returning union.
-                let ty = Type::union(tys);
+                let ty = Type::new_union(span, tys);
                 ty.assert_valid();
                 return Ok(ty);
             }
@@ -2705,7 +2705,7 @@ impl Analyzer<'_, '_> {
                 types.dedup_type();
                 let obj = Type::Array(Array {
                     span,
-                    elem_type: box Type::union(types),
+                    elem_type: box Type::new_union(span, types),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
@@ -3022,7 +3022,7 @@ impl Analyzer<'_, '_> {
                                     let mut types = vec![undefined, ty];
                                     types.dedup_type();
 
-                                    Type::union(types)
+                                    Type::new_union(span, types)
                                 }
                                 Some(TruePlusMinus::Minus) => self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty),
                                 _ => ty,
@@ -4066,15 +4066,18 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to resolve type from an optional ts entity name")?;
 
-                Ok(Type::union(vec![
-                    ty,
-                    Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                ])
+                Ok(Type::new_union(
+                    span,
+                    vec![
+                        ty,
+                        Type::Keyword(KeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                    ],
+                )
                 .freezed())
             }
 

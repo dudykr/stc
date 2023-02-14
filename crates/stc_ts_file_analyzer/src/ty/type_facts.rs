@@ -586,5 +586,5 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
         }));
     }
 
-    Type::union(types)
+    Type::new_union(span, types)
 }

@@ -1528,7 +1528,7 @@ impl Analyzer<'_, '_> {
                         if ty.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) || var_ty.type_eq(&ty) {
                             var_ty
                         } else {
-                            Type::union(vec![var_ty, ty]).freezed()
+                            Type::new_union(span, vec![var_ty, ty]).freezed()
                         }
                     } else {
                         ty
@@ -2108,6 +2108,7 @@ impl Expander<'_, '_, '_> {
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })),
+                                        None,
                                         None,
                                         InferTypeOpts { ..Default::default() },
                                     )?;
