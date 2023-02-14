@@ -12,7 +12,7 @@ use itertools::Itertools;
 use stc_ts_ast_rnode::{RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
-use stc_ts_type_ops::generalization::prevent_generalize;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
@@ -790,6 +790,15 @@ impl Analyzer<'_, '_> {
             _ => Cow::Borrowed(arg),
         };
 
+        // TODO(kdy1): Verify if this is correct
+        if let Type::Param(arg) = arg.normalize() {
+            if let Some(inverse) = inferred.type_params.get(&arg.name) {
+                if inverse.priority < opts.priority {
+                    return Ok(());
+                }
+            }
+        }
+
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 if e.get().is_fixed {
@@ -945,6 +954,8 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, Type>> {
+        let _tracing = dev_span!("infer_type_with_types");
+
         if cfg!(debug_assertions) {
             // Assertion for deep clone
             let _ = type_params.to_vec();
@@ -1396,6 +1407,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            ty.inferred_type.fix();
             ty.inferred_type.freeze();
 
             map.insert(k, ty.inferred_type);

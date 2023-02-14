@@ -18,7 +18,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Constructor, Function, Id, IdCtx,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
     IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
     StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
 };
@@ -491,7 +491,7 @@ impl Analyzer<'_, '_> {
 
             callee_ty.freeze();
 
-            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty)?;
+            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty, type_ann)?;
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.freeze();
 
@@ -2418,45 +2418,9 @@ impl Analyzer<'_, '_> {
         }
 
         let (c, _) = callable.into_iter().next().unwrap();
-        let mut is_type_ann_chosen_from_overload = false;
 
-        let type_ann = match type_ann {
-            Some(v) => Some(Cow::Borrowed(v)),
-            None => match expr {
-                ReEvalMode::NoReEval => None,
-                _ => Some({
-                    is_type_ann_chosen_from_overload = true;
-                    match kind {
-                        ExtractKind::New => Cow::Owned(Type::Constructor(Constructor {
-                            span,
-                            type_params: c.type_params.clone(),
-                            params: c.params.clone(),
-                            type_ann: c.ret_ty.clone(),
-                            is_abstract: false,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })),
-                        ExtractKind::Call => Cow::Owned(Type::Function(Function {
-                            span,
-                            type_params: c.type_params.clone(),
-                            params: c.params.clone(),
-                            ret_ty: c.ret_ty.clone(),
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })),
-                    }
-                }),
-            },
-        };
-
-        let ctx = Ctx {
-            is_type_ann_for_call_reeval_chosen_from_overload: self.ctx.is_type_ann_for_call_reeval_chosen_from_overload
-                || is_type_ann_chosen_from_overload,
-            ..self.ctx
-        };
         if candidates.len() == 1 {
             return self
-                .with_ctx(ctx)
                 .get_return_type(
                     span,
                     kind,
@@ -2468,26 +2432,25 @@ impl Analyzer<'_, '_> {
                     args,
                     arg_types,
                     spread_arg_types,
-                    type_ann.as_deref(),
+                    type_ann,
                 )
                 .map(Some);
         }
 
-        self.with_ctx(ctx)
-            .get_return_type(
-                span,
-                kind,
-                expr,
-                c.type_params.as_ref().map(|v| &*v.params),
-                &c.params,
-                *c.ret_ty.clone(),
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-                type_ann.as_deref(),
-            )
-            .map(Some)
+        self.get_return_type(
+            span,
+            kind,
+            expr,
+            c.type_params.as_ref().map(|v| &*v.params),
+            &c.params,
+            *c.ret_ty.clone(),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )
+        .map(Some)
     }
 
     /// Returns the return type of function. This method should be called only
@@ -2509,6 +2472,8 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("get_return_type");
 
         let span = span.with_ctxt(SyntaxContext::empty());
+        ret_ty.freeze();
+        let type_ann = self.expand_type_ann(span, type_ann)?.freezed();
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
         let params = params
@@ -2568,33 +2533,6 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
-            let inferred_from_return_type = if self.ctx.reevaluating_call_or_new {
-                None
-            } else {
-                match type_ann {
-                    Some(type_ann) => self
-                        .infer_type_with_types(span, type_params, &ret_ty, type_ann, Default::default())
-                        .map(Some)?,
-                    None => None,
-                }
-            };
-
-            let mut expanded_params;
-            let params = if let Some(map) = &inferred_from_return_type {
-                expanded_params = params
-                    .into_iter()
-                    .map(|v| -> VResult<_> {
-                        let ty = box self.expand_type_params(map, *v.ty, Default::default())?;
-
-                        Ok(FnParam { ty, ..v })
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-                expanded_params.freeze();
-                expanded_params
-            } else {
-                params
-            };
-
             // Assert deep clone
             if cfg!(debug_assertions) {
                 let _ = type_args.cloned();
@@ -2612,6 +2550,7 @@ impl Analyzer<'_, '_> {
                 spread_arg_types,
                 None,
                 Some(&ret_ty),
+                type_ann.as_deref(),
                 InferTypeOpts {
                     is_type_ann: type_ann.is_some(),
                     ..Default::default()
@@ -2732,7 +2671,7 @@ impl Analyzer<'_, '_> {
                 new_args.push(new_arg);
             }
 
-            if !self.ctx.reevaluating_call_or_new {
+            if !self.ctx.reevaluating_call_or_new && type_ann.is_none() {
                 debug!("Reevaluating a call");
                 let ctx = Ctx {
                     reevaluating_call_or_new: true,
@@ -2740,10 +2679,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReEvalMode::Call(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
                     }
                     ReEvalMode::New(e) => {
-                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann.as_deref());
                     }
                     _ => {}
                 }
@@ -3536,7 +3475,14 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn apply_type_ann_from_callee(&mut self, span: Span, kind: ExtractKind, args: &[RExprOrSpread], callee: &Type) -> VResult<()> {
+    fn apply_type_ann_from_callee(
+        &mut self,
+        span: Span,
+        kind: ExtractKind,
+        args: &[RExprOrSpread],
+        callee: &Type,
+        type_ann_for_return_type: Option<&Type>,
+    ) -> VResult<()> {
         let c = self.extract_callee_candidates(span, kind, callee)?;
 
         if c.len() != 1 {
@@ -3545,12 +3491,28 @@ impl Analyzer<'_, '_> {
 
         let c = c.into_iter().next().unwrap();
 
-        // TODO: Move this logic to get_return_type
-        if c.type_params.is_some() {
-            return Ok(());
-        }
+        let params = match (&c.type_params, type_ann_for_return_type) {
+            (Some(type_params), Some(type_ann)) => {
+                let type_params = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann, Default::default())?;
+                let params = c.params.clone().freezed();
 
-        for (arg, param) in args.iter().zip(c.params.iter()) {
+                let mut params = self.expand_type_params(&type_params, params, Default::default())?;
+
+                for param in &mut params {
+                    self.add_required_type_params(&mut param.ty);
+                }
+
+                Cow::Owned(params)
+            }
+
+            (Some(..), None) => {
+                return Ok(());
+            }
+
+            _ => Cow::Borrowed(&c.params),
+        };
+
+        for (arg, param) in args.iter().zip(params.iter()) {
             // TODO(kdy1):  Handle rest
             if arg.spread.is_some() || matches!(param.pat, RPat::Rest(..)) {
                 break;
@@ -3566,10 +3528,15 @@ impl Analyzer<'_, '_> {
         match arg {
             RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {
-                self.apply_fn_type_ann(arg.span(), arg.function.params.iter().map(|v| &v.pat), Some(type_ann));
+                self.apply_fn_type_ann(
+                    arg.span(),
+                    arg.function.node_id,
+                    arg.function.params.iter().map(|v| &v.pat),
+                    Some(type_ann),
+                );
             }
             RExpr::Arrow(arg) => {
-                self.apply_fn_type_ann(arg.span(), arg.params.iter(), Some(type_ann));
+                self.apply_fn_type_ann(arg.span(), arg.node_id, arg.params.iter(), Some(type_ann));
             }
             _ => {}
         }

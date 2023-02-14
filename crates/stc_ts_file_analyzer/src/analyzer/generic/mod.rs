@@ -100,6 +100,7 @@ impl Analyzer<'_, '_> {
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
         ret_ty: Option<&Type>,
+        ret_ty_type_ann: Option<&Type>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
@@ -123,7 +124,7 @@ impl Analyzer<'_, '_> {
                         type_param: type_param.name.clone(),
                         candidates: Default::default(),
                         contra_candidates: Default::default(),
-                        inferred_type: param.clone(),
+                        inferred_type: param.clone().freezed(),
                         priority: Default::default(),
                         top_level: Default::default(),
                         is_fixed: true,
@@ -226,6 +227,23 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+            }
+        }
+
+        if let Some(ret_ty) = ret_ty {
+            if let Some(ret_type_ann) = ret_ty_type_ann {
+                let _tracing = dev_span!("infer_arg_types: return type annotation");
+
+                self.infer_type(
+                    span,
+                    &mut inferred,
+                    ret_type_ann,
+                    ret_ty,
+                    InferTypeOpts {
+                        priority: InferencePriority::ReturnType,
+                        ..Default::default()
+                    },
+                )?;
             }
         }
 
