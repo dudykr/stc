@@ -828,7 +828,7 @@ impl Analyzer<'_, '_> {
             //
             //             inferred
             //                 .type_elements
-            //                 .insert(name, Type::union(vec![prev_ty, box arg.clone()]))
+            //                 .insert(name, Type::new_union(span, vec![prev_ty, box arg.clone()]))
             //                 .expect_none("Cannot override");
             //         }
             //         Entry::Vacant(e) => {
@@ -1878,7 +1878,7 @@ impl Analyzer<'_, '_> {
                             }, // TODO(kdy1): Handle method element
                             _ => None,
                         });
-                        let mut key_ty = Type::union(key_ty);
+                        let mut key_ty = Type::new_union(span, key_ty);
                         prevent_generalize(&mut key_ty);
                         self.insert_inferred(span, inferred, type_param, Cow::Owned(key_ty), opts)?;
                     }

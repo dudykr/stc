@@ -1985,7 +1985,7 @@ impl Analyzer<'_, '_> {
             //         .collect::<Result<Vec<_>, _>>()?;
 
             //     types.dedup_type();
-            //     return Ok(Type::union(types));
+            //     return Ok(Type::new_union(span, types));
             // }
             Type::Union(ref u) => {
                 let candidates = u

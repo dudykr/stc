@@ -2705,7 +2705,7 @@ impl Analyzer<'_, '_> {
                 types.dedup_type();
                 let obj = Type::Array(Array {
                     span,
-                    elem_type: box Type::union(types),
+                    elem_type: box Type::new_union(span, types),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
@@ -3022,7 +3022,7 @@ impl Analyzer<'_, '_> {
                                     let mut types = vec![undefined, ty];
                                     types.dedup_type();
 
-                                    Type::union(types)
+                                    Type::new_union(span, types)
                                 }
                                 Some(TruePlusMinus::Minus) => self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty),
                                 _ => ty,
@@ -4066,15 +4066,18 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to resolve type from an optional ts entity name")?;
 
-                Ok(Type::union(vec![
-                    ty,
-                    Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                ])
+                Ok(Type::new_union(
+                    span,
+                    vec![
+                        ty,
+                        Type::Keyword(KeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                    ],
+                )
                 .freezed())
             }
 

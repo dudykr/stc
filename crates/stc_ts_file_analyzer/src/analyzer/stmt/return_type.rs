@@ -202,13 +202,13 @@ impl Analyzer<'_, '_> {
                         },
                     )
                 } else {
-                    Type::union(types)
+                    Type::new_union(span, types)
                 };
 
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::union(actual))
+                    self.simplify(Type::new_union(span, actual))
                 };
 
                 let mut metadata = yield_ty.metadata();
@@ -252,7 +252,7 @@ impl Analyzer<'_, '_> {
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::union(actual))
+                    self.simplify(Type::new_union(span, actual))
                 };
 
                 return Ok(Some(Type::Ref(Ref {
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                 return Ok(actual.pop());
             }
 
-            let ty = Type::union(actual);
+            let ty = Type::new_union(span, actual);
             let ty = self.simplify(ty);
 
             // print_type("Return",  &ty);
@@ -698,7 +698,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                             }
                         }
                     }
-                    let ty = Type::union(types);
+                    let ty = Type::new_union(span, types);
 
                     return ty;
                 }
