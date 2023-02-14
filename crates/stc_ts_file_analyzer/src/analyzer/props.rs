@@ -435,7 +435,12 @@ impl Analyzer<'_, '_> {
                         child.ctx.in_async = p.function.is_async;
                         child.ctx.in_generator = p.function.is_generator;
 
-                        child.apply_fn_type_ann(p.function.span, p.function.params.iter().map(|v| &v.pat), method_type_ann.as_ref());
+                        child.apply_fn_type_ann(
+                            p.function.span,
+                            p.function.node_id,
+                            p.function.params.iter().map(|v| &v.pat),
+                            method_type_ann.as_ref(),
+                        );
 
                         // We mark as wip
                         if !computed {

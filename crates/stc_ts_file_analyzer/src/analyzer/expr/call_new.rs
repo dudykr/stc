@@ -3496,7 +3496,11 @@ impl Analyzer<'_, '_> {
                 let type_params = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann, Default::default())?;
                 let params = c.params.clone().freezed();
 
-                let params = self.expand_type_params(&type_params, params, Default::default())?;
+                let mut params = self.expand_type_params(&type_params, params, Default::default())?;
+
+                for param in &mut params {
+                    self.add_required_type_params(&mut param.ty);
+                }
 
                 Cow::Owned(params)
             }
@@ -3524,10 +3528,15 @@ impl Analyzer<'_, '_> {
         match arg {
             RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {
-                self.apply_fn_type_ann(arg.span(), arg.function.params.iter().map(|v| &v.pat), Some(type_ann));
+                self.apply_fn_type_ann(
+                    arg.span(),
+                    arg.function.node_id,
+                    arg.function.params.iter().map(|v| &v.pat),
+                    Some(type_ann),
+                );
             }
             RExpr::Arrow(arg) => {
-                self.apply_fn_type_ann(arg.span(), arg.params.iter(), Some(type_ann));
+                self.apply_fn_type_ann(arg.span(), arg.node_id, arg.params.iter(), Some(type_ann));
             }
             _ => {}
         }

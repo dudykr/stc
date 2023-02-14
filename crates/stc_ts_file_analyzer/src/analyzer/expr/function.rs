@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use rnode::NodeId;
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::{
@@ -41,13 +42,14 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
 
-                child.apply_fn_type_ann(f.span, f.params.iter(), type_ann.as_deref());
+                child.apply_fn_type_ann(f.span, f.node_id, f.params.iter(), type_ann.as_deref());
 
                 for p in &f.params {
                     child.default_any_pat(p);
                 }
                 f.params.validate_with(&mut *child.with_ctx(ctx))?
             };
+
             let declared_ret_ty = match f.return_type.validate_with(child) {
                 Some(Ok(ty)) => Some(ty),
                 Some(Err(err)) => {
@@ -142,7 +144,15 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn apply_fn_type_ann<'a>(&mut self, span: Span, params: impl Iterator<Item = &'a RPat> + Clone, type_ann: Option<&Type>) {
+    /// `fn_node_id` should be [NodeId] of [stc_ts_ast_rnode::RFunction] or
+    /// [stc_ts_ast_rnode::RArrowExpr]
+    pub(crate) fn apply_fn_type_ann<'a>(
+        &mut self,
+        span: Span,
+        fn_node_id: NodeId,
+        params: impl Iterator<Item = &'a RPat> + Clone,
+        type_ann: Option<&Type>,
+    ) {
         if let Some(ty) = &type_ann {
             // See functionExpressionContextualTyping1.ts
             //
@@ -155,6 +165,11 @@ impl Analyzer<'_, '_> {
             };
             if candidates.len() != 1 {
                 return;
+            }
+
+            // We handle type parameters using mutations
+            if let Some(mutations) = &mut self.mutations {
+                mutations.for_callable.entry(fn_node_id).or_default().type_params = candidates[0].type_params.clone();
             }
 
             // Handle rest in `ty.params`.

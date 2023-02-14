@@ -601,7 +601,12 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             ) {
-                self.apply_fn_type_ann(c.span, c.function.params.iter().map(|v| &v.pat), Some(&type_ann));
+                self.apply_fn_type_ann(
+                    c.span,
+                    c.function.node_id,
+                    c.function.params.iter().map(|v| &v.pat),
+                    Some(&type_ann),
+                );
             }
         }
 
