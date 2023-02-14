@@ -1367,7 +1367,7 @@ impl Analyzer<'_, '_> {
                 if new_obj_types.is_empty() {
                     return Ok(None);
                 }
-                let mut ty = Type::union(new_obj_types);
+                let mut ty = Type::new_union(span, new_obj_types);
                 ty.fix();
 
                 return Ok(Some((Name::from(top.clone()), ty)));

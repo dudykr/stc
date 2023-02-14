@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ty) = data.exports.types.get(orig.sym()) {
                         did_work = true;
-                        let ty = Type::union(ty.clone());
+                        let ty = Type::new_union(span, ty.clone());
                         self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
                     }
                 }

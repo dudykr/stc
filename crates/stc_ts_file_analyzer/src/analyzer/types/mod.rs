@@ -1093,13 +1093,16 @@ impl Analyzer<'_, '_> {
                                         return Ok(Some(elem.clone().freezed()));
                                     }
 
-                                    let mut ty = Type::union(if is_str {
-                                        str_lits
-                                    } else if is_num {
-                                        num_lits
-                                    } else {
-                                        return never!();
-                                    });
+                                    let mut ty = Type::new_union(
+                                        span,
+                                        if is_str {
+                                            str_lits
+                                        } else if is_num {
+                                            num_lits
+                                        } else {
+                                            return never!();
+                                        },
+                                    );
 
                                     ty.reposition(e.span);
                                     return Ok(Some(ty).freezed());

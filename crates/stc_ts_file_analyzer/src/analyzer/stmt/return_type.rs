@@ -756,7 +756,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         span,
                         readonly,
                         obj_type: obj_type.clone(),
-                        index_type: box Type::union(types),
+                        index_type: box Type::new_union(span, types),
                         metadata,
                         tracker: Default::default(),
                     });

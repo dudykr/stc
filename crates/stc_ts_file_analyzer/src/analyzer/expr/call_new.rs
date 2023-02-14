@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Ok(Type::union(types));
+                    return Ok(Type::new_union(span, types));
                 }
 
                 Type::Interface(ref i) => {
@@ -3727,7 +3727,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                 unreachable!()
                             }
 
-                            *ty = Type::union(types);
+                            *ty = Type::new_union(*span, types);
                             return;
                         }
                     }
