@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
                         type_param: type_param.name.clone(),
                         candidates: Default::default(),
                         contra_candidates: Default::default(),
-                        inferred_type: param.clone(),
+                        inferred_type: param.clone().freezed(),
                         priority: Default::default(),
                         top_level: Default::default(),
                         is_fixed: true,
