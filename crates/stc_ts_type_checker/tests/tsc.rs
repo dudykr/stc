@@ -28,14 +28,15 @@ use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
 use stc_ts_type_checker::{
-    loader::{DefaultFileLoader, ModuleLoader},
+    loader::{DefaultFileLoader, LoadFile, ModuleLoader},
     Checker,
 };
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
-    FileName, SourceMap, Span,
+    FileName, SourceFile, SourceMap, Span,
 };
+use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
@@ -294,12 +295,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         },
     };
 
-    {
-        let src = fs::read_to_string(file_name).unwrap();
-        // Postpone multi-file tests.
-        if src.contains("<reference path") {
-            panic!("`<reference path` is not supported yet");
-        }
+    let main_src = Arc::new(fs::read_to_string(file_name).unwrap());
+    // Postpone multi-file tests.
+    if main_src.contains("<reference path") {
+        panic!("`<reference path` is not supported yet");
     }
 
     let mut stats = Stats::default();
@@ -326,7 +325,15 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
+                ModuleLoader::new(
+                    cm,
+                    env,
+                    TestResolver,
+                    TestFileLoader {
+                        main_src,
+                        files: spec.sub_files.clone(),
+                    },
+                ),
             );
 
             // Install a logger
@@ -494,3 +501,16 @@ impl Fold for Spanner {
         self.span
     }
 }
+
+struct TestResolver;
+
+impl Resolve for TestResolver {
+    fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, anyhow::Error> {}
+}
+
+struct TestFileLoader {
+    main_src: Arc<String>,
+    files: Arc<Vec<(String, String)>>,
+}
+
+impl LoadFile for TestFileLoader {}
