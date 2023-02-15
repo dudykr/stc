@@ -9,6 +9,7 @@ version = "0.1.0"
 [lib]
 
 [features]
+no-threading = ["stc_ts_file_analyzer/no-threading"]
 perf = ["tracing/release_max_level_off"]
 
 [dependencies]

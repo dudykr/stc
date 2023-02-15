@@ -116,18 +116,33 @@ where
 
         let (_declared_modules, references, deps) = find_modules_and_deps(&comments, &entry.ast);
 
-        let deps = GLOBALS.with(|globals| {
-            (references.par_iter().map(|v| (v, false)))
-                .chain(deps.par_iter().map(|v| (v, true)))
-                .map(|(dep, is_normal_dep)| {
-                    GLOBALS.set(globals, || {
-                        let dep_path = Arc::new(self.resolver.resolve(filename, dep)?);
+        let deps = if cfg!(feature = "no-threading") {
+            GLOBALS.with(|globals| {
+                (references.iter().map(|v| (v, false)))
+                    .chain(deps.iter().map(|v| (v, true)))
+                    .map(|(dep, is_normal_dep)| {
+                        GLOBALS.set(globals, || {
+                            let dep_path = Arc::new(self.resolver.resolve(filename, dep)?);
 
-                        self.load_recursively(&dep_path, false).map(|v| (v, is_normal_dep))
+                            self.load_recursively(&dep_path, false).map(|v| (v, is_normal_dep))
+                        })
                     })
-                })
-                .collect::<Vec<_>>()
-        });
+                    .collect::<Vec<_>>()
+            })
+        } else {
+            GLOBALS.with(|globals| {
+                (references.par_iter().map(|v| (v, false)))
+                    .chain(deps.par_iter().map(|v| (v, true)))
+                    .map(|(dep, is_normal_dep)| {
+                        GLOBALS.set(globals, || {
+                            let dep_path = Arc::new(self.resolver.resolve(filename, dep)?);
+
+                            self.load_recursively(&dep_path, false).map(|v| (v, is_normal_dep))
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+        };
 
         {
             // Add to the dependency graph
