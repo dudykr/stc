@@ -336,7 +336,13 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             // Install a logger
             let _guard = testing::init();
 
-            checker.check(Arc::new(FileName::Real(file_name.into())));
+            if spec.sub_files.is_empty() {
+                checker.check(Arc::new(FileName::Real(file_name.into())));
+            } else {
+                for (file_name, ..) in spec.sub_files.iter() {
+                    checker.check(Arc::new(FileName::Real(file_name.into())));
+                }
+            }
 
             let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
