@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, SourceMap, Span, SyntaxContext, GLOBALS};
+use swc_common::{FileName, SourceFile, SourceMap, Span, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -55,14 +55,21 @@ pub trait LoadModule: 'static + Send + Sync {
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records>;
 }
 
+/// **NOTE**: [FileName::Custom] is not passed to this type.
+pub trait LoadFile: 'static + Send + Sync {
+    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax)>;
+}
+
 /// A simple implementation of [LoadModule].
-pub struct ModuleLoader<R>
+pub struct ModuleLoader<L, R>
 where
+    L: LoadFile,
     R: 'static + Sync + Send + Resolve,
 {
     cm: Arc<SourceMap>,
     env: Env,
     resolver: R,
+    loader: L,
 
     /// TODO(kdu1): Split the
     comments: StcComments,
@@ -75,15 +82,17 @@ where
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
 }
 
-impl<R> ModuleLoader<R>
+impl<L, R> ModuleLoader<L, R>
 where
+    L: LoadFile,
     R: Resolve,
 {
-    pub fn new(cm: Arc<SourceMap>, env: Env, resolver: R) -> Self {
+    pub fn new(cm: Arc<SourceMap>, env: Env, resolver: R, loader: L) -> Self {
         Self {
             cm,
             env,
             resolver,
+            loader,
 
             comments: Default::default(),
             loading_started: Default::default(),
@@ -170,21 +179,6 @@ where
         let comments = self.comments.clone();
 
         let (fm, syntax) = match &**filename {
-            FileName::Real(path) => {
-                let fm = self
-                    .cm
-                    .load_file(path)
-                    .with_context(|| format!("failed to load module `{}`", path.display()))?;
-
-                let syntax = TsConfig {
-                    dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
-                    tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
-                    ..Default::default()
-                };
-
-                (fm, syntax)
-            }
-
             FileName::Custom(..) => {
                 let fm = self.cm.new_source_file((**filename).clone(), String::new());
 
@@ -206,17 +200,13 @@ where
                 ));
             }
 
-            _ => {
-                bail!("failed to load module `{}`", filename);
-            }
+            _ => self
+                .loader
+                .load_file(&self.cm, filename)
+                .with_context(|| format!("failed to load module `{}`", filename))?,
         };
 
-        let lexer = Lexer::new(
-            Syntax::Typescript(syntax),
-            EsVersion::latest(),
-            StringInput::from(&*fm),
-            Some(&comments),
-        );
+        let lexer = Lexer::new(syntax, EsVersion::latest(), StringInput::from(&*fm), Some(&comments));
 
         let mut parser = Parser::new_from(lexer);
         let result = parser.parse_module();
@@ -248,7 +238,7 @@ where
         Ok((
             Arc::new(ModuleRecord {
                 id,
-                is_dts: syntax.dts,
+                is_dts: syntax.dts(),
                 filename: filename.clone(),
                 top_level_ctxt,
                 ast,
@@ -258,8 +248,9 @@ where
     }
 }
 
-impl<R> LoadModule for ModuleLoader<R>
+impl<L, R> LoadModule for ModuleLoader<L, R>
 where
+    L: LoadFile,
     R: 'static + Sync + Send + Resolve,
 {
     fn load_module(&self, filename: &Arc<FileName>, is_entry: bool) -> Result<Records> {
@@ -305,5 +296,30 @@ where
             .with_context(|| format!("failed to resolve `{}` from `{}`", module_specifier, base))?;
 
         self.load_module(&Arc::new(filename), false)
+    }
+}
+
+pub struct DefaultFileLoader;
+
+impl LoadFile for DefaultFileLoader {
+    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax)> {
+        match &**filename {
+            FileName::Real(path) => {
+                let fm = cm
+                    .load_file(path)
+                    .with_context(|| format!("failed to load module `{}`", path.display()))?;
+
+                let syntax = TsConfig {
+                    dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
+                    tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
+                    ..Default::default()
+                };
+
+                Ok((fm, Syntax::Typescript(syntax)))
+            }
+            _ => {
+                bail!("DefaultFileLoader only supports real files")
+            }
+        }
     }
 }

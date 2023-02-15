@@ -9,7 +9,10 @@ use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_lang_server::LspCommand;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::{loader::ModuleLoader, Checker};
+use stc_ts_type_checker::{
+    loader::{DefaultFileLoader, ModuleLoader},
+    Checker,
+};
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
     FileName, SourceMap,
@@ -91,7 +94,7 @@ async fn main() -> Result<(), Error> {
                     handler.clone(),
                     env.clone(),
                     None,
-                    ModuleLoader::new(cm.clone(), env.clone(), NodeResolver),
+                    ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
                 );
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
@@ -110,7 +113,7 @@ async fn main() -> Result<(), Error> {
                     handler.clone(),
                     env.clone(),
                     None,
-                    ModuleLoader::new(cm, env, NodeResolver),
+                    ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
                 );
 
                 checker.check(Arc::new(FileName::Real(path)));

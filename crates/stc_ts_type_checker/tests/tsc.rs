@@ -17,7 +17,6 @@ use std::{
     panic::{catch_unwind, resume_unwind},
     path::{Path, PathBuf},
     sync::Arc,
-    time::{Duration, Instant},
 };
 
 use anyhow::Context;
@@ -28,7 +27,10 @@ use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
-use stc_ts_type_checker::{loader::ModuleLoader, Checker};
+use stc_ts_type_checker::{
+    loader::{DefaultFileLoader, ModuleLoader},
+    Checker,
+};
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
@@ -82,55 +84,6 @@ fn is_all_test_enabled() -> bool {
 
 fn print_matched_errors() -> bool {
     !env::var("DO_NOT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
-}
-
-fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
-    static TOTAL_CHECK: Lazy<Mutex<Duration>> = Lazy::new(Default::default);
-    static TOTAL_FULL: Lazy<Mutex<Duration>> = Lazy::new(Default::default);
-    static LINES: Lazy<Mutex<usize>> = Lazy::new(Default::default);
-
-    if cfg!(debug_assertions) {
-        return;
-    }
-
-    let time_of_check = {
-        let mut guard = TOTAL_CHECK.lock();
-        *guard += time_of_check;
-        *guard
-    };
-    let full_time = {
-        let mut guard = TOTAL_FULL.lock();
-        *guard += full_time;
-        *guard
-    };
-
-    let line_count = {
-        let mut guard = LINES.lock();
-        *guard += line_count;
-        *guard
-    };
-
-    let content = format!(
-        "{:#?}",
-        Timings {
-            lines: line_count,
-            check_time: time_of_check,
-            full_time
-        }
-    );
-
-    #[allow(dead_code)]
-    #[derive(Debug)]
-    struct Timings {
-        lines: usize,
-        check_time: Duration,
-        full_time: Duration,
-    }
-
-    // If we are testing everything, update stats file.
-    if is_all_test_enabled() {
-        fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
-    }
 }
 
 /// Add stats and return total stats.
@@ -352,8 +305,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             panic!("`<reference path` is not supported yet");
         }
     }
-    let mut time_of_check = Duration::new(0, 0);
-    let mut full_time = Duration::new(0, 0);
 
     let mut stats = Stats::default();
     dbg!(&libs);
@@ -379,29 +330,19 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(cm, env, NodeResolver),
+                ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
             );
 
             // Install a logger
             let _guard = testing::init();
 
-            let start = Instant::now();
-
             checker.check(Arc::new(FileName::Real(file_name.into())));
-
-            let end = Instant::now();
-
-            time_of_check = end - start;
 
             let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
             for e in errors {
                 e.emit(&handler);
             }
-
-            let end = Instant::now();
-
-            full_time = end - start;
 
             if false {
                 return Ok(());
@@ -412,19 +353,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         .expect_err("");
 
     mem::forget(stat_guard);
-
-    if !cfg!(debug_assertions) {
-        let line_cnt = {
-            let content = fs::read_to_string(file_name).unwrap();
-
-            content.lines().count()
-        };
-        record_time(line_cnt, time_of_check, full_time);
-
-        // if time > Duration::new(0, 500_000_000) {
-        //     let _ = fs::write(file_name.with_extension("timings.txt"),
-        // format!("{:?}", time)); }
-    }
 
     let mut extra_errors = diagnostics
         .iter()
