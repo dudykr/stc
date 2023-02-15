@@ -55,6 +55,7 @@ pub trait LoadModule: 'static + Send + Sync {
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records>;
 }
 
+/// **NOTE**: [FileName::Custom] is not passed to this type.
 pub trait LoadFile: 'static + Send + Sync {
     fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax)>;
 }
@@ -178,21 +179,6 @@ where
         let comments = self.comments.clone();
 
         let (fm, syntax) = match &**filename {
-            FileName::Real(path) => {
-                let fm = self
-                    .cm
-                    .load_file(path)
-                    .with_context(|| format!("failed to load module `{}`", path.display()))?;
-
-                let syntax = TsConfig {
-                    dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
-                    tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
-                    ..Default::default()
-                };
-
-                (fm, syntax)
-            }
-
             FileName::Custom(..) => {
                 let fm = self.cm.new_source_file((**filename).clone(), String::new());
 
@@ -214,17 +200,13 @@ where
                 ));
             }
 
-            _ => {
-                bail!("failed to load module `{}`", filename);
-            }
+            _ => self
+                .loader
+                .load_file(&self.cm, filename)
+                .with_context(|| format!("failed to load module `{}`", filename))?,
         };
 
-        let lexer = Lexer::new(
-            Syntax::Typescript(syntax),
-            EsVersion::latest(),
-            StringInput::from(&*fm),
-            Some(&comments),
-        );
+        let lexer = Lexer::new(syntax, EsVersion::latest(), StringInput::from(&*fm), Some(&comments));
 
         let mut parser = Parser::new_from(lexer);
         let result = parser.parse_module();
@@ -256,7 +238,7 @@ where
         Ok((
             Arc::new(ModuleRecord {
                 id,
-                is_dts: syntax.dts,
+                is_dts: syntax.dts(),
                 filename: filename.clone(),
                 top_level_ctxt,
                 ast,
@@ -314,5 +296,30 @@ where
             .with_context(|| format!("failed to resolve `{}` from `{}`", module_specifier, base))?;
 
         self.load_module(&Arc::new(filename), false)
+    }
+}
+
+pub struct DefaultFileLoader;
+
+impl LoadFile for DefaultFileLoader {
+    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax)> {
+        match &**filename {
+            FileName::Real(path) => {
+                let fm = cm
+                    .load_file(path)
+                    .with_context(|| format!("failed to load module `{}`", path.display()))?;
+
+                let syntax = TsConfig {
+                    dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
+                    tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
+                    ..Default::default()
+                };
+
+                Ok((fm, Syntax::Typescript(syntax)))
+            }
+            _ => {
+                bail!("DefaultFileLoader only supports real files")
+            }
+        }
     }
 }
