@@ -503,29 +503,3 @@ impl Fold for Spanner {
         self.span
     }
 }
-
-#[derive(Clone)]
-struct TestFileSystem {
-    main_src: Arc<String>,
-    files: Arc<Vec<(String, String)>>,
-}
-
-impl Resolve for TestFileSystem {
-    fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, Error> {
-        println!("resolve: {:?} {:?}", base, module_specifier);
-
-        todo!()
-    }
-}
-
-impl LoadFile for TestFileSystem {
-    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
-        println!("load_file: {:?} ", filename);
-
-        if let FileName::Real(..) = &**filename {
-            return DefaultFileLoader.load_file(cm, filename);
-        }
-
-        todo!()
-    }
-}
