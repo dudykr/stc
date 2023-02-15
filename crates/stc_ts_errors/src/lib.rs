@@ -776,6 +776,10 @@ pub enum ErrorKind {
         id: Id,
     },
 
+    ImportFailedWithoutId {
+        span: Span,
+    },
+
     ExportFailed {
         span: Span,
         orig: Id,
