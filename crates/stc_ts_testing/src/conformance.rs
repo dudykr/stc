@@ -229,7 +229,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule.always_strict = strict;
                     rule.strict_null_checks = strict;
                     rule.strict_function_types = strict;
-                } else if s.starts_with("filename") {
+                } else if s.to_ascii_lowercase().starts_with("filename") {
                 } else if s.to_ascii_lowercase().starts_with("allowjs") || s.to_ascii_lowercase().starts_with("checkjs") {
                     panic!("allowJs and checkJs are not supported yet. See https://github.com/dudykr/stc/issues/702")
                 } else {
