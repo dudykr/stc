@@ -513,7 +513,11 @@ impl Resolve for TestFileSystem {
     fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, Error> {
         println!("resolve: {:?} {:?}", base, module_specifier);
 
-        todo!()
+        if let Some(name) = module_specifier.strip_prefix("./") {
+            return Ok(FileName::Real(name.into()));
+        }
+
+        todo!("resolve: {:?} {:?}", base, module_specifier);
     }
 }
 
