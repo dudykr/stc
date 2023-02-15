@@ -332,14 +332,26 @@ where
     fn visit(&mut self, expr: &RCallExpr) {
         let span = expr.span();
 
-        match expr.callee {
-            RCallee::Expr(box RExpr::Ident(ref i)) if i.sym == js_word!("require") => {
+        match &expr.callee {
+            RCallee::Expr(box RExpr::Ident(i)) if i.sym == js_word!("require") => {
                 let src = expr
                     .args
                     .iter()
                     .map(|v| match *v.expr {
                         RExpr::Lit(RLit::Str(RStr { ref value, .. })) => value.clone(),
                         _ => unimplemented!("error reporting for dynamic require"),
+                    })
+                    .next()
+                    .unwrap();
+                self.to.push((self.cur_ctxt, DepInfo { span, src }));
+            }
+            RCallee::Import(import) => {
+                let src = expr
+                    .args
+                    .iter()
+                    .map(|v| match *v.expr {
+                        RExpr::Lit(RLit::Str(RStr { ref value, .. })) => value.clone(),
+                        _ => unimplemented!("error reporting for dynamic import"),
                     })
                     .next()
                     .unwrap();
