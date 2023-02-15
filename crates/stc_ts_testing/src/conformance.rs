@@ -2,7 +2,11 @@
 #![allow(clippy::if_same_then_else)]
 #![allow(clippy::manual_strip)]
 
-use std::{mem::take, path::Path};
+use std::{
+    io::{stderr, Write},
+    mem::take,
+    path::Path,
+};
 
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -59,6 +63,7 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
     files
 }
 
+#[allow(clippy::explicit_write)]
 pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
@@ -223,8 +228,9 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule.always_strict = strict;
                     rule.strict_null_checks = strict;
                     rule.strict_function_types = strict;
+                } else if s.starts_with("filename") {
                 } else {
-                    panic!("Comment is not handled: {}", s);
+                    writeln!(stderr(), "Comment is not handled: {}", s).unwrap();
                 }
             }
         }
