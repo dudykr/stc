@@ -110,21 +110,34 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::any(span, Default::default()));
             }
             RCallee::Expr(callee) => callee,
-            RCallee::Import(..) => {
+            RCallee::Import(callee) => {
                 let base = self.storage.path(self.ctx.module_id);
 
-                let src = args.iter().next().and_then(|arg| match arg {
-                    RExprOrSpread { spread: None, expr } => match &**expr {
-                        RExpr::Lit(RLit::Str(RStr { span, value, .. })) => Some(value.clone()),
-                        _ => None,
-                    },
-                    _ => None,
-                });
-                let dep_id = src.and_then(|src| self.loader.module_id(&base, &src));
+                let src = args.iter().next();
+                let src = match src {
+                    Some(src) => src.expr.validate_with_default(self)?,
+                    None => {
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: "validation of dynamic import without an arg".to_string(),
+                        }
+                        .into())
+                    }
+                };
+
+                let src = match src.normalize() {
+                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
+                    ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
+                    _ => return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into()),
+                };
+
+                let dep_id = self.loader.module_id(&base, &src);
 
                 if let Some(dep_id) = dep_id {
                     if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
                         return Ok(dep.clone());
+                    } else {
+                        return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
                     }
                 }
 
