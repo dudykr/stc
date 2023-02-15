@@ -298,6 +298,9 @@ struct AnalyzerData {
     cache: TypeCache,
 
     checked_for_async_iterator: bool,
+
+    /// Used to check mixed default exports.
+    merged_default_exports: AHashSet<Id>,
 }
 
 /// Configuration for the analyzer.

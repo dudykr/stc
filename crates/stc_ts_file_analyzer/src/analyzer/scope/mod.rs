@@ -791,7 +791,24 @@ impl Analyzer<'_, '_> {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
         }
 
-        let should_check_for_mixed = !self.config.is_builtin && !matches!(ty.normalize(), Type::Param(..));
+        let should_check_for_mixed_default_exports = ty.is_module();
+        if should_check_for_mixed_default_exports {
+            if let Some(default_exports) = self.data.for_module.exports_spans.get(&(js_word!("default"), IdCtx::Var)) {
+                for default_export in default_exports {
+                    if let Some((id, _)) = self.data.fn_impl_spans.iter().find(|(id, span)| span.contains(default_export)) {
+                        if &name == id {
+                            self.storage.report(ErrorKind::MixedDefaultExports { span: ty.span() }.into());
+                            if !self.data.merged_default_exports.contains(id) {
+                                self.storage.report(ErrorKind::MixedDefaultExports { span: *default_export }.into());
+                                self.data.merged_default_exports.insert(id.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let should_check_for_mixed = !self.config.is_builtin && !matches!(ty.normalize(), Type::Param(..) | Type::Module(..));
         if should_check_for_mixed {
             // Report an error for
             //
