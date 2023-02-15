@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
                 let src = match src {
                     Some(src) => src,
                     None => {
-                        return Err(ErrorKind::ImportFailedWithoutId { span: callee.span }.into());
+                        return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into());
                     }
                 };
 
@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
                     if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
                         return Ok(dep.clone());
                     } else {
-                        return Err(ErrorKind::ImportFailedWithoutId { span: callee.span }.into());
+                        return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
                     }
                 }
 
