@@ -8,5 +8,6 @@ function foo<T>(a: (x: T) => T, b: (x: T) => T) {
 
 //var r1 = foo((x: number) => 1, (x: string) => ''); // error
 var r2 = foo((x: Object) => null, (x: string) => ''); // string => string
+var r2: (_: string) => string
 
 export { }
