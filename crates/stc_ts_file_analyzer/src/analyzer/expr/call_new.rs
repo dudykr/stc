@@ -113,19 +113,21 @@ impl Analyzer<'_, '_> {
             RCallee::Import(callee) => {
                 let base = self.storage.path(self.ctx.module_id);
 
-                let src = args.iter().next().and_then(|arg| match arg {
-                    RExprOrSpread { spread: None, expr } => match &**expr {
-                        RExpr::Lit(RLit::Str(RStr { span, value, .. })) => Some(value.clone()),
-                        _ => None,
-                    },
-                    _ => None,
-                });
-
+                let src = args.iter().next();
                 let src = match src {
-                    Some(src) => src,
+                    Some(src) => src.expr.validate_with_default(self)?,
                     None => {
-                        return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into());
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: "validation of dynamic import without an arg".to_string(),
+                        }
+                        .into())
                     }
+                };
+
+                let src = match src.normalize() {
+                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
+                    _ => return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into()),
                 };
 
                 let dep_id = self.loader.module_id(&base, &src);
