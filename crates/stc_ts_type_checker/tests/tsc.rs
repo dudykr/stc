@@ -19,13 +19,12 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::Context;
+use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
 use stc_ts_type_checker::{
     loader::{DefaultFileLoader, LoadFile, ModuleLoader},
@@ -320,20 +319,18 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         .errors(|cm, handler| {
             let handler = Arc::new(handler);
             let env = Env::simple(rule, target, module_config, &libs);
+
+            let fs = TestFileSystem {
+                main_src,
+                files: spec.sub_files.clone(),
+            };
+
             let mut checker = Checker::new(
                 cm.clone(),
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(
-                    cm,
-                    env,
-                    TestResolver,
-                    TestFileLoader {
-                        main_src,
-                        files: spec.sub_files.clone(),
-                    },
-                ),
+                ModuleLoader::new(cm, env, fs.clone(), fs),
             );
 
             // Install a logger
@@ -502,15 +499,28 @@ impl Fold for Spanner {
     }
 }
 
-struct TestResolver;
-
-impl Resolve for TestResolver {
-    fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, anyhow::Error> {}
-}
-
-struct TestFileLoader {
+#[derive(Clone)]
+struct TestFileSystem {
     main_src: Arc<String>,
     files: Arc<Vec<(String, String)>>,
 }
 
-impl LoadFile for TestFileLoader {}
+impl Resolve for TestFileSystem {
+    fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, Error> {
+        println!("resolve: {:?} {:?}", base, module_specifier);
+
+        todo!()
+    }
+}
+
+impl LoadFile for TestFileSystem {
+    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
+        print!("load_file: {:?} ", filename);
+
+        if let FileName::Real(..) = &**filename {
+            return DefaultFileLoader.load_file(cm, filename);
+        }
+
+        todo!()
+    }
+}
