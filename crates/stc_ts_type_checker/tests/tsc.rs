@@ -338,10 +338,8 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
             if spec.sub_files.is_empty() {
                 checker.check(Arc::new(FileName::Real(file_name.into())));
-            } else {
-                for (file_name, ..) in spec.sub_files.iter() {
-                    checker.check(Arc::new(FileName::Real(file_name.into())));
-                }
+            } else if let Some((file_name, ..)) = spec.sub_files.last() {
+                checker.check(Arc::new(FileName::Real(file_name.into())));
             }
 
             let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
@@ -523,10 +521,18 @@ impl LoadFile for TestFileSystem {
     fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
         println!("load_file: {:?} ", filename);
 
-        if let FileName::Real(..) = &**filename {
+        if self.files.is_empty() {
             return DefaultFileLoader.load_file(cm, filename);
         }
 
-        todo!()
+        for (name, content) in self.files.iter() {
+            if filename.to_string() == *name {
+                let fm = cm.new_source_file((**filename).clone(), content.clone());
+
+                return Ok((fm, Syntax::Typescript(Default::default())));
+            }
+        }
+
+        todo!("load_file: {:?} ", filename);
     }
 }
