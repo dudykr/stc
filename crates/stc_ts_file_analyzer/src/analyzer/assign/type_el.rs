@@ -498,6 +498,17 @@ impl Analyzer<'_, '_> {
 
                     return self
                         .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
+                        .convert_err(|err| match err {
+                            ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err.into()),
+                            },
+                            ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err.into()),
+                            },
+                            _ => err,
+                        })
                         .with_context(|| {
                             format!(
                                 "tried to assign the converted type to type elements:\nRHS={}",
