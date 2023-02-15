@@ -847,6 +847,7 @@ es6/memberFunctionDeclarations/MemberFunctionDeclaration2_es6.ts
 es6/memberFunctionDeclarations/MemberFunctionDeclaration3_es6.ts
 es6/memberFunctionDeclarations/MemberFunctionDeclaration7_es6.ts
 es6/modules/defaultExportWithOverloads01.ts
+es6/modules/defaultExportsCannotMerge04.ts
 es6/modules/importEmptyFromModuleNotExisted.ts
 es6/modules/multipleDefaultExports03.ts
 es6/newTarget/invalidNewTarget.es5.ts
