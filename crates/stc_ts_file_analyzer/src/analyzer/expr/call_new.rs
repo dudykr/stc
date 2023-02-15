@@ -110,7 +110,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::any(span, Default::default()));
             }
             RCallee::Expr(callee) => callee,
-            RCallee::Import(..) => {
+            RCallee::Import(callee) => {
                 let base = self.storage.path(self.ctx.module_id);
 
                 let src = args.iter().next().and_then(|arg| match arg {
@@ -120,11 +120,21 @@ impl Analyzer<'_, '_> {
                     },
                     _ => None,
                 });
-                let dep_id = src.and_then(|src| self.loader.module_id(&base, &src));
+
+                let src = match src {
+                    Some(src) => src,
+                    None => {
+                        return Err(ErrorKind::ImportFailedWithoutId { span: callee.span }.into());
+                    }
+                };
+
+                let dep_id = self.loader.module_id(&base, &src);
 
                 if let Some(dep_id) = dep_id {
                     if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
                         return Ok(dep.clone());
+                    } else {
+                        return Err(ErrorKind::ImportFailedWithoutId { span: callee.span }.into());
                     }
                 }
 
