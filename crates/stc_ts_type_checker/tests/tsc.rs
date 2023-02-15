@@ -25,6 +25,7 @@ use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
 use stc_ts_type_checker::{
     loader::{DefaultFileLoader, LoadFile, ModuleLoader},
@@ -512,6 +513,10 @@ struct TestFileSystem {
 impl Resolve for TestFileSystem {
     fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, Error> {
         println!("resolve: {:?} {:?}", base, module_specifier);
+
+        if !module_specifier.starts_with('.') {
+            return NodeResolver.resolve(base, module_specifier);
+        }
 
         if let Some(name) = module_specifier.strip_prefix("./") {
             return Ok(FileName::Real(name.into()));
