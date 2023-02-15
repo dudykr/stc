@@ -294,10 +294,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         },
     };
 
-    if !spec.sub_files.is_empty() {
-        panic!("sub_files is not supported yet");
-    }
-
     {
         let src = fs::read_to_string(file_name).unwrap();
         // Postpone multi-file tests.
