@@ -27,7 +27,10 @@ use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
-use stc_ts_type_checker::{loader::ModuleLoader, Checker};
+use stc_ts_type_checker::{
+    loader::{DefaultFileLoader, ModuleLoader},
+    Checker,
+};
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
@@ -327,7 +330,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(cm, env, NodeResolver),
+                ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
             );
 
             // Install a logger
