@@ -322,7 +322,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             let env = Env::simple(rule, target, module_config, &libs);
 
             let fs = TestFileSystem {
-                main_src,
                 files: spec.sub_files.clone(),
             };
 
@@ -506,7 +505,6 @@ impl Fold for Spanner {
 
 #[derive(Clone)]
 struct TestFileSystem {
-    main_src: Arc<String>,
     files: Arc<Vec<(String, String)>>,
 }
 
@@ -535,7 +533,7 @@ impl LoadFile for TestFileSystem {
         }
 
         for (name, content) in self.files.iter() {
-            if filename.to_string() == *name {
+            if filename.to_string() == *name || format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
                 let fm = cm.new_source_file((**filename).clone(), content.clone());
 
                 return Ok((fm, Syntax::Typescript(Default::default())));
