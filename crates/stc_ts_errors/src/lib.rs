@@ -776,7 +776,7 @@ pub enum ErrorKind {
         id: Id,
     },
 
-    ImportFailedWithoutId {
+    NonStringDynamicImport {
         span: Span,
     },
 
