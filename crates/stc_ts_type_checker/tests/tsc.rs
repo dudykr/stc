@@ -344,7 +344,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     {
         let src = fs::read_to_string(file_name).unwrap();
         // Postpone multi-file tests.
-        if src.to_lowercase().contains("@filename") || src.contains("<reference path") {
+        if src.contains("<reference path") {
             if is_all_test_enabled() {
                 record_stat(Stats {
                     required_error: expected_errors.len(),
