@@ -127,6 +127,7 @@ impl Analyzer<'_, '_> {
 
                 let src = match src.normalize() {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
+                    ty if ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
                     _ => return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into()),
                 };
 
