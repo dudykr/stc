@@ -509,7 +509,10 @@ impl From<super::Module> for RTsType {
             type_name: RTsEntityName::Ident(match m.name {
                 RTsModuleName::Ident(i) => i,
                 RTsModuleName::Str(..) => {
-                    unimplemented!("converting stringly-named module type to ast")
+                    return RTsType::TsKeywordType(RTsKeywordType {
+                        span: m.span,
+                        kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                    })
                 }
             }),
         })

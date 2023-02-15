@@ -1,4 +1,3 @@
-#[cfg(not(feature = "no-threading"))]
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
@@ -102,20 +101,31 @@ impl Analyzer<'_, '_> {
             normal_imports.push((ctxt, base.clone(), dep_id, import.src.clone(), import));
         }
 
-        #[cfg(feature = "no-threading")]
-        let iter = normal_imports.into_iter();
-        #[cfg(not(feature = "no-threading"))]
-        let iter = normal_imports.into_par_iter();
+        let import_results = if cfg!(feature = "no-threading") {
+            let iter = normal_imports.into_iter();
 
-        let import_results = GLOBALS.with(|globals| {
-            iter.map(|(ctxt, base, dep_id, module_specifier, import)| {
-                GLOBALS.set(globals, || {
-                    let res = loader.load_non_circular_dep(&base, &module_specifier);
-                    (ctxt, dep_id, import, res)
+            GLOBALS.with(|globals| {
+                iter.map(|(ctxt, base, dep_id, module_specifier, import)| {
+                    GLOBALS.set(globals, || {
+                        let res = loader.load_non_circular_dep(&base, &module_specifier);
+                        (ctxt, dep_id, import, res)
+                    })
                 })
+                .collect::<Vec<_>>()
             })
-            .collect::<Vec<_>>()
-        });
+        } else {
+            let iter = normal_imports.into_par_iter();
+
+            GLOBALS.with(|globals| {
+                iter.map(|(ctxt, base, dep_id, module_specifier, import)| {
+                    GLOBALS.set(globals, || {
+                        let res = loader.load_non_circular_dep(&base, &module_specifier);
+                        (ctxt, dep_id, import, res)
+                    })
+                })
+                .collect::<Vec<_>>()
+            })
+        };
 
         for (ctxt, dep_id, import, res) in import_results {
             let span = import.span;
@@ -321,8 +331,8 @@ where
     fn visit(&mut self, expr: &RCallExpr) {
         let span = expr.span();
 
-        match expr.callee {
-            RCallee::Expr(box RExpr::Ident(ref i)) if i.sym == js_word!("require") => {
+        match &expr.callee {
+            RCallee::Expr(box RExpr::Ident(i)) if i.sym == js_word!("require") => {
                 let src = expr
                     .args
                     .iter()
@@ -333,6 +343,16 @@ where
                     .next()
                     .unwrap();
                 self.to.push((self.cur_ctxt, DepInfo { span, src }));
+            }
+            RCallee::Import(import) => {
+                let src = expr.args.first().and_then(|v| match *v.expr {
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some(value.clone()),
+                    _ => None,
+                });
+
+                if let Some(src) = src {
+                    self.to.push((self.cur_ctxt, DepInfo { span, src }));
+                }
             }
             _ => {}
         }

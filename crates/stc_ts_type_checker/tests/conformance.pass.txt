@@ -164,6 +164,7 @@ classes/classExpressions/classWithStaticFieldInParameterBindingPattern.3.ts
 classes/classExpressions/classWithStaticFieldInParameterBindingPattern.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.3.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.ts
+classes/classExpressions/extendClassExpressionFromModule.ts
 classes/classExpressions/genericClassExpressionInFunction.ts
 classes/classExpressions/modifierOnClassExpressionMemberInFunction.ts
 classes/classStaticBlock/classStaticBlock1.ts
@@ -369,6 +370,16 @@ declarationEmit/typePredicates/declarationEmitIdentifierPredicatesWithPrivateNam
 declarationEmit/typeofImportTypeOnlyExport.ts
 decorators/1.0lib-noErrors.ts
 directives/ts-expect-error-nocheck.ts
+dynamicImport/importCallExpression3ES2020.ts
+dynamicImport/importCallExpressionDeclarationEmit2.ts
+dynamicImport/importCallExpressionInAMD3.ts
+dynamicImport/importCallExpressionInCJS4.ts
+dynamicImport/importCallExpressionInExportEqualsAMD.ts
+dynamicImport/importCallExpressionInExportEqualsCJS.ts
+dynamicImport/importCallExpressionInExportEqualsUMD.ts
+dynamicImport/importCallExpressionInScriptContext1.ts
+dynamicImport/importCallExpressionInSystem3.ts
+dynamicImport/importCallExpressionInUMD3.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.classMethods.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionDeclarations.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionExpressions.es2015.ts
@@ -1592,6 +1603,7 @@ externalModules/exportDefaultClassNameWithObject.ts
 externalModules/exportNonLocalDeclarations.ts
 externalModules/exportNonVisibleType.ts
 externalModules/globalAugmentationModuleResolution.ts
+externalModules/importImportOnlyModule.ts
 externalModules/multipleExportDefault1.ts
 externalModules/multipleExportDefault2.ts
 externalModules/multipleExportDefault3.ts

@@ -111,11 +111,28 @@ impl Analyzer<'_, '_> {
             }
             RCallee::Expr(callee) => callee,
             RCallee::Import(..) => {
+                let base = self.storage.path(self.ctx.module_id);
+
+                let src = args.iter().next().and_then(|arg| match arg {
+                    RExprOrSpread { spread: None, expr } => match &**expr {
+                        RExpr::Lit(RLit::Str(RStr { span, value, .. })) => Some(value.clone()),
+                        _ => None,
+                    },
+                    _ => None,
+                });
+                let dep_id = src.and_then(|src| self.loader.module_id(&base, &src));
+
+                if let Some(dep_id) = dep_id {
+                    if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
+                        return Ok(dep.clone());
+                    }
+                }
+
                 return Err(ErrorKind::Unimplemented {
                     span: e.span,
                     msg: "validation of dynamic import".to_string(),
                 }
-                .into())
+                .into());
             }
         };
 
