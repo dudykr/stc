@@ -2,8 +2,14 @@
 #![allow(clippy::if_same_then_else)]
 #![allow(clippy::manual_strip)]
 
-use std::path::Path;
+use std::{
+    io::{stderr, Write},
+    mem::take,
+    path::Path,
+};
 
+use once_cell::sync::Lazy;
+use regex::Regex;
 use rustc_hash::FxHashSet;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{ModuleConfig, Rule};
@@ -21,8 +27,43 @@ pub struct TestSpec {
     pub target: EsVersion,
     pub raw_target: String,
     pub module_config: ModuleConfig,
+
+    /// Empty for single file tests.
+    pub sub_files: Vec<(String, String)>,
 }
 
+fn parse_sub_files(source: &str) -> Vec<(String, String)> {
+    static OPTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^[\\/]{2}\s*@(\w+)\s*:\s*([^\r\n]*)"#).unwrap());
+    let mut files = vec![];
+
+    let mut buf = String::new();
+    let mut sub_filename = String::new();
+
+    for line in source.lines() {
+        if let Some(cap) = OPTION_REGEX.captures(line) {
+            let meta_data_name = cap.get(1).unwrap().as_str().to_lowercase();
+            let meta_data_value = cap.get(2).unwrap().as_str();
+            // https://github.com/microsoft/TypeScript/blob/71b2ba6111e934f2b4ee112bc4d8d2f47ced22f5/src/testRunner/compilerRunner.ts#L118-L148
+            if let "filename" = &*meta_data_name {
+                if !sub_filename.is_empty() {
+                    files.push((sub_filename, take(&mut buf)));
+                }
+
+                sub_filename = meta_data_value.trim().to_string();
+            }
+        } else {
+            buf += line;
+            buf.push('\n');
+        }
+    }
+    if !sub_filename.is_empty() {
+        files.push((sub_filename, buf));
+    }
+
+    files
+}
+
+#[allow(clippy::explicit_write)]
 pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
@@ -30,6 +71,8 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let fname = file_name.to_string_lossy();
     ::testing::run_test(false, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
+
+        let sub_files = parse_sub_files(&fm.src);
 
         // We parse files twice. At first, we read comments and detect
         // configurations for following parse.
@@ -185,8 +228,9 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule.always_strict = strict;
                     rule.strict_null_checks = strict;
                     rule.strict_function_types = strict;
+                } else if s.starts_with("filename") {
                 } else {
-                    panic!("Comment is not handled: {}", s);
+                    writeln!(stderr(), "Comment is not handled: {}", s).unwrap();
                 }
             }
         }
@@ -227,6 +271,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     target,
                     raw_target,
                     module_config,
+                    sub_files: sub_files.clone(),
                 }
             })
             .collect())
