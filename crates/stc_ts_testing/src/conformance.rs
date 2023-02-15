@@ -6,6 +6,7 @@ use std::{
     io::{stderr, Write},
     mem::take,
     path::Path,
+    sync::Arc,
 };
 
 use once_cell::sync::Lazy;
@@ -29,7 +30,7 @@ pub struct TestSpec {
     pub module_config: ModuleConfig,
 
     /// Empty for single file tests.
-    pub sub_files: Vec<(String, String)>,
+    pub sub_files: Arc<Vec<(String, String)>>,
 }
 
 fn parse_sub_files(source: &str) -> Vec<(String, String)> {
@@ -72,7 +73,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     ::testing::run_test(false, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
 
-        let sub_files = parse_sub_files(&fm.src);
+        let sub_files = Arc::new(parse_sub_files(&fm.src));
 
         // We parse files twice. At first, we read comments and detect
         // configurations for following parse.
@@ -229,6 +230,8 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule.strict_null_checks = strict;
                     rule.strict_function_types = strict;
                 } else if s.starts_with("filename") {
+                } else if s.to_ascii_lowercase().starts_with("allowjs") || s.to_ascii_lowercase().starts_with("checkjs") {
+                    panic!("allowJs and checkJs are not supported yet. See https://github.com/dudykr/stc/issues/702")
                 } else {
                     writeln!(stderr(), "Comment is not handled: {}", s).unwrap();
                 }
