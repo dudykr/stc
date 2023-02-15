@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, SourceMap, Span, SyntaxContext, GLOBALS};
+use swc_common::{FileName, SourceFile, SourceMap, Span, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -55,14 +55,20 @@ pub trait LoadModule: 'static + Send + Sync {
     fn load_dep(&self, base: &Arc<FileName>, module_specifier: &str) -> Result<Records>;
 }
 
+pub trait LoadFile: 'static + Send + Sync {
+    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax)>;
+}
+
 /// A simple implementation of [LoadModule].
-pub struct ModuleLoader<R>
+pub struct ModuleLoader<L, R>
 where
+    L: LoadFile,
     R: 'static + Sync + Send + Resolve,
 {
     cm: Arc<SourceMap>,
     env: Env,
     resolver: R,
+    loader: L,
 
     /// TODO(kdu1): Split the
     comments: StcComments,
@@ -75,15 +81,17 @@ where
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
 }
 
-impl<R> ModuleLoader<R>
+impl<L, R> ModuleLoader<L, R>
 where
+    L: LoadFile,
     R: Resolve,
 {
-    pub fn new(cm: Arc<SourceMap>, env: Env, resolver: R) -> Self {
+    pub fn new(cm: Arc<SourceMap>, env: Env, resolver: R, loader: L) -> Self {
         Self {
             cm,
             env,
             resolver,
+            loader,
 
             comments: Default::default(),
             loading_started: Default::default(),
@@ -258,8 +266,9 @@ where
     }
 }
 
-impl<R> LoadModule for ModuleLoader<R>
+impl<L, R> LoadModule for ModuleLoader<L, R>
 where
+    L: LoadFile,
     R: 'static + Sync + Send + Resolve,
 {
     fn load_module(&self, filename: &Arc<FileName>, is_entry: bool) -> Result<Records> {
