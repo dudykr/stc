@@ -371,6 +371,7 @@ declarationEmit/typeofImportTypeOnlyExport.ts
 decorators/1.0lib-noErrors.ts
 directives/ts-expect-error-nocheck.ts
 dynamicImport/importCallExpression3ES2020.ts
+dynamicImport/importCallExpressionDeclarationEmit1.ts
 dynamicImport/importCallExpressionDeclarationEmit2.ts
 dynamicImport/importCallExpressionInAMD3.ts
 dynamicImport/importCallExpressionInCJS4.ts
@@ -380,6 +381,8 @@ dynamicImport/importCallExpressionInExportEqualsUMD.ts
 dynamicImport/importCallExpressionInScriptContext1.ts
 dynamicImport/importCallExpressionInSystem3.ts
 dynamicImport/importCallExpressionInUMD3.ts
+dynamicImport/importCallExpressionInUMD5.ts
+dynamicImport/importCallExpressionShouldNotGetParen.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.classMethods.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionDeclarations.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionExpressions.es2015.ts
