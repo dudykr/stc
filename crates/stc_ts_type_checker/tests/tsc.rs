@@ -521,7 +521,7 @@ impl Resolve for TestFileSystem {
 
 impl LoadFile for TestFileSystem {
     fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
-        print!("load_file: {:?} ", filename);
+        println!("load_file: {:?} ", filename);
 
         if let FileName::Real(..) = &**filename {
             return DefaultFileLoader.load_file(cm, filename);
