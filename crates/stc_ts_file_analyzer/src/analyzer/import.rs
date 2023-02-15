@@ -1,4 +1,3 @@
-#[cfg(not(feature = "no-threading"))]
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
