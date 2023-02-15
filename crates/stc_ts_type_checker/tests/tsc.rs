@@ -19,7 +19,7 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::Context;
+use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
@@ -28,14 +28,15 @@ use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
 use stc_ts_type_checker::{
-    loader::{DefaultFileLoader, ModuleLoader},
+    loader::{DefaultFileLoader, LoadFile, ModuleLoader},
     Checker,
 };
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
-    FileName, SourceMap, Span,
+    FileName, SourceFile, SourceMap, Span,
 };
+use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
@@ -294,16 +295,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         },
     };
 
-    if !spec.sub_files.is_empty() {
-        panic!("sub_files is not supported yet");
-    }
-
-    {
-        let src = fs::read_to_string(file_name).unwrap();
-        // Postpone multi-file tests.
-        if src.contains("<reference path") {
-            panic!("`<reference path` is not supported yet");
-        }
+    let main_src = Arc::new(fs::read_to_string(file_name).unwrap());
+    // Postpone multi-file tests.
+    if main_src.contains("<reference path") {
+        panic!("`<reference path` is not supported yet");
     }
 
     let mut stats = Stats::default();
@@ -325,18 +320,27 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         .errors(|cm, handler| {
             let handler = Arc::new(handler);
             let env = Env::simple(rule, target, module_config, &libs);
+
+            let fs = TestFileSystem {
+                files: spec.sub_files.clone(),
+            };
+
             let mut checker = Checker::new(
                 cm.clone(),
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
+                ModuleLoader::new(cm, env, fs.clone(), fs),
             );
 
             // Install a logger
             let _guard = testing::init();
 
-            checker.check(Arc::new(FileName::Real(file_name.into())));
+            if spec.sub_files.is_empty() {
+                checker.check(Arc::new(FileName::Real(file_name.into())));
+            } else if let Some((file_name, ..)) = spec.sub_files.last() {
+                checker.check(Arc::new(FileName::Real(file_name.into())));
+            }
 
             let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
@@ -496,5 +500,46 @@ struct Spanner {
 impl Fold for Spanner {
     fn fold_span(&mut self, _: Span) -> Span {
         self.span
+    }
+}
+
+#[derive(Clone)]
+struct TestFileSystem {
+    files: Arc<Vec<(String, String)>>,
+}
+
+impl Resolve for TestFileSystem {
+    fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<FileName, Error> {
+        println!("resolve: {:?} {:?}", base, module_specifier);
+
+        if !module_specifier.starts_with('.') {
+            return NodeResolver.resolve(base, module_specifier);
+        }
+
+        if let Some(name) = module_specifier.strip_prefix("./") {
+            return Ok(FileName::Real(name.into()));
+        }
+
+        todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);
+    }
+}
+
+impl LoadFile for TestFileSystem {
+    fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
+        println!("load_file: {:?} ", filename);
+
+        if self.files.is_empty() {
+            return DefaultFileLoader.load_file(cm, filename);
+        }
+
+        for (name, content) in self.files.iter() {
+            if filename.to_string() == *name || format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
+                let fm = cm.new_source_file((**filename).clone(), content.clone());
+
+                return Ok((fm, Syntax::Typescript(Default::default())));
+            }
+        }
+
+        todo!("load_file: {:?} ", filename);
     }
 }
