@@ -16,7 +16,7 @@ cleanup
 
 # We prevent regression using faster checks
 touch ../stc_ts_file_analyzer/tests/base.rs
-cargo test -p stc_ts_file_analyzer --features tracing/max_level_off --color always --test base $@ -- -Zunstable-options --report-time --ignored || true
+cargo test -p stc_ts_file_analyzer --features tracing/max_level_off --features no-threading --color always --test base $@ -- -Zunstable-options --report-time --ignored || true
 
 
 cleanup
