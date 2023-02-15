@@ -208,7 +208,12 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
             SourceFileInput::from(&*fm),
             None,
         );
-        parser.parse_module().ok()
+
+        parser.parse_module().ok()?;
+
+        assert!(parser.take_errors().is_empty());
+
+        Some(())
     })
     .ok()??;
 
