@@ -345,16 +345,14 @@ where
                 self.to.push((self.cur_ctxt, DepInfo { span, src }));
             }
             RCallee::Import(import) => {
-                let src = expr
-                    .args
-                    .iter()
-                    .map(|v| match *v.expr {
-                        RExpr::Lit(RLit::Str(RStr { ref value, .. })) => value.clone(),
-                        _ => unimplemented!("error reporting for dynamic import"),
-                    })
-                    .next()
-                    .unwrap();
-                self.to.push((self.cur_ctxt, DepInfo { span, src }));
+                let src = expr.args.first().and_then(|v| match *v.expr {
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some(value.clone()),
+                    _ => None,
+                });
+
+                if let Some(src) = src {
+                    self.to.push((self.cur_ctxt, DepInfo { span, src }));
+                }
             }
             _ => {}
         }
