@@ -175,13 +175,21 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("report_errors_for_duplicated_exports_of_var");
 
         let v = self.data.for_module.exports_spans.entry((sym.clone(), IdCtx::Var)).or_default();
+        let func_spans = &self.data.fn_impl_spans;
+        let is_duplicated_func = func_spans.iter().any(|(_, spans)| spans.len() >= 2);
+
         v.push(span);
 
+        let is_duplicated_export = v.len() >= 2;
         // TODO(kdy1): Optimize this by emitting same error only once.
-        if v.len() >= 2 {
+        if is_duplicated_export {
             for &span in &*v {
                 if sym == js_word!("default") {
-                    self.storage.report(ErrorKind::DuplicateDefaultExport { span }.into());
+                    if is_duplicated_func || func_spans.len() >= 2 {
+                        self.storage.report(ErrorKind::DuplicateExport { span }.into());
+                    } else {
+                        self.storage.report(ErrorKind::DuplicateDefaultExport { span }.into());
+                    }
                 } else {
                     self.storage.report(ErrorKind::DuplicateExport { span }.into());
                 }

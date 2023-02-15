@@ -900,6 +900,7 @@ es6/modules/exportsAndImportsWithContextualKeywordNames02.ts
 es6/modules/exportsAndImportsWithUnderscores4.ts
 es6/modules/importEmptyFromModuleNotExisted.ts
 es6/modules/multipleDefaultExports03.ts
+es6/modules/multipleDefaultExports04.ts
 es6/modules/reExportDefaultExport.ts
 es6/newTarget/invalidNewTarget.es5.ts
 es6/newTarget/invalidNewTarget.es6.ts
