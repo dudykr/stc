@@ -640,6 +640,7 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2335
     SuperInClassWithoutSuper {
         span: Span,
     },
@@ -649,6 +650,7 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2505
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -663,10 +665,11 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2463
     OptionalBindingPatternInImplSignature {
         span: Span,
     },
-
+    /// TS5076
     NullishCoalescingMixedWithLogicalWithoutParen {
         span: Span,
     },
