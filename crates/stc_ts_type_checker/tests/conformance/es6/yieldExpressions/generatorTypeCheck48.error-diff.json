@@ -1,0 +1,6 @@
+{
+  "required_errors": {
+    "TS7055": 2
+  },
+  "extra_errors": {}
+}
