@@ -441,15 +441,19 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             *required.entry(err.code.clone()).or_default() += 1;
         }
 
-        fs::write(
-            &error_diff_file_name,
-            serde_json::to_string_pretty(&ErrorDiff {
-                extra_errors: extra,
-                required_errors: required,
-            })
-            .unwrap(),
-        )
-        .expect("failed to write error diff file");
+        if extra.is_empty() && required.is_empty() {
+            fs::remove_file(&error_diff_file_name).expect("failed to delete error diff file");
+        } else {
+            fs::write(
+                &error_diff_file_name,
+                serde_json::to_string_pretty(&ErrorDiff {
+                    extra_errors: extra,
+                    required_errors: required,
+                })
+                .unwrap(),
+            )
+            .expect("failed to write error diff file");
+        }
     }
 
     if print_matched_errors() {
