@@ -917,6 +917,12 @@ impl Analyzer<'_, '_> {
                     if i.sym == js_word!("undefined") {
                         return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                     }
+                    if i.sym == js_word!("this") {
+                        if let Some(this) = self.scope.this().map(Cow::into_owned) {
+                            return Ok(this);
+                        }
+                    }
+
                     let mut i = i.clone();
                     if i.span.is_dummy() {
                         i.span = span.with_ctxt(i.span.ctxt);
