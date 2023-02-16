@@ -55,7 +55,7 @@ impl Drop for RecordOnPanic {
             panic: 1,
             ..self.stats.clone()
         };
-        print_per_test_stat(&self.stats_file_name, &stats);
+        stats.print_to(&self.stats_file_name);
         record_stat(stats);
     }
 }
@@ -426,7 +426,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     stats.extra_error += extra_err_count;
 
     // Print per-test stats so we can prevent regressions.
-    print_per_test_stat(&stats_file_name, &stats);
+    stats.print_to(&stats_file_name);
 
     let total_stats = record_stat(stats);
 
@@ -481,13 +481,15 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     Ok(())
 }
 
-fn print_per_test_stat(stats_file_name: &Path, stats: &Stats) {
-    if env::var("CI").unwrap_or_default() == "1" {
-        let stat_string = fs::read_to_string(stats_file_name).expect("failed to read test stats file");
+impl Stats {
+    fn print_to(&self, file_name: &Path) {
+        if env::var("CI").unwrap_or_default() == "1" {
+            let stat_string = fs::read_to_string(file_name).expect("failed to read test stats file");
 
-        assert_eq!(format!("{:#?}", stats), stat_string, "CI=1 so test stats must match");
-    } else {
-        fs::write(stats_file_name, format!("{:#?}", stats)).expect("failed to write test stats");
+            assert_eq!(format!("{:#?}", self), stat_string, "CI=1 so test stats must match");
+        } else {
+            fs::write(file_name, format!("{:#?}", self)).expect("failed to write test stats");
+        }
     }
 }
 
