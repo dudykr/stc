@@ -4,7 +4,9 @@ import json
 
 
 def stats(d: dict):
-    return {k: v for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}
+    items = {k: v for k, v in sorted(
+        d.items(), key=lambda item: item[1], reverse=True)}
+    return json.dumps(items, indent=4)
 
 
 def main():
