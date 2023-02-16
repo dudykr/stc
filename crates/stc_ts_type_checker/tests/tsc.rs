@@ -20,9 +20,10 @@ use std::{
 };
 
 use anyhow::{Context, Error};
+use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
@@ -274,6 +275,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     expected_errors.sort();
 
     let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem));
+    let error_diff_file_name = file_name.with_file_name(format!("{}.error-diff.json", file_stem));
 
     let TestSpec {
         err_shift_n,
@@ -427,6 +429,29 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     stats.print_to(&stats_file_name);
     add_to_total_stats(stats);
 
+    {
+        let mut extra = IndexMap::default();
+        let mut required = IndexMap::default();
+
+        for err in extra_errors.iter() {
+            *extra.entry(err.1.clone()).or_default() += 1;
+        }
+
+        for err in expected_errors.iter() {
+            *required.entry(err.code.clone()).or_default() += 1;
+        }
+
+        fs::write(
+            &error_diff_file_name,
+            serde_json::to_string_pretty(&ErrorDiff {
+                extra_errors: extra,
+                required_errors: required,
+            })
+            .unwrap(),
+        )
+        .expect("failed to write error diff file");
+    }
+
     if print_matched_errors() {
         eprintln!(
             "\n============================================================\n{:?}
@@ -471,6 +496,14 @@ impl Stats {
             fs::write(file_name, format!("{:#?}", self)).expect("failed to write test stats");
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+struct ErrorDiff {
+    /// Count by error code
+    required_errors: IndexMap<String, usize>,
+    /// Count by error code
+    extra_errors: IndexMap<String, usize>,
 }
 
 struct Spanner {
