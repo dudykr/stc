@@ -32,7 +32,6 @@ mod builtin;
 mod cast;
 mod class;
 mod function;
-mod query;
 #[cfg(test)]
 mod tests;
 mod tpl;
@@ -542,13 +541,15 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             })
-            | Type::Tpl(..) => {
+            | Type::Tpl(..)
+            | Type::Query(..) => {
                 let ty = self
                     .normalize(
                         Some(span),
                         Cow::Borrowed(ty),
                         NormalizeTypeOpts {
                             merge_union_elements: true,
+                            preserve_global_this: true,
                             ..Default::default()
                         },
                     )?
@@ -766,6 +767,14 @@ impl Analyzer<'_, '_> {
 
         if to.type_eq(rhs) {
             return Ok(());
+        }
+
+        if to.is_global_this() || rhs.is_global_this() {
+            return Err(ErrorKind::SimpleAssignFailed {
+                span: opts.span,
+                cause: None,
+            }
+            .context("global this"));
         }
 
         if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
@@ -1106,7 +1115,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
-                if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || rhs.is_any() {
                     return Ok(());
                 }
                 if let Type::Query(QueryType { expr, .. }) = rhs.clone() {
@@ -1463,8 +1472,6 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(data, to, rhs, opts),
-
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
                 ty,
@@ -1492,12 +1499,6 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_inner(data, to, &new_rhs, opts)
                     .context("tried to assign a type expanded from a reference to another type");
-            }
-
-            Type::Query(rhs) => {
-                return self
-                    .assign_query_type_to_type(data, to, rhs, opts)
-                    .context("tried to assign a query type to another type")
             }
 
             Type::Infer(..) => fail!(),
