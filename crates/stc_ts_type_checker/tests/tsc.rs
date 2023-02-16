@@ -425,15 +425,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     // Print per-test stats so we can prevent regressions.
     stats.print_to(&stats_file_name);
+    add_to_total_stats(stats);
 
-    let total_stats = add_to_total_stats(stats);
-
-    if cfg!(debug_assertions) {
-        println!("[TOTAL_STATS] {:#?}", total_stats);
-
-        if expected_errors.is_empty() {
-            println!("[REMOVE_ONLY]{}", file_name.display());
-        }
+    if expected_errors.is_empty() {
+        println!("[REMOVE_ONLY]{}", file_name.display());
     }
 
     if extra_errors.len() == expected_errors.len() {
