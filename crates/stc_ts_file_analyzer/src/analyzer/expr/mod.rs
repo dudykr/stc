@@ -2898,7 +2898,7 @@ impl Analyzer<'_, '_> {
                 // No property found
                 return Err(ErrorKind::NoSuchPropertyInModule {
                     span,
-                    name: box name.clone(),
+                    name: box prop.clone(),
                 }
                 .into());
             }
