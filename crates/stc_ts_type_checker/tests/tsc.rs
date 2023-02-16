@@ -429,7 +429,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     stats.print_to(&stats_file_name);
     add_to_total_stats(stats);
 
-    {
+    if env::var("CI").unwrap_or_default() != "1" {
         let mut extra = IndexMap::default();
         let mut required = IndexMap::default();
 
@@ -442,7 +442,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         }
 
         if extra.is_empty() && required.is_empty() {
-            fs::remove_file(&error_diff_file_name).expect("failed to delete error diff file");
+            let _ = fs::remove_file(&error_diff_file_name);
         } else {
             fs::write(
                 &error_diff_file_name,
