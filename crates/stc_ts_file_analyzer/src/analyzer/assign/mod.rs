@@ -1115,7 +1115,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
-                if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || rhs.is_any() {
                     return Ok(());
                 }
                 if let Type::Query(QueryType { expr, .. }) = rhs.clone() {
