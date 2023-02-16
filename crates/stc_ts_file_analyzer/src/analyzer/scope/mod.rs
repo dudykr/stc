@@ -920,6 +920,12 @@ impl Analyzer<'_, '_> {
                     if i.sym == js_word!("this") {
                         if let Some(this) = self.scope.this().map(Cow::into_owned) {
                             return Ok(this);
+                        } else {
+                            return Ok(Type::This(ThisType {
+                                span,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }));
                         }
                     }
 
