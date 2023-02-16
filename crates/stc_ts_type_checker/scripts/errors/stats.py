@@ -12,7 +12,7 @@ def stats(d: dict):
 def main():
     files = glob.glob(
         "./tests/**/*.error-diff.json", recursive=True)
-    print(len(files))
+    # print(len(files))
 
     extras = {}
     required = {}
