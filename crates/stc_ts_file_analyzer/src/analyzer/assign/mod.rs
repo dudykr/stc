@@ -542,13 +542,15 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             })
-            | Type::Tpl(..) => {
+            | Type::Tpl(..)
+            | Type::Query(..) => {
                 let ty = self
                     .normalize(
                         Some(span),
                         Cow::Borrowed(ty),
                         NormalizeTypeOpts {
                             merge_union_elements: true,
+                            preserve_global_this: true,
                             ..Default::default()
                         },
                     )?
@@ -766,6 +768,14 @@ impl Analyzer<'_, '_> {
 
         if to.type_eq(rhs) {
             return Ok(());
+        }
+
+        if to.is_global_this() || rhs.is_global_this() {
+            return Err(ErrorKind::SimpleAssignFailed {
+                span: opts.span,
+                cause: None,
+            }
+            .context("global this"));
         }
 
         if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
