@@ -3,5 +3,14 @@
     "TS2733": 1,
     "TS2718": 1
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2733": [
+      3
+    ],
+    "TS2718": [
+      6
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

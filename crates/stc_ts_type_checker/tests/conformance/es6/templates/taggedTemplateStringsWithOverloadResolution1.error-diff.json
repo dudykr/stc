@@ -4,5 +4,22 @@
     "TS2769": 4,
     "TS2554": 2
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2345": [
+      9,
+      10
+    ],
+    "TS2769": [
+      11,
+      12,
+      13,
+      19
+    ],
+    "TS2554": [
+      14,
+      21
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

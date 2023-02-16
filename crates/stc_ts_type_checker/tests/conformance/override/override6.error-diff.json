@@ -3,5 +3,15 @@
     "TS4114": 1,
     "TS4115": 2
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS4114": [
+      11
+    ],
+    "TS4115": [
+      12,
+      12
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
