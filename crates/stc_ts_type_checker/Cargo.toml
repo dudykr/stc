@@ -17,7 +17,7 @@ anyhow = "1"
 auto_impl = "1"
 dashmap = {version = "3", features = ["raw-api"]}
 fxhash = "0.2.1"
-indexmap = "1"
+indexmap = {version = "1", features = ["serde"]}
 log = "0.4.14"
 once_cell = "1.5.2"
 parking_lot = "0.12.1"
