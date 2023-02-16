@@ -499,9 +499,9 @@ impl Stats {
 struct ErrorDiff {
     /// Count by error code
     required_errors: IndexMap<String, usize>,
+    required_error_lines: IndexMap<String, Vec<usize>>,
     /// Count by error code
     extra_errors: IndexMap<String, usize>,
-    required_error_lines: IndexMap<String, Vec<usize>>,
     extra_error_lines: IndexMap<String, Vec<usize>>,
 }
 
