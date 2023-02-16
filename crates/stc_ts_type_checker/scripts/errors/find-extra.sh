@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -eu
 
-# Usage: ./scrtips/errors/find-extra.sh {ts error code}
+# Usage: ./scripts/errors/find-extra.sh {ts error code}
 # 
-# ./scrtips/errors/find-extra.sh TS2322
+# ./scripts/errors/find-extra.sh TS2322
 #
 
 while IFS= read -r line; do
