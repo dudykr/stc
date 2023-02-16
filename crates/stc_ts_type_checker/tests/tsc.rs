@@ -427,19 +427,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     stats.print_to(&stats_file_name);
     add_to_total_stats(stats);
 
-    if expected_errors.is_empty() {
-        println!("[REMOVE_ONLY]{}", file_name.display());
-    }
-
-    if extra_errors.len() == expected_errors.len() {
-        let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
-        let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
-
-        if expected_lines == extra_lines {
-            println!("[ERROR_CODE_ONLY]{}", file_name.display());
-        }
-    }
-
     if print_matched_errors() {
         eprintln!(
             "\n============================================================\n{:?}
