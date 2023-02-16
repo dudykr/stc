@@ -426,9 +426,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     stats.extra_error += extra_err_count;
 
     // Print per-test stats so we can prevent regressions.
-    if cfg!(debug_assertions) {
-        print_per_test_stat(&stats_file_name, &stats);
-    }
+    print_per_test_stat(&stats_file_name, &stats);
 
     let total_stats = record_stat(stats);
 
