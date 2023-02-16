@@ -32,7 +32,6 @@ mod builtin;
 mod cast;
 mod class;
 mod function;
-mod query;
 #[cfg(test)]
 mod tests;
 mod tpl;
@@ -1473,8 +1472,6 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(data, to, rhs, opts),
-
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
                 ty,
@@ -1502,12 +1499,6 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_inner(data, to, &new_rhs, opts)
                     .context("tried to assign a type expanded from a reference to another type");
-            }
-
-            Type::Query(rhs) => {
-                return self
-                    .assign_query_type_to_type(data, to, rhs, opts)
-                    .context("tried to assign a query type to another type")
             }
 
             Type::Infer(..) => fail!(),
