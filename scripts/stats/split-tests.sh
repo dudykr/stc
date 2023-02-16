@@ -39,4 +39,4 @@ cat "$GIST_DIR/.stc/dedup2.txt" \
     | sort -n -k 3 -t ":" -r \
     > "$GIST_DIR/list.txt"
 
-# (cd $GIST_DIR && git commit -am "Update" && git push)
+(cd $GIST_DIR && git commit -am "Update" && git push)
