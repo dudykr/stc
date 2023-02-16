@@ -145,7 +145,7 @@ fn is_ignored(path: &Path) -> bool {
         return !path.to_string_lossy().contains(&test);
     }
 
-    !PASS.iter().any(|line| path.to_string_lossy().contains(line))
+    !PASS.iter().any(|line| path.to_string_lossy().ends_with(line))
 }
 
 #[test]

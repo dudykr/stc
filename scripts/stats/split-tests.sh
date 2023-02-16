@@ -20,10 +20,14 @@ echo "Sorting done.txt"
 echo "Sorting issue-required.txt"
 (cd $GIST_DIR && sortFile issue-required.txt)
 
-find crates/* -name "*.stats.rust-debug" > "$GIST_DIR/.stc/all.txt"
+find crates/* -name "*.stats.rust-debug" | xargs grep -l 'extra_error: [1-9][0-9]*' > "$GIST_DIR/.stc/all.txt"
+sortFile "$GIST_DIR/.stc/all.txt"
+
+comm -23 "$GIST_DIR/done.txt" "$GIST_DIR/.stc/all.txt" > "$GIST_DIR/.stc/tmp.txt"
+comm -23 "$GIST_DIR/done.txt" "$GIST_DIR/.stc/tmp.txt" > "$GIST_DIR/.stc/tmp2.txt"
+mv "$GIST_DIR/.stc/tmp2.txt" "$GIST_DIR/done.txt"
 
 echo "comm (1)"
-sortFile "$GIST_DIR/.stc/all.txt"
 comm -23 "$GIST_DIR/.stc/all.txt" "$GIST_DIR/done.txt" > "$GIST_DIR/.stc/dedup.txt"
 
 echo "comm (2)"
