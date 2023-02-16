@@ -430,29 +430,22 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     add_to_total_stats(stats);
 
     if env::var("CI").unwrap_or_default() != "1" {
-        let mut extra = IndexMap::default();
-        let mut required = IndexMap::default();
+        let mut diff = ErrorDiff::default();
 
         for err in extra_errors.iter() {
-            *extra.entry(err.1.clone()).or_default() += 1;
+            *diff.extra_errors.entry(err.1.clone()).or_default() += 1;
+            diff.extra_error_lines.entry(err.1.clone()).or_default().push(err.0);
         }
 
         for err in expected_errors.iter() {
-            *required.entry(err.code.clone()).or_default() += 1;
+            *diff.required_errors.entry(err.code.clone()).or_default() += 1;
+            diff.required_error_lines.entry(err.code.clone()).or_default().push(err.line);
         }
 
-        if extra.is_empty() && required.is_empty() {
+        if diff.extra_errors.is_empty() && diff.required_errors.is_empty() {
             let _ = fs::remove_file(&error_diff_file_name);
         } else {
-            fs::write(
-                &error_diff_file_name,
-                serde_json::to_string_pretty(&ErrorDiff {
-                    extra_errors: extra,
-                    required_errors: required,
-                })
-                .unwrap(),
-            )
-            .expect("failed to write error diff file");
+            fs::write(&error_diff_file_name, serde_json::to_string_pretty(&diff).unwrap()).expect("failed to write error diff file");
         }
     }
 
@@ -502,12 +495,14 @@ impl Stats {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 struct ErrorDiff {
     /// Count by error code
     required_errors: IndexMap<String, usize>,
+    required_error_lines: IndexMap<String, Vec<usize>>,
     /// Count by error code
     extra_errors: IndexMap<String, usize>,
+    extra_error_lines: IndexMap<String, Vec<usize>>,
 }
 
 struct Spanner {

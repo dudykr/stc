@@ -2,5 +2,12 @@
   "required_errors": {
     "TS2301": 2
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2301": [
+      8,
+      16
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

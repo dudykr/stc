@@ -3,5 +3,19 @@
     "TS2344": 4,
     "TS2322": 3
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2344": [
+      9,
+      16,
+      23,
+      30
+    ],
+    "TS2322": [
+      43,
+      45,
+      46
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

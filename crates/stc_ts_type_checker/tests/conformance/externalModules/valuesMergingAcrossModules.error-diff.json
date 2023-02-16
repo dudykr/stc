@@ -3,5 +3,14 @@
     "TS2440": 1,
     "TS2349": 1
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2440": [
+      2
+    ],
+    "TS2349": [
+      7
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
