@@ -105,11 +105,9 @@ fn record_stat(stats: Stats) -> Stats {
 
     drop(guard);
 
-    let content = format!("{:#?}", stats);
-
     // If we are testing everything, update stats file.
     if is_all_test_enabled() {
-        fs::write("tests/tsc-stats.rust-debug", &content).unwrap();
+        stats.print_to(Path::new("tests/tsc-stats.rust-debug"));
     }
 
     stats
