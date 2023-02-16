@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import glob
 import json
-import os
+
+
+def stats(d: dict):
+    return {k: v for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}
 
 
 def main():
@@ -17,8 +20,8 @@ def main():
             for k, v in data['required_errors'].items():
                 required[k] = required.get(k, 0) + v
 
-    print('Extra:', extras)
-    print('Required:', required)
+    print('Extra:', stats(extras))
+    print('Required:', stats(required))
 
 
 if __name__ == "__main__":
