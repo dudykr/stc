@@ -20,9 +20,10 @@ use std::{
 };
 
 use anyhow::{Context, Error};
+use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
@@ -55,8 +56,8 @@ impl Drop for RecordOnPanic {
             panic: 1,
             ..self.stats.clone()
         };
-        print_per_test_stat(&self.stats_file_name, &stats);
-        record_stat(stats);
+        stats.print_to(&self.stats_file_name);
+        add_to_total_stats(stats);
     }
 }
 
@@ -88,7 +89,7 @@ fn print_matched_errors() -> bool {
 }
 
 /// Add stats and return total stats.
-fn record_stat(stats: Stats) -> Stats {
+fn add_to_total_stats(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(Default::default);
 
     if !cfg!(debug_assertions) {
@@ -105,11 +106,9 @@ fn record_stat(stats: Stats) -> Stats {
 
     drop(guard);
 
-    let content = format!("{:#?}", stats);
-
     // If we are testing everything, update stats file.
     if is_all_test_enabled() {
-        fs::write("tests/tsc-stats.rust-debug", &content).unwrap();
+        stats.print_to(Path::new("tests/tsc-stats.rust-debug"));
     }
 
     stats
@@ -276,6 +275,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     expected_errors.sort();
 
     let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_stem));
+    let error_diff_file_name = file_name.with_file_name(format!("{}.error-diff.json", file_stem));
 
     let TestSpec {
         err_shift_n,
@@ -426,26 +426,33 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     stats.extra_error += extra_err_count;
 
     // Print per-test stats so we can prevent regressions.
-    if cfg!(debug_assertions) {
-        print_per_test_stat(&stats_file_name, &stats);
-    }
+    stats.print_to(&stats_file_name);
+    add_to_total_stats(stats);
 
-    let total_stats = record_stat(stats);
+    if env::var("CI").unwrap_or_default() != "1" {
+        let mut extra = IndexMap::default();
+        let mut required = IndexMap::default();
 
-    if cfg!(debug_assertions) {
-        println!("[TOTAL_STATS] {:#?}", total_stats);
-
-        if expected_errors.is_empty() {
-            println!("[REMOVE_ONLY]{}", file_name.display());
+        for err in extra_errors.iter() {
+            *extra.entry(err.1.clone()).or_default() += 1;
         }
-    }
 
-    if extra_errors.len() == expected_errors.len() {
-        let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
-        let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
+        for err in expected_errors.iter() {
+            *required.entry(err.code.clone()).or_default() += 1;
+        }
 
-        if expected_lines == extra_lines {
-            println!("[ERROR_CODE_ONLY]{}", file_name.display());
+        if extra.is_empty() && required.is_empty() {
+            let _ = fs::remove_file(&error_diff_file_name);
+        } else {
+            fs::write(
+                &error_diff_file_name,
+                serde_json::to_string_pretty(&ErrorDiff {
+                    extra_errors: extra,
+                    required_errors: required,
+                })
+                .unwrap(),
+            )
+            .expect("failed to write error diff file");
         }
     }
 
@@ -483,14 +490,24 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     Ok(())
 }
 
-fn print_per_test_stat(stats_file_name: &Path, stats: &Stats) {
-    if env::var("CI").unwrap_or_default() == "1" {
-        let stat_string = fs::read_to_string(stats_file_name).expect("failed to read test stats file");
+impl Stats {
+    fn print_to(&self, file_name: &Path) {
+        if env::var("CI").unwrap_or_default() == "1" {
+            let stat_string = fs::read_to_string(file_name).expect("failed to read test stats file");
 
-        assert_eq!(format!("{:#?}", stats), stat_string, "CI=1 so test stats must match");
-    } else {
-        fs::write(stats_file_name, format!("{:#?}", stats)).expect("failed to write test stats");
+            assert_eq!(format!("{:#?}", self), stat_string, "CI=1 so test stats must match");
+        } else {
+            fs::write(file_name, format!("{:#?}", self)).expect("failed to write test stats");
+        }
     }
+}
+
+#[derive(Debug, Serialize)]
+struct ErrorDiff {
+    /// Count by error code
+    required_errors: IndexMap<String, usize>,
+    /// Count by error code
+    extra_errors: IndexMap<String, usize>,
 }
 
 struct Spanner {
