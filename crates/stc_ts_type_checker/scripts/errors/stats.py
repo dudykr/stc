@@ -17,8 +17,8 @@ def main():
             for k, v in data['required_errors'].items():
                 required[k] = required.get(k, 0) + v
 
-    print(extras)
-    print(required)
+    print('Extra:', extras)
+    print('Required:', required)
 
 
 if __name__ == "__main__":
