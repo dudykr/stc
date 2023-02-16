@@ -56,7 +56,7 @@ impl Drop for RecordOnPanic {
             ..self.stats.clone()
         };
         stats.print_to(&self.stats_file_name);
-        record_stat(stats);
+        add_to_total_stats(stats);
     }
 }
 
@@ -88,7 +88,7 @@ fn print_matched_errors() -> bool {
 }
 
 /// Add stats and return total stats.
-fn record_stat(stats: Stats) -> Stats {
+fn add_to_total_stats(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(Default::default);
 
     if !cfg!(debug_assertions) {
@@ -426,7 +426,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     // Print per-test stats so we can prevent regressions.
     stats.print_to(&stats_file_name);
 
-    let total_stats = record_stat(stats);
+    let total_stats = add_to_total_stats(stats);
 
     if cfg!(debug_assertions) {
         println!("[TOTAL_STATS] {:#?}", total_stats);
