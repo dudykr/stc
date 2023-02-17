@@ -2,7 +2,8 @@ use std::borrow::Cow;
 
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl, RVarDeclarator,
+    RArrayPat, RArrowExpr, RBindingIdent, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsFnOrConstructorType,
+    RTsFnParam, RTsFnType, RTsType, RTsTypeAssertion, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -173,6 +174,16 @@ impl Analyzer<'_, '_> {
                 let old_this = if creates_new_this { self.scope.this.take() } else { None };
 
                 let declared_ty = v.name.get_ty();
+                let declared_ty_include_this =
+                    if let Some(RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(RTsFnType { params, .. }))) = declared_ty {
+                        if let [RTsFnParam::Ident(RBindingIdent { id, .. }), ..] = &params[..] {
+                            id.sym == js_word!("this")
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    };
                 if declared_ty.is_some() {
                     //TODO(kdy1):
                     // self.span_allowed_implicit_any = span;
@@ -210,7 +221,7 @@ impl Analyzer<'_, '_> {
                 match declared_ty {
                     Some(ty) => {
                         debug!("var: user declared type");
-                        let ty = match ty.validate_with(self) {
+                        let mut ty = match ty.validate_with(self) {
                             Ok(ty) => ty,
                             Err(err) => {
                                 self.storage.report(err);
@@ -218,12 +229,22 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
                         };
+
+                        if declared_ty_include_this {
+                            if let box RExpr::Arrow(RArrowExpr { .. }) = init {
+                                if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
+                                    *params = params[1..].to_vec();
+                                }
+                            }
+                        }
+
                         let ty = self.expand(span, ty, Default::default())?;
                         let error_for_null_or_undefined = if matches!(v.name, RPat::Array(..) | RPat::Object(..)) {
                             self.deny_null_or_undefined(span, &ty)
                         } else {
                             Ok(())
                         };
+
                         ty.assert_valid();
                         let mut ty = (|| {
                             if !should_instantiate_type_ann(&ty) {
