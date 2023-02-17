@@ -3,5 +3,17 @@
     "TS2526": 1,
     "TS2527": 4
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2526": [
+      6
+    ],
+    "TS2527": [
+      32,
+      34,
+      36,
+      42
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

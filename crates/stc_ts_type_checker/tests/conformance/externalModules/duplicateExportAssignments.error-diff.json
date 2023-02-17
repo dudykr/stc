@@ -2,7 +2,29 @@
   "required_errors": {
     "TS2300": 11
   },
+  "required_error_lines": {
+    "TS2300": [
+      2,
+      4,
+      4,
+      5,
+      5,
+      5,
+      6,
+      7,
+      8,
+      9,
+      9
+    ]
+  },
   "extra_errors": {
     "TS2528": 3
+  },
+  "extra_error_lines": {
+    "TS2528": [
+      4,
+      5,
+      6
+    ]
   }
 }

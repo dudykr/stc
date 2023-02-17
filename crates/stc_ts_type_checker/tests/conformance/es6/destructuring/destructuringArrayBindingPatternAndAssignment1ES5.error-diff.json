@@ -2,5 +2,13 @@
   "required_errors": {
     "TS2493": 3
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2493": [
+      43,
+      44,
+      44
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

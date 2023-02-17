@@ -135,7 +135,16 @@ impl Analyzer<'_, '_> {
 
                 if let Some(dep_id) = dep_id {
                     if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
-                        return Ok(dep.clone());
+                        return Ok(Type::Ref(Ref {
+                            span,
+                            type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), span.with_ctxt(SyntaxContext::empty()))),
+                            type_args: Some(box TypeParamInstantiation {
+                                span,
+                                params: vec![dep.clone()],
+                            }),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }));
                     } else {
                         return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
                     }

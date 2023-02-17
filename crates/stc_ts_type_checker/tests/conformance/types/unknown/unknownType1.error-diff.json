@@ -3,5 +3,18 @@
     "TS2322": 5,
     "TS2564": 1
   },
-  "extra_errors": {}
+  "required_error_lines": {
+    "TS2322": [
+      122,
+      130,
+      131,
+      172,
+      173
+    ],
+    "TS2564": [
+      164
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

@@ -1942,7 +1942,9 @@ impl Analyzer<'_, '_> {
                                 if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
                                     if !class_prop.accessor.getter && !class_prop.accessor.setter {
                                         if class_prop.key.type_eq(prop) {
-                                            return Err(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span }.into());
+                                            self.storage
+                                                .report(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span: prop.span() }.into());
+                                            return Ok(Type::any(prop.span(), Default::default()));
                                         };
                                     }
                                 }
@@ -2742,7 +2744,9 @@ impl Analyzer<'_, '_> {
                                 if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
                                     if !p.accessor.getter && !p.accessor.setter {
                                         if p.key.type_eq(prop) {
-                                            return Err(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span }.into());
+                                            self.storage
+                                                .report(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span: prop.span() }.into());
+                                            return Ok(Type::any(prop.span(), Default::default()));
                                         };
                                     }
                                 }
@@ -2894,7 +2898,7 @@ impl Analyzer<'_, '_> {
                 // No property found
                 return Err(ErrorKind::NoSuchPropertyInModule {
                     span,
-                    name: box name.clone(),
+                    name: box prop.clone(),
                 }
                 .into());
             }

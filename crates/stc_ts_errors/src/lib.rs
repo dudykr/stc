@@ -15,7 +15,6 @@ use ansi_term::Color::Yellow;
 use derivative::Derivative;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
-use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
 use swc_atoms::JsWord;
@@ -640,6 +639,7 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2335
     SuperInClassWithoutSuper {
         span: Span,
     },
@@ -649,6 +649,7 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2505
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -663,10 +664,11 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2463
     OptionalBindingPatternInImplSignature {
         span: Span,
     },
-
+    /// TS5076
     NullishCoalescingMixedWithLogicalWithoutParen {
         span: Span,
     },
@@ -813,7 +815,7 @@ pub enum ErrorKind {
 
     NoSuchPropertyInModule {
         span: Span,
-        name: Box<RTsModuleName>,
+        name: Box<Key>,
     },
 
     /// TS2355

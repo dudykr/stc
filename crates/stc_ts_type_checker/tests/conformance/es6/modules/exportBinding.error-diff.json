@@ -3,7 +3,22 @@
     "TS2372": 1,
     "TS2454": 2
   },
+  "required_error_lines": {
+    "TS2372": [
+      5
+    ],
+    "TS2454": [
+      5,
+      5
+    ]
+  },
   "extra_errors": {
     "TS2304": 2
+  },
+  "extra_error_lines": {
+    "TS2304": [
+      1,
+      2
+    ]
   }
 }
