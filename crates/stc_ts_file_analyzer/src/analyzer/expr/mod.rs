@@ -451,7 +451,7 @@ impl Analyzer<'_, '_> {
                                     ..
                                 }, ..] = &params[..]
                                 {
-                                    id.sym == js_word!("this")
+                                    id.sym != js_word!("this")
                                 } else {
                                     false
                                 }
