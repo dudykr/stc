@@ -8,9 +8,9 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrowExpr, RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber,
-    ROptChainBase, ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl,
-    RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    RArrowExpr, RAssignExpr, RBindingIdent, RClassExpr, RExpr, RFnExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber,
+    ROptChainBase, ROptChainExpr, RParam, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr,
+    RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -440,7 +440,25 @@ impl Analyzer<'_, '_> {
                         ..
                     }, ..] = &params[..]
                     {
-                        id.sym == js_word!("this") && matches!(e.right, box RExpr::Arrow(RArrowExpr { .. }))
+                        let rhs_want_skip_this = matches!(e.right, box RExpr::Arrow(RArrowExpr { .. }))
+                            || if let box RExpr::Fn(RFnExpr {
+                                function: box stc_ts_ast_rnode::RFunction { params, .. },
+                                ..
+                            }) = &e.right
+                            {
+                                if let [RParam {
+                                    pat: RPat::Ident(RBindingIdent { id, .. }),
+                                    ..
+                                }, ..] = &params[..]
+                                {
+                                    id.sym == js_word!("this")
+                                } else {
+                                    false
+                                }
+                            } else {
+                                false
+                            };
+                        id.sym == js_word!("this") && rhs_want_skip_this
                     } else {
                         false
                     }
