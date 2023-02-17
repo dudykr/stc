@@ -8,9 +8,9 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, ROptChainBase,
-    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName,
-    RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    RArrowExpr, RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber,
+    ROptChainBase, ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl,
+    RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -21,9 +21,10 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, Id, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
-    QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
+    Function, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType,
+    PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -432,6 +433,23 @@ impl Analyzer<'_, '_> {
             is_valid_lhs(&e.left).report(&mut analyzer.storage);
 
             let mut errors = Errors::default();
+            let will_skip_this = if let Some(ty) = type_ann {
+                if let Type::Function(Function { params, .. }) = ty.normalize() {
+                    if let [FnParam {
+                        pat: RPat::Ident(RBindingIdent { id, .. }),
+                        ..
+                    }, ..] = &params[..]
+                    {
+                        id.sym == js_word!("this") && matches!(e.right, box RExpr::Arrow(RArrowExpr { .. }))
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
 
             let rhs_ty = match {
                 if !skip_right {
@@ -446,10 +464,24 @@ impl Analyzer<'_, '_> {
                         ..analyzer.ctx
                     };
                     let mut analyzer = analyzer.with_ctx(ctx);
-                    let result: Result<_, _> = e
-                        .right
-                        .validate_with_args(&mut *analyzer, (mode, None, type_ann))
-                        .context("tried to validate rhs an assign expr");
+
+                    let result = match type_ann {
+                        Some(ty) if will_skip_this => {
+                            let mut ty = ty.clone();
+                            if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
+                                *params = params[1..].to_vec();
+                            }
+
+                            ty.freeze();
+                            e.right
+                                .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
+                                .context("tried to validate rhs an assign expr")
+                        }
+                        rest => e
+                            .right
+                            .validate_with_args(&mut *analyzer, (mode, None, rest))
+                            .context("tried to validate rhs an assign expr"),
+                    };
 
                     match result {
                         Ok(v) => Some(v),
