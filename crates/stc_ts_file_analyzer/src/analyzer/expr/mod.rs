@@ -2936,7 +2936,7 @@ impl Analyzer<'_, '_> {
                         if let Key::Normal { sym, .. } = prop {
                             if let Some(types) = exports.types.get(sym) {
                                 for ty in types.iter() {
-                                    if ty.is_module() {
+                                    if ty.is_module() || ty.is_interface() {
                                         return Ok(ty.clone());
                                     }
                                 }

@@ -1710,6 +1710,7 @@ internalModules/moduleDeclarations/asiPreventsParsingAsNamespace02.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace03.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace04.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace05.ts
+internalModules/moduleDeclarations/nonInstantiatedModule.ts
 jsdoc/jsdocLinkTag5.ts
 jsdoc/jsdocLinkTag6.ts
 jsdoc/jsdocTwoLineTypedef.ts
