@@ -3227,7 +3227,10 @@ impl Analyzer<'_, '_> {
         }
 
         if let Type::Predicate(p) = ret_ty.normalize() {
-            self.ctx.is_type_predicate = true;
+            let ctx = Ctx {
+                is_type_predicate: true,
+                ..self.ctx
+            };
 
             let ty = match &p.ty {
                 Some(v) => v,
@@ -3247,7 +3250,7 @@ impl Analyzer<'_, '_> {
                                 let arg = &args[idx];
                                 if let RExpr::Ident(var_name) = &*arg.expr {
                                     let ty = ty.clone().freezed();
-                                    self.store_call_fact_for_var(var_name.span, var_name.into(), &ty);
+                                    self.with_ctx(ctx).store_call_fact_for_var(var_name.span, var_name.into(), &ty);
                                 }
                             }
                             _ => {}
