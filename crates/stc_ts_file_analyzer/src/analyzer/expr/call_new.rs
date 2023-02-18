@@ -3227,6 +3227,8 @@ impl Analyzer<'_, '_> {
         }
 
         if let Type::Predicate(p) = ret_ty.normalize() {
+            self.ctx.is_type_predicate = true;
+
             let ty = match &p.ty {
                 Some(v) => v,
                 None => return,
@@ -3265,6 +3267,7 @@ impl Analyzer<'_, '_> {
             .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
             .context("tried to normalize original type")?
             .freezed();
+
         let new_ty = self
             .normalize(Some(span), Cow::Owned(new_ty), Default::default())
             .context("tried to normalize new type")?
@@ -3290,9 +3293,27 @@ impl Analyzer<'_, '_> {
         }
 
         match new_ty.normalize() {
-            Type::Keyword(..) | Type::Lit(..) => {}
+            Type::Keyword(keyword) => {
+                if let TsKeywordTypeKind::TsObjectKeyword = keyword.kind {
+                    if orig_ty.is_any() {
+                        return Ok(orig_ty.into_owned());
+                    }
+                }
+            }
+
+            Type::Lit(..) => {}
             _ => {
                 match orig_ty.normalize() {
+                    Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                        ..
+                    }) => {
+                        if new_ty.is_fn_type() {
+                            return Ok(orig_ty.into_owned());
+                        }
+
+                        return Ok(new_ty.into_owned());
+                    }
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
@@ -3359,7 +3380,6 @@ impl Analyzer<'_, '_> {
             _ => {
                 if let Some(previous_types) = self.find_var_type(&var_name.clone(), TypeOfMode::RValue).map(Cow::into_owned) {
                     let narrowed_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.fixed().freezed();
-
                     self.add_type_fact(&var_name, narrowed_ty, new_ty.clone());
                     return;
                 }
