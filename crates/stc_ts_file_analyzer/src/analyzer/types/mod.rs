@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
                         if opts.normalize_keywords {
                             let name = match k.kind {
                                 TsKeywordTypeKind::TsNumberKeyword => Some(js_word!("Number")),
-                                TsKeywordTypeKind::TsObjectKeyword => Some(js_word!("Number")),
+                                TsKeywordTypeKind::TsObjectKeyword => Some(js_word!("Object")),
                                 TsKeywordTypeKind::TsBooleanKeyword => Some(js_word!("Boolean")),
                                 TsKeywordTypeKind::TsStringKeyword => Some(js_word!("String")),
                                 TsKeywordTypeKind::TsSymbolKeyword => Some(js_word!("Symbol")),
@@ -186,6 +186,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(name) = name {
                                 let global = self.env.get_global_type(actual_span, &name)?;
+
                                 global.assert_valid();
 
                                 return Ok(Cow::Owned(global));

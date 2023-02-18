@@ -1151,8 +1151,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
-            return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
+        if !self.ctx.is_type_predicate {
+            if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
+                return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
+            }
         }
 
         Ok(None)
@@ -2058,6 +2060,7 @@ impl Expander<'_, '_, '_> {
                     error!("Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
+
                 if let Some(types) = self.analyzer.find_type(&i.into())? {
                     info!(
                         "expand: expanding `{}` using analyzer: {}",
@@ -2103,6 +2106,7 @@ impl Expander<'_, '_, '_> {
                                 }
 
                                 verify!(ty);
+
                                 return Ok(Some(ty.clone()));
                             }
 
