@@ -778,6 +778,7 @@ pub enum ErrorKind {
         id: Id,
     },
 
+    /// TS7036
     NonStringDynamicImport {
         span: Span,
     },
@@ -2121,6 +2122,8 @@ impl ErrorKind {
             ErrorKind::RestTypeNotFromObject { .. } => 2700,
 
             ErrorKind::UsePropBeforeInit { .. } => 2729,
+
+            ErrorKind::NonStringDynamicImport { .. } => 7036,
 
             _ => 0,
         }
