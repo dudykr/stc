@@ -3265,6 +3265,7 @@ impl Analyzer<'_, '_> {
                 is_type_predicate: true,
                 ..self.ctx
             };
+            self.ctx.is_type_predicate = true;
 
             let ty = match &p.ty {
                 Some(v) => v,
