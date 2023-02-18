@@ -400,6 +400,7 @@ dynamicImport/importCallExpressionInUMD1.ts
 dynamicImport/importCallExpressionInUMD3.ts
 dynamicImport/importCallExpressionInUMD5.ts
 dynamicImport/importCallExpressionShouldNotGetParen.ts
+dynamicImport/importCallExpressionSpecifierNotStringTypeError.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.classMethods.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionDeclarations.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionExpressions.es2015.ts
