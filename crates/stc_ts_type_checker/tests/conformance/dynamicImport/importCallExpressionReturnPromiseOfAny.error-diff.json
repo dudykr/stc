@@ -2,10 +2,10 @@
   "required_errors": {},
   "required_error_lines": {},
   "extra_errors": {
-    "TS0": 1
+    "TS7036": 1
   },
   "extra_error_lines": {
-    "TS0": [
+    "TS7036": [
       11
     ]
   }
