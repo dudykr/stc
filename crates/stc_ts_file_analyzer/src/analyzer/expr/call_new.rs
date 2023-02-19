@@ -1308,6 +1308,10 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(arg.clone());
                         }
 
+                        Type::Param(..) => {
+                            new_arg_types.push(arg.clone());
+                        }
+
                         _ => {
                             self.scope.is_call_arg_count_unknown = true;
 
