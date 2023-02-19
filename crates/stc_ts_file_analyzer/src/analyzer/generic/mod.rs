@@ -229,6 +229,9 @@ impl Analyzer<'_, '_> {
                         for arg in &args[idx..stop_idx] {
                             self.infer_type(span, &mut inferred, &p_ty.elem_type, &arg.ty, opts)?;
                         }
+                        if let Some(arg) = args.get(stop_idx) {
+                            self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
+                        }
                     }
                     _ => {
                         // Handle varargs
