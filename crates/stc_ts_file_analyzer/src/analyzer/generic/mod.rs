@@ -230,7 +230,7 @@ impl Analyzer<'_, '_> {
                             self.infer_type(span, &mut inferred, &p_ty.elem_type, &arg.ty, opts)?;
                         }
                         if let Some(arg) = args.get(stop_idx) {
-                            self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
+                            self.infer_type(span, &mut inferred, &p_ty.elem_type, &arg.ty, opts)?;
                         }
                     }
                     _ => {
