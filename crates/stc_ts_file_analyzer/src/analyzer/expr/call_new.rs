@@ -1308,6 +1308,10 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(arg.clone());
                         }
 
+                        Type::Param(..) => {
+                            new_arg_types.push(arg.clone());
+                        }
+
                         _ => {
                             self.scope.is_call_arg_count_unknown = true;
 
@@ -2503,6 +2507,9 @@ impl Analyzer<'_, '_> {
         ret_ty.freeze();
         let type_ann = self.expand_type_ann(span, type_ann)?.freezed();
 
+        dbg!(&arg_types);
+        dbg!(&spread_arg_types);
+
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
         let params = params
             .iter()
@@ -3608,11 +3615,13 @@ impl Analyzer<'_, '_> {
             let args: Vec<_> = args
                 .iter()
                 .map(|arg| {
-                    arg.validate_with(this).report(&mut this.storage).unwrap_or_else(|| TypeOrSpread {
-                        span: arg.span(),
-                        spread: arg.spread,
-                        ty: box Type::any(arg.expr.span(), Default::default()),
-                    })
+                    dbg!(arg.validate_with(this))
+                        .report(&mut this.storage)
+                        .unwrap_or_else(|| TypeOrSpread {
+                            span: arg.span(),
+                            spread: arg.spread,
+                            ty: box Type::any(arg.expr.span(), Default::default()),
+                        })
                 })
                 .collect();
 
