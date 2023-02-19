@@ -2507,9 +2507,6 @@ impl Analyzer<'_, '_> {
         ret_ty.freeze();
         let type_ann = self.expand_type_ann(span, type_ann)?.freezed();
 
-        dbg!(&arg_types);
-        dbg!(&spread_arg_types);
-
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
         let params = params
             .iter()
@@ -3615,13 +3612,11 @@ impl Analyzer<'_, '_> {
             let args: Vec<_> = args
                 .iter()
                 .map(|arg| {
-                    dbg!(arg.validate_with(this))
-                        .report(&mut this.storage)
-                        .unwrap_or_else(|| TypeOrSpread {
-                            span: arg.span(),
-                            spread: arg.spread,
-                            ty: box Type::any(arg.expr.span(), Default::default()),
-                        })
+                    arg.validate_with(this).report(&mut this.storage).unwrap_or_else(|| TypeOrSpread {
+                        span: arg.span(),
+                        spread: arg.spread,
+                        ty: box Type::any(arg.expr.span(), Default::default()),
+                    })
                 })
                 .collect();
 
