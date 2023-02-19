@@ -17,7 +17,7 @@ stc_ts_generics = {path = "../stc_ts_generics"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
 stc_utils = {path = "../stc_utils"}
-swc_atoms = "0.4.34"
-swc_common = "0.29.29"
-swc_ecma_ast = "0.96.3"
+swc_atoms = "0.4.36"
+swc_common = "0.29.31"
+swc_ecma_ast = "0.96.5"
 tracing = "0.1.37"
