@@ -66,6 +66,6 @@ serde_json = "1"
 stc_testing = {path = "../stc_testing"}
 stc_ts_testing = {path = "../stc_ts_testing"}
 swc_ecma_parser = "0.124.9"
-swc_ecma_transforms = "0.203.21"
+swc_ecma_transforms = "0.203.22"
 swc_ecma_visit = "0.82.5"
 testing = "0.31.15"

@@ -2775,9 +2775,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_transforms"
-version = "0.203.21"
+version = "0.203.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c6e2fcd2cfc6f7c3ca3eae497636c6ca10a3d270ad44641957ce269bfba2237"
+checksum = "1090e8387fa29d697d92cbc2bc5671ffa388d360478597eb06ca6ca1a8ea9272"
 dependencies = [
  "swc_atoms",
  "swc_common",
