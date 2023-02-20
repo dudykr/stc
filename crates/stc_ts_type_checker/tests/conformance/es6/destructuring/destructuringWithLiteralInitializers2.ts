@@ -12,7 +12,7 @@ function f13([x = 0, y] = [1, 'foo']) {}
 
 function f20([x = 0, y = 'bar']) {}
 function f21([x = 0, y = 'bar'] = []) {}
-function f22([x = 0, y = 'bar'] = [1]) {}
+function f22([x = 0, y = 'bar'] = [1, sx]) {}
 function f23([x = 0, y = 'bar'] = [1, 'foo']) {}
 
 declare const nx: number | undefined;
