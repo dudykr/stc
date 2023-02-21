@@ -22,8 +22,8 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
-    Function, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType,
-    PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    Function, Id, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator,
+    OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
     TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
@@ -368,7 +368,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to get type of lhs of an assignment")
                         .map(|ty| {
                             mark_var_as_truthy = true;
-                            ty
+                            ty.freezed()
                         })
                         .convert_err(|err| {
                             skip_right = true;
@@ -433,32 +433,40 @@ impl Analyzer<'_, '_> {
             is_valid_lhs(&e.left).report(&mut analyzer.storage);
 
             let mut errors = Errors::default();
-            let will_skip_this = if let Some(ty) = type_ann {
+            // skip this flag for arrow function, static method etc.
+            let mut left_function_declare_not_this_type = false;
+            let right_funtion_declared_this = if let box RExpr::Fn(RFnExpr {
+                function: box stc_ts_ast_rnode::RFunction { params, .. },
+                ..
+            }) = &e.right
+            {
+                if let [RParam {
+                    pat: RPat::Ident(RBindingIdent { id, .. }),
+                    ..
+                }, ..] = &params[..]
+                {
+                    id.sym == js_word!("this")
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
+
+            let rhs_is_arrow = matches!(e.right, box RExpr::Arrow(RArrowExpr { .. }));
+            let lhs_declared_this = if let Some(ty) = type_ann {
                 if let Type::Function(Function { params, .. }) = ty.normalize() {
                     if let [FnParam {
-                        pat: RPat::Ident(RBindingIdent { id, .. }),
+                        pat: RPat::Ident(RBindingIdent { id, type_ann, .. }),
+                        ty,
                         ..
                     }, ..] = &params[..]
                     {
-                        let rhs_want_skip_this = matches!(e.right, box RExpr::Arrow(RArrowExpr { .. }))
-                            || if let box RExpr::Fn(RFnExpr {
-                                function: box stc_ts_ast_rnode::RFunction { params, .. },
-                                ..
-                            }) = &e.right
-                            {
-                                if let [RParam {
-                                    pat: RPat::Ident(RBindingIdent { id, .. }),
-                                    ..
-                                }, ..] = &params[..]
-                                {
-                                    id.sym != js_word!("this")
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            };
-                        id.sym == js_word!("this") && rhs_want_skip_this
+                        if matches!(ty.normalize_instance(), Type::This(..)) {
+                            left_function_declare_not_this_type = true;
+                        }
+
+                        id.sym == js_word!("this")
                     } else {
                         false
                     }
@@ -482,14 +490,57 @@ impl Analyzer<'_, '_> {
                         ..analyzer.ctx
                     };
                     let mut analyzer = analyzer.with_ctx(ctx);
-
+                    dbg!(123123);
                     let result = match type_ann {
-                        Some(ty) if will_skip_this => {
+                        Some(ty) if rhs_is_arrow || !right_funtion_declared_this => {
+                            let mut ty = ty.clone();
+                            if lhs_declared_this {
+                                if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
+                                    if !rhs_is_arrow {
+                                        if !left_function_declare_not_this_type {
+                                            analyzer.scope.this = Some(*params[0].ty.to_owned().freezed());
+                                        } else {
+                                            // bound this (lhs to rhs)
+                                            if let RPatOrExpr::Pat(box RPat::Expr(box RExpr::Member(RMemberExpr {
+                                                obj: box RExpr::Ident(obj),
+                                                ..
+                                            }))) = &e.left
+                                            {
+                                                if let Ok(value) = analyzer
+                                                    .type_of_var(obj, TypeOfMode::LValue, None)
+                                                    .context("tried to get type of lhs of an assignment")
+                                                {
+                                                    analyzer.scope.this = Some(value.freezed());
+                                                }
+                                            }
+                                        }
+                                    }
+                                    *params = params[1..].to_vec();
+                                }
+                            }
+                            ty.freeze();
+                            e.right
+                                .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
+                                .context("tried to validate rhs an assign expr")
+                        }
+                        Some(ty) if right_funtion_declared_this => {
                             let mut ty = ty.clone();
                             if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
-                                *params = params[1..].to_vec();
+                                if let Some(this) = &analyzer.scope.this {
+                                    params[0] = FnParam {
+                                        ty: Box::new(
+                                            Type::Instance(Instance {
+                                                span: params[0].span,
+                                                ty: Box::new(this.clone().freezed()),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })
+                                            .freezed(),
+                                        ),
+                                        ..params[0].clone()
+                                    };
+                                }
                             }
-
                             ty.freeze();
                             e.right
                                 .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
