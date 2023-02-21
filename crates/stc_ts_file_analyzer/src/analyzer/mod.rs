@@ -162,7 +162,7 @@ pub(crate) struct Ctx {
     in_assign_rhs: bool,
 
     in_export_decl: bool,
-
+    in_export_named: bool,
     skip_identical_while_inference: bool,
 
     super_references_super_class: bool,
@@ -521,6 +521,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_return_arg: false,
                 in_assign_rhs: false,
                 in_export_decl: false,
+                in_export_named: false,
                 skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,

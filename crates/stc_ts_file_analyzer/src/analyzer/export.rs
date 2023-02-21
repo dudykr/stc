@@ -39,7 +39,6 @@ impl Analyzer<'_, '_> {
                 }
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
-
                     a.export_type(i.span(), i.id.clone().into(), None)
                 }
 
@@ -65,15 +64,15 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()));
                     a.register_type(e.id.clone().into(), ty);
 
-                    a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
+                    a.storage
+                        .export_type(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                     a.storage
                         .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
                 RDecl::TsModule(module) => match &module.id {
                     RTsModuleName::Ident(id) => {
                         module.visit_with(a);
-
-                        a.storage.export_type(span, a.ctx.module_id, id.clone().into());
+                        a.storage.export_type(span, a.ctx.module_id, id.clone().into(), id.clone().into());
                     }
                     RTsModuleName::Str(..) => {
                         let module: Option<Type> = module.validate_with(a)?;
@@ -236,12 +235,11 @@ impl Analyzer<'_, '_> {
         };
 
         let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.freezed()).collect::<Vec<_>>();
-
         for ty in iter {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
 
-        self.storage.export_type(span, self.ctx.module_id, name);
+        self.storage.export_type(span, self.ctx.module_id, name, orig_name);
     }
 
     /// Exports a variable.
@@ -329,6 +327,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportNamedSpecifier) {
         let ctx = Ctx {
             report_error_for_non_local_vars: true,
+            in_export_named: true,
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
@@ -447,8 +446,8 @@ impl Analyzer<'_, '_> {
             self.storage.export_var(span, ctxt, id.clone(), orig.clone());
         }
 
-        if self.storage.get_local_type(ctxt, orig).is_some() {
-            self.storage.export_type(span, ctxt, id);
+        if self.storage.get_local_type(ctxt, orig.clone()).is_some() {
+            self.storage.export_type(span, ctxt, id, orig);
         }
     }
 
