@@ -25,7 +25,7 @@ pub fn builtin() {
         }
         libs.sort();
         libs.dedup();
-        let data = BuiltIn::from_ts_libs(&shared, &libs);
+        let data = BuiltIn::from_ts_libs(&shared, &libs, false);
 
         let env = Env::new(
             shared,
@@ -70,7 +70,7 @@ pub fn intl() {
         }
         libs.sort();
         libs.dedup();
-        let data = BuiltIn::from_ts_libs(&shared, &libs);
+        let data = BuiltIn::from_ts_libs(&shared, &libs, false);
 
         let env = Env::new(
             shared,

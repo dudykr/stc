@@ -200,6 +200,7 @@ pub struct Rule {
     pub no_unused_locals: bool,
     pub no_unused_parameters: bool,
     pub use_define_property_for_class_fields: bool,
+    pub no_lib: bool,
 
     pub jsx: JsxMode,
 }
