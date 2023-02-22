@@ -2855,9 +2855,9 @@ dependencies = [
 
 [[package]]
 name = "swc_error_reporters"
-version = "0.13.30"
+version = "0.13.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cab7b4d57a38aa721d3b64896f07198567e0d26fa15517eeddc52560f7f7ab8"
+checksum = "da4d20e5079a9c29de7b959a42aae34e14985499273dc248b868bae2dd3fa633"
 dependencies = [
  "anyhow",
  "miette",
