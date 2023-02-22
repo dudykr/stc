@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
             let mut errors = Errors::default();
             // skip this flag for arrow function, static method etc.
             let mut left_function_declare_not_this_type = false;
-            let right_funtion_declared_this = if let box RExpr::Fn(RFnExpr {
+            let right_function_declared_this = if let box RExpr::Fn(RFnExpr {
                 function: box stc_ts_ast_rnode::RFunction { params, .. },
                 ..
             }) = &e.right
@@ -492,7 +492,7 @@ impl Analyzer<'_, '_> {
                     let mut analyzer = analyzer.with_ctx(ctx);
 
                     let result = match type_ann {
-                        Some(ty) if rhs_is_arrow || !right_funtion_declared_this => {
+                        Some(ty) if rhs_is_arrow || !right_function_declared_this => {
                             let mut ty = ty.clone();
                             if lhs_declared_this {
                                 if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
@@ -523,7 +523,7 @@ impl Analyzer<'_, '_> {
                                 .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
                                 .context("tried to validate rhs an assign expr")
                         }
-                        Some(ty) if right_funtion_declared_this => {
+                        Some(ty) if right_function_declared_this => {
                             let mut ty = ty.clone();
                             if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
                                 if let Some(this) = &analyzer.scope.this {
