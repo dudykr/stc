@@ -1340,8 +1340,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 for ty in &li.types {
-                    dbg!(force_dump_type_as_string(ty));
-                    dbg!(force_dump_type_as_string(rhs));
                     match self
                         .assign_with_opts(
                             data,
@@ -1363,15 +1361,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                dbg!(&errors);
-
                 let left_contains_object = li.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
                 let rhs_requires_unknown_property_check = !matches!(rhs.normalize(), Type::Keyword(..));
 
-                dbg!(left_contains_object, rhs_requires_unknown_property_check);
-
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
-                    dbg!("checking if rhs is unknown");
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
