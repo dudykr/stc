@@ -3882,7 +3882,6 @@ impl Analyzer<'_, '_> {
                     return Ok(ty.clone().into_owned());
                 }
 
-                if let Type::Module(..) = ty.normalize() {
                 if let Type::Module(..) | Type::Alias(..) = ty.normalize() {
                     return Ok(ty.clone().into_owned());
                 }
