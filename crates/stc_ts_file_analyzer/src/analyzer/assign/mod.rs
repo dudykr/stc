@@ -1318,17 +1318,6 @@ impl Analyzer<'_, '_> {
             Type::Intersection(ref li) => {
                 let mut errors = vec![];
 
-                // TODO(kdy1): Optimize unknown rhs handling
-
-                let is_str = li.types.iter().any(|ty| ty.is_str());
-                let is_num = li.types.iter().any(|ty| ty.is_num());
-                let is_bool = li.types.iter().any(|ty| ty.is_bool());
-
-                // LHS is never.
-                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 && !rhs.is_never() {
-                    fail!()
-                }
-
                 // This is required to handle intersections of function-like types.
                 if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
                     if self
