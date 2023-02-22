@@ -164,6 +164,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule.strict_function_types = strict;
                 } else if s.starts_with("noLib:") {
                     let v = s["noLib:".len()..].trim().parse().unwrap();
+                    rule.no_lib = v;
                     if v {
                         libs = vec![];
                     }
