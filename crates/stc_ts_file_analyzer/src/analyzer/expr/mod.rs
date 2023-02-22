@@ -308,6 +308,7 @@ impl Analyzer<'_, '_> {
 
         if type_ann.is_none() && need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
+            ty.freeze();
             ty.fix();
         }
 
@@ -490,7 +491,7 @@ impl Analyzer<'_, '_> {
                         ..analyzer.ctx
                     };
                     let mut analyzer = analyzer.with_ctx(ctx);
-                    dbg!(123123);
+
                     let result = match type_ann {
                         Some(ty) if rhs_is_arrow || !right_funtion_declared_this => {
                             let mut ty = ty.clone();
@@ -4687,8 +4688,7 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        Ok(ty)
+        Ok(ty.freezed())
     }
 }
 
