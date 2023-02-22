@@ -7,12 +7,6 @@
       18
     ]
   },
-  "extra_errors": {
-    "TS2741": 1
-  },
-  "extra_error_lines": {
-    "TS2741": [
-      16
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
