@@ -2,7 +2,7 @@ use std::{borrow::Cow, cmp::min, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
+    debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
@@ -576,7 +576,6 @@ impl Analyzer<'_, '_> {
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(right))
         {
             if cfg!(debug_assertions) {
-                print_backtrace();
                 info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
             }
             return Ok(());
@@ -1321,19 +1320,20 @@ impl Analyzer<'_, '_> {
 
                 // This is required to handle intersections of function-like types.
                 if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
-                    if dbg!(self.assign_to_type_elements(
-                        data,
-                        li.span,
-                        &l_type_lit.members,
-                        rhs,
-                        l_type_lit.metadata,
-                        AssignOpts {
-                            is_assigning_to_class_members: true,
-                            allow_unknown_rhs: Some(false),
-                            ..opts
-                        },
-                    ))
-                    .is_ok()
+                    if self
+                        .assign_to_type_elements(
+                            data,
+                            li.span,
+                            &l_type_lit.members,
+                            rhs,
+                            l_type_lit.metadata,
+                            AssignOpts {
+                                is_assigning_to_class_members: true,
+                                allow_unknown_rhs: Some(false),
+                                ..opts
+                            },
+                        )
+                        .is_ok()
                     {
                         return Ok(());
                     }
