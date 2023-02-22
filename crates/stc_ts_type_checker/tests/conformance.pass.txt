@@ -400,6 +400,7 @@ dynamicImport/importCallExpressionInUMD1.ts
 dynamicImport/importCallExpressionInUMD3.ts
 dynamicImport/importCallExpressionInUMD5.ts
 dynamicImport/importCallExpressionShouldNotGetParen.ts
+dynamicImport/importCallExpressionSpecifierNotStringTypeError.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.classMethods.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionDeclarations.es2015.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.functionExpressions.es2015.ts
@@ -1709,6 +1710,7 @@ internalModules/moduleDeclarations/asiPreventsParsingAsNamespace02.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace03.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace04.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace05.ts
+internalModules/moduleDeclarations/nonInstantiatedModule.ts
 jsdoc/jsdocLinkTag5.ts
 jsdoc/jsdocLinkTag6.ts
 jsdoc/jsdocTwoLineTypedef.ts

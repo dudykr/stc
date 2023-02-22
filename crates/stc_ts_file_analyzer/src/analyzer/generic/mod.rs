@@ -186,6 +186,16 @@ impl Analyzer<'_, '_> {
                     self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
                 }
             } else {
+                let stop_idx = args
+                    .iter()
+                    .skip(idx)
+                    .position(|arg| arg.spread.is_some())
+                    .map(|v| v + idx)
+                    .unwrap_or({
+                        // No spread means all arguments are used.
+                        args.len()
+                    });
+
                 match p.ty.normalize_instance() {
                     Type::Param(param) => {
                         self.infer_type(
@@ -194,7 +204,7 @@ impl Analyzer<'_, '_> {
                             &p.ty,
                             &Type::Tuple(Tuple {
                                 span: p.ty.span(),
-                                elems: args[idx..]
+                                elems: args[idx..stop_idx]
                                     .iter()
                                     .map(|arg| &arg.ty)
                                     .cloned()
@@ -216,13 +226,16 @@ impl Analyzer<'_, '_> {
                     }
                     Type::Array(p_ty) => {
                         // Handle varargs. This result in union of all types.
-                        for arg in &args[idx..] {
+                        for arg in &args[idx..stop_idx] {
+                            self.infer_type(span, &mut inferred, &p_ty.elem_type, &arg.ty, opts)?;
+                        }
+                        if let Some(arg) = args.get(stop_idx) {
                             self.infer_type(span, &mut inferred, &p_ty.elem_type, &arg.ty, opts)?;
                         }
                     }
                     _ => {
                         // Handle varargs
-                        for arg in &args[idx..] {
+                        for arg in &args[idx..stop_idx] {
                             self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
                         }
                     }
