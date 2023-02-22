@@ -508,7 +508,7 @@ impl Analyzer<'_, '_> {
                         }
                         Some(ty) if right_function_declared_this => {
                             let mut ty = ty.clone();
-                            if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
+                            if let Some(stc_ts_types::Function { params, .. }) = ty.as_fn_type_mut() {
                                 if let Some(this) = &analyzer.scope.this {
                                     params[0] = FnParam {
                                         ty: Box::new(
