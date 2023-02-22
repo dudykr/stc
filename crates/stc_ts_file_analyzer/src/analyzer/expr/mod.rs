@@ -478,7 +478,7 @@ impl Analyzer<'_, '_> {
                         Some(ty) if rhs_is_arrow || !right_function_declared_this => {
                             let mut ty = ty.clone();
                             if lhs_declared_this {
-                                if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
+                                if let Some(stc_ts_types::Function { params, .. }) = ty.as_fn_type_mut() {
                                     if !rhs_is_arrow {
                                         if !left_function_declare_not_this_type {
                                             analyzer.scope.this = Some(*params[0].ty.to_owned());
