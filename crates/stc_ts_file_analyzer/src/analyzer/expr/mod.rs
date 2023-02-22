@@ -2958,6 +2958,10 @@ impl Analyzer<'_, '_> {
                                     tracker: Default::default(),
                                 }));
                             }
+
+                            if let Some(vars) = exports.vars.get(sym).cloned() {
+                                return Ok(vars);
+                            }
                         }
                     }
                     IdCtx::Var => {
@@ -2978,7 +2982,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
                 // No property found
                 return Err(ErrorKind::NoSuchPropertyInModule {
                     span,
@@ -3879,10 +3882,15 @@ impl Analyzer<'_, '_> {
                     return Ok(ty.clone().into_owned());
                 }
 
-                if let Type::Module(..) = ty.normalize() {
+                if let Type::Module(..) | Type::Alias(..) = ty.normalize() {
+                    return Ok(ty.clone().into_owned());
+                }
+
+                if self.ctx.in_export_named {
                     return Ok(ty.clone().into_owned());
                 }
             }
+
             Err(ErrorKind::TypeUsedAsVar {
                 span,
                 name: i.clone().into(),

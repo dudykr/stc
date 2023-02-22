@@ -911,9 +911,15 @@ es6/modules/exportAndImport-es3-amd.ts
 es6/modules/exportAndImport-es3.ts
 es6/modules/exportAndImport-es5-amd.ts
 es6/modules/exportAndImport-es5.ts
+es6/modules/exportsAndImports1-amd.ts
+es6/modules/exportsAndImports1-es6.ts
+es6/modules/exportsAndImports1.ts
 es6/modules/exportsAndImports2-amd.ts
 es6/modules/exportsAndImports2-es6.ts
 es6/modules/exportsAndImports2.ts
+es6/modules/exportsAndImports3-amd.ts
+es6/modules/exportsAndImports3-es6.ts
+es6/modules/exportsAndImports3.ts
 es6/modules/exportsAndImportsWithContextualKeywordNames02.ts
 es6/modules/exportsAndImportsWithUnderscores4.ts
 es6/modules/importEmptyFromModuleNotExisted.ts
@@ -1633,6 +1639,8 @@ externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
 externalModules/typeOnly/nestedNamespace.ts
+externalModules/typeOnly/preserveValueImports_errors.ts
+externalModules/typeOnlyMerge1.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
 functions/functionParameterObjectRestAndInitializers.ts
