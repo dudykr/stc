@@ -1552,7 +1552,7 @@ impl Analyzer<'_, '_> {
                             to,
                             rhs,
                             AssignOpts {
-                                allow_missing_fields: true,
+                                allow_assignment_to_param_constraint: true,
                                 ..opts
                             },
                         )

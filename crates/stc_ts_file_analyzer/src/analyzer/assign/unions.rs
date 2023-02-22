@@ -2,7 +2,10 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::RBool;
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::{
+    debug::{force_dump_type_as_string, print_backtrace},
+    DebugExt, ErrorKind,
+};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
@@ -27,6 +30,9 @@ impl Analyzer<'_, '_> {
     ///  - lhs = `(["a", number] | ["b", number] | ["c", string]);`
     ///  - rhs = `[("b" | "a"), 1];`
     pub(super) fn assign_to_union(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
+        dbg!(force_dump_type_as_string(l));
+        dbg!(force_dump_type_as_string(r));
+        print_backtrace();
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
         match r_res {
