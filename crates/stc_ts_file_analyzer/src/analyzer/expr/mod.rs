@@ -308,10 +308,9 @@ impl Analyzer<'_, '_> {
 
         if type_ann.is_none() && need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
-            ty.freeze();
             ty.fix();
         }
-
+        ty.freeze();
         self.cur_facts.assert_clone_cheap();
 
         if !self.config.is_builtin && !ty.is_any() {
@@ -499,7 +498,7 @@ impl Analyzer<'_, '_> {
                                 if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
                                     if !rhs_is_arrow {
                                         if !left_function_declare_not_this_type {
-                                            analyzer.scope.this = Some(*params[0].ty.to_owned().freezed());
+                                            analyzer.scope.this = Some(*params[0].ty.to_owned());
                                         } else {
                                             // bound this (lhs to rhs)
                                             if let RPatOrExpr::Pat(box RPat::Expr(box RExpr::Member(RMemberExpr {
@@ -511,7 +510,7 @@ impl Analyzer<'_, '_> {
                                                     .type_of_var(obj, TypeOfMode::LValue, None)
                                                     .context("tried to get type of lhs of an assignment")
                                                 {
-                                                    analyzer.scope.this = Some(value.freezed());
+                                                    analyzer.scope.this = Some(value);
                                                 }
                                             }
                                         }
@@ -519,7 +518,7 @@ impl Analyzer<'_, '_> {
                                     *params = params[1..].to_vec();
                                 }
                             }
-                            ty.freeze();
+
                             e.right
                                 .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
                                 .context("tried to validate rhs an assign expr")
@@ -532,7 +531,7 @@ impl Analyzer<'_, '_> {
                                         ty: Box::new(
                                             Type::Instance(Instance {
                                                 span: params[0].span,
-                                                ty: Box::new(this.clone().freezed()),
+                                                ty: Box::new(this.clone()),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
                                             })
@@ -542,7 +541,7 @@ impl Analyzer<'_, '_> {
                                     };
                                 }
                             }
-                            ty.freeze();
+
                             e.right
                                 .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
                                 .context("tried to validate rhs an assign expr")
