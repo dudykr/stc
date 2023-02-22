@@ -174,6 +174,7 @@ impl Analyzer<'_, '_> {
                     &object,
                     AssignOpts {
                         span: jsx_element_span,
+                        allow_missing_fields: true,
                         ..Default::default()
                     },
                 )

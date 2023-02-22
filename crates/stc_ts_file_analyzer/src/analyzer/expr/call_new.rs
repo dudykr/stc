@@ -34,7 +34,7 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
-        generic::InferTypeOpts,
+        generic::{ExtendsOpts, InferTypeOpts},
         types::NormalizeTypeOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,
@@ -3324,7 +3324,15 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
-                        if let Some(v) = self.extends(span, &orig_ty, &new_ty, Default::default()) {
+                        if let Some(v) = self.extends(
+                            span,
+                            &orig_ty,
+                            &new_ty,
+                            ExtendsOpts {
+                                allow_missing_fields: true,
+                                ..Default::default()
+                            },
+                        ) {
                             if v {
                                 if let Type::ClassDef(def) = orig_ty.normalize() {
                                     return Ok(Type::Class(Class {
