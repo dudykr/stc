@@ -3841,6 +3841,10 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap());
                 ty.assert_valid();
 
+                if self.ctx.in_export_assignment {
+                    return Ok(ty.clone().into_owned());
+                }
+
                 if let Type::Module(..) = ty.normalize() {
                     return Ok(ty.clone().into_owned());
                 }

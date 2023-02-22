@@ -298,7 +298,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
-        let ctx = Ctx { ..self.ctx };
+        let ctx = Ctx {
+            in_export_assignment: true,
+            ..self.ctx
+        };
         self.with_ctx(ctx)
             .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 
