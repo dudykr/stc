@@ -2,7 +2,7 @@ use std::{borrow::Cow, cmp::min, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
@@ -576,6 +576,7 @@ impl Analyzer<'_, '_> {
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(right))
         {
             if cfg!(debug_assertions) {
+                print_backtrace();
                 info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
             }
             return Ok(());
@@ -1526,7 +1527,7 @@ impl Analyzer<'_, '_> {
                     if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
                         return self
                             .assign_inner(
-                                data,
+                                &mut AssignData::default(),
                                 to,
                                 &new,
                                 AssignOpts {
@@ -1906,7 +1907,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
+                if let Type::Tuple(..)
+                | Type::TypeLit(..)
+                | Type::Union(..)
+                | Type::Alias(..)
+                | Type::Interface(..)
+                | Type::Intersection(..) = rhs
+                {
                     if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                         return res.context("tried to assign using `assign_to_union`");
                     }
