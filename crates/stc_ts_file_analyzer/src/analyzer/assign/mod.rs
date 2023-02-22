@@ -1320,25 +1320,27 @@ impl Analyzer<'_, '_> {
 
                 // This is required to handle intersections of function-like types.
                 if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
-                    if self
-                        .assign_to_type_elements(
-                            data,
-                            li.span,
-                            &l_type_lit.members,
-                            rhs,
-                            l_type_lit.metadata,
-                            AssignOpts {
-                                is_assigning_to_class_members: true,
-                                ..opts
-                            },
-                        )
-                        .is_ok()
+                    if dbg!(self.assign_to_type_elements(
+                        data,
+                        li.span,
+                        &l_type_lit.members,
+                        rhs,
+                        l_type_lit.metadata,
+                        AssignOpts {
+                            is_assigning_to_class_members: true,
+                            allow_unknown_rhs: Some(false),
+                            ..opts
+                        },
+                    ))
+                    .is_ok()
                     {
                         return Ok(());
                     }
                 }
 
                 for ty in &li.types {
+                    dbg!(force_dump_type_as_string(ty));
+                    dbg!(force_dump_type_as_string(rhs));
                     match self
                         .assign_with_opts(
                             data,
@@ -1360,10 +1362,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                dbg!(&errors);
+
                 let left_contains_object = li.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
                 let rhs_requires_unknown_property_check = !matches!(rhs.normalize(), Type::Keyword(..));
 
+                dbg!(left_contains_object, rhs_requires_unknown_property_check);
+
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
+                    dbg!("checking if rhs is unknown");
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
