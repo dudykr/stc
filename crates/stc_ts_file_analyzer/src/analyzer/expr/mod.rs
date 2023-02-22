@@ -8,7 +8,7 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrowExpr, RAssignExpr, RBindingIdent, RClassExpr, RExpr, RFnExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RFnExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber,
     ROptChainBase, ROptChainExpr, RParam, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr,
     RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
@@ -433,27 +433,10 @@ impl Analyzer<'_, '_> {
             is_valid_lhs(&e.left).report(&mut analyzer.storage);
 
             let mut errors = Errors::default();
-            // skip this flag for arrow function, static method etc.
-            let mut left_function_declare_not_this_type = false;
-            let right_function_declared_this = if let box RExpr::Fn(RFnExpr {
-                function: box stc_ts_ast_rnode::RFunction { params, .. },
-                ..
-            }) = &e.right
-            {
-                if let [RParam {
-                    pat: RPat::Ident(RBindingIdent { id, .. }),
-                    ..
-                }, ..] = &params[..]
-                {
-                    id.sym == js_word!("this")
-                } else {
-                    false
-                }
-            } else {
-                false
-            };
 
-            let rhs_is_arrow = matches!(e.right, box RExpr::Arrow(RArrowExpr { .. }));
+            let right_function_declared_this = function_has_this(&e.right);
+            let rhs_is_arrow = e.right.is_arrow_expr();
+            let mut left_function_declare_not_this_type = false;
             let lhs_declared_this = if let Some(ty) = type_ann {
                 if let Type::Function(Function { params, .. }) = ty.normalize() {
                     if let [FnParam {
@@ -4751,5 +4734,26 @@ impl Analyzer<'_, '_> {
             })),
             RLit::JSXText(v) => v.validate_with(self),
         }
+    }
+}
+
+fn function_has_this(expr: &RExpr) -> bool {
+    match expr {
+        RExpr::Fn(RFnExpr {
+            function: box stc_ts_ast_rnode::RFunction { params, .. },
+            ..
+        }) => {
+            if let [RParam {
+                pat: RPat::Ident(RBindingIdent { id, .. }),
+                ..
+            }, ..] = &params[..]
+            {
+                id.sym == js_word!("this")
+            } else {
+                false
+            }
+        }
+        RExpr::Paren(RParenExpr { ref expr, .. }) => function_has_this(expr),
+        _ => false,
     }
 }

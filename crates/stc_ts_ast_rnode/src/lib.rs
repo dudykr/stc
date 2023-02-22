@@ -29,6 +29,14 @@ impl RExpr {
             })
         )
     }
+
+    pub fn is_arrow_expr(&self) -> bool {
+        match self {
+            RExpr::Arrow(RArrowExpr { .. }) => true,
+            RExpr::Paren(RParenExpr { expr, .. }) => expr.is_arrow_expr(),
+            _ => false,
+        }
+    }
 }
 
 impl From<RTsEntityName> for RExpr {
