@@ -185,6 +185,7 @@ impl Analyzer<'_, '_> {
                 true,
                 false,
                 false,
+                false,
             )
             .report(&mut self.storage);
 
@@ -233,6 +234,7 @@ impl Analyzer<'_, '_> {
                             true,
                             false,
                             false,
+                            false,
                         )?;
                     } else {
                         self.declare_var(
@@ -242,6 +244,7 @@ impl Analyzer<'_, '_> {
                             Some(data.clone()),
                             None,
                             true,
+                            false,
                             false,
                             false,
                         )?;
