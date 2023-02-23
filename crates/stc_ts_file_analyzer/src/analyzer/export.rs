@@ -396,11 +396,19 @@ impl Analyzer<'_, '_> {
 
         for specifier in &node.specifiers {
             match specifier {
-                RExportSpecifier::Namespace(_) => {
+                RExportSpecifier::Namespace(s) => {
                     // We need
                     match &node.src {
                         Some(src) => {
                             let (dep, data) = self.get_imported_items(node.span, &src.value);
+
+                            let name = match &s.name {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            self.storage.reexport_type(s.span, self.ctx.module_id, name.clone(), data.clone());
+                            self.storage.reexport_var(s.span, self.ctx.module_id, name, data);
                         }
                         None => {}
                     }
