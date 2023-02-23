@@ -908,26 +908,7 @@ impl Analyzer<'_, '_> {
                     // If r is an iterator, we should assign each element to l.
                     if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
                         if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
-                            for idx in max(li.clone().count(), ri.clone().count()).. {
-                                let re = self.access_property(
-                                    r.span,
-                                    &r_iter,
-                                    &Key::Num(RNumber {
-                                        span: r.span,
-                                        value: idx as f64,
-                                        raw: None,
-                                    }),
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    AccessPropertyOpts {
-                                        disallow_indexing_array_with_string: true,
-                                        disallow_creating_indexed_type_from_ty_els: true,
-                                        disallow_indexing_class_with_computed: true,
-                                        disallow_inexact: true,
-                                        ..Default::default()
-                                    },
-                                )?;
-
+                            for idx in 0..max(li.clone().count(), ri.clone().count()) {
                                 let le = self.access_property(
                                     l.span,
                                     &l_iter,
@@ -943,6 +924,26 @@ impl Analyzer<'_, '_> {
                                         disallow_creating_indexed_type_from_ty_els: true,
                                         disallow_indexing_class_with_computed: true,
                                         disallow_inexact: true,
+                                        ..Default::default()
+                                    },
+                                )?;
+
+                                let re = self.access_property(
+                                    r.span,
+                                    &r_iter,
+                                    &Key::Num(RNumber {
+                                        span: r.span,
+                                        value: idx as f64,
+                                        raw: None,
+                                    }),
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_indexing_class_with_computed: true,
+                                        disallow_inexact: true,
+                                        use_last_element_for_tuple_on_out_of_bound: true,
                                         ..Default::default()
                                     },
                                 )?;
