@@ -276,7 +276,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule,
                     ts_config,
                     target,
-                    raw_target,
+                    suffix: format!("(target={})", raw_target),
                     module_config,
                     sub_files: sub_files.clone(),
                 }
