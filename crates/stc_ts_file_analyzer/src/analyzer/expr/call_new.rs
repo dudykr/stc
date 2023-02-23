@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_backtrace, print_type},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_type},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
