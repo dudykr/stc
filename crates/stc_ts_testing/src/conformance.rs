@@ -67,15 +67,6 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
     files
 }
 
-enum TestSpecLike {
-    Single(TestSpec),
-    Multi(Vec<TestSpec>),
-}
-
-impl TestSpecLike {
-    fn set_target(&mut self, targets: &[(String, EsVersion, bool)]) {}
-}
-
 #[allow(clippy::explicit_write)]
 pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
@@ -255,28 +246,48 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
         err_shift_n = err_shift_n.min(first_stmt_line);
         dbg!(err_shift_n);
 
-        Ok(targets
-            .into_iter()
-            .map(|(raw_target, target, specified)| {
-                let libs = build_target(target, specified, &libs);
+        if targets.len() > 1 {
+            return Ok(targets
+                .into_iter()
+                .map(|(raw, target, specified)| {
+                    let libs = build_target(target, specified, &libs);
 
-                TestSpec {
-                    err_shift_n,
-                    libs,
-                    rule,
-                    ts_config,
-                    target,
-                    suffix: format!("(target={})", raw_target),
-                    module_config,
-                    sub_files: sub_files.clone(),
-                }
-            })
-            .collect())
+                    TestSpec {
+                        err_shift_n,
+                        libs,
+                        rule,
+                        ts_config,
+                        target,
+                        suffix: format!("(target={})", raw),
+                        module_config: module_config[0].1,
+                        sub_files: sub_files.clone(),
+                    }
+                })
+                .collect());
+        }
+
+        let target = targets[0].1;
+        let specified = targets[0].2;
+
+        let libs = build_target(target, specified, &libs);
+
+        Ok(vec![TestSpec {
+            err_shift_n,
+            libs,
+            rule,
+            ts_config,
+            target,
+            suffix: Default::default(),
+            module_config: module_config[0].1,
+            sub_files,
+        }])
     })
     .unwrap()
 }
 
-fn parse_directive_values<T>(s: &str, parser: &dyn Fn(&str) -> T) -> Vec<(String, T)> {}
+fn parse_directive_values<T>(s: &str, parser: &dyn Fn(&str) -> T) -> Vec<(String, T)> {
+    s.trim().split(',').map(|s| s.trim()).map(|s| (s.into(), parser(s))).collect()
+}
 
 fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
     fn parse_target_inner(s: &str) -> Vec<EsVersion> {
@@ -325,7 +336,7 @@ fn build_target(target: EsVersion, specified: bool, libs: &[Lib]) -> Vec<Lib> {
             _ => Lib::load("es2022.full"),
         }
     } else if specified {
-        libs_with_deps(&libs)
+        libs_with_deps(libs)
     } else {
         libs.to_vec()
     }
