@@ -640,6 +640,9 @@ pub(crate) struct AccessPropertyOpts {
     pub is_in_union: bool,
 
     pub do_not_use_any_for_object: bool,
+
+    /// Used for rest elements or [Type::Rest].
+    pub use_last_element_for_tuple_on_out_of_bound: bool,
 }
 
 #[validator]
@@ -2728,6 +2731,9 @@ impl Analyzer<'_, '_> {
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 }));
+                            }
+                            if opts.use_last_element_for_tuple_on_out_of_bound {
+                                return Ok(*elems.last().unwrap().ty.clone());
                             }
 
                             if let TypeOfMode::LValue = type_mode {

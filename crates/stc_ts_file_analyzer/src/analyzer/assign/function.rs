@@ -1,13 +1,13 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::max};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{ClassDef, Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -17,7 +17,7 @@ use tracing::debug;
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
-        expr::GetIteratorOpts,
+        expr::{AccessPropertyOpts, GetIteratorOpts, TypeOfMode},
         generic::InferTypeOpts,
         Analyzer,
     },
@@ -882,6 +882,7 @@ impl Analyzer<'_, '_> {
                     l,
                     AssignOpts {
                         allow_unknown_type: true,
+                        allow_assignment_to_param: false,
                         ..opts
                     },
                 ) {
@@ -904,26 +905,52 @@ impl Analyzer<'_, '_> {
                 }
 
                 (_, RPat::Rest(..)) => {
-                    // If r is a tuple, we should assign each element to l.
-                    let r_ty = self.normalize(Some(span), Cow::Borrowed(&r.ty), Default::default())?;
-                    if let Some(r_tuple) = r_ty.as_tuple() {
-                        let mut ri = r_tuple.elems.iter();
+                    // If r is an iterator, we should assign each element to l.
+                    if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
+                        if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
+                            for idx in 0..max(li.clone().count(), ri.clone().count()) {
+                                let le = self.access_property(
+                                    span,
+                                    &l_iter,
+                                    &Key::Num(RNumber {
+                                        span: l.span,
+                                        value: idx as f64,
+                                        raw: None,
+                                    }),
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_indexing_class_with_computed: true,
+                                        disallow_inexact: true,
+                                        ..Default::default()
+                                    },
+                                )?;
 
-                        let re = ri.next();
-                        if let Some(ri) = re {
-                            self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
-                                format!(
-                                    "tried to assign a rest parameter to parameters; r_ty = {}",
-                                    force_dump_type_as_string(&r.ty)
-                                )
-                            })?;
-                        }
-                        for l in li {
-                            let re = ri.next();
-                            if let Some(ri) = re {
-                                self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
+                                let re = self.access_property(
+                                    span,
+                                    &r_iter,
+                                    &Key::Num(RNumber {
+                                        span: r.span,
+                                        value: idx as f64,
+                                        raw: None,
+                                    }),
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_indexing_class_with_computed: true,
+                                        disallow_inexact: true,
+                                        use_last_element_for_tuple_on_out_of_bound: true,
+                                        ..Default::default()
+                                    },
+                                )?;
+
+                                self.assign_param_type(data, &le, &re, opts).with_context(|| {
                                     format!(
-                                        "tried to assign a rest parameter to parameters; r_ty = {} (iter)",
+                                        "tried to assign a rest parameter to parameters; r_ty = {}",
                                         force_dump_type_as_string(&r.ty)
                                     )
                                 })?;
