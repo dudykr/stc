@@ -26,7 +26,10 @@ pub struct TestSpec {
     #[allow(unused)]
     pub ts_config: TsConfig,
     pub target: EsVersion,
-    pub raw_target: String,
+
+    /// Empty for non-multi-file tests and includes `(` and `)` for multi-file
+    /// tests.
+    pub suffix: String,
     pub module_config: ModuleConfig,
 
     /// Empty for single file tests.
