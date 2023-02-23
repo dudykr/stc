@@ -270,6 +270,21 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
         let specified = targets[0].2;
 
         let libs = build_target(target, specified, &libs);
+        if module_config.len() > 1 {
+            return Ok(module_config
+                .into_iter()
+                .map(|(raw, module_config)| TestSpec {
+                    err_shift_n,
+                    libs: libs.clone(),
+                    rule,
+                    ts_config,
+                    target,
+                    suffix: format!("(module={})", raw),
+                    module_config,
+                    sub_files: sub_files.clone(),
+                })
+                .collect());
+        }
 
         Ok(vec![TestSpec {
             err_shift_n,
