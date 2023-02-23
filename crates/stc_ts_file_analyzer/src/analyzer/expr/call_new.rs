@@ -124,10 +124,26 @@ impl Analyzer<'_, '_> {
                         .into())
                     }
                 };
-
                 let src = match src.normalize() {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
                     ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
+                    ty if ty.is_union_type() => {
+                        let span = ty.span();
+                        let types = ty.clone().expect_union_type().types;
+                        if types.iter().all(|t| t.is_str_like()) {
+                            return Ok(Type::Ref(Ref {
+                                span,
+                                type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), span.with_ctxt(SyntaxContext::empty()))),
+                                type_args: Some(box TypeParamInstantiation {
+                                    span,
+                                    params: vec![Type::any(span, Default::default())],
+                                }),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }));
+                        }
+                        return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into());
+                    }
                     _ => return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into()),
                 };
 
