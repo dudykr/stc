@@ -67,7 +67,7 @@ Error:
     `----
 
 Error: 
-  > ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean)
+  > ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity)
 
   x Type
     ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:28:1]
