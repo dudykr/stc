@@ -143,9 +143,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn handle_import(&mut self, span: Span, ctxt: ModuleId, target: ModuleId, orig: Id, id: Id) {
         let mut found_entry = false;
+        let is_import_successful = ctxt != target;
 
         // Check for entry only if import was successful.
-        if ctxt != target {
+        if is_import_successful {
             if let Some(data) = self.data.imports.get(&(ctxt, target)) {
                 match data.normalize() {
                     Type::Module(data) => {
@@ -185,7 +186,7 @@ impl Analyzer<'_, '_> {
             )
             .report(&mut self.storage);
 
-            if ctxt != target {
+            if is_import_successful {
                 // If import was successful but the entry is not found, the error should point
                 // the specifier.
                 self.storage.report(ErrorKind::ImportFailed { span, orig, id }.into());
