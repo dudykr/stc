@@ -1133,38 +1133,8 @@ impl Analyzer<'_, '_> {
                 .freezed();
 
             if let Type::TypeLit(elem_tl) = elem.normalize_instance() {
-                // Intersect property types
-                'outer: for e in elem_tl.members.iter() {
-                    if let TypeElement::Property(p) = e {
-                        for prev in property_types.iter_mut() {
-                            if let TypeElement::Property(prev) = prev {
-                                if prev.key.type_eq(&p.key) {
-                                    let prev_type = prev
-                                        .type_ann
-                                        .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
-                                    let other = p
-                                        .type_ann
-                                        .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
-
-                                    let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
-
-                                    if let Some(new) = new {
-                                        if new.is_never() {
-                                            return never!();
-                                        }
-                                        prev.type_ann = Some(box new);
-                                        continue 'outer;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    property_types.push(e.clone());
+                if let Some(ty) = self.normalize_intersection_of_type_elements(span, &elem_tl.members, &mut property_types, opts)? {
+                    return Ok(Some(ty));
                 }
             }
         }
@@ -1323,6 +1293,61 @@ impl Analyzer<'_, '_> {
             }
             Ok(Some(acc_type))
         }
+    }
+
+    fn normalize_intersection_of_type_elements(
+        &mut self,
+        span: Span,
+        elements: &[TypeElement],
+        property_types: &mut Vec<TypeElement>,
+        opts: NormalizeTypeOpts,
+    ) -> VResult<Option<Type>> {
+        macro_rules! never {
+            () => {{
+                Ok(Some(Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsNeverKeyword,
+                    metadata: KeywordTypeMetadata { ..Default::default() },
+                    tracker: Default::default(),
+                })))
+            }};
+        }
+
+        // Intersect property types
+        'outer: for e in elements.iter() {
+            if let TypeElement::Property(p) = e {
+                for prev in property_types.iter_mut() {
+                    if let TypeElement::Property(prev) = prev {
+                        if prev.key.type_eq(&p.key) {
+                            let prev_type = prev
+                                .type_ann
+                                .clone()
+                                .map(|v| *v)
+                                .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                            let other = p
+                                .type_ann
+                                .clone()
+                                .map(|v| *v)
+                                .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+
+                            let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
+
+                            if let Some(new) = new {
+                                if new.is_never() {
+                                    return never!();
+                                }
+                                prev.type_ann = Some(box new);
+                                continue 'outer;
+                            }
+                        }
+                    }
+                }
+            }
+
+            property_types.push(e.clone());
+        }
+
+        Ok(None)
     }
 
     pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {

@@ -1319,17 +1319,6 @@ impl Analyzer<'_, '_> {
             Type::Intersection(ref li) => {
                 let mut errors = vec![];
 
-                // TODO(kdy1): Optimize unknown rhs handling
-
-                let is_str = li.types.iter().any(|ty| ty.is_str());
-                let is_num = li.types.iter().any(|ty| ty.is_num());
-                let is_bool = li.types.iter().any(|ty| ty.is_bool());
-
-                // LHS is never.
-                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 && !rhs.is_never() {
-                    fail!()
-                }
-
                 // This is required to handle intersections of function-like types.
                 if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
                     if self
@@ -1341,6 +1330,7 @@ impl Analyzer<'_, '_> {
                             l_type_lit.metadata,
                             AssignOpts {
                                 is_assigning_to_class_members: true,
+                                allow_unknown_rhs: Some(false),
                                 ..opts
                             },
                         )
@@ -1531,7 +1521,7 @@ impl Analyzer<'_, '_> {
                     if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
                         return self
                             .assign_inner(
-                                data,
+                                &mut AssignData::default(),
                                 to,
                                 &new,
                                 AssignOpts {
@@ -1556,7 +1546,7 @@ impl Analyzer<'_, '_> {
                             to,
                             rhs,
                             AssignOpts {
-                                allow_missing_fields: true,
+                                allow_assignment_to_param_constraint: true,
                                 ..opts
                             },
                         )
@@ -1911,7 +1901,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
+                if let Type::Tuple(..)
+                | Type::TypeLit(..)
+                | Type::Union(..)
+                | Type::Alias(..)
+                | Type::Interface(..)
+                | Type::Intersection(..) = rhs
+                {
                     if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                         return res.context("tried to assign using `assign_to_union`");
                     }
