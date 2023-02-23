@@ -12,13 +12,9 @@
     ]
   },
   "extra_errors": {
-    "TS2322": 1,
     "TS2345": 3
   },
   "extra_error_lines": {
-    "TS2322": [
-      23
-    ],
     "TS2345": [
       71,
       72,
