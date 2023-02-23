@@ -72,6 +72,10 @@ enum TestSpecLike {
     Multi(Vec<TestSpec>),
 }
 
+impl TestSpecLike {
+    fn set_target(&mut self, targets: &[(String, EsVersion, bool)]) {}
+}
+
 #[allow(clippy::explicit_write)]
 pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
@@ -254,25 +258,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
         Ok(targets
             .into_iter()
             .map(|(raw_target, target, specified)| {
-                let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
-                    match target {
-                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
-                        EsVersion::Es2015 => Lib::load("es2015.full"),
-                        EsVersion::Es2016 => Lib::load("es2016.full"),
-                        EsVersion::Es2017 => Lib::load("es2017.full"),
-                        EsVersion::Es2018 => Lib::load("es2018.full"),
-                        EsVersion::Es2019 => Lib::load("es2019.full"),
-                        EsVersion::Es2021 => Lib::load("es2021.full"),
-                        EsVersion::Es2022 => Lib::load("es2022.full"),
-                        // TODO(upstream): enable es2023
-                        // EsVersion::Es2023 => Lib::load("es2023.full"),
-                        _ => Lib::load("es2022.full"),
-                    }
-                } else if specified {
-                    libs_with_deps(&libs)
-                } else {
-                    libs.clone()
-                };
+                let libs = build_target(target, specified, &libs);
 
                 TestSpec {
                     err_shift_n,
@@ -321,6 +307,28 @@ fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
         return vec![(s.into(), parse_target_inner(s)[0])];
     }
     s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
+}
+
+fn build_target(target: EsVersion, specified: bool, libs: &[Lib]) -> Vec<Lib> {
+    if specified && libs == vec![Lib::Es5, Lib::Dom] {
+        match target {
+            EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
+            EsVersion::Es2015 => Lib::load("es2015.full"),
+            EsVersion::Es2016 => Lib::load("es2016.full"),
+            EsVersion::Es2017 => Lib::load("es2017.full"),
+            EsVersion::Es2018 => Lib::load("es2018.full"),
+            EsVersion::Es2019 => Lib::load("es2019.full"),
+            EsVersion::Es2021 => Lib::load("es2021.full"),
+            EsVersion::Es2022 => Lib::load("es2022.full"),
+            // TODO(upstream): enable es2023
+            // EsVersion::Es2023 => Lib::load("es2023.full"),
+            _ => Lib::load("es2022.full"),
+        }
+    } else if specified {
+        libs_with_deps(&libs)
+    } else {
+        libs.to_vec()
+    }
 }
 
 fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
