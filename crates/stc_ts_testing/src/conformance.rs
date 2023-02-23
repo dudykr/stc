@@ -67,6 +67,11 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
     files
 }
 
+enum TestSpecLike {
+    Single(TestSpec),
+    Multi(Vec<TestSpec>),
+}
+
 #[allow(clippy::explicit_write)]
 pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
@@ -123,7 +128,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
             allow_unreachable_code: false,
             ..Default::default()
         };
-        let mut module_config = ModuleConfig::None;
+        let mut module_config = vec![("".into(), ModuleConfig::None)];
         let ts_config = TsConfig::default();
 
         let mut had_comment = false;
@@ -216,8 +221,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
                     rule.suppress_implicit_any_index_errors = v;
                 } else if s.starts_with("module:") {
-                    let v = s["module:".len()..].trim().to_lowercase().parse().unwrap();
-                    module_config = v;
+                    module_config = parse_directive_values(&s["module:".len()..], &|s| s.parse().unwrap());
                 } else if s.to_lowercase().starts_with("notypesandsymbols") {
                     // Ignored as we don't generate them.
                 } else if s.to_lowercase().starts_with("usedefineforclassfields") {
@@ -285,6 +289,8 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
     })
     .unwrap()
 }
+
+fn parse_directive_values<T>(s: &str, parser: &dyn Fn(&str) -> T) -> Vec<(String, T)> {}
 
 fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
     fn parse_target_inner(s: &str) -> Vec<EsVersion> {
