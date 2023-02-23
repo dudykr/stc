@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, fmt::Debug};
+use std::{borrow::Cow, fmt::Debug};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -40,6 +40,7 @@ use crate::{
     VResult,
 };
 
+mod conditional;
 mod index_signature;
 mod keyof;
 mod mapped;
@@ -394,163 +395,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Conditional(c) => {
-                        let mut c = c.clone();
-
-                        // TODO(kdy1): Cleanup
-                        c = match self.expand_conditional_type(actual_span, Type::Conditional(c)).foldable() {
-                            Type::Conditional(c) => c,
-                            ty => return Ok(Cow::Owned(ty)),
-                        };
-
-                        ALLOW_DEEP_CLONE.set(&(), || {
-                            let ty = dump_type_as_string(&Type::Conditional(c.clone()));
-
-                            debug!("normalize: conditional: {}", ty)
-                        });
-
-                        c.check_type = box self
-                            .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
-                            .context("tried to normalize the `check` type of a conditional type")?
-                            .freezed()
-                            .into_owned()
-                            .freezed();
-
-                        c.extends_type = box self
-                            .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
-                            .context("tried to normalize the `extends` type of a conditional type")?
-                            .freezed()
-                            .into_owned()
-                            .freezed();
-
-                        if let Some(v) = self.extends(actual_span, &c.check_type, &c.extends_type, Default::default()) {
-                            let ty = if v { &c.true_type } else { &c.false_type };
-                            // TODO(kdy1): Optimize
-                            let ty = self
-                                .normalize(span, Cow::Borrowed(ty), opts)
-                                .context("tried to normalize the calculated type of a conditional type")?
-                                .into_owned();
-                            return Ok(Cow::Owned(ty));
-                        }
-
-                        if let Type::Param(TypeParam {
-                            name,
-                            constraint: Some(check_type_constraint),
-                            ..
-                        }) = c.check_type.normalize()
-                        {
-                            let new_type = self
-                                .reduce_conditional_type(
-                                    c.span,
-                                    &c.check_type,
-                                    check_type_constraint,
-                                    &c.extends_type,
-                                    &c.true_type,
-                                    &c.false_type,
-                                    c.metadata,
-                                )
-                                .context("tried to reduce conditional type")?;
-
-                            if let Some(new_type) = new_type {
-                                return self.normalize(span, Cow::Owned(new_type), opts);
-                            }
-                        }
-
-                        if let Type::Union(check_type_union) = c.check_type.normalize() {
-                            let mut all = true;
-                            let mut types = vec![];
-                            for check_type in &check_type_union.types {
-                                let res = self.extends(ty.span(), check_type, &c.extends_type, Default::default());
-                                if let Some(v) = res {
-                                    if v {
-                                        if !c.true_type.is_never() {
-                                            types.push(check_type.clone());
-                                        }
-                                    } else {
-                                        if !c.false_type.is_never() {
-                                            types.push(check_type.clone());
-                                        }
-                                    }
-                                } else {
-                                    all = false;
-                                    break;
-                                }
-                            }
-
-                            if all {
-                                let new = Type::Union(Union {
-                                    span: actual_span.with_ctxt(SyntaxContext::empty()),
-                                    types,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                })
-                                .fixed();
-
-                                new.assert_valid();
-
-                                return Ok(Cow::Owned(new));
-                            }
-                        }
-
-                        // TODO: Optimize
-                        // If we can calculate type using constraints, do so.
-
-                        // TODO(kdy1): PERF
-                        if let Type::Param(TypeParam {
-                            name,
-                            constraint: Some(check_type_constraint),
-                            ..
-                        }) = c.check_type.normalize_mut()
-                        {
-                            // We removes unmatchable constraints.
-                            // It means, for
-                            //
-                            // T: a type param extends string | undefined
-                            // A: T extends null | undefined ? never : T
-                            //
-                            // We removes `undefined` from parents of T.
-
-                            if let Type::Union(check_type_union) = check_type_constraint.normalize() {
-                                let mut all = true;
-                                let mut types = vec![];
-                                for check_type in &check_type_union.types {
-                                    let res = self.extends(ty.span(), check_type, &c.extends_type, Default::default());
-                                    if let Some(v) = res {
-                                        if v {
-                                            if !c.true_type.is_never() {
-                                                types.push(check_type.clone());
-                                            }
-                                        } else {
-                                            if !c.false_type.is_never() {
-                                                types.push(check_type.clone());
-                                            }
-                                        }
-                                    } else {
-                                        all = false;
-                                        break;
-                                    }
-                                }
-
-                                if all {
-                                    types.dedup_type();
-                                    let new = Type::Union(Union {
-                                        span: actual_span.with_ctxt(SyntaxContext::empty()),
-                                        types,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    });
-
-                                    *check_type_constraint = box new;
-
-                                    let mut params = HashMap::default();
-                                    params.insert(name.clone(), ALLOW_DEEP_CLONE.set(&(), || *c.check_type.clone().fixed().freezed()));
-                                    let c = self.expand_type_params(&params, c, Default::default())?;
-                                    let c = Type::Conditional(c);
-                                    c.assert_valid();
-
-                                    return Ok(Cow::Owned(c));
-                                }
-                            }
-                        }
+                        return self.normalize_conditional(actual_span, c, opts);
                     }
 
                     Type::Query(q) => {
@@ -812,7 +657,7 @@ impl Analyzer<'_, '_> {
         false_type: &Type,
         metadata: ConditionalMetadata,
     ) -> VResult<Option<Type>> {
-        if !check_type.is_type_param() {
+        if !Self::has_type_param_for_conditional(check_type) {
             return Ok(None);
         }
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -1348,69 +1193,6 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(None)
-    }
-
-    pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {
-        let _tracing = dev_span!("expand_conditional_type");
-
-        if !ty.is_conditional() {
-            return ty;
-        }
-
-        let ty = ty.foldable();
-        if let Type::Conditional(Conditional {
-            mut check_type,
-            mut extends_type,
-            mut true_type,
-            mut false_type,
-            metadata,
-            ..
-        }) = ty
-        {
-            extends_type.freeze();
-            check_type.freeze();
-
-            // We need to handle infer type.
-            let type_params = self
-                .infer_ts_infer_types(
-                    span,
-                    &extends_type,
-                    &check_type,
-                    InferTypeOpts {
-                        exclude_null_and_undefined: true,
-                        ..Default::default()
-                    },
-                )
-                .ok();
-
-            if let Some(type_params) = type_params {
-                check_type = box self.expand_type_params(&type_params, *check_type, Default::default()).unwrap();
-                extends_type = box self.expand_type_params(&type_params, *extends_type, Default::default()).unwrap();
-
-                true_type = box self.expand_type_params(&type_params, *true_type, Default::default()).unwrap();
-                false_type = box self.expand_type_params(&type_params, *false_type, Default::default()).unwrap();
-            }
-
-            if check_type.is_class() {
-                if let Type::Class(check_type) = check_type.normalize_mut() {
-                    if let Type::Constructor(..) = extends_type.normalize() {
-                        return *true_type;
-                    }
-                }
-            }
-
-            return Type::Conditional(Conditional {
-                span,
-                check_type,
-                extends_type,
-                true_type,
-                false_type,
-                metadata,
-                tracker: Default::default(),
-            });
-        }
-
-        ty
     }
 
     // This is part of normalization.

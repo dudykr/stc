@@ -368,6 +368,15 @@ impl Analyzer<'_, '_> {
                     return Some(false);
                 }
             }
+            Type::Intersection(child_intersection) => {
+                for child_ty in child_intersection.types.iter() {
+                    match self.extends(span, child_ty, parent, opts) {
+                        Some(false) => return Some(false),
+                        None => return None,
+                        _ => {}
+                    }
+                }
+            }
             _ => {}
         }
 
