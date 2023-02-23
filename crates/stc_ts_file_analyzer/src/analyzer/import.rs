@@ -167,6 +167,8 @@ impl Analyzer<'_, '_> {
                         unreachable!()
                     }
                 }
+            } else {
+                unreachable!("Import should be successful")
             }
         }
 
