@@ -149,19 +149,16 @@ impl Analyzer<'_, '_> {
             if let Some(data) = self.data.imports.get(&(ctxt, target)) {
                 match data.normalize() {
                     Type::Module(data) => {
-                        for (i, ty) in &data.exports.vars {
-                            if orig.sym() == i {
-                                found_entry = true;
-                                self.storage.store_private_var(ctxt, id.clone(), ty.clone());
-                            }
+                        if let Some(ty) = data.exports.vars.get(orig.sym()).cloned() {
+                            found_entry = true;
+                            self.storage.store_private_var(ctxt, id.clone(), ty);
                         }
 
-                        for (i, types) in &data.exports.types {
-                            if orig.sym() == i {
-                                for ty in types {
-                                    found_entry = true;
-                                    self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
-                                }
+                        if let Some(types) = data.exports.types.get(orig.sym()).cloned() {
+                            found_entry = true;
+                            for ty in types {
+                                found_entry = true;
+                                self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                             }
                         }
                     }
