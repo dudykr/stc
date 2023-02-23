@@ -118,6 +118,7 @@ pub(crate) struct Ctx {
     in_declare: bool,
     in_fn_without_body: bool,
     in_global: bool,
+    in_export_assignment: bool,
     in_export_default_expr: bool,
 
     in_async: bool,
@@ -161,7 +162,7 @@ pub(crate) struct Ctx {
     in_assign_rhs: bool,
 
     in_export_decl: bool,
-
+    in_export_named: bool,
     skip_identical_while_inference: bool,
 
     super_references_super_class: bool,
@@ -496,6 +497,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_declare: is_dts,
                 in_fn_without_body: false,
                 in_global: !is_builtin && is_dts,
+                in_export_assignment: false,
                 in_export_default_expr: false,
                 in_async: false,
                 in_generator: false,
@@ -519,6 +521,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_return_arg: false,
                 in_assign_rhs: false,
                 in_export_decl: false,
+                in_export_named: false,
                 skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,

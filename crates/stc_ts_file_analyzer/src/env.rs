@@ -26,8 +26,10 @@ pub trait BuiltInGen: Sized {
     #[allow(clippy::new_ret_no_self)]
     fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
 
-    fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> BuiltIn {
-        debug_assert_ne!(libs, &[], "No typescript library file is specified");
+    fn from_ts_libs(env: &StableEnv, libs: &[Lib], no_lib: bool) -> BuiltIn {
+        if !no_lib {
+            debug_assert_ne!(libs, &[], "No typescript library file is specified");
+        };
 
         // Loading builtin is very slow, so we cache it to a file using serde_json
 
@@ -298,7 +300,7 @@ pub trait EnvFactory {
 
         let builtin = {
             let builtin = cell.get_or_init(|| {
-                let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
+                let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs, rule.no_lib);
                 Arc::new(builtin)
             });
             (*builtin).clone()

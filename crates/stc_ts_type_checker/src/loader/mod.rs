@@ -9,10 +9,10 @@ use rayon::prelude::*;
 use stc_ts_env::Env;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, SourceFile, SourceMap, Span, SyntaxContext, GLOBALS};
-use swc_ecma_ast::{EsVersion, Module};
+use swc_common::{input::SourceFileInput, FileName, SourceFile, SourceMap, Span, SyntaxContext, GLOBALS};
+use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
-use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::VisitMutWith;
 use swc_fast_graph::digraph::FastDiGraphMap;
 
@@ -221,9 +221,14 @@ where
                 .with_context(|| format!("failed to load module `{}`", filename))?,
         };
 
-        let lexer = Lexer::new(syntax, EsVersion::latest(), StringInput::from(&*fm), Some(&comments));
-
-        let mut parser = Parser::new_from(lexer);
+        let mut parser = Parser::new(
+            Syntax::Typescript(TsConfig {
+                tsx: fm.name.to_string().contains("tsx"),
+                ..Default::default()
+            }),
+            SourceFileInput::from(&*fm),
+            Some(&comments),
+        );
         let result = parser.parse_module();
 
         let mut ast = match result {

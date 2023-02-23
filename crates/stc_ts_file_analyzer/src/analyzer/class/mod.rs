@@ -1582,6 +1582,7 @@ impl Analyzer<'_, '_> {
                 // Then, we can expand super class
 
                 let super_type_params = try_opt!(c.super_type_params.validate_with(child));
+
                 match &c.super_class {
                     Some(box expr) => {
                         let need_base_class = !matches!(expr, RExpr::Ident(..));

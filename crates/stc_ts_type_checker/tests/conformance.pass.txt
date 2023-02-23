@@ -367,6 +367,8 @@ declarationEmit/exportDefaultExpressionComments.ts
 declarationEmit/exportDefaultNamespace.ts
 declarationEmit/libReferenceDeclarationEmit.ts
 declarationEmit/libReferenceDeclarationEmitBundle.ts
+declarationEmit/libReferenceNoLib.ts
+declarationEmit/libReferenceNoLibBundle.ts
 declarationEmit/nullPropertyName.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicatesWithPrivateName01.ts
@@ -911,9 +913,15 @@ es6/modules/exportAndImport-es3-amd.ts
 es6/modules/exportAndImport-es3.ts
 es6/modules/exportAndImport-es5-amd.ts
 es6/modules/exportAndImport-es5.ts
+es6/modules/exportsAndImports1-amd.ts
+es6/modules/exportsAndImports1-es6.ts
+es6/modules/exportsAndImports1.ts
 es6/modules/exportsAndImports2-amd.ts
 es6/modules/exportsAndImports2-es6.ts
 es6/modules/exportsAndImports2.ts
+es6/modules/exportsAndImports3-amd.ts
+es6/modules/exportsAndImports3-es6.ts
+es6/modules/exportsAndImports3.ts
 es6/modules/exportsAndImportsWithContextualKeywordNames02.ts
 es6/modules/exportsAndImportsWithUnderscores4.ts
 es6/modules/importEmptyFromModuleNotExisted.ts
@@ -1633,6 +1641,8 @@ externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
 externalModules/typeOnly/nestedNamespace.ts
+externalModules/typeOnly/preserveValueImports_errors.ts
+externalModules/typeOnlyMerge1.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
 functions/functionParameterObjectRestAndInitializers.ts
@@ -2595,6 +2605,7 @@ types/typeRelationships/comparable/optionalProperties01.ts
 types/typeRelationships/comparable/optionalProperties02.ts
 types/typeRelationships/comparable/switchCaseWithIntersectionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
+types/typeRelationships/comparable/typeAssertionsWithIntersectionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
 types/typeRelationships/comparable/weakTypesAndLiterals01.ts
 types/typeRelationships/instanceOf/narrowingConstrainedTypeVariable.ts

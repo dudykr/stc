@@ -3,6 +3,7 @@ use std::sync::Arc;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{BuiltIn, Env, ModuleConfig, StableEnv};
 use stc_ts_file_analyzer::env::BuiltInGen;
+use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 
 #[test]
@@ -25,7 +26,7 @@ pub fn builtin() {
         }
         libs.sort();
         libs.dedup();
-        let data = BuiltIn::from_ts_libs(&shared, &libs);
+        let data = BuiltIn::from_ts_libs(&shared, &libs, false);
 
         let env = Env::new(
             shared,
@@ -70,7 +71,7 @@ pub fn intl() {
         }
         libs.sort();
         libs.dedup();
-        let data = BuiltIn::from_ts_libs(&shared, &libs);
+        let data = BuiltIn::from_ts_libs(&shared, &libs, false);
 
         let env = Env::new(
             shared,
@@ -88,7 +89,7 @@ pub fn intl() {
             let i = intl.expect_module();
             let type_names = i.exports.types.iter().map(|v| v.0).collect::<Vec<_>>();
             eprintln!("Type names: {:?}", type_names);
-            assert!(i.exports.types.contains_key(&"NumberFormatOptions".into()));
+            assert!(i.exports.types.contains_key(&JsWord::from("NumberFormatOptions")));
         }
 
         Ok(())

@@ -9,15 +9,6 @@
       120
     ]
   },
-  "extra_errors": {
-    "TS2339": 4
-  },
-  "extra_error_lines": {
-    "TS2339": [
-      127,
-      128,
-      129,
-      132
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

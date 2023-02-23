@@ -856,7 +856,7 @@ impl Analyzer<'_, '_> {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty.clone(), false);
 
             if !self.config.is_builtin {
-                self.storage.export_type(ty.span(), self.ctx.module_id, name.clone());
+                self.storage.export_type(ty.span(), self.ctx.module_id, name.clone(), name.clone());
             }
 
             self.scope.register_type(name, ty.clone(), false);
@@ -1884,9 +1884,9 @@ impl<'a> Scope<'a> {
         if cfg!(debug_assertions) {
             debug!("Analyzer.find_type('{}')", name);
         }
-
         if let Some(ty) = self.facts.types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
+
             // println!("({}) find_type({}): Found (cond facts)", self.depth(), name);
             return Some(ItemRef::Single(iter::once(ty)));
         }
