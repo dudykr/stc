@@ -1745,6 +1745,8 @@ impl Analyzer<'_, '_> {
                                 ExtractKind::Call => lit.members.iter().filter(|m| matches!(m, TypeElement::Call(..))).count() <= 1,
                             }
                         }
+                        Type::Function(..) if kind == ExtractKind::Call => false,
+                        Type::Constructor(..) if kind == ExtractKind::New => false,
                         _ => true,
                     }),
                     ..Default::default()
@@ -3532,6 +3534,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     allow_unknown_rhs: Some(true),
                                     allow_assignment_to_param: true,
+                                    allow_assignment_to_param_constraint: true,
                                     ..Default::default()
                                 },
                             )

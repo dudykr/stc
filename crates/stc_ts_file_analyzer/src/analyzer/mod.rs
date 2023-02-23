@@ -914,6 +914,7 @@ impl Analyzer<'_, '_> {
                     true,
                     false,
                     false,
+                    false,
                 )?;
 
                 if node.is_export {

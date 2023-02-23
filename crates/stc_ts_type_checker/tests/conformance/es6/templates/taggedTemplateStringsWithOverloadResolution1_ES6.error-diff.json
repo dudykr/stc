@@ -1,7 +1,6 @@
 {
   "required_errors": {
     "TS2345": 2,
-    "TS2769": 4,
     "TS2554": 2
   },
   "required_error_lines": {
@@ -9,17 +8,20 @@
       10,
       11
     ],
-    "TS2769": [
-      12,
-      13,
-      14,
-      20
-    ],
     "TS2554": [
       15,
       22
     ]
   },
-  "extra_errors": {},
-  "extra_error_lines": {}
+  "extra_errors": {
+    "TS2769": 4
+  },
+  "extra_error_lines": {
+    "TS2769": [
+      10,
+      11,
+      15,
+      22
+    ]
+  }
 }

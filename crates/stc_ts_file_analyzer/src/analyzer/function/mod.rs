@@ -451,7 +451,17 @@ impl Analyzer<'_, '_> {
             })?;
 
         let mut a = self.with_ctx(ctx);
-        match a.declare_var(f.span(), VarKind::Fn, f.ident.clone().into(), Some(fn_ty), None, true, true, false) {
+        match a.declare_var(
+            f.span(),
+            VarKind::Fn,
+            f.ident.clone().into(),
+            Some(fn_ty),
+            None,
+            true,
+            true,
+            false,
+            f.function.body.is_some(),
+        ) {
             Ok(..) => {}
             Err(err) => {
                 a.storage.report(err);

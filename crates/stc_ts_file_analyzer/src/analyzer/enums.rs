@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
 
         self.register_type(name.clone(), stored_ty.clone());
 
-        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty), None, true, true, false)
+        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty), None, true, true, false, false)
             .report(&mut self.storage);
 
         // Validate const enums

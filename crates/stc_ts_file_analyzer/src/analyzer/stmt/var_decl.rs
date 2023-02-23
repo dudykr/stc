@@ -346,6 +346,10 @@ impl Analyzer<'_, '_> {
                         ty.fix();
                         ty.assert_valid();
 
+                        if self.ctx.var_kind == VarDeclKind::Const && ty.is_lit() {
+                            prevent_generalize(&mut ty);
+                        }
+
                         #[allow(clippy::nonminimal_bool)]
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) && !matches!(v.name, RPat::Array(_) | RPat::Object(..))
                         {
@@ -708,6 +712,7 @@ impl Analyzer<'_, '_> {
                             false,
                             // allow_multiple
                             kind == VarDeclKind::Var,
+                            false,
                             false,
                         ) {
                             Ok(..) => {}

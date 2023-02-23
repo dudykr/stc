@@ -383,7 +383,17 @@ impl Analyzer<'_, '_> {
             RTsParamPropParam::Ident(ref i) => {
                 let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
 
-                self.declare_var(i.id.span, VarKind::Param, i.id.clone().into(), ty.clone(), None, true, false, false)?;
+                self.declare_var(
+                    i.id.span,
+                    VarKind::Param,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                    false,
+                )?;
 
                 Ok(FnParam {
                     span: p.span,
@@ -416,7 +426,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.declare_var(i.id.span, VarKind::Param, i.id.clone().into(), ty.clone(), None, true, false, false)?;
+                self.declare_var(
+                    i.id.span,
+                    VarKind::Param,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                    false,
+                )?;
 
                 Ok(FnParam {
                     span: p.span,
@@ -2052,6 +2072,7 @@ impl Analyzer<'_, '_> {
                         // declare Class does not allow multiple declarations.
                         false,
                         false,
+                        false,
                     ) {
                         Ok(..) => {}
                         Err(err) => {
@@ -2315,6 +2336,7 @@ impl Analyzer<'_, '_> {
             // initialized = true
             true,
             // declare Class does not allow multiple declarations.
+            false,
             false,
             false,
         ) {
