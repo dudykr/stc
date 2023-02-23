@@ -866,9 +866,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let mut l_tuple = self.convert_params_to_tuple(&l);
-        let mut r_tuple = self.convert_params_to_tuple(&r);
-
         loop {
             let l = li.next();
             let r = ri.next();
@@ -963,6 +960,4 @@ impl Analyzer<'_, '_> {
 
         Ok(())
     }
-
-    pub(crate) fn convert_params_to_tuple(&mut self, params: &[FnParam]) -> VResult<Tuple> {}
 }
