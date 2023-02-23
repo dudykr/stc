@@ -30,13 +30,8 @@ type TypedObjectOrdinalMembers<TDef extends readonly FieldDefinition[]> = {
 
 // Default members
 interface TypedObjectMembers<TDef extends readonly FieldDefinition[]> {
-    // get/set a field by name
-    get<K extends TDef[number]["name"]>(key: K): FieldType<Extract<TDef[number], { readonly name: K }>["type"]>;
-    set<K extends TDef[number]["name"]>(key: K, value: FieldType<Extract<TDef[number], { readonly name: K }>["type"]>): void;
-
     // get/set a field by index
     getIndex<I extends IndicesOf<TDef>>(index: I): FieldType<Extract<TDef[I], FieldDefinition>["type"]>;
-    setIndex<I extends IndicesOf<TDef>>(index: I, value: FieldType<Extract<TDef[I], FieldDefinition>["type"]>): void;
 }
 
 type TypedObject<TDef extends readonly FieldDefinition[]> =
