@@ -828,6 +828,7 @@ es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
 es6/destructuring/optionalBindingParameters1.ts
 es6/destructuring/optionalBindingParameters2.ts
+es6/destructuring/optionalBindingParametersInOverloads1.ts
 es6/destructuring/optionalBindingParametersInOverloads2.ts
 es6/destructuring/restElementWithAssignmentPattern1.ts
 es6/destructuring/restElementWithAssignmentPattern3.ts
@@ -2462,6 +2463,7 @@ types/stringLiteral/stringLiteralTypesInUnionTypes01.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes03.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes04.ts
+types/stringLiteral/stringLiteralTypesOverloadAssignability01.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability02.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability03.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability04.ts
