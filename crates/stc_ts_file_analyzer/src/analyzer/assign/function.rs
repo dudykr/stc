@@ -910,7 +910,7 @@ impl Analyzer<'_, '_> {
                         if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
                             for idx in 0..max(li.clone().count(), ri.clone().count()) {
                                 let le = self.access_property(
-                                    l.span,
+                                    span,
                                     &l_iter,
                                     &Key::Num(RNumber {
                                         span: l.span,
@@ -929,7 +929,7 @@ impl Analyzer<'_, '_> {
                                 )?;
 
                                 let re = self.access_property(
-                                    r.span,
+                                    span,
                                     &r_iter,
                                     &Key::Num(RNumber {
                                         span: r.span,
