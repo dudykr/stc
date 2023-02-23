@@ -800,6 +800,12 @@ impl Analyzer<'_, '_> {
         };
         arg.assert_clone_cheap();
 
+        if let Some(constraint) = inferred.constraints.get(&name) {
+            if let Some(false) = self.extends(span, &arg, constraint, Default::default()) {
+                return Ok(());
+            }
+        }
+
         // TODO(kdy1): Verify if this is correct
         if let Type::Param(arg) = arg.normalize() {
             if let Some(inverse) = inferred.type_params.get(&arg.name) {

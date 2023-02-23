@@ -50,6 +50,8 @@ pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, InferenceInfo>,
 
+    constraints: FxHashMap<Id, Type>,
+
     errored: FxHashSet<Id>,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
@@ -83,6 +85,7 @@ impl Default for InferData {
             skip_generalization: Default::default(),
             priority: InferencePriority::MaxValue,
             contravariant: Default::default(),
+            constraints: Default::default(),
         }
     }
 }
@@ -114,6 +117,12 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         let mut inferred = InferData::default();
+
+        for param in type_params {
+            if let Some(constraint) = &param.constraint {
+                inferred.constraints.insert(param.name.clone(), *constraint.clone());
+            }
+        }
 
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
