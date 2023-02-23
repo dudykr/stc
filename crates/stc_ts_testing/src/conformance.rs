@@ -13,7 +13,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use stc_ts_builtin_types::Lib;
-use stc_ts_env::{ModuleConfig, Rule};
+use stc_ts_env::{JsxMode, ModuleConfig, Rule};
 use stc_ts_utils::StcComments;
 use swc_common::{input::SourceFileInput, BytePos, Spanned};
 use swc_ecma_ast::{EsVersion, Program};
@@ -118,6 +118,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
             }
         }
 
+        let mut jsx_options: Vec<(_, JsxMode)> = vec![];
         let mut libs = vec![Lib::Es5, Lib::Dom];
         let mut rule = Rule {
             allow_unreachable_code: false,
@@ -222,7 +223,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                 } else if s.to_lowercase().starts_with("usedefineforclassfields") {
                     rule.use_define_property_for_class_fields = true;
                 } else if s.to_lowercase().starts_with("jsx") {
-                    rule.jsx = s["jsx:".len()..].trim().to_lowercase().parse().unwrap();
+                    jsx_options = parse_directive_values(&s["jsx:".len()..], &|s| s.to_ascii_lowercase().parse().unwrap());
                 } else if s.to_lowercase().starts_with("noemit") || s.to_lowercase().starts_with("preserveconstenums") {
                     // Ignored as we only checks type.
                 } else if s.starts_with("strict") {
@@ -286,6 +287,24 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                 .collect());
         }
 
+        let module_config = module_config[0].1;
+
+        if jsx_options.len() > 1 {
+            return Ok(jsx_options
+                .into_iter()
+                .map(|(raw, jsx)| TestSpec {
+                    err_shift_n,
+                    libs: libs.clone(),
+                    rule: Rule { jsx, ..rule },
+                    ts_config,
+                    target,
+                    suffix: format!("(jsx={})", raw),
+                    module_config,
+                    sub_files: sub_files.clone(),
+                })
+                .collect());
+        }
+
         Ok(vec![TestSpec {
             err_shift_n,
             libs,
@@ -293,7 +312,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
             ts_config,
             target,
             suffix: Default::default(),
-            module_config: module_config[0].1,
+            module_config,
             sub_files,
         }])
     })
