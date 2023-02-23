@@ -1085,7 +1085,13 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                self.assign_with_opts(data, to, &rc.true_type, opts)
+                let ty = if rc.true_type.type_eq(&rc.check_type) {
+                    Type::new_intersection(span, [*(rc.true_type).clone(), *(rc.extends_type).clone()])
+                } else {
+                    *(rc.true_type).clone()
+                };
+                dbg!(&ty);
+                self.assign_with_opts(data, to, &ty, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
                 self.assign_with_opts(data, to, &rc.false_type, opts)
                     .context("tried to assign the false type of a conditional type to lhs")?;
