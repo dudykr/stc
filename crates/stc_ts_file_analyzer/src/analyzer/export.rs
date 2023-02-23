@@ -462,8 +462,10 @@ impl Analyzer<'_, '_> {
     fn reexport(&mut self, span: Span, ctxt: ModuleId, from: ModuleId, orig: Id, id: Id) {
         let mut did_work = false;
 
+        let is_import_successful = ctxt != from;
+
         // Dependency module is not found.
-        if ctxt == from {
+        if !is_import_successful {
             return;
         }
 
@@ -485,6 +487,8 @@ impl Analyzer<'_, '_> {
                     unreachable!()
                 }
             }
+        } else {
+            unreachable!("import should be successful")
         }
 
         if !did_work {
