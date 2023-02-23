@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Tuple, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -882,6 +882,7 @@ impl Analyzer<'_, '_> {
                     l,
                     AssignOpts {
                         allow_unknown_type: true,
+                        allow_assignment_to_param: false,
                         ..opts
                     },
                 ) {
