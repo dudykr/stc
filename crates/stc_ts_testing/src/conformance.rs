@@ -13,7 +13,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use stc_ts_builtin_types::Lib;
-use stc_ts_env::{ModuleConfig, Rule};
+use stc_ts_env::{JsxMode, ModuleConfig, Rule};
 use stc_ts_utils::StcComments;
 use swc_common::{input::SourceFileInput, BytePos, Spanned};
 use swc_ecma_ast::{EsVersion, Program};
@@ -26,7 +26,10 @@ pub struct TestSpec {
     #[allow(unused)]
     pub ts_config: TsConfig,
     pub target: EsVersion,
-    pub raw_target: String,
+
+    /// Empty for non-multi-file tests and includes `(` and `)` for multi-file
+    /// tests.
+    pub suffix: String,
     pub module_config: ModuleConfig,
 
     /// Empty for single file tests.
@@ -115,12 +118,13 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
             }
         }
 
+        let mut jsx_options: Vec<(_, JsxMode)> = vec![];
         let mut libs = vec![Lib::Es5, Lib::Dom];
         let mut rule = Rule {
             allow_unreachable_code: false,
             ..Default::default()
         };
-        let mut module_config = ModuleConfig::None;
+        let mut module_config = vec![("".into(), ModuleConfig::None)];
         let ts_config = TsConfig::default();
 
         let mut had_comment = false;
@@ -213,14 +217,13 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
                     rule.suppress_implicit_any_index_errors = v;
                 } else if s.starts_with("module:") {
-                    let v = s["module:".len()..].trim().to_lowercase().parse().unwrap();
-                    module_config = v;
+                    module_config = parse_directive_values(&s["module:".len()..], &|s| s.parse().unwrap());
                 } else if s.to_lowercase().starts_with("notypesandsymbols") {
                     // Ignored as we don't generate them.
                 } else if s.to_lowercase().starts_with("usedefineforclassfields") {
                     rule.use_define_property_for_class_fields = true;
                 } else if s.to_lowercase().starts_with("jsx") {
-                    rule.jsx = s["jsx:".len()..].trim().to_lowercase().parse().unwrap();
+                    jsx_options = parse_directive_values(&s["jsx:".len()..], &|s| s.to_ascii_lowercase().parse().unwrap());
                 } else if s.to_lowercase().starts_with("noemit") || s.to_lowercase().starts_with("preserveconstenums") {
                     // Ignored as we only checks type.
                 } else if s.starts_with("strict") {
@@ -244,43 +247,80 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
         err_shift_n = err_shift_n.min(first_stmt_line);
         dbg!(err_shift_n);
 
-        Ok(targets
-            .into_iter()
-            .map(|(raw_target, target, specified)| {
-                let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
-                    match target {
-                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
-                        EsVersion::Es2015 => Lib::load("es2015.full"),
-                        EsVersion::Es2016 => Lib::load("es2016.full"),
-                        EsVersion::Es2017 => Lib::load("es2017.full"),
-                        EsVersion::Es2018 => Lib::load("es2018.full"),
-                        EsVersion::Es2019 => Lib::load("es2019.full"),
-                        EsVersion::Es2021 => Lib::load("es2021.full"),
-                        EsVersion::Es2022 => Lib::load("es2022.full"),
-                        // TODO(upstream): enable es2023
-                        // EsVersion::Es2023 => Lib::load("es2023.full"),
-                        _ => Lib::load("es2022.full"),
-                    }
-                } else if specified {
-                    libs_with_deps(&libs)
-                } else {
-                    libs.clone()
-                };
+        if targets.len() > 1 {
+            return Ok(targets
+                .into_iter()
+                .map(|(raw, target, specified)| {
+                    let libs = build_target(target, specified, &libs);
 
-                TestSpec {
+                    TestSpec {
+                        err_shift_n,
+                        libs,
+                        rule,
+                        ts_config,
+                        target,
+                        suffix: format!("(target={})", raw),
+                        module_config: module_config[0].1,
+                        sub_files: sub_files.clone(),
+                    }
+                })
+                .collect());
+        }
+
+        let target = targets[0].1;
+        let specified = targets[0].2;
+
+        let libs = build_target(target, specified, &libs);
+        if module_config.len() > 1 {
+            return Ok(module_config
+                .into_iter()
+                .map(|(raw, module_config)| TestSpec {
                     err_shift_n,
-                    libs,
+                    libs: libs.clone(),
                     rule,
                     ts_config,
                     target,
-                    raw_target,
+                    suffix: format!("(module={})", raw),
                     module_config,
                     sub_files: sub_files.clone(),
-                }
-            })
-            .collect())
+                })
+                .collect());
+        }
+
+        let module_config = module_config[0].1;
+
+        if jsx_options.len() > 1 {
+            return Ok(jsx_options
+                .into_iter()
+                .map(|(raw, jsx)| TestSpec {
+                    err_shift_n,
+                    libs: libs.clone(),
+                    rule: Rule { jsx, ..rule },
+                    ts_config,
+                    target,
+                    suffix: format!("(jsx={})", raw),
+                    module_config,
+                    sub_files: sub_files.clone(),
+                })
+                .collect());
+        }
+
+        Ok(vec![TestSpec {
+            err_shift_n,
+            libs,
+            rule,
+            ts_config,
+            target,
+            suffix: Default::default(),
+            module_config,
+            sub_files,
+        }])
     })
     .unwrap()
+}
+
+fn parse_directive_values<T>(s: &str, parser: &dyn Fn(&str) -> T) -> Vec<(String, T)> {
+    s.trim().split(',').map(|s| s.trim()).map(|s| (s.into(), parser(s))).collect()
 }
 
 fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
@@ -312,6 +352,28 @@ fn parse_targets(s: &str) -> Vec<(String, EsVersion)> {
         return vec![(s.into(), parse_target_inner(s)[0])];
     }
     s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
+}
+
+fn build_target(target: EsVersion, specified: bool, libs: &[Lib]) -> Vec<Lib> {
+    if specified && libs == vec![Lib::Es5, Lib::Dom] {
+        match target {
+            EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
+            EsVersion::Es2015 => Lib::load("es2015.full"),
+            EsVersion::Es2016 => Lib::load("es2016.full"),
+            EsVersion::Es2017 => Lib::load("es2017.full"),
+            EsVersion::Es2018 => Lib::load("es2018.full"),
+            EsVersion::Es2019 => Lib::load("es2019.full"),
+            EsVersion::Es2021 => Lib::load("es2021.full"),
+            EsVersion::Es2022 => Lib::load("es2022.full"),
+            // TODO(upstream): enable es2023
+            // EsVersion::Es2023 => Lib::load("es2023.full"),
+            _ => Lib::load("es2022.full"),
+        }
+    } else if specified {
+        libs_with_deps(libs)
+    } else {
+        libs.to_vec()
+    }
 }
 
 fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {

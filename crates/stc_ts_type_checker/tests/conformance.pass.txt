@@ -1640,6 +1640,7 @@ externalModules/multipleExportDefault3.ts
 externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
+externalModules/topLevelAwait.3.ts
 externalModules/typeOnly/nestedNamespace.ts
 externalModules/typeOnly/preserveValueImports_errors.ts
 externalModules/typeOnlyMerge1.ts
@@ -1728,6 +1729,7 @@ jsdoc/parseLinkTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
+jsx/tsxEmitSpreadAttribute.ts
 override/override10.ts
 override/override12.ts
 override/override14.ts
