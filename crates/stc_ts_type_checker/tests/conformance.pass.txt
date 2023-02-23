@@ -1640,6 +1640,7 @@ externalModules/multipleExportDefault3.ts
 externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
+externalModules/topLevelAwait.3.ts
 externalModules/typeOnly/nestedNamespace.ts
 externalModules/typeOnly/preserveValueImports_errors.ts
 externalModules/typeOnlyMerge1.ts
