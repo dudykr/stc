@@ -1085,12 +1085,25 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                let ty = if rc.true_type.type_eq(&rc.check_type) {
-                    Type::new_intersection(span, [*(rc.true_type).clone(), *(rc.extends_type).clone()])
+                let ty = if rc.check_type.is_type_param() {
+                    let mut params = HashMap::default();
+                    if let Some(ty) = rc.check_type.as_type_param() {
+                        params.insert(
+                            ty.name.clone(),
+                            Type::new_intersection(span, [*(rc.check_type).clone(), *(rc.extends_type).clone()]).freezed(),
+                        );
+                    }
+
+                    let res = self.expand_type_params(&params, Type::Conditional(rc.clone()), Default::default());
+                    if let Ok(Type::Conditional(Conditional { true_type, .. })) = res {
+                        *true_type.freezed()
+                    } else {
+                        *rc.true_type.clone()
+                    }
                 } else {
-                    *(rc.true_type).clone()
+                    *rc.true_type.clone()
                 };
-                dbg!(&ty);
+
                 self.assign_with_opts(data, to, &ty, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
                 self.assign_with_opts(data, to, &rc.false_type, opts)
