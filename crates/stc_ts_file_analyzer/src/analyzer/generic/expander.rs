@@ -313,6 +313,7 @@ impl Analyzer<'_, '_> {
             },
             Type::ClassDef(child_class) => match parent {
                 Type::Function(..) | Type::Lit(..) => return Some(false),
+                Type::Constructor(..) => return Some(true),
                 Type::TypeLit(parent) => {
                     // //
                     // // TODO

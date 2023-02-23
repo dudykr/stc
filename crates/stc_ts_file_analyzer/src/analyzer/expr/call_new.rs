@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_type},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -1745,6 +1745,8 @@ impl Analyzer<'_, '_> {
                                 ExtractKind::Call => lit.members.iter().filter(|m| matches!(m, TypeElement::Call(..))).count() <= 1,
                             }
                         }
+                        Type::Function(..) if kind == ExtractKind::Call => false,
+                        Type::Constructor(..) if kind == ExtractKind::New => false,
                         _ => true,
                     }),
                     ..Default::default()
@@ -3532,6 +3534,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     allow_unknown_rhs: Some(true),
                                     allow_assignment_to_param: true,
+                                    allow_assignment_to_param_constraint: true,
                                     ..Default::default()
                                 },
                             )

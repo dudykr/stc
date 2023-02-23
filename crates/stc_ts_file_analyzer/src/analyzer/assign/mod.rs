@@ -1642,6 +1642,12 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
                     if opts.allow_assignment_to_param {
+                        if let Some(ref c) = *constraint {
+                            return self
+                                .assign_inner(data, to, c, AssignOpts { ..opts })
+                                .context("tried to assign a type parameter to another type parameter");
+                        }
+
                         return Ok(());
                     }
 
