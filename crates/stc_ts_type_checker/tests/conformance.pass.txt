@@ -1729,6 +1729,7 @@ jsdoc/parseLinkTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
+jsx/tsxEmitSpreadAttribute.ts
 override/override10.ts
 override/override12.ts
 override/override14.ts
