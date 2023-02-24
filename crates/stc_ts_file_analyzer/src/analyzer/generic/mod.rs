@@ -575,7 +575,7 @@ impl Analyzer<'_, '_> {
                 .or_else(|| unwrap_builtin_with_single_arg(param, "ArrayLike"))
                 .or_else(|| unwrap_builtin_with_single_arg(param, "ReadonlyArray"))
             {
-                if let Type::Array(arg) = arg {
+                if let Type::Array(arg) = arg.normalize() {
                     return self.infer_type(span, inferred, param_elem, &arg.elem_type, opts);
                 }
 
