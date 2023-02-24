@@ -2635,6 +2635,14 @@ impl Analyzer<'_, '_> {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
                         new_args.push(arg_ty.clone());
+                        // let ty = box arg.expr.validate_with_args(self, (TypeOfMode::RValue, None,
+                        // Some(&param.ty)))?;
+
+                        // new_args.push(TypeOrSpread {
+                        //     span: arg.span(),
+                        //     spread: arg.spread,
+                        //     ty,
+                        // });
                         continue;
                     }
                 };
@@ -3621,7 +3629,15 @@ impl Analyzer<'_, '_> {
             RExpr::Arrow(arg) => {
                 self.apply_fn_type_ann(arg.span(), arg.node_id, arg.params.iter(), Some(type_ann));
             }
-            _ => {}
+            _ => {
+                if let Some(mutations) = &mut self.mutations {
+                    if let Some(node_id) = arg.node_id() {
+                        if !node_id.is_invalid() {
+                            mutations.for_exprs.entry(node_id).or_default().type_ann = Some(type_ann.clone());
+                        }
+                    }
+                }
+            }
         }
 
         Ok(())
