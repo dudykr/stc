@@ -3593,6 +3593,8 @@ impl Analyzer<'_, '_> {
                     self.add_required_type_params(&mut param.ty);
                 }
 
+                params.freeze();
+
                 Cow::Owned(params)
             }
 
