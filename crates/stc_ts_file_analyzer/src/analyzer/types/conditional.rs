@@ -55,16 +55,12 @@ impl Analyzer<'_, '_> {
         if let Some(v) = self.extends(span, &c.check_type, &c.extends_type, Default::default()) {
             let ty = if v { &c.true_type } else { &c.false_type };
             // TODO(kdy1): Optimize
-            dbg!(&ty);
-            dbg!(&c);
             let ty = self
                 .normalize(Some(span), Cow::Borrowed(ty), opts)
                 .context("tried to normalize the calculated type of a conditional type")?
                 .into_owned();
-            dbg!(&ty);
             return Ok(Cow::Owned(ty));
         }
-        dbg!(123);
         if let Type::Param(TypeParam {
             name,
             constraint: Some(check_type_constraint),

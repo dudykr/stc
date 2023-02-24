@@ -155,7 +155,7 @@ impl Analyzer<'_, '_> {
                 return Some(v);
             }
         }
-        dbg!(123);
+
         match child {
             Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) | Type::Conditional(..) => return None,
             Type::Ref(..) => {
@@ -209,7 +209,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        dbg!(123);
         match parent {
             Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) => return None,
             Type::Ref(..) => {
@@ -237,7 +236,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        dbg!(123);
         match parent {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
@@ -288,7 +286,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        dbg!(123);
         match child {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -373,14 +370,11 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::Intersection(child_intersection) => {
-                dbg!(&child_intersection);
                 for child_ty in child_intersection.types.iter() {
                     match self.extends(span, child_ty, parent, opts) {
                         Some(true) => return Some(true),
                         None => return None,
-                        _ => {
-                            dbg!(&child_ty);
-                        }
+                        _ => {}
                     }
                 }
             }
