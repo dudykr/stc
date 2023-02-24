@@ -25,7 +25,7 @@ use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, dev_span, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::warn;
 
 use crate::{
@@ -774,6 +774,22 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Array(Array {
                         span: t.span,
                         elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                }
+            }
+            RTsEntityName::Ident(ref i) if i.sym == js_word!("ReadonlyArray") && type_args.is_some() => {
+                if type_args.as_ref().unwrap().params.len() == 1 {
+                    return Ok(Type::Operator(Operator {
+                        span,
+                        op: TsTypeOperatorOp::ReadOnly,
+                        ty: box Type::Array(Array {
+                            span: t.span,
+                            elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));

@@ -267,8 +267,6 @@ impl Analyzer<'_, '_> {
                         value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty, Default::default())?;
                         value_ty.assert_valid();
-                        value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
-                        value_ty.assert_valid();
                         value_ty.freeze();
 
                         let opts = AssignOpts {

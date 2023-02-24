@@ -160,6 +160,51 @@ impl TypeEq for RTsLit {
     }
 }
 
+impl RExpr {
+    pub fn node_id(&self) -> Option<NodeId> {
+        match self {
+            RExpr::This(v) => Some(v.node_id),
+            RExpr::Array(v) => Some(v.node_id),
+            RExpr::Object(v) => Some(v.node_id),
+            RExpr::Fn(v) => Some(v.node_id),
+            RExpr::Unary(v) => Some(v.node_id),
+            RExpr::Update(v) => Some(v.node_id),
+            RExpr::Bin(v) => Some(v.node_id),
+            RExpr::Assign(v) => Some(v.node_id),
+            RExpr::Member(v) => Some(v.node_id),
+            RExpr::SuperProp(v) => Some(v.node_id),
+            RExpr::Cond(v) => Some(v.node_id),
+            RExpr::Call(v) => Some(v.node_id),
+            RExpr::New(v) => Some(v.node_id),
+            RExpr::Seq(v) => Some(v.node_id),
+            RExpr::Ident(v) => Some(v.node_id),
+            RExpr::Lit(..) => None,
+            RExpr::Tpl(v) => Some(v.node_id),
+            RExpr::TaggedTpl(v) => Some(v.node_id),
+            RExpr::Arrow(v) => Some(v.node_id),
+            RExpr::Class(v) => Some(v.node_id),
+            RExpr::Yield(v) => Some(v.node_id),
+            RExpr::MetaProp(v) => Some(v.node_id),
+            RExpr::Await(v) => Some(v.node_id),
+            RExpr::Paren(v) => Some(v.node_id),
+            RExpr::JSXMember(v) => Some(v.node_id),
+            RExpr::JSXNamespacedName(v) => Some(v.node_id),
+            RExpr::JSXEmpty(v) => Some(v.node_id),
+            RExpr::JSXElement(v) => Some(v.node_id),
+            RExpr::JSXFragment(v) => Some(v.node_id),
+            RExpr::TsTypeAssertion(v) => Some(v.node_id),
+            RExpr::TsConstAssertion(v) => Some(v.node_id),
+            RExpr::TsNonNull(v) => Some(v.node_id),
+            RExpr::TsAs(v) => Some(v.node_id),
+            RExpr::TsInstantiation(v) => Some(v.node_id),
+            RExpr::TsSatisfies(v) => Some(v.node_id),
+            RExpr::PrivateName(v) => Some(v.node_id),
+            RExpr::OptChain(v) => Some(v.node_id),
+            RExpr::Invalid(..) => None,
+        }
+    }
+}
+
 define_rnode!({
     pub struct Class {
         pub span: Span,
