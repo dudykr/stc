@@ -21,6 +21,8 @@ pub struct Mutations {
     pub for_module_items: FxHashMap<NodeId, ModuleItemMut>,
 
     /// Used for validation, not dts generation.
+    pub for_exprs: FxHashMap<NodeId, ExprMut>,
+    /// Used for validation, not dts generation.
     pub for_callable: FxHashMap<NodeId, CallableMut>,
 }
 
@@ -44,6 +46,11 @@ pub struct FunctionMut {
 #[derive(Default)]
 pub struct CallableMut {
     pub type_params: Option<TypeParamDecl>,
+}
+
+#[derive(Default)]
+pub struct ExprMut {
+    pub type_ann: Option<Type>,
 }
 
 #[derive(Default)]

@@ -147,6 +147,7 @@ impl Analyzer<'_, '_> {
                     // same name
                     opts.kind == VarKind::Var(VarDeclKind::Var),
                     false,
+                    false,
                 )
             }
 

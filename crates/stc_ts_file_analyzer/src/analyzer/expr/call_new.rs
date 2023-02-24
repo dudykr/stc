@@ -124,10 +124,26 @@ impl Analyzer<'_, '_> {
                         .into())
                     }
                 };
-
                 let src = match src.normalize() {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
                     ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
+                    ty if ty.is_union_type() => {
+                        let span = ty.span();
+                        let types = ty.clone().expect_union_type().types;
+                        if types.iter().all(|t| t.is_str_like()) {
+                            return Ok(Type::Ref(Ref {
+                                span,
+                                type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), span.with_ctxt(SyntaxContext::empty()))),
+                                type_args: Some(box TypeParamInstantiation {
+                                    span,
+                                    params: vec![Type::any(span, Default::default())],
+                                }),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }));
+                        }
+                        return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into());
+                    }
                     _ => return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into()),
                 };
 
@@ -1729,6 +1745,8 @@ impl Analyzer<'_, '_> {
                                 ExtractKind::Call => lit.members.iter().filter(|m| matches!(m, TypeElement::Call(..))).count() <= 1,
                             }
                         }
+                        Type::Function(..) if kind == ExtractKind::Call => false,
+                        Type::Constructor(..) if kind == ExtractKind::New => false,
                         _ => true,
                     }),
                     ..Default::default()
@@ -2571,6 +2589,8 @@ impl Analyzer<'_, '_> {
                 let _ = type_params.to_vec();
                 let _ = params.clone();
                 let _ = spread_arg_types.to_vec();
+                let _ = ret_ty.clone();
+                let _ = type_ann.clone().map(Cow::into_owned);
             }
 
             debug!("Inferring arg types for a call");
@@ -2617,6 +2637,14 @@ impl Analyzer<'_, '_> {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
                         new_args.push(arg_ty.clone());
+                        // let ty = box arg.expr.validate_with_args(self, (TypeOfMode::RValue, None,
+                        // Some(&param.ty)))?;
+
+                        // new_args.push(TypeOrSpread {
+                        //     span: arg.span(),
+                        //     spread: arg.spread,
+                        //     ty,
+                        // });
                         continue;
                     }
                 };
@@ -3516,6 +3544,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     allow_unknown_rhs: Some(true),
                                     allow_assignment_to_param: true,
+                                    allow_assignment_to_param_constraint: true,
                                     ..Default::default()
                                 },
                             )
@@ -3566,6 +3595,8 @@ impl Analyzer<'_, '_> {
                     self.add_required_type_params(&mut param.ty);
                 }
 
+                params.freeze();
+
                 Cow::Owned(params)
             }
 
@@ -3602,7 +3633,15 @@ impl Analyzer<'_, '_> {
             RExpr::Arrow(arg) => {
                 self.apply_fn_type_ann(arg.span(), arg.node_id, arg.params.iter(), Some(type_ann));
             }
-            _ => {}
+            _ => {
+                if let Some(mutations) = &mut self.mutations {
+                    if let Some(node_id) = arg.node_id() {
+                        if !node_id.is_invalid() {
+                            mutations.for_exprs.entry(node_id).or_default().type_ann = Some(type_ann.clone());
+                        }
+                    }
+                }
+            }
         }
 
         Ok(())

@@ -126,7 +126,7 @@ impl NodeResolver {
 
         match base_dir.parent() {
             Some(parent) => self.resolve_node_modules(parent, target),
-            None => bail!("not found"),
+            None => bail!("failed to find {target} from {}", base_dir.display()),
         }
     }
 }

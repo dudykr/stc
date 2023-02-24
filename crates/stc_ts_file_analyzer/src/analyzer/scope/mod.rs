@@ -690,7 +690,7 @@ impl Scope<'_> {
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for updating types.
     pub(super) fn override_var(&mut self, kind: VarKind, name: Id, ty: Type) -> VResult<()> {
-        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
+        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true, false)?;
 
         Ok(())
     }
@@ -1317,6 +1317,7 @@ impl Analyzer<'_, '_> {
         initialized: bool,
         allow_multiple: bool,
         is_override: bool,
+        is_fn_decl_with_body: bool,
     ) -> VResult<Option<Type>> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -1454,6 +1455,8 @@ impl Analyzer<'_, '_> {
             )
         }
 
+        let mut skip_storing_type = false;
+
         match self.scope.vars.entry(name.clone()) {
             Entry::Occupied(e) => {
                 //println!("\tdeclare_var: found entry");
@@ -1485,6 +1488,9 @@ impl Analyzer<'_, '_> {
 
                 if !self.data.known_wrong_overloads.contains(&name) {
                     if let Some(orig) = &v.ty {
+                        if is_fn_decl_with_body {
+                            skip_storing_type = true;
+                        }
                         if let Some(ty) = &ty {
                             self.validate_with(|a| {
                                 let res = a.validate_fn_overloads(span, orig, ty, kind);
@@ -1556,7 +1562,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        if ty.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) || var_ty.type_eq(&ty) {
+                        if skip_storing_type || ty.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) || var_ty.type_eq(&ty) {
                             var_ty
                         } else {
                             Type::new_union(span, vec![var_ty, ty]).freezed()

@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.declare_var(span, VarKind::Fn, i.clone(), Some(fn_ty.into()), None, true, true, false)
+                self.declare_var(span, VarKind::Fn, i.clone(), Some(fn_ty.into()), None, true, true, false, false)
                     .report(&mut self.storage);
 
                 self.export_var(f.span(), Id::word(js_word!("default")), Some(i), f.function.body.is_some());
@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
 
-                self.declare_var(span, VarKind::Class, var_name, Some(class_ty), None, true, true, false)
+                self.declare_var(span, VarKind::Class, var_name, Some(class_ty), None, true, true, false, false)
                     .report(&mut self.storage);
 
                 self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
@@ -396,11 +396,19 @@ impl Analyzer<'_, '_> {
 
         for specifier in &node.specifiers {
             match specifier {
-                RExportSpecifier::Namespace(_) => {
+                RExportSpecifier::Namespace(s) => {
                     // We need
                     match &node.src {
                         Some(src) => {
                             let (dep, data) = self.get_imported_items(node.span, &src.value);
+
+                            let name = match &s.name {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            self.storage.reexport_type(s.span, self.ctx.module_id, name.clone(), data.clone());
+                            self.storage.reexport_var(s.span, self.ctx.module_id, name, data);
                         }
                         None => {}
                     }
@@ -454,8 +462,10 @@ impl Analyzer<'_, '_> {
     fn reexport(&mut self, span: Span, ctxt: ModuleId, from: ModuleId, orig: Id, id: Id) {
         let mut did_work = false;
 
+        let is_import_successful = ctxt != from;
+
         // Dependency module is not found.
-        if ctxt == from {
+        if !is_import_successful {
             return;
         }
 
@@ -477,6 +487,8 @@ impl Analyzer<'_, '_> {
                     unreachable!()
                 }
             }
+        } else {
+            unreachable!("import should be successful")
         }
 
         if !did_work {

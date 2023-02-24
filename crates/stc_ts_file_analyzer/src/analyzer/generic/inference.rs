@@ -783,12 +783,14 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let arg = match arg.normalize() {
+        let mut arg = match arg.normalize() {
             Type::Union(arg) if opts.exclude_null_and_undefined => {
                 Cow::Owned(Type::new_union(arg.span, arg.types.iter().filter(|ty| !ty.is_null_or_undefined()).cloned()).freezed())
             }
             _ => Cow::Borrowed(arg),
         };
+        // TODO: Do `arg.assert_clone_cheap()` instead of `arg.freeze()`
+        arg.freeze();
 
         // TODO(kdy1): Verify if this is correct
         if let Type::Param(arg) = arg.normalize() {

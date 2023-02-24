@@ -401,6 +401,7 @@ dynamicImport/importCallExpressionInSystem3.ts
 dynamicImport/importCallExpressionInUMD1.ts
 dynamicImport/importCallExpressionInUMD3.ts
 dynamicImport/importCallExpressionInUMD5.ts
+dynamicImport/importCallExpressionReturnPromiseOfAny.ts
 dynamicImport/importCallExpressionShouldNotGetParen.ts
 dynamicImport/importCallExpressionSpecifierNotStringTypeError.ts
 emitter/es2015/asyncGenerators/emitter.asyncGenerators.classMethods.es2015.ts
@@ -827,6 +828,7 @@ es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
 es6/destructuring/optionalBindingParameters1.ts
 es6/destructuring/optionalBindingParameters2.ts
+es6/destructuring/optionalBindingParametersInOverloads1.ts
 es6/destructuring/optionalBindingParametersInOverloads2.ts
 es6/destructuring/restElementWithAssignmentPattern1.ts
 es6/destructuring/restElementWithAssignmentPattern3.ts
@@ -1640,6 +1642,7 @@ externalModules/multipleExportDefault3.ts
 externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
+externalModules/topLevelAwait.3.ts
 externalModules/typeOnly/nestedNamespace.ts
 externalModules/typeOnly/preserveValueImports_errors.ts
 externalModules/typeOnlyMerge1.ts
@@ -1728,6 +1731,7 @@ jsdoc/parseLinkTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
+jsx/tsxEmitSpreadAttribute.ts
 override/override10.ts
 override/override12.ts
 override/override14.ts
@@ -2333,6 +2337,7 @@ types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAccessProperty.ts
 types/nonPrimitive/nonPrimitiveAndEmptyObject.ts
+types/nonPrimitive/nonPrimitiveAndTypeVariables.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveAssignError.ts
 types/nonPrimitive/nonPrimitiveInFunction.ts
@@ -2459,6 +2464,7 @@ types/stringLiteral/stringLiteralTypesInUnionTypes01.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes03.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes04.ts
+types/stringLiteral/stringLiteralTypesOverloadAssignability01.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability02.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability03.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability04.ts

@@ -40,7 +40,7 @@ Error:
    `----
 
 Error: 
-  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
+  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T)
 
   x Type
    ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:7:1]

@@ -143,25 +143,23 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn handle_import(&mut self, span: Span, ctxt: ModuleId, target: ModuleId, orig: Id, id: Id) {
         let mut found_entry = false;
+        let is_import_successful = ctxt != target;
 
         // Check for entry only if import was successful.
-        if ctxt != target {
+        if is_import_successful {
             if let Some(data) = self.data.imports.get(&(ctxt, target)) {
                 match data.normalize() {
                     Type::Module(data) => {
-                        for (i, ty) in &data.exports.vars {
-                            if orig.sym() == i {
-                                found_entry = true;
-                                self.storage.store_private_var(ctxt, id.clone(), ty.clone());
-                            }
+                        if let Some(ty) = data.exports.vars.get(orig.sym()).cloned() {
+                            found_entry = true;
+                            self.storage.store_private_var(ctxt, id.clone(), ty);
                         }
 
-                        for (i, types) in &data.exports.types {
-                            if orig.sym() == i {
-                                for ty in types {
-                                    found_entry = true;
-                                    self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
-                                }
+                        if let Some(types) = data.exports.types.get(orig.sym()).cloned() {
+                            found_entry = true;
+                            for ty in types {
+                                found_entry = true;
+                                self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                             }
                         }
                     }
@@ -169,6 +167,8 @@ impl Analyzer<'_, '_> {
                         unreachable!()
                     }
                 }
+            } else {
+                unreachable!("Import should be successful")
             }
         }
 
@@ -185,10 +185,11 @@ impl Analyzer<'_, '_> {
                 true,
                 false,
                 false,
+                false,
             )
             .report(&mut self.storage);
 
-            if ctxt != target {
+            if is_import_successful {
                 // If import was successful but the entry is not found, the error should point
                 // the specifier.
                 self.storage.report(ErrorKind::ImportFailed { span, orig, id }.into());
@@ -233,6 +234,7 @@ impl Analyzer<'_, '_> {
                             true,
                             false,
                             false,
+                            false,
                         )?;
                     } else {
                         self.declare_var(
@@ -242,6 +244,7 @@ impl Analyzer<'_, '_> {
                             Some(data.clone()),
                             None,
                             true,
+                            false,
                             false,
                             false,
                         )?;

@@ -267,8 +267,6 @@ impl Analyzer<'_, '_> {
                         value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty, Default::default())?;
                         value_ty.assert_valid();
-                        value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
-                        value_ty.assert_valid();
                         value_ty.freeze();
 
                         let opts = AssignOpts {
@@ -345,6 +343,10 @@ impl Analyzer<'_, '_> {
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
                         ty.assert_valid();
+
+                        if self.ctx.var_kind == VarDeclKind::Const && ty.is_lit() {
+                            prevent_generalize(&mut ty);
+                        }
 
                         #[allow(clippy::nonminimal_bool)]
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) && !matches!(v.name, RPat::Array(_) | RPat::Object(..))
@@ -708,6 +710,7 @@ impl Analyzer<'_, '_> {
                             false,
                             // allow_multiple
                             kind == VarDeclKind::Var,
+                            false,
                             false,
                         ) {
                             Ok(..) => {}

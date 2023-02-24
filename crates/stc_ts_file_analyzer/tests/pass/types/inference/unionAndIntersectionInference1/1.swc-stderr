@@ -65,7 +65,7 @@ Error:
 Error: 
   > Promise<({
   |     name: 'test';
-  | } | never)>
+  | } | ITest)>
 
   x Type
    ,-[$DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:8:1]

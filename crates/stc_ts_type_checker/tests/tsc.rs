@@ -235,9 +235,9 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<RefError>) {
     let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
-            "{}(target={}).errors.json",
+            "{}{}.errors.json",
             ts_file.file_stem().unwrap().to_string_lossy(),
-            v.raw_target
+            v.suffix
         )),
         None => ts_file.with_extension("errors.json"),
     };
@@ -283,7 +283,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         rule,
         target,
         module_config,
-        raw_target: _,
         ..
     } = spec;
 

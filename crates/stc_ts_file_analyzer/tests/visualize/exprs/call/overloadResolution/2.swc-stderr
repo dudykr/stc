@@ -17,7 +17,7 @@ Error:
    `----
 
 Error: 
-  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number | () => any)
+  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number)
 
   x Type
    ,-[$DIR/tests/visualize/exprs/call/overloadResolution/2.ts:6:1]

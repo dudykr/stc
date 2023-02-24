@@ -1666,6 +1666,12 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
                     if opts.allow_assignment_to_param {
+                        if let Some(ref c) = *constraint {
+                            return self
+                                .assign_inner(data, to, c, AssignOpts { ..opts })
+                                .context("tried to assign a type parameter to another type parameter");
+                        }
+
                         return Ok(());
                     }
 
@@ -1705,6 +1711,22 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
                     }
+                    Type::TypeLit(to) => {
+                        // Don't ask why.
+                        //
+                        // See: subtypingWithOptionalProperties.ts
+                        if !self.rule().strict_null_checks
+                            && to.members.iter().all(|el| match el {
+                                TypeElement::Property(p) => p.optional,
+                                _ => false,
+                            })
+                        {
+                            return Ok(());
+                        } else {
+                            fail!()
+                        }
+                    }
+
                     _ => {
                         fail!()
                     }
@@ -1991,6 +2013,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_fn_type()
                             || ty.is_tpl()
                             || ty.is_intersection()
+                            || ty.is_type_param()
                     });
 
                 if should_use_single_error {
