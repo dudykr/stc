@@ -33,7 +33,7 @@ use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error};
 
-use super::{expr::AccessPropertyOpts, generic::InferTypeOpts};
+use super::expr::AccessPropertyOpts;
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
@@ -1710,7 +1710,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 let members = self.merge_type_elements(span, members)?;
-
                 Cow::Owned(TypeLit {
                     span: t.span,
                     members,
@@ -1722,6 +1721,27 @@ impl Analyzer<'_, '_> {
                 })
             }
 
+            Type::Conditional(t) => {
+                let mut members = vec![];
+                {
+                    let ty = self.overwrite_conditional(span, t);
+                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))?;
+                    members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
+                }
+                {
+                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(&t.false_type))?;
+                    members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
+                }
+                Cow::Owned(TypeLit {
+                    span: t.span,
+                    members,
+                    metadata: TypeLitMetadata {
+                        inexact: true,
+                        ..Default::default()
+                    },
+                    tracker: Default::default(),
+                })
+            }
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
                     span: ty.span.with_ctxt(SyntaxContext::empty()),

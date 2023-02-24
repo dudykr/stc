@@ -8,7 +8,7 @@ use stc_utils::{
     dev_span,
     ext::TypeVecExt,
 };
-use swc_common::{Span, SyntaxContext};
+use swc_common::{Span, SyntaxContext, TypeEq};
 use tracing::debug;
 
 use super::NormalizeTypeOpts;
@@ -25,9 +25,9 @@ impl Analyzer<'_, '_> {
         opts: NormalizeTypeOpts,
     ) -> VResult<Cow<'a, Type>> {
         let mut c = c.clone();
-        let span = c.span;
+        let span = if c.span.is_dummy() { actual_span } else { c.span };
         // TODO(kdy1): Cleanup
-        c = match self.expand_conditional_type(c.span, Type::Conditional(c)).foldable() {
+        c = match self.expand_conditional_type(span, Type::Conditional(c)).foldable() {
             Type::Conditional(c) => c,
             ty => return Ok(Cow::Owned(ty)),
         };
@@ -52,7 +52,7 @@ impl Analyzer<'_, '_> {
             .into_owned()
             .freezed();
 
-        if let Some(v) = self.extends(c.span, &c.check_type, &c.extends_type, Default::default()) {
+        if let Some(v) = self.extends(span, &c.check_type, &c.extends_type, Default::default()) {
             let ty = if v { &c.true_type } else { &c.false_type };
             // TODO(kdy1): Optimize
             dbg!(&ty);
@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
             let mut all = true;
             let mut types = vec![];
             for check_type in &check_type_union.types {
-                let res = self.extends(c.span, check_type, &c.extends_type, Default::default());
+                let res = self.extends(span, check_type, &c.extends_type, Default::default());
                 if let Some(v) = res {
                     if v {
                         if !c.true_type.is_never() {
@@ -192,8 +192,33 @@ impl Analyzer<'_, '_> {
         match c.normalize() {
             Type::Param(..) => true,
             Type::Intersection(Intersection { types, .. }) => types.iter().any(Self::has_type_param_for_conditional),
-            Type::Conditional(Conditional { check_type, .. }) => Self::has_type_param_for_conditional(&*check_type),
+            Type::Conditional(Conditional { check_type, .. }) => Self::has_type_param_for_conditional(check_type),
             _ => false,
+        }
+    }
+
+    pub(crate) fn overwrite_conditional(&mut self, span: Span, c: &Conditional) -> Type {
+        if Self::has_type_param_for_conditional(&c.check_type) {
+            if c.check_type.type_eq(&c.true_type) {
+                Type::new_intersection(span, [*(c.check_type).clone(), *(c.extends_type).clone()]).freezed()
+            } else {
+                let mut params = HashMap::default();
+                if let Some(ty) = c.check_type.as_type_param() {
+                    params.insert(
+                        ty.name.clone(),
+                        Type::new_intersection(span, [*(c.check_type).clone(), *(c.extends_type).clone()]).freezed(),
+                    );
+                }
+                let true_type = *c.true_type.clone();
+                let res = self.expand_type_params(&params, true_type, Default::default());
+                if let Ok(ty) = res {
+                    ty.freezed()
+                } else {
+                    *c.true_type.clone()
+                }
+            }
+        } else {
+            *c.true_type.clone()
         }
     }
 

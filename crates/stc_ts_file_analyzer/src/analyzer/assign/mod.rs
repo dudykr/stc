@@ -1086,32 +1086,10 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                let ty = if Self::has_type_param_for_conditional(&rc.check_type) {
-                    if rc.check_type.type_eq(&rc.true_type) {
-                        Type::new_intersection(span, [*(rc.check_type).clone(), *(rc.extends_type).clone()]).freezed()
-                    } else {
-                        let mut params = HashMap::default();
-                        if let Some(ty) = rc.check_type.as_type_param() {
-                            params.insert(
-                                ty.name.clone(),
-                                Type::new_intersection(span, [*(rc.check_type).clone(), *(rc.extends_type).clone()]).freezed(),
-                            );
-                        }
-                        let true_type = *rc.true_type.clone();
-                        let res = self.expand_type_params(&params, true_type, Default::default());
-                        if let Ok(ty) = res {
-                            ty.freezed()
-                        } else {
-                            *rc.true_type.clone()
-                        }
-                    }
-                } else {
-                    *rc.true_type.clone()
-                };
-                dbg!(&ty);
+                let ty = self.overwrite_conditional(span, rc);
+
                 self.assign_with_opts(data, to, &ty, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
-                dbg!(&rc.false_type);
                 self.assign_with_opts(data, to, &rc.false_type, opts)
                     .context("tried to assign the false type of a conditional type to lhs")?;
 
@@ -1567,8 +1545,8 @@ impl Analyzer<'_, '_> {
                     .map(|rhs| {
                         self.assign_inner(
                             data,
-                            rhs,
                             to,
+                            rhs,
                             AssignOpts {
                                 allow_assignment_to_param_constraint: true,
                                 ..opts
