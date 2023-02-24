@@ -250,8 +250,8 @@ impl Analyzer<'_, '_> {
                 self.infer_type(
                     span,
                     &mut inferred,
-                    ret_type_ann,
                     ret_ty,
+                    ret_type_ann,
                     InferTypeOpts {
                         priority: InferencePriority::ReturnType,
                         ..Default::default()
