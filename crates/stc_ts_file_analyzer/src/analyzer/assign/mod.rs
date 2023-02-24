@@ -1973,6 +1973,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_fn_type()
                             || ty.is_tpl()
                             || ty.is_intersection()
+                            || ty.is_type_param()
                     });
 
                 if should_use_single_error {
