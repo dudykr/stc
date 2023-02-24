@@ -283,6 +283,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         rule,
         target,
         module_config,
+        lib_files,
         ..
     } = spec;
 
@@ -334,6 +335,8 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
             // Install a logger
             let _guard = testing::init();
+
+            checker.load_typings(&file_name, None, Some(&lib_files));
 
             if spec.sub_files.is_empty() {
                 checker.check(Arc::new(FileName::Real(file_name.into())));
