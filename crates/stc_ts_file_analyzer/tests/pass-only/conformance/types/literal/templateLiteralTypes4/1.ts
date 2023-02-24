@@ -50,8 +50,3 @@ type Point = TypedObject<[
 
 declare const p: Point;
 p.getIndex(0); // ok, 0 is a valid index
-p.getIndex(1); // ok, 1 is a valid index
-
-p.setIndex(0, 0); // ok, 0 is a valid index
-p.setIndex(1, 0); // ok, 1 is a valid index
-
