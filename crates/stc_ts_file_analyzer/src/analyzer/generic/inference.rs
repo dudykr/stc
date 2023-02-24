@@ -789,7 +789,7 @@ impl Analyzer<'_, '_> {
             }
             _ => Cow::Borrowed(arg),
         };
-        // TODO:
+        // TODO: Do `arg.assert_clone_cheap()` instead of `arg.freeze()`
         arg.freeze();
 
         // TODO(kdy1): Verify if this is correct
