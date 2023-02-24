@@ -571,20 +571,9 @@ impl Analyzer<'_, '_> {
                 append_type_as_union: true,
                 ..opts
             };
-            if let Some(param_elem) = unwrap_builtin_with_single_arg(param, "Array")
-                .or_else(|| unwrap_builtin_with_single_arg(param, "ArrayLike"))
-                .or_else(|| unwrap_builtin_with_single_arg(param, "ReadonlyArray"))
-            {
-                if let Type::Array(arg) = arg.normalize() {
-                    return self.infer_type(span, inferred, param_elem, &arg.elem_type, opts);
-                }
 
-                if let Some(arg_elem) = unwrap_builtin_with_single_arg(arg, "Array")
-                    .or_else(|| unwrap_builtin_with_single_arg(arg, "ArrayLike"))
-                    .or_else(|| unwrap_builtin_with_single_arg(arg, "ReadonlyArray"))
-                {
-                    return self.infer_type(span, inferred, param_elem, arg_elem, opts);
-                }
+            if let (Some(p), Some(a)) = (array_elem_type(param), array_elem_type(arg)) {
+                return self.infer_type(span, inferred, p, a, opts);
             }
         }
 
@@ -2328,6 +2317,21 @@ impl Analyzer<'_, '_> {
 
         Ok(())
     }
+}
+
+fn array_elem_type(t: &Type) -> Option<&Type> {
+    if let Type::Array(a) = t.normalize() {
+        return Some(&a.elem_type);
+    }
+
+    if let Some(elem) = unwrap_builtin_with_single_arg(t, "Array")
+        .or_else(|| unwrap_builtin_with_single_arg(t, "ArrayLike"))
+        .or_else(|| unwrap_builtin_with_single_arg(t, "ReadonlyArray"))
+    {
+        return Some(elem);
+    }
+
+    None
 }
 
 /// Handles renaming of the type parameters.
