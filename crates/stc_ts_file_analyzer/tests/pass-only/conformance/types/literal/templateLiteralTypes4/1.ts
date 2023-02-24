@@ -50,3 +50,5 @@ type Point = TypedObject<[
 
 declare const p: Point;
 p.getIndex(0); // ok, 0 is a valid index
+
+export { }
