@@ -13,7 +13,7 @@ function f20<T>(
   // fooBar(x);
   // fooBar(y);
   // fooBar(z);
-  fooBat(x);
+  // fooBat(x);
   fooBat(y);
   fooBat(z);
 }

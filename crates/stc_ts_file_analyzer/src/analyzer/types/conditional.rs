@@ -56,6 +56,7 @@ impl Analyzer<'_, '_> {
             let ty = if v { &c.true_type } else { &c.false_type };
             // TODO(kdy1): Optimize
             dbg!(&ty);
+            dbg!(&c);
             let ty = self
                 .normalize(Some(span), Cow::Borrowed(ty), opts)
                 .context("tried to normalize the calculated type of a conditional type")?
@@ -63,7 +64,7 @@ impl Analyzer<'_, '_> {
             dbg!(&ty);
             return Ok(Cow::Owned(ty));
         }
-
+        dbg!(123);
         if let Type::Param(TypeParam {
             name,
             constraint: Some(check_type_constraint),
@@ -188,9 +189,10 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn has_type_param_for_conditional(c: &Type) -> bool {
-        match c {
+        match c.normalize() {
             Type::Param(..) => true,
-            Type::Intersection(Intersection { types, .. }) => types.iter().any(|t| Self::has_type_param_for_conditional(t)),
+            Type::Intersection(Intersection { types, .. }) => types.iter().any(Self::has_type_param_for_conditional),
+            Type::Conditional(Conditional { check_type, .. }) => Self::has_type_param_for_conditional(&*check_type),
             _ => false,
         }
     }

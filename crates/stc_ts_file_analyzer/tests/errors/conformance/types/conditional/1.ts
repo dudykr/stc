@@ -2,7 +2,7 @@ type Foo = { foo: string };
 type Bar = { bar: string };
 
 declare function fooBar(x: { foo: string; bar: string }): void;
-declare function fooBat(x: { foo: string; bat: string }): void;
+declare function fooBat(x: { foo: string; bat: string }): number;
 type Extract2<T, U, V> = T extends U ? (T extends V ? T : never) : never;
 
 function f20<T>(
@@ -13,7 +13,7 @@ function f20<T>(
   // fooBar(x);
   // fooBar(y);
   // fooBar(z);
-  fooBat(x);
-  fooBat(y);
-  fooBat(z);
+  const result = fooBat(x);
+  // fooBat(y);
+  // fooBat(z);
 }
