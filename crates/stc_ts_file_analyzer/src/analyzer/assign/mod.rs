@@ -1687,6 +1687,22 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
                     }
+                    Type::TypeLit(to) => {
+                        // Don't ask why.
+                        //
+                        // See: subtypingWithOptionalProperties.ts
+                        if !self.rule().strict_null_checks
+                            && to.members.iter().all(|el| match el {
+                                TypeElement::Property(p) => p.optional,
+                                _ => false,
+                            })
+                        {
+                            return Ok(());
+                        } else {
+                            fail!()
+                        }
+                    }
+
                     _ => {
                         fail!()
                     }
