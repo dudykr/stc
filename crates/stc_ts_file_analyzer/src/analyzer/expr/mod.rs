@@ -110,6 +110,18 @@ impl Analyzer<'_, '_> {
             e
         ));
 
+        let mut type_ann = type_ann.map(Cow::Borrowed);
+
+        if type_ann.is_none() {
+            if let Some(mutations) = &mut self.mutations {
+                if let Some(node_id) = e.node_id() {
+                    if !node_id.is_invalid() {
+                        type_ann = mutations.for_exprs.get(&node_id).and_then(|v| v.type_ann.clone()).map(Cow::Owned);
+                    }
+                }
+            }
+        }
+
         let span = e.span();
         let need_type_param_handling = match e {
             RExpr::Member(..) => true,
@@ -126,15 +138,15 @@ impl Analyzer<'_, '_> {
             match e {
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
-                RExpr::Bin(e) => e.validate_with_args(self, type_ann),
-                RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
-                RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
+                RExpr::Bin(e) => e.validate_with_args(self, type_ann.as_deref()),
+                RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann.as_deref())),
+                RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann.as_deref())),
                 RExpr::Update(e) => e.validate_with(self),
-                RExpr::New(e) => e.validate_with_args(self, type_ann),
-                RExpr::Call(e) => e.validate_with_args(self, type_ann),
-                RExpr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-                RExpr::TsTypeAssertion(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-                RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
+                RExpr::New(e) => e.validate_with_args(self, type_ann.as_deref()),
+                RExpr::Call(e) => e.validate_with_args(self, type_ann.as_deref()),
+                RExpr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann.as_deref())),
+                RExpr::TsTypeAssertion(e) => e.validate_with_args(self, (mode, type_args, type_ann.as_deref())),
+                RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann.as_deref())),
                 RExpr::Unary(e) => e.validate_with(self),
 
                 RExpr::This(RThisExpr { span, .. }) => {
@@ -209,23 +221,25 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                RExpr::Ident(ref i) => i.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::Ident(ref i) => i.validate_with_args(self, (mode, type_args, type_ann.as_deref())),
 
-                RExpr::Array(arr) => arr.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::Array(arr) => arr.validate_with_args(self, (mode, type_args, type_ann.as_deref())),
 
                 RExpr::Lit(lit) => lit.validate_with(self),
 
-                RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann.as_deref())),
 
-                RExpr::Tpl(ref e) => e.validate_with_args(self, type_ann),
+                RExpr::Tpl(ref e) => e.validate_with_args(self, type_ann.as_deref()),
 
                 RExpr::TsNonNull(RTsNonNullExpr { span, ref expr, .. }) => {
-                    let mut ty = expr.validate_with_args(self, (mode, type_args, type_ann))?.remove_falsy();
+                    let mut ty = expr
+                        .validate_with_args(self, (mode, type_args, type_ann.as_deref()))?
+                        .remove_falsy();
                     ty.reposition(*span);
                     Ok(ty)
                 }
 
-                RExpr::Object(e) => e.validate_with_args(self, type_ann),
+                RExpr::Object(e) => e.validate_with_args(self, type_ann.as_deref()),
 
                 // https://github.com/Microsoft/TypeScript/issues/26959
                 RExpr::Yield(..) => {
@@ -233,16 +247,16 @@ impl Analyzer<'_, '_> {
                     Ok(Type::any(span, Default::default()))
                 }
 
-                RExpr::Await(e) => e.validate_with_args(self, type_ann),
+                RExpr::Await(e) => e.validate_with_args(self, type_ann.as_deref()),
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    Ok(class.validate_with_args(self, type_ann)?.into())
+                    Ok(class.validate_with_args(self, type_ann.as_deref())?.into())
                 }
 
-                RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann)?.into()),
+                RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann.as_deref())?.into()),
 
-                RExpr::Fn(f) => Ok(f.validate_with_args(self, type_ann)?),
+                RExpr::Fn(f) => Ok(f.validate_with_args(self, type_ann.as_deref())?),
 
                 RExpr::Member(ref expr) => {
                     // Foo.a
@@ -265,17 +279,17 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Invalid(ref i) => Ok(Type::any(i.span(), Default::default())),
 
-                RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
+                RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann.as_deref()),
 
-                RExpr::TsConstAssertion(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::TsConstAssertion(expr) => expr.validate_with_args(self, (mode, None, type_ann.as_deref())),
 
-                RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann.as_deref())),
 
-                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, type_args, type_ann.as_deref())),
 
-                RExpr::JSXElement(expr) => expr.validate_with_args(self, type_ann),
+                RExpr::JSXElement(expr) => expr.validate_with_args(self, type_ann.as_deref()),
 
-                RExpr::JSXFragment(expr) => expr.validate_with_args(self, type_ann),
+                RExpr::JSXFragment(expr) => expr.validate_with_args(self, type_ann.as_deref()),
 
                 _ => Err(ErrorKind::Unimplemented {
                     span,
