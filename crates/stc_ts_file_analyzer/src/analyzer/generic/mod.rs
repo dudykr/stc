@@ -1111,7 +1111,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Alias(param) => {
-                self.infer_type(span, inferred, &param.ty, arg_normalized, opts)?;
+                self.infer_type(span, inferred, &param.ty, arg, opts)?;
                 if let Some(type_params) = &param.type_params {
                     self.rename_inferred(span, inferred, type_params)?;
                 }
@@ -1119,7 +1119,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(param) => {
-                if self.infer_type_using_mapped_type(span, inferred, param, arg_normalized, opts)? {
+                if self.infer_type_using_mapped_type(span, inferred, param, arg, opts)? {
                     dbg!();
                     return Ok(());
                 }
@@ -1571,7 +1571,7 @@ impl Analyzer<'_, '_> {
                     name, key_name
                 );
 
-                match arg {
+                match arg.normalize() {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
                         let mut key_types = vec![];
@@ -2078,7 +2078,7 @@ impl Analyzer<'_, '_> {
                                     _ => unreachable!(),
                                 };
                                 if name == index_ty.name {
-                                    match arg {
+                                    match arg.normalize() {
                                         Type::TypeLit(arg) => {
                                             let mut members = Vec::with_capacity(arg.members.len());
 
@@ -2167,7 +2167,7 @@ impl Analyzer<'_, '_> {
                 }) = constraint.normalize()
                 {
                     if let Some(param_ty) = &param.ty {
-                        if let Type::TypeLit(arg_lit) = arg {
+                        if let Type::TypeLit(arg_lit) = arg.normalize() {
                             let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
                             print_type("reversed", &reversed_param_ty);
 
