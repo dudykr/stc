@@ -572,8 +572,9 @@ impl Analyzer<'_, '_> {
                     .freezed();
                 &p
             }
-            _ => param_normalized,
+            _ => param,
         };
+        let param_normalized = param.normalize();
 
         if cfg!(feature = "fastpath") {
             let opts = InferTypeOpts {
@@ -581,12 +582,12 @@ impl Analyzer<'_, '_> {
                 ..opts
             };
 
-            if let (Some(p), Some(a)) = (array_elem_type(param), array_elem_type(arg_normalized)) {
+            if let (Some(p), Some(a)) = (array_elem_type(param_normalized), array_elem_type(arg_normalized)) {
                 return self.infer_type(span, inferred, p, a, opts);
             }
         }
 
-        match (param.normalize(), arg.normalize()) {
+        match (param_normalized.normalize(), arg.normalize()) {
             (Type::Union(p), _) => {
                 if !opts.skip_initial_union_check {
                     self.infer_type_using_union(
@@ -617,27 +618,27 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let p = param;
+        let p = param_normalized;
         let a = arg_normalized;
 
-        if let Some(res) = self.infer_builtin(span, inferred, param, arg_normalized, opts) {
+        if let Some(res) = self.infer_builtin(span, inferred, param_normalized, arg_normalized, opts) {
             return res;
         }
 
-        if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg_normalized, opts)? {
+        if self.infer_type_by_converting_to_type_lit(span, inferred, param_normalized, arg_normalized, opts)? {
             return Ok(());
         }
 
         if opts.for_fn_assignment {
             if let Type::Param(arg) = arg_normalized.normalize() {
-                if !param.is_type_param() {
-                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
+                if !param_normalized.is_type_param() {
+                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param_normalized), opts)?;
                     return Ok(());
                 }
             }
         }
 
-        match (param.normalize(), arg_normalized.normalize()) {
+        match (param_normalized.normalize(), arg_normalized.normalize()) {
             (_, Type::Enum(..)) => {
                 let arg = self
                     .normalize(
@@ -653,7 +654,7 @@ impl Analyzer<'_, '_> {
                     .freezed()
                     .into_owned()
                     .freezed();
-                return self.infer_type_inner(span, inferred, param, &arg, opts);
+                return self.infer_type_inner(span, inferred, param_normalized, &arg, opts);
             }
 
             (
@@ -700,7 +701,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match param.normalize() {
+        match param_normalized.normalize() {
             Type::Param(TypeParam {
                 ref name, ref constraint, ..
             }) => {
@@ -1242,7 +1243,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (param, arg_normalized) {
+        match (param_normalized, arg_normalized) {
             (Type::Union(Union { types: param_types, .. }), _) => {
                 return self.infer_to_multiple_types(span, inferred, arg, param_types, true, opts);
             }
@@ -1253,7 +1254,7 @@ impl Analyzer<'_, '_> {
             (_, Type::Union(arg_union)) => {
                 // Source is a union or intersection type, infer from each constituent type
                 for source_type in arg_union.types.iter() {
-                    self.infer_from_types(span, inferred, source_type, param, opts)?;
+                    self.infer_from_types(span, inferred, source_type, param_normalized, opts)?;
                 }
                 return Ok(());
             }
@@ -1269,7 +1270,7 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::ReadOnly,
                 ty: arg,
                 ..
-            }) => return self.infer_type(span, inferred, param, arg, opts),
+            }) => return self.infer_type(span, inferred, param_normalized, arg, opts),
 
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
@@ -1278,7 +1279,7 @@ impl Analyzer<'_, '_> {
                 return self.infer_type(
                     span,
                     inferred,
-                    param,
+                    param_normalized,
                     &Type::Ref(Ref {
                         span,
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
@@ -1313,22 +1314,22 @@ impl Analyzer<'_, '_> {
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
-                        return self.infer_type(span, inferred, param, &arg, opts);
+                        return self.infer_type(span, inferred, param_normalized, &arg, opts);
                     }
                 }
             }
-            Type::Alias(arg) => return self.infer_type(span, inferred, param, &arg.ty, opts),
+            Type::Alias(arg) => return self.infer_type(span, inferred, param_normalized, &arg.ty, opts),
 
             Type::Interface(arg) => {
                 // Body should be handled by the match expression above.
 
                 for parent in &arg.extends {
                     let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
-                    self.infer_type(span, inferred, param, &parent, opts)?;
+                    self.infer_type(span, inferred, param_normalized, &parent, opts)?;
                 }
 
                 // Check to print unimplemented error message
-                match param {
+                match param_normalized {
                     Type::Operator(..) | Type::Interface(..) => return Ok(()),
                     _ => {}
                 }
@@ -1344,7 +1345,7 @@ impl Analyzer<'_, '_> {
                         dejavu: inferred.dejavu.clone(),
                         ..Default::default()
                     };
-                    self.infer_type(span, &mut inferred, param, ty, opts)
+                    self.infer_type(span, &mut inferred, param_normalized, ty, opts)
                         .context("failed to in infer element type of an intersection type")?;
                     data.push(inferred);
                 }
@@ -1402,23 +1403,23 @@ impl Analyzer<'_, '_> {
                     | Type::Lit(..)
             )
         };
-        if ignore(param) && ignore(arg_normalized) {
+        if ignore(param_normalized) && ignore(arg_normalized) {
             return Ok(());
         }
 
-        if param.is_str_lit() || param.is_bool_lit() || param.is_num_lit() {
+        if param_normalized.is_str_lit() || param_normalized.is_bool_lit() || param_normalized.is_num_lit() {
             // Prevent logging
             return Ok(());
         }
 
-        if param.is_predicate() && arg_normalized.is_bool() {
+        if param_normalized.is_predicate() && arg_normalized.is_bool() {
             // Prevent logging
             return Ok(());
         }
 
         error!(
             "unimplemented: infer_type\nparam  = {}\narg = {}",
-            force_dump_type_as_string(param),
+            force_dump_type_as_string(param_normalized),
             force_dump_type_as_string(arg_normalized),
         );
         Ok(())
