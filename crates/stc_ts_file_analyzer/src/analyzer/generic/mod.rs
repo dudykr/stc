@@ -709,10 +709,8 @@ impl Analyzer<'_, '_> {
                             ..self.ctx
                         };
 
-                        self.with_ctx(ctx)
-                            .infer_type(span, inferred, &prev.inferred_type, arg_normalized, opts)?;
-                        self.with_ctx(ctx)
-                            .infer_type(span, inferred, arg_normalized, &prev.inferred_type, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, &prev.inferred_type, arg, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev.inferred_type, opts)?;
                     }
                 }
 
