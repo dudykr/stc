@@ -1913,6 +1913,7 @@ impl Analyzer<'_, '_> {
                         });
                         let mut key_ty = Type::new_union(span, key_ty);
                         prevent_generalize(&mut key_ty);
+                        key_ty.freeze();
                         self.insert_inferred(span, inferred, type_param, Cow::Owned(key_ty), opts)?;
                     }
 
