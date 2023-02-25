@@ -2355,6 +2355,7 @@ fn array_elem_type(t: &Type) -> Option<&Type> {
         .or_else(|| unwrap_builtin_with_single_arg(t, "ArrayLike"))
         .or_else(|| unwrap_builtin_with_single_arg(t, "ReadonlyArray"))
     {
+        elem.assert_clone_cheap();
         return Some(elem);
     }
 
