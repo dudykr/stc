@@ -948,7 +948,7 @@ impl Analyzer<'_, '_> {
                                         if let Some(type_ann) = &p.type_ann {
                                             // TODO(kdy1): Change p.ty
 
-                                            self.infer_type(span, inferred, type_ann, arg_normalized, opts)?;
+                                            self.infer_type(span, inferred, type_ann, arg, opts)?;
                                         }
 
                                         new_lit.members.push(TypeElement::Property(p));
@@ -967,7 +967,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Alias(..) => {
-                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg_normalized))? {
+                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
                 }
@@ -1020,7 +1020,7 @@ impl Analyzer<'_, '_> {
                         elems: vec![TupleElement {
                             span,
                             label: None,
-                            ty: box arg_normalized.clone(),
+                            ty: box arg.clone(),
                             tracker: Default::default(),
                         }],
                         metadata: Default::default(),
@@ -1188,7 +1188,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 inferred,
                                 &param.obj_type,
-                                arg_normalized,
+                                arg,
                                 InferTypeOpts {
                                     append_type_as_union: true,
                                     ..Default::default()
