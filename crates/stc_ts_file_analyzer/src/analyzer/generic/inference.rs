@@ -22,6 +22,8 @@ use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error, info};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
@@ -804,6 +806,11 @@ impl Analyzer<'_, '_> {
 
         if let Some(constraint) = inferred.constraints.get(&name) {
             if let Some(false) = self.extends(span, &arg, constraint, Default::default()) {
+                warn!(
+                    "Type parameter `{}` is not assignable to `{}`",
+                    dump_type_as_string(&arg),
+                    dump_type_as_string(constraint)
+                );
                 return Ok(());
             }
         }
