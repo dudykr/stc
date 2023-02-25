@@ -6,7 +6,7 @@ use stc_ts_generics::{
     ExpandGenericOpts,
 };
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Id, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_ts_types::{Id, Interface, KeywordType, Operator, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
@@ -395,6 +395,17 @@ impl Analyzer<'_, '_> {
 
         if child.is_null_or_undefined() && (parent.is_fn_type() || parent.is_constructor()) {
             return Some(false);
+        }
+
+        // TODO: Implement correct logic
+        if let Type::Operator(Operator {
+            op: TsTypeOperatorOp::KeyOf,
+            ..
+        }) = child.normalize()
+        {
+            if parent.is_str_like() {
+                return Some(true);
+            }
         }
 
         let res = self.assign_with_opts(
