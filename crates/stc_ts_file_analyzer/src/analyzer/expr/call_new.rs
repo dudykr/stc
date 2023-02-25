@@ -2536,6 +2536,7 @@ impl Analyzer<'_, '_> {
             })
             .collect_vec();
         self.expand_this_in_type(&mut ret_ty);
+        ret_ty.freeze();
 
         let is_type_arg_count_fine = {
             let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
