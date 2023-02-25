@@ -2589,7 +2589,7 @@ impl Analyzer<'_, '_> {
                 let _ = type_params.to_vec();
                 let _ = params.clone();
                 let _ = spread_arg_types.to_vec();
-                let _ = ret_ty.clone();
+                ret_ty.assert_clone_cheap();
                 let _ = type_ann.clone().map(Cow::into_owned);
             }
 
