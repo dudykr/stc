@@ -1320,7 +1320,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            Type::Alias(arg) => return self.infer_type(span, inferred, param_normalized, &arg.ty, opts),
+            Type::Alias(arg) => return self.infer_type(span, inferred, param, &arg.ty, opts),
 
             Type::Interface(arg) => {
                 // Body should be handled by the match expression above.
