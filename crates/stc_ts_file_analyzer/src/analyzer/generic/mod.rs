@@ -822,7 +822,7 @@ impl Analyzer<'_, '_> {
                     }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
-                        let arg = Type::new_union(span, arg.elems.iter().map(|element| *element.ty.clone()));
+                        let arg = Type::new_union(span, arg.elems.iter().map(|element| *element.ty.clone())).freezed();
                         return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
                     }
 
