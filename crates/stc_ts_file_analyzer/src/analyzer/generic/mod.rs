@@ -583,7 +583,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param.normalize(), arg_normalized.normalize()) {
+        match (param.normalize(), arg.normalize()) {
             (Type::Union(p), _) => {
                 if !opts.skip_initial_union_check {
                     self.infer_type_using_union(
