@@ -1,10 +1,6 @@
 Stats {
     required_error: 2,
     matched_error: 5,
-<<<<<<< HEAD
     extra_error: 3,
-=======
-    extra_error: 4,
->>>>>>> 21d22962 (fix: type predicates getting expanded to js_word)
     panic: 0,
 }
