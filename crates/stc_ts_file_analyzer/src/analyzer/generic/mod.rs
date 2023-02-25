@@ -576,7 +576,8 @@ impl Analyzer<'_, '_> {
         };
         let param_normalized = param.normalize();
 
-        if cfg!(feature = "fastpath") {
+        {
+            // Handle array-like types
             let opts = InferTypeOpts {
                 append_type_as_union: true,
                 ..opts
