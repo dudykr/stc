@@ -1138,7 +1138,7 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Param(obj_type),
                         ..
                     } if self.mapped_type_param_name.contains(&obj_type.name) => {
-                        self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg_normalized), opts)?;
+                        self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
                         return Ok(());
                     }
 
@@ -1152,7 +1152,7 @@ impl Analyzer<'_, '_> {
                     {
                         for ty in types {
                             if let Type::Param(obj_type) = ty.normalize() {
-                                self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg_normalized), opts)?;
+                                self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
                             }
                         }
                         return Ok(());
