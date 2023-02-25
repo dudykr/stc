@@ -2343,7 +2343,9 @@ impl Analyzer<'_, '_> {
                         _ => None,
                     }
                 },
-            )
+            );
+
+            ty.inferred_type.freeze();
         });
 
         Ok(())
