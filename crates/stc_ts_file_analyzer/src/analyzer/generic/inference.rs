@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let _tracing = dev_span!("infer_type_using_union");
 
-        let (temp_sources, temp_targets) = self.infer_from_matching_types(
+        let (mut temp_sources, mut temp_targets) = self.infer_from_matching_types(
             span,
             inferred,
             &once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
@@ -227,6 +227,10 @@ impl Analyzer<'_, '_> {
             |this, s, t| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
+
+        // TODO(kdy1): Remove these freeze calls
+        temp_sources.freeze();
+        temp_targets.freeze();
 
         let (sources, targets) = self.infer_from_matching_types(
             span,
@@ -241,7 +245,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let target = Type::new_union(span, targets);
+        let target = Type::new_union(span, targets).freezed();
 
         if sources.is_empty() {
             return self.infer_from_types(
@@ -257,7 +261,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let source = Type::new_union(span, sources);
+        let source = Type::new_union(span, sources).freezed();
 
         self.infer_from_types(
             span,
@@ -493,7 +497,8 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
+        let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
+        matches.freeze();
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
@@ -783,14 +788,13 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let mut arg = match arg.normalize() {
+        let arg = match arg.normalize() {
             Type::Union(arg) if opts.exclude_null_and_undefined => {
                 Cow::Owned(Type::new_union(arg.span, arg.types.iter().filter(|ty| !ty.is_null_or_undefined()).cloned()).freezed())
             }
             _ => Cow::Borrowed(arg),
         };
-        // TODO: Do `arg.assert_clone_cheap()` instead of `arg.freeze()`
-        arg.freeze();
+        arg.assert_clone_cheap();
 
         // TODO(kdy1): Verify if this is correct
         if let Type::Param(arg) = arg.normalize() {
@@ -891,8 +895,9 @@ impl Analyzer<'_, '_> {
                                 e.get().inferred_type.clone()
                             }
                         } else {
-                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
+                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()]).freezed()
                         };
+                        new.assert_clone_cheap();
                         e.get_mut().inferred_type = new;
                         return Ok(());
                     }
@@ -927,14 +932,18 @@ impl Analyzer<'_, '_> {
                 let mut arg = arg.clone();
 
                 if opts.is_inferring_rest_type {
-                    arg = Cow::Owned(arg.into_owned().generalize_lit());
+                    arg = Cow::Owned(arg.into_owned().generalize_lit().freezed());
                 }
+
+                let arg = arg.into_owned();
+
+                arg.assert_clone_cheap();
 
                 e.insert(InferenceInfo {
                     type_param: name,
                     candidates: Default::default(),
                     contra_candidates: Default::default(),
-                    inferred_type: arg.into_owned(),
+                    inferred_type: arg,
                     priority: opts.priority,
                     top_level: true,
                     is_fixed: false,
@@ -961,8 +970,8 @@ impl Analyzer<'_, '_> {
         if cfg!(debug_assertions) {
             // Assertion for deep clone
             let _ = type_params.to_vec();
-            let _ = param.clone();
-            let _ = arg.clone();
+            param.assert_clone_cheap();
+            arg.assert_clone_cheap();
         }
 
         let mut inferred = InferData::default();
@@ -1056,9 +1065,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let arg = arg.normalize();
-
-        match arg {
+        match arg.normalize() {
             Type::Interface(arg) => {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg, opts)?;
             }
@@ -1077,7 +1084,9 @@ impl Analyzer<'_, '_> {
         }
 
         for parent in &param.extends {
-            let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
+            let parent = self
+                .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
+                .freezed();
             self.infer_type(span, inferred, &parent, arg, opts)?;
         }
 
@@ -1192,7 +1201,8 @@ impl Analyzer<'_, '_> {
                                         ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .freezed(),
                                     opts,
                                 )?;
                             }
@@ -1215,7 +1225,8 @@ impl Analyzer<'_, '_> {
                                         ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .freezed(),
                                     at,
                                     opts,
                                 )?;
@@ -1514,6 +1525,7 @@ impl Analyzer<'_, '_> {
 
             if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
                 prevent_generalize(&mut ty.inferred_type);
+                ty.inferred_type.freeze()
             }
         }
     }

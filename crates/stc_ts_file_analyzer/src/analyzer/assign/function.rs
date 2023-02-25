@@ -228,7 +228,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -236,7 +237,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
 
                 let map = self.infer_type_with_types(
                     span,
@@ -282,7 +284,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -290,7 +293,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
 
                 let map = self.infer_type_with_types(
                     span,
