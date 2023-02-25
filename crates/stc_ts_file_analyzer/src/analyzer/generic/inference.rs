@@ -431,6 +431,8 @@ impl Analyzer<'_, '_> {
         is_target_union: bool,
         mut opts: InferTypeOpts,
     ) -> VResult<()> {
+        let _tracing = dev_span!("infer_to_multiple_types_with_priority");
+
         let saved_priority = opts.priority;
         opts.priority |= new_priority;
         self.infer_to_multiple_types(span, inferred, source, targets, is_target_union, opts)?;
@@ -499,6 +501,8 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
         matches.freeze();
+
+        let _tracing = dev_span!("infer_to_tpl_lit_type", matches = matches.as_ref().map_or(0, |v| v.len()));
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
