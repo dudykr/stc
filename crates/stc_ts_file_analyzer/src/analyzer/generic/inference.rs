@@ -951,7 +951,6 @@ impl Analyzer<'_, '_> {
                 if opts.is_inferring_rest_type {
                     arg = Cow::Owned(arg.into_owned().generalize_lit().freezed());
                 }
-                arg.freeze();
 
                 let arg = arg.into_owned();
 
