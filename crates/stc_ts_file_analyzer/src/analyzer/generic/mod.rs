@@ -708,6 +708,7 @@ impl Analyzer<'_, '_> {
                             skip_identical_while_inference: true,
                             ..self.ctx
                         };
+                        prev.inferred_type.assert_clone_cheap();
 
                         self.with_ctx(ctx).infer_type(span, inferred, &prev.inferred_type, arg, opts)?;
                         self.with_ctx(ctx).infer_type(span, inferred, arg, &prev.inferred_type, opts)?;
