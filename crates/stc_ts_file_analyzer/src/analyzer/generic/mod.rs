@@ -789,7 +789,7 @@ impl Analyzer<'_, '_> {
                     dump_type_as_string(arg_normalized)
                 );
 
-                self.upsert_inferred(span, inferred, name.clone(), arg_normalized, opts)?;
+                self.upsert_inferred(span, inferred, name.clone(), arg, opts)?;
 
                 return Ok(());
             }
