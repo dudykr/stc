@@ -1857,12 +1857,15 @@ impl Analyzer<'_, '_> {
                             span,
                             inferred,
                             name.clone(),
-                            Cow::Owned(Type::Tuple(Tuple {
-                                span: arg.span,
-                                elems: new_elems,
-                                metadata: arg.metadata,
-                                tracker: Default::default(),
-                            })),
+                            Cow::Owned(
+                                Type::Tuple(Tuple {
+                                    span: arg.span,
+                                    elems: new_elems,
+                                    metadata: arg.metadata,
+                                    tracker: Default::default(),
+                                })
+                                .freezed(),
+                            ),
                             opts,
                         )?;
 
