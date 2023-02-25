@@ -6,7 +6,7 @@ use stc_ts_generics::{
     ExpandGenericOpts,
 };
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_ts_types::{Id, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
@@ -268,6 +268,18 @@ impl Analyzer<'_, '_> {
                     return None;
                 }
             }
+
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"Function" => match child {
+                Type::Function(..) => {
+                    return Some(true);
+                }
+                Type::TypeLit(child) => {
+                    if child.members.iter().any(|m| matches!(m, TypeElement::Call(..))) {
+                        return Some(true);
+                    }
+                }
+                _ => {}
+            },
 
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
                 Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::TypeLit(..) => {
