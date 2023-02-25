@@ -493,7 +493,8 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
+        let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
+        matches.freeze();
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
