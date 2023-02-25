@@ -1345,7 +1345,7 @@ impl Analyzer<'_, '_> {
                         dejavu: inferred.dejavu.clone(),
                         ..Default::default()
                     };
-                    self.infer_type(span, &mut inferred, param_normalized, ty, opts)
+                    self.infer_type(span, &mut inferred, param, ty, opts)
                         .context("failed to in infer element type of an intersection type")?;
                     data.push(inferred);
                 }
