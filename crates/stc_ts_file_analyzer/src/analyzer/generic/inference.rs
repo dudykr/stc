@@ -257,7 +257,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let source = Type::new_union(span, sources);
+        let source = Type::new_union(span, sources).freezed();
 
         self.infer_from_types(
             span,
