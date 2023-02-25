@@ -548,18 +548,18 @@ impl Analyzer<'_, '_> {
         if should_delegate(param_normalized) {
             let mut param = self.normalize(Some(span), Cow::Borrowed(param_normalized), Default::default())?;
             param.freeze();
-            return self.infer_type(span, inferred, &param, arg_normalized, opts);
+            return self.infer_type(span, inferred, &param, arg, opts);
         }
 
         if should_delegate(arg_normalized) {
             let mut arg = self.normalize(Some(span), Cow::Borrowed(arg_normalized), Default::default())?;
             arg.freeze();
 
-            return self.infer_type(span, inferred, param_normalized, &arg, opts);
+            return self.infer_type(span, inferred, param, &arg, opts);
         }
 
         let p;
-        let param = match param_normalized {
+        let param = match param.normalize() {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
                 p = box param_normalized
