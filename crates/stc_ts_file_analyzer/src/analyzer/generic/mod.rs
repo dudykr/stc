@@ -1316,7 +1316,7 @@ impl Analyzer<'_, '_> {
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
-                        return self.infer_type(span, inferred, param_normalized, &arg, opts);
+                        return self.infer_type(span, inferred, param, &arg, opts);
                     }
                 }
             }
