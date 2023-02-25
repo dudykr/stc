@@ -1280,14 +1280,15 @@ impl Analyzer<'_, '_> {
                 return self.infer_type(
                     span,
                     inferred,
-                    param_normalized,
+                    param,
                     &Type::Ref(Ref {
                         span,
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .freezed(),
                     opts,
                 );
             }
