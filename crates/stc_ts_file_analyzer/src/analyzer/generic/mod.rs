@@ -1788,20 +1788,23 @@ impl Analyzer<'_, '_> {
                             span,
                             inferred,
                             name.clone(),
-                            Cow::Owned(Type::Array(Array {
-                                span: arg.span,
-                                elem_type: box new_ty.unwrap_or_else(|| {
-                                    Type::any(
-                                        arg.span,
-                                        KeywordTypeMetadata {
-                                            common: arg.metadata.common,
-                                            ..Default::default()
-                                        },
-                                    )
-                                }),
-                                metadata: arg.metadata,
-                                tracker: Default::default(),
-                            })),
+                            Cow::Owned(
+                                Type::Array(Array {
+                                    span: arg.span,
+                                    elem_type: box new_ty.unwrap_or_else(|| {
+                                        Type::any(
+                                            arg.span,
+                                            KeywordTypeMetadata {
+                                                common: arg.metadata.common,
+                                                ..Default::default()
+                                            },
+                                        )
+                                    }),
+                                    metadata: arg.metadata,
+                                    tracker: Default::default(),
+                                })
+                                .freezed(),
+                            ),
                             opts,
                         )?;
 
