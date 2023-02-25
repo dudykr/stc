@@ -655,7 +655,7 @@ impl Analyzer<'_, '_> {
                     .freezed()
                     .into_owned()
                     .freezed();
-                return self.infer_type_inner(span, inferred, param_normalized, &arg, opts);
+                return self.infer_type_inner(span, inferred, param, &arg, opts);
             }
 
             (
