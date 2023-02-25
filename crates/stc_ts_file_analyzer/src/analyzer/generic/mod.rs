@@ -1272,7 +1272,7 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::ReadOnly,
                 ty: arg,
                 ..
-            }) => return self.infer_type(span, inferred, param_normalized, arg, opts),
+            }) => return self.infer_type(span, inferred, param, arg, opts),
 
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
@@ -1303,7 +1303,7 @@ impl Analyzer<'_, '_> {
                 let arg = self
                     .expand(
                         span,
-                        arg_normalized.clone(),
+                        arg.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -1373,7 +1373,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Prevent logging
-        match arg_normalized.normalize() {
+        match arg.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
