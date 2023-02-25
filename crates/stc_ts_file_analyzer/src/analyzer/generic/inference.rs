@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let _tracing = dev_span!("infer_type_using_union");
 
-        let (temp_sources, temp_targets) = self.infer_from_matching_types(
+        let (mut temp_sources, mut temp_targets) = self.infer_from_matching_types(
             span,
             inferred,
             &once(arg).flat_map(|v| v.iter_union()).cloned().collect_vec(),
@@ -227,6 +227,10 @@ impl Analyzer<'_, '_> {
             |this, s, t| this.is_type_or_base_identical_to(s, t),
             opts,
         )?;
+
+        // TODO(kdy1): Remove these freeze calls
+        temp_sources.freeze();
+        temp_targets.freeze();
 
         let (sources, targets) = self.infer_from_matching_types(
             span,
