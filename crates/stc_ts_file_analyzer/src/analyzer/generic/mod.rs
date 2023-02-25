@@ -1231,10 +1231,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Operator(param) => {
-                self.infer_type_using_operator(span, inferred, param, arg_normalized, opts)?;
+                self.infer_type_using_operator(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
-                if let Type::Interface(..) = arg_normalized {
+                if let Type::Interface(..) = arg.normalize() {
                 } else {
                     return Ok(());
                 }
