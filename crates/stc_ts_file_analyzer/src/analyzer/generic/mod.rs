@@ -623,29 +623,29 @@ impl Analyzer<'_, '_> {
         let p = param_normalized;
         let a = arg_normalized;
 
-        if let Some(res) = self.infer_builtin(span, inferred, param_normalized, arg_normalized, opts) {
+        if let Some(res) = self.infer_builtin(span, inferred, param, arg, opts) {
             return res;
         }
 
-        if self.infer_type_by_converting_to_type_lit(span, inferred, param_normalized, arg_normalized, opts)? {
+        if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg, opts)? {
             return Ok(());
         }
 
         if opts.for_fn_assignment {
             if let Type::Param(arg) = arg_normalized.normalize() {
                 if !param_normalized.is_type_param() {
-                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param_normalized), opts)?;
+                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
                     return Ok(());
                 }
             }
         }
 
-        match (param_normalized.normalize(), arg_normalized.normalize()) {
+        match (param.normalize(), arg.normalize()) {
             (_, Type::Enum(..)) => {
                 let arg = self
                     .normalize(
                         Some(arg_normalized.span()),
-                        Cow::Borrowed(arg_normalized),
+                        Cow::Borrowed(arg),
                         NormalizeTypeOpts {
                             expand_enum_def: true,
                             preserve_global_this: true,
