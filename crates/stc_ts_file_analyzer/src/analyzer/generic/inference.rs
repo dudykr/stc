@@ -1221,7 +1221,8 @@ impl Analyzer<'_, '_> {
                                         ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .freezed(),
                                     at,
                                     opts,
                                 )?;
