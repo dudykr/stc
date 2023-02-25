@@ -609,7 +609,7 @@ impl Analyzer<'_, '_> {
 
             (Type::Intersection(param), _) => {
                 for param in &param.types {
-                    self.infer_type(span, inferred, param, arg_normalized, opts)?;
+                    self.infer_type(span, inferred, param, arg, opts)?;
                 }
 
                 return Ok(());
