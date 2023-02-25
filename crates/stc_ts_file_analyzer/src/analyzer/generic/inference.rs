@@ -1065,9 +1065,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let arg = arg.normalize();
-
-        match arg {
+        match arg.normalize() {
             Type::Interface(arg) => {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg, opts)?;
             }
@@ -1086,7 +1084,9 @@ impl Analyzer<'_, '_> {
         }
 
         for parent in &param.extends {
-            let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
+            let parent = self
+                .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
+                .freezed();
             self.infer_type(span, inferred, &parent, arg, opts)?;
         }
 

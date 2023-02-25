@@ -684,7 +684,7 @@ impl Analyzer<'_, '_> {
                 return self.infer_to_multiple_types_with_priority(
                     span,
                     inferred,
-                    arg_normalized,
+                    arg,
                     &[*target.true_type.clone(), *target.false_type.clone()],
                     if inferred.contravariant {
                         InferencePriority::ContravariantConditional
@@ -740,7 +740,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(constraint) = constraint {
                     if constraint.is_str() || constraint.is_num() {
-                        match arg_normalized.normalize() {
+                        match arg.normalize() {
                             // We use `default`
                             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
                             _ => {}
@@ -801,9 +801,9 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Interface(param) => match arg_normalized {
-                Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg_normalized, opts)?,
-                Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg_normalized, opts),
+            Type::Interface(param) => match arg.normalize() {
+                Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg, opts)?,
+                Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg, opts),
                 _ => {}
             },
 
