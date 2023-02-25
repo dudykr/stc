@@ -801,7 +801,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(arg_normalized), opts)?;
+                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(arg), opts)?;
                 return Ok(());
             }
 
