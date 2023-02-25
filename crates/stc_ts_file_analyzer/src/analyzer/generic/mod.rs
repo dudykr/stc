@@ -590,7 +590,7 @@ impl Analyzer<'_, '_> {
                         span,
                         inferred,
                         p,
-                        arg_normalized,
+                        arg,
                         InferTypeOpts {
                             append_type_as_union: true,
                             ..opts
