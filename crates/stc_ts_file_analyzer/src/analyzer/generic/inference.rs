@@ -893,6 +893,7 @@ impl Analyzer<'_, '_> {
                         } else {
                             Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
                         };
+                        new.assert_clone_cheap();
                         e.get_mut().inferred_type = new;
                         return Ok(());
                     }
@@ -1515,6 +1516,7 @@ impl Analyzer<'_, '_> {
 
             if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
                 prevent_generalize(&mut ty.inferred_type);
+                ty.inferred_type.freeze()
             }
         }
     }
