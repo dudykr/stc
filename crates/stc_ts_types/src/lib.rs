@@ -1578,7 +1578,9 @@ struct AssertCloneCheap;
 
 impl Visit<Type> for AssertCloneCheap {
     fn visit(&mut self, ty: &Type) {
-        debug_assert!(ty.is_clone_cheap(), "{:?} is not cheap to clone", ty);
+        if cfg![debug_assertions] && !ty.is_clone_cheap() {
+            unreachable!("{:?} is not cheap to clone", ty);
+        }
     }
 }
 
