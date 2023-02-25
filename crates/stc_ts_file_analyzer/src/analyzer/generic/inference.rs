@@ -961,8 +961,8 @@ impl Analyzer<'_, '_> {
         if cfg!(debug_assertions) {
             // Assertion for deep clone
             let _ = type_params.to_vec();
-            let _ = param.clone();
-            let _ = arg.clone();
+            param.assert_clone_cheap();
+            arg.assert_clone_cheap();
         }
 
         let mut inferred = InferData::default();
