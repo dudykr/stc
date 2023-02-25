@@ -697,7 +697,7 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Tpl(target), _) => {
-                return self.infer_to_tpl_lit_type(span, inferred, arg_normalized, target, opts);
+                return self.infer_to_tpl_lit_type(span, inferred, arg, target, opts);
             }
 
             _ => {}
@@ -1216,7 +1216,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return self.infer_type(span, inferred, &param.type_ann, arg_normalized, opts);
+                    return self.infer_type(span, inferred, &param.type_ann, arg, opts);
                 }
             }
 
