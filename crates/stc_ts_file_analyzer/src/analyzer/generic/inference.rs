@@ -891,7 +891,7 @@ impl Analyzer<'_, '_> {
                                 e.get().inferred_type.clone()
                             }
                         } else {
-                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()].freezed())
+                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()]).freezed()
                         };
                         new.assert_clone_cheap();
                         e.get_mut().inferred_type = new;
