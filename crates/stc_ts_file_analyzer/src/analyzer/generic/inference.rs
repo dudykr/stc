@@ -931,13 +931,15 @@ impl Analyzer<'_, '_> {
                     arg = Cow::Owned(arg.into_owned().generalize_lit().freezed());
                 }
 
+                let arg = arg.into_owned();
+
                 arg.assert_clone_cheap();
 
                 e.insert(InferenceInfo {
                     type_param: name,
                     candidates: Default::default(),
                     contra_candidates: Default::default(),
-                    inferred_type: arg.into_owned(),
+                    inferred_type: arg,
                     priority: opts.priority,
                     top_level: true,
                     is_fixed: false,
