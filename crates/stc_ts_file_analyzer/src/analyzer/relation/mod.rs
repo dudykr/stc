@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use stc_ts_types::Type;
+use stc_ts_types::{KeywordType, Type};
 use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -34,6 +34,12 @@ impl Analyzer<'_, '_> {
             if relation == Relation::Comparable && !target.is_never() && self.is_simple_type_related_to(target, source, relation)
                 || self.is_simple_type_related_to(source, target, relation)
             {
+                return true;
+            }
+        } else if !(&[source, target].iter().any(|ty| {
+            ty.is_union_type() || ty.is_intersection() || ty.is_conditional() || ty.is_indexed_access_type() || ty.is_substitution()
+        })) {
+            if source.is_singleton() {
                 return true;
             }
         }
