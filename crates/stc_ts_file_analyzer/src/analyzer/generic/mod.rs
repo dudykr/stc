@@ -301,15 +301,17 @@ impl Analyzer<'_, '_> {
                 type_param.constraint.as_deref().map(Type::normalize),
                 Some(Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..))
             ) {
-                let ty = self.expand(
-                    span,
-                    *type_param.constraint.clone().unwrap(),
-                    ExpandOpts {
-                        full: true,
-                        expand_union: false,
-                        ..Default::default()
-                    },
-                )?;
+                let ty = self
+                    .expand(
+                        span,
+                        *type_param.constraint.clone().unwrap(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: false,
+                            ..Default::default()
+                        },
+                    )?
+                    .freezed();
                 if !inferred.type_params.contains_key(&type_param.name) {
                     self.insert_inferred(span, &mut inferred, type_param, Cow::Owned(ty), opts)?;
                 }
