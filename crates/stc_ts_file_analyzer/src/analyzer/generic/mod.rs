@@ -1727,12 +1727,15 @@ impl Analyzer<'_, '_> {
                             span,
                             inferred,
                             name.clone(),
-                            Cow::Owned(Type::TypeLit(TypeLit {
-                                span: arg.span,
-                                members: new_members,
-                                metadata: arg.metadata,
-                                tracker: Default::default(),
-                            })),
+                            Cow::Owned(
+                                Type::TypeLit(TypeLit {
+                                    span: arg.span,
+                                    members: new_members,
+                                    metadata: arg.metadata,
+                                    tracker: Default::default(),
+                                })
+                                .freezed(),
+                            ),
                             opts,
                         )?;
 
@@ -1747,6 +1750,7 @@ impl Analyzer<'_, '_> {
                         })
                         .fixed();
                         prevent_generalize(&mut keys);
+                        keys.freeze();
 
                         self.insert_inferred_raw(span, inferred, key_name, Cow::Owned(keys), opts)?;
 
