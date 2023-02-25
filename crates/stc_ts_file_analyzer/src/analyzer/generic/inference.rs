@@ -501,8 +501,6 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let _tracing = dev_span!("infer_to_tpl_lit_type");
-
         let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
         matches.freeze();
 
