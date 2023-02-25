@@ -1097,7 +1097,7 @@ impl Analyzer<'_, '_> {
 
                             info!("Ref: {:?}", param);
                         }
-                        _ => return self.infer_type(span, inferred, &param, arg_normalized, opts),
+                        _ => return self.infer_type(span, inferred, &param, arg, opts),
                     }
                 }
             },
