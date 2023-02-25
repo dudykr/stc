@@ -1243,7 +1243,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (param_normalized, arg_normalized) {
+        match (param.normalize(), arg.normalize()) {
             (Type::Union(Union { types: param_types, .. }), _) => {
                 return self.infer_to_multiple_types(span, inferred, arg, param_types, true, opts);
             }
