@@ -3,9 +3,10 @@
 #![allow(clippy::manual_strip)]
 
 use std::{
+    env,
     io::{stderr, Write},
     mem::take,
-    path::Path,
+    path::{Path, PathBuf},
     sync::Arc,
 };
 
@@ -36,7 +37,7 @@ pub struct TestSpec {
     pub sub_files: Arc<Vec<(String, String)>>,
 
     /// Library types defined by `@libFiles`
-    pub lib_files: Vec<String>,
+    pub lib_files: Vec<PathBuf>,
 }
 
 fn parse_sub_files(source: &str) -> Vec<(String, String)> {
@@ -209,7 +210,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     lib_files = s["libFiles:".len()..]
                         .trim()
                         .split(',')
-                        .map(|s| s.trim_end_matches(".d.ts").to_owned())
+                        .map(|s| env::current_dir().unwrap().join("tests").join("libs").join(s))
                         .collect();
                 } else if s.starts_with("allowUnreachableCode:") {
                     let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();

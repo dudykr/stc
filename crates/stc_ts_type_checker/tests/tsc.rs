@@ -336,7 +336,9 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             // Install a logger
             let _guard = testing::init();
 
-            checker.load_typings(&file_name, None, Some(&lib_files));
+            for lib in lib_files {
+                checker.check(Arc::new(FileName::Real(lib.to_path_buf())));
+            }
 
             if spec.sub_files.is_empty() {
                 checker.check(Arc::new(FileName::Real(file_name.into())));
@@ -542,7 +544,7 @@ impl LoadFile for TestFileSystem {
     fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
         println!("load_file: {:?} ", filename);
 
-        if self.files.is_empty() {
+        if self.files.is_empty() || filename.to_string().ends_with(".d.ts") {
             return DefaultFileLoader.load_file(cm, filename);
         }
 

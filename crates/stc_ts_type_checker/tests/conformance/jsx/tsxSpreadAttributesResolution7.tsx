@@ -2,7 +2,7 @@
 // @jsx: preserve
 // @noLib: true
 // @skipLibCheck: true
-// @libFiles: react.d.ts,lib.d.ts
+// @libFiles: lib.d.ts,react.d.ts
 
 import React = require('react');
 
