@@ -1589,7 +1589,7 @@ impl Type {
             return;
         }
 
-        let _ctx = panic_ctx!(format!("assert_clone_cheap: {:?}", self));
+        // let _ctx = panic_ctx!(format!("assert_clone_cheap: {:?}", self));
 
         self.visit_with(&mut AssertCloneCheap);
     }
