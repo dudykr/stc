@@ -499,11 +499,10 @@ impl Analyzer<'_, '_> {
         target: &TplType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
-        matches.freeze();
         let _tracing = dev_span!("infer_to_tpl_lit_type");
 
-        let matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
+        let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
+        matches.freeze();
 
         let _tracing = dev_span!("infer_to_tpl_lit_type", matches = matches.as_ref().map_or(0, |v| v.len()));
 
