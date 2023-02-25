@@ -1788,6 +1788,22 @@ impl Type {
         }
     }
 
+    pub fn is_singleton(&self) -> bool {
+        match self.normalize_instance() {
+            Type::Keyword(keyword) => {
+                if let KeywordType {
+                    kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                    ..
+                } = keyword
+                {
+                    return false;
+                }
+                true
+            }
+            _ => false,
+        }
+    }
+
     pub fn contains_undefined(&self) -> bool {
         match *self.normalize() {
             Type::Keyword(KeywordType {

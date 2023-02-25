@@ -27,4 +27,4 @@ Error:
    `----
 
 Error: 
-  > string[]
+  > (string | string[])
