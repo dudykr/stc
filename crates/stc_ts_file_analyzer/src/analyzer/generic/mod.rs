@@ -536,6 +536,9 @@ impl Analyzer<'_, '_> {
         let param_normalized = param.normalize();
         let arg_normalized = arg.normalize();
 
+        param.assert_clone_cheap();
+        arg.assert_clone_cheap();
+
         /// Returns true if we can unconditionally delegate to `infer_type`.
         fn should_delegate(ty: &Type) -> bool {
             match ty.normalize() {
