@@ -531,39 +531,43 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let param = param.normalize();
-        let arg = arg.normalize();
+        let param_normalized = param.normalize();
+        let arg_normalized = arg.normalize();
 
         /// Returns true if we can unconditionally delegate to `infer_type`.
         fn should_delegate(ty: &Type) -> bool {
-            match ty {
+            match ty.normalize() {
                 Type::Instance(..) => true,
                 Type::IndexedAccessType(t) => matches!(t.index_type.normalize(), Type::Lit(..)),
                 _ => false,
             }
         }
 
-        if should_delegate(param) {
-            let mut param = self.normalize(Some(span), Cow::Borrowed(param), Default::default())?;
+        if should_delegate(param_normalized) {
+            let mut param = self.normalize(Some(span), Cow::Borrowed(param_normalized), Default::default())?;
             param.freeze();
-            return self.infer_type(span, inferred, &param, arg, opts);
+            return self.infer_type(span, inferred, &param, arg_normalized, opts);
         }
 
-        if should_delegate(arg) {
-            let mut arg = self.normalize(Some(span), Cow::Borrowed(arg), Default::default())?;
+        if should_delegate(arg_normalized) {
+            let mut arg = self.normalize(Some(span), Cow::Borrowed(arg_normalized), Default::default())?;
             arg.freeze();
 
-            return self.infer_type(span, inferred, param, &arg, opts);
+            return self.infer_type(span, inferred, param_normalized, &arg, opts);
         }
 
         let p;
-        let param = match param {
+        let param = match param_normalized {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
-                p = box param.clone().foldable().fold_with(&mut MappedIndexedSimplifier).freezed();
+                p = box param_normalized
+                    .clone()
+                    .foldable()
+                    .fold_with(&mut MappedIndexedSimplifier)
+                    .freezed();
                 &p
             }
-            _ => param,
+            _ => param_normalized,
         };
 
         if cfg!(feature = "fastpath") {
@@ -572,19 +576,19 @@ impl Analyzer<'_, '_> {
                 ..opts
             };
 
-            if let (Some(p), Some(a)) = (array_elem_type(param), array_elem_type(arg)) {
+            if let (Some(p), Some(a)) = (array_elem_type(param), array_elem_type(arg_normalized)) {
                 return self.infer_type(span, inferred, p, a, opts);
             }
         }
 
-        match (param.normalize(), arg.normalize()) {
+        match (param.normalize(), arg_normalized.normalize()) {
             (Type::Union(p), _) => {
                 if !opts.skip_initial_union_check {
                     self.infer_type_using_union(
                         span,
                         inferred,
                         p,
-                        arg,
+                        arg_normalized,
                         InferTypeOpts {
                             append_type_as_union: true,
                             ..opts
@@ -599,7 +603,7 @@ impl Analyzer<'_, '_> {
 
             (Type::Intersection(param), _) => {
                 for param in &param.types {
-                    self.infer_type(span, inferred, param, arg, opts)?;
+                    self.infer_type(span, inferred, param, arg_normalized, opts)?;
                 }
 
                 return Ok(());
@@ -609,18 +613,18 @@ impl Analyzer<'_, '_> {
         }
 
         let p = param;
-        let a = arg;
+        let a = arg_normalized;
 
-        if let Some(res) = self.infer_builtin(span, inferred, param, arg, opts) {
+        if let Some(res) = self.infer_builtin(span, inferred, param, arg_normalized, opts) {
             return res;
         }
 
-        if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg, opts)? {
+        if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg_normalized, opts)? {
             return Ok(());
         }
 
         if opts.for_fn_assignment {
-            if let Type::Param(arg) = arg.normalize() {
+            if let Type::Param(arg) = arg_normalized.normalize() {
                 if !param.is_type_param() {
                     self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
                     return Ok(());
@@ -628,12 +632,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param.normalize(), arg.normalize()) {
+        match (param.normalize(), arg_normalized.normalize()) {
             (_, Type::Enum(..)) => {
                 let arg = self
                     .normalize(
-                        Some(arg.span()),
-                        Cow::Borrowed(arg),
+                        Some(arg_normalized.span()),
+                        Cow::Borrowed(arg_normalized),
                         NormalizeTypeOpts {
                             expand_enum_def: true,
                             preserve_global_this: true,
@@ -672,7 +676,7 @@ impl Analyzer<'_, '_> {
                 return self.infer_to_multiple_types_with_priority(
                     span,
                     inferred,
-                    arg,
+                    arg_normalized,
                     &[*target.true_type.clone(), *target.false_type.clone()],
                     if inferred.contravariant {
                         InferencePriority::ContravariantConditional
@@ -685,7 +689,7 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Tpl(target), _) => {
-                return self.infer_to_tpl_lit_type(span, inferred, arg, target, opts);
+                return self.infer_to_tpl_lit_type(span, inferred, arg_normalized, target, opts);
             }
 
             _ => {}
@@ -703,8 +707,10 @@ impl Analyzer<'_, '_> {
                             ..self.ctx
                         };
 
-                        self.with_ctx(ctx).infer_type(span, inferred, &prev.inferred_type, arg, opts)?;
-                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev.inferred_type, opts)?;
+                        self.with_ctx(ctx)
+                            .infer_type(span, inferred, &prev.inferred_type, arg_normalized, opts)?;
+                        self.with_ctx(ctx)
+                            .infer_type(span, inferred, arg_normalized, &prev.inferred_type, opts)?;
                     }
                 }
 
@@ -727,7 +733,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(constraint) = constraint {
                     if constraint.is_str() || constraint.is_num() {
-                        match arg.normalize() {
+                        match arg_normalized.normalize() {
                             // We use `default`
                             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
                             _ => {}
@@ -743,14 +749,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 if self.ctx.skip_identical_while_inference {
-                    if let Type::Param(arg) = arg {
+                    if let Type::Param(arg) = arg_normalized {
                         if *name == arg.name {
                             return Ok(());
                         }
                     }
                 }
 
-                if arg.is_any() && self.is_implicitly_typed(arg) {
+                if arg_normalized.is_any() && self.is_implicitly_typed(arg_normalized) {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
                     }
@@ -759,12 +765,12 @@ impl Analyzer<'_, '_> {
                         Entry::Occupied(..) => {}
                         Entry::Vacant(e) => {
                             e.insert(Type::Param(TypeParam {
-                                span: arg.span(),
+                                span: arg_normalized.span(),
                                 name: name.clone(),
                                 constraint: None,
                                 default: None,
                                 metadata: TypeParamMetadata {
-                                    common: arg.metadata(),
+                                    common: arg_normalized.metadata(),
                                     ..Default::default()
                                 },
                                 tracker: Default::default(),
@@ -776,21 +782,26 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                debug!("({}): Inferred `{}` as {}", self.scope.depth(), name, dump_type_as_string(arg));
+                debug!(
+                    "({}): Inferred `{}` as {}",
+                    self.scope.depth(),
+                    name,
+                    dump_type_as_string(arg_normalized)
+                );
 
-                self.upsert_inferred(span, inferred, name.clone(), arg, opts)?;
+                self.upsert_inferred(span, inferred, name.clone(), arg_normalized, opts)?;
 
                 return Ok(());
             }
 
-            Type::Interface(param) => match arg {
-                Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg, opts)?,
-                Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg, opts),
+            Type::Interface(param) => match arg_normalized {
+                Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg_normalized, opts)?,
+                Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg_normalized, opts),
                 _ => {}
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(arg), opts)?;
+                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(arg_normalized), opts)?;
                 return Ok(());
             }
 
@@ -800,7 +811,7 @@ impl Analyzer<'_, '_> {
                     ..opts
                 };
 
-                match arg {
+                match arg_normalized {
                     Type::Array(Array {
                         elem_type: arg_elem_type, ..
                     }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
@@ -839,7 +850,7 @@ impl Analyzer<'_, '_> {
             //     }
             //     return Ok(());
             // }
-            Type::Function(p) => match arg {
+            Type::Function(p) => match arg_normalized {
                 Type::Function(a) => {
                     self.infer_type_of_fn_params(
                         span,
@@ -892,7 +903,7 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::TypeLit(param) => match arg {
+            Type::TypeLit(param) => match arg_normalized {
                 Type::TypeLit(arg) => return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, arg, opts),
 
                 Type::IndexedAccessType(arg_iat) => {
@@ -930,7 +941,7 @@ impl Analyzer<'_, '_> {
                                         if let Some(type_ann) = &p.type_ann {
                                             // TODO(kdy1): Change p.ty
 
-                                            self.infer_type(span, inferred, type_ann, arg, opts)?;
+                                            self.infer_type(span, inferred, type_ann, arg_normalized, opts)?;
                                         }
 
                                         new_lit.members.push(TypeElement::Property(p));
@@ -949,7 +960,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Alias(..) => {
-                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
+                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg_normalized))? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
                 }
@@ -957,7 +968,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Tuple(param) => match arg {
+            Type::Tuple(param) => match arg_normalized {
                 Type::Array(arg) => {
                     for elem in &param.elems {
                         match elem.ty.normalize() {
@@ -977,7 +988,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Keyword(..) => {
-                if let Type::Keyword(..) = arg {
+                if let Type::Keyword(..) = arg_normalized {
                     return Ok(());
                 }
 
@@ -989,7 +1000,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Rest(param_rest) => {
-                if let Type::Rest(arg_rest) = arg {
+                if let Type::Rest(arg_rest) = arg_normalized {
                     return self.infer_type(span, inferred, &param_rest.ty, &arg_rest.ty, opts);
                 }
 
@@ -1002,7 +1013,7 @@ impl Analyzer<'_, '_> {
                         elems: vec![TupleElement {
                             span,
                             label: None,
-                            ty: box arg.clone(),
+                            ty: box arg_normalized.clone(),
                             tracker: Default::default(),
                         }],
                         metadata: Default::default(),
@@ -1017,7 +1028,7 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            Type::Ref(param) => match arg {
+            Type::Ref(param) => match arg_normalized {
                 Type::Ref(arg)
                     if param.type_name.eq_ignore_span(&arg.type_name)
                         && param.type_args.as_ref().map(|v| v.params.len()) == arg.type_args.as_ref().map(|v| v.params.len()) =>
@@ -1081,19 +1092,19 @@ impl Analyzer<'_, '_> {
 
                             info!("Ref: {:?}", param);
                         }
-                        _ => return self.infer_type(span, inferred, &param, arg, opts),
+                        _ => return self.infer_type(span, inferred, &param, arg_normalized, opts),
                     }
                 }
             },
 
             Type::Lit(..) => {
-                if let Type::Lit(..) = arg {
+                if let Type::Lit(..) = arg_normalized {
                     return Ok(());
                 }
             }
 
             Type::Alias(param) => {
-                self.infer_type(span, inferred, &param.ty, arg, opts)?;
+                self.infer_type(span, inferred, &param.ty, arg_normalized, opts)?;
                 if let Some(type_params) = &param.type_params {
                     self.rename_inferred(span, inferred, type_params)?;
                 }
@@ -1101,14 +1112,14 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(param) => {
-                if self.infer_type_using_mapped_type(span, inferred, param, arg, opts)? {
+                if self.infer_type_using_mapped_type(span, inferred, param, arg_normalized, opts)? {
                     dbg!();
                     return Ok(());
                 }
             }
 
             Type::IndexedAccessType(param) => {
-                if let Type::IndexedAccessType(arg) = arg {
+                if let Type::IndexedAccessType(arg) = arg_normalized {
                     if param.obj_type.eq_ignore_span(&arg.obj_type) {
                         self.infer_type(span, inferred, &param.index_type, &arg.index_type, opts)?;
                         return Ok(());
@@ -1120,7 +1131,7 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Param(obj_type),
                         ..
                     } if self.mapped_type_param_name.contains(&obj_type.name) => {
-                        self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
+                        self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg_normalized), opts)?;
                         return Ok(());
                     }
 
@@ -1134,7 +1145,7 @@ impl Analyzer<'_, '_> {
                     {
                         for ty in types {
                             if let Type::Param(obj_type) = ty.normalize() {
-                                self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
+                                self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg_normalized), opts)?;
                             }
                         }
                         return Ok(());
@@ -1170,7 +1181,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 inferred,
                                 &param.obj_type,
-                                arg,
+                                arg_normalized,
                                 InferTypeOpts {
                                     append_type_as_union: true,
                                     ..Default::default()
@@ -1182,7 +1193,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Constructor(param) => {
-                if let Type::Class(arg_class) = arg {
+                if let Type::Class(arg_class) = arg_normalized {
                     for member in &arg_class.def.body {
                         match member {
                             ClassMember::Constructor(constructor) => {
@@ -1198,27 +1209,27 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return self.infer_type(span, inferred, &param.type_ann, arg, opts);
+                    return self.infer_type(span, inferred, &param.type_ann, arg_normalized, opts);
                 }
             }
 
             Type::Class(param) => {
-                if let Type::Class(arg) = arg {
+                if let Type::Class(arg) = arg_normalized {
                     return self.infer_types_using_class(span, inferred, param, arg, opts);
                 }
             }
 
             Type::ClassDef(param) => {
-                if let Type::ClassDef(arg) = arg {
+                if let Type::ClassDef(arg) = arg_normalized {
                     return self.infer_types_using_class_def(span, inferred, param, arg, opts);
                 }
             }
 
             Type::Operator(param) => {
-                self.infer_type_using_operator(span, inferred, param, arg, opts)?;
+                self.infer_type_using_operator(span, inferred, param, arg_normalized, opts)?;
 
                 // We need to check parents
-                if let Type::Interface(..) = arg {
+                if let Type::Interface(..) = arg_normalized {
                 } else {
                     return Ok(());
                 }
@@ -1227,12 +1238,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (param, arg) {
+        match (param, arg_normalized) {
             (Type::Union(Union { types: param_types, .. }), _) => {
-                return self.infer_to_multiple_types(span, inferred, arg, param_types, true, opts);
+                return self.infer_to_multiple_types(span, inferred, arg_normalized, param_types, true, opts);
             }
             (Type::Intersection(Intersection { types: param_types, .. }), _) => {
-                return self.infer_to_multiple_types(span, inferred, arg, param_types, false, opts);
+                return self.infer_to_multiple_types(span, inferred, arg_normalized, param_types, false, opts);
             }
 
             (_, Type::Union(arg_union)) => {
@@ -1246,7 +1257,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg {
+        match arg_normalized {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 
@@ -1284,7 +1295,7 @@ impl Analyzer<'_, '_> {
                 let arg = self
                     .expand(
                         span,
-                        arg.clone(),
+                        arg_normalized.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -1352,7 +1363,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Prevent logging
-        match arg {
+        match arg_normalized.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
@@ -1387,7 +1398,7 @@ impl Analyzer<'_, '_> {
                     | Type::Lit(..)
             )
         };
-        if ignore(param) && ignore(arg) {
+        if ignore(param) && ignore(arg_normalized) {
             return Ok(());
         }
 
@@ -1396,7 +1407,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if param.is_predicate() && arg.is_bool() {
+        if param.is_predicate() && arg_normalized.is_bool() {
             // Prevent logging
             return Ok(());
         }
@@ -1404,7 +1415,7 @@ impl Analyzer<'_, '_> {
         error!(
             "unimplemented: infer_type\nparam  = {}\narg = {}",
             force_dump_type_as_string(param),
-            force_dump_type_as_string(arg),
+            force_dump_type_as_string(arg_normalized),
         );
         Ok(())
     }
