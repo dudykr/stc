@@ -928,8 +928,10 @@ impl Analyzer<'_, '_> {
                 let mut arg = arg.clone();
 
                 if opts.is_inferring_rest_type {
-                    arg = Cow::Owned(arg.into_owned().generalize_lit());
+                    arg = Cow::Owned(arg.into_owned().generalize_lit().freezed());
                 }
+
+                arg.assert_clone_cheap();
 
                 e.insert(InferenceInfo {
                     type_param: name,
