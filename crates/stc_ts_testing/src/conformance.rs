@@ -212,6 +212,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                         .split(',')
                         .map(|s| env::current_dir().unwrap().join("tests").join("libs").join(s))
                         .collect();
+                    lib_files.sort();
                 } else if s.starts_with("allowUnreachableCode:") {
                     let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
                     rule.allow_unreachable_code = v;
