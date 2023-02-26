@@ -237,14 +237,8 @@ impl Analyzer<'_, '_> {
                                             Some(match rhs.normalize() {
                                                 Type::Interface(r) => r.body.iter().all(|el| match el {
                                                     TypeElement::Index(..) => false,
-                                                    TypeElement::Property(PropertySignature {
-                                                        key: Key::Computed(..), ..
-                                                    })
-                                                    | TypeElement::Method(MethodSignature {
-                                                        key: Key::Computed(..), ..
-                                                    })
-                                                    | TypeElement::Property(PropertySignature { optional: true, .. })
-                                                    | TypeElement::Method(MethodSignature { optional: true, .. }) => false,
+                                                    TypeElement::Property(PropertySignature { .. })
+                                                    | TypeElement::Method(MethodSignature { .. }) => false,
                                                     _ => true,
                                                 }),
                                                 _ => false,
