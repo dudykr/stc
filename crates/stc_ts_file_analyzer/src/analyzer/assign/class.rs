@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_errors::{DebugExt, ErrorKind};
-use stc_ts_types::{Class, ClassDef, ClassMember, ClassProperty, Key, Method, Type, TypeLitMetadata};
+use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
@@ -198,17 +198,12 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
-                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties
-                            || (l.def.body.iter().all(|p| {
-                                !matches!(
-                                    p,
-                                    ClassMember::Property(ClassProperty { key: Key::Private(..), .. })
-                                        | ClassMember::Method(Method { key: Key::Private(..), .. })
-                                )
-                            }) && match r.normalize() {
+                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
+                            Some(match r.normalize() {
                                 Type::Interface(r) => !r.extends.is_empty(),
                                 _ => false,
-                            }),
+                            })
+                        }),
                         ..opts
                     },
                 )

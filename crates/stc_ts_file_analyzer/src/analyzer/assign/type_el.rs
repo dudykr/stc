@@ -231,20 +231,23 @@ impl Analyzer<'_, '_> {
                                 &rty,
                                 lhs_metadata,
                                 AssignOpts {
-                                    report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties
-                                        || match rhs.normalize() {
-                                            Type::Interface(r) => r.body.iter().all(|el| match el {
-                                                TypeElement::Index(..) => false,
-                                                TypeElement::Property(PropertySignature {
-                                                    key: Key::Computed(..), ..
-                                                })
-                                                | TypeElement::Method(MethodSignature {
-                                                    key: Key::Computed(..), ..
-                                                }) => false,
-                                                _ => true,
-                                            }),
-                                            _ => false,
-                                        },
+                                    report_assign_failure_for_missing_properties: opts
+                                        .report_assign_failure_for_missing_properties
+                                        .or_else(|| {
+                                            Some(match rhs.normalize() {
+                                                Type::Interface(r) => r.body.iter().all(|el| match el {
+                                                    TypeElement::Index(..) => false,
+                                                    TypeElement::Property(PropertySignature {
+                                                        key: Key::Computed(..), ..
+                                                    })
+                                                    | TypeElement::Method(MethodSignature {
+                                                        key: Key::Computed(..), ..
+                                                    }) => false,
+                                                    _ => true,
+                                                }),
+                                                _ => false,
+                                            })
+                                        }),
                                     ..opts
                                 },
                             )
@@ -871,7 +874,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            if opts.report_assign_failure_for_missing_properties
+            if opts.report_assign_failure_for_missing_properties.unwrap_or_default()
                 && lhs.iter().all(|el| {
                     !matches!(
                         el,
