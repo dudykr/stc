@@ -224,7 +224,24 @@ impl Analyzer<'_, '_> {
                     {
                         rty.freeze();
                         return self
-                            .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, AssignOpts { ..opts })
+                            .assign_to_type_elements(
+                                data,
+                                lhs_span,
+                                lhs,
+                                &rty,
+                                lhs_metadata,
+                                AssignOpts {
+                                    report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties
+                                        || match rhs.normalize() {
+                                            Type::Interface(r) => r.body.iter().all(|el| match el {
+                                                TypeElement::Index(..) => false,
+                                                _ => true,
+                                            }),
+                                            _ => false,
+                                        },
+                                    ..opts
+                                },
+                            )
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
@@ -848,7 +865,15 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            if opts.report_assign_failure_for_missing_properties {
+            if opts.report_assign_failure_for_missing_properties
+                && lhs.iter().all(|el| {
+                    !matches!(
+                        el,
+                        TypeElement::Property(PropertySignature { key: Key::Private(..), .. })
+                            | TypeElement::Method(MethodSignature { key: Key::Private(..), .. })
+                    )
+                })
+            {
                 errors.push(
                     ErrorKind::ObjectAssignFailed {
                         span,
