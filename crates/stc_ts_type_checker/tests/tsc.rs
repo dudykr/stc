@@ -544,7 +544,7 @@ impl LoadFile for TestFileSystem {
     fn load_file(&self, cm: &Arc<SourceMap>, filename: &Arc<FileName>) -> Result<(Arc<SourceFile>, Syntax), Error> {
         println!("load_file: {:?} ", filename);
 
-        if self.files.is_empty() || filename.to_string().ends_with(".d.ts") {
+        if self.files.is_empty() {
             return DefaultFileLoader.load_file(cm, filename);
         }
 
@@ -554,6 +554,10 @@ impl LoadFile for TestFileSystem {
 
                 return Ok((fm, Syntax::Typescript(Default::default())));
             }
+        }
+
+        if filename.to_string().ends_with(".d.ts") {
+            return DefaultFileLoader.load_file(cm, filename);
         }
 
         todo!("load_file: {:?} ", filename);
