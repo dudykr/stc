@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use stc_ts_types::{KeywordType, Type};
-use swc_common::{TypeEq, DUMMY_SP};
+use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{pat::PatMode, Analyzer};
@@ -36,17 +36,8 @@ impl Analyzer<'_, '_> {
             {
                 return true;
             }
-        } else if !([source, target].iter().any(|ty| {
-            // TODO: remove ty.is_param() and ty.is_tpl() when ty.is_substitution() is
-            // implemented
-            ty.is_union_type()
-                || ty.is_intersection()
-                || ty.is_substitution()
-                || ty.is_type_param()
-                || ty.is_tpl()
-                || ty.is_type_lit()
-                || ty.is_conditional()
-                || ty.is_indexed_access_type()
+        } else if !(&[source, target].iter().any(|ty| {
+            ty.is_union_type() || ty.is_intersection() || ty.is_conditional() || ty.is_indexed_access_type() || ty.is_substitution()
         })) {
             // TODO: enable when ty.is_substitution() is implemented
             // if !source.type_eq(target) {
