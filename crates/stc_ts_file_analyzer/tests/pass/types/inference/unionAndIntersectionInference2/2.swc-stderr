@@ -29,6 +29,6 @@ Error:
    `----
 
 Error: 
-  > (string | {
+  > {
   |     name: string;
-  | })
+  | }

@@ -1983,6 +1983,7 @@ impl Type {
         self.is_type_lit() || self.is_union_type() || self.is_intersection()
     }
 
+    // TODO: Implement
     pub fn is_substitution(&self) -> bool {
         false
     }
