@@ -183,6 +183,8 @@ pub(crate) struct AssignOpts {
 
     /// Used to prevent recursion
     pub do_not_normalize_intersection_on_rhs: bool,
+
+    pub report_assign_failure_for_missing_properties: bool,
 }
 
 #[derive(Default)]
