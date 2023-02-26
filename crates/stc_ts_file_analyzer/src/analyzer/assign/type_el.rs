@@ -852,7 +852,11 @@ impl Analyzer<'_, '_> {
                 errors.push(
                     ErrorKind::ObjectAssignFailed {
                         span,
-                        errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }.into()],
+                        errors: vec![ErrorKind::MissingFields {
+                            span,
+                            fields: missing_fields,
+                        }
+                        .into()],
                     }
                     .into(),
                 )
