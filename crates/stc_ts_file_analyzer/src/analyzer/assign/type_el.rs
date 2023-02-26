@@ -848,7 +848,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            if self.should_report_properties(span, lhs, rhs) {
+            if !opts.report_assign_failure_for_missing_properties || self.should_report_properties(span, lhs, rhs) {
                 errors.push(
                     ErrorKind::MissingFields {
                         span,
