@@ -243,7 +243,7 @@ fn compare(input: PathBuf) {
         .into_iter()
         .map(|err| StcError {
             line: err.line,
-            code: err.code,
+            code: ErrorKind::normalize_error_code(err.code),
         })
         .collect_vec();
     expected.sort();
