@@ -235,12 +235,15 @@ impl Analyzer<'_, '_> {
                                         .report_assign_failure_for_missing_properties
                                         .or_else(|| {
                                             Some(match rhs.normalize() {
-                                                Type::Interface(r) => r.body.iter().all(|el| match el {
-                                                    TypeElement::Index(..) => false,
-                                                    TypeElement::Property(PropertySignature { .. })
-                                                    | TypeElement::Method(MethodSignature { .. }) => false,
-                                                    _ => true,
-                                                }),
+                                                Type::Interface(r) => {
+                                                    r.extends.is_empty()
+                                                        && r.body.iter().all(|el| match el {
+                                                            TypeElement::Index(..) => false,
+                                                            TypeElement::Property(PropertySignature { .. })
+                                                            | TypeElement::Method(MethodSignature { .. }) => false,
+                                                            _ => true,
+                                                        })
+                                                }
                                                 _ => false,
                                             })
                                         }),
