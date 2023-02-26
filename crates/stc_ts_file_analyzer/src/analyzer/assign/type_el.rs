@@ -242,7 +242,9 @@ impl Analyzer<'_, '_> {
                                                     })
                                                     | TypeElement::Method(MethodSignature {
                                                         key: Key::Computed(..), ..
-                                                    }) => false,
+                                                    })
+                                                    | TypeElement::Property(PropertySignature { optional: true, .. })
+                                                    | TypeElement::Method(MethodSignature { optional: true, .. }) => false,
                                                     _ => true,
                                                 }),
                                                 _ => false,
