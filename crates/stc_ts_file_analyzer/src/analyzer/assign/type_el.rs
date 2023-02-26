@@ -224,7 +224,34 @@ impl Analyzer<'_, '_> {
                     {
                         rty.freeze();
                         return self
-                            .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, AssignOpts { ..opts })
+                            .assign_to_type_elements(
+                                data,
+                                lhs_span,
+                                lhs,
+                                &rty,
+                                lhs_metadata,
+                                AssignOpts {
+                                    report_assign_failure_for_missing_properties: opts
+                                        .report_assign_failure_for_missing_properties
+                                        .or_else(|| {
+                                            Some(match rhs.normalize() {
+                                                Type::Interface(r) => {
+                                                    r.extends.is_empty()
+                                                        && r.body.iter().all(|el| {
+                                                            !matches!(
+                                                                el,
+                                                                TypeElement::Index(..)
+                                                                    | TypeElement::Property(PropertySignature { .. })
+                                                                    | TypeElement::Method(MethodSignature { .. })
+                                                            )
+                                                        })
+                                                }
+                                                _ => false,
+                                            })
+                                        }),
+                                    ..opts
+                                },
+                            )
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
@@ -848,7 +875,27 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            if self.should_report_properties(span, lhs, rhs) {
+            if opts.report_assign_failure_for_missing_properties.unwrap_or_default()
+                && lhs.iter().all(|el| {
+                    !matches!(
+                        el,
+                        TypeElement::Property(PropertySignature { key: Key::Private(..), .. })
+                            | TypeElement::Method(MethodSignature { key: Key::Private(..), .. })
+                    )
+                })
+            {
+                errors.push(
+                    ErrorKind::ObjectAssignFailed {
+                        span,
+                        errors: vec![ErrorKind::MissingFields {
+                            span,
+                            fields: missing_fields,
+                        }
+                        .into()],
+                    }
+                    .into(),
+                )
+            } else if self.should_report_properties(span, lhs, rhs) {
                 errors.push(
                     ErrorKind::MissingFields {
                         span,
