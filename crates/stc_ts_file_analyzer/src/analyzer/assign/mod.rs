@@ -2397,7 +2397,22 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
                 return self
-                    .assign_to_type_elements(data, span, members, rhs, *metadata, opts)
+                    .assign_to_type_elements(
+                        data,
+                        span,
+                        members,
+                        rhs,
+                        *metadata,
+                        AssignOpts {
+                            report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
+                                match rhs.normalize() {
+                                    Type::Interface(r) if !r.extends.is_empty() => Some(true),
+                                    _ => None,
+                                }
+                            }),
+                            ..opts
+                        },
+                    )
                     .context("tried to assign a type to type elements");
             }
 
