@@ -2,7 +2,6 @@ use std::borrow::Cow;
 
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
-use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
@@ -112,15 +111,9 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
-        let r = r.normalize();
+        let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
 
-        match r {
-            Type::Ref(..) => {
-                let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
-                r.freeze();
-                return self.assign_to_class(data, l, &r, opts);
-            }
-
+        match r.normalize() {
             Type::Class(rc) => {
                 if l.eq_ignore_span(rc) {
                     return Ok(());
@@ -128,7 +121,7 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.def.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(&[], r)? {
+                    if let Some(members) = self.collect_class_members(&[], &r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -190,7 +183,7 @@ impl Analyzer<'_, '_> {
                     data,
                     l.span,
                     &lhs_members,
-                    r,
+                    &r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
@@ -224,7 +217,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::Lit(..) | Type::Keyword(..) = r {
+        if let Type::Lit(..) | Type::Keyword(..) = r.normalize() {
             return Err(ErrorKind::SimpleAssignFailed {
                 span: opts.span,
                 cause: None,
