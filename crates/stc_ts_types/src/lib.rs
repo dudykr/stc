@@ -1229,6 +1229,16 @@ impl TypeElement {
         }
         .as_deref()
     }
+
+    pub fn accessibility(&self) -> Option<Accessibility> {
+        match self {
+            TypeElement::Property(p) => p.accessibility,
+            TypeElement::Method(m) => m.accessibility,
+            TypeElement::Constructor(c) => c.accessibility,
+            TypeElement::Index(..) => None,
+            TypeElement::Call(..) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
