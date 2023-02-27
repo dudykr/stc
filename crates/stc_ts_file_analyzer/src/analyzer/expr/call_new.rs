@@ -15,7 +15,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_generics::type_param::{self, finder::TypeParamUsageFinder};
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
@@ -1373,7 +1373,6 @@ impl Analyzer<'_, '_> {
         }
 
         let span = span.with_ctxt(SyntaxContext::empty());
-
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) | Type::Instance(..) => {
                 let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
@@ -1387,7 +1386,14 @@ impl Analyzer<'_, '_> {
 
         if let ExtractKind::Call = kind {
             match ty.normalize() {
-                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span, Default::default())),
+                Type::Interface(i) if i.name == "Function" => {
+                    if i.type_params.is_none() && type_args.is_some() {
+                        self.storage
+                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into());
+                    }
+
+                    return Ok(Type::any(span, Default::default()));
+                }
                 _ => {}
             }
         }

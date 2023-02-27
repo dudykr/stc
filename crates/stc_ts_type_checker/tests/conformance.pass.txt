@@ -1440,6 +1440,7 @@ expressions/functionCalls/callOverload.ts
 expressions/functionCalls/callWithSpread2.ts
 expressions/functionCalls/callWithSpread5.ts
 expressions/functionCalls/forgottenNew.ts
+expressions/functionCalls/functionCalls.ts
 expressions/functionCalls/grammarAmbiguities.ts
 expressions/functionCalls/newWithSpreadES5.ts
 expressions/functionCalls/newWithSpreadES6.ts
