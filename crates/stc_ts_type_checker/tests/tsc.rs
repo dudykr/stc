@@ -283,6 +283,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         rule,
         target,
         module_config,
+        lib_files,
         ..
     } = spec;
 
@@ -334,6 +335,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
             // Install a logger
             let _guard = testing::init();
+
+            for lib in lib_files {
+                checker.check(Arc::new(FileName::Real(lib.to_path_buf())));
+            }
 
             if spec.sub_files.is_empty() {
                 checker.check(Arc::new(FileName::Real(file_name.into())));
@@ -549,6 +554,10 @@ impl LoadFile for TestFileSystem {
 
                 return Ok((fm, Syntax::Typescript(Default::default())));
             }
+        }
+
+        if filename.to_string().ends_with(".d.ts") {
+            return DefaultFileLoader.load_file(cm, filename);
         }
 
         todo!("load_file: {:?} ", filename);
