@@ -1145,17 +1145,17 @@ impl Analyzer<'_, '_> {
                             ..opts
                         };
                         if l_key.type_eq(r_key) {
+                            if let Some(la) = lm.accessibility() {
+                                if let Some(ra) = rm.accessibility() {
+                                    if la != ra {
+                                        return Err(ErrorKind::AssignFailedDueToAccessibility { span }.into());
+                                    }
+                                }
+                            }
+
                             match lm {
                                 TypeElement::Property(ref lp) => match rm {
                                     TypeElement::Property(ref rp) => {
-                                        if lp.accessibility != rp.accessibility {
-                                            if lp.accessibility == Some(Accessibility::Private)
-                                                || rp.accessibility == Some(Accessibility::Private)
-                                            {
-                                                return Err(ErrorKind::AssignFailedDueToAccessibility { span }.into());
-                                            }
-                                        }
-
                                         if !opts.for_castablity {
                                             if !lp.optional && rp.optional && !lp.type_ann.as_deref().map_or(true, |ty| ty.is_any()) {
                                                 return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span }.into());
