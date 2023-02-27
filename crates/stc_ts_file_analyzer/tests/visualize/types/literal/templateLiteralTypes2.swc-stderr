@@ -1367,8 +1367,7 @@ Error:
      `----
 
 Error: 
-  > (transform: ("-moz-initial" | (string & {
-  | }))) => number
+  > (transform: ("-moz-initial" | string)) => number
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:120:1]

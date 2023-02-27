@@ -1741,6 +1741,9 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
+                if let Some(true) = c.as_union_type().map(|ty| ty.types.iter().any(|ty| ty.type_eq(rhs))) {
+                    return Ok(());
+                }
                 fail!()
             }
 

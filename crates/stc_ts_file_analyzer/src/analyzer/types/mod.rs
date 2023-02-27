@@ -815,12 +815,9 @@ impl Analyzer<'_, '_> {
         let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
         let is_function = normalized_types.iter().any(|ty| ty.is_fn_type());
-        let is_non_empty_type_lit = normalized_types.iter().any(|ty| match ty.normalize() {
-            Type::TypeLit(ty) => !ty.members.is_empty(),
-            _ => false,
-        });
+        let is_type_lit = normalized_types.iter().any(|ty| ty.is_type_lit());
 
-        if is_lit && is_non_empty_type_lit {
+        if (is_null || is_undefined) && is_type_lit {
             return never!();
         }
 
@@ -852,6 +849,20 @@ impl Analyzer<'_, '_> {
                 && !a.type_eq(b)
             {
                 return never!();
+            }
+            if let (Type::Conditional(c), other) | (other, Type::Conditional(c)) = (a, b) {
+                return Ok(Some(
+                    Type::Conditional(Conditional {
+                        span,
+                        check_type: c.check_type.clone(),
+                        extends_type: c.extends_type.clone(),
+                        true_type: Box::new(Type::new_intersection(span, vec![*(c.true_type).clone(), other.clone()])),
+                        false_type: Box::new(Type::new_intersection(span, vec![*(c.false_type.clone()), other.clone()])),
+                        metadata: c.metadata,
+                        tracker: c.tracker,
+                    })
+                    .freezed(),
+                ));
             }
         }
 
@@ -1089,23 +1100,11 @@ impl Analyzer<'_, '_> {
                         temp_vec.append(&mut types.to_owned());
                         temp_vec.push(other.to_owned());
 
-                        acc_type = Type::Intersection(Intersection {
-                            span,
-                            types: temp_vec,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })
-                        .freezed();
+                        acc_type = Type::new_intersection(span, temp_vec).freezed();
                         continue;
                     }
                     (other, another) => {
-                        acc_type = Type::Intersection(Intersection {
-                            span,
-                            types: vec![other.to_owned(), another.to_owned()],
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })
-                        .freezed();
+                        acc_type = Type::new_intersection(span, vec![other.to_owned(), another.to_owned()]).freezed();
                         continue;
                     }
                 };

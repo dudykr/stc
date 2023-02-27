@@ -353,6 +353,15 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
             }));
         }
 
+        if self.facts.contains(TypeFacts::Truthy) {
+            ty.types.push(Type::TypeLit(TypeLit {
+                span: DUMMY_SP,
+                members: vec![],
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }));
+        }
+
         ty
     }
 }
@@ -362,6 +371,29 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u = u.fold_children_with(self);
 
         u.types.retain(|v| !v.is_never());
+
+        if self.facts.contains(TypeFacts::Truthy) {
+            u.types = u
+                .types
+                .iter_mut()
+                .map(|ty| {
+                    ty.freeze();
+                    Type::new_intersection(
+                        u.span,
+                        vec![
+                            ty.clone(),
+                            Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: vec![],
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
+                        ],
+                    )
+                })
+                .collect();
+            u.types.retain(|ty| !ty.is_null_or_undefined());
+        }
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
             u.types
