@@ -2808,13 +2808,94 @@ impl Analyzer<'_, '_> {
     /// Should be called only if `to` is not expandable.
     fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
         match to.kind {
-            IntrinsicKind::Uppercase => {}
-            IntrinsicKind::Lowercase => {}
-            IntrinsicKind::Capitalize => {}
-            IntrinsicKind::Uncapitalize => {}
+            IntrinsicKind::Uppercase => {
+                if let Type::Lit(LitType {
+                    lit: RTsLit::Str(value), ..
+                }) = r
+                {
+                    if let Some(value) = &value.raw {
+                        if !value.to_uppercase().eq(&value.to_string()) {
+                            return Err(ErrorKind::AssignFailed {
+                                span: r.span(),
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        }
+                    }
+                }
+            }
+            IntrinsicKind::Lowercase => {
+                if let Type::Lit(LitType {
+                    lit: RTsLit::Str(value), ..
+                }) = r
+                {
+                    if let Some(value) = &value.raw {
+                        if !value.to_lowercase().eq(&value.to_string()) {
+                            return Err(ErrorKind::AssignFailed {
+                                span: r.span(),
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        }
+                    }
+                }
+            }
+            IntrinsicKind::Capitalize => {
+                if let Type::Lit(LitType {
+                    lit: RTsLit::Str(value), ..
+                }) = r
+                {
+                    if let Some(value) = &value.raw {
+                        let ch = value.to_string().chars().next();
+
+                        if let Some(ch) = ch {
+                            if !ch.is_uppercase() {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: r.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                }
+            }
+            IntrinsicKind::Uncapitalize => {
+                if let Type::Lit(LitType {
+                    lit: RTsLit::Str(value), ..
+                }) = r
+                {
+                    if let Some(value) = &value.raw {
+                        let ch = value.to_string().chars().next();
+
+                        if let Some(ch) = ch {
+                            if !ch.is_lowercase() {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: r.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        error!("unimplemented: assign to intrinsic type\n{:?}\n{}", to, dump_type_as_string(r));
+        // error!("unimplemented: assign to intrinsic type\n{:?}\n{}", to,
+        // dump_type_as_string(r));
         Ok(())
     }
 
