@@ -15,7 +15,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_generics::type_param::{self, finder::TypeParamUsageFinder};
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
