@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::TypeLit(..) | Type::Interface(..) => {
+            Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
                 let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(&*r))?.unwrap();
 
                 let mut lhs_members = vec![];
