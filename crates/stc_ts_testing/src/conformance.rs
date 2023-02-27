@@ -3,9 +3,10 @@
 #![allow(clippy::manual_strip)]
 
 use std::{
+    env,
     io::{stderr, Write},
     mem::take,
-    path::Path,
+    path::{Path, PathBuf},
     sync::Arc,
 };
 
@@ -34,6 +35,9 @@ pub struct TestSpec {
 
     /// Empty for single file tests.
     pub sub_files: Arc<Vec<(String, String)>>,
+
+    /// Library types defined by `@libFiles`
+    pub lib_files: Vec<PathBuf>,
 }
 
 fn parse_sub_files(source: &str) -> Vec<(String, String)> {
@@ -126,6 +130,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
         };
         let mut module_config = vec![("".into(), ModuleConfig::None)];
         let ts_config = TsConfig::default();
+        let mut lib_files = vec![];
 
         let mut had_comment = false;
 
@@ -201,6 +206,13 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                         ls.extend(Lib::load(&v.to_lowercase().replace("es6", "es2015")))
                     }
                     libs = ls.into_iter().collect()
+                } else if s.starts_with("libFiles:") {
+                    lib_files = s["libFiles:".len()..]
+                        .trim()
+                        .split(',')
+                        .map(|s| env::current_dir().unwrap().join("tests").join("libs").join(s))
+                        .collect();
+                    lib_files.sort();
                 } else if s.starts_with("allowUnreachableCode:") {
                     let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
                     rule.allow_unreachable_code = v;
@@ -262,6 +274,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                         suffix: format!("(target={})", raw),
                         module_config: module_config[0].1,
                         sub_files: sub_files.clone(),
+                        lib_files: lib_files.clone(),
                     }
                 })
                 .collect());
@@ -283,6 +296,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     suffix: format!("(module={})", raw),
                     module_config,
                     sub_files: sub_files.clone(),
+                    lib_files: lib_files.clone(),
                 })
                 .collect());
         }
@@ -301,6 +315,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     suffix: format!("(jsx={})", raw),
                     module_config,
                     sub_files: sub_files.clone(),
+                    lib_files: lib_files.clone(),
                 })
                 .collect());
         }
@@ -314,6 +329,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
             suffix: Default::default(),
             module_config,
             sub_files,
+            lib_files,
         }])
     })
     .unwrap()
