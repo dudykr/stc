@@ -395,7 +395,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Conditional(c) => {
-                        return self.normalize_conditional(actual_span, c, opts);
+                        return self.normalize_conditional(actual_span, c.clone(), opts);
                     }
 
                     Type::Query(q) => {

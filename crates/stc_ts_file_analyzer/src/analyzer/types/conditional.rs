@@ -21,10 +21,9 @@ impl Analyzer<'_, '_> {
     pub(crate) fn normalize_conditional<'a>(
         &mut self,
         actual_span: Span,
-        c: &Conditional,
+        mut c: Conditional,
         opts: NormalizeTypeOpts,
     ) -> VResult<Cow<'a, Type>> {
-        let mut c = c.clone();
         let span = if c.span.is_dummy() { actual_span } else { c.span };
         // TODO(kdy1): Cleanup
         c = match self.expand_conditional_type(span, Type::Conditional(c)).foldable() {
@@ -168,7 +167,7 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     });
 
-                    *check_type_constraint = box new;
+                    **check_type_constraint = new;
 
                     let mut params = HashMap::default();
                     params.insert(name.clone(), ALLOW_DEEP_CLONE.set(&(), || *c.check_type.clone().fixed().freezed()));

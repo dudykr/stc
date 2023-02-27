@@ -1086,9 +1086,9 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                let ty = self.overwrite_conditional(span, rc);
+                let new_true_ty = self.overwrite_conditional(span, rc);
 
-                self.assign_with_opts(data, to, &ty, opts)
+                self.assign_with_opts(data, to, &new_true_ty, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
                 self.assign_with_opts(data, to, &rc.false_type, opts)
                     .context("tried to assign the false type of a conditional type to lhs")?;
