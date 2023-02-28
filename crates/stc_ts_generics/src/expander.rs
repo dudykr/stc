@@ -236,12 +236,13 @@ impl GenericExpander<'_> {
 
                 m = m.fold_with(self);
 
-                match m.type_param.constraint.map(CowType::into_owned) {
+                match m.type_param.constraint.as_deref() {
                     Some(Type::TypeLit(lit)) => {
                         let ty = m.ty.clone();
 
                         let mut members = lit
                             .members
+                            .clone()
                             .into_iter()
                             .map(|mut v| match v {
                                 TypeElement::Property(ref mut p) => {
@@ -337,7 +338,7 @@ impl GenericExpander<'_> {
                     }) = constraint.normalize()
                     {
                         match ty.normalize() {
-                            Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return *ty.clone(),
+                            Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return ty.clone().into_owned(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -628,7 +629,7 @@ struct MappedHandler<'d> {
 
 impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        if let Type::IndexedAccessType(ty) = ty {
+        if let Type::IndexedAccessType(ty) = &ty {
             if let Type::Param(TypeParam { name: obj_param_name, .. }) = ty.obj_type.normalize() {
                 if let Type::Param(TypeParam {
                     name: index_param_name,
