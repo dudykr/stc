@@ -31,7 +31,7 @@ use stc_utils::{
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use super::expr::AccessPropertyOpts;
 use crate::{
@@ -74,6 +74,8 @@ pub(crate) struct NormalizeTypeOpts {
     /// If `true`, [Type::Enum] will be expanded as a union of `string` and
     /// [Type::EnumVariant].
     pub expand_enum_def: bool,
+
+    pub preserve_keyof: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -256,14 +258,10 @@ impl Analyzer<'_, '_> {
                                         Cow::Borrowed(elem),
                                         NormalizeTypeOpts {
                                             preserve_mapped: true,
-                                            preserve_typeof: false,
-                                            normalize_keywords: false,
                                             preserve_global_this: true,
                                             preserve_intersection: true,
                                             preserve_union: true,
-                                            merge_union_elements: false,
-                                            process_only_key: false,
-                                            expand_enum_def: false,
+                                            ..Default::default()
                                         },
                                     )?
                                     .into_owned();
@@ -306,14 +304,10 @@ impl Analyzer<'_, '_> {
                                             Cow::Borrowed(elem),
                                             NormalizeTypeOpts {
                                                 preserve_mapped: true,
-                                                preserve_typeof: false,
-                                                normalize_keywords: false,
                                                 preserve_global_this: true,
                                                 preserve_intersection: true,
                                                 preserve_union: true,
-                                                merge_union_elements: false,
-                                                process_only_key: false,
-                                                expand_enum_def: false,
+                                                ..Default::default()
                                             },
                                         )?
                                         .into_owned();
@@ -550,11 +544,13 @@ impl Analyzer<'_, '_> {
                         ty,
                         ..
                     }) => {
-                        let keys_ty = self
-                            .keyof(actual_span, ty)
-                            .context("tried to get keys of a type as a part of normalization")?;
-                        keys_ty.assert_valid();
-                        return Ok(Cow::Owned(keys_ty));
+                        if !opts.preserve_keyof {
+                            let keys_ty = self
+                                .keyof(actual_span, ty)
+                                .context("tried to get keys of a type as a part of normalization")?;
+                            keys_ty.assert_valid();
+                            return Ok(Cow::Owned(keys_ty));
+                        }
                     }
 
                     Type::Enum(e) => {

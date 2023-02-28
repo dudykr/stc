@@ -1373,7 +1373,6 @@ impl Analyzer<'_, '_> {
         }
 
         let span = span.with_ctxt(SyntaxContext::empty());
-
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) | Type::Instance(..) => {
                 let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
@@ -1387,7 +1386,14 @@ impl Analyzer<'_, '_> {
 
         if let ExtractKind::Call = kind {
             match ty.normalize() {
-                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span, Default::default())),
+                Type::Interface(i) if i.name == "Function" => {
+                    if i.type_params.is_none() && type_args.is_some() {
+                        self.storage
+                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into());
+                    }
+
+                    return Ok(Type::any(span, Default::default()));
+                }
                 _ => {}
             }
         }
@@ -2536,6 +2542,8 @@ impl Analyzer<'_, '_> {
             })
             .collect_vec();
         self.expand_this_in_type(&mut ret_ty);
+        ret_ty.fix();
+        ret_ty.freeze();
 
         let is_type_arg_count_fine = {
             let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
@@ -2589,7 +2597,7 @@ impl Analyzer<'_, '_> {
                 let _ = type_params.to_vec();
                 let _ = params.clone();
                 let _ = spread_arg_types.to_vec();
-                let _ = ret_ty.clone();
+                ret_ty.assert_clone_cheap();
                 let _ = type_ann.clone().map(Cow::into_owned);
             }
 

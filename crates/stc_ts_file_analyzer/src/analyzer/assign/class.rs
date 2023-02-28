@@ -198,6 +198,12 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
+                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
+                            Some(match r.normalize() {
+                                Type::Interface(r) => !r.extends.is_empty(),
+                                _ => false,
+                            })
+                        }),
                         ..opts
                     },
                 )
