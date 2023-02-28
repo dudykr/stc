@@ -30,6 +30,18 @@ impl From<CowType> for RTsType {
     }
 }
 
+impl From<CowType> for RTsTypeAnn {
+    fn from(ty: CowType) -> Self {
+        ty.into_owned().into()
+    }
+}
+
+impl From<CowType> for Box<RTsType> {
+    fn from(ty: CowType) -> Self {
+        box ty.into_owned().into()
+    }
+}
+
 impl From<Type> for RTsType {
     fn from(t: Type) -> Self {
         match t {
