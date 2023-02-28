@@ -15,7 +15,7 @@ use std::{
     fmt,
     fmt::{Debug, Formatter},
     iter::FusedIterator,
-    mem::{replace, transmute},
+    mem::replace,
     ops::{AddAssign, Deref},
 };
 
@@ -1603,14 +1603,7 @@ impl Deref for CowType {
 }
 
 impl CowType {
-    #[inline(always)]
-    fn to_type(&self) -> &Type {
-        match self {
-            CowType::Owned(ty) => ty,
-            CowType::Arc(ty) => &ty.ty,
-        }
-    }
-
+    #[inline]
     pub fn into_owned(self) -> Type {
         match self {
             CowType::Owned(ty) => *ty,
@@ -1624,37 +1617,27 @@ impl CowType {
     /// Converts this type to foldable type.
     ///
     /// TODO(kdy1): Remove if possible
+    #[inline]
     pub fn foldable(mut self) -> Type {
-        self.normalize_mut();
-        self
+        self.into_owned()
     }
 
-    /// [Type::Arc] is normalized.
-    pub fn normalize<'s, 'c>(&'s self) -> &'c Type
-    where
-        's: 'c,
-    {
-        match *self {
-            Type::Arc(ref s) => {
-                //
-                unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
-            }
-            _ => unsafe {
-                // Shorten lifetimes
-                transmute::<&'s Self, &'c Type>(self)
-            },
+    #[inline]
+    pub fn normalize(&self) -> &Type {
+        match self {
+            CowType::Owned(ty) => ty,
+            CowType::Arc(ty) => &ty,
         }
     }
 
     /// `Type::Static` is normalized.
+    #[inline]
     #[instrument(skip_all)]
     pub fn normalize_mut(&mut self) -> &mut Type {
-        if let Type::Arc(ArcType { ty }) = self {
-            let ty = Arc::make_mut(ty);
-            *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
+        match self {
+            CowType::Owned(ty) => ty,
+            CowType::Arc(ty) => Arc::make_mut(ty),
         }
-
-        self
     }
 }
 
