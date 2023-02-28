@@ -174,7 +174,7 @@ impl ObjectUnionNormalizer {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            if let Type::TypeLit(ty) = ty.normalize() {
+            if let Type::TypeLit(ty) = ty {
                 inexact |= ty.metadata.inexact;
                 prev_specified |= ty.metadata.specified;
 
@@ -252,7 +252,7 @@ impl ObjectUnionNormalizer {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(box Type::new_union(DUMMY_SP, return_types)),
+                ret_ty: Some(Type::new_union(DUMMY_SP, return_types).into()),
                 type_params,
                 params: new_params
                     .into_iter()
@@ -268,7 +268,7 @@ impl ObjectUnionNormalizer {
                         }
                         types.dedup_type();
 
-                        let ty = box Type::new_intersection(DUMMY_SP, types);
+                        let ty = Type::new_intersection(DUMMY_SP, types).into();
                         FnParam {
                             span: DUMMY_SP,
                             // TODO
