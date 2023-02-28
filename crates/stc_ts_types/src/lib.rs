@@ -585,7 +585,7 @@ impl PartialEq<str> for Key {
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
-    pub ty: Box<Type>,
+    pub ty: CowType,
 }
 
 impl Debug for ComputedKey {
@@ -621,7 +621,7 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Instance {
     pub span: Span,
-    pub ty: Box<Type>,
+    pub ty: CowType,
     pub metadata: InstanceMetadata,
 
     pub tracker: Tracker<"Instance">,
@@ -708,7 +708,7 @@ assert_eq_size!(Symbol, [u8; 48]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct RestType {
     pub span: Span,
-    pub ty: Box<Type>,
+    pub ty: CowType,
     pub metadata: RestTypeMetadata,
 
     pub tracker: Tracker<"RestType">,
@@ -720,7 +720,7 @@ assert_eq_size!(RestType, [u8; 32]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct OptionalType {
     pub span: Span,
-    pub ty: Box<Type>,
+    pub ty: CowType,
     pub metadata: OptionalTypeMetadata,
 
     pub tracker: Tracker<"OptionalType">,
@@ -733,8 +733,8 @@ assert_eq_size!(OptionalType, [u8; 32]);
 pub struct IndexedAccessType {
     pub span: Span,
     pub readonly: bool,
-    pub obj_type: Box<Type>,
-    pub index_type: Box<Type>,
+    pub obj_type: CowType,
+    pub index_type: CowType,
     pub metadata: IndexedAccessTypeMetadata,
 
     pub tracker: Tracker<"IndexedAccessType">,
@@ -900,7 +900,7 @@ pub struct ClassDef {
     pub span: Span,
     pub is_abstract: bool,
     pub name: Option<Id>,
-    pub super_class: Option<Box<Type>>,
+    pub super_class: Option<CowType>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
@@ -946,14 +946,14 @@ pub struct Method {
     pub is_optional: bool,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Box<Type>,
+    pub ret_ty: CowType,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassProperty {
     pub span: Span,
     pub key: Key,
-    pub value: Option<Box<Type>>,
+    pub value: Option<CowType>,
     pub is_static: bool,
     #[use_eq]
     pub accessibility: Option<Accessibility>,
@@ -972,9 +972,9 @@ pub struct Mapped {
     pub readonly: Option<TruePlusMinus>,
     #[use_eq]
     pub optional: Option<TruePlusMinus>,
-    pub name_type: Option<Box<Type>>,
+    pub name_type: Option<CowType>,
     pub type_param: TypeParam,
-    pub ty: Option<Box<Type>>,
+    pub ty: Option<CowType>,
     pub metadata: MappedMetadata,
 
     pub tracker: Tracker<"Mapped">,
@@ -986,10 +986,10 @@ assert_eq_size!(Mapped, [u8; 104]);
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
     pub span: Span,
-    pub check_type: Box<Type>,
-    pub extends_type: Box<Type>,
-    pub true_type: Box<Type>,
-    pub false_type: Box<Type>,
+    pub check_type: CowType,
+    pub extends_type: CowType,
+    pub true_type: CowType,
+    pub false_type: CowType,
     pub metadata: ConditionalMetadata,
 
     pub tracker: Tracker<"Conditional">,
@@ -1014,7 +1014,7 @@ pub struct Operator {
     pub span: Span,
     #[use_eq]
     pub op: TsTypeOperatorOp,
-    pub ty: Box<Type>,
+    pub ty: CowType,
     pub metadata: OperatorMetadata,
 
     pub tracker: Tracker<"Operator">,
@@ -1054,7 +1054,7 @@ pub struct TupleElement {
     pub span: Span,
     #[not_type]
     pub label: Option<RPat>,
-    pub ty: Box<Type>,
+    pub ty: CowType,
 
     pub tracker: Tracker<"TupleElement">,
 }
@@ -1069,7 +1069,7 @@ impl Debug for TupleElement {
 pub struct Alias {
     pub span: Span,
     pub type_params: Option<Box<TypeParamDecl>>,
-    pub ty: Box<Type>,
+    pub ty: CowType,
     pub metadata: AliasMetadata,
 
     pub tracker: Tracker<"Alias">,
@@ -1236,7 +1236,7 @@ pub struct CallSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
     pub type_params: Option<TypeParamDecl>,
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<CowType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1246,7 +1246,7 @@ pub struct ConstructorSignature {
     #[use_eq]
     pub accessibility: Option<Accessibility>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<CowType>,
     pub type_params: Option<TypeParamDecl>,
 }
 
@@ -1260,7 +1260,7 @@ pub struct PropertySignature {
     pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
-    pub type_ann: Option<Box<Type>>,
+    pub type_ann: Option<CowType>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
 
@@ -1289,7 +1289,7 @@ pub struct MethodSignature {
     pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<CowType>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
 }
@@ -1321,7 +1321,7 @@ pub struct IndexSignature {
     pub span: Span,
 
     pub params: Vec<FnParam>,
-    pub type_ann: Option<Box<Type>>,
+    pub type_ann: Option<CowType>,
 
     pub readonly: bool,
 
@@ -1343,7 +1343,7 @@ impl Take for IndexSignature {
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Array {
     pub span: Span,
-    pub elem_type: Box<Type>,
+    pub elem_type: CowType,
     pub metadata: ArrayMetadata,
 
     pub tracker: Tracker<"Array">,
@@ -1404,7 +1404,7 @@ pub struct FnParam {
     pub required: bool,
     #[not_type]
     pub pat: RPat,
-    pub ty: Box<Type>,
+    pub ty: CowType,
 }
 
 impl Debug for FnParam {
@@ -1466,8 +1466,8 @@ impl Intersection {
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
-    pub constraint: Option<Box<Type>>,
-    pub default: Option<Box<Type>>,
+    pub constraint: Option<CowType>,
+    pub default: Option<CowType>,
     pub metadata: TypeParamMetadata,
 
     pub tracker: Tracker<"TypeParam">,
@@ -1501,7 +1501,7 @@ pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Box<Type>,
+    pub ret_ty: CowType,
     pub metadata: FunctionMetadata,
 
     pub tracker: Tracker<"Function">,
@@ -1540,7 +1540,7 @@ pub struct Constructor {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     /// The return type.
-    pub type_ann: Box<Type>,
+    pub type_ann: CowType,
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
 
@@ -1556,7 +1556,7 @@ pub struct Predicate {
     #[use_eq_ignore_span]
     pub param_name: RTsThisTypeOrIdent,
     pub asserts: bool,
-    pub ty: Option<Box<Type>>,
+    pub ty: Option<CowType>,
     pub metadata: PredicateMetadata,
 
     pub tracker: Tracker<"Predicate">,
@@ -1569,30 +1569,30 @@ assert_eq_size!(Predicate, [u8; 72]);
 pub struct TypeOrSpread {
     pub span: Span,
     pub spread: Option<Span>,
-    pub ty: Box<Type>,
+    pub ty: CowType,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, Visit, Serialize, Deserialize)]
-pub enum TypeRef {
+pub enum CowType {
     Owned(Box<Type>),
     Arc(ArcType),
 }
 
-impl TypeEq for TypeRef {
+impl TypeEq for CowType {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
         self.to_type().type_eq(other.to_type())
     }
 }
 
-impl EqIgnoreSpan for TypeRef {
+impl EqIgnoreSpan for CowType {
     #[inline]
     fn eq_ignore_span(&self, other: &Self) -> bool {
         self.to_type().eq_ignore_span(other.to_type())
     }
 }
 
-impl Deref for TypeRef {
+impl Deref for CowType {
     type Target = Type;
 
     #[inline(always)]
@@ -1601,12 +1601,12 @@ impl Deref for TypeRef {
     }
 }
 
-impl TypeRef {
+impl CowType {
     #[inline(always)]
     fn to_type(&self) -> &Type {
         match self {
-            TypeRef::Owned(ty) => ty,
-            TypeRef::Arc(ty) => &ty.ty,
+            CowType::Owned(ty) => ty,
+            CowType::Arc(ty) => &ty.ty,
         }
     }
 }
