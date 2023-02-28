@@ -61,6 +61,29 @@ impl Analyzer<'_, '_> {
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
+                let lhs_members = l
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, true))
+                    .collect_vec();
+
+                self.assign_to_type_elements(
+                    data,
+                    l.span,
+                    &lhs_members,
+                    &r,
+                    TypeLitMetadata {
+                        specified: true,
+                        ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: Some(true),
+                        is_assigning_to_class_members: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign to type elements created from a class")?;
+
                 return Ok(());
             }
 
@@ -133,6 +156,30 @@ impl Analyzer<'_, '_> {
                     self.assign_class_members_to_class_member(data, lm, r_body, opts)
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
+
+                let lhs_members = l
+                    .def
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, false))
+                    .collect_vec();
+
+                self.assign_to_type_elements(
+                    data,
+                    l.span,
+                    &lhs_members,
+                    &r,
+                    TypeLitMetadata {
+                        specified: true,
+                        ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: Some(true),
+                        is_assigning_to_class_members: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign to type elements created from a class")?;
 
                 if !rc.def.is_abstract {
                     // class Child extends Parent
@@ -247,9 +294,9 @@ impl Analyzer<'_, '_> {
                         ClassMember::Method(rm) => {
                             //
                             if self.key_matches(span, &lm.key, &rm.key, false) {
-                                if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
-                                    return Ok(());
-                                }
+                                // if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
+                                //     return Ok(());
+                                // }
 
                                 if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
                                     return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
@@ -300,9 +347,9 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
-                                    return Ok(());
-                                }
+                                // if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
+                                //     return Ok(());
+                                // }
 
                                 if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
                                     return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
