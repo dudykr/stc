@@ -1,7 +1,7 @@
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use rustc_hash::FxHashMap;
 
-use crate::Type;
+use crate::{CowType, Type};
 
 /// Replaces all types which matches `matcher` with `replacer`.
 ///
@@ -12,7 +12,7 @@ use crate::Type;
 pub fn replace_type<M, R>(ty: &mut Type, matcher: M, replacer: R)
 where
     M: Fn(&Type) -> bool,
-    R: Fn(&mut Type) -> Option<Type>,
+    R: Fn(&mut Type) -> Option<CowType>,
 {
     let mut cache = FxHashMap::default();
     ty.visit_mut_with(&mut TypeReplacer {
@@ -28,7 +28,7 @@ type Cache = FxHashMap<*const (), bool>;
 struct TypeReplacer<'a, M, R>
 where
     M: Fn(&Type) -> bool,
-    R: Fn(&mut Type) -> Option<Type>,
+    R: Fn(&mut Type) -> Option<CowType>,
 {
     cache: &'a mut Cache,
 
@@ -39,7 +39,7 @@ where
 impl<M, R> VisitMut<Type> for TypeReplacer<'_, M, R>
 where
     M: Fn(&Type) -> bool,
-    R: Fn(&mut Type) -> Option<Type>,
+    R: Fn(&mut Type) -> Option<CowType>,
 {
     fn visit_mut(&mut self, ty: &mut Type) {
         {
@@ -56,12 +56,29 @@ where
 
         if (self.matcher)(ty) {
             if let Some(new_ty) = (self.replacer)(ty) {
-                *ty = new_ty;
+                *ty = new_ty.into_owned();
                 return;
             }
         }
 
         ty.visit_mut_children_with(self);
+    }
+}
+
+impl<M, R> VisitMut<CowType> for TypeReplacer<'_, M, R>
+where
+    M: Fn(&Type) -> bool,
+    R: Fn(&mut Type) -> Option<CowType>,
+{
+    fn visit_mut(&mut self, ty: &mut CowType) {
+        if (self.matcher)(ty) {
+            if let Some(new_ty) = (self.replacer)(ty.normalize_mut()) {
+                *ty = new_ty;
+                return;
+            }
+        }
+
+        ty.normalize_mut().visit_mut_with(self);
     }
 }
 

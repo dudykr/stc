@@ -1641,7 +1641,15 @@ impl CowType {
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
             CowType::Owned(ty) => ty,
-            CowType::Arc(ty) => Arc::make_mut(&mut ty.ty),
+            CowType::Arc(ty) => {
+                let new = Arc::make_mut(&mut ty.ty);
+                *self = CowType::Owned(box new.take());
+
+                match self {
+                    CowType::Owned(ty) => ty,
+                    CowType::Arc(_) => unreachable!(),
+                }
+            }
         }
     }
 }
