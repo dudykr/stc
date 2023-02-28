@@ -113,7 +113,7 @@ impl VisitMut<Intersection> for Fixer {
             }
 
             if ty.is_intersection() {
-                let i = ty.expect_intersection();
+                let i = ty.into_owned().expect_intersection();
                 for ty in i.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;

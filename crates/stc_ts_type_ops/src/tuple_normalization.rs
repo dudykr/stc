@@ -26,7 +26,7 @@ pub fn normalize_tuples(ty: &mut Type) {
                 let common_metadata = tuple.metadata.common;
 
                 let span = ty.span();
-                let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| *elem.ty).collect::<Vec<_>>();
+                let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| elem.ty).collect::<Vec<_>>();
                 types.dedup_type();
 
                 let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());

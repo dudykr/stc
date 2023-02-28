@@ -76,19 +76,16 @@ impl GenericExpander<'_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: type_args
-                            .as_ref()
-                            .and_then(|args| args.params.first().cloned())
-                            .unwrap_or_else(|| {
-                                Type::any(
-                                    span,
-                                    KeywordTypeMetadata {
-                                        common: metadata.common,
-                                        ..Default::default()
-                                    },
-                                )
-                            })
-                            .into(),
+                        elem_type: type_args.as_ref().and_then(|args| args.params.first().cloned()).unwrap_or_else(|| {
+                            Type::any(
+                                span,
+                                KeywordTypeMetadata {
+                                    common: metadata.common,
+                                    ..Default::default()
+                                },
+                            )
+                            .into()
+                        }),
                         metadata: ArrayMetadata {
                             common: metadata.common,
                             ..Default::default()
