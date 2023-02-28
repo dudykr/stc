@@ -1598,7 +1598,7 @@ impl Deref for CowType {
 
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
-        self.normalize()
+        self
     }
 }
 
@@ -1636,7 +1636,7 @@ impl CowType {
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
             CowType::Owned(ty) => ty,
-            CowType::Arc(ty) => Arc::make_mut(ty),
+            CowType::Arc(ty) => Arc::make_mut(&mut ty.ty),
         }
     }
 }
@@ -1817,7 +1817,7 @@ impl Type {
     }
 
     pub fn contains_void(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Instance(ty) => ty.ty.contains_void(),
 
             Type::Keyword(KeywordType {
@@ -1858,13 +1858,13 @@ impl Type {
     }
 
     pub fn contains_undefined(&self) -> bool {
-        match *self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => true,
 
-            Type::Union(ref t) => t.types.iter().any(|t| t.contains_undefined()),
+            Type::Union(t) => t.types.iter().any(|t| t.contains_undefined()),
 
             _ => false,
         }
@@ -1913,7 +1913,7 @@ impl Type {
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
-        match self.normalize() {
+        match self {
             Type::Instance(ty) => ty.ty.is_kwd(k),
             Type::Keyword(KeywordType { kind, .. }) if *kind == k => true,
             _ => false,
@@ -1921,7 +1921,7 @@ impl Type {
     }
 
     pub fn is_unique_symbol(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ref ty,
@@ -2070,7 +2070,7 @@ impl Type {
 
 impl Type {
     pub fn metadata(&self) -> CommonTypeMetadata {
-        match self.normalize() {
+        match self {
             Type::Instance(ty) => ty.metadata.common,
             Type::StaticThis(ty) => ty.metadata.common,
             Type::This(ty) => ty.metadata.common,
@@ -2110,7 +2110,7 @@ impl Type {
     }
 
     pub fn metadata_mut(&mut self) -> &mut CommonTypeMetadata {
-        match self.normalize_mut() {
+        match self {
             Type::Instance(ty) => &mut ty.metadata.common,
             Type::StaticThis(ty) => &mut ty.metadata.common,
             Type::This(ty) => &mut ty.metadata.common,
@@ -2161,7 +2161,7 @@ impl Type {
             return;
         }
 
-        match self.normalize_mut() {
+        match self {
             Type::Operator(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
@@ -2352,7 +2352,7 @@ impl Type {
     }
 
     pub fn is_global_this(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Query(QueryType {
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i)),
                 ..
@@ -2497,7 +2497,7 @@ impl Type {
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
         matches!(
-            self.normalize(),
+            self,
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
@@ -2506,16 +2506,16 @@ impl Type {
     }
 
     pub fn is_str_lit(&self) -> bool {
-        matches!(self.normalize(), Type::Lit(LitType { lit: RTsLit::Str(..), .. }))
+        matches!(self, Type::Lit(LitType { lit: RTsLit::Str(..), .. }))
     }
 
     pub fn is_bool_lit(&self) -> bool {
-        matches!(self.normalize(), Type::Lit(LitType { lit: RTsLit::Bool(..), .. }))
+        matches!(self, Type::Lit(LitType { lit: RTsLit::Bool(..), .. }))
     }
 
     pub fn is_num(&self) -> bool {
         matches!(
-            self.normalize(),
+            self,
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
@@ -2541,7 +2541,7 @@ impl Type {
 
     pub fn is_num_lit(&self) -> bool {
         matches!(
-            self.normalize(),
+            self,
             Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
@@ -2552,7 +2552,7 @@ impl Type {
     /// Returns true if `self` is a `boolean` or a boolean literal.
     pub fn is_bool(&self) -> bool {
         matches!(
-            self.normalize(),
+            self,
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
