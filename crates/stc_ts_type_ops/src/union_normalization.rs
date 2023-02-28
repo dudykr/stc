@@ -23,7 +23,7 @@ impl ObjectUnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[Type]) -> IndexSet<Vec<JsWord>> {
+    fn find_keys(&self, types: &[CowType]) -> IndexSet<Vec<JsWord>> {
         types.iter().flat_map(|t| self.find_keys_of_type(t)).collect()
     }
 
@@ -264,7 +264,7 @@ impl ObjectUnionNormalizer {
                                 pat = Some(param.pat);
                             }
 
-                            types.push(*param.ty);
+                            types.push(param.ty);
                         }
                         types.dedup_type();
 
@@ -428,7 +428,7 @@ impl ObjectUnionNormalizer {
 
         let deep = self.find_keys(&*types);
 
-        let inexact = types.iter().any(|ty| match ty {
+        let inexact = types.iter().any(|ty| match &**ty {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });

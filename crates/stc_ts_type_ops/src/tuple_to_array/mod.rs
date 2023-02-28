@@ -1,5 +1,5 @@
 use rnode::{Fold, FoldWith};
-use stc_ts_types::{Array, ArrayMetadata, Type};
+use stc_ts_types::{Array, ArrayMetadata, CowType, Type};
 use swc_common::TypeEq;
 
 pub use self::metadata::prevent_tuple_to_array;
@@ -16,7 +16,7 @@ impl Fold<Type> for TupleToArray {
             Type::Tuple(tuple) => {
                 let span = tuple.span;
 
-                let mut types: Vec<Type> = vec![];
+                let mut types: Vec<CowType> = vec![];
 
                 for element in tuple.elems {
                     if types.iter().any(|item| item.type_eq(&element.ty)) {
