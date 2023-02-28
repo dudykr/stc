@@ -321,8 +321,6 @@ impl Analyzer<'_, '_> {
                 if lm.is_optional {
                     return Ok(());
                 }
-
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign a class member to another one"));
             }
             ClassMember::Property(lp) => {
                 for rm in r {
