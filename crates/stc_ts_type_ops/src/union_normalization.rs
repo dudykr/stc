@@ -319,7 +319,7 @@ impl ObjectUnionNormalizer {
     }
 
     /// - `types`: Types of a union.
-    fn normalize_keys(&self, types: &mut Vec<Type>) {
+    fn normalize_keys(&self, types: &mut Vec<CowType>) {
         fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
             if let Some(ty) = ty.as_union_type_mut() {
                 for ty in &mut ty.types {
