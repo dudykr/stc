@@ -278,15 +278,7 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
 
         match l {
-            ClassMember::Constructor(lc) => {
-                for rm in r {
-                    if let ClassMember::Constructor(rc) = rm {
-                        self.assign_params(data, &lc.params, &rc.params, opts)?;
-                        // TODO(kdy1): Validate parameters and etc..
-                        return Ok(());
-                    }
-                }
-            }
+            ClassMember::Constructor(..) | ClassMember::IndexSignature(..) => return Ok(()),
             ClassMember::Method(lm) => {
                 for r_member in r {
                     match r_member {
@@ -380,13 +372,6 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                 }
             }
-            ClassMember::IndexSignature(_) => {}
         }
-
-        Err(ErrorKind::Unimplemented {
-            span: opts.span,
-            msg: format!("fine-grained class assignment to lhs member: {:#?}", l),
-        }
-        .into())
     }
 }
