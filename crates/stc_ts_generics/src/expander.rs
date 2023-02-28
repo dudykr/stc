@@ -40,7 +40,7 @@ impl GenericExpander<'_> {
     fn fold_type(&mut self, mut ty: Type) -> Type {
         let span = ty.span();
 
-        match ty.normalize() {
+        match ty {
             Type::StaticThis(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) | Type::Infer(InferType { type_param: param, .. }) => {
@@ -64,8 +64,6 @@ impl GenericExpander<'_> {
 
             _ => {}
         }
-
-        ty.normalize_mut();
 
         match ty {
             Type::Ref(Ref {
@@ -159,7 +157,7 @@ impl GenericExpander<'_> {
                         match operator.ty.normalize() {
                             Type::Param(param) if self.params.contains_key(&param.name) => {
                                 let ty = self.params.get(&param.name).unwrap();
-                                match ty.normalize() {
+                                match ty {
                                     Type::TypeLit(ty)
                                         if ty
                                             .members

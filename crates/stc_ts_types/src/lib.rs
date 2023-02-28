@@ -1686,6 +1686,13 @@ where
     }
 }
 
+impl From<Type> for CowType {
+    #[inline]
+    fn from(ty: Type) -> Self {
+        CowType::Owned(box ty)
+    }
+}
+
 pub trait TypeIterExt {}
 
 struct AssertCloneCheap;
