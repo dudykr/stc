@@ -1993,6 +1993,8 @@ impl Analyzer<'_, '_> {
                             || ty.is_tpl()
                             || ty.is_intersection()
                             || ty.is_type_param()
+                            || ty.is_class()
+                            || ty.is_class_def()
                     });
 
                 if should_use_single_error {
