@@ -16,7 +16,7 @@ use std::{
     fmt::{Debug, Formatter},
     iter::FusedIterator,
     mem::{replace, transmute},
-    ops::AddAssign,
+    ops::{AddAssign, Deref},
 };
 
 use fxhash::FxHashMap;
@@ -1570,6 +1570,45 @@ pub struct TypeOrSpread {
     pub span: Span,
     pub spread: Option<Span>,
     pub ty: Box<Type>,
+}
+
+#[derive(Debug, Clone, PartialEq, Spanned, Visit, Serialize, Deserialize)]
+pub enum TypeRef {
+    Owned(Box<Type>),
+    Arc(ArcType),
+}
+
+impl TypeEq for TypeRef {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.to_type().type_eq(other.to_type())
+    }
+}
+
+impl EqIgnoreSpan for TypeRef {
+    #[inline]
+    fn eq_ignore_span(&self, other: &Self) -> bool {
+        self.to_type().eq_ignore_span(other.to_type())
+    }
+}
+
+impl Deref for TypeRef {
+    type Target = Type;
+
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        self.to_type()
+    }
+}
+
+impl TypeRef {
+    #[inline(always)]
+    fn to_type(&self) -> &Type {
+        match self {
+            TypeRef::Owned(ty) => ty,
+            TypeRef::Arc(ty) => &ty.ty,
+        }
+    }
 }
 
 pub trait TypeIterExt {}
