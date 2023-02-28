@@ -14,8 +14,6 @@ pub struct Widen {
 
 impl Fold<Type> for Widen {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
         let ty = ty.fold_children_with(self);
 
         match ty {
