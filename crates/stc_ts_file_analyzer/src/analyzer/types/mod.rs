@@ -2274,7 +2274,12 @@ impl Analyzer<'_, '_> {
                 }
                 ty.types.retain(|element| !element.is_never());
             }
-
+            Type::Intersection(ty) => {
+                for ty in &mut ty.types {
+                    self.exclude_type(span, ty, &excluded);
+                }
+                ty.types.retain(|element| !element.is_unknown());
+            }
             Type::Param(TypeParam {
                 constraint: Some(constraint),
                 ..
