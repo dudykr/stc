@@ -80,8 +80,8 @@ pub struct ModuleTypeData {
     pub private_vars: FxHashMap<Id, Type>,
     pub vars: FxHashMap<JsWord, Type>,
 
-    pub private_types: FxHashMap<Id, Vec<Type>>,
-    pub types: FxHashMap<JsWord, Vec<Type>>,
+    pub private_types: FxHashMap<Id, Vec<CowType>>,
+    pub types: FxHashMap<JsWord, Vec<CowType>>,
 }
 
 impl Visitable for ModuleTypeData {}
@@ -1157,7 +1157,7 @@ pub struct TypeParamInstantiation {
     pub span: Span,
 
     /// TODO(kdy1): Rename to `args`.
-    pub params: Vec<Type>,
+    pub params: Vec<CowType>,
 }
 
 impl Debug for TypeParamInstantiation {
@@ -1363,7 +1363,7 @@ assert_eq_size!(Array, [u8; 40]);
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Union {
     pub span: Span,
-    pub types: Vec<Type>,
+    pub types: Vec<CowType>,
     pub metadata: UnionMetadata,
 
     pub tracker: Tracker<"Union">,
@@ -1426,7 +1426,7 @@ impl Debug for FnParam {
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Intersection {
     pub span: Span,
-    pub types: Vec<Type>,
+    pub types: Vec<CowType>,
     pub metadata: IntersectionMetadata,
 
     pub tracker: Tracker<"Intersection">,
@@ -1761,7 +1761,7 @@ impl Type {
         }
     }
 
-    pub fn new_union_without_dedup(span: Span, types: Vec<Type>) -> Self {
+    pub fn new_union_without_dedup(span: Span, types: Vec<CowType>) -> Self {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
             1 => types.into_iter().next().unwrap(),
@@ -1809,7 +1809,7 @@ impl Type {
         ty
     }
 
-    pub fn new_union<I: IntoIterator<Item = Self> + Debug>(span: Span, iter: I) -> Self {
+    pub fn new_union<I: IntoIterator<Item = CowType> + Debug>(span: Span, iter: I) -> Self {
         let mut elements = vec![];
 
         for ty in iter {
@@ -2972,7 +2972,7 @@ pub struct TplType {
     pub span: Span,
 
     pub quasis: Vec<TplElem>,
-    pub types: Vec<Type>,
+    pub types: Vec<CowType>,
 
     pub metadata: TplTypeMetadata,
 
