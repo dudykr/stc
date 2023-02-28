@@ -436,9 +436,10 @@ impl Analyzer<'_, '_> {
 
                 Type::Class(rhs_cls) => {
                     // TODO(kdy1): Check if constructor exists.
-                    if rhs_cls.def.is_abstract {
-                        return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span }.into());
-                    }
+                    // if rhs_cls.def.is_abstract {
+                    //     return
+                    // Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span
+                    // }.into()); }
 
                     // TODO(kdy1): Optimize
                     // for el in lhs {
