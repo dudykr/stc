@@ -81,8 +81,6 @@ impl Fold<Type> for LitGeneralizer {
             }
         }
 
-        ty.normalize_mut();
-
         match &ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(index_type) => {
                 return ty;
@@ -182,7 +180,7 @@ impl Visit<Type> for LitChecker {
             return;
         }
 
-        if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
+        if let Type::Lit(LitType { metadata, .. }) = ty {
             if metadata.common.prevent_generalization {
                 return;
             }
@@ -190,7 +188,7 @@ impl Visit<Type> for LitChecker {
             self.found = true;
             return;
         }
-        if let Type::Tpl(TplType { metadata, .. }) = ty.normalize() {
+        if let Type::Tpl(TplType { metadata, .. }) = ty {
             if metadata.common.prevent_generalization {
                 return;
             }

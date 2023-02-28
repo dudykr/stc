@@ -236,37 +236,33 @@ impl GenericExpander<'_> {
 
                 m = m.fold_with(self);
 
-                match m.type_param.constraint.as_deref() {
-                    Some(Type::TypeLit(lit)) => {
-                        let ty = m.ty.clone();
+                if let Some(Type::TypeLit(lit)) = m.type_param.constraint.as_deref() {
+                    let ty = m.ty.clone();
 
-                        let mut members = lit
-                            .members
-                            .clone()
-                            .into_iter()
-                            .map(|mut v| match v {
-                                TypeElement::Property(ref mut p) => {
-                                    p.type_ann = ty.clone();
+                    let mut members = lit
+                        .members
+                        .clone()
+                        .into_iter()
+                        .map(|mut v| match v {
+                            TypeElement::Property(ref mut p) => {
+                                p.type_ann = ty.clone();
 
-                                    v
-                                }
-                                _ => todo!("type element other than property in a mapped type"),
-                            })
-                            .collect();
+                                v
+                            }
+                            _ => todo!("type element other than property in a mapped type"),
+                        })
+                        .collect();
 
-                        for member in &mut members {
-                            apply_mapped_flags(member, m.optional, m.readonly);
-                        }
-
-                        return Type::TypeLit(TypeLit {
-                            span,
-                            members,
-                            metadata: lit.metadata,
-                            tracker: Default::default(),
-                        });
+                    for member in &mut members {
+                        apply_mapped_flags(member, m.optional, m.readonly);
                     }
 
-                    _ => {}
+                    return Type::TypeLit(TypeLit {
+                        span,
+                        members,
+                        metadata: lit.metadata,
+                        tracker: Default::default(),
+                    });
                 }
 
                 // TODO(kdy1): PERF
