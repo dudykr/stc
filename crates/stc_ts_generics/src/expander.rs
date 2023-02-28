@@ -37,10 +37,10 @@ pub struct GenericExpander<'a> {
 }
 
 impl GenericExpander<'_> {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+    fn fold_type(&mut self, ty: Type) -> Type {
         let span = ty.span();
 
-        match ty {
+        match &ty {
             Type::StaticThis(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) | Type::Infer(InferType { type_param: param, .. }) => {
@@ -76,15 +76,19 @@ impl GenericExpander<'_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: box type_args.as_ref().and_then(|args| args.params.first().cloned()).unwrap_or_else(|| {
-                            Type::any(
-                                span,
-                                KeywordTypeMetadata {
-                                    common: metadata.common,
-                                    ..Default::default()
-                                },
-                            )
-                        }),
+                        elem_type: type_args
+                            .as_ref()
+                            .and_then(|args| args.params.first().cloned())
+                            .unwrap_or_else(|| {
+                                Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
+                                )
+                            })
+                            .into(),
                         metadata: ArrayMetadata {
                             common: metadata.common,
                             ..Default::default()
@@ -268,13 +272,6 @@ impl GenericExpander<'_> {
                         });
                     }
 
-                    Some(Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Union(ref u),
-                        ..
-                    })) => {
-                        error!("Union!");
-                    }
                     _ => {}
                 }
 
@@ -282,8 +279,8 @@ impl GenericExpander<'_> {
                 if let Some(ty) = &mut m.ty {
                     ty.normalize_mut();
                 }
-                m.ty = match m.ty {
-                    Some(box Type::IndexedAccessType(IndexedAccessType {
+                m.ty = match m.ty.map(CowType::into_owned) {
+                    Some(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly,
                         mut obj_type,
@@ -322,14 +319,17 @@ impl GenericExpander<'_> {
                                 });
                             }
 
-                            _ => Some(box Type::IndexedAccessType(IndexedAccessType {
-                                span,
-                                readonly,
-                                obj_type,
-                                index_type,
-                                metadata,
-                                tracker: Default::default(),
-                            })),
+                            _ => Some(
+                                Type::IndexedAccessType(IndexedAccessType {
+                                    span,
+                                    readonly,
+                                    obj_type,
+                                    index_type,
+                                    metadata,
+                                    tracker: Default::default(),
+                                })
+                                .into(),
+                            ),
                         }
                     }
                     _ => m.ty,
@@ -478,7 +478,7 @@ impl Fold<Type> for GenericExpander<'_> {
         };
 
         let old_fully = self.fully;
-        self.fully |= matches!(ty.normalize(), Type::Mapped(..));
+        self.fully |= matches!(ty, Type::Mapped(..));
 
         {
             // TODO(kdy1): Remove this block, after fixing a regression of a mapped types.
