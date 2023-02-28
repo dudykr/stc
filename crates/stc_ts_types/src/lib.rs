@@ -15,7 +15,6 @@ use std::{
     fmt,
     fmt::{Debug, Formatter},
     iter::FusedIterator,
-    mem::{replace, take},
     ops::{AddAssign, Deref},
 };
 
@@ -361,6 +360,12 @@ impl TypeEq for Type {
             (Type::Tpl(l), Type::Tpl(r)) => l.type_eq(r),
             _ => false,
         }
+    }
+}
+
+impl Take for Type {
+    fn dummy() -> Self {
+        Self::any(DUMMY_SP, Default::default())
     }
 }
 
@@ -1598,7 +1603,7 @@ impl Deref for CowType {
 
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
-        self
+        self.normalize()
     }
 }
 
@@ -1618,7 +1623,7 @@ impl CowType {
     ///
     /// TODO(kdy1): Remove if possible
     #[inline]
-    pub fn foldable(mut self) -> Type {
+    pub fn foldable(self) -> Type {
         self.into_owned()
     }
 
@@ -2886,9 +2891,11 @@ impl VisitMut<CowType> for Freezer {
             CowType::Owned(owned) => {
                 owned.visit_mut_children_with(self);
 
-                *ty = CowType::Arc(ArcType { ty: owned.take() })
+                *ty = CowType::Arc(ArcType {
+                    ty: Arc::new(*owned.take()),
+                })
             }
-            CowType::Arc(_) => return,
+            CowType::Arc(_) => {}
         }
     }
 }
@@ -3087,7 +3094,7 @@ pub struct ValidityChecker {
 
 /// Freezed types are valid.
 impl Visit<ArcType> for ValidityChecker {
-    fn visit(&mut self, ty: &ArcType) {}
+    fn visit(&mut self, _: &ArcType) {}
 }
 
 impl Visit<Union> for ValidityChecker {

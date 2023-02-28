@@ -34,7 +34,7 @@ macro_rules! impl_is {
 
             /// This method normalizes the type **only if** the underlying type is the
             /// required variant.
-            pub fn $opt_name(mut self) -> Option<$type_name> {
+            pub fn $opt_name(self) -> Option<$type_name> {
                 if self.$is_name() {
                     match self {
                         Type::$variant(ty) => Some(ty),
