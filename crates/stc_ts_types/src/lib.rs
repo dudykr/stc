@@ -628,7 +628,7 @@ pub struct Instance {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Instance, [u8; 32]);
+assert_eq_size!(Instance, [u8; 40]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
@@ -1580,6 +1580,9 @@ pub enum CowType {
     Arc(ArcType),
 }
 
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(CowType, [u8; 16]);
+
 impl TypeEq for CowType {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
@@ -1609,6 +1612,16 @@ impl CowType {
         match self {
             CowType::Owned(ty) => ty,
             CowType::Arc(ty) => &ty.ty,
+        }
+    }
+
+    pub fn into_owned(self) -> Type {
+        match self {
+            CowType::Owned(ty) => *ty,
+            CowType::Arc(ty) => match Arc::try_unwrap(ty.ty) {
+                Ok(v) => v,
+                Err(arc) => (*arc).clone(),
+            },
         }
     }
 }
