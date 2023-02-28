@@ -1,5 +1,7 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{ArcType, Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid};
+use stc_ts_types::{
+    ArcType, Array, Conditional, CowType, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
+};
 use swc_common::TypeEq;
 
 pub trait Fix: Sized {
@@ -131,10 +133,6 @@ impl VisitMut<Intersection> for Fixer {
 
 impl Fixer {
     fn fix_type(&mut self, ty: &mut Type) {
-        if matches!(ty, Type::Arc(..)) {
-            return;
-        }
-
         if matches!(ty, Type::Keyword(..) | Type::Lit(..)) {
             return;
         }
@@ -143,7 +141,6 @@ impl Fixer {
             return;
         }
 
-        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         match ty {
@@ -193,7 +190,15 @@ impl VisitMut<Type> for Fixer {
     }
 }
 
-/// Freezed types are valid.
-impl VisitMut<ArcType> for Fixer {
-    fn visit_mut(&mut self, _: &mut ArcType) {}
+impl VisitMut<CowType> for Fixer {
+    fn visit_mut(&mut self, ty: &mut CowType) {
+        match ty {
+            CowType::Owned(ty) => {
+                ty.visit_mut_with(self);
+            }
+            CowType::Arc(_) => {
+                // Freezed types are valid.
+            }
+        }
+    }
 }
