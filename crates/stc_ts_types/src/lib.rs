@@ -240,7 +240,6 @@ impl Debug for Type {
             Self::Module(arg0) => write!(f, "{:?}", arg0),
             Self::Class(arg0) => write!(f, "{:?}", arg0),
             Self::ClassDef(arg0) => write!(f, "{:?}", arg0),
-            Self::Arc(arg0) => write!(f, "{:?}", arg0),
             Self::Rest(arg0) => write!(f, "{:?}", arg0),
             Self::Optional(arg0) => write!(f, "{:?}", arg0),
             Self::Symbol(arg0) => write!(f, "{:?}", arg0),
@@ -254,7 +253,6 @@ impl Clone for Type {
     #[instrument(name = "Type::clone", skip_all)]
     fn clone(&self) -> Self {
         match self {
-            Type::Arc(ty) => ty.clone().into(),
             Type::Keyword(ty) => ty.clone().into(),
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
@@ -1622,6 +1620,42 @@ impl CowType {
             },
         }
     }
+
+    /// Converts this type to foldable type.
+    ///
+    /// TODO(kdy1): Remove if possible
+    pub fn foldable(mut self) -> Type {
+        self.normalize_mut();
+        self
+    }
+
+    /// [Type::Arc] is normalized.
+    pub fn normalize<'s, 'c>(&'s self) -> &'c Type
+    where
+        's: 'c,
+    {
+        match *self {
+            Type::Arc(ref s) => {
+                //
+                unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
+            }
+            _ => unsafe {
+                // Shorten lifetimes
+                transmute::<&'s Self, &'c Type>(self)
+            },
+        }
+    }
+
+    /// `Type::Static` is normalized.
+    #[instrument(skip_all)]
+    pub fn normalize_mut(&mut self) -> &mut Type {
+        if let Type::Arc(ArcType { ty }) = self {
+            let ty = Arc::make_mut(ty);
+            *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
+        }
+
+        self
+    }
 }
 
 pub trait TypeIterExt {}
@@ -1871,7 +1905,7 @@ impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
         match self {
-            Type::Arc(..) | Type::Keyword(..) | Type::Lit(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
+            Type::Keyword(..) | Type::Lit(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
             // TODO(kdy1): Make this false.
             Type::Param(TypeParam { constraint, default, .. }) => {
@@ -2089,8 +2123,6 @@ impl Type {
             Type::Symbol(ty) => ty.metadata.common,
             Type::Tpl(ty) => ty.metadata.common,
             Type::StringMapping(ty) => ty.metadata.common,
-
-            Type::Arc(_) => unreachable!(),
         }
     }
 
@@ -2131,8 +2163,6 @@ impl Type {
             Type::Symbol(ty) => &mut ty.metadata.common,
             Type::Tpl(ty) => &mut ty.metadata.common,
             Type::StringMapping(ty) => &mut ty.metadata.common,
-
-            Type::Arc(_) => unreachable!(),
         }
     }
 
@@ -2218,10 +2248,6 @@ impl Type {
             Type::Tpl(ty) => ty.span = span,
 
             Type::StringMapping(ty) => ty.span = span,
-
-            Type::Arc(..) => {
-                unreachable!()
-            }
         }
     }
 }
@@ -2427,31 +2453,6 @@ impl Type {
 //}
 
 impl Type {
-    /// Converts this type to foldable type.
-    ///
-    /// TODO(kdy1): Remove if possible
-    pub fn foldable(mut self) -> Type {
-        self.normalize_mut();
-        self
-    }
-
-    /// [Type::Arc] is normalized.
-    pub fn normalize<'s, 'c>(&'s self) -> &'c Type
-    where
-        's: 'c,
-    {
-        match *self {
-            Type::Arc(ref s) => {
-                //
-                unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
-            }
-            _ => unsafe {
-                // Shorten lifetimes
-                transmute::<&'s Self, &'c Type>(self)
-            },
-        }
-    }
-
     /// [Type::Arc] and [Type::Instance] are normalized.
     pub fn normalize_instance<'s, 'c>(&'s self) -> &'c Type
     where
@@ -2462,17 +2463,6 @@ impl Type {
             Type::Instance(ty) => ty.ty.normalize_instance(),
             _ => ty,
         }
-    }
-
-    /// `Type::Static` is normalized.
-    #[instrument(skip_all)]
-    pub fn normalize_mut(&mut self) -> &mut Type {
-        if let Type::Arc(ArcType { ty }) = self {
-            let ty = Arc::make_mut(ty);
-            *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
-        }
-
-        self
     }
 
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
