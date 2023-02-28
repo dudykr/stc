@@ -819,6 +819,7 @@ es6/destructuring/iterableArrayPattern30.ts
 es6/destructuring/iterableArrayPattern4.ts
 es6/destructuring/iterableArrayPattern5.ts
 es6/destructuring/iterableArrayPattern6.ts
+es6/destructuring/iterableArrayPattern7.ts
 es6/destructuring/iterableArrayPattern8.ts
 es6/destructuring/iterableArrayPattern9.ts
 es6/destructuring/nonIterableRestElement1.ts
@@ -2206,6 +2207,7 @@ statements/for-ofStatements/ES5for-of32.ts
 statements/forStatements/forStatements.ts
 statements/forStatements/forStatementsMultipleValidDecl.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
+statements/returnStatements/invalidReturnStatements.ts
 statements/returnStatements/returnStatements.ts
 statements/switchStatements/switchStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
