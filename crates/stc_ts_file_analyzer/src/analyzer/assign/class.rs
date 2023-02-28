@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
 
         match l {
-            ClassMember::Constructor(..) | ClassMember::IndexSignature(..) => return Ok(()),
+            ClassMember::Constructor(..) | ClassMember::IndexSignature(..) => {}
             ClassMember::Method(lm) => {
                 for r_member in r {
                     match r_member {
@@ -373,5 +373,7 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        Ok(())
     }
 }
