@@ -1719,13 +1719,13 @@ impl Type {
 
     pub fn new_intersection<I>(span: Span, iter: I) -> Self
     where
-        I: IntoIterator<Item = Type>,
+        I: IntoIterator<Item = CowType>,
     {
         let mut tys = vec![];
 
         for ty in iter {
             if ty.is_intersection() {
-                tys.extend(ty.expect_intersection().types);
+                tys.extend(ty.into_owned().expect_intersection().types);
             } else {
                 tys.push(ty);
             }
@@ -1751,7 +1751,7 @@ impl Type {
 
         match tys.len() {
             0 => Type::never(span, Default::default()),
-            1 => tys.into_iter().next().unwrap(),
+            1 => tys.into_iter().next().unwrap().into_owned(),
             _ => Type::Intersection(Intersection {
                 span,
                 types: tys,
@@ -1764,7 +1764,7 @@ impl Type {
     pub fn new_union_without_dedup(span: Span, types: Vec<CowType>) -> Self {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
-            1 => types.into_iter().next().unwrap(),
+            1 => types.into_iter().next().unwrap().into_owned(),
             _ => {
                 if types.iter().any(|t| t.is_union_type()) {
                     let mut elements = vec![];
@@ -1781,7 +1781,7 @@ impl Type {
                         }
 
                         if ty.is_union_type() {
-                            let types = ty.expect_union_type().types;
+                            let types = ty.into_owned().expect_union_type().types;
                             for new in types {
                                 elements.push(new)
                             }
@@ -1824,15 +1824,15 @@ impl Type {
             }
 
             if ty.is_union_type() {
-                let types = ty.expect_union_type().types;
+                let types = ty.into_owned().expect_union_type().types;
                 for new in types {
-                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                    if elements.iter().any(|prev: &CowType| prev.type_eq(&new)) {
                         continue;
                     }
                     elements.push(new)
                 }
             } else {
-                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                if elements.iter().any(|prev: &CowType| prev.type_eq(&ty)) {
                     continue;
                 }
                 elements.push(ty)
@@ -2515,7 +2515,7 @@ impl<'a> Iterator for Iter<'a> {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
-                ty
+                ty.map(|v| &**v)
             }
 
             _ if self.idx == 0 => {
