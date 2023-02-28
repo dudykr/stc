@@ -449,6 +449,8 @@ impl Analyzer<'_, '_> {
         target: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
+        let _tracing = dev_span!("infer_from_contravariant_types");
+
         let old = inferred.contravariant;
         inferred.contravariant = true;
         let res = self.infer_from_types(span, inferred, source, target, opts);
