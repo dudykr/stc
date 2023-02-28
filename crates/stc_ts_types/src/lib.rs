@@ -196,8 +196,6 @@ pub enum Type {
     /// Class definition itself.
     ClassDef(ClassDef),
 
-    Arc(ArcType),
-
     Rest(RestType),
 
     Optional(OptionalType),
