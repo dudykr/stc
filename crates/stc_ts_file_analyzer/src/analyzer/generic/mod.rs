@@ -1038,7 +1038,22 @@ impl Analyzer<'_, '_> {
             Type::Ref(param) => match arg_normalized {
                 Type::Ref(arg)
                     if param.type_name.eq_ignore_span(&arg.type_name)
-                        && param.type_args.as_ref().map(|v| v.params.len()) == arg.type_args.as_ref().map(|v| v.params.len()) =>
+                        && param.type_args.as_ref().map(|v| v.params.len()) == arg.type_args.as_ref().map(|v| v.params.len())
+                        && match &arg.type_name {
+                            RTsEntityName::Ident(i) => matches!(
+                                &*i.sym,
+                                "Promise"
+                                    | "PromiseLike"
+                                    | "Iterator"
+                                    | "AsyncIterator"
+                                    | "Iterable"
+                                    | "ArrayLike"
+                                    | "IteratorResult"
+                                    | "IterableIterator"
+                                    | "IteratorYieldResult"
+                            ),
+                            _ => false,
+                        } =>
                 {
                     if param.type_args.is_none() && arg.type_args.is_none() {
                         return Ok(());
