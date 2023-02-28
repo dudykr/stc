@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use itertools::Itertools;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use swc_common::EqIgnoreSpan;
@@ -66,18 +67,11 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
                 let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(&*r))?.unwrap();
 
-                let mut lhs_members = vec![];
-                for lm in &l.body {
-                    let lm = self.make_type_el_from_class_member(lm, true)?;
-                    let lm = match lm {
-                        Some(v) => v,
-                        None => {
-                            // Instance property does not exist at the moment.
-                            continue;
-                        }
-                    };
-                    lhs_members.push(lm);
-                }
+                let lhs_members = l
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, true))
+                    .collect_vec();
 
                 self.assign_to_type_elements(
                     data,
@@ -167,17 +161,12 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
-                let mut lhs_members = vec![];
-                for lm in &l.def.body {
-                    let lm = self.make_type_el_from_class_member(lm, false)?;
-                    let lm = match lm {
-                        Some(v) => v,
-                        None => {
-                            continue;
-                        }
-                    };
-                    lhs_members.push(lm);
-                }
+                let lhs_members = l
+                    .def
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, false))
+                    .collect_vec();
 
                 self.assign_to_type_elements(
                     data,
