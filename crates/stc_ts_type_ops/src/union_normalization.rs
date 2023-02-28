@@ -6,8 +6,8 @@ use rustc_hash::FxHashMap;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::{
-    CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParamDecl, Union,
+    CallSignature, CowType, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParamDecl, Union,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
 use swc_atoms::JsWord;
@@ -28,7 +28,7 @@ impl ObjectUnionNormalizer {
     }
 
     fn find_keys_of_type(&self, ty: &Type) -> IndexSet<Vec<JsWord>> {
-        match ty.normalize() {
+        match ty {
             Type::TypeLit(ty) => {
                 let mut keys = IndexSet::default();
 
@@ -86,7 +86,7 @@ impl ObjectUnionNormalizer {
         let mut return_types = vec![];
 
         for ty in &u.types {
-            if let Type::Function(f) = ty.normalize() {
+            if let Type::Function(f) = ty {
                 if new_type_params.is_none() {
                     new_type_params = f.type_params.clone();
                 }
@@ -125,7 +125,7 @@ impl ObjectUnionNormalizer {
                     }
                     types.dedup_type();
 
-                    let ty = box Type::new_intersection(DUMMY_SP, types);
+                    let ty = Type::new_intersection(DUMMY_SP, types).into();
                     FnParam {
                         span: DUMMY_SP,
                         // TODO
@@ -142,7 +142,7 @@ impl ObjectUnionNormalizer {
                     }
                 })
                 .collect(),
-            ret_ty: box Type::new_union(u.span, return_types),
+            ret_ty: Type::new_union(u.span, return_types).into(),
             metadata: FunctionMetadata {
                 common: u.metadata.common,
                 ..Default::default()
@@ -357,12 +357,15 @@ impl ObjectUnionNormalizer {
                                 },
                                 optional: true,
                                 params: Default::default(),
-                                type_ann: Some(box Type::Keyword(KeywordType {
-                                    span: DUMMY_SP,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                })),
+                                type_ann: Some(
+                                    Type::Keyword(KeywordType {
+                                        span: DUMMY_SP,
+                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    })
+                                    .into(),
+                                ),
                                 type_params: Default::default(),
                                 metadata: Default::default(),
                                 accessor: Default::default(),
@@ -394,12 +397,15 @@ impl ObjectUnionNormalizer {
                                     },
                                     optional: true,
                                     params: Default::default(),
-                                    type_ann: Some(box Type::TypeLit(TypeLit {
-                                        span: DUMMY_SP,
-                                        members: Default::default(),
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })),
+                                    type_ann: Some(
+                                        Type::TypeLit(TypeLit {
+                                            span: DUMMY_SP,
+                                            members: Default::default(),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                        .into(),
+                                    ),
                                     type_params: Default::default(),
                                     metadata: Default::default(),
                                     accessor: Default::default(),
@@ -409,7 +415,7 @@ impl ObjectUnionNormalizer {
                         };
 
                         if let TypeElement::Property(prop) = &mut ty.members[idx] {
-                            if let Some(ty) = prop.type_ann.as_deref_mut() {
+                            if let Some(ty) = prop.type_ann.as_mut().map(CowType::normalize_mut) {
                                 insert_property_to(ty, &keys[1..], inexact)
                             }
                         }
