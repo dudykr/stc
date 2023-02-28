@@ -25,7 +25,7 @@ pub(super) struct DceForDts<'a> {
 }
 
 impl DceForDts<'_> {
-    fn get_mapped<F, T>(&self, sym: &Id, pred: F) -> Option<T>
+    fn get_mapped<F, T>(&self, sym: &Id, mut pred: F) -> Option<T>
     where
         F: FnMut(&Type) -> Option<T>,
     {
@@ -34,7 +34,7 @@ impl DceForDts<'_> {
                 debug_assert!(ty.is_clone_cheap(), "All exported types must be freezed: {:?}", ty);
             }
 
-            types.iter().filter_map(pred).next()
+            types.iter().filter_map(|ty| pred(ty)).next()
         } else {
             None
         }

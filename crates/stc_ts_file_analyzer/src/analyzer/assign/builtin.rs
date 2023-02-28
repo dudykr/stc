@@ -23,8 +23,6 @@ impl Analyzer<'_, '_> {
     /// - Handles assignment of promise types.
     pub(super) fn assign_to_builtin(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let span = opts.span;
-        let l = l.normalize();
-        let r = r.normalize();
 
         match l {
             Type::Ref(Ref {
