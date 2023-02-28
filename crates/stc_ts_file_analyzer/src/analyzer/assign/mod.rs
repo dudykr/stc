@@ -1612,6 +1612,9 @@ impl Analyzer<'_, '_> {
                                 rhs,
                                 AssignOpts {
                                     allow_unknown_rhs: Some(true),
+                                    report_assign_failure_for_missing_properties: opts
+                                        .report_assign_failure_for_missing_properties
+                                        .or(Some(true)),
                                     ..opts
                                 },
                             )
@@ -1993,6 +1996,8 @@ impl Analyzer<'_, '_> {
                             || ty.is_tpl()
                             || ty.is_intersection()
                             || ty.is_type_param()
+                            || ty.is_class()
+                            || ty.is_class_def()
                     });
 
                 if should_use_single_error {
