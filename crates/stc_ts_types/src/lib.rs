@@ -196,7 +196,7 @@ pub enum Type {
     /// Class definition itself.
     ClassDef(ClassDef),
 
-    Arc(Freezed),
+    Arc(ArcType),
 
     Rest(RestType),
 
@@ -2415,7 +2415,7 @@ impl Type {
     /// `Type::Static` is normalized.
     #[instrument(skip_all)]
     pub fn normalize_mut(&mut self) -> &mut Type {
-        if let Type::Arc(Freezed { ty }) = self {
+        if let Type::Arc(ArcType { ty }) = self {
             let ty = Arc::make_mut(ty);
             *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
         }
@@ -2844,7 +2844,7 @@ impl VisitMut<Type> for Freezer {
             }),
         );
 
-        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
+        *ty = Type::Arc(ArcType { ty: Arc::new(new_ty) })
     }
 }
 
@@ -2942,29 +2942,30 @@ impl From<RTplElement> for TplElem {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
+/// A [Type] which is cheap to clone.
 #[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
-pub struct Freezed {
+pub struct ArcType {
     ty: Arc<Type>,
 }
 
-impl Debug for Freezed {
+impl Debug for ArcType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.ty)
     }
 }
 
-impl Spanned for Freezed {
+impl Spanned for ArcType {
     fn span(&self) -> Span {
         self.ty.span()
     }
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Freezed, [u8; 8]);
+assert_eq_size!(ArcType, [u8; 8]);
 
-impl Visitable for Freezed {}
+impl Visitable for ArcType {}
 
-impl<V> VisitWith<V> for Freezed
+impl<V> VisitWith<V> for ArcType
 where
     V: ?Sized,
 {
@@ -2974,7 +2975,7 @@ where
     }
 }
 
-impl<V> VisitMutWith<V> for Freezed
+impl<V> VisitMutWith<V> for ArcType
 where
     V: ?Sized,
 {
@@ -2984,7 +2985,7 @@ where
     }
 }
 
-impl<V> FoldWith<V> for Freezed
+impl<V> FoldWith<V> for ArcType
 where
     V: ?Sized,
 {
