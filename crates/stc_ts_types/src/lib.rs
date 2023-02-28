@@ -973,7 +973,7 @@ pub struct Mapped {
     #[use_eq]
     pub optional: Option<TruePlusMinus>,
     pub name_type: Option<CowType>,
-    pub type_param: TypeParam,
+    pub type_param: Box<TypeParam>,
     pub ty: Option<CowType>,
     pub metadata: MappedMetadata,
 
@@ -981,7 +981,7 @@ pub struct Mapped {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Mapped, [u8; 104]);
+assert_eq_size!(Mapped, [u8; 72]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
@@ -1356,7 +1356,7 @@ impl Debug for Array {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Array, [u8; 32]);
+assert_eq_size!(Array, [u8; 40]);
 
 /// a | b
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1532,7 +1532,7 @@ impl Debug for Function {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Function, [u8; 96]);
+assert_eq_size!(Function, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Constructor {
@@ -1548,7 +1548,7 @@ pub struct Constructor {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Constructor, [u8; 104]);
+assert_eq_size!(Constructor, [u8; 112]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Predicate {
@@ -1563,7 +1563,7 @@ pub struct Predicate {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Predicate, [u8; 72]);
+assert_eq_size!(Predicate, [u8; 80]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeOrSpread {

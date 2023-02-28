@@ -504,7 +504,7 @@ impl From<super::Mapped> for RTsType {
             name_type: t.name_type.map(From::from),
 
             readonly: t.readonly,
-            type_param: t.type_param.into(),
+            type_param: (*t.type_param).into(),
             optional: t.optional.map(From::from),
             type_ann: t.ty.map(From::from),
         }
