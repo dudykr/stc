@@ -1,4 +1,4 @@
-use stc_ts_types::{replace::replace_type, Array, ArrayMetadata, Type};
+use stc_ts_types::{replace::replace_type, Array, ArrayMetadata, CowType, Type};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::TypeVecExt;
 use swc_common::Spanned;
@@ -7,7 +7,7 @@ pub fn normalize_tuples(ty: &mut Type) {
     replace_type(
         ty,
         |ty| {
-            if let Type::Tuple(tuple) = ty.normalize() {
+            if let Type::Tuple(tuple) = ty {
                 if tuple.metadata.prevent_tuple_to_array {
                     return false;
                 }
@@ -22,7 +22,7 @@ pub fn normalize_tuples(ty: &mut Type) {
             false
         },
         |ty| {
-            if let Type::Tuple(tuple) = ty.normalize() {
+            if let Type::Tuple(tuple) = ty {
                 let common_metadata = tuple.metadata.common;
 
                 let span = ty.span();
@@ -34,15 +34,15 @@ pub fn normalize_tuples(ty: &mut Type) {
                     types.retain(|ty| !ty.is_null_or_undefined())
                 }
 
-                return Some(Type::Array(Array {
+                return Some(CowType::Owned(box Type::Array(Array {
                     span,
-                    elem_type: box Type::new_union(span, types),
+                    elem_type: Type::new_union(span, types).into(),
                     metadata: ArrayMetadata {
                         common: common_metadata,
                         ..Default::default()
                     },
                     tracker: Default::default(),
-                }));
+                })));
             }
 
             None

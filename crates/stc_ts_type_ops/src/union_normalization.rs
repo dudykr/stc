@@ -422,7 +422,7 @@ impl ObjectUnionNormalizer {
 
         let deep = self.find_keys(&*types);
 
-        let inexact = types.iter().any(|ty| match ty.normalize() {
+        let inexact = types.iter().any(|ty| match ty {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });

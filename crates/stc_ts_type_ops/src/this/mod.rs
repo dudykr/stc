@@ -17,7 +17,7 @@ impl Visit<Type> for ThisFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);
 
-        if let Type::This(..) = ty.normalize() {
+        if let Type::This(..) = ty {
             self.found = true;
         }
     }

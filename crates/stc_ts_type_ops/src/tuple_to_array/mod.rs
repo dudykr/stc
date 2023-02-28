@@ -10,8 +10,6 @@ pub struct TupleToArray;
 
 impl Fold<Type> for TupleToArray {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
         let ty = ty.fold_children_with(self);
 
         match ty {
@@ -28,7 +26,7 @@ impl Fold<Type> for TupleToArray {
                     types.push(*element.ty);
                 }
 
-                let elem_type = box Type::new_union(span, types);
+                let elem_type = Type::new_union(span, types).into();
                 Type::Array(Array {
                     span,
                     elem_type,
