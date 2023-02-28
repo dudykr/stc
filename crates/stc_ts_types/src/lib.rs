@@ -323,7 +323,7 @@ impl Clone for Type {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Type, [u8; 112]);
+assert_eq_size!(Type, [u8; 120]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -515,7 +515,7 @@ impl From<RPrivateName> for PrivateName {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Key, [u8; 40]);
+assert_eq_size!(Key, [u8; 48]);
 
 impl Key {
     /// Returns `true` if this key is a number or a number-like string.
@@ -601,7 +601,7 @@ impl TypeEq for ComputedKey {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ComputedKey, [u8; 32]);
+assert_eq_size!(ComputedKey, [u8; 40]);
 
 /// Special type to denote instance of various types.
 ///
@@ -715,7 +715,7 @@ pub struct RestType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(RestType, [u8; 32]);
+assert_eq_size!(RestType, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct OptionalType {
@@ -727,7 +727,7 @@ pub struct OptionalType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(OptionalType, [u8; 32]);
+assert_eq_size!(OptionalType, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct IndexedAccessType {
@@ -741,7 +741,7 @@ pub struct IndexedAccessType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(IndexedAccessType, [u8; 48]);
+assert_eq_size!(IndexedAccessType, [u8; 64]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Ref {
@@ -789,7 +789,7 @@ pub struct InferType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(InferType, [u8; 80]);
+assert_eq_size!(InferType, [u8; 96]);
 
 impl Debug for InferType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -910,7 +910,7 @@ pub struct ClassDef {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ClassDef, [u8; 96]);
+assert_eq_size!(ClassDef, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum ClassMember {
@@ -996,7 +996,7 @@ pub struct Conditional {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Conditional, [u8; 56]);
+assert_eq_size!(Conditional, [u8; 88]);
 
 impl Debug for Conditional {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -1021,7 +1021,7 @@ pub struct Operator {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Operator, [u8; 40]);
+assert_eq_size!(Operator, [u8; 48]);
 
 impl TypeEq for Operator {
     fn type_eq(&self, other: &Self) -> bool {
@@ -1076,7 +1076,7 @@ pub struct Alias {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Alias, [u8; 40]);
+assert_eq_size!(Alias, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Interface {
