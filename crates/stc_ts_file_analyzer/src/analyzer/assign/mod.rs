@@ -2899,7 +2899,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // error!("unimplemented: assign to intrinsic type\n{:?}\n{}", to,
         // dump_type_as_string(r));
         Ok(())
     }
