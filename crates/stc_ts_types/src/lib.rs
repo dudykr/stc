@@ -1572,6 +1572,8 @@ pub struct TypeOrSpread {
     pub ty: CowType,
 }
 
+/// A reference to a type.
+
 #[derive(Debug, Clone, PartialEq, Spanned, Visit, Serialize, Deserialize)]
 pub enum CowType {
     Owned(Box<Type>),
