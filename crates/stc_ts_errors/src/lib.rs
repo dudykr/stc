@@ -1545,7 +1545,7 @@ pub enum ErrorKind {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ErrorKind, [u8; 72]);
+assert_eq_size!(ErrorKind, [u8; 80]);
 
 impl Error {
     pub fn convert<F>(mut self, op: F) -> Self
