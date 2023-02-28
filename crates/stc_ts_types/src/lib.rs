@@ -1635,7 +1635,8 @@ impl CowType {
         }
     }
 
-    /// `Type::Static` is normalized.
+    /// Multiple calls to this method is cheap, but the first call can be
+    /// expensive.
     #[inline]
     #[instrument(skip_all)]
     pub fn normalize_mut(&mut self) -> &mut Type {

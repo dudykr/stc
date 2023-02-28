@@ -324,7 +324,7 @@ impl ObjectUnionNormalizer {
         fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
             if let Some(ty) = ty.as_union_type_mut() {
                 for ty in &mut ty.types {
-                    insert_property_to(ty, keys, inexact);
+                    insert_property_to(ty.normalize_mut(), keys, inexact);
                 }
                 return;
             }
@@ -437,7 +437,7 @@ impl ObjectUnionNormalizer {
         // Add properties.
         for ty in types.iter_mut() {
             for keys in &deep {
-                insert_property_to(ty, keys, inexact);
+                insert_property_to(ty.normalize_mut(), keys, inexact);
             }
         }
     }
