@@ -82,7 +82,7 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
         return String::new();
     }
 
-    if let Type::StringMapping(t) = t.normalize() {
+    if let Type::StringMapping(t) = t {
         return format!("intrinsic:{:?}<{}>", t.kind, force_dump_type_as_string(&t.type_args.params[0]));
     }
 
@@ -108,7 +108,7 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
             }),
         })));
 
-        if let Type::Interface(t) = t.normalize() {
+        if let Type::Interface(t) = t {
             ALLOW_DEEP_CLONE.set(&(), || {
                 body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
@@ -146,9 +146,9 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
         s = format!("instanceof {}", s)
     }
 
-    match t.normalize() {
+    match t {
         Type::ClassDef(..) | Type::Class(..) => {
-            writeln!(s, "\n{:?}", t.normalize()).unwrap();
+            writeln!(s, "\n{:?}", t).unwrap();
         }
         _ => {}
     }
@@ -275,8 +275,6 @@ impl Fold<Type> for Visualizer {
         if self.done_types.iter().any(|prev| prev.type_eq(&ty)) {
             return ty;
         }
-
-        ty.normalize_mut();
 
         self.done_types.push(ty.clone());
 

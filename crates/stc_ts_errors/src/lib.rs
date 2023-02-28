@@ -1763,7 +1763,7 @@ impl ErrorKind {
             ErrorKind::CannotExtendTypeOnlyItem { .. } => 2689,
             ErrorKind::TypeNotFound { .. } => 2304,
 
-            ErrorKind::NotVariable { ty, .. } => match ty.as_deref().map(Type::normalize) {
+            ErrorKind::NotVariable { ty, .. } => match ty.as_deref() {
                 Some(Type::Enum(..)) => 2628,
                 Some(Type::ClassDef(..)) => 2629,
                 Some(Type::Function(..)) => 2630,
