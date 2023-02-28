@@ -294,12 +294,11 @@ impl Analyzer<'_, '_> {
                         ClassMember::Method(rm) => {
                             //
                             if self.key_matches(span, &lm.key, &rm.key, false) {
-                                // if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
-                                //     return Ok(());
-                                // }
-
-                                if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
-                                    return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
+                                if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
+                                } else {
+                                    if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
+                                        return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
+                                    }
                                 }
 
                                 self.assign_to_fn_like(
@@ -347,16 +346,16 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                // if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
-                                //     return Ok(());
-                                // }
+                                if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
+                                } else {
+                                    if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
+                                        return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                    }
 
-                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
-                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
-                                }
-
-                                if lp.accessibility == Some(Accessibility::Private) && rp.accessibility != Some(Accessibility::Private) {
-                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                    if lp.accessibility == Some(Accessibility::Private) && rp.accessibility != Some(Accessibility::Private)
+                                    {
+                                        return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                    }
                                 }
 
                                 return Ok(());
