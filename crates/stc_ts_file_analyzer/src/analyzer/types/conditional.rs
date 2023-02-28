@@ -9,7 +9,7 @@ use stc_utils::{
     ext::TypeVecExt,
 };
 use swc_common::{Span, SyntaxContext, TypeEq};
-use tracing::debug;
+use tracing::{debug, info};
 
 use super::NormalizeTypeOpts;
 use crate::{
@@ -38,7 +38,14 @@ impl Analyzer<'_, '_> {
         });
 
         c.check_type = box self
-            .normalize(Some(span), Cow::Borrowed(&c.check_type), Default::default())
+            .normalize(
+                Some(span),
+                Cow::Borrowed(&c.check_type),
+                NormalizeTypeOpts {
+                    preserve_keyof: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to normalize the `check` type of a conditional type")?
             .freezed()
             .into_owned()
@@ -52,6 +59,7 @@ impl Analyzer<'_, '_> {
             .freezed();
 
         if let Some(v) = self.extends(span, &c.check_type, &c.extends_type, Default::default()) {
+            info!("normalize: conditional: check_type extends extends_type: {:?}", v);
             let ty = if v { &c.true_type } else { &c.false_type };
             // TODO(kdy1): Optimize
             let ty = self
