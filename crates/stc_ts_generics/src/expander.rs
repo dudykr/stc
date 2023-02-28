@@ -119,13 +119,6 @@ impl GenericExpander<'_> {
                 Type::Param(param)
             }
 
-            // Alias returns other than self.
-            Type::Alias(mut alias) => {
-                alias = alias.fold_with(self);
-
-                *alias.ty
-            }
-
             Type::Interface(mut i) => {
                 i = i.fold_with(self);
 
@@ -290,7 +283,7 @@ impl GenericExpander<'_> {
                     })) => {
                         obj_type.normalize_mut();
                         // TODO(kdy1): PERF
-                        match *obj_type {
+                        match obj_type.into_owned() {
                             Type::TypeLit(TypeLit {
                                 span, members, metadata, ..
                             }) if members
@@ -319,11 +312,11 @@ impl GenericExpander<'_> {
                                 });
                             }
 
-                            _ => Some(
+                            obj_type => Some(
                                 Type::IndexedAccessType(IndexedAccessType {
                                     span,
                                     readonly,
-                                    obj_type,
+                                    obj_type: obj_type.into(),
                                     index_type,
                                     metadata,
                                     tracker: Default::default(),
@@ -332,7 +325,7 @@ impl GenericExpander<'_> {
                             ),
                         }
                     }
-                    _ => m.ty,
+                    m_ty => m_ty.map(From::from),
                 };
 
                 if let Some(constraint) = &m.type_param.constraint {
@@ -406,7 +399,7 @@ impl GenericExpander<'_> {
 
             Type::IndexedAccessType(ty) => {
                 let mut ty = ty.fold_with(self);
-                ty.obj_type.fix();
+                ty.obj_type.normalize_mut().fix();
 
                 let key = match ty.index_type.normalize() {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(Key::Normal {
