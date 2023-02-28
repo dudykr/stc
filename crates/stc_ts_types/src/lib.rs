@@ -2993,6 +2993,11 @@ impl From<RTplElement> for TplElem {
 assert_eq_size!(TplType, [u8; 72]);
 
 /// A [Type] which is cheap to clone.
+///
+///
+/// # Variances
+///
+/// All [ArcType]s satisfy the constraints of [Type].
 #[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct ArcType {
     ty: Arc<Type>,

@@ -1,5 +1,5 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid};
+use stc_ts_types::{ArcType, Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid};
 use swc_common::TypeEq;
 
 pub trait Fix: Sized {
@@ -191,4 +191,9 @@ impl VisitMut<Type> for Fixer {
     fn visit_mut(&mut self, ty: &mut Type) {
         self.fix_type(ty);
     }
+}
+
+/// Freezed types are valid.
+impl VisitMut<ArcType> for Fixer {
+    fn visit_mut(&mut self, _: &mut ArcType) {}
 }
