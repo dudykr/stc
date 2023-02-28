@@ -5,7 +5,7 @@ use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, ErrorKind, Errors};
-use stc_ts_types::{CowType, Id, ModuleId, ModuleTypeData};
+use stc_ts_types::{CowType, Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, FileName, Span, SyntaxContext, TypeEq, DUMMY_SP};
@@ -119,7 +119,7 @@ impl CowTypeStore for Single<'_> {
                 self.info
                     .exports
                     .private_vars
-                    .insert(id, CowType::new_union(DUMMY_SP, vec![prev_ty, ty]).freezed());
+                    .insert(id, Type::Owned(box Type::new_union(DUMMY_SP, vec![prev_ty, ty])).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -154,7 +154,7 @@ impl CowTypeStore for Single<'_> {
             .exports
             .private_types
             .get(&id)
-            .map(|types| CowType::new_intersection(DUMMY_SP, types.iter().cloned()).freezed());
+            .map(|types| Type::new_intersection(DUMMY_SP, types.iter().cloned()).freezed());
 
         match ty {
             Some(ty) => Some(ty),
@@ -269,8 +269,7 @@ impl CowTypeStore for Group<'_> {
         match map.private_vars.entry(id) {
             Entry::Occupied(e) => {
                 let (id, prev_ty) = e.remove_entry();
-                map.private_vars
-                    .insert(id, CowType::new_union(DUMMY_SP, vec![prev_ty, ty]).freezed());
+                map.private_vars.insert(id, Type::new_union(DUMMY_SP, vec![prev_ty, ty]).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -307,7 +306,7 @@ impl CowTypeStore for Group<'_> {
             .get(&ctxt)?
             .private_types
             .get(&id)
-            .map(|types| CowType::new_intersection(DUMMY_SP, types.iter().cloned()));
+            .map(|types| Type::new_intersection(DUMMY_SP, types.iter().cloned()));
         match ty {
             Some(ty) => Some(ty),
             None => self.parent?.get_local_type(ctxt, id),
@@ -424,7 +423,7 @@ impl CowTypeStore for Builtin {
         match self.vars.entry(id.sym().clone()) {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
-                self.vars.insert(id, CowType::new_intersection(DUMMY_SP, vec![prev_ty, ty]));
+                self.vars.insert(id, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);
@@ -438,7 +437,7 @@ impl CowTypeStore for Builtin {
 
     fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<CowType> {
         let types = self.types.get(id.sym()).cloned()?;
-        Some(CowType::new_intersection(DUMMY_SP, types))
+        Some(Type::new_intersection(DUMMY_SP, types))
     }
 
     fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<CowType> {

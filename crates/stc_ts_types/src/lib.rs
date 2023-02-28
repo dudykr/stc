@@ -77,8 +77,8 @@ pub enum IdCtx {
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ModuleTypeData {
-    pub private_vars: FxHashMap<Id, Type>,
-    pub vars: FxHashMap<JsWord, Type>,
+    pub private_vars: FxHashMap<Id, CowType>,
+    pub vars: FxHashMap<JsWord, CowType>,
 
     pub private_types: FxHashMap<Id, Vec<CowType>>,
     pub types: FxHashMap<JsWord, Vec<CowType>>,
@@ -3216,3 +3216,4 @@ impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(Key);
 impl_freeze!(Mapped);
+impl_freeze!(CowType);
