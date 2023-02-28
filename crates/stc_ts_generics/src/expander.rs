@@ -6,9 +6,9 @@ use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
-    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
-    InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
-    TypeElement, TypeLit, TypeParam,
+    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, CowType, Function, Id, IndexSignature,
+    IndexedAccessType, InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator,
+    PropertySignature, Ref, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use stc_visit::visit_cache;
@@ -175,7 +175,7 @@ impl GenericExpander<'_> {
                                                         prop_ty: &p
                                                             .type_ann
                                                             .clone()
-                                                            .unwrap_or_else(|| box Type::any(p.span, Default::default())),
+                                                            .unwrap_or_else(|| Type::any(p.span, Default::default()).into()),
                                                     }),
                                                     ..p.clone()
                                                 })),
@@ -196,7 +196,7 @@ impl GenericExpander<'_> {
                                                             ret_ty: method
                                                                 .ret_ty
                                                                 .clone()
-                                                                .unwrap_or_else(|| box Type::any(method.span, Default::default())),
+                                                                .unwrap_or_else(|| Type::any(method.span, Default::default()).into()),
                                                             metadata: Default::default(),
                                                             tracker: Default::default(),
                                                         }),
@@ -239,8 +239,8 @@ impl GenericExpander<'_> {
 
                 m = m.fold_with(self);
 
-                match m.type_param.constraint {
-                    Some(box Type::TypeLit(lit)) => {
+                match m.type_param.constraint.map(CowType::into_owned) {
+                    Some(Type::TypeLit(lit)) => {
                         let ty = m.ty.clone();
 
                         let mut members = lit
@@ -268,7 +268,7 @@ impl GenericExpander<'_> {
                         });
                     }
 
-                    Some(box Type::Operator(Operator {
+                    Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Union(ref u),
                         ..
@@ -635,7 +635,7 @@ struct MappedHandler<'d> {
 
 impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        if let Type::IndexedAccessType(ty) = ty.normalize() {
+        if let Type::IndexedAccessType(ty) = ty {
             if let Type::Param(TypeParam { name: obj_param_name, .. }) = ty.obj_type.normalize() {
                 if let Type::Param(TypeParam {
                     name: index_param_name,
@@ -660,8 +660,6 @@ impl Fold<Type> for MappedHandler<'_> {
             }
         }
 
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
         ty
