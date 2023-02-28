@@ -1612,6 +1612,9 @@ impl Analyzer<'_, '_> {
                                 rhs,
                                 AssignOpts {
                                     allow_unknown_rhs: Some(true),
+                                    report_assign_failure_for_missing_properties: opts
+                                        .report_assign_failure_for_missing_properties
+                                        .or(Some(true)),
                                     ..opts
                                 },
                             )

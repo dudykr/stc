@@ -176,11 +176,15 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
-                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| match r
-                            .normalize()
-                        {
-                            Type::Class(..) => Some(true),
-                            _ => None,
+                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
+                            if l.def.body.iter().any(|m| match m {
+                                ClassMember::Method(..) => true,
+                                _ => false,
+                            }) {
+                                return Some(false);
+                            }
+
+                            Some(true)
                         }),
                         ..opts
                     },
