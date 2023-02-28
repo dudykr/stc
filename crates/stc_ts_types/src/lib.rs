@@ -323,7 +323,7 @@ assert_eq_size!(Type, [u8; 120]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
-        match (self.normalize(), other.normalize()) {
+        match (self, other) {
             (Type::Instance(l), Type::Instance(r)) => l.type_eq(r),
             (Type::StaticThis(l), Type::StaticThis(r)) => l.type_eq(r),
             (Type::This(l), Type::This(r)) => l.type_eq(r),
@@ -1582,14 +1582,14 @@ assert_eq_size!(CowType, [u8; 16]);
 impl TypeEq for CowType {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
-        self.to_type().type_eq(other.to_type())
+        self.normalize().type_eq(other.normalize())
     }
 }
 
 impl EqIgnoreSpan for CowType {
     #[inline]
     fn eq_ignore_span(&self, other: &Self) -> bool {
-        self.to_type().eq_ignore_span(other.to_type())
+        self.normalize().eq_ignore_span(other.normalize())
     }
 }
 
@@ -1598,7 +1598,7 @@ impl Deref for CowType {
 
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
-        self.to_type()
+        self.normalize()
     }
 }
 
@@ -1626,7 +1626,7 @@ impl CowType {
     pub fn normalize(&self) -> &Type {
         match self {
             CowType::Owned(ty) => ty,
-            CowType::Arc(ty) => &ty,
+            CowType::Arc(ty) => &ty.ty,
         }
     }
 
@@ -2437,22 +2437,15 @@ impl Type {
 
 impl Type {
     /// [Type::Arc] and [Type::Instance] are normalized.
-    pub fn normalize_instance<'s, 'c>(&'s self) -> &'c Type
-    where
-        's: 'c,
-    {
-        let ty = self.normalize();
-        match ty {
+    pub fn normalize_instance(&self) -> &Type {
+        match self {
             Type::Instance(ty) => ty.ty.normalize_instance(),
-            _ => ty,
+            _ => self,
         }
     }
 
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
-        Iter {
-            ty: self.normalize(),
-            idx: 0,
-        }
+        Iter { ty: self, idx: 0 }
     }
 }
 
