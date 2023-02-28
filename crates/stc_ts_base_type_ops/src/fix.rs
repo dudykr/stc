@@ -70,7 +70,7 @@ impl VisitMut<Union> for Fixer {
             ty.assert_valid();
         }
 
-        let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
+        let mut new: Vec<CowType> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
             if ty.is_never() {
                 continue;
@@ -81,7 +81,7 @@ impl VisitMut<Union> for Fixer {
             }
 
             if ty.is_union_type() {
-                let u = ty.expect_union_type();
+                let u = ty.into_owned().expect_union_type();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -106,7 +106,7 @@ impl VisitMut<Intersection> for Fixer {
             ty.assert_valid();
         }
 
-        let mut new: Vec<Type> = Vec::with_capacity(ty.types.capacity());
+        let mut new: Vec<CowType> = Vec::with_capacity(ty.types.capacity());
         for ty in ty.types.drain(..) {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
@@ -154,8 +154,8 @@ impl Fixer {
                 }
                 1 => {
                     let mut elem = u.types.drain(..).next().unwrap();
-                    elem.respan(u.span);
-                    *ty = elem;
+                    elem.normalize_mut().respan(u.span);
+                    *ty = elem.into_owned();
                 }
                 _ => {}
             },
@@ -172,8 +172,8 @@ impl Fixer {
                 }
                 1 => {
                     let mut elem = i.types.drain(..).next().unwrap();
-                    elem.respan(i.span);
-                    *ty = elem;
+                    elem.normalize_mut().respan(i.span);
+                    *ty = elem.into_owned();
                 }
                 _ => {}
             },

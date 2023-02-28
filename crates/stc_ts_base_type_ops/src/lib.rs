@@ -79,7 +79,7 @@ pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>,
 pub fn is_str_lit_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(is_str_lit_or_union),
+        Type::Union(Union { ref types, .. }) => types.iter().map(|v| &**v).all(is_str_lit_or_union),
         _ => false,
     }
 }
