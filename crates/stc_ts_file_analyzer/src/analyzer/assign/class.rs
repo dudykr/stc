@@ -177,10 +177,7 @@ impl Analyzer<'_, '_> {
                         allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
                         report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
-                            if l.def.body.iter().any(|m| match m {
-                                ClassMember::Method(..) => true,
-                                _ => false,
-                            }) {
+                            if l.def.body.iter().any(|m| matches!(m, ClassMember::Method(..))) {
                                 return Some(false);
                             }
 
