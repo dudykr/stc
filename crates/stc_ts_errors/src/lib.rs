@@ -1660,7 +1660,7 @@ impl ErrorKind {
             // TS2739: Missing properties with a type name
             // TS2740: Missing properties with type names
             // TS2741: Missing properties with comparison-like error message
-            2739 | 2740 | 2741 => 2741,
+            2739 | 2740 | 2741 => 2322,
 
             _ => code,
         }
