@@ -86,7 +86,7 @@ impl ObjectUnionNormalizer {
         let mut return_types = vec![];
 
         for ty in &u.types {
-            if let Type::Function(f) = ty {
+            if let Type::Function(f) = &**ty {
                 if new_type_params.is_none() {
                     new_type_params = f.type_params.clone();
                 }
@@ -99,7 +99,7 @@ impl ObjectUnionNormalizer {
                     new_params[idx].push(param);
                 }
 
-                return_types.push(*f.ret_ty.clone());
+                return_types.push(f.ret_ty.clone());
             }
         }
 
@@ -121,7 +121,7 @@ impl ObjectUnionNormalizer {
                             pat = Some(param.pat.clone());
                         }
 
-                        types.push(*param.ty.clone());
+                        types.push(param.ty.clone());
                     }
                     types.dedup_type();
 
@@ -174,7 +174,7 @@ impl ObjectUnionNormalizer {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            if let Type::TypeLit(ty) = ty {
+            if let Type::TypeLit(ty) = &**ty {
                 inexact |= ty.metadata.inexact;
                 prev_specified |= ty.metadata.specified;
 
@@ -221,7 +221,7 @@ impl ObjectUnionNormalizer {
                                 new_params[idx].push(param);
                             }
 
-                            new_return_types.entry(i).or_default().extend(ret_ty.clone().map(|v| *v));
+                            new_return_types.entry(i).or_default().extend(ret_ty.clone());
                         }
                         _ => {
                             if extra_members.len() <= type_idx {
@@ -313,6 +313,7 @@ impl ObjectUnionNormalizer {
                 new_lit
             })
             .map(Type::TypeLit)
+            .map(CowType::from)
             .collect();
 
         u.types = new_types;

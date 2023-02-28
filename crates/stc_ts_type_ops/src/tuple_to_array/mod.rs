@@ -23,7 +23,7 @@ impl Fold<Type> for TupleToArray {
                         continue;
                     }
 
-                    types.push(*element.ty);
+                    types.push(element.ty);
                 }
 
                 let elem_type = Type::new_union(span, types).into();
