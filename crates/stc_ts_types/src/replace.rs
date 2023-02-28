@@ -1,7 +1,7 @@
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use rustc_hash::FxHashMap;
 
-use crate::Type;
+use crate::{CowType, Type};
 
 /// Replaces all types which matches `matcher` with `replacer`.
 ///
@@ -61,7 +61,6 @@ where
             }
         }
 
-        ty.normalize_mut();
         ty.visit_mut_children_with(self);
     }
 }

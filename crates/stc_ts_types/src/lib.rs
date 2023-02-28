@@ -15,7 +15,7 @@ use std::{
     fmt,
     fmt::{Debug, Formatter},
     iter::FusedIterator,
-    mem::replace,
+    mem::{replace, take},
     ops::{AddAssign, Deref},
 };
 
@@ -1570,7 +1570,7 @@ pub struct TypeOrSpread {
 
 /// A reference to a type.
 
-#[derive(Debug, Clone, PartialEq, Spanned, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, Serialize, Deserialize)]
 pub enum CowType {
     Owned(Box<Type>),
     Arc(ArcType),
@@ -1638,6 +1638,38 @@ impl CowType {
             CowType::Owned(ty) => ty,
             CowType::Arc(ty) => Arc::make_mut(&mut ty.ty),
         }
+    }
+}
+
+impl Visitable for CowType {}
+
+impl<V> VisitWith<V> for CowType
+where
+    V: ?Sized,
+{
+    #[inline]
+    fn visit_children_with(&self, visitor: &mut V) {
+        self.normalize().visit_with(visitor);
+    }
+}
+
+impl<V> VisitMutWith<V> for CowType
+where
+    V: ?Sized,
+{
+    #[inline]
+    fn visit_mut_children_with(&mut self, v: &mut V) {
+        self.normalize_mut().visit_mut_with(v);
+    }
+}
+
+impl<V> FoldWith<V> for CowType
+where
+    V: ?Sized,
+{
+    #[inline]
+    fn fold_children_with(self, v: &mut V) -> Self {
+        Self::Owned(box self.into_owned().fold_with(v))
     }
 }
 
@@ -2842,35 +2874,28 @@ impl Type {
 //    }
 //}
 
-impl VisitMut<Type> for Freezer {
-    fn visit_mut(&mut self, ty: &mut Type) {
+impl VisitMut<CowType> for Freezer {
+    fn visit_mut(&mut self, ty: &mut CowType) {
         if ty.is_clone_cheap() {
             return;
         }
 
         ty.assert_valid();
 
-        ty.visit_mut_children_with(self);
+        match ty {
+            CowType::Owned(owned) => {
+                owned.visit_mut_children_with(self);
 
-        let new_ty = replace(
-            ty,
-            Type::Keyword(KeywordType {
-                span: DUMMY_SP,
-                kind: TsKeywordTypeKind::TsAnyKeyword,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
-        );
-
-        *ty = Type::Arc(ArcType { ty: Arc::new(new_ty) })
+                *ty = CowType::Arc(ArcType { ty: owned.take() })
+            }
+            CowType::Arc(_) => return,
+        }
     }
 }
 
 impl Type {
     pub fn as_bool(&self) -> Value<bool> {
         match self {
-            Type::Arc(ref ty) => ty.ty.as_bool(),
-
             Type::Class(_) | Type::TypeLit(_) => Known(true),
 
             Type::Lit(ty) => Known(match &ty.lit {
@@ -3060,15 +3085,9 @@ pub struct ValidityChecker {
     valid: bool,
 }
 
-impl Visit<Type> for ValidityChecker {
-    fn visit(&mut self, ty: &Type) {
-        // Freezed types are valid.
-        if matches!(ty, Type::Arc(..)) {
-            return;
-        }
-
-        ty.visit_children_with(self);
-    }
+/// Freezed types are valid.
+impl Visit<ArcType> for ValidityChecker {
+    fn visit(&mut self, ty: &ArcType) {}
 }
 
 impl Visit<Union> for ValidityChecker {
