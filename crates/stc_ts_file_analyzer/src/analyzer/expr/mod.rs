@@ -4651,7 +4651,7 @@ impl Analyzer<'_, '_> {
             let mut cur_str = String::new();
 
             for ty in types {
-                if let Type::Lit(LitType { lit: RTsLit::Str(v), .. }) = ty {
+                if let Type::Lit(LitType { lit: RTsLit::Str(v), .. }) = &*ty {
                     cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
                     cur_str.push_str(&v.value);
                     continue;
@@ -4691,7 +4691,8 @@ impl Analyzer<'_, '_> {
                     common: CommonTypeMetadata { ..Default::default() },
                 },
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
 
         Ok(Type::Tpl(TplType {
@@ -4702,7 +4703,8 @@ impl Analyzer<'_, '_> {
                 common: CommonTypeMetadata { ..Default::default() },
             },
             tracker: Default::default(),
-        }))
+        })
+        .into())
     }
 }
 
