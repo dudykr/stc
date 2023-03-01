@@ -4,7 +4,7 @@ use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
+    ArcCowType, Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
     Union,
 };
@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
         ty.visit_mut_with(&mut PreventComplexSimplification);
     }
 
-    pub(super) fn simplify(&self, ty: Type) -> Type {
+    pub(super) fn simplify(&self, ty: ArcCowType) -> ArcCowType {
         let _tracing = dev_span!("simplify");
 
         info!("Simplifying {}", dump_type_as_string(&ty));

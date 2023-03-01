@@ -2797,7 +2797,7 @@ impl Analyzer<'_, '_> {
                 new_arg_types = vec![];
                 for arg in &new_args {
                     if arg.spread.is_some() {
-                        match arg.ty {
+                        match &*arg.ty {
                             Type::Tuple(arg_ty) => {
                                 new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| TypeOrSpread {
                                     span: arg.spread.unwrap(),
@@ -2826,7 +2826,7 @@ impl Analyzer<'_, '_> {
             };
 
             ret_ty.fix();
-            let ret_ty = self.expand(span, ret_ty, Default::default())?;
+            let ret_ty = self.expand(span, ret_ty.into(), Default::default())?;
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
@@ -2862,7 +2862,8 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                                 tracker: Default::default(),
-                            }),
+                            })
+                            .into(),
                         );
                     }
                 }
@@ -2876,7 +2877,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         metadata: KeywordTypeMetadata { ..Default::default() },
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                 );
             }
 
@@ -2887,8 +2889,8 @@ impl Analyzer<'_, '_> {
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
             if ty.is_conditional() {
-                if let Ok(new) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
-                    ty = new.into_owned();
+                if let Ok(new) = self.normalize(Some(span), &ty, Default::default()) {
+                    ty = new;
                 }
             }
 
