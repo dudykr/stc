@@ -558,7 +558,7 @@ impl Analyzer<'_, '_> {
         fn should_delegate(ty: &Type) -> bool {
             match ty {
                 Type::Instance(..) => true,
-                Type::IndexedAccessType(t) => matches!(t.index_type, Type::Lit(..)),
+                Type::IndexedAccessType(t) => matches!(&*t.index_type, Type::Lit(..)),
                 _ => false,
             }
         }
@@ -1822,7 +1822,7 @@ impl Analyzer<'_, '_> {
                             Cow::Owned(
                                 Type::Array(Array {
                                     span: arg.span,
-                                    elem_type: box new_ty.unwrap_or_else(|| {
+                                    elem_type: new_ty.unwrap_or_else(|| {
                                         Type::any(
                                             arg.span,
                                             KeywordTypeMetadata {
@@ -1830,6 +1830,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )
+                                        .into()
                                     }),
                                     metadata: arg.metadata,
                                     tracker: Default::default(),
@@ -1961,8 +1962,8 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        match &tp.constraint {
-                            Some(box Type::Union(ty))
+                        match tp.constraint.as_deref() {
+                            Some(Type::Union(ty))
                                 if ty.types.iter().all(|ty| {
                                     matches!(
                                         ty,
@@ -1975,7 +1976,7 @@ impl Analyzer<'_, '_> {
                             {
                                 ty.types
                                     .iter()
-                                    .map(|ty| match ty {
+                                    .map(|ty| match ty.normalize() {
                                         Type::Operator(Operator {
                                             ty: box Type::Param(p), ..
                                         }) => p.name.clone(),
