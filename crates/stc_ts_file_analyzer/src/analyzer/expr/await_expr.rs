@@ -45,7 +45,7 @@ impl Analyzer<'_, '_> {
                     type_name: RTsEntityName::Ident(RIdent::new("PromiseLike".into(), span)),
                     type_args: Some(box TypeParamInstantiation {
                         span,
-                        params: vec![item.clone()],
+                        params: vec![item.clone().into()],
                     }),
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -114,6 +114,6 @@ impl Analyzer<'_, '_> {
 
                 None
             })
-            .unwrap_or(ty))
+            .unwrap_or_else(|| ty.clone().into_cow()))
     }
 }

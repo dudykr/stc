@@ -754,7 +754,7 @@ impl Analyzer<'_, '_> {
         let ty_str = dump_type_as_string(&ty);
 
         if try_next_value {
-            if let Ok(ty) = self.get_next_value_type_of_iterator(span, Cow::Borrowed(&ty)) {
+            if let Ok(ty) = self.get_next_value_type_of_iterator(span, &ty) {
                 return Ok(ty);
             }
         }
@@ -844,6 +844,8 @@ impl Analyzer<'_, '_> {
 
     /// Returns the type of `iterator.next().value`.
     fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: &Type) -> VResult<ArcCowType> {
+        let iterator = iterator.clone().into_freezed();
+
         let next_ret_ty = self
             .call_property(
                 span,
@@ -872,7 +874,7 @@ impl Analyzer<'_, '_> {
             .context("tried calling `next()` to get element type of iterator")?;
 
         let elem_ty = self
-            .get_value_type_from_iterator_result(span, next_ret_ty)
+            .get_value_type_from_iterator_result(span, &next_ret_ty)
             .context("tried to get type from `IteratorResult<T>`")?;
 
         Ok(elem_ty)
