@@ -770,37 +770,35 @@ impl Analyzer<'_, '_> {
         iterator.freeze();
 
         if iterator.is_str() {
-            return Ok(Cow::Owned(Type::Keyword(KeywordType {
+            return Ok(Type::Keyword(KeywordType {
                 span: iterator.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })));
+            }));
         }
 
         match &*iterator {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {
-                    return Ok(Cow::Owned(Type::any(
+                    return Ok(Type::any(
                         tuple.span,
                         KeywordTypeMetadata {
                             common: tuple.metadata.common,
                         },
-                    )));
+                    ));
                 }
                 let types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
-                return Ok(Cow::Owned(
-                    Type::Union(Union {
-                        span: tuple.span,
-                        types,
-                        metadata: UnionMetadata {
-                            common: tuple.metadata.common,
-                        },
-                        tracker: Default::default(),
-                    })
-                    .fixed(),
-                ));
+                return Ok(Type::Union(Union {
+                    span: tuple.span,
+                    types,
+                    metadata: UnionMetadata {
+                        common: tuple.metadata.common,
+                    },
+                    tracker: Default::default(),
+                })
+                .fixed());
             }
             Type::Union(u) => {
                 let types = u
@@ -838,12 +836,12 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
 
-                return Ok(Cow::Owned(Type::Intersection(Intersection {
+                return Ok(Type::Intersection(Intersection {
                     span: i.span,
                     types,
                     metadata: i.metadata,
                     tracker: Default::default(),
-                })));
+                }));
             }
 
             _ => {}
@@ -851,7 +849,7 @@ impl Analyzer<'_, '_> {
 
         let elem_ty = self.get_next_value_type_of_iterator(span, iterator)?;
 
-        Ok(Cow::Owned(elem_ty))
+        Ok(elem_ty)
     }
 
     /// Returns the type of `iterator.next().value`.
