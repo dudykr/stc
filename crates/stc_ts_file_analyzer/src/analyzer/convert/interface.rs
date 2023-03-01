@@ -24,7 +24,7 @@ impl Analyzer<'_, '_> {
         for p in parent.iter() {
             let res: VResult<()> = try {
                 let parent = self.type_of_ts_entity_name(span, &p.expr, p.type_args.as_deref())?;
-                let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
+                let parent = self.normalize(None, &parent, Default::default())?.freezed();
 
                 if matches!(
                     &*parent,

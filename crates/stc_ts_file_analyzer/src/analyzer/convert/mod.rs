@@ -1137,7 +1137,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let mut prev_keys: Vec<Cow<_>> = vec![];
+        let mut prev_keys: Vec<_> = vec![];
 
         for elem in elems {
             if let TypeElement::Property(PropertySignature {

@@ -554,7 +554,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new.push(ty.clone());
+            new.push(ty.clone().into_cow());
         }
         if new.is_empty() {
             // All types can be merged
@@ -1322,7 +1322,8 @@ impl Analyzer<'_, '_> {
                             common: src.metadata(),
                             ..Default::default()
                         },
-                    ))
+                    )
+                    .into())
                 }
                 _ => {}
             },

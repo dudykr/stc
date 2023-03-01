@@ -69,7 +69,8 @@ impl Analyzer<'_, '_> {
                 let mut type_lit = Type::TypeLit(TypeLit {
                     members: Default::default(),
                     ..*ty
-                });
+                })
+                .into_cow();
 
                 for el in &ty.members {
                     self.append_type_element_to_type(span, &mut type_lit, el)

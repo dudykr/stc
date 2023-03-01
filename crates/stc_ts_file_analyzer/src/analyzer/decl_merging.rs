@@ -86,10 +86,13 @@ impl Analyzer<'_, '_> {
                         new_members.extend(self.type_element_to_class_member(el)?);
                     }
 
-                    return Ok(Some(Type::ClassDef(ClassDef {
-                        body: new_members,
-                        ..a.clone()
-                    })));
+                    return Ok(Some(
+                        Type::ClassDef(ClassDef {
+                            body: new_members,
+                            ..a.clone()
+                        })
+                        .into(),
+                    ));
                 }
             }
 
