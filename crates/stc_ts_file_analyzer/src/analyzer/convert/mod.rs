@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
-    type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
+    type_id::SymbolId, Accessor, Alias, AliasMetadata, ArcCowType, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
     ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
     IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
     Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem, TplType,
@@ -168,7 +168,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<Type> {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<ArcCowType> {
         let ctx = Ctx {
             in_actual_type: true,
             ..self.ctx
@@ -1034,7 +1034,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
+    fn validate(&mut self, ty: &RTsType) -> VResult<ArcCowType> {
         let is_topmost_type = !self.ctx.is_not_topmost_type;
         let ctx = Ctx {
             is_not_topmost_type: true,
