@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{CowType, Id, Type};
+use stc_ts_types::{ArcCowType, Id, Type};
 use stc_utils::{cache::Freeze, dev_span};
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
@@ -18,12 +18,12 @@ mod marks;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BuiltIn {
-    vars: FxHashMap<JsWord, CowType>,
-    types: FxHashMap<JsWord, CowType>,
+    vars: FxHashMap<JsWord, ArcCowType>,
+    types: FxHashMap<JsWord, ArcCowType>,
 }
 
 impl BuiltIn {
-    pub fn new(vars: FxHashMap<JsWord, CowType>, types: FxHashMap<JsWord, CowType>) -> Self {
+    pub fn new(vars: FxHashMap<JsWord, ArcCowType>, types: FxHashMap<JsWord, ArcCowType>) -> Self {
         BuiltIn { vars, types }
     }
 }
@@ -36,8 +36,8 @@ pub struct Env {
     target: EsVersion,
     module: ModuleConfig,
     builtin: Arc<BuiltIn>,
-    global_types: Arc<Mutex<FxHashMap<JsWord, CowType>>>,
-    global_vars: Arc<Mutex<FxHashMap<JsWord, CowType>>>,
+    global_types: Arc<Mutex<FxHashMap<JsWord, ArcCowType>>>,
+    global_vars: Arc<Mutex<FxHashMap<JsWord, ArcCowType>>>,
 }
 
 impl Env {
@@ -69,7 +69,7 @@ impl Env {
         self.rule
     }
 
-    pub fn declare_global_var(&mut self, name: JsWord, ty: CowType) {
+    pub fn declare_global_var(&mut self, name: JsWord, ty: ArcCowType) {
         ty.assert_clone_cheap();
 
         let _res = self.global_vars.lock().insert(name, ty);
@@ -77,14 +77,14 @@ impl Env {
         // name);
     }
 
-    pub fn declare_global_type(&mut self, name: JsWord, ty: CowType) {
+    pub fn declare_global_type(&mut self, name: JsWord, ty: ArcCowType) {
         ty.assert_clone_cheap();
 
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types.lock().insert(
                     name,
-                    CowType::from(Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]).fixed()).freezed(),
+                    ArcCowType::from(Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]).fixed()).freezed(),
                 );
             }
             Err(_) => {
@@ -93,7 +93,7 @@ impl Env {
         }
     }
 
-    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<CowType, Error> {
+    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<ArcCowType, Error> {
         let _tracing = dev_span!("get_global_var");
 
         if let Some(ty) = self.global_vars.lock().get(name) {
@@ -113,7 +113,7 @@ impl Env {
         .into())
     }
 
-    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<CowType, Error> {
+    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<ArcCowType, Error> {
         let _tracing = dev_span!("get_global_type");
 
         if let Some(ty) = self.global_types.lock().get(name) {

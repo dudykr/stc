@@ -1,5 +1,7 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{Array, Conditional, CowType, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid};
+use stc_ts_types::{
+    ArcCowType, Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
+};
 use swc_common::TypeEq;
 
 pub trait Fix: Sized {
@@ -70,7 +72,7 @@ impl VisitMut<Union> for Fixer {
             ty.assert_valid();
         }
 
-        let mut new: Vec<CowType> = Vec::with_capacity(u.types.capacity());
+        let mut new: Vec<ArcCowType> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
             if ty.is_never() {
                 continue;
@@ -106,7 +108,7 @@ impl VisitMut<Intersection> for Fixer {
             ty.assert_valid();
         }
 
-        let mut new: Vec<CowType> = Vec::with_capacity(ty.types.capacity());
+        let mut new: Vec<ArcCowType> = Vec::with_capacity(ty.types.capacity());
         for ty in ty.types.drain(..) {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
@@ -188,13 +190,13 @@ impl VisitMut<Type> for Fixer {
     }
 }
 
-impl VisitMut<CowType> for Fixer {
-    fn visit_mut(&mut self, ty: &mut CowType) {
+impl VisitMut<ArcCowType> for Fixer {
+    fn visit_mut(&mut self, ty: &mut ArcCowType) {
         match ty {
-            CowType::Owned(ty) => {
+            ArcCowType::Owned(ty) => {
                 ty.visit_mut_with(self);
             }
-            CowType::Arc(_) => {
+            ArcCowType::Arc(_) => {
                 // Freezed types are valid.
             }
         }

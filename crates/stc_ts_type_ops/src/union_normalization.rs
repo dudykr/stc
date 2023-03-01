@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::{
-    CallSignature, CowType, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement, TypeLit,
+    ArcCowType, CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement, TypeLit,
     TypeLitMetadata, TypeParamDecl, Union,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
@@ -23,7 +23,7 @@ impl ObjectUnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[CowType]) -> IndexSet<Vec<JsWord>> {
+    fn find_keys(&self, types: &[ArcCowType]) -> IndexSet<Vec<JsWord>> {
         types.iter().flat_map(|t| self.find_keys_of_type(t)).collect()
     }
 
@@ -313,14 +313,14 @@ impl ObjectUnionNormalizer {
                 new_lit
             })
             .map(Type::TypeLit)
-            .map(CowType::from)
+            .map(ArcCowType::from)
             .collect();
 
         u.types = new_types;
     }
 
     /// - `types`: Types of a union.
-    fn normalize_keys(&self, types: &mut Vec<CowType>) {
+    fn normalize_keys(&self, types: &mut Vec<ArcCowType>) {
         fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
             if let Some(ty) = ty.as_union_type_mut() {
                 for ty in &mut ty.types {
@@ -416,7 +416,7 @@ impl ObjectUnionNormalizer {
                         };
 
                         if let TypeElement::Property(prop) = &mut ty.members[idx] {
-                            if let Some(ty) = prop.type_ann.as_mut().map(CowType::normalize_mut) {
+                            if let Some(ty) = prop.type_ann.as_mut().map(ArcCowType::normalize_mut) {
                                 insert_property_to(ty, &keys[1..], inexact)
                             }
                         }

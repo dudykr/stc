@@ -15,11 +15,11 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::normalize_tuples, Fix};
 use stc_ts_types::{
-    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
-    ConstructorSignature, CowType, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata,
-    Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator,
-    PropertySignature, QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    name::Name, Accessor, ArcCowType, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
+    ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, IndexSignature, IndexedAccessType, Instance, InstanceMetadata, Intersection,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature,
+    QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
+    TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -902,7 +902,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[CowType], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+    pub(crate) fn normalize_intersection_types(
+        &mut self,
+        span: Span,
+        types: &[ArcCowType],
+        opts: NormalizeTypeOpts,
+    ) -> VResult<Option<Type>> {
         macro_rules! never {
             () => {{
                 Ok(Some(Type::Keyword(KeywordType {

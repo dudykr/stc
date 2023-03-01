@@ -5,7 +5,7 @@ use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, ErrorKind, Errors};
-use stc_ts_types::{CowType, Id, ModuleId, ModuleTypeData, Type};
+use stc_ts_types::{ArcCowType, Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, FileName, Span, SyntaxContext, TypeEq, DUMMY_SP};
@@ -27,17 +27,17 @@ pub trait ErrorStore {
 
 #[auto_impl(&mut, Box)]
 pub trait CowTypeStore: Send + Sync {
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<CowType>;
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<CowType>;
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<ArcCowType>;
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<ArcCowType>;
 
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: CowType, should_override: bool);
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: CowType);
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType, should_override: bool);
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType);
 
     fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
     fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: CowType);
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: CowType);
+    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: ArcCowType);
+    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: ArcCowType);
 
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData;
 }
@@ -91,7 +91,7 @@ impl ErrorStore for Single<'_> {
 }
 
 impl CowTypeStore for Single<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: CowType, should_override: bool) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType, should_override: bool) {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
@@ -105,7 +105,7 @@ impl CowTypeStore for Single<'_> {
         }
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: CowType) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType) {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
@@ -119,7 +119,7 @@ impl CowTypeStore for Single<'_> {
                 self.info
                     .exports
                     .private_vars
-                    .insert(id, CowType::Owned(box Type::new_union(DUMMY_SP, vec![prev_ty, ty])).freezed());
+                    .insert(id, ArcCowType::Owned(box Type::new_union(DUMMY_SP, vec![prev_ty, ty])).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -147,14 +147,14 @@ impl CowTypeStore for Single<'_> {
         }
     }
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<CowType> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<ArcCowType> {
         debug_assert_eq!(ctxt, self.id);
         let ty = self
             .info
             .exports
             .private_types
             .get(&id)
-            .map(|types| CowType::from(Type::new_intersection(DUMMY_SP, types.iter().cloned())).freezed());
+            .map(|types| ArcCowType::from(Type::new_intersection(DUMMY_SP, types.iter().cloned())).freezed());
 
         match ty {
             Some(ty) => Some(ty),
@@ -162,7 +162,7 @@ impl CowTypeStore for Single<'_> {
         }
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<CowType> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<ArcCowType> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&id) {
@@ -176,13 +176,13 @@ impl CowTypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: CowType) {
+    fn reexport_type(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: ArcCowType) {
         ty.assert_clone_cheap();
 
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: CowType) {
+    fn reexport_var(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: ArcCowType) {
         ty.assert_clone_cheap();
 
         // TODO(kdy1): error reporting for duplicate
@@ -251,7 +251,7 @@ impl ErrorStore for Group<'_> {
 }
 
 impl CowTypeStore for Group<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: CowType, should_override: bool) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType, should_override: bool) {
         if should_override {
             if self.info.entry(ctxt).or_default().types.contains_key(id.sym()) {
                 self.info.entry(ctxt).or_default().types.insert(id.sym().clone(), vec![ty.clone()]);
@@ -263,14 +263,14 @@ impl CowTypeStore for Group<'_> {
         }
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: CowType) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType) {
         let map = self.info.entry(ctxt).or_default();
 
         match map.private_vars.entry(id) {
             Entry::Occupied(e) => {
                 let (id, prev_ty) = e.remove_entry();
                 map.private_vars
-                    .insert(id, CowType::from(Type::new_union(DUMMY_SP, vec![prev_ty, ty])).freezed());
+                    .insert(id, ArcCowType::from(Type::new_union(DUMMY_SP, vec![prev_ty, ty])).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -301,13 +301,13 @@ impl CowTypeStore for Group<'_> {
         }
     }
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<CowType> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<ArcCowType> {
         let ty = self
             .info
             .get(&ctxt)?
             .private_types
             .get(&id)
-            .map(|types| CowType::from(Type::new_intersection(DUMMY_SP, types.iter().cloned())).freezed());
+            .map(|types| ArcCowType::from(Type::new_intersection(DUMMY_SP, types.iter().cloned())).freezed());
 
         match ty {
             Some(ty) => Some(ty),
@@ -315,7 +315,7 @@ impl CowTypeStore for Group<'_> {
         }
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<CowType> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<ArcCowType> {
         match self.info.get(&ctxt)?.private_vars.get(&id).cloned() {
             Some(ty) => Some(ty),
             None => self.parent?.get_local_var(ctxt, id),
@@ -326,11 +326,11 @@ impl CowTypeStore for Group<'_> {
         self.info.remove(&ctxt).unwrap_or_default()
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: CowType) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: ArcCowType) {
         self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: CowType) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: ArcCowType) {
         // TODO(kdy1): Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
@@ -390,8 +390,8 @@ impl Mode for Group<'_> {
 
 #[derive(Debug, Default)]
 pub struct Builtin {
-    pub vars: FxHashMap<JsWord, CowType>,
-    pub types: FxHashMap<JsWord, Vec<CowType>>,
+    pub vars: FxHashMap<JsWord, ArcCowType>,
+    pub types: FxHashMap<JsWord, Vec<ArcCowType>>,
 }
 
 impl ErrorStore for Builtin {
@@ -412,21 +412,21 @@ impl ErrorStore for Builtin {
 }
 
 impl CowTypeStore for Builtin {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: CowType, should_override: bool) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType, should_override: bool) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
         debug_assert!(!should_override);
 
         self.types.entry(id.sym().clone()).or_default().push(ty);
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: CowType) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: ArcCowType) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
 
         match self.vars.entry(id.sym().clone()) {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
                 self.vars
-                    .insert(id, CowType::from(Type::new_intersection(DUMMY_SP, vec![prev_ty, ty])));
+                    .insert(id, ArcCowType::from(Type::new_intersection(DUMMY_SP, vec![prev_ty, ty])));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);
@@ -438,12 +438,12 @@ impl CowTypeStore for Builtin {
 
     fn export_type(&mut self, _: Span, _: ModuleId, _: Id, _: Id) {}
 
-    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<CowType> {
+    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<ArcCowType> {
         let types = self.types.get(id.sym()).cloned()?;
-        Some(CowType::from(Type::new_intersection(DUMMY_SP, types)))
+        Some(ArcCowType::from(Type::new_intersection(DUMMY_SP, types)))
     }
 
-    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<CowType> {
+    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<ArcCowType> {
         self.vars.get(id.sym()).cloned()
     }
 
@@ -451,9 +451,9 @@ impl CowTypeStore for Builtin {
         unimplemented!("builtin.take_info")
     }
 
-    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: CowType) {}
+    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: ArcCowType) {}
 
-    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: CowType) {}
+    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: ArcCowType) {}
 }
 
 impl Mode for Builtin {

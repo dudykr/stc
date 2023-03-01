@@ -12,7 +12,7 @@ use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
 use crate::{
-    Alias, Array, ClassDef, Conditional, CowType, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType, InferType,
+    Alias, ArcCowType, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType, InferType,
     Interface, Intersection, Key, KeywordType, LitType, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType, StaticThis,
     StringMapping, Symbol, ThisType, TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
     TypeParamInstantiation, Union,
@@ -24,20 +24,20 @@ impl From<Box<Type>> for RTsType {
     }
 }
 
-impl From<CowType> for RTsType {
-    fn from(ty: CowType) -> Self {
+impl From<ArcCowType> for RTsType {
+    fn from(ty: ArcCowType) -> Self {
         ty.into_owned().into()
     }
 }
 
-impl From<CowType> for RTsTypeAnn {
-    fn from(ty: CowType) -> Self {
+impl From<ArcCowType> for RTsTypeAnn {
+    fn from(ty: ArcCowType) -> Self {
         ty.into_owned().into()
     }
 }
 
-impl From<CowType> for Box<RTsType> {
-    fn from(ty: CowType) -> Self {
+impl From<ArcCowType> for Box<RTsType> {
+    fn from(ty: ArcCowType) -> Self {
         box ty.into_owned().into()
     }
 }

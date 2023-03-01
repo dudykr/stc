@@ -1,4 +1,4 @@
-use stc_ts_types::{replace::replace_type, Array, ArrayMetadata, CowType, Type};
+use stc_ts_types::{replace::replace_type, ArcCowType, Array, ArrayMetadata, Type};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::TypeVecExt;
 use swc_common::Spanned;
@@ -34,7 +34,7 @@ pub fn normalize_tuples(ty: &mut Type) {
                     types.retain(|ty| !ty.is_null_or_undefined())
                 }
 
-                return Some(CowType::Owned(box Type::Array(Array {
+                return Some(ArcCowType::Owned(box Type::Array(Array {
                     span,
                     elem_type: Type::new_union(span, types).into(),
                     metadata: ArrayMetadata {

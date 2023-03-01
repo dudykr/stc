@@ -1,5 +1,5 @@
 use rnode::{Fold, FoldWith};
-use stc_ts_types::{Array, ArrayMetadata, CowType, KeywordType, PropertySignature, Type};
+use stc_ts_types::{ArcCowType, Array, ArrayMetadata, KeywordType, PropertySignature, Type};
 use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -32,7 +32,7 @@ impl Fold<Type> for Widen {
             Type::Tuple(tuple) if self.tuple_to_array => {
                 let span = tuple.span;
 
-                let mut types: Vec<CowType> = vec![];
+                let mut types: Vec<ArcCowType> = vec![];
 
                 for element in tuple.elems {
                     if types.iter().any(|item| item.type_eq(&element.ty)) {

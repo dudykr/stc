@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    CowType, KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
+    ArcCowType, KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
     UnionMetadata,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Use Cow<TupleElement>
     fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> VResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
-            let to_for_clone = CowType::new_freezed(to.clone());
+            let to_for_clone = ArcCowType::new_freezed(to.clone());
             let mut to_types = (0..el_ty.types.len()).map(|_| to_for_clone.clone()).collect_vec();
 
             for (idx, el_ty) in el_ty.types.iter().enumerate() {

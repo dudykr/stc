@@ -77,11 +77,11 @@ pub enum IdCtx {
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ModuleTypeData {
-    pub private_vars: FxHashMap<Id, CowType>,
-    pub vars: FxHashMap<JsWord, CowType>,
+    pub private_vars: FxHashMap<Id, ArcCowType>,
+    pub vars: FxHashMap<JsWord, ArcCowType>,
 
-    pub private_types: FxHashMap<Id, Vec<CowType>>,
-    pub types: FxHashMap<JsWord, Vec<CowType>>,
+    pub private_types: FxHashMap<Id, Vec<ArcCowType>>,
+    pub types: FxHashMap<JsWord, Vec<ArcCowType>>,
 }
 
 impl Visitable for ModuleTypeData {}
@@ -586,7 +586,7 @@ impl PartialEq<str> for Key {
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
-    pub ty: CowType,
+    pub ty: ArcCowType,
 }
 
 impl Debug for ComputedKey {
@@ -622,7 +622,7 @@ assert_eq_size!(ComputedKey, [u8; 40]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Instance {
     pub span: Span,
-    pub ty: CowType,
+    pub ty: ArcCowType,
     pub metadata: InstanceMetadata,
 
     pub tracker: Tracker<"Instance">,
@@ -709,7 +709,7 @@ assert_eq_size!(Symbol, [u8; 48]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct RestType {
     pub span: Span,
-    pub ty: CowType,
+    pub ty: ArcCowType,
     pub metadata: RestTypeMetadata,
 
     pub tracker: Tracker<"RestType">,
@@ -721,7 +721,7 @@ assert_eq_size!(RestType, [u8; 40]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct OptionalType {
     pub span: Span,
-    pub ty: CowType,
+    pub ty: ArcCowType,
     pub metadata: OptionalTypeMetadata,
 
     pub tracker: Tracker<"OptionalType">,
@@ -734,8 +734,8 @@ assert_eq_size!(OptionalType, [u8; 40]);
 pub struct IndexedAccessType {
     pub span: Span,
     pub readonly: bool,
-    pub obj_type: CowType,
-    pub index_type: CowType,
+    pub obj_type: ArcCowType,
+    pub index_type: ArcCowType,
     pub metadata: IndexedAccessTypeMetadata,
 
     pub tracker: Tracker<"IndexedAccessType">,
@@ -901,7 +901,7 @@ pub struct ClassDef {
     pub span: Span,
     pub is_abstract: bool,
     pub name: Option<Id>,
-    pub super_class: Option<CowType>,
+    pub super_class: Option<ArcCowType>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
@@ -947,14 +947,14 @@ pub struct Method {
     pub is_optional: bool,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: CowType,
+    pub ret_ty: ArcCowType,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassProperty {
     pub span: Span,
     pub key: Key,
-    pub value: Option<CowType>,
+    pub value: Option<ArcCowType>,
     pub is_static: bool,
     #[use_eq]
     pub accessibility: Option<Accessibility>,
@@ -973,9 +973,9 @@ pub struct Mapped {
     pub readonly: Option<TruePlusMinus>,
     #[use_eq]
     pub optional: Option<TruePlusMinus>,
-    pub name_type: Option<CowType>,
+    pub name_type: Option<ArcCowType>,
     pub type_param: Box<TypeParam>,
-    pub ty: Option<CowType>,
+    pub ty: Option<ArcCowType>,
     pub metadata: MappedMetadata,
 
     pub tracker: Tracker<"Mapped">,
@@ -987,10 +987,10 @@ assert_eq_size!(Mapped, [u8; 72]);
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
     pub span: Span,
-    pub check_type: CowType,
-    pub extends_type: CowType,
-    pub true_type: CowType,
-    pub false_type: CowType,
+    pub check_type: ArcCowType,
+    pub extends_type: ArcCowType,
+    pub true_type: ArcCowType,
+    pub false_type: ArcCowType,
     pub metadata: ConditionalMetadata,
 
     pub tracker: Tracker<"Conditional">,
@@ -1015,7 +1015,7 @@ pub struct Operator {
     pub span: Span,
     #[use_eq]
     pub op: TsTypeOperatorOp,
-    pub ty: CowType,
+    pub ty: ArcCowType,
     pub metadata: OperatorMetadata,
 
     pub tracker: Tracker<"Operator">,
@@ -1055,7 +1055,7 @@ pub struct TupleElement {
     pub span: Span,
     #[not_type]
     pub label: Option<RPat>,
-    pub ty: CowType,
+    pub ty: ArcCowType,
 
     pub tracker: Tracker<"TupleElement">,
 }
@@ -1070,7 +1070,7 @@ impl Debug for TupleElement {
 pub struct Alias {
     pub span: Span,
     pub type_params: Option<Box<TypeParamDecl>>,
-    pub ty: CowType,
+    pub ty: ArcCowType,
     pub metadata: AliasMetadata,
 
     pub tracker: Tracker<"Alias">,
@@ -1157,7 +1157,7 @@ pub struct TypeParamInstantiation {
     pub span: Span,
 
     /// TODO(kdy1): Rename to `args`.
-    pub params: Vec<CowType>,
+    pub params: Vec<ArcCowType>,
 }
 
 impl Debug for TypeParamInstantiation {
@@ -1237,7 +1237,7 @@ pub struct CallSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
     pub type_params: Option<TypeParamDecl>,
-    pub ret_ty: Option<CowType>,
+    pub ret_ty: Option<ArcCowType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1247,7 +1247,7 @@ pub struct ConstructorSignature {
     #[use_eq]
     pub accessibility: Option<Accessibility>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Option<CowType>,
+    pub ret_ty: Option<ArcCowType>,
     pub type_params: Option<TypeParamDecl>,
 }
 
@@ -1261,7 +1261,7 @@ pub struct PropertySignature {
     pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
-    pub type_ann: Option<CowType>,
+    pub type_ann: Option<ArcCowType>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
 
@@ -1290,7 +1290,7 @@ pub struct MethodSignature {
     pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
-    pub ret_ty: Option<CowType>,
+    pub ret_ty: Option<ArcCowType>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
 }
@@ -1322,7 +1322,7 @@ pub struct IndexSignature {
     pub span: Span,
 
     pub params: Vec<FnParam>,
-    pub type_ann: Option<CowType>,
+    pub type_ann: Option<ArcCowType>,
 
     pub readonly: bool,
 
@@ -1344,7 +1344,7 @@ impl Take for IndexSignature {
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Array {
     pub span: Span,
-    pub elem_type: CowType,
+    pub elem_type: ArcCowType,
     pub metadata: ArrayMetadata,
 
     pub tracker: Tracker<"Array">,
@@ -1363,7 +1363,7 @@ assert_eq_size!(Array, [u8; 40]);
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Union {
     pub span: Span,
-    pub types: Vec<CowType>,
+    pub types: Vec<ArcCowType>,
     pub metadata: UnionMetadata,
 
     pub tracker: Tracker<"Union">,
@@ -1405,7 +1405,7 @@ pub struct FnParam {
     pub required: bool,
     #[not_type]
     pub pat: RPat,
-    pub ty: CowType,
+    pub ty: ArcCowType,
 }
 
 impl Debug for FnParam {
@@ -1426,7 +1426,7 @@ impl Debug for FnParam {
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Intersection {
     pub span: Span,
-    pub types: Vec<CowType>,
+    pub types: Vec<ArcCowType>,
     pub metadata: IntersectionMetadata,
 
     pub tracker: Tracker<"Intersection">,
@@ -1467,8 +1467,8 @@ impl Intersection {
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
-    pub constraint: Option<CowType>,
-    pub default: Option<CowType>,
+    pub constraint: Option<ArcCowType>,
+    pub default: Option<ArcCowType>,
     pub metadata: TypeParamMetadata,
 
     pub tracker: Tracker<"TypeParam">,
@@ -1502,7 +1502,7 @@ pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: CowType,
+    pub ret_ty: ArcCowType,
     pub metadata: FunctionMetadata,
 
     pub tracker: Tracker<"Function">,
@@ -1541,7 +1541,7 @@ pub struct Constructor {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     /// The return type.
-    pub type_ann: CowType,
+    pub type_ann: ArcCowType,
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
 
@@ -1557,7 +1557,7 @@ pub struct Predicate {
     #[use_eq_ignore_span]
     pub param_name: RTsThisTypeOrIdent,
     pub asserts: bool,
-    pub ty: Option<CowType>,
+    pub ty: Option<ArcCowType>,
     pub metadata: PredicateMetadata,
 
     pub tracker: Tracker<"Predicate">,
@@ -1570,35 +1570,35 @@ assert_eq_size!(Predicate, [u8; 80]);
 pub struct TypeOrSpread {
     pub span: Span,
     pub spread: Option<Span>,
-    pub ty: CowType,
+    pub ty: ArcCowType,
 }
 
 /// A reference to a type.
 
 #[derive(Debug, Clone, PartialEq, Spanned, Serialize, Deserialize)]
-pub enum CowType {
+pub enum ArcCowType {
     Owned(Box<Type>),
     Arc(ArcType),
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(CowType, [u8; 16]);
+assert_eq_size!(ArcCowType, [u8; 16]);
 
-impl TypeEq for CowType {
+impl TypeEq for ArcCowType {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
         self.normalize().type_eq(other.normalize())
     }
 }
 
-impl EqIgnoreSpan for CowType {
+impl EqIgnoreSpan for ArcCowType {
     #[inline]
     fn eq_ignore_span(&self, other: &Self) -> bool {
         self.normalize().eq_ignore_span(other.normalize())
     }
 }
 
-impl Deref for CowType {
+impl Deref for ArcCowType {
     type Target = Type;
 
     #[inline(always)]
@@ -1607,18 +1607,18 @@ impl Deref for CowType {
     }
 }
 
-impl CowType {
+impl ArcCowType {
     #[inline]
     pub fn new_freezed(mut ty: Type) -> Self {
         ty.freeze();
-        CowType::Arc(ArcType { ty: Arc::new(ty) })
+        ArcCowType::Arc(ArcType { ty: Arc::new(ty) })
     }
 
     #[inline]
     pub fn into_owned(self) -> Type {
         match self {
-            CowType::Owned(ty) => *ty,
-            CowType::Arc(ty) => match Arc::try_unwrap(ty.ty) {
+            ArcCowType::Owned(ty) => *ty,
+            ArcCowType::Arc(ty) => match Arc::try_unwrap(ty.ty) {
                 Ok(v) => v,
                 Err(arc) => (*arc).clone(),
             },
@@ -1636,8 +1636,8 @@ impl CowType {
     #[inline]
     pub fn normalize(&self) -> &Type {
         match self {
-            CowType::Owned(ty) => ty,
-            CowType::Arc(ty) => &ty.ty,
+            ArcCowType::Owned(ty) => ty,
+            ArcCowType::Arc(ty) => &ty.ty,
         }
     }
 
@@ -1647,23 +1647,23 @@ impl CowType {
     #[instrument(skip_all)]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
-            CowType::Owned(ty) => ty,
-            CowType::Arc(ty) => {
+            ArcCowType::Owned(ty) => ty,
+            ArcCowType::Arc(ty) => {
                 let new = Arc::make_mut(&mut ty.ty);
-                *self = CowType::Owned(box new.take());
+                *self = ArcCowType::Owned(box new.take());
 
                 match self {
-                    CowType::Owned(ty) => ty,
-                    CowType::Arc(_) => unreachable!(),
+                    ArcCowType::Owned(ty) => ty,
+                    ArcCowType::Arc(_) => unreachable!(),
                 }
             }
         }
     }
 }
 
-impl Visitable for CowType {}
+impl Visitable for ArcCowType {}
 
-impl<V> VisitWith<V> for CowType
+impl<V> VisitWith<V> for ArcCowType
 where
     V: ?Sized,
 {
@@ -1673,7 +1673,7 @@ where
     }
 }
 
-impl<V> VisitMutWith<V> for CowType
+impl<V> VisitMutWith<V> for ArcCowType
 where
     V: ?Sized,
 {
@@ -1683,7 +1683,7 @@ where
     }
 }
 
-impl<V> FoldWith<V> for CowType
+impl<V> FoldWith<V> for ArcCowType
 where
     V: ?Sized,
 {
@@ -1693,17 +1693,17 @@ where
     }
 }
 
-impl From<Type> for CowType {
+impl From<Type> for ArcCowType {
     #[inline]
     fn from(ty: Type) -> Self {
-        CowType::Owned(box ty)
+        ArcCowType::Owned(box ty)
     }
 }
 
-impl From<Cow<'_, Type>> for CowType {
+impl From<Cow<'_, Type>> for ArcCowType {
     #[inline]
     fn from(ty: Cow<Type>) -> Self {
-        CowType::Owned(box ty.into_owned())
+        ArcCowType::Owned(box ty.into_owned())
     }
 }
 
@@ -1733,7 +1733,7 @@ impl Type {
 
     pub fn new_intersection<I>(span: Span, iter: I) -> Self
     where
-        I: IntoIterator<Item = CowType>,
+        I: IntoIterator<Item = ArcCowType>,
     {
         let mut tys = vec![];
 
@@ -1775,7 +1775,7 @@ impl Type {
         }
     }
 
-    pub fn new_union_without_dedup(span: Span, types: Vec<CowType>) -> Self {
+    pub fn new_union_without_dedup(span: Span, types: Vec<ArcCowType>) -> Self {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
             1 => types.into_iter().next().unwrap().into_owned(),
@@ -1823,7 +1823,7 @@ impl Type {
         ty
     }
 
-    pub fn new_union<I: IntoIterator<Item = CowType> + Debug>(span: Span, iter: I) -> Self {
+    pub fn new_union<I: IntoIterator<Item = ArcCowType> + Debug>(span: Span, iter: I) -> Self {
         let mut elements = vec![];
 
         for ty in iter {
@@ -1840,13 +1840,13 @@ impl Type {
             if ty.is_union_type() {
                 let types = ty.into_owned().expect_union_type().types;
                 for new in types {
-                    if elements.iter().any(|prev: &CowType| prev.type_eq(&new)) {
+                    if elements.iter().any(|prev: &ArcCowType| prev.type_eq(&new)) {
                         continue;
                     }
                     elements.push(new)
                 }
             } else {
-                if elements.iter().any(|prev: &CowType| prev.type_eq(&ty)) {
+                if elements.iter().any(|prev: &ArcCowType| prev.type_eq(&ty)) {
                     continue;
                 }
                 elements.push(ty)
@@ -2908,8 +2908,8 @@ impl Type {
 //    }
 //}
 
-impl VisitMut<CowType> for Freezer {
-    fn visit_mut(&mut self, ty: &mut CowType) {
+impl VisitMut<ArcCowType> for Freezer {
+    fn visit_mut(&mut self, ty: &mut ArcCowType) {
         if ty.is_clone_cheap() {
             return;
         }
@@ -2917,14 +2917,14 @@ impl VisitMut<CowType> for Freezer {
         ty.assert_valid();
 
         match ty {
-            CowType::Owned(owned) => {
+            ArcCowType::Owned(owned) => {
                 owned.visit_mut_children_with(self);
 
-                *ty = CowType::Arc(ArcType {
+                *ty = ArcCowType::Arc(ArcType {
                     ty: Arc::new(*owned.take()),
                 })
             }
-            CowType::Arc(_) => {}
+            ArcCowType::Arc(_) => {}
         }
     }
 }
@@ -2986,7 +2986,7 @@ pub struct TplType {
     pub span: Span,
 
     pub quasis: Vec<TplElem>,
-    pub types: Vec<CowType>,
+    pub types: Vec<ArcCowType>,
 
     pub metadata: TplTypeMetadata,
 
@@ -3230,4 +3230,4 @@ impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(Key);
 impl_freeze!(Mapped);
-impl_freeze!(CowType);
+impl_freeze!(ArcCowType);

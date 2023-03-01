@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
-    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, CowType, Function, Id, IndexSignature,
+    ArcCowType, Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature,
     IndexedAccessType, InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator,
     PropertySignature, Ref, Type, TypeElement, TypeLit, TypeParam,
 };
@@ -266,7 +266,7 @@ impl GenericExpander<'_> {
                 if let Some(ty) = &mut m.ty {
                     ty.normalize_mut();
                 }
-                m.ty = match m.ty.map(CowType::into_owned) {
+                m.ty = match m.ty.map(ArcCowType::into_owned) {
                     Some(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly,
