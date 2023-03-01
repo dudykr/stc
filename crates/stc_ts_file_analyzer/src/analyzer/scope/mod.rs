@@ -1023,7 +1023,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
+    pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<ArcCowType>> {
         let ty = (|| {
             if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
                 v.assert_clone_cheap();

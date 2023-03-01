@@ -3392,14 +3392,14 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Clarify this.
-    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Type) -> Type {
+    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: ArcCowType) -> ArcCowType {
         if self.scope.is_in_call() {
             return ty;
         }
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        match ty {
+        match &*ty {
             Type::Union(ref union_ty) => {
                 let is_all_fn = union_ty.types.iter().all(|v| matches!(&**v, Type::Function(f)));
                 if is_all_fn {
@@ -3409,7 +3409,8 @@ impl Analyzer<'_, '_> {
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    });
+                    })
+                    .into();
                 }
                 ty
             }
@@ -3605,7 +3606,7 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::NotVariable {
                             span,
                             left: span,
-                            ty: Some(box ty.clone()),
+                            ty: Some(ty.clone().into_owned()),
                         }
                         .into());
                     }
@@ -3657,7 +3658,8 @@ impl Analyzer<'_, '_> {
                 types: modules,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            });
+            })
+            .into();
             ty.fix();
             ty.freeze();
         }
@@ -3684,7 +3686,7 @@ impl Analyzer<'_, '_> {
             let ty = self.find_type(&cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
-                    if let Type::Module(module) = ty {
+                    if let Type::Module(module) = &**ty {
                         //
                         if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
                             return Ok(var_ty);
@@ -3703,7 +3705,8 @@ impl Analyzer<'_, '_> {
                     span,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
         }
 
@@ -3745,11 +3748,11 @@ impl Analyzer<'_, '_> {
                     self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
                 } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
                     self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into());
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
                     self.storage
                         .report(ErrorKind::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span }.into());
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
             }
         }
@@ -3767,9 +3770,9 @@ impl Analyzer<'_, '_> {
                     ),
                     TypeOfMode::RValue => {}
                 }
-                return Ok(Type::undefined(span, Default::default()));
+                return Ok(Type::undefined(span, Default::default()).into());
             }
-            js_word!("void") => return Ok(Type::any(span, Default::default())),
+            js_word!("void") => return Ok(Type::any(span, Default::default()).into()),
             js_word!("eval") => {
                 if let TypeOfMode::LValue = type_mode {
                     return Err(ErrorKind::CannotAssignToFunction { span }.into());
