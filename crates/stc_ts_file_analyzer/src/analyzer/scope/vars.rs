@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
 
                 let mut right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_deref().or(ty.as_ref())))
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_deref().or(ty.as_deref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span, Default::default()).into());
 
@@ -253,7 +253,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
                             .unwrap_or_else(|err| {
                                 self.storage.report(err);
-                                Cow::Owned(Type::any(span, Default::default()))
+                                Cow::Owned(Type::any(span, Default::default()).into())
                             })
                         })
                         .freezed();
@@ -264,7 +264,7 @@ impl Analyzer<'_, '_> {
                                 // Rest element is special.
                                 let type_for_rest_arg = match &ty {
                                     Some(ty) => self
-                                        .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
+                                        .get_rest_elements(Some(span), ty, idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                         .report(&mut self.storage),
                                     None => None,
@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
 
                                 let default = match default {
                                     Some(ty) => self
-                                        .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
+                                        .get_rest_elements(Some(span), &ty, idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
                                         .report(&mut self.storage),
                                     None => None,
