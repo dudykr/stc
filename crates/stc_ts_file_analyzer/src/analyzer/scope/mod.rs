@@ -1160,7 +1160,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
+    fn find_local_type(&self, name: &Id) -> Option<ItemRef<ArcCowType>> {
         let _tracing = dev_span!("find_local_type", name = tracing::field::debug(name));
 
         #[allow(dead_code)]

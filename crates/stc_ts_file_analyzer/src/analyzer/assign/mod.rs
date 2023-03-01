@@ -1175,7 +1175,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = &*t {
+                                if let Type::Enum(en) = &**t {
                                     if en.has_num {
                                         return Ok(());
                                     }
@@ -1203,7 +1203,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = &*t {
+                                if let Type::Enum(en) = &**t {
                                     if en.has_str {
                                         return Ok(());
                                     }
@@ -1272,7 +1272,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = &*t {
+                                if let Type::Enum(en) = &**t {
                                     if let Some(v) = en.members.iter().find(|m| match m.id {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
@@ -1299,7 +1299,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = &*t {
+                                if let Type::Enum(en) = &**t {
                                     if let Some(v) = en.members.iter().find(|m| match m.id {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
@@ -2068,7 +2068,7 @@ impl Analyzer<'_, '_> {
                         }) => {
                             if let Some(types) = self.find_type(enum_name)? {
                                 for ty in types {
-                                    if let Type::Enum(ref e) = *ty {
+                                    if let Type::Enum(ref e) = &**ty {
                                         let condition = e.has_str && !e.has_num;
                                         if condition {
                                             return Ok(());
@@ -2104,7 +2104,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(types) = self.find_type(enum_name)? {
                                 for ty in types {
-                                    if let Type::Enum(ref e) = *ty {
+                                    if let Type::Enum(ref e) = &**ty {
                                         let condition = e.has_num && !e.has_str;
                                         if condition {
                                             return Ok(());
@@ -2698,7 +2698,7 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(EnumVariant { ref enum_name, .. }) => {
                 if let Some(types) = self.find_type(enum_name)? {
                     for ty in types {
-                        if let Type::Enum(ref e) = &*ty {
+                        if let Type::Enum(ref e) = &**ty {
                             match to {
                                 Type::Interface(..) | Type::TypeLit(..) => {}
                                 _ => {

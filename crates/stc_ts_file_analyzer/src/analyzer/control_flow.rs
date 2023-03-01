@@ -971,11 +971,11 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(&i.id.clone().into())? {
                         for ty in types {
-                            if let Type::Module(..) = &*ty {
+                            if let Type::Module(..) = &**ty {
                                 return Err(ErrorKind::NotVariable {
                                     span: i.id.span,
                                     left: lhs.span(),
-                                    ty: Some(ty.clone().into()),
+                                    ty: Some(ty.into_owned()),
                                 }
                                 .into());
                             }
