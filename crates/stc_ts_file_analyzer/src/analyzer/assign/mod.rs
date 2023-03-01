@@ -1458,7 +1458,7 @@ impl Analyzer<'_, '_> {
                     //
                     // See typeArgumentInferenceWithObjectLiteral.ts
 
-                    let rhs = self.expand_enum_variant(rhs.clone())?;
+                    let rhs = self.expand_enum_variant(rhs.into_owned())?;
 
                     return self
                         .assign_inner(data, to, &rhs, opts)
