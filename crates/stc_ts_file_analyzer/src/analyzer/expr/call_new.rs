@@ -2701,7 +2701,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     if let Some(ty) = default_any_ty {
-                        match &ty {
+                        match &*ty {
                             Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -2715,7 +2715,7 @@ impl Analyzer<'_, '_> {
                                 //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                 //     }
                                 // }
-                                let new_ty = *actual.ty.clone();
+                                let new_ty = actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
@@ -2737,9 +2737,9 @@ impl Analyzer<'_, '_> {
 
                         info!("Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
-                        let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
+                        let mut ty = Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
                         self.add_required_type_params(&mut ty);
-                        ty
+                        ty.into()
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
@@ -2747,13 +2747,13 @@ impl Analyzer<'_, '_> {
                         }
 
                         info!("Inferring type of function expr with updated type");
-                        let mut ty = box Type::Function(
+                        let mut ty = Type::Function(
                             fn_expr
                                 .function
                                 .validate_with_args(&mut *self.with_ctx(ctx), fn_expr.ident.as_ref())?,
                         );
                         self.add_required_type_params(&mut ty);
-                        ty
+                        ty.into()
                     }
                     _ => arg_ty.ty.clone(),
                 };
