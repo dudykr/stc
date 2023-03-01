@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         if *p.sym() == *sym {
-                            return Some(value.clone().map(|v| *v).unwrap_or_else(|| {
+                            return Some(value.clone().unwrap_or_else(|| {
                                 Type::any(
                                     span,
                                     KeywordTypeMetadata {
