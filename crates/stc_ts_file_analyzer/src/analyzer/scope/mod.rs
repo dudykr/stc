@@ -571,7 +571,7 @@ impl Scope<'_> {
                         *prev = ty;
                         return;
                     } else if let Some(prev_i) = prev.as_intersection_mut() {
-                        if let Some(index) = prev_i.types.iter().position(|v| matches!(v, Type::Param(..))) {
+                        if let Some(index) = prev_i.types.iter().position(|v| matches!(v.normalize(), Type::Param(..))) {
                             prev_i.types.remove(index);
                         }
 
@@ -608,7 +608,7 @@ impl Scope<'_> {
                     prev.fix();
                     prev.freeze();
                 } else {
-                    let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
+                    let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()).into());
                     *prev = Type::Intersection(Intersection {
                         span: DUMMY_SP,
                         types: vec![prev_ty, ty],

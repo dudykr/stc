@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
 
             {
                 //  Expand return types if no element references a type parameter
-                let can_expand = !values.return_types.iter().any(should_preserve_ref);
+                let can_expand = !values.return_types.iter().any(|ty| should_preserve_ref(ty));
 
                 if can_expand {
                     values.return_types = values
