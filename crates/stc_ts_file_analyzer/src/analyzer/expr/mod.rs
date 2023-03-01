@@ -4504,7 +4504,7 @@ impl Analyzer<'_, '_> {
             Type::Ref(Ref { span, .. }) => {
                 let ty = self.expand(
                     *span,
-                    ty.clone(),
+                    ty.clone().into(),
                     ExpandOpts {
                         full: true,
                         ignore_expand_prevention_for_top: true,
@@ -4608,7 +4608,7 @@ impl Analyzer<'_, '_> {
                     return false;
                 }
                 matches!(
-                    el.params[0].ty,
+                    &*el.params[0].ty,
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
