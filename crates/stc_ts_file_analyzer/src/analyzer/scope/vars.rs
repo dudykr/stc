@@ -916,7 +916,8 @@ impl Analyzer<'_, '_> {
                         members: new_members,
                         metadata: lit.metadata,
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 Type::Union(u) => {
@@ -931,7 +932,8 @@ impl Analyzer<'_, '_> {
                         types,
                         metadata: u.metadata,
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
@@ -950,7 +952,8 @@ impl Analyzer<'_, '_> {
                         members: vec![],
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }))
+                    })
+                    .into())
                 }
 
                 // Create Omit<T, 'foo' | 'bar'>
@@ -1002,7 +1005,8 @@ impl Analyzer<'_, '_> {
                         types: key_types,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    });
+                    })
+                    .into_freezed_cow();
 
                     return Ok(Type::Ref(Ref {
                         span,
