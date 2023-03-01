@@ -558,7 +558,7 @@ impl Analyzer<'_, '_> {
                         orig_ty.freeze();
 
                         //
-                        let ty = self.validate_rhs_of_instanceof(span, &rt, &rt);
+                        let ty = self.validate_rhs_of_instanceof(span, &rt, rt);
 
                         // `o` cannot be null in the following code
                         // if (o?.baz instanceof Error) {
@@ -812,8 +812,13 @@ impl Analyzer<'_, '_> {
                         || rt.is_interface()
                         || rt.is_tpl()
                     {
-                        self.storage
-                            .report(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rt.clone() }.into());
+                        self.storage.report(
+                            ErrorKind::WrongTypeForRhsOfNumericOperation {
+                                span,
+                                ty: rt.clone().into(),
+                            }
+                            .into(),
+                        );
                     }
                 }
 
@@ -909,7 +914,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
 
             op!("||") | op!("&&") => {
@@ -961,7 +967,7 @@ impl Analyzer<'_, '_> {
                         // }
 
                         // Remove falsy types from lhs
-                        let lt = lt.remove_falsy();
+                        let lt = lt.remove_falsy().into();
 
                         return Ok(Type::new_union(span, vec![lt, rt]).into());
                     }
@@ -1434,7 +1440,7 @@ impl Analyzer<'_, '_> {
                 return Ok(orig_ty);
             } else {
                 if let (Type::Interface(..), Type::Interface(..)) = (&*orig_ty, &*ty) {
-                    return Ok(ty);
+                    return Ok(ty.clone().into());
                 }
 
                 if !self
@@ -1469,7 +1475,7 @@ impl Analyzer<'_, '_> {
             })
             .into());
         }
-        Ok(ty)
+        Ok(ty.clone().into())
     }
 
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
@@ -1478,7 +1484,7 @@ impl Analyzer<'_, '_> {
         let l = self
             .normalize(
                 None,
-                Cow::Borrowed(l),
+                l,
                 NormalizeTypeOpts {
                     preserve_global_this: true,
                     preserve_intersection: true,
@@ -1530,8 +1536,8 @@ impl Analyzer<'_, '_> {
                                 ErrorKind::CannotCompareWithOp {
                                     span,
                                     op,
-                                    left: box l.clone(),
-                                    right: box r.clone(),
+                                    left: l.clone().into(),
+                                    right: r.clone().into(),
                                 }
                                 .into(),
                             );
@@ -2329,8 +2335,7 @@ impl Analyzer<'_, '_> {
             for ty in types {
                 match &*ty {
                     Type::Interface(interface) => {
-                        if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(ty)) {
-                            let tl = tl.into_owned();
+                        if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty)) {
                             self.get_additional_exclude_target_for_type_lit(
                                 span,
                                 &ty,
