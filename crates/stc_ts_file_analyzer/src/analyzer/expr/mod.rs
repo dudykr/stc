@@ -751,14 +751,15 @@ impl Analyzer<'_, '_> {
         if computed {
             prop.validate_with_default(self)
                 .and_then(|ty| {
-                    self.expand_top_ref(ty.span(), Cow::Owned(ty), Default::default())
+                    self.expand_top_ref(ty.span(), Cow::Owned(ty.into_owned()), Default::default())
                         .map(Cow::into_owned)
+                        .map(Type::into_freezed)
                 })
                 .and_then(|ty| self.expand_enum(ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
                     span: prop.span(),
-                    ty: box ty,
+                    ty,
                     expr: box prop.clone(),
                 })
                 .map(Key::Computed)
