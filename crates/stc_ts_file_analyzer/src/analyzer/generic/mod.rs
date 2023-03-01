@@ -926,7 +926,7 @@ impl Analyzer<'_, '_> {
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self.expand(
                         arg_iat.span,
-                        *arg_iat.obj_type.clone(),
+                        arg_iat.obj_type.clone(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -1036,7 +1036,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                    .freezed(),
+                    .into_freezed_cow(),
                     InferTypeOpts {
                         is_inferring_rest_type: true,
                         append_type_as_union: true,
@@ -1261,7 +1261,7 @@ impl Analyzer<'_, '_> {
                 self.infer_type_using_operator(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
-                if let Type::Interface(..) = arg {
+                if let Type::Interface(..) = arg.normalize() {
                 } else {
                     return Ok(());
                 }
@@ -1270,7 +1270,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (param, arg) {
+        match (param.normalize(), arg.normalize()) {
             (Type::Union(Union { types: param_types, .. }), _) => {
                 return self.infer_to_multiple_types(span, inferred, arg, param_types, true, opts);
             }
