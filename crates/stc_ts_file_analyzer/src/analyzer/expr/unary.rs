@@ -29,7 +29,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): Check for `self.ctx.in_cond` to improve performance.
-        let arg_ty: Option<Type> = match op {
+        let arg_ty: Option<ArcCowType> = match op {
             op!("!") => {
                 let orig_facts = self.cur_facts.take();
                 let arg_ty = self
@@ -101,14 +101,16 @@ impl Analyzer<'_, '_> {
                         .collect(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             op!("void") => return Ok(Type::undefined(span, Default::default())),
