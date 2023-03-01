@@ -961,7 +961,7 @@ impl Analyzer<'_, '_> {
                     arg = Cow::Owned(arg.into_owned().generalize_lit().freezed());
                 }
 
-                let arg = arg.into_owned();
+                let arg = arg.into_owned().into_freezed_cow();
 
                 arg.assert_clone_cheap();
 
@@ -1016,19 +1016,16 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        param: &Type,
-        arg: &Type,
+        param: &ArcCowType,
+        arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> Option<VResult<()>> {
-        let param = param;
-        let arg = arg;
-
-        if let Some(elem_type) = unwrap_builtin_with_single_arg(param, "ReadonlyArray").or_else(|| match param {
+        if let Some(elem_type) = unwrap_builtin_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
             Type::Interface(Interface { name, body, .. }) => {
                 if name == "ReadonlyArray" {
                     body.iter()
                         .filter_map(|v| match v {
-                            TypeElement::Index(i) => i.type_ann.as_deref(),
+                            TypeElement::Index(i) => i.type_ann.as_ref(),
                             _ => None,
                         })
                         .next()
@@ -1061,8 +1058,8 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        if let Type::Array(Array { elem_type, .. }) = param {
-            match arg {
+        if let Type::Array(Array { elem_type, .. }) = param.normalize() {
+            match arg.normalize() {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(type_name),
                     type_args: Some(type_args),
@@ -1094,7 +1091,7 @@ impl Analyzer<'_, '_> {
         arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        match arg {
+        match arg.normalize() {
             Type::Interface(arg) => {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg, opts)?;
             }

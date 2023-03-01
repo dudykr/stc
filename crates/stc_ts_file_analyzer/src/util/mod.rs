@@ -69,10 +69,6 @@ pub(crate) trait RemoveTypes {
 
 impl RemoveTypes for Type {
     fn remove_falsy(mut self) -> Type {
-        if matches!(self, Type::Union(..) | Type::Intersection(..)) {
-            self.normalize_mut();
-        }
-
         match self {
             Type::Keyword(KeywordType { kind, span, metadata, .. }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
@@ -127,7 +123,7 @@ impl RemoveTypes for Type {
 
 impl RemoveTypes for Intersection {
     fn remove_falsy(self) -> Type {
-        let types = self.types.into_iter().map(|ty| ty.remove_falsy()).collect::<Vec<_>>();
+        let types = self.types.into_iter().map(|ty| ty.remove_falsy().into_cow()).collect::<Vec<_>>();
 
         if types.iter().any(|ty| ty.is_never()) {
             return Type::never(
@@ -153,7 +149,7 @@ impl RemoveTypes for Intersection {
     }
 
     fn remove_truthy(self) -> Type {
-        let types = self.types.into_iter().map(|ty| ty.remove_truthy()).collect::<Vec<_>>();
+        let types = self.types.into_iter().map(|ty| ty.remove_truthy().into_cow()).collect::<Vec<_>>();
         if types.iter().any(|ty| ty.is_never()) {
             return Type::never(
                 self.span,
@@ -183,7 +179,7 @@ impl RemoveTypes for Union {
         let types: Vec<_> = self
             .types
             .into_iter()
-            .map(|ty| ty.remove_falsy())
+            .map(|ty| ty.remove_falsy().into_cow())
             .filter(|ty| !ty.is_never())
             .collect();
 
@@ -214,7 +210,7 @@ impl RemoveTypes for Union {
         let types: Vec<_> = self
             .types
             .into_iter()
-            .map(|ty| ty.remove_truthy())
+            .map(|ty| ty.remove_truthy().into_cow())
             .filter(|ty| !ty.is_never())
             .collect();
 
