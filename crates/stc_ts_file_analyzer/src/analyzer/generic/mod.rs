@@ -1904,7 +1904,7 @@ impl Analyzer<'_, '_> {
             //     [P in Key]: Type;
             // };
             if let Some(constraint) = &param.type_param.constraint {
-                if let Type::Param(type_param) = constraint {
+                if let Type::Param(type_param) = &**constraint {
                     debug!(
                         "[generic/inference] Found form of `P in T` where T = {}, P = {}",
                         type_param.name, param.type_param.name

@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Assign(p) => {
                 let type_ann = p.left.get_ty();
-                let type_ann: Option<Type> = match type_ann {
+                let type_ann: Option<ArcCowType> = match type_ann {
                     Some(v) => v.validate_with(self).report(&mut self.storage),
                     None => None,
                 };
@@ -1042,7 +1042,7 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    pub fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
+    pub fn regist_destructure(&mut self, span: Span, ty: Option<ArcCowType>, des_key: Option<DestructureId>) -> DestructureId {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());

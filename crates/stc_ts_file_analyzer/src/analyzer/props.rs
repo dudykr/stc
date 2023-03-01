@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ..
-                }) = ty
+                }) = &**ty
                 {
                     return true;
                 }
