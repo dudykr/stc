@@ -99,8 +99,8 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
-        ret_ty: Option<&Type>,
-        ret_ty_type_ann: Option<&Type>,
+        ret_ty: Option<&ArcCowType>,
+        ret_ty_type_ann: Option<&ArcCowType>,
         opts: InferTypeOpts,
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
@@ -221,7 +221,7 @@ impl Analyzer<'_, '_> {
                                 },
                                 tracker: Default::default(),
                             })
-                            .freezed(),
+                            .into_freezed_cow(),
                             opts,
                         )?;
                     }
