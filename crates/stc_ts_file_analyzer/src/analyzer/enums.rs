@@ -600,12 +600,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expands an enum variant as a literal.
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<ArcCowType> {
-        if let Type::EnumVariant(ref ev) = ty {
+    pub(super) fn expand_enum_variant(&self, ty: ArcCowType) -> VResult<ArcCowType> {
+        if let Type::EnumVariant(ref ev) = &*ty {
             if let Some(variant_name) = &ev.name {
                 if let Some(types) = self.find_type(&ev.enum_name)? {
                     for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = ty {
+                        if let Type::Enum(Enum { members, .. }) = &*ty {
                             if let Some(v) = members.iter().find(|m| match m.id {
                                 RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
                                     sym == variant_name

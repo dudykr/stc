@@ -752,7 +752,7 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
         try_next_value: bool,
         opts: GetIteratorOpts,
-    ) -> VResult<Cow<'a, Type>> {
+    ) -> VResult<ArcCowType> {
         let ty_str = dump_type_as_string(&ty);
 
         if try_next_value {
@@ -775,7 +775,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator {
+        match &*iterator {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {
