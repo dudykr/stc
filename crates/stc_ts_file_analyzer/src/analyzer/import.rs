@@ -65,7 +65,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
+    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: ArcCowType) -> VResult<()> {
         self.data.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
