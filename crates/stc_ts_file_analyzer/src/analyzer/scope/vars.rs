@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
 
                 let mut right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_deref().or(ty.as_ref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span, Default::default()).into());
 
@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to convert a type to an iterator to assign with an array pattern.")
                             .unwrap_or_else(|err| {
                                 self.storage.report(err);
-                                Cow::Owned(Type::any(span, Default::default()))
+                                Type::any(span, Default::default()).into()
                             })
                         })
                         .freezed();
@@ -297,7 +297,7 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     match result {
-                                        Ok(ty) => Ok(ty.into_type().generalize_lit()),
+                                        Ok(ty) => Ok(ty.generalize_lit().into()),
                                         Err(err) => match &*err {
                                             ErrorKind::TupleIndexError { .. } => match elem {
                                                 RPat::Assign(p) => {
@@ -325,7 +325,8 @@ impl Analyzer<'_, '_> {
                                                         elems: vec![],
                                                         metadata: Default::default(),
                                                         tracker: Default::default(),
-                                                    }))
+                                                    })
+                                                    .into())
                                                 }
                                                 _ => Err(err),
                                             },
