@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_types::Type;
 use swc_common::Span;
 use swc_ecma_ast::TsKeywordTypeKind;

@@ -873,7 +873,7 @@ impl Analyzer<'_, '_> {
             let rhs = self
                 .normalize(
                     Some(span),
-                    Cow::Borrowed(&rhs),
+                    &rhs,
                     NormalizeTypeOpts {
                         expand_enum_def: true,
                         ..Default::default()
@@ -973,7 +973,7 @@ impl Analyzer<'_, '_> {
             let rhs = self
                 .normalize(
                     Some(opts.span),
-                    Cow::Borrowed(&rhs),
+                    &rhs,
                     NormalizeTypeOpts {
                         preserve_typeof: true,
                         preserve_global_this: true,
@@ -1584,9 +1584,9 @@ impl Analyzer<'_, '_> {
                 if use_single_error {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
+                        left: to.clone().into(),
                         right_ident: None,
-                        right: box rhs.clone(),
+                        right: rhs.clone().into(),
                         cause: errors,
                     }
                     .into());

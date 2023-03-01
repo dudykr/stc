@@ -745,7 +745,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, rhs_ty: &ArcCowType) -> ArcCowType {
         rhs_ty.assert_valid();
 
-        let res: VResult<Type> = try {
+        let res: VResult<ArcCowType> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
@@ -1242,7 +1242,7 @@ impl Analyzer<'_, '_> {
 
         let src = self.normalize(
             Some(span),
-            Cow::Borrowed(src),
+            src,
             NormalizeTypeOpts {
                 preserve_union: true,
                 preserve_global_this: true,
@@ -1330,7 +1330,7 @@ impl Analyzer<'_, '_> {
         Ok(src.into_owned())
     }
 
-    fn determine_type_fact_by_field_fact(&mut self, span: Span, name: &Name, ty: &Type) -> VResult<Option<(Name, Type)>> {
+    fn determine_type_fact_by_field_fact(&mut self, span: Span, name: &Name, ty: &Type) -> VResult<Option<(Name, ArcCowType)>> {
         ty.assert_valid();
 
         if name.len() == 1 {

@@ -9,7 +9,6 @@ use stc_ts_types::{
     Accessor, ArcCowType, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature,
     TypeElement, TypeLit,
 };
-use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
