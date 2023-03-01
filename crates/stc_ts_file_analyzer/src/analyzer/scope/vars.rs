@@ -1067,13 +1067,13 @@ impl Analyzer<'_, '_> {
             Some(Type::Param(TypeParam {
                 constraint: Some(result), ..
             })) => {
-                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                if let Ok(result) = self.normalize(Some(span), result, Default::default()) {
                     return self.regist_destructure(span, Some(result), des_key);
                 }
             }
 
             Some(Type::Instance(Instance { ty: result, .. })) => {
-                if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
+                if let Ok(result) = self.normalize(Some(span), result, Default::default()) {
                     return self.regist_destructure(span, Some(result), des_key);
                 }
             }
