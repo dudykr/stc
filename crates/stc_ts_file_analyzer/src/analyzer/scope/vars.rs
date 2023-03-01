@@ -810,7 +810,7 @@ impl Analyzer<'_, '_> {
                                     key,
                                     optional,
                                     params: Vec::new(),
-                                    type_ann: real_property_type.flatten().map(|v| box v),
+                                    type_ann: real_property_type.flatten(),
                                     type_params: None,
                                     metadata: Default::default(),
                                     accessor: Default::default(),

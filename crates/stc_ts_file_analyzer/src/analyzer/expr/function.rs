@@ -318,7 +318,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                    .freezed(),
+                    .into_freezed(),
                 ),
                 Some(destructure_key),
             );
