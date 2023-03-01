@@ -1165,11 +1165,8 @@ impl Analyzer<'_, '_> {
 
                 if self.key_matches(span, &p.key, prop, false) {
                     // TODO(kdy1): Remove useless clone
-                    let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span(), Default::default()));
-                    let mut ty = self
-                        .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
-                        .map(Cow::into_owned)
-                        .unwrap_or_else(|_| ty);
+                    let ty = p.type_ann.clone().unwrap_or_else(|| Type::any(m.span(), Default::default()).into());
+                    let mut ty = self.normalize(Some(span), &ty, Default::default()).unwrap_or_else(|_| ty);
 
                     // TODO(kdy1): PERF
 
@@ -1273,12 +1270,12 @@ impl Analyzer<'_, '_> {
         }
 
         if !opts.do_not_use_any_for_computed_key && prop.is_computed() {
-            return Ok(Type::any(span, Default::default()));
+            return Ok(Type::any(span, Default::default()).into());
         }
 
         Err(ErrorKind::NoSuchProperty {
             span,
-            obj: Some(box obj.clone()),
+            obj: Some(obj.clone().into()),
             prop: Some(box prop.clone()),
         }
         .context("failed to call property of type elements"))
@@ -1295,14 +1292,14 @@ impl Analyzer<'_, '_> {
                     let arg_ty = self
                         .normalize(
                             Some(arg.span()),
-                            Cow::Borrowed(&arg.ty),
+                            &arg.ty,
                             NormalizeTypeOpts {
                                 preserve_global_this: true,
                                 ..Default::default()
                             },
                         )
                         .context("tried to expand ref to handle a spread argument")?;
-                    match arg_ty {
+                    match &*arg_ty {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| TypeOrSpread {
                                 span: arg.spread.unwrap(),
@@ -1320,7 +1317,7 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(TypeOrSpread {
                                 span: *span,
                                 spread: None,
-                                ty: box arg_ty.clone().into_owned(),
+                                ty: arg_ty.clone(),
                             });
                         }
 
@@ -1343,7 +1340,7 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(TypeOrSpread {
                                 span: arg.span(),
                                 spread: arg.spread,
-                                ty: box elem_type.into_owned(),
+                                ty: elem_type,
                             });
                         }
                     }
