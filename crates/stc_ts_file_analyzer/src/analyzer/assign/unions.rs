@@ -76,9 +76,9 @@ impl Analyzer<'_, '_> {
                         .context("tried to append an element to a type")?;
                 }
 
-                Ok(type_lit)
+                Ok(type_lit.into_cow())
             }
-            _ => Ok(ty.into_owned()),
+            _ => Ok(ty.into_cow()),
         }
     }
 

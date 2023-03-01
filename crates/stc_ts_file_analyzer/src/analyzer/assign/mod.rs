@@ -6,9 +6,9 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
-    TypeElement, TypeLit, TypeParam,
+    ArcCowType, Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple,
+    TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
