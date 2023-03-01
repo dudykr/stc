@@ -10,8 +10,7 @@ pub fn reduce(m: &Mapped) -> Option<Type> {
             |ty| {
                 match ty {
                     Type::Param(TypeParam {
-                        constraint: Some(box arr_ty),
-                        ..
+                        constraint: Some(arr_ty), ..
                     }) if arr_ty.is_array() => return true,
                     _ => (),
                 }
