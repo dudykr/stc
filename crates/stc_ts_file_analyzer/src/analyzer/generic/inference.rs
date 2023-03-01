@@ -359,7 +359,13 @@ impl Analyzer<'_, '_> {
                     .map(|(_, t)| t.clone())
                     .collect_vec();
                 if !unmatched.is_empty() {
-                    return self.infer_from_types(span, inferred, &Type::new_union(span, unmatched), &naked_type_var.unwrap(), opts);
+                    return self.infer_from_types(
+                        span,
+                        inferred,
+                        &Type::new_union(span, unmatched).into_freezed_cow(),
+                        &naked_type_var.unwrap(),
+                        opts,
+                    );
                 }
             }
         } else {
