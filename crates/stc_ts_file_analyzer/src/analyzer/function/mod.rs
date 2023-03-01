@@ -139,20 +139,21 @@ impl Analyzer<'_, '_> {
                 declared_ret_ty = Some(match &*ret_ty {
                     Type::ClassDef(def) => Type::Class(Class {
                         span,
-                        def: box def,
+                        def: box def.clone(),
                         metadata: ClassMetadata {
                             common: metadata,
                             ..Default::default()
                         },
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
 
                     _ => ret_ty,
                 });
             }
 
             if let Some(ty) = &mut declared_ret_ty {
-                if let Type::Ref(..) = ty {
+                if let Type::Ref(..) = &**ty {
                     child.prevent_expansion(ty);
                 }
             }
@@ -169,8 +170,8 @@ impl Analyzer<'_, '_> {
 
             let mut inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
-                    let mut inferred_return_type = match inferred_return_type {
-                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?),
+                    let mut inferred_return_type = match &*inferred_return_type {
+                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?).into(),
                         _ => inferred_return_type,
                     };
 
@@ -191,7 +192,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if child.may_generalize(&inferred_return_type) {
-                            inferred_return_type = inferred_return_type.generalize_lit();
+                            inferred_return_type = inferred_return_type.generalize_lit().into();
                         }
                     }
 
@@ -204,7 +205,7 @@ impl Analyzer<'_, '_> {
                         span = declared.span();
                         let declared = child.normalize(Some(span), Cow::Borrowed(declared), Default::default())?;
 
-                        match declared {
+                        match &*declared {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
@@ -225,12 +226,15 @@ impl Analyzer<'_, '_> {
                     if f.return_type.is_none() {
                         if let Some(m) = &mut child.mutations {
                             if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }));
+                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(
+                                    Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    })
+                                    .into(),
+                                );
                             }
                         }
                     }
@@ -240,6 +244,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
+                    .into()
                 }
                 None => Type::any(f.span, Default::default()),
             };
