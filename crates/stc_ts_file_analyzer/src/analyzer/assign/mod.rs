@@ -873,7 +873,7 @@ impl Analyzer<'_, '_> {
             let rhs = self
                 .normalize(
                     Some(span),
-                    Cow::Borrowed(rhs),
+                    Cow::Borrowed(&rhs),
                     NormalizeTypeOpts {
                         expand_enum_def: true,
                         ..Default::default()
@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match to {
+        match &*to {
             Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(RIdent {
                     sym: js_word!("Symbol"), ..
@@ -900,7 +900,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Str contains `kind`, and it's not handled properly by type_eq.
-            Type::Lit(LitType { lit: RTsLit::Str(to), .. }) => match rhs {
+            Type::Lit(LitType { lit: RTsLit::Str(to), .. }) => match &*rhs {
                 Type::Lit(LitType { lit: RTsLit::Str(rhs), .. }) => {
                     if to.value == rhs.value {
                         return Ok(());
@@ -918,7 +918,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Ref(left) => {
-                if let Type::Ref(right) = rhs {
+                if let Type::Ref(right) = &*rhs {
                     // We need this as type may recurse, and thus cannot be handled by expander.
                     if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
                         return Ok(());
@@ -932,7 +932,7 @@ impl Analyzer<'_, '_> {
                     .assign_inner(
                         data,
                         &new_lhs,
-                        rhs,
+                        &rhs,
                         AssignOpts {
                             allow_unknown_rhs: if opts.allow_unknown_rhs_if_expanded {
                                 Some(true)
@@ -973,7 +973,7 @@ impl Analyzer<'_, '_> {
             let rhs = self
                 .normalize(
                     Some(opts.span),
-                    Cow::Borrowed(rhs),
+                    Cow::Borrowed(&rhs),
                     NormalizeTypeOpts {
                         preserve_typeof: true,
                         preserve_global_this: true,
@@ -1004,7 +1004,7 @@ impl Analyzer<'_, '_> {
 
         // Allow v = null and v = undefined if strict null check is false
         if !self.rule().strict_null_checks {
-            match rhs {
+            match &*rhs {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
@@ -1035,8 +1035,8 @@ impl Analyzer<'_, '_> {
             let rhs = rhs.clone().generalize_lit();
 
             for (kwd, interface) in special_cases {
-                match to {
-                    Type::Keyword(k) if k.kind == *kwd => match rhs {
+                match &*to {
+                    Type::Keyword(k) if k.kind == *kwd => match &*rhs {
                         Type::Instance(Instance {
                             ty: box Type::Interface(ref i),
                             ..
