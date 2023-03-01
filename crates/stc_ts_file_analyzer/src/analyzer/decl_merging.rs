@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
         debug_assert!(a.is_clone_cheap());
         debug_assert!(b.is_clone_cheap());
 
-        match (a, b) {
+        match (&*a, &*b) {
             (Type::ClassDef(a), Type::Interface(bi)) => {
                 // TODO: Handle the number of type parameters.
                 let mut type_params = FxHashMap::default();
@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&b))
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {

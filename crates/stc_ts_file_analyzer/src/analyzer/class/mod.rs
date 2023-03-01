@@ -2053,7 +2053,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => Type::from(ty).into_freezed(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span(), Default::default())
+                Type::any(c.span(), Default::default()).into()
             }
         };
 
