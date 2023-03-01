@@ -2465,7 +2465,7 @@ impl Analyzer<'_, '_> {
 pub(super) fn is_literals(ty: &Type) -> bool {
     match ty {
         Type::Lit(_) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(is_literals),
+        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_literals(ty)),
         _ => false,
     }
 }
