@@ -256,10 +256,7 @@ impl Analyzer<'_, '_> {
             return Ok(Type::any(to.span(), Default::default()).into());
         }
 
-        let mut to = to.foldable();
-        // TODO(kdy1): PERF
-
-        match to {
+        match &*to {
             Type::TypeLit(ref mut lit) => {
                 lit.metadata.inexact = true;
                 let common_metadata = lit.metadata.common;
@@ -322,13 +319,14 @@ impl Analyzer<'_, '_> {
                     metadata: to.metadata,
                     tracker: Default::default(),
                 })
-                .fixed())
+                .fixed()
+                .into())
             }
 
             _ => {}
         }
 
-        Ok(Type::new_intersection(span, vec![to, rhs]))
+        Ok(Type::new_intersection(span, vec![to, rhs]).into())
     }
 
     pub(crate) fn append_type_element(&mut self, to: ArcCowType, rhs: TypeElement) -> VResult<ArcCowType> {
@@ -351,9 +349,8 @@ impl Analyzer<'_, '_> {
         } else {
             to
         };
-        to.normalize_mut();
 
-        match to {
+        match &*to {
             Type::TypeLit(ref mut lit) => {
                 // TODO(kdy1): Remove previous member with same key.
 
@@ -370,7 +367,8 @@ impl Analyzer<'_, '_> {
                 metadata: to.metadata,
                 tracker: Default::default(),
             })
-            .fixed()),
+            .fixed()
+            .into()),
             Type::Intersection(ref mut to_intersection) => {
                 for to_ty in to_intersection.types.iter_mut().rev() {
                     if to_ty.is_type_lit() {
@@ -379,12 +377,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                to_intersection.types.push(Type::TypeLit(TypeLit {
-                    span: rhs.span(),
-                    members: vec![rhs],
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                }));
+                to_intersection.types.push(
+                    Type::TypeLit(TypeLit {
+                        span: rhs.span(),
+                        members: vec![rhs],
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                );
 
                 Ok(to)
             }

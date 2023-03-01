@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
                 //
 
                 if is_obj_optional {
-                    let mut types = vec![Type::undefined(span, Default::default()), ty];
+                    let mut types = vec![Type::undefined(span, Default::default()).into(), ty];
                     types.dedup_type();
                     Ok(Type::new_union(span, types))
                 } else {
