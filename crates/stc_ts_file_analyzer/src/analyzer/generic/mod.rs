@@ -1944,7 +1944,7 @@ impl Analyzer<'_, '_> {
                         let mut tp = type_param;
 
                         loop {
-                            match &tp.constraint.as_ref().map(|v| v) {
+                            match &tp.constraint.as_deref() {
                                 Some(Type::Param(p)) => {
                                     tp = p;
                                 }

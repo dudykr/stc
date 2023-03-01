@@ -355,10 +355,9 @@ impl Analyzer<'_, '_> {
                     }
 
                     let ty = ty.unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit().foldable();
+                        let mut ty = default_value_ty.generalize_lit();
 
                         if matches!(ty, Type::Tuple(..)) {
-                            ty.normalize_mut();
                             match ty {
                                 Type::Tuple(tuple) => {
                                     let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();

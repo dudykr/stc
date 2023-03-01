@@ -445,8 +445,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        source: &Type,
-        target: &Type,
+        source: &ArcCowType,
+        target: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let _tracing = dev_span!("infer_from_contravariant_types");
