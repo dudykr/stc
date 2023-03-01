@@ -74,7 +74,7 @@ impl Simplifier<'_> {
 
 impl Fold<Union> for Simplifier<'_> {
     fn fold(&mut self, mut union: Union) -> Union {
-        let should_remove_null_and_undefined = union.types.iter().any(|ty| matches!(ty, Type::Ref(..) | Type::Function(..)));
+        let should_remove_null_and_undefined = union.types.iter().any(|ty| matches!(&**ty, Type::Ref(..) | Type::Function(..)));
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {
@@ -86,11 +86,11 @@ impl Fold<Union> for Simplifier<'_> {
             });
         }
 
-        let has_array = union.types.iter().any(|ty| matches!(ty, Type::Array(..)));
+        let has_array = union.types.iter().any(|ty| matches!(&**ty, Type::Array(..)));
 
         // Remove empty tuple
         if has_array {
-            union.types.retain(|ty| match ty {
+            union.types.retain(|ty| match &**ty {
                 Type::Tuple(tuple) => !tuple.elems.is_empty(),
                 _ => true,
             });

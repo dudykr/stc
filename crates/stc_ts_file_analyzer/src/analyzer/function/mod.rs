@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{ErrorKind, Errors};
@@ -203,7 +201,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ref declared) = declared_ret_ty {
                         span = declared.span();
-                        let declared = child.normalize(Some(span), Cow::Borrowed(declared), Default::default())?;
+                        let declared = child.normalize(Some(span), declared, Default::default())?;
 
                         match &*declared {
                             Type::Keyword(KeywordType {
