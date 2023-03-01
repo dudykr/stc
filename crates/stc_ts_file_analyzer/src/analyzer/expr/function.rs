@@ -65,16 +65,17 @@ impl Analyzer<'_, '_> {
             let declared_ret_ty = match declared_ret_ty {
                 Some(ty) => {
                     let span = ty.span();
-                    Some(match ty {
+                    Some(match &*ty {
                         Type::ClassDef(def) => Type::Class(Class {
                             span,
                             metadata: ClassMetadata {
                                 common: def.metadata.common,
                                 ..Default::default()
                             },
-                            def: box def,
+                            def: box def.clone(),
                             tracker: Default::default(),
-                        }),
+                        })
+                        .into(),
                         _ => ty,
                     })
                 }
@@ -85,9 +86,9 @@ impl Analyzer<'_, '_> {
             let inferred_return_type = {
                 match f.body {
                     RBlockStmtOrExpr::Expr(ref e) => Some({
-                        let ty = e.validate_with_args(child, (TypeOfMode::RValue, None, declared_ret_ty.as_ref()))?;
+                        let ty = e.validate_with_args(child, (TypeOfMode::RValue, None, declared_ret_ty.as_deref()))?;
                         if !child.ctx.in_argument && f.return_type.is_none() && type_ann.is_none() && child.may_generalize(&ty) {
-                            ty.generalize_lit()
+                            ty.generalize_lit().into()
                         } else {
                             ty
                         }
@@ -99,10 +100,10 @@ impl Analyzer<'_, '_> {
 
             // Remove void from inferred return type.
             let inferred_return_type = inferred_return_type.map(|mut ty| {
-                if let Type::Union(ty) = &mut ty {
+                if let Type::Union(ty) = ty.normalize_mut() {
                     ty.types.retain(|ty| {
                         !matches!(
-                            ty,
+                            &**ty,
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
@@ -138,8 +139,8 @@ impl Analyzer<'_, '_> {
                 span: f.span,
                 params,
                 type_params,
-                ret_ty: box declared_ret_ty
-                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
+                ret_ty: declared_ret_ty
+                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()).into())),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
