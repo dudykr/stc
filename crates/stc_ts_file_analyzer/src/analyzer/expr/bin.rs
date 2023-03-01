@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
 
                 let any_type_param = TypeParamInstantiation {
                     span,
-                    params: vec![Type::any(span, Default::default())],
+                    params: vec![Type::any(span, Default::default()).into()],
                 };
                 let type_args = if let RExpr::Ident(..) = &**right {
                     Some(&any_type_param)
@@ -196,11 +196,9 @@ impl Analyzer<'_, '_> {
             span,
             op,
             &lt.as_ref()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()))),
+                .unwrap_or_else(|| Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()).into()),
             &rt.as_ref()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()))),
+                .unwrap_or_else(|| Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()).into()),
         );
 
         if add_type_facts {
@@ -1062,19 +1060,22 @@ impl Analyzer<'_, '_> {
                                         kind: TsKeywordTypeKind::TsStringKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                 ]);
                             } else {
                                 //  - typeof x !== s
@@ -1086,19 +1087,22 @@ impl Analyzer<'_, '_> {
                                         kind: TsKeywordTypeKind::TsStringKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                 ]);
                             }
                             None
@@ -1453,9 +1457,10 @@ impl Analyzer<'_, '_> {
                 def: box def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
-        Ok(ty.into_owned())
+        Ok(ty)
     }
 
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
@@ -1477,7 +1482,7 @@ impl Analyzer<'_, '_> {
         let r = self
             .normalize(
                 None,
-                Cow::Borrowed(r),
+                r,
                 NormalizeTypeOpts {
                     preserve_global_this: true,
                     preserve_intersection: true,
