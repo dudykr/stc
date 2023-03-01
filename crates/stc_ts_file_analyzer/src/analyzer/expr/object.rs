@@ -199,7 +199,7 @@ impl Analyzer<'_, '_> {
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
-    pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<ArcCowType> {
+    pub(crate) fn append_type(&mut self, span: Span, to: ArcCowType, rhs: ArcCowType, opts: AppendTypeOpts) -> VResult<ArcCowType> {
         let _tracing = dev_span!("append_type");
 
         if to.is_any() || to.is_unknown() {

@@ -24,8 +24,8 @@ use crate::{
 #[derive(Debug)]
 pub enum ResolvedJsxName {
     /// [Type] is the object.
-    Intrinsic(Type),
-    Value(Type),
+    Intrinsic(ArcCowType),
+    Value(ArcCowType),
 }
 
 impl Analyzer<'_, '_> {
@@ -247,7 +247,8 @@ impl Analyzer<'_, '_> {
             kind: TsKeywordTypeKind::TsStringKeyword,
             metadata: Default::default(),
             tracker: Default::default(),
-        }))
+        })
+        .into())
     }
 }
 

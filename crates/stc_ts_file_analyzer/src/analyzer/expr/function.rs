@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
 use stc_ts_errors::DebugExt;
