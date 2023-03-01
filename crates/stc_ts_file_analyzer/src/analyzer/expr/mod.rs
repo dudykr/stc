@@ -4745,7 +4745,8 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
         let ty = self.type_of_var(i, mode, type_args)?;
         if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
