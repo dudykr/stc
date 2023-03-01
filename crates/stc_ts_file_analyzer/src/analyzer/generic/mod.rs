@@ -650,12 +650,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param, arg) {
+        match (&**param, &**arg) {
             (_, Type::Enum(..)) => {
                 let arg = self
                     .normalize(
                         Some(arg_normalized.span()),
-                        Cow::Borrowed(arg),
+                        arg,
                         NormalizeTypeOpts {
                             expand_enum_def: true,
                             preserve_global_this: true,
