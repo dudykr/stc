@@ -880,7 +880,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let ty = (|| -> VResult<_> {
+        let ty = (|| -> VResult<ArcCowType> {
             let mut ty = self.normalize(
                 Some(span),
                 ty,
@@ -892,7 +892,7 @@ impl Analyzer<'_, '_> {
             ty.freeze();
 
             if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
-                return Ok(ty.into_type());
+                return Ok(ty);
             }
 
             match &*ty {
