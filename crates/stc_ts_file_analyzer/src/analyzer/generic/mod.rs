@@ -1314,7 +1314,7 @@ impl Analyzer<'_, '_> {
                 let arg = self
                     .expand(
                         span,
-                        arg.clone(),
+                        arg.clone().into(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -1325,7 +1325,7 @@ impl Analyzer<'_, '_> {
                         },
                     )?
                     .freezed();
-                match arg {
+                match &*arg {
                     Type::Ref(..) => {}
                     _ => {
                         return self.infer_type(span, inferred, param, &arg, opts);
@@ -1640,9 +1640,7 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann = type_ann
-                                        .map(Box::new)
-                                        .or_else(|| Some(box Type::any(arg_prop.span, Default::default())));
+                                    let type_ann = type_ann.or_else(|| Some(Type::any(arg_prop.span, Default::default())).into());
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),

@@ -616,7 +616,7 @@ impl Scope<'_> {
                         tracker: Default::default(),
                     })
                     .fixed()
-                    .freezed();
+                    .into_freezed();
                 }
             }
             Entry::Vacant(e) => {
