@@ -1091,7 +1091,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Interface,
-        arg: &Type,
+        arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         match arg {
@@ -1255,7 +1255,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
-                                    .freezed(),
+                                    .into_freezed_cow(),
                                     at,
                                     opts,
                                 )?;

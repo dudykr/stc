@@ -580,7 +580,7 @@ impl Analyzer<'_, '_> {
         let param = match param {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
-                p = box param_normalized.clone().fold_with(&mut MappedIndexedSimplifier).freezed();
+                p = box param_normalized.clone().fold_with(&mut MappedIndexedSimplifier).into_freezed_cow();
                 &p
             }
             _ => param,
