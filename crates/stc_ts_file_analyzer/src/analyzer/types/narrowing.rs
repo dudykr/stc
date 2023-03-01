@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
+use stc_ts_types::{ArcCowType, KeywordTypeMetadata, Type, Union, UnionMetadata};
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_common::{Span, Spanned};
 
@@ -12,7 +12,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult<Type> {
+    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult<ArcCowType> {
         declared.assert_valid();
         actual.assert_valid();
 

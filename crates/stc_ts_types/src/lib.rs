@@ -1720,6 +1720,11 @@ impl Visit<Type> for AssertCloneCheap {
 }
 
 impl Type {
+    #[inline]
+    pub fn into_freezed(self) -> ArcCowType {
+        ArcCowType::new_freezed(self)
+    }
+
     #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn assert_clone_cheap(&self) {
         if !cfg!(debug_assertions) {

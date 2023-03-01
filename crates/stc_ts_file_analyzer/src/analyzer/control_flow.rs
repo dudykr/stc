@@ -452,7 +452,7 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
+    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<ArcCowType>) -> VResult<Vec<ArcCowType>> {
         let _tracing = dev_span!("adjust_ternary_type");
 
         types.iter_mut().for_each(|ty| {
@@ -472,7 +472,7 @@ impl Analyzer<'_, '_> {
                     },
                     tracker: Default::default(),
                 })
-                .freezed();
+                .into_freezed();
             }
         });
 
@@ -556,7 +556,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
+    fn remove_child_types(&mut self, span: Span, types: Vec<ArcCowType>) -> VResult<Vec<ArcCowType>> {
         let _tracing = dev_span!("remove_child_types");
 
         let mut new = vec![];
@@ -584,7 +584,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new.push(ty.clone());
+            new.push(ty.clone().into());
         }
         if new.is_empty() {
             // All types can be merged
@@ -598,7 +598,7 @@ impl Analyzer<'_, '_> {
     /// Returns the type of discriminant.
     ///
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult<Type> {
+    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult<ArcCowType> {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
             if let Some(test) = &case.test {
@@ -879,7 +879,7 @@ impl Analyzer<'_, '_> {
                         self.assign_with_opts(
                             &mut Default::default(),
                             &var_ty,
-                            ty,
+                            &ty,
                             AssignOpts {
                                 span: i.id.span,
                                 ..opts.assign

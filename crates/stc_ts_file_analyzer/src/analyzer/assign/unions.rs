@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match to {
+        match to.normalize_mut() {
             Type::Union(to) => {
                 for to in &mut to.types {
                     self.append_tuple_element_to_type(span, to, el)?;
