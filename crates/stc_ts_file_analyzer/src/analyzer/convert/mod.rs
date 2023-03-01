@@ -1056,7 +1056,7 @@ impl Analyzer<'_, '_> {
                 }),
                 RTsType::TsLitType(ty) => {
                     if let RTsLit::Tpl(t) = &ty.lit {
-                        return Ok(t.validate_with(a)?.into());
+                        return Ok(t.validate_with(a).map(Type::from)?.into());
                     }
 
                     Type::Lit(LitType {
@@ -1084,7 +1084,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .into(),
                             );
-                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()).into());
                         }
                     }
                     Type::Keyword(KeywordType {
@@ -1136,7 +1136,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let mut prev_keys: Vec<_> = vec![];
+        let mut prev_keys: Vec<&_> = vec![];
 
         for elem in elems {
             if let TypeElement::Property(PropertySignature {
@@ -1150,7 +1150,6 @@ impl Analyzer<'_, '_> {
             }) = elem
             {
                 if let Some(key) = elem.key() {
-                    let key = key;
                     let key_ty = key.ty();
 
                     if key_ty.is_symbol() {

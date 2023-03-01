@@ -426,36 +426,34 @@ impl Analyzer<'_, '_> {
             self.env.get_global_type(span, &"AsyncIterator".into()).report(&mut self.storage);
         }
 
-        let async_iterator = self
-            .call_property(
+        let async_iterator = self.call_property(
+            span,
+            ExtractKind::Call,
+            Default::default(),
+            &ty,
+            &ty,
+            &Key::Computed(ComputedKey {
                 span,
-                ExtractKind::Call,
-                Default::default(),
-                &ty,
-                &ty,
-                &Key::Computed(ComputedKey {
+                expr: box RExpr::Invalid(RInvalid { span }),
+                ty: Type::Symbol(Symbol {
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: Type::Symbol(Symbol {
-                        span,
-                        id: SymbolId::async_iterator(),
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    })
-                    .into(),
-                }),
-                None,
-                &[],
-                &[],
-                &[],
-                None,
-                CallOpts {
-                    disallow_optional_object_property: true,
-                    do_not_use_any_for_computed_key: true,
-                    ..Default::default()
-                },
-            )
-            .map(Cow::Owned);
+                    id: SymbolId::async_iterator(),
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                })
+                .into(),
+            }),
+            None,
+            &[],
+            &[],
+            &[],
+            None,
+            CallOpts {
+                disallow_optional_object_property: true,
+                do_not_use_any_for_computed_key: true,
+                ..Default::default()
+            },
+        );
 
         if let Ok(async_iterator) = async_iterator {
             let item_promise = self
@@ -762,7 +760,7 @@ impl Analyzer<'_, '_> {
 
         if try_next_value {
             if let Ok(ty) = self.get_next_value_type_of_iterator(span, Cow::Borrowed(&ty)) {
-                return Ok(Cow::Owned(ty));
+                return Ok(ty);
             }
         }
 
