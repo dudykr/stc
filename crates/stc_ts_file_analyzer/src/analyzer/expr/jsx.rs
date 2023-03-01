@@ -58,7 +58,8 @@ impl Analyzer<'_, '_> {
                     },
                     ..Default::default()
                 },
-            ))
+            )
+            .into())
         }
     }
 

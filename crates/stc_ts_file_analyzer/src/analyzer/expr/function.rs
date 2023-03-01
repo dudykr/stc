@@ -257,8 +257,8 @@ impl Analyzer<'_, '_> {
 
             for (idx, param) in params.enumerate() {
                 if temp_els.len() == 1 {
-                    if let Some(TupleElement { ty: box ty, .. }) = temp_els.first_mut() {
-                        if let Some(Union { types, .. }) = ty.as_union_type_mut() {
+                    if let Some(TupleElement { ty, .. }) = temp_els.first_mut() {
+                        if let Some(Union { types, .. }) = ty.normalize_mut().as_union_type_mut() {
                             for ty in types {
                                 if let Some(Tuple { elems, .. }) = ty.as_tuple_mut() {
                                     if idx < elems.len() {
@@ -275,12 +275,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let RPat::Rest(..) = param {
-                    if let Ok(mut ty) = self.get_rest_elements(Some(param.span()), Cow::Borrowed(&params_tuple), idx) {
+                    if let Ok(mut ty) = self.get_rest_elements(Some(param.span()), &params_tuple, idx) {
                         ty.freeze();
 
                         if let Some(pat_node_id) = param.node_id() {
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.into_owned());
+                                m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty);
                             }
                         }
                     }
