@@ -266,7 +266,6 @@ impl Analyzer<'_, '_> {
                                     Some(ty) => self
                                         .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
-                                        .map(Cow::into_owned)
                                         .report(&mut self.storage),
                                     None => None,
                                 }
@@ -276,7 +275,6 @@ impl Analyzer<'_, '_> {
                                     Some(ty) => self
                                         .get_rest_elements(Some(span), Cow::Borrowed(&ty), idx)
                                         .context("tried to get left elements of an iterator to declare variables using a rest pattern")
-                                        .map(Cow::into_owned)
                                         .report(&mut self.storage),
                                     None => None,
                                 }
@@ -291,7 +289,7 @@ impl Analyzer<'_, '_> {
                             let elem_ty = ty
                                 .as_ref()
                                 .try_map(|ty| -> VResult<ArcCowType> {
-                                    let result = self.get_element_from_iterator(span, Cow::Borrowed(ty), idx).with_context(|| {
+                                    let result = self.get_element_from_iterator(span, ty, idx).with_context(|| {
                                         format!(
                                             "tried to get the type of {}th element from iterator to declare vars with an array pattern",
                                             idx
@@ -340,7 +338,7 @@ impl Analyzer<'_, '_> {
                             let default_elem_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
-                                    self.get_element_from_iterator(span, Cow::Borrowed(ty), idx)
+                                    self.get_element_from_iterator(span, ty, idx)
                                         .with_context(|| {
                                             format!(
                                                 "tried to get the type of {}th element from iterator to declare vars with an array \
@@ -372,9 +370,8 @@ impl Analyzer<'_, '_> {
                                     // Rest element is special.
                                     let type_for_rest_arg = match &ty {
                                         Some(ty) => self
-                                            .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
+                                            .get_rest_elements(Some(span), ty, idx)
                                             .context("tried to get left elements of an iterator to declare variables using a rest pattern")
-                                            .map(Cow::into_owned)
                                             .report(&mut self.storage),
                                         None => None,
                                     }
@@ -382,9 +379,8 @@ impl Analyzer<'_, '_> {
 
                                     let default = match &default {
                                         Some(ty) => self
-                                            .get_rest_elements(Some(span), Cow::Borrowed(ty), idx)
+                                            .get_rest_elements(Some(span), ty, idx)
                                             .context("tried to get left elements of an iterator to declare variables using a rest pattern")
-                                            .map(Cow::into_owned)
                                             .report(&mut self.storage),
                                         None => None,
                                     }
@@ -399,13 +395,13 @@ impl Analyzer<'_, '_> {
                                     elems.push(TupleElement {
                                         span: elem.span(),
                                         label: Some(*elem.arg.clone()),
-                                        ty: box Type::Rest(RestType {
+                                        ty: Type::Rest(RestType {
                                             span: elem.span,
                                             ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })
-                                        .freezed(),
+                                        .into_freezed(),
                                         tracker: Default::default(),
                                     });
 
