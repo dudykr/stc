@@ -1955,7 +1955,7 @@ impl Analyzer<'_, '_> {
             .or_else(|err| {
                 // If user selected type arguments, we should not report no matching overload.
                 if type_args.is_some() && matches!(&*err, ErrorKind::NoMatchingOverload { .. }) {
-                    Ok(Some(Type::any(span, Default::default())))
+                    Ok(Some(Type::any(span, Default::default()).into()))
                 } else {
                     Err(err)
                 }
@@ -1968,12 +1968,12 @@ impl Analyzer<'_, '_> {
         match kind {
             ExtractKind::Call => Err(ErrorKind::NoCallSignature {
                 span,
-                callee: box callee_ty.clone(),
+                callee: callee_ty.clone().into(),
             }
             .context("failed to select the element to invoke")),
             ExtractKind::New => Err(ErrorKind::NoNewSignature {
                 span,
-                callee: box callee_ty.clone(),
+                callee: callee_ty.clone().into(),
             }
             .context("failed to select the element to invoke")),
         }
@@ -2010,7 +2010,7 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let callee = self
-            .normalize(Some(span), Cow::Borrowed(callee), Default::default())
+            .normalize(Some(span), callee, Default::default())
             .context("tried to normalize to extract callee")?;
 
         // TODO(kdy1): Check if signature match.
@@ -2047,7 +2047,7 @@ impl Analyzer<'_, '_> {
                 let candidate = CallCandidate {
                     type_params: f.type_params.clone(),
                     params: f.params.clone(),
-                    ret_ty: box Type::any(span, Default::default()),
+                    ret_ty: Type::any(span, Default::default()).into(),
                 };
                 return Ok(vec![candidate]);
             }
@@ -2077,7 +2077,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(..) => {
-                let callee = self.convert_type_to_type_lit(span, callee)?.map(Cow::into_owned).map(Type::TypeLit);
+                let callee = self
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&callee))?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
                 if let Some(callee) = callee {
                     return self.extract_callee_candidates(span, kind, &callee);
                 }
@@ -2100,7 +2103,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default()).into()),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(m.span, Default::default()).into()),
                             });
                         }
                         _ => {}
