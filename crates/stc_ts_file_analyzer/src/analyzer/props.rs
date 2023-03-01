@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
 
                     errors.push(err);
                     // TODO(kdy1): Change this to something else (maybe any)
-                    Type::unknown(span, Default::default())
+                    Type::unknown(span, Default::default()).into()
                 }
             };
             ty.freeze();

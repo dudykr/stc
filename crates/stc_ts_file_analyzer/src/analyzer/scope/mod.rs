@@ -357,12 +357,12 @@ impl Scope<'_> {
         }
     }
 
-    pub fn get_super_class(&self, is_static: bool) -> Option<Type> {
+    pub fn get_super_class(&self, is_static: bool) -> Option<ArcCowType> {
         if let ScopeKind::Class = self.kind {
             if is_static {
-                return self.super_class.as_deref().cloned();
+                return self.super_class.clone();
             } else {
-                return self.super_class.clone().as_deref().cloned().map(make_instance_type);
+                return self.super_class.clone().map(make_instance_type);
             }
         }
 
@@ -465,6 +465,7 @@ impl Scope<'_> {
                                         tracker: Default::default(),
                                     })
                                     .fixed()
+                                    .into()
                                 }
                             } else {
                                 actual_ty
