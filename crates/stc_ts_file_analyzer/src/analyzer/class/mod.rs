@@ -814,7 +814,7 @@ impl Analyzer<'_, '_> {
                     params.get(0).map(|p| p.ty.clone())
                 } else {
                     // TODO: Should emit TS1049 error here
-                    Some(box Type::any(key_span, Default::default()))
+                    Some(Type::any(key_span, Default::default()).into())
                 },
                 is_static: c.is_static,
                 accessibility: c.accessibility,

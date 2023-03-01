@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
-use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
+use stc_ts_types::{name::Name, ArcCowType, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::Freeze,
@@ -47,9 +47,9 @@ use crate::{
 #[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct CondFacts {
     pub facts: FxHashMap<Name, TypeFacts>,
-    pub vars: FxHashMap<Name, Type>,
-    pub excludes: FxHashMap<Name, Vec<Type>>,
-    pub types: FxHashMap<Id, Type>,
+    pub vars: FxHashMap<Name, ArcCowType>,
+    pub excludes: FxHashMap<Name, Vec<ArcCowType>>,
+    pub types: FxHashMap<Id, ArcCowType>,
 }
 
 impl CondFacts {
@@ -1227,7 +1227,7 @@ impl Analyzer<'_, '_> {
         src: &Type,
         property: &JsWord,
         type_facts: Option<TypeFacts>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         src.assert_valid();
 
         let src = self.normalize(
