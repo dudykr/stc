@@ -524,8 +524,8 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(obj) => {
-                let normalize_ty = ty.as_ref().map(Type::normalize);
-                let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
+                let normalized_ty = ty.as_deref();
+                let should_use_no_such_property = !matches!(normalized_ty, Some(Type::TypeLit(..)));
                 let destructure_key = self.regist_destructure(span, ty.clone(), None);
 
                 let mut real = Type::TypeLit(TypeLit {
@@ -707,7 +707,7 @@ impl Analyzer<'_, '_> {
                                             let mut default_value_type = default
                                                 .validate_with_args(
                                                     self,
-                                                    (TypeOfMode::RValue, None, prop_ty.as_ref().or(default_prop_ty.as_ref())),
+                                                    (TypeOfMode::RValue, None, prop_ty.as_deref().or(default_prop_ty.as_deref())),
                                                 )
                                                 .context("tried to validate default value of an assignment pattern")
                                                 .report(&mut self.storage);
