@@ -224,7 +224,7 @@ impl Analyzer<'_, '_> {
                         .map(|ty| {
                             self.get_iterator(
                                 span,
-                                Cow::Owned(ty),
+                                &ty,
                                 GetIteratorOpts {
                                     disallow_str: true,
                                     ..Default::default()
@@ -245,7 +245,7 @@ impl Analyzer<'_, '_> {
                         .map(|ty| {
                             self.get_iterator(
                                 span,
-                                Cow::Borrowed(ty),
+                                ty,
                                 GetIteratorOpts {
                                     disallow_str: true,
                                     ..Default::default()
