@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
                     })
                     .into()
                 }
-                None => Type::any(f.span, Default::default()),
+                None => Type::any(f.span, Default::default()).into(),
             };
 
             inferred_return_type.freeze();
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
                 span: f.span,
                 type_params,
                 params,
-                ret_ty: box declared_ret_ty.unwrap_or(inferred_return_type),
+                ret_ty: declared_ret_ty.unwrap_or(inferred_return_type),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -383,7 +383,7 @@ impl Analyzer<'_, '_> {
                 for element in elems.iter_mut() {
                     let span = element.span();
 
-                    match element.ty {
+                    match &*element.ty {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
@@ -403,13 +403,14 @@ impl Analyzer<'_, '_> {
                     //    });
                     //}
 
-                    element.ty = box Type::any(
+                    element.ty = Type::any(
                         span,
                         KeywordTypeMetadata {
                             common: element.ty.metadata(),
                             ..Default::default()
                         },
-                    );
+                    )
+                    .into();
                 }
             };
 
@@ -421,10 +422,10 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => Type::Function(ty).fixed().freezed(),
+            Ok(ty) => Type::Function(ty).fixed().into_freezed(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(f.span, Default::default())
+                Type::any(f.span, Default::default()).into()
             }
         }
     }
