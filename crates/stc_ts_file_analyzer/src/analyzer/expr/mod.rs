@@ -2835,7 +2835,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let mut types = elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
+                let mut types = elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
                 types.dedup_type();
                 let obj = Type::Array(Array {
                     span,
@@ -2849,7 +2849,9 @@ impl Analyzer<'_, '_> {
 
             Type::ClassDef(cls) => {
                 match prop {
-                    Key::Normal { sym, .. } if *sym == *"prototype" => return self.create_prototype_of_class_def(cls).map(Type::TypeLit),
+                    Key::Normal { sym, .. } if *sym == *"prototype" => {
+                        return self.create_prototype_of_class_def(cls).map(Type::TypeLit).map(From::from)
+                    }
                     _ => {}
                 }
 
@@ -2940,7 +2942,7 @@ impl Analyzer<'_, '_> {
 
                                 let indexed = self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
                                 if indexed {
-                                    return Ok(index.type_ann.clone().unwrap_or_else(|| Type::any(span, Default::default())).into());
+                                    return Ok(index.type_ann.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()));
                                 }
                             }
                         }
@@ -3002,7 +3004,8 @@ impl Analyzer<'_, '_> {
                                     types,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
 
                             if let Some(vars) = exports.vars.get(sym).cloned() {
@@ -3045,7 +3048,7 @@ impl Analyzer<'_, '_> {
                                 .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
                         }
                         // Return any to prevent other errors
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
 
                     if this.normalize_instance().is_this() {
@@ -3055,7 +3058,7 @@ impl Analyzer<'_, '_> {
                     return self.access_property(span, &this, prop, type_mode, id_ctx, opts);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
 
                 let scope = if self.ctx.in_computed_prop_name {
@@ -3068,11 +3071,11 @@ impl Analyzer<'_, '_> {
                 match scope.map(|scope| scope.kind()) {
                     Some(ScopeKind::Fn) => {
                         // TODO
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
                     None => {
                         // Global this
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
                     kind => {
                         return Err(ErrorKind::Unimplemented {
@@ -3094,8 +3097,8 @@ impl Analyzer<'_, '_> {
                 }
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
-                    new.retain(|prop_ty| match prop_ty {
-                        Type::IndexedAccessType(iat) => !matches!(iat.obj_type, Type::Param(..)),
+                    new.retain(|prop_ty| match &**prop_ty {
+                        Type::IndexedAccessType(iat) => !matches!(&*iat.obj_type, Type::Param(..)),
                         _ => true,
                     });
                 }
@@ -3115,7 +3118,8 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
-                .fixed();
+                .fixed()
+                .into();
                 // ty.respan(span);
                 return Ok(ty);
             }
@@ -3127,7 +3131,7 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint.as_ref().map(Type::normalize) {
+                match constraint {
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Array(..),
