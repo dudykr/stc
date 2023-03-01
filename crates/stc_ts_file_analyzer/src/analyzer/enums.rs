@@ -6,7 +6,8 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
+    Accessor, ArcCowType, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature,
+    TypeElement, TypeLit,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
@@ -563,7 +564,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&self, ty: Type) -> VResult<ArcCowType> {
+    pub(super) fn expand_enum(&self, ty: ArcCowType) -> VResult<ArcCowType> {
         let e = match ty {
             Type::Enum(e) => e,
             _ => return Ok(ty),

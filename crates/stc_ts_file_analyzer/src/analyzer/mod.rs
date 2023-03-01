@@ -19,7 +19,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{type_id::DestructureId, Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{type_id::DestructureId, ArcCowType, Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};

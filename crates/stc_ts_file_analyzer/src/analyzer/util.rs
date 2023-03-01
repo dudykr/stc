@@ -6,8 +6,8 @@ use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr, QueryType, Ref,
-    RefMetadata, Tuple, TypeElement, Union,
+    ArcCowType, Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr,
+    QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
 };
 use stc_utils::{cache::ALLOW_DEEP_CLONE, dev_span};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext};

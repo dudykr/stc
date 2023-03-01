@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
 use stc_ts_errors::ErrorKind;
-use stc_ts_types::{KeywordType, LitType, Type};
+use stc_ts_types::{ArcCowType, KeywordType, LitType, Type};
 use stc_utils::cache::Freeze;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;

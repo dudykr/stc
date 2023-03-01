@@ -10,8 +10,8 @@ use stc_ts_errors::{
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
-    PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    replace::replace_type, ArcCowType, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType,
+    Mapped, Operator, PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},

@@ -6,7 +6,8 @@ use stc_ts_env::JsxMode;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
-    CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, LitType, PropertySignature, Type, TypeElement, TypeLit,
+    ArcCowType, CommonTypeMetadata, Id, IdCtx, Key, KeywordType, KeywordTypeMetadata, LitType, PropertySignature, Type, TypeElement,
+    TypeLit,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;

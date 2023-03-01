@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_types::{
-    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, RestType, Tuple, TupleElement, TypeElMetadata,
-    TypeElement, TypeLit, TypeLitMetadata,
+    ArcCowType, Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, RestType, Tuple, TupleElement,
+    TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};

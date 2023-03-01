@@ -1,7 +1,7 @@
 use stc_ts_ast_rnode::{RTsInstantiation, RTsSatisfiesExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{Type, TypeParamInstantiation};
+use stc_ts_types::{ArcCowType, Type, TypeParamInstantiation};
 use stc_utils::cache::Freeze;
 
 use crate::{

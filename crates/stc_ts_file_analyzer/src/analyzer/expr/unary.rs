@@ -3,7 +3,7 @@ use stc_ts_ast_rnode::{
     RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
-use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
+use stc_ts_types::{ArcCowType, KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;

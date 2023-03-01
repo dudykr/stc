@@ -695,7 +695,7 @@ impl Analyzer<'_, '_> {
 
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
-                        match lit {
+                        match &*lit {
                             Type::Lit(LitType {
                                 lit: RTsLit::Number(..), ..
                             }) => self.assign_with_opts(

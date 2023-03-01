@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
-    TypeElement, Union,
+    ArcCowType, Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature,
+    Ref, Type, TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt, try_cache};
 use swc_atoms::js_word;

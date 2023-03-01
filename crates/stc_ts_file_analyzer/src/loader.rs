@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use auto_impl::auto_impl;
-use stc_ts_types::{ModuleId, ModuleTypeData, Type};
+use stc_ts_types::{ArcCowType, ModuleId, ModuleTypeData, Type};
 use swc_atoms::JsWord;
 use swc_common::FileName;
 

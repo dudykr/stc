@@ -8,8 +8,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Symbol, Tuple,
-    TupleElement, Type, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
+    type_id::SymbolId, ArcCowType, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType,
+    Symbol, Tuple, TupleElement, Type, TypeParam, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{
     cache::Freeze,

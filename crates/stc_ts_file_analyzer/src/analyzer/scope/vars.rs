@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement,
-    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    type_id::DestructureId, ArcCowType, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, dev_span, TryOpt};
