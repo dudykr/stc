@@ -215,13 +215,13 @@ impl Fold<Type> for Simplifier<'_> {
                     )
                     .unwrap();
 
-                let s = match index_type {
+                let s = match index_type.normalize() {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.clone(),
                     _ => {
                         return Type::IndexedAccessType(IndexedAccessType {
                             span,
                             readonly,
-                            obj_type: box Type::Keyword(k),
+                            obj_type: Type::Keyword(k).into(),
                             index_type,
                             metadata,
                             tracker: Default::default(),
@@ -229,7 +229,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }
                 };
 
-                match obj_type {
+                match obj_type.normalize() {
                     Type::Interface(i) => {
                         for element in &i.body {
                             match element {
@@ -250,7 +250,7 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly,
-                    obj_type: box obj_type,
+                    obj_type: obj_type.into(),
                     index_type,
                     metadata,
                     tracker: Default::default(),
