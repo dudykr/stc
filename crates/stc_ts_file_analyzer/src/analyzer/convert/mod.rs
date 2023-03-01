@@ -603,7 +603,7 @@ impl Analyzer<'_, '_> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
-            ty: box node.ty.validate_with(self)?,
+            ty: node.ty.validate_with(self)?,
             tracker: Default::default(),
         })
     }
@@ -613,10 +613,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConditionalType) -> VResult<Conditional> {
-        let check_type = box t.check_type.validate_with(self)?;
-        let extends_type = box t.extends_type.validate_with(self)?;
-        let true_type = box t.true_type.validate_with(self)?;
-        let false_type = box t.false_type.validate_with(self)?;
+        let check_type = t.check_type.validate_with(self)?;
+        let extends_type = t.extends_type.validate_with(self)?;
+        let true_type = t.true_type.validate_with(self)?;
+        let false_type = t.false_type.validate_with(self)?;
 
         Ok(Conditional {
             span: t.span,
@@ -633,7 +633,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsMappedType) -> VResult<Mapped> {
-        let type_param = ty.type_param.validate_with(self)?;
+        let type_param = box ty.type_param.validate_with(self)?;
 
         Ok(Mapped {
             span: ty.span,

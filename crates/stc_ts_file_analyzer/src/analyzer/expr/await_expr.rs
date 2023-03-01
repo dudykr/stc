@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
                 .map(Cow::Owned);
         }
 
-        if let Type::Union(ty) = ty {
+        if let Type::Union(ty) = &*ty {
             let mut types = Vec::with_capacity(ty.types.len());
 
             for ty in &ty.types {

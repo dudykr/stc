@@ -764,6 +764,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
+                .into()
             })
         });
 

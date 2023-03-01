@@ -1765,10 +1765,10 @@ pub(crate) struct VarInfo {
     pub initialized: bool,
 
     /// Declared type.
-    pub ty: Option<Type>,
+    pub ty: Option<ArcCowType>,
 
     /// Stored type.
-    pub actual_ty: Option<Type>,
+    pub actual_ty: Option<ArcCowType>,
 
     /// Copied from parent scope. If this is true, it's not a variable
     /// declaration.

@@ -1035,8 +1035,8 @@ impl Analyzer<'_, '_> {
             let rhs = rhs.clone().generalize_lit();
 
             for (kwd, interface) in special_cases {
-                match &*to {
-                    Type::Keyword(k) if k.kind == *kwd => match &*rhs {
+                match to {
+                    Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Instance(Instance {
                             ty: box Type::Interface(ref i),
                             ..
