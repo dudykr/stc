@@ -2,14 +2,13 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use triomphe::Arc;
 
-pub use self::boxed::BoxedArcCow;
 use crate::freeze::Freezer;
 
 #[macro_use]
 mod macros;
-mod boxed;
 pub mod freeze;
 
 pub enum ArcCow<T>
@@ -72,5 +71,30 @@ pub fn _assert_trait_impl() {
     }
 
     _assert::<ArcCow<String>>();
-    _assert::<BoxedArcCow<String>>();
+}
+
+impl<T> Serialize for ArcCow<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        (**self).serialize(serializer)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for ArcCow<T>
+where
+    T: DeserializeOwned,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let t: T = Deserialize::deserialize(deserializer)?;
+
+        Ok(ArcCow::from(t))
+    }
 }
