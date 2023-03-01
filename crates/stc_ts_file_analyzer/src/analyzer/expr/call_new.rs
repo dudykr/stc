@@ -1922,7 +1922,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::Call => Some(CallCandidate {
                     params: params.clone(),
                     type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
-                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| Type::any(*span, Default::default()).into()),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1933,7 +1933,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::New => Some(CallCandidate {
                     params: params.clone(),
                     type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
-                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| Type::any(*span, Default::default()).into()),
                 }),
                 _ => None,
             })
@@ -2671,7 +2671,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
-                        self.register_type(param.name.clone(), Type::Param(param.clone()));
+                        self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
                     }
                 }
 
