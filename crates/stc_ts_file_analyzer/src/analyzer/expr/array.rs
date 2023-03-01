@@ -245,7 +245,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
-    pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: &Type, n: usize) -> VResult<ArcCowType> {
         debug!("Calculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
@@ -410,7 +410,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty)
     }
 
-    pub(crate) fn get_async_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_async_iterator_element_type<'a>(&mut self, span: Span, ty: &Type) -> VResult<ArcCowType> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
