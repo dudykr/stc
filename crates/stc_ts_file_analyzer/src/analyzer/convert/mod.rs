@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
@@ -1344,7 +1344,8 @@ impl Analyzer<'_, '_> {
                 .collect(),
             metadata: Default::default(),
             tracker: Default::default(),
-        });
+        })
+        .into_freezed();
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
         }

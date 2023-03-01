@@ -1428,13 +1428,13 @@ impl Analyzer<'_, '_> {
         let mut cons = self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
             let ty = cons.validate_with_args(child, (mode, None, type_ann)).report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
+            Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default()).into()))
         })?;
         cons.freeze();
         let mut alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt.validate_with_args(child, (mode, None, type_ann)).report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
+            Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default()).into()))
         })?;
         alt.freeze();
 

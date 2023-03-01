@@ -139,14 +139,14 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: box elem_type,
+                                ty: elem_type,
                                 tracker: Default::default(),
                             });
                         }
                     }
                     continue;
                 }
-                None => Type::undefined(span, Default::default()),
+                None => Type::undefined(span, Default::default()).into(),
             };
             elements.push(TupleElement {
                 span,
@@ -202,7 +202,7 @@ impl Analyzer<'_, '_> {
             let mut ty = Type::Array(
                 Array {
                     span,
-                    elem_type: box Type::new_union(span, types),
+                    elem_type: Type::new_union(span, types).into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }
@@ -530,7 +530,8 @@ impl Analyzer<'_, '_> {
                         common: u.metadata.common,
                         ..Default::default()
                     },
-                )]
+                )
+                .into()]
             }
         }
 

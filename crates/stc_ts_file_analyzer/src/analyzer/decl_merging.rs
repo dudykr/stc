@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
             None => return Ok((new, false)),
         };
 
-        let orig = orig.next().unwrap().into_owned();
+        let orig = orig.next().unwrap().into();
 
         let new = self.merge_declaration_types(new.span(), orig, new)?;
         info!("Merging declaration {} with type {}", name, dump_type_as_string(&new));
