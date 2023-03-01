@@ -1615,7 +1615,7 @@ impl ArcCowType {
     }
 
     #[inline]
-    pub fn into_owned(self) -> Type {
+    pub fn into_type(self) -> Type {
         match self {
             ArcCowType::Owned(ty) => *ty,
             ArcCowType::Arc(ty) => match Arc::try_unwrap(ty.ty) {
@@ -1630,7 +1630,7 @@ impl ArcCowType {
     /// TODO(kdy1): Remove if possible
     #[inline]
     pub fn foldable(self) -> Type {
-        self.into_owned()
+        self.into_type()
     }
 
     #[inline]
@@ -1689,7 +1689,7 @@ where
 {
     #[inline]
     fn fold_children_with(self, v: &mut V) -> Self {
-        Self::Owned(box self.into_owned().fold_with(v))
+        Self::Owned(box self.into_type().fold_with(v))
     }
 }
 
@@ -1749,7 +1749,7 @@ impl Type {
 
         for ty in iter {
             if ty.is_intersection() {
-                tys.extend(ty.into_owned().expect_intersection().types);
+                tys.extend(ty.into_type().expect_intersection().types);
             } else {
                 tys.push(ty);
             }
@@ -1775,7 +1775,7 @@ impl Type {
 
         match tys.len() {
             0 => Type::never(span, Default::default()),
-            1 => tys.into_iter().next().unwrap().into_owned(),
+            1 => tys.into_iter().next().unwrap().into_type(),
             _ => Type::Intersection(Intersection {
                 span,
                 types: tys,
@@ -1788,7 +1788,7 @@ impl Type {
     pub fn new_union_without_dedup(span: Span, types: Vec<ArcCowType>) -> Self {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
-            1 => types.into_iter().next().unwrap().into_owned(),
+            1 => types.into_iter().next().unwrap().into_type(),
             _ => {
                 if types.iter().any(|t| t.is_union_type()) {
                     let mut elements = vec![];
@@ -1805,7 +1805,7 @@ impl Type {
                         }
 
                         if ty.is_union_type() {
-                            let types = ty.into_owned().expect_union_type().types;
+                            let types = ty.into_type().expect_union_type().types;
                             for new in types {
                                 elements.push(new)
                             }
@@ -1848,7 +1848,7 @@ impl Type {
             }
 
             if ty.is_union_type() {
-                let types = ty.into_owned().expect_union_type().types;
+                let types = ty.into_type().expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev: &ArcCowType| prev.type_eq(&new)) {
                         continue;

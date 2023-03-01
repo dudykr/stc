@@ -84,7 +84,7 @@ impl VisitMut<Union> for Fixer {
             }
 
             if ty.is_union_type() {
-                let u = ty.into_owned().expect_union_type();
+                let u = ty.into_type().expect_union_type();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -116,7 +116,7 @@ impl VisitMut<Intersection> for Fixer {
             }
 
             if ty.is_intersection() {
-                let i = ty.into_owned().expect_intersection();
+                let i = ty.into_type().expect_intersection();
                 for ty in i.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -158,7 +158,7 @@ impl Fixer {
                 1 => {
                     let mut elem = u.types.drain(..).next().unwrap();
                     elem.normalize_mut().respan(u.span);
-                    *ty = elem.into_owned();
+                    *ty = elem.into_type();
                 }
                 _ => {}
             },
@@ -176,7 +176,7 @@ impl Fixer {
                 1 => {
                     let mut elem = i.types.drain(..).next().unwrap();
                     elem.normalize_mut().respan(i.span);
-                    *ty = elem.into_owned();
+                    *ty = elem.into_type();
                 }
                 _ => {}
             },

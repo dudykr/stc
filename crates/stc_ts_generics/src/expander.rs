@@ -57,7 +57,7 @@ impl GenericExpander<'_> {
                         self.dejavu.insert(param.name.clone());
                         let ty = ty.clone().fold_with(self);
                         self.dejavu.remove(&param.name);
-                        return ty.into_owned();
+                        return ty.into_type();
                     }
                 }
             }
@@ -266,7 +266,7 @@ impl GenericExpander<'_> {
                 if let Some(ty) = &mut m.ty {
                     ty.normalize_mut();
                 }
-                m.ty = match m.ty.map(ArcCowType::into_owned) {
+                m.ty = match m.ty.map(ArcCowType::into_type) {
                     Some(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly,
@@ -277,7 +277,7 @@ impl GenericExpander<'_> {
                     })) => {
                         obj_type.normalize_mut();
                         // TODO(kdy1): PERF
-                        match obj_type.into_owned() {
+                        match obj_type.into_type() {
                             Type::TypeLit(TypeLit {
                                 span, members, metadata, ..
                             }) if members
@@ -331,7 +331,7 @@ impl GenericExpander<'_> {
                     }) = constraint.normalize()
                     {
                         match ty.normalize() {
-                            Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return ty.clone().into_owned(),
+                            Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return ty.clone().into_type(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,

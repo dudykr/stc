@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                 },
 
                 Type::TypeLit(l) => {
-                    return Ok(try_cache!(self.data.cache.keyof_type_lit, ty.clone().into_owned(), {
+                    return Ok(try_cache!(self.data.cache.keyof_type_lit, ty.clone().into_type(), {
                         let mut types = vec![];
                         for member in &l.members {
                             match member {

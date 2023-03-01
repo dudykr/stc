@@ -654,7 +654,7 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to normalize enum")?
                     .freezed()
-                    .into_owned()
+                    .into_type()
                     .freezed();
                 return self.infer_type_inner(span, inferred, param, &arg, opts);
             }

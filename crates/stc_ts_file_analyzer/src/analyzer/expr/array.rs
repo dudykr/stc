@@ -545,7 +545,7 @@ impl Analyzer<'_, '_> {
 
         if iterator.is_tuple() {
             iterator.freeze();
-            let ty = iterator.into_owned().expect_tuple();
+            let ty = iterator.into_type().expect_tuple();
 
             // TODO: Handle [Type::Rest]
 

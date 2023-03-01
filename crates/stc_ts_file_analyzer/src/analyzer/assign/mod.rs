@@ -293,14 +293,14 @@ impl Analyzer<'_, '_> {
                     Type::TypeLit(..) => {
                         return Err(ErrorKind::WrongTypeForRhsOfNumericOperation {
                             span,
-                            ty: rhs.into_owned().into(),
+                            ty: rhs.into_type().into(),
                         }
                         .into())
                     }
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
                         return Err(ErrorKind::WrongTypeForRhsOfNumericOperation {
                             span,
-                            ty: rhs.into_owned().into(),
+                            ty: rhs.into_type().into(),
                         }
                         .into())
                     }
@@ -399,8 +399,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::InvalidOpAssign {
                             span,
                             op,
-                            lhs: l.into_owned().clone().into(),
-                            rhs: r.into_owned().clone().into(),
+                            lhs: l.into_type().clone().into(),
+                            rhs: r.into_type().clone().into(),
                         }
                         .into());
                     }
@@ -423,8 +423,8 @@ impl Analyzer<'_, '_> {
                     .convert_err(|err| ErrorKind::InvalidOpAssign {
                         span,
                         op,
-                        lhs: l.into_owned().clone().into(),
-                        rhs: r.into_owned().clone().into(),
+                        lhs: l.into_type().clone().into(),
+                        rhs: r.into_type().clone().into(),
                     });
             }
             _ => {}
@@ -566,7 +566,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )?
-                    .into_owned();
+                    .into_type();
 
                 return Ok(Cow::Owned(ty));
             }
@@ -880,7 +880,7 @@ impl Analyzer<'_, '_> {
                     },
                 )?
                 .freezed()
-                .into_owned()
+                .into_type()
                 .freezed();
             if self.assign_inner(data, to, &rhs, opts).is_ok() {
                 return Ok(());

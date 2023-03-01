@@ -26,19 +26,19 @@ impl From<Box<Type>> for RTsType {
 
 impl From<ArcCowType> for RTsType {
     fn from(ty: ArcCowType) -> Self {
-        ty.into_owned().into()
+        ty.into_type().into()
     }
 }
 
 impl From<ArcCowType> for RTsTypeAnn {
     fn from(ty: ArcCowType) -> Self {
-        ty.into_owned().into()
+        ty.into_type().into()
     }
 }
 
 impl From<ArcCowType> for Box<RTsType> {
     fn from(ty: ArcCowType) -> Self {
-        box ty.into_owned().into()
+        box ty.into_type().into()
     }
 }
 

@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
             let callee_before_expanding = force_dump_type_as_string(&callee);
             let callee = self
                 .normalize(Some(span), &callee, NormalizeTypeOpts { ..Default::default() })?
-                .into_owned();
+                .into_type();
 
             if let Type::ClassDef(cls) = callee {
                 if cls.is_abstract {
@@ -1746,7 +1746,7 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => self.get_best_return_type(
                 span,
                 expr,
-                ty.clone().into_owned(),
+                ty.clone().into_type(),
                 kind,
                 type_args,
                 args,

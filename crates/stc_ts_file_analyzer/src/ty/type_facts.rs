@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
             return ty;
         }
 
-        let mut ty = ty.into_owned();
+        let mut ty = ty.into_type();
 
         let _tracing = dev_span!("apply_type_facts_to_type");
 

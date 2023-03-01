@@ -1271,7 +1271,7 @@ impl Analyzer<'_, '_> {
 
         let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
         if let Ok(ty) = ty {
-            let ty = ty.into_owned();
+            let ty = ty.into_type();
             ty.assert_valid();
             debug!(
                 "[({})/vars/destructor]: Declaring {:?} as {}",
@@ -2735,7 +2735,7 @@ impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {
                 .analyzer
                 .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
             {
-                *value = new.freezed().into_owned();
+                *value = new.freezed().into_type();
             }
         }
     }

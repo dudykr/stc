@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
                         // TODO(kdy1): Change this to `get_iterable_element_type`
                         if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
-                            types.push(el_ty.into_owned());
+                            types.push(el_ty.into_type());
                         }
                     }
                 }
@@ -499,11 +499,11 @@ impl Analyzer<'_, '_> {
                 if self.ctx.in_async {
                     self.get_async_iterator_element_type(e.span, Cow::Owned(ty))
                         .context("tried to convert argument as an async iterator for delegating yield")?
-                        .into_owned()
+                        .into_type()
                 } else {
                     self.get_iterator_element_type(e.span, Cow::Owned(ty), false, GetIteratorOpts { ..Default::default() })
                         .context("tried to convert argument as an iterator for delegating yield")?
-                        .into_owned()
+                        .into_type()
                 }
             } else {
                 ty

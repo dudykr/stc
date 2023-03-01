@@ -751,7 +751,7 @@ impl Analyzer<'_, '_> {
         if computed {
             prop.validate_with_default(self)
                 .and_then(|ty| {
-                    self.expand_top_ref(ty.span(), Cow::Owned(ty.into_owned()), Default::default())
+                    self.expand_top_ref(ty.span(), Cow::Owned(ty.into_type()), Default::default())
                         .map(Cow::into_owned)
                         .map(Type::into_freezed)
                 })
@@ -3041,7 +3041,7 @@ impl Analyzer<'_, '_> {
 
             Type::This(..) => {
                 // TODO(kdy1): Use parent scope in computed property names.
-                if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
+                if let Some(this) = self.scope.this().map(|this| this.into_type()) {
                     if self.ctx.in_computed_prop_name {
                         if !self.ctx.in_class_member {
                             self.storage

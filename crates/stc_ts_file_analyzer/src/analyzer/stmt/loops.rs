@@ -207,7 +207,7 @@ impl Analyzer<'_, '_> {
         if rhs.is_bool() || rhs.is_str() || rhs.is_num() || rhs.is_never() || rhs.is_symbol() {
             return Err(ErrorKind::RightHandSideMustBeObject {
                 span,
-                ty: box rhs.clone().into_owned(),
+                ty: box rhs.clone().into_type(),
             }
             .into());
         }

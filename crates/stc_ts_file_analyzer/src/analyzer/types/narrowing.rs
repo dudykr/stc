@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
         if let Type::Union(actual) = actual {
             let mut new_types = vec![];
             for actual in &actual.types {
-                let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), actual)?;
+                let ty = self.narrowed_type_of_assignment(span, declared.clone().into_type(), actual)?;
                 new_types.push(ty);
             }
 
@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
             .fixed());
         }
 
-        let mut declared = declared.into_owned();
+        let mut declared = declared.into_type();
         declared.normalize_mut();
         // TODO(kdy1): PERF
 

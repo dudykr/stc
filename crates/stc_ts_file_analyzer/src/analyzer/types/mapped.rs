@@ -593,7 +593,7 @@ impl Analyzer<'_, '_> {
             for property_name in property_names {
                 match property_name {
                     PropertyName::Key(key) => {
-                        let mut new_key = name_type.clone().into_owned();
+                        let mut new_key = name_type.clone().into_type();
 
                         // Replace T with ty
                         replace_type(&mut new_key, |needle| needle.type_eq(original_keyof_operand), |_| Some(ty.clone()));
@@ -620,7 +620,7 @@ impl Analyzer<'_, '_> {
                                 },
                             )?
                             .freezed()
-                            .into_owned();
+                            .into_type();
 
                         new_keys.push(new_key);
                     }

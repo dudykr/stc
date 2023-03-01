@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
             };
 
             if matches!(&*ty, Type::Arc(..)) {
-                let ty = self.normalize(span, Cow::Borrowed(ty), opts)?.into_owned();
+                let ty = self.normalize(span, Cow::Borrowed(ty), opts)?.into_type();
 
                 return Ok(Cow::Owned(ty));
             }
@@ -172,7 +172,7 @@ impl Analyzer<'_, '_> {
 
                         new_ty.freeze();
 
-                        return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
+                        return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_type()));
                     }
 
                     Type::Keyword(k) => {
@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(Cow::Owned(
                                     self.normalize(span, Cow::Owned(ty), opts)
                                         .context("tried to expand a mapped type as a part of normalization")?
-                                        .into_owned(),
+                                        .into_type(),
                                 ));
                             }
                         }
@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
 
                     Type::Alias(a) => {
                         // TODO(kdy1): Optimize
-                        return Ok(Cow::Owned(self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned()));
+                        return Ok(Cow::Owned(self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_type()));
                     }
 
                     Type::StringMapping(i) => {
@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
                         let elem_type = box self
                             .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
                             .context("tried to normalize the type of the element of an array type")?
-                            .into_owned();
+                            .into_type();
 
                         elem_type.assert_valid();
 
@@ -263,7 +263,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )?
-                                    .into_owned();
+                                    .into_type();
 
                                 if let Type::EnumVariant(EnumVariant {
                                     name: Some(..), enum_name, ..
@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )?
-                                        .into_owned();
+                                        .into_type();
 
                                     if let Type::EnumVariant(EnumVariant {
                                         span,
@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
                                 ty.freeze();
-                                let mut ty = ty.into_owned();
+                                let mut ty = ty.into_type();
 
                                 if let Some(u) = ty.as_union_type_mut() {
                                     types.append(&mut u.types);
@@ -413,14 +413,14 @@ impl Analyzer<'_, '_> {
                             )
                             .context("tried to normalize the `check` type of a conditional type")?
                             .freezed()
-                            .into_owned()
+                            .into_type()
                             .freezed();
 
                         c.extends_type = box self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
                             .context("tried to normalize the `extends` type of a conditional type")?
                             .freezed()
-                            .into_owned()
+                            .into_type()
                             .freezed();
 
                         if let Some(v) = self.extends(actual_span, &c.check_type, &c.extends_type, Default::default()) {
@@ -430,7 +430,7 @@ impl Analyzer<'_, '_> {
                             let ty = self
                                 .normalize(span, Cow::Borrowed(ty), opts)
                                 .context("tried to normalize the calculated type of a conditional type")?
-                                .into_owned();
+                                .into_type();
                             return Ok(Cow::Owned(ty));
                         }
 
@@ -633,7 +633,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?;
                         ty.freeze();
-                        let ty = ty.into_owned();
+                        let ty = ty.into_type();
 
                         return Ok(Cow::Owned(ty));
                     }
@@ -648,12 +648,12 @@ impl Analyzer<'_, '_> {
                         let obj_ty = box self
                             .normalize(span, Cow::Borrowed(&iat.obj_type), opts)
                             .context("tried to normalize object type")?
-                            .into_owned();
+                            .into_type();
 
                         let index_ty = box self
                             .normalize(span, Cow::Borrowed(&iat.index_type), opts)
                             .context("tried to normalize index type")?
-                            .into_owned()
+                            .into_type()
                             .freezed();
 
                         let ctx = Ctx {
@@ -686,7 +686,7 @@ impl Analyzer<'_, '_> {
                             let ty = self
                                 .normalize(span, Cow::Owned(prop_ty), opts)
                                 .context("tried to normalize the type of property")?
-                                .into_owned();
+                                .into_type();
 
                             return Ok(Cow::Owned(ty));
                         }
@@ -879,9 +879,9 @@ impl Analyzer<'_, '_> {
                 //
                 if let Some(extends) = self.extends(span, check_type_constraint, extends_type, ExtendsOpts { ..Default::default() }) {
                     if extends {
-                        return Ok(Some(true_type.into_owned()));
+                        return Ok(Some(true_type.into_type()));
                     } else {
-                        return Ok(Some(false_type.into_owned()));
+                        return Ok(Some(false_type.into_type()));
                     }
                 }
             }
@@ -892,8 +892,8 @@ impl Analyzer<'_, '_> {
                 span,
                 check_type: box check_type.clone(),
                 extends_type: box extends_type.clone(),
-                true_type: box true_type.into_owned(),
-                false_type: box false_type.into_owned(),
+                true_type: box true_type.into_type(),
+                false_type: box false_type.into_type(),
                 metadata,
                 tracker: Default::default(),
             })))
@@ -929,7 +929,7 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             ) {
-                let result = res.into_owned();
+                let result = res.into_type();
 
                 match &result {
                     Type::Keyword(KeywordType {
@@ -1138,7 +1138,7 @@ impl Analyzer<'_, '_> {
                 )
                 .context("failed to normalize types while intersecting properties")?
                 .freezed()
-                .into_owned()
+                .into_type()
                 .freezed();
 
             if let Type::TypeLit(elem_tl) = elem.normalize_instance() {
@@ -1445,7 +1445,7 @@ impl Analyzer<'_, '_> {
         let actual_span = ty.span();
 
         // TODO(kdy1): PERF
-        let mut ty = ty.into_owned();
+        let mut ty = ty.into_type();
         ty.normalize_mut();
 
         Ok(match ty {
@@ -1558,7 +1558,7 @@ impl Analyzer<'_, '_> {
                 }
                 Err(ErrorKind::ObjectIsPossiblyUndefinedWithType {
                     span,
-                    ty: box ty.into_owned(),
+                    ty: box ty.into_type(),
                 }
                 .into())
             }
@@ -1804,7 +1804,7 @@ impl Analyzer<'_, '_> {
         }
 
         if ty.is_interface() {
-            let t = ty.into_owned().expect_interface();
+            let t = ty.into_type().expect_interface();
             let mut members = vec![];
 
             for parent in &t.extends {
@@ -2289,7 +2289,7 @@ impl Analyzer<'_, '_> {
                     .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
                     .context("failed to expand intrinsic in type parameters")?
                     .freezed()
-                    .into_owned()
+                    .into_type()
                     .freezed();
 
                 let arg = Type::Param(TypeParam {
@@ -2582,7 +2582,7 @@ impl Analyzer<'_, '_> {
             self.exclude_type(span, ALLOW_DEEP_CLONE.set(&(), || mapped_ty.to_mut()), &excluded);
         }
 
-        *ty = ALLOW_DEEP_CLONE.set(&(), || mapped_ty.into_owned());
+        *ty = ALLOW_DEEP_CLONE.set(&(), || mapped_ty.into_type());
         ty.fix();
     }
 

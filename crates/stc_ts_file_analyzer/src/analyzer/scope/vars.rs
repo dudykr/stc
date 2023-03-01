@@ -301,7 +301,7 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     match result {
-                                        Ok(ty) => Ok(ty.into_owned().generalize_lit()),
+                                        Ok(ty) => Ok(ty.into_type().generalize_lit()),
                                         Err(err) => match &*err {
                                             ErrorKind::TupleIndexError { .. } => match elem {
                                                 RPat::Assign(p) => {
@@ -482,7 +482,7 @@ impl Analyzer<'_, '_> {
 
                     let save_ty = ty.clone().map(|ty| {
                         if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
-                            let mut ty = ty.into_owned();
+                            let mut ty = ty.into_type();
                             if let Type::Union(Union { types, .. }) = ty.normalize_mut() {
                                 'outer: for member in types.iter_mut() {
                                     if let Type::Tuple(tuple) = member.normalize_mut() {
@@ -899,7 +899,7 @@ impl Analyzer<'_, '_> {
             ty.freeze();
 
             if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
-                return Ok(ty.into_owned());
+                return Ok(ty.into_type());
             }
 
             match ty {
@@ -992,7 +992,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect_vec();
                     if key_types.is_empty() {
-                        return Ok(ty.into_owned());
+                        return Ok(ty.into_type());
                     }
                     let keys = Type::Union(Union {
                         span,
@@ -1006,7 +1006,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation {
                             span,
-                            params: vec![ty.clone().into_owned(), keys],
+                            params: vec![ty.clone().into_type(), keys],
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
@@ -1065,13 +1065,13 @@ impl Analyzer<'_, '_> {
                 ..
             })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                    return self.regist_destructure(span, Some(result.into_type()), des_key);
                 }
             }
 
             Some(Type::Instance(Instance { ty: box result, .. })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                    return self.regist_destructure(span, Some(result.into_type()), des_key);
                 }
             }
 

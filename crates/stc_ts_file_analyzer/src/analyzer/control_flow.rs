@@ -852,7 +852,7 @@ impl Analyzer<'_, '_> {
         let orig_ty = self
             .normalize(Some(ty.span().or_else(|| span)), ty, Default::default())
             .context("tried to normalize a type to assign it to a pattern")?
-            .into_owned()
+            .into_type()
             .into_freezed();
 
         let ty = orig_ty;

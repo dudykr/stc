@@ -56,7 +56,7 @@ where
 
         if (self.matcher)(ty) {
             if let Some(new_ty) = (self.replacer)(ty) {
-                *ty = new_ty.into_owned();
+                *ty = new_ty.into_type();
                 return;
             }
         }

@@ -1492,7 +1492,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?
-            .into_owned()
+            .into_type()
             .freezed();
         let r = self
             .normalize(
@@ -1505,7 +1505,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?
-            .into_owned()
+            .into_type()
             .freezed();
 
         let l = l;
@@ -1893,7 +1893,7 @@ impl Analyzer<'_, '_> {
 
         let ty = self.type_of_name(span, &name.slice_to(name.len() - 1), TypeOfMode::RValue, None)?;
 
-        let ty = self.normalize(Some(span), &ty, Default::default())?.into_owned();
+        let ty = self.normalize(Some(span), &ty, Default::default())?.into_type();
 
         if let Type::Union(u) = ty {
             let mut has_undefined = false;
