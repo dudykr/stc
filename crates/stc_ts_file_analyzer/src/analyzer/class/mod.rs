@@ -101,14 +101,12 @@ impl Analyzer<'_, '_> {
 
             // Report error if type is not found.
             if let Some(ty) = &ty {
-                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                    .report(&mut self.storage);
+                self.normalize(Some(span), ty, Default::default()).report(&mut self.storage);
             }
 
             // Report error if type is not found.
             if let Some(ty) = &value_ty {
-                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                    .report(&mut self.storage);
+                self.normalize(Some(span), ty, Default::default()).report(&mut self.storage);
             }
         }
 

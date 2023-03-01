@@ -2638,7 +2638,7 @@ impl Analyzer<'_, '_> {
                         // Try to assign by converting rhs to an iterable.
                         if opts.allow_iterable_on_rhs {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
+                                .get_iterator(span, rhs, Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             for (i, elem) in lhs_elems.iter().enumerate() {
@@ -3010,7 +3010,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut map = HashMap::default();
-                        map.insert(r.type_param.name.clone(), Type::Param(*l.type_param.clone()).freezed());
+                        map.insert(r.type_param.name.clone(), Type::Param(*l.type_param.clone()).into_freezed());
 
                         let new_r_ty = self.expand_type_params(&map, r.ty.clone(), Default::default())?;
 
