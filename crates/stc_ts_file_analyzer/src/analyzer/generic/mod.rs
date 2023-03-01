@@ -1097,7 +1097,7 @@ impl Analyzer<'_, '_> {
                     }
                     let mut param = self.expand(
                         span,
-                        Type::Ref(param.clone()),
+                        Type::Ref(param.clone()).into(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -1108,7 +1108,7 @@ impl Analyzer<'_, '_> {
                         },
                     )?;
                     param.freeze();
-                    match param {
+                    match &*param {
                         Type::Ref(..) => {
                             dbg!();
 
@@ -1160,7 +1160,7 @@ impl Analyzer<'_, '_> {
                     IndexedAccessType {
                         obj_type: box Type::Intersection(Intersection { types, .. }),
                         ..
-                    } if types.iter().all(|ty| match ty {
+                    } if types.iter().all(|ty| match &**ty {
                         Type::Param(obj_type) => self.mapped_type_param_name.contains(&obj_type.name),
                         _ => false,
                     }) =>

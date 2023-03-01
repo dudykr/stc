@@ -104,9 +104,6 @@ impl Fold<Union> for Simplifier<'_> {
 
 impl Fold<Type> for Simplifier<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
         if let Type::Array(Array {
             elem_type:
                 box Type::IndexedAccessType(IndexedAccessType {

@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
             None => {
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
-                return (ctxt, Type::any(span, Default::default()));
+                return (ctxt, Type::any(span, Default::default()).into());
             }
         };
         let data = match self.data.imports.get(&(ctxt, dep_id)).cloned() {
@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
             None => {
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
-                return (ctxt, Type::any(span, Default::default()));
+                return (ctxt, Type::any(span, Default::default()).into());
             }
         };
 
