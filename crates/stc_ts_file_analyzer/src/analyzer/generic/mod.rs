@@ -2662,7 +2662,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
     match v {
         TruePlusMinus::True => {
             if element_ty.is_optional() {
-                match element_ty.normalize_mut() {
+                match element_ty {
                     Type::Optional(ty) => {
                         let ty = ty.ty.take();
                         let ty = ty.remove_falsy();

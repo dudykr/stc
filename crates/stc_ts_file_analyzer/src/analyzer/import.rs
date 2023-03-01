@@ -148,7 +148,7 @@ impl Analyzer<'_, '_> {
         // Check for entry only if import was successful.
         if is_import_successful {
             if let Some(data) = self.data.imports.get(&(ctxt, target)) {
-                match data {
+                match &**data {
                     Type::Module(data) => {
                         if let Some(ty) = data.exports.vars.get(orig.sym()).cloned() {
                             found_entry = true;
@@ -175,12 +175,12 @@ impl Analyzer<'_, '_> {
         if !found_entry {
             self.data.unresolved_imports.insert(id.clone());
 
-            self.register_type(id.clone(), Type::any(span, Default::default()));
+            self.register_type(id.clone(), Type::any(span, Default::default()).into());
             self.declare_var(
                 span,
                 VarKind::Import,
                 id.clone(),
-                Some(Type::any(span, Default::default())),
+                Some(Type::any(span, Default::default()).into()),
                 None,
                 true,
                 false,
@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
                             ns.span,
                             VarKind::Import,
                             ns.local.clone().into(),
-                            Some(Type::any(ns.span, Default::default())),
+                            Some(Type::any(ns.span, Default::default()).into()),
                             None,
                             true,
                             false,
