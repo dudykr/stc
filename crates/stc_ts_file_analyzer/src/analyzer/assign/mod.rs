@@ -1215,7 +1215,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = t {
+                                if let Type::Enum(en) = &*t {
                                     if en.has_str {
                                         return Ok(());
                                     }

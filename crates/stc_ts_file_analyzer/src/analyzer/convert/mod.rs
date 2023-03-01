@@ -760,7 +760,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
         let span = t.span;
-        let type_args = try_opt!(t.type_params.validate_with(self)).map(From::from).freezed();
+        let type_args = try_opt!(t.type_params.validate_with(self)).freezed();
         let mut contains_infer = false;
 
         let mut reported_type_not_found = false;

@@ -774,14 +774,14 @@ impl Analyzer<'_, '_> {
 
                     match op {
                         op!("??=") | op!("||=") => {
-                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty);
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty).into_freezed();
 
-                            Type::new_union(span, vec![ArcCowType::new_freezed(lhs_ty), rhs_ty.clone()])
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
                         }
                         op!("&&=") => {
-                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty);
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty).into_freezed();
 
-                            Type::new_union(span, vec![ArcCowType::new_freezed(lhs_ty), rhs_ty.clone()])
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
                         }
                         _ => rhs_ty.clone(),
                     }
@@ -1177,7 +1177,7 @@ impl Analyzer<'_, '_> {
 
     /// While this type fact is in scope, the var named `sym` will be treated as
     /// `ty`.
-    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type, exclude: Type) {
+    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: ArcCowType, exclude: ArcCowType) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 
         ty.assert_clone_cheap();
@@ -1186,7 +1186,7 @@ impl Analyzer<'_, '_> {
         self.cur_facts.insert_var(sym, ty, exclude, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
+    pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: ArcCowType, is_for_true: bool) {
         debug_assert!(!self.config.is_builtin);
 
         ty.assert_valid();
@@ -1343,7 +1343,7 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if let Type::Union(u) = obj {
+        if let Type::Union(u) = &*obj {
             if name.len() == 2 {
                 let mut new_obj_types = vec![];
 

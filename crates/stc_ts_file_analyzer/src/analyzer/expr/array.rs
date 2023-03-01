@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
 
                     // TODO(kdy1): PERF
 
-                    match element_type {
+                    match &*element_type {
                         Type::Array(array) => {
                             can_be_tuple = false;
                             elements.push(TupleElement {

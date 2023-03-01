@@ -784,7 +784,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn register_type(&mut self, name: Id, ty: Type) -> ArcCowType {
+    pub(super) fn register_type(&mut self, name: Id, ty: ArcCowType) -> ArcCowType {
         let _tracing = dev_span!("register_type");
 
         if cfg!(debug_assertions) {
