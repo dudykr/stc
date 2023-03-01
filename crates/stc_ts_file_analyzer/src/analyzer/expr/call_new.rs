@@ -3775,7 +3775,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 let mut types: Vec<ArcCowType> = vec![];
 
                 for index_ty in index_type.iter_union() {
-                    let (lit_span, value) = match index_ty {
+                    let (lit_span, value) = match &**index_ty {
                         Type::Lit(LitType {
                             span: lit_span,
                             lit: RTsLit::Str(RStr { value, .. }),
