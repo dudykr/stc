@@ -402,7 +402,7 @@ impl Visit<RTsEntityName> for VarVisitor<'_> {
 }
 
 /// Returns union if both of `opt1` and `opt2` is [Some].
-pub(crate) fn opt_union(span: Span, opt1: Option<Type>, opt2: Option<Type>) -> Option<Type> {
+pub(crate) fn opt_union(span: Span, opt1: Option<ArcCowType>, opt2: Option<ArcCowType>) -> Option<ArcCowType> {
     match (opt1, opt2) {
         (None, None) => None,
         (None, Some(v)) => Some(v),

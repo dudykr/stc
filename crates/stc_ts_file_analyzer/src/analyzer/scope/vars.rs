@@ -422,7 +422,7 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
-                                        .map(|ty| ty.generalize_lit())
+                                        .map(|ty| ty.generalize_lit().into_cow())
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
                                         add_destructure_sign(ty, destructure_key);
                                     }
 
-                                    let prop_ty = prop_ty.map(Type::freezed);
+                                    let prop_ty = prop_ty.map(Type::into_freezed);
 
                                     match &prop.value {
                                         Some(default) => {
@@ -1043,7 +1043,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn regist_destructure(&mut self, span: Span, ty: Option<ArcCowType>, des_key: Option<DestructureId>) -> DestructureId {
-        match ty.as_ref().map(Type::normalize) {
+        match ty.as_deref() {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
                 let destructure_key = des_key;
@@ -1054,8 +1054,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             Some(Type::Param(TypeParam {
-                constraint: Some(box result),
-                ..
+                constraint: Some(result), ..
             })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
                     return self.regist_destructure(span, Some(result.into_type()), des_key);

@@ -808,7 +808,7 @@ impl Analyzer<'_, '_> {
         arg.assert_clone_cheap();
 
         // TODO(kdy1): Verify if this is correct
-        if let Type::Param(arg) = arg {
+        if let Type::Param(arg) = &*arg {
             if let Some(inverse) = inferred.type_params.get(&arg.name) {
                 if inverse.priority < opts.priority {
                     return Ok(());
