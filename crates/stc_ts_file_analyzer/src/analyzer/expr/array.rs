@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
             elements.push(TupleElement {
                 span,
                 label: None,
-                ty: box ty,
+                ty,
                 tracker: Default::default(),
             });
         }
@@ -162,7 +162,8 @@ impl Analyzer<'_, '_> {
                 elem_type: box Type::any(span, Default::default()),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
 
         if !can_be_tuple || (type_ann.is_none() && elements.is_empty()) {

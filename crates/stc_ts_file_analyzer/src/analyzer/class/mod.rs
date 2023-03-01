@@ -2050,7 +2050,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassExpr, type_ann: Option<&Type>) -> VResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with_args(self, type_ann) {
-            Ok(ty) => ty.into(),
+            Ok(ty) => Type::from(ty).into_freezed(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(c.span(), Default::default())

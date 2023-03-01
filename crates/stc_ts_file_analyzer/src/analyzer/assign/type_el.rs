@@ -341,7 +341,7 @@ impl Analyzer<'_, '_> {
                                     tracker: Default::default(),
                                 });
 
-                                let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+                                let rhs = self.normalize(None, &r_arr, Default::default())?;
 
                                 if let Ok(()) = self.assign_to_type_elements(
                                     data,
