@@ -585,7 +585,7 @@ impl Analyzer<'_, '_> {
             }
             _ => param,
         };
-        let param_normalized = param;
+        let param_normalized = param.normalize();
 
         {
             // Handle array-like types
