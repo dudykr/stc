@@ -194,7 +194,7 @@ impl Analyzer<'_, '_> {
             _ => {
                 if p.type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        m.for_class_props.entry(p.node_id).or_default().ty = value.clone().map(|ty| ty.generalize_lit());
+                        m.for_class_props.entry(p.node_id).or_default().ty = value.clone().map(|ty| ty.generalize_lit().into_freezed());
                     }
                 }
             }
@@ -1715,14 +1715,17 @@ impl Analyzer<'_, '_> {
                                     let node_id = c.node_id;
                                     m.for_classes.entry(node_id).or_default().super_class = Some(box RExpr::Ident(new_ty.clone()));
                                 }
-                                Some(box Type::Ref(Ref {
-                                    span: DUMMY_SP,
-                                    type_name: RTsEntityName::Ident(new_ty),
-                                    // TODO(kdy1): Handle type parameters
-                                    type_args: None,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }))
+                                Some(
+                                    Type::Ref(Ref {
+                                        span: DUMMY_SP,
+                                        type_name: RTsEntityName::Ident(new_ty),
+                                        // TODO(kdy1): Handle type parameters
+                                        type_args: None,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    })
+                                    .into(),
+                                )
                             }
                             Type::ClassDef(cls) => {
                                 // check if the constructor of the super class is private.

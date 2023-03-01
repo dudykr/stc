@@ -345,6 +345,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        let iterator = iterator.clone().into_freezed();
         let next_ret_ty = self
             .call_property(
                 span,

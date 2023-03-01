@@ -1004,17 +1004,17 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(&ty), Default::default())
+                    .get_iterator(span, &ty, Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));
+                    .unwrap_or_else(|| Type::any(span, Default::default()).into());
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
                         if let RPat::Rest(elem) = elem {
                             // Rest element is special.
                             let type_for_rest_arg = self
-                                .get_rest_elements(None, ty, i)
+                                .get_rest_elements(None, &ty, i)
                                 .context("tried to get left elements of an iterator to assign using a rest pattern")?;
 
                             self.try_assign_pat_with_opts(
