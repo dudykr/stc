@@ -241,7 +241,7 @@ impl Analyzer<'_, '_> {
                         .validate_with_args(self, (mode, type_args, type_ann.as_deref()))?
                         .remove_falsy();
                     ty.reposition(*span);
-                    Ok(ty)
+                    Ok(ty.into())
                 }
 
                 RExpr::Object(e) => e.validate_with_args(self, type_ann.as_deref()),
@@ -249,17 +249,17 @@ impl Analyzer<'_, '_> {
                 // https://github.com/Microsoft/TypeScript/issues/26959
                 RExpr::Yield(..) => {
                     e.visit_children_with(self);
-                    Ok(Type::any(span, Default::default()))
+                    Ok(Type::any(span, Default::default()).into())
                 }
 
                 RExpr::Await(e) => e.validate_with_args(self, type_ann.as_deref()),
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    Ok(class.validate_with_args(self, type_ann.as_deref())?.into())
+                    Ok(class.validate_with_args(self, type_ann.as_deref()).map(Type::from)?.into())
                 }
 
-                RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann.as_deref())?.into()),
+                RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann.as_deref()).map(Type::from)?.into()),
 
                 RExpr::Fn(f) => Ok(f.validate_with_args(self, type_ann.as_deref())?),
 
@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::MetaProp(e) => e.validate_with(self),
 
-                RExpr::Invalid(ref i) => Ok(Type::any(i.span(), Default::default())),
+                RExpr::Invalid(ref i) => Ok(Type::any(i.span(), Default::default()).into()),
 
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann.as_deref()),
 
