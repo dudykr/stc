@@ -27,7 +27,7 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
-use stc_arc_cow::{freeze::Freezer, ArcCow};
+use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
     RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
@@ -194,9 +194,9 @@ pub enum Type {
     Class(Class),
 
     /// Class definition itself.
-    ClassDef(ArcCow<ClassDef>),
+    ClassDef(ClassDef),
 
-    Arc(ArcType),
+    Arc(Freezed),
 
     Rest(RestType),
 
@@ -886,7 +886,7 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
-    pub def: ArcCow<ClassDef>,
+    pub def: Box<ClassDef>,
     pub metadata: ClassMetadata,
 
     pub tracker: Tracker<"Class">,
@@ -2415,7 +2415,7 @@ impl Type {
     /// `Type::Static` is normalized.
     #[instrument(skip_all)]
     pub fn normalize_mut(&mut self) -> &mut Type {
-        if let Type::Arc(ArcType { ty }) = self {
+        if let Type::Arc(Freezed { ty }) = self {
             let ty = Arc::make_mut(ty);
             *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
         }
@@ -2844,7 +2844,7 @@ impl VisitMut<Type> for Freezer {
             }),
         );
 
-        *ty = Type::Arc(ArcType { ty: Arc::new(new_ty) })
+        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
     }
 }
 
@@ -2942,30 +2942,29 @@ impl From<RTplElement> for TplElem {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
-/// A [Type] which is cheap to clone.
 #[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
-pub struct ArcType {
+pub struct Freezed {
     ty: Arc<Type>,
 }
 
-impl Debug for ArcType {
+impl Debug for Freezed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.ty)
     }
 }
 
-impl Spanned for ArcType {
+impl Spanned for Freezed {
     fn span(&self) -> Span {
         self.ty.span()
     }
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ArcType, [u8; 8]);
+assert_eq_size!(Freezed, [u8; 8]);
 
-impl Visitable for ArcType {}
+impl Visitable for Freezed {}
 
-impl<V> VisitWith<V> for ArcType
+impl<V> VisitWith<V> for Freezed
 where
     V: ?Sized,
 {
@@ -2975,7 +2974,7 @@ where
     }
 }
 
-impl<V> VisitMutWith<V> for ArcType
+impl<V> VisitMutWith<V> for Freezed
 where
     V: ?Sized,
 {
@@ -2985,7 +2984,7 @@ where
     }
 }
 
-impl<V> FoldWith<V> for ArcType
+impl<V> FoldWith<V> for Freezed
 where
     V: ?Sized,
 {
