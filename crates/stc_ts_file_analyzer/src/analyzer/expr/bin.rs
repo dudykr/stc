@@ -1954,7 +1954,7 @@ impl Analyzer<'_, '_> {
     /// ## orig_ty
     ///
     /// Original type of the variable.
-    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> VResult<ArcCowType> {
+    fn narrow_with_equality(&mut self, orig_ty: &ArcCowType, equals_to: &Type) -> VResult<ArcCowType> {
         let span = equals_to.span();
 
         if orig_ty.type_eq(equals_to) {
