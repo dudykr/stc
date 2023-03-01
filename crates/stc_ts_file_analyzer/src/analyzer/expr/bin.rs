@@ -195,10 +195,12 @@ impl Analyzer<'_, '_> {
         self.report_errors_for_bin_expr(
             span,
             op,
-            &lt.as_ref()
-                .unwrap_or_else(|| Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()).into()),
-            &rt.as_ref()
-                .unwrap_or_else(|| Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()).into()),
+            &lt.as_deref()
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()))),
+            &rt.as_deref()
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()))),
         );
 
         if add_type_facts {
@@ -333,7 +335,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some((Ok(name), ty)) = c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
+                if let Some((Ok(name), ty)) = c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match &**l_ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -499,7 +501,7 @@ impl Analyzer<'_, '_> {
                             metadata,
                             default,
                             ..
-                        }) = &*c.left.1
+                        }) = &**c.left.1
                         {
                             if param.is_unknown() || param.is_any() {
                                 Type::Param(TypeParam {
