@@ -110,13 +110,15 @@ impl Analyzer<'_, '_> {
             e
         ));
 
+        let tmp;
         let mut type_ann = type_ann.map(Cow::Borrowed);
 
         if type_ann.is_none() {
             if let Some(mutations) = &mut self.mutations {
                 if let Some(node_id) = e.node_id() {
                     if !node_id.is_invalid() {
-                        type_ann = mutations.for_exprs.get(&node_id).and_then(|v| v.type_ann.clone());
+                        tmp = mutations.for_exprs.get(&node_id).and_then(|v| v.type_ann.clone());
+                        type_ann = tmp.as_deref().map(Cow::Borrowed);
                     }
                 }
             }
@@ -177,7 +179,8 @@ impl Analyzer<'_, '_> {
                             ))),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
 
                     let scope = if self.ctx.in_computed_prop_name {
