@@ -379,6 +379,7 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
+                            .into()
                         } else {
                             prevent_generalize(&mut r);
                             r.freeze();
@@ -557,7 +558,7 @@ impl Analyzer<'_, '_> {
                         orig_ty.freeze();
 
                         //
-                        let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
+                        let ty = self.validate_rhs_of_instanceof(span, &rt, &rt);
 
                         // `o` cannot be null in the following code
                         // if (o?.baz instanceof Error) {
@@ -588,7 +589,7 @@ impl Analyzer<'_, '_> {
 
                         if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
-                                .narrow_with_instanceof(span, Cow::Borrowed(&ty), &orig_ty)
+                                .narrow_with_instanceof(span, &ty, &orig_ty)
                                 .context("tried to narrow type with instanceof")?
                                 .freezed();
 
@@ -1744,7 +1745,7 @@ impl Analyzer<'_, '_> {
 
     /// The right operand to be of type Any or a subtype of the 'Function'
     /// interface type.
-    fn validate_rhs_of_instanceof(&mut self, span: Span, type_for_error: &Type, ty: Type) -> Type {
+    fn validate_rhs_of_instanceof(&mut self, span: Span, type_for_error: &Type, ty: Type) -> ArcCowType {
         if ty.is_any() {
             return ty;
         }
