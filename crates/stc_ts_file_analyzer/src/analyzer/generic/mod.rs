@@ -566,11 +566,7 @@ impl Analyzer<'_, '_> {
         let param = match param {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
-                p = box param_normalized
-                    .clone()
-                    .foldable()
-                    .fold_with(&mut MappedIndexedSimplifier)
-                    .freezed();
+                p = box param_normalized.clone().fold_with(&mut MappedIndexedSimplifier).freezed();
                 &p
             }
             _ => param,
@@ -1166,7 +1162,7 @@ impl Analyzer<'_, '_> {
                     }) =>
                     {
                         for ty in types {
-                            if let Type::Param(obj_type) = ty {
+                            if let Type::Param(obj_type) = &**ty {
                                 self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
                             }
                         }
@@ -1182,7 +1178,7 @@ impl Analyzer<'_, '_> {
                             constraint: Some(index_param_constraint),
                             ..
                         }),
-                    ) = (param.obj_type, param.index_type)
+                    ) = (&*param.obj_type, &*param.index_type)
                     {
                         // param  = [string, number, ...T][P];
                         // arg = true;
@@ -1197,7 +1193,7 @@ impl Analyzer<'_, '_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: keyof_ty,
                             ..
-                        }) = index_param_constraint
+                        }) = &**index_param_constraint
                         {
                             return self.infer_type(
                                 span,

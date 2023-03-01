@@ -77,7 +77,8 @@ impl Analyzer<'_, '_> {
                         .collect::<VResult<_>>()?,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
             RPat::Rest(r) => {
                 if let RPat::Array(..) = &*r.arg {
@@ -88,7 +89,8 @@ impl Analyzer<'_, '_> {
                         ty: box self.default_type_for_pat(&r.arg)?,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
             }
             RPat::Object(obj) => {
@@ -149,16 +151,17 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
             RPat::Assign(pat) => return self.default_type_for_pat(&pat.left),
             _ => {}
         }
 
         if self.ctx.in_argument {
-            Ok(Type::unknown(pat.span(), Default::default()))
+            Ok(Type::unknown(pat.span(), Default::default()).into())
         } else {
-            Ok(Type::any(pat.span(), Default::default()))
+            Ok(Type::any(pat.span(), Default::default()).into())
         }
     }
 }
