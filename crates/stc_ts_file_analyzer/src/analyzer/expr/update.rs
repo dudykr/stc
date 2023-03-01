@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
 use stc_ts_errors::ErrorKind;
 use stc_ts_types::{ArcCowType, KeywordType, LitType, Type};
@@ -126,19 +124,20 @@ impl Analyzer<'_, '_> {
             span,
             metadata: Default::default(),
             tracker: Default::default(),
-        }))
+        })
+        .into())
     }
 }
 
 impl Analyzer<'_, '_> {
     fn is_update_operand_valid(&mut self, arg: &Type) -> VResult<bool> {
-        let ty = self.normalize(Some(arg.span()), Cow::Borrowed(arg), Default::default())?;
+        let ty = self.normalize(Some(arg.span()), arg, Default::default())?;
 
         if ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_str() || ty.is_bool() {
             return Ok(false);
         }
 
-        if let Type::Union(ty) = ty {
+        if let Type::Union(ty) = &*ty {
             for ty in &ty.types {
                 if !self.is_update_operand_valid(ty)? {
                     return Ok(false);

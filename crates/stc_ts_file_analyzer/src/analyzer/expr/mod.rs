@@ -364,7 +364,7 @@ impl Analyzer<'_, '_> {
             pat_mode: PatMode::Assign,
             ..self.ctx
         };
-        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| -> VResult<ArcCowType> {
             let span = e.span();
             let mut mark_var_as_truthy = false;
             let mut skip_right = false;
@@ -392,29 +392,31 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| {
                             skip_right = true;
                             match &err {
-                                ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => match ty {
-                                    Type::Module(Module {
-                                        exports:
-                                            box ModuleTypeData {
-                                                private_types,
-                                                types,
-                                                private_vars,
-                                                vars,
-                                            },
-                                        ..
-                                    }) => {
-                                        if private_types.is_empty() && private_vars.is_empty() && types.is_empty() && vars.is_empty() {
-                                            ErrorKind::CannotAssignToModule { span }
-                                        } else {
-                                            ErrorKind::CannotAssignToNamespace { span }
+                                ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
+                                    match &**ty {
+                                        Type::Module(Module {
+                                            exports:
+                                                box ModuleTypeData {
+                                                    private_types,
+                                                    types,
+                                                    private_vars,
+                                                    vars,
+                                                },
+                                            ..
+                                        }) => {
+                                            if private_types.is_empty() && private_vars.is_empty() && types.is_empty() && vars.is_empty() {
+                                                ErrorKind::CannotAssignToModule { span }
+                                            } else {
+                                                ErrorKind::CannotAssignToNamespace { span }
+                                            }
                                         }
+                                        Type::Namespace(..) => ErrorKind::CannotAssignToNamespace { span },
+                                        Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
+                                        Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
+                                        Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
+                                        _ => err,
                                     }
-                                    Type::Namespace(..) => ErrorKind::CannotAssignToNamespace { span },
-                                    Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
-                                    Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
-                                    Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
-                                    _ => err,
-                                },
+                                }
                                 ErrorKind::CannotAssignToNamespace { .. }
                                 | ErrorKind::CannotAssignToModule { .. }
                                 | ErrorKind::CannotAssignToClass { .. }
@@ -593,7 +595,7 @@ impl Analyzer<'_, '_> {
 
             let mut rhs_ty = match rhs_ty {
                 Ok(v) => v,
-                Err(()) => Type::any(span, Default::default()),
+                Err(()) => Type::any(span, Default::default()).into(),
             };
             rhs_ty.respan(e.right.span());
             rhs_ty.freeze();
