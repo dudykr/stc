@@ -1361,7 +1361,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         expr: ReEvalMode,
-        ty: &Type,
+        ty: &ArcCowType,
         kind: ExtractKind,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
@@ -1375,7 +1375,7 @@ impl Analyzer<'_, '_> {
         }
 
         let span = span.with_ctxt(SyntaxContext::empty());
-        match ty {
+        match &**ty {
             Type::Ref(..) | Type::Query(..) | Type::Instance(..) => {
                 let ty = self.normalize(None, ty, Default::default())?;
                 return self.extract(span, expr, &ty, kind, args, arg_types, spread_arg_types, type_args, type_ann, opts);
@@ -1387,7 +1387,7 @@ impl Analyzer<'_, '_> {
         debug!("[exprs/call] Calling {}", dump_type_as_string(ty));
 
         if let ExtractKind::Call = kind {
-            match ty {
+            match &**ty {
                 Type::Interface(i) if i.name == "Function" => {
                     if i.type_params.is_none() && type_args.is_some() {
                         self.storage
@@ -1401,7 +1401,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let ExtractKind::New = kind {
-            match ty {
+            match &**ty {
                 Type::ClassDef(ref cls) => {
                     self.scope.this = Some(
                         Type::Class(Class {
@@ -1650,14 +1650,14 @@ impl Analyzer<'_, '_> {
                     ExtractKind::Call => {
                         return Err(ErrorKind::NoCallSignature {
                             span,
-                            callee: box ty.clone(),
+                            callee: ty.clone().into(),
                         }
                         .into())
                     }
                     ExtractKind::New => {
                         return Err(ErrorKind::NoNewSignature {
                             span,
-                            callee: box ty.clone(),
+                            callee: ty.clone().into(),
                         }
                         .into())
                     }

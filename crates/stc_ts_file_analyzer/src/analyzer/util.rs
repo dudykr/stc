@@ -179,10 +179,10 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn make_instance_type(ty: Type) -> Type {
+pub(crate) fn make_instance_type(ty: ArcCowType) -> ArcCowType {
     let span = ty.span();
 
-    match ty {
+    match &*ty {
         Type::Tuple(Tuple {
             ref elems, span, metadata, ..
         }) => Type::Tuple(Tuple {
