@@ -2395,7 +2395,7 @@ fn array_elem_type(t: &Type) -> Option<&ArcCowType> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: ArcCowType, type_ann: Option<&Type>) -> VResult<ArcCowType> {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: ArcCowType, type_ann: Option<&ArcCowType>) -> VResult<ArcCowType> {
         if self.config.is_builtin {
             return Ok(ty);
         }

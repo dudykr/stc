@@ -1454,7 +1454,7 @@ impl Analyzer<'_, '_> {
             self.storage.store_private_var(
                 self.ctx.module_id,
                 name.clone(),
-                ty.clone().unwrap_or_else(|| Type::any(span, Default::default())),
+                ty.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()),
             )
         }
 
@@ -2297,7 +2297,7 @@ impl Expander<'_, '_, '_> {
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
 
-            if let Type::Enum(e) = ty {
+            if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
                     enum_name: e.id.clone().into(),
