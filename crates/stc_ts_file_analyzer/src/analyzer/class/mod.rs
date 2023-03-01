@@ -442,7 +442,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())).into(),
+                    ty: ty.unwrap_or_else(|| Type::any(i.id.span, Default::default()).into()),
                 })
             }
             _ => unreachable!(),

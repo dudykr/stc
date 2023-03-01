@@ -490,7 +490,7 @@ impl Analyzer<'_, '_> {
                             },
                         )
                     });
-                match callee_ty {
+                match &*callee_ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -503,7 +503,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                match callee_ty {
+                match &*callee_ty {
                     Type::Union(u) => {
                         let types = u
                             .types

@@ -910,8 +910,8 @@ impl Analyzer<'_, '_> {
 
                 (_, RPat::Rest(..)) => {
                     // If r is an iterator, we should assign each element to l.
-                    if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
-                        if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
+                    if let Ok(r_iter) = self.get_iterator(span, &r.ty, Default::default()) {
+                        if let Ok(l_iter) = self.get_iterator(span, &l.ty, Default::default()) {
                             for idx in 0..max(li.clone().count(), ri.clone().count()) {
                                 let le = self.access_property(
                                     span,

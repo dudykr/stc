@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
 
         let mut iterator = type_ann
             .as_deref()
-            .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
+            .and_then(|ty| self.get_iterator(span, ty, Default::default()).ok());
         iterator.freeze();
 
         let prefer_tuple = self.ctx.prefer_tuple_for_array_lit || self.prefer_tuple(type_ann.as_deref());
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to get the type of `next` of an async iterator")?;
 
             let item = self
-                .get_awaited_type(span, Cow::Owned(item_promise), false)
+                .get_awaited_type(span, &item_promise, false)
                 .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
 
             let elem_ty = self
