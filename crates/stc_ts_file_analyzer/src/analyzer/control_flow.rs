@@ -1329,7 +1329,7 @@ impl Analyzer<'_, '_> {
             },
         }
 
-        Ok(src.into_owned())
+        Ok(src)
     }
 
     fn determine_type_fact_by_field_fact(&mut self, span: Span, name: &Name, ty: &Type) -> VResult<Option<(Name, ArcCowType)>> {

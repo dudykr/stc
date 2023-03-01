@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_errors::ErrorKind;
 use stc_ts_types::{TsExpr, Type, TypeElement, TypeLit};
 use stc_utils::{cache::Freeze, dev_span};

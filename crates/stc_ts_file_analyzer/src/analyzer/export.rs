@@ -130,8 +130,18 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.declare_var(span, VarKind::Fn, i.clone(), Some(fn_ty.into()), None, true, true, false, false)
-                    .report(&mut self.storage);
+                self.declare_var(
+                    span,
+                    VarKind::Fn,
+                    i.clone(),
+                    Some(Type::from(fn_ty).into_freezed()),
+                    None,
+                    true,
+                    true,
+                    false,
+                    false,
+                )
+                .report(&mut self.storage);
 
                 self.export_var(f.span(), Id::word(js_word!("default")), Some(i), f.function.body.is_some());
             }

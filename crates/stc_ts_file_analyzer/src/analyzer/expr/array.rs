@@ -569,7 +569,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(Cow::Owned(iterator.into_owned()))
+        Ok(iterator)
     }
 
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: &Type, opts: GetIteratorOpts) -> VResult<ArcCowType> {
@@ -582,7 +582,7 @@ impl Analyzer<'_, '_> {
 
         let iterator = iterator?;
 
-        if let Type::Class(..) = iterator {
+        if let Type::Class(..) = &*iterator {
             if let Ok(return_prop_ty) = self.access_property(
                 span,
                 &iterator,
