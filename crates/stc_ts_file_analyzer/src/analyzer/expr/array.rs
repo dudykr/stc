@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
         if should_be_any && !self.ctx.prefer_tuple_for_array_lit {
             elements.iter_mut().for_each(|el| {
                 let span = el.ty.span().with_ctxt(SyntaxContext::empty());
-                el.ty = box Type::any(
+                el.ty = Type::any(
                     span,
                     KeywordTypeMetadata {
                         common: CommonTypeMetadata {
@@ -228,7 +228,8 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
-                );
+                )
+                .into();
             });
         }
 
@@ -237,7 +238,8 @@ impl Analyzer<'_, '_> {
             elems: elements,
             metadata: Default::default(),
             tracker: Default::default(),
-        }))
+        })
+        .into())
     }
 }
 

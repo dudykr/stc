@@ -309,7 +309,7 @@ impl AddAssign for CondFacts {
                         }
                         prev => {
                             let prev = prev.take();
-                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).into_freezed();
+                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev.into_cow(), v]).into_freezed();
                         }
                     };
                     e.get_mut().fix();

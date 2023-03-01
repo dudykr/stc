@@ -12,17 +12,17 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult<ArcCowType> {
+    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: &Type, actual: &Type) -> VResult<ArcCowType> {
         declared.assert_valid();
         actual.assert_valid();
 
         let mut declared = self
-            .normalize(Some(span), Cow::Owned(declared), Default::default())
+            .normalize(Some(span), declared, Default::default())
             .context("tried to normalize declared type")?;
         declared.freeze();
 
         let mut actual = self
-            .normalize(Some(span), Cow::Borrowed(actual), Default::default())
+            .normalize(Some(span), actual, Default::default())
             .context("tried to normalize declared type")?;
         actual.freeze();
 

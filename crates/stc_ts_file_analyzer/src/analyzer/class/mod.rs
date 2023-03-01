@@ -1311,7 +1311,7 @@ impl Analyzer<'_, '_> {
 
                 errors.push(err);
 
-                Type::any(span, Default::default())
+                Type::any(span, Default::default()).into()
             }
         };
 

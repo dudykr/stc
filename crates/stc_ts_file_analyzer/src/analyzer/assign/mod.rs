@@ -1839,7 +1839,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     ..
-                                }) = m.params[0].ty
+                                }) = &*m.params[0].ty
                                 {
                                     if let Some(type_ann) = &m.type_ann {
                                         return self.assign_with_opts(data, lhs_elem_type, type_ann, opts);
@@ -1857,7 +1857,7 @@ impl Analyzer<'_, '_> {
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self
-                                .get_iterator_element_type(span, r, false, Default::default())
+                                .get_iterator_element_type(span, &r, false, Default::default())
                                 .context("tried to get the element type of an iterator assignment")?;
 
                             self.assign_with_opts(

@@ -1319,7 +1319,7 @@ impl Analyzer<'_, '_> {
                             .into()
                         }
 
-                        _ => Type::any(DUMMY_SP, Default::default()),
+                        _ => Type::any(DUMMY_SP, Default::default()).into(),
                     };
 
                     TupleElement {
