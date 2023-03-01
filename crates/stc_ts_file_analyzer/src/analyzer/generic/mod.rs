@@ -2682,7 +2682,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
         TruePlusMinus::Plus => match element_ty {
             Type::Optional(ty) => {}
             _ => {
-                let ty = box element_ty.take();
+                let ty = element_ty.take().into();
                 *element_ty = Type::Optional(OptionalType {
                     span: DUMMY_SP,
                     ty,

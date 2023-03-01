@@ -160,8 +160,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        sources: &[Type],
-        targets: &[Type],
+        sources: &[ArcCowType],
+        targets: &[ArcCowType],
         matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
         opts: InferTypeOpts,
     ) -> VResult<(Vec<Type>, Vec<Type>)> {
@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         source: &Type,
-        targets: &[Type],
+        targets: &[ArcCowType],
         is_target_union: bool,
         opts: InferTypeOpts,
     ) -> VResult<()> {

@@ -256,7 +256,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match ty {
+        match &*ty {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
