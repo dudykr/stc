@@ -1399,7 +1399,7 @@ impl Analyzer<'_, '_> {
         if computed && !opts.do_not_validate_type_of_computed_prop {
             let res: VResult<_> = try {
                 let key_ty = prop.ty();
-                let key_ty = self.normalize(Some(span), key_ty, Default::default())?;
+                let key_ty = self.normalize(Some(span), &key_ty, Default::default())?;
 
                 if key_ty.is_fn_type() || key_ty.is_constructor() {
                     Err(ErrorKind::CannotUseTypeAsIndexIndex { span })?
@@ -1429,7 +1429,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     if &**sym == "globalThis" {
-                        return Ok(obj.clone());
+                        return Ok(obj.clone().into());
                     }
 
                     match id_ctx {
@@ -1439,7 +1439,7 @@ impl Analyzer<'_, '_> {
                             let res = if sym == "name" {
                                 Err(ErrorKind::NoSuchProperty {
                                     span,
-                                    obj: Some(box obj.clone()),
+                                    obj: Some(obj.clone().into()),
                                     prop: Some(box Key::Normal { span, sym: sym.clone() }),
                                 }
                                 .into())
@@ -1451,13 +1451,13 @@ impl Analyzer<'_, '_> {
 
                             // TODO(kdy1): Apply correct rule
                             if res.is_err() {
-                                return Ok(Type::any(span, Default::default()));
+                                return Ok(Type::any(span, Default::default()).into());
                             }
 
                             return res.convert_err(|err| match err {
                                 ErrorKind::NoSuchVar { span, name } => ErrorKind::NoSuchProperty {
                                     span,
-                                    obj: Some(box obj.clone()),
+                                    obj: Some(obj.clone().into()),
                                     prop: Some(box Key::Normal {
                                         span,
                                         sym: name.sym().clone(),
@@ -1474,7 +1474,7 @@ impl Analyzer<'_, '_> {
                                 .convert_err(|err| match err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
                                         span,
-                                        obj: Some(box obj.clone()),
+                                        obj: Some(obj.clone().into()),
                                         prop: Some(box Key::Normal {
                                             span,
                                             sym: name.sym().clone(),
@@ -1498,7 +1498,7 @@ impl Analyzer<'_, '_> {
                         opts,
                     )
                 }
-                Key::Computed(ComputedKey { ty, .. }) => match ty {
+                Key::Computed(ComputedKey { ty, .. }) => match &**ty {
                     Type::Lit(LitType {
                         lit:
                             RTsLit::Str(RStr {
