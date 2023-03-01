@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
                         e.unwrap_or_else(|| {
                             let mut ty = Type::any(span, Default::default());
                             self.mark_as_implicitly_typed(&mut ty);
-                            ty
+                            ty.into()
                         })
                         .into()
                     }
@@ -769,7 +769,7 @@ impl Analyzer<'_, '_> {
             let node_id = c.function.node_id;
 
             let ret_ty = if self.may_generalize(&ret_ty) {
-                ret_ty.clone().generalize_lit().into()
+                ret_ty.clone().generalize_lit().into_cow()
             } else {
                 *ret_ty.clone()
             };
