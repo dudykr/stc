@@ -773,10 +773,10 @@ impl Analyzer<'_, '_> {
                     if let RExpr::Ident(left) = &**expr {
                         if op == op!("??=") || op == op!("||=") || op == op!("&&=") {
                             if let Ok(prev) = self.type_of_var(left, TypeOfMode::RValue, None) {
-                                let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev.into_owned());
+                                let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
 
                                 if let Some(var) = self.scope.vars.get_mut(&Id::from(left)) {
-                                    var.actual_ty = Some(new_actual_ty.into_freezed());
+                                    var.actual_ty = Some(new_actual_ty);
                                 }
                             }
                         }
@@ -784,16 +784,14 @@ impl Analyzer<'_, '_> {
 
                     match op {
                         op!("??=") | op!("||=") => {
-                            lhs_ty = self
-                                .apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty.into_owned())
-                                .into_freezed();
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty).into_freezed();
 
-                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()]).into()
                         }
                         op!("&&=") => {
-                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty.into_owned()).into_freezed();
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty);
 
-                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()]).into()
                         }
                         _ => rhs_ty.clone(),
                     }

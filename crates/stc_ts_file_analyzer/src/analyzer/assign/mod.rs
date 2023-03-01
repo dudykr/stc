@@ -2710,7 +2710,7 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(EnumVariant { ref enum_name, .. }) => {
                 if let Some(types) = self.find_type(enum_name)? {
                     for ty in types {
-                        if let Type::Enum(ref e) = ty {
+                        if let Type::Enum(ref e) = &*ty {
                             match to {
                                 Type::Interface(..) | Type::TypeLit(..) => {}
                                 _ => {
@@ -2839,7 +2839,7 @@ impl Analyzer<'_, '_> {
         (|| -> VResult<_> {
             let ty = self.normalize(
                 Some(span),
-                Cow::Borrowed(ty),
+                ty,
                 NormalizeTypeOpts {
                     normalize_keywords: true,
                     process_only_key: true,
@@ -2874,7 +2874,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::new_union(span, keys));
+                return Ok(Type::new_union(span, keys).into());
             }
 
             if let Some(ty) = self

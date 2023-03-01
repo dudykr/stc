@@ -403,13 +403,16 @@ impl Analyzer<'_, '_> {
                 },
                 optional: false,
                 params: Default::default(),
-                type_ann: Some(box Type::EnumVariant(EnumVariant {
-                    span: m.span,
-                    enum_name: e.id.clone().into(),
-                    name: Some(key.sym),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
+                type_ann: Some(
+                    Type::EnumVariant(EnumVariant {
+                        span: m.span,
+                        enum_name: e.id.clone().into(),
+                        name: Some(key.sym),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ),
                 type_params: Default::default(),
                 metadata: Default::default(),
                 accessor: Accessor {
