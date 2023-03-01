@@ -1288,7 +1288,7 @@ impl Analyzer<'_, '_> {
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
 
-                let params = vec![*arr.elem_type.clone()];
+                let params = vec![*arr.elem_type.clone().into()];
                 return self.infer_type(
                     span,
                     inferred,

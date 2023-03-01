@@ -220,7 +220,7 @@ impl Analyzer<'_, '_> {
                 let mut parent = self
                     .expand(
                         parent.span().or_else(|| span),
-                        parent.clone(),
+                        parent.clone().into(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -231,7 +231,7 @@ impl Analyzer<'_, '_> {
                         },
                     )
                     .unwrap();
-                if let Type::Ref(..) = parent {
+                if let Type::Ref(..) = &*parent {
                     return None;
                 }
                 parent.freeze();

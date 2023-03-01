@@ -1659,6 +1659,10 @@ impl ArcCowType {
             }
         }
     }
+
+    pub fn iter_union(&self) -> impl Debug + Iterator<Item = &ArcCowType> {
+        IterUnion { ty: self, idx: 0 }
+    }
 }
 
 impl Visitable for ArcCowType {}
@@ -2519,27 +2523,23 @@ impl Type {
             _ => self,
         }
     }
-
-    pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
-        Iter { ty: self, idx: 0 }
-    }
 }
 
 #[derive(Debug)]
-struct Iter<'a> {
-    ty: &'a Type,
+struct IterUnion<'a> {
+    ty: &'a ArcCowType,
     idx: usize,
 }
 
-impl<'a> Iterator for Iter<'a> {
-    type Item = &'a Type;
+impl<'a> Iterator for IterUnion<'a> {
+    type Item = &'a ArcCowType;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match &self.ty {
+        match &**self.ty {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
-                ty.map(|v| &**v)
+                ty
             }
 
             _ if self.idx == 0 => {
@@ -2552,7 +2552,7 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
-impl FusedIterator for Iter<'_> {}
+impl FusedIterator for IterUnion<'_> {}
 
 impl Type {
     /// Return true if `self` is a [Type::Ref] pointing to `name`.
