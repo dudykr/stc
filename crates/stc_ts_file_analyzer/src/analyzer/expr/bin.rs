@@ -1751,7 +1751,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): We should assign this to builtin interface `Function`.
-        match ty {
+        match &*ty {
             // Error
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1856,7 +1856,7 @@ impl Analyzer<'_, '_> {
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
     ///
     /// Returns `(name, true_fact, false_fact)`.
-    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, ArcCowType, Vec<ArcCowType>)> {
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &ArcCowType) -> VResult<(Name, ArcCowType, Vec<ArcCowType>)> {
         let span = equals_to.span();
 
         let mut id: RIdent = name.top().into();
@@ -1940,7 +1940,7 @@ impl Analyzer<'_, '_> {
                     excluded.freezed(),
                 ));
             }
-            let ty = Type::new_union(span, candidates).freezed();
+            let ty = Type::new_union(span, candidates).into_freezed();
             return Ok((actual, ty, excluded.freezed()));
         }
 
