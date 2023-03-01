@@ -28,7 +28,7 @@ impl Analyzer<'_, '_> {
         let mut errored = false;
 
         let ty = res
-            .and_then(|ty| match ty {
+            .and_then(|ty| match &*ty {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..

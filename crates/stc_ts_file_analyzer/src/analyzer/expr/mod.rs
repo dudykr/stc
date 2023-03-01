@@ -3843,7 +3843,7 @@ impl Analyzer<'_, '_> {
             //
             // let id: (x: Foo) => Foo = x => x;
             //
-            return Ok(Type::any(span, Default::default()));
+            return Ok(Type::any(span, Default::default()).into());
         }
 
         if !self.config.is_builtin {
@@ -3892,7 +3892,7 @@ impl Analyzer<'_, '_> {
             })();
 
             if self.scope.can_access_declaring_regardless_of_context(&i.into()) {
-                return Ok(Type::any(span, Default::default()));
+                return Ok(Type::any(span, Default::default()).into());
             }
 
             if self.ctx.allow_ref_declaring {
@@ -3900,7 +3900,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(ErrorKind::ImplicitAnyBecauseOfSelfRef { span }.into());
                 }
 
-                return Ok(Type::any(span, Default::default()));
+                return Ok(Type::any(span, Default::default()).into());
             } else {
                 return Err(ErrorKind::ReferencedInInit { span }.into());
             }
