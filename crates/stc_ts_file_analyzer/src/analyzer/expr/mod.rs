@@ -4775,25 +4775,29 @@ impl Analyzer<'_, '_> {
                 lit: RTsLit::Bool(v.clone()),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })),
+            })
+            .into()),
             RLit::Str(ref v) => Ok(Type::Lit(LitType {
                 span: v.span,
                 lit: RTsLit::Str(v.clone()),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })),
+            })
+            .into()),
             RLit::Num(v) => Ok(Type::Lit(LitType {
                 span: v.span,
                 lit: RTsLit::Number(v.clone()),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })),
+            })
+            .into()),
             RLit::BigInt(v) => Ok(Type::Lit(LitType {
                 span: v.span,
                 lit: RTsLit::BigInt(v.clone()),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })),
+            })
+            .into()),
             RLit::Null(RNull { span }) => {
                 if self.ctx.in_export_default_expr {
                     // TODO(kdy1): strict mode
@@ -4802,7 +4806,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 Ok(Type::Keyword(KeywordType {
@@ -4810,7 +4815,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
             RLit::Regex(v) => Ok(Type::Ref(Ref {
                 span: v.span,
@@ -4823,7 +4829,8 @@ impl Analyzer<'_, '_> {
                 type_args: None,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })),
+            })
+            .into()),
             RLit::JSXText(v) => v.validate_with(self),
         }
     }
