@@ -2078,7 +2078,7 @@ impl Analyzer<'_, '_> {
                     ) = operator.ty.normalize()
                     {
                         if let Type::Param(..) = iat.obj_type.normalize() {
-                            if let Type::Param(..) = iat.index_type {
+                            if let Type::Param(..) = iat.index_type.normalize() {
                                 let param_ty = param.ty.clone().unwrap();
                                 let name = param.type_param.name.clone();
                                 let (obj_ty, index_ty) = match &**param.type_param.constraint.as_ref().unwrap() {

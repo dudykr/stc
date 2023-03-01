@@ -259,16 +259,19 @@ impl Analyzer<'_, '_> {
                     self.simplify(Type::new_union(span, actual)).into_cow()
                 };
 
-                return Ok(Some(Type::Ref(Ref {
-                    span,
-                    type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
-                    type_args: Some(box TypeParamInstantiation {
+                return Ok(Some(
+                    Type::Ref(Ref {
                         span,
-                        params: vec![ret_ty],
-                    }),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })));
+                        type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span,
+                            params: vec![ret_ty],
+                        }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ));
             }
 
             let is_all_null_or_undefined = actual.iter().all(|ty| ty.is_null_or_undefined());
@@ -318,14 +321,14 @@ impl Analyzer<'_, '_> {
             } else if let Some(ret_ty) = &ret_ty {
                 let declared = Type::Instance(Instance {
                     span: declared.span(),
-                    ty: box declared,
+                    ty: declared,
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
 
                 let ret_ty = Type::Instance(Instance {
                     span: ret_ty.span(),
-                    ty: box ret_ty.clone(),
+                    ty: ret_ty.clone(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
