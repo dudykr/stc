@@ -621,8 +621,7 @@ impl Analyzer<'_, '_> {
                                         .report(&mut self.storage)
                                 }
                             }
-                            .flatten()
-                            .map(|v| box v);
+                            .flatten();
 
                             real = self.append_type_element(
                                 real,

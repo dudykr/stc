@@ -714,7 +714,7 @@ impl Analyzer<'_, '_> {
             if !child.config.is_builtin {
                 for param in params.iter() {
                     child
-                        .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
+                        .declare_complex_vars(VarKind::Param, &param.pat, param.ty.clone(), None, None)
                         .report(&mut child.storage);
                 }
             }
