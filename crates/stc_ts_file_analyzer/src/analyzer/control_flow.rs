@@ -262,6 +262,16 @@ impl Merge for Type {
     }
 }
 
+impl Merge for ArcCowType {
+    fn or(&mut self, r: Self) {
+        let l_span = self.span();
+
+        let l = replace(self, Type::never(l_span, Default::default()).into());
+
+        *self = Type::new_union(l_span, vec![l, r.into()]).into_freezed();
+    }
+}
+
 impl<T> Merge for Option<T>
 where
     T: Merge,
@@ -732,7 +742,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, rhs_ty: &Type) -> Type {
+    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, rhs_ty: &ArcCowType) -> ArcCowType {
         rhs_ty.assert_valid();
 
         let res: VResult<Type> = try {
