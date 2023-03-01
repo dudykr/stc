@@ -2639,7 +2639,7 @@ impl Analyzer<'_, '_> {
                     if errors.iter().any(|err| err.is_property_not_found()) {
                         return Err(ErrorKind::NoSuchProperty {
                             span,
-                            obj: Some(box obj.clone()),
+                            obj: Some(obj.clone().into()),
                             prop: Some(box prop.clone()),
                         }
                         .into());
@@ -2664,9 +2664,9 @@ impl Analyzer<'_, '_> {
                                 .into(),
                             );
                             tys.dedup_type();
-                            let ty = Type::new_union(span, tys).into();
+                            let ty = Type::new_union(span, tys);
                             ty.assert_valid();
-                            return Ok(ty);
+                            return Ok(ty.into());
                         }
 
                         return Err(ErrorKind::NoSuchProperty {
@@ -2886,10 +2886,10 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if let Some(ref ty) = p.value {
-                                    return Ok(*ty.clone());
+                                    return Ok(ty.clone());
                                 }
 
-                                return Ok(Type::any(p.key.span().with_ctxt(SyntaxContext::empty()), Default::default()));
+                                return Ok(Type::any(p.key.span().with_ctxt(SyntaxContext::empty()), Default::default()).into());
                             }
                         }
 
@@ -2902,7 +2902,7 @@ impl Analyzer<'_, '_> {
                                 if m.key.is_private() {
                                     self.storage
                                         .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                    return Ok(Type::any(span, Default::default()));
+                                    return Ok(Type::any(span, Default::default()).into());
                                 }
 
                                 return Ok(Type::Function(ty::Function {
@@ -2912,7 +2912,8 @@ impl Analyzer<'_, '_> {
                                     ret_ty: m.ret_ty.clone(),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
                         }
 
@@ -2933,18 +2934,13 @@ impl Analyzer<'_, '_> {
                                     index_signature_fallback = Some(Ok(index
                                         .type_ann
                                         .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, Default::default()))));
+                                        .unwrap_or_else(|| Type::any(span, Default::default()).into())));
                                     continue;
                                 }
 
                                 let indexed = self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
                                 if indexed {
-                                    return Ok(index
-                                        .type_ann
-                                        .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, Default::default())));
+                                    return Ok(index.type_ann.clone().unwrap_or_else(|| Type::any(span, Default::default())).into());
                                 }
                             }
                         }
