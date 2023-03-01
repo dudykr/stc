@@ -965,7 +965,7 @@ impl Analyzer<'_, '_> {
                                 return Err(ErrorKind::NotVariable {
                                     span: i.id.span,
                                     left: lhs.span(),
-                                    ty: Some(box ty.clone()),
+                                    ty: Some(ty.clone().into()),
                                 }
                                 .into());
                             }
