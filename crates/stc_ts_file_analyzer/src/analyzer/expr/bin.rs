@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
         };
         if self.ctx.in_switch_case_test {
             if lt.is_tpl() {
-                lt = lt.generalize_lit();
+                lt = lt.generalize_lit().into();
             }
         }
 
@@ -306,8 +306,8 @@ impl Analyzer<'_, '_> {
 
                 // Try narrowing type
                 let c = Comparator {
-                    left: (&**left, lt),
-                    right: (&**right, rt),
+                    left: (&**left, &lt),
+                    right: (&**right, &rt),
                 };
 
                 let mut has_switch_case_test_not_compatible = false;
@@ -317,8 +317,8 @@ impl Analyzer<'_, '_> {
                         self.storage.report(
                             ErrorKind::SwitchCaseTestNotCompatible {
                                 span,
-                                disc: box lt.clone(),
-                                test: box rt.clone(),
+                                disc: lt.clone().into(),
+                                test: rt.clone().into(),
                             }
                             .into(),
                         )
@@ -327,8 +327,8 @@ impl Analyzer<'_, '_> {
                             ErrorKind::NoOverlap {
                                 span,
                                 value: true,
-                                left: box lt.clone(),
-                                right: box rt.clone(),
+                                left: lt.clone().into(),
+                                right: rt.clone().into(),
                             }
                             .into(),
                         )
@@ -2301,8 +2301,8 @@ impl Analyzer<'_, '_> {
         r: &Type,
         name: Name,
         is_loose_comparison: bool,
-    ) -> FxHashMap<Name, Vec<Type>> {
-        let mut additional_target: FxHashMap<Name, Vec<Type>> = Default::default();
+    ) -> FxHashMap<Name, Vec<ArcCowType>> {
+        let mut additional_target: FxHashMap<Name, Vec<ArcCowType>> = Default::default();
 
         if let Type::Union(Union { types, .. }) = origin_ty {
             for ty in types {
