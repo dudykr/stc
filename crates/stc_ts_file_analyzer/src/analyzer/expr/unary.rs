@@ -328,15 +328,18 @@ fn negate(ty: ArcCowType) -> ArcCowType {
                 .into();
             }
             RTsLit::Number(ref v) => {
-                return Type::Lit(LitType {
-                    lit: RTsLit::Bool(RBool {
-                        value: v.value != 0.0,
-                        span: v.span,
-                    }),
-                    span,
-                    metadata,
-                    tracker: Default::default(),
-                });
+                return Type::Lit(
+                    LitType {
+                        lit: RTsLit::Bool(RBool {
+                            value: v.value != 0.0,
+                            span: v.span,
+                        }),
+                        span,
+                        metadata,
+                        tracker: Default::default(),
+                    }
+                    .into(),
+                );
             }
             RTsLit::Str(ref v) => {
                 return Type::Lit(LitType {

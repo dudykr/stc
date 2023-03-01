@@ -3199,7 +3199,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         ) {
-                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span, Default::default())).into());
+                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()));
                         }
                     }
                 }
@@ -3275,22 +3275,22 @@ impl Analyzer<'_, '_> {
                 let index_type = match prop {
                     Key::Computed(c) => c.ty.clone(),
                     _ => {
-                        let mut prop_ty = box prop.ty().into_owned();
+                        let mut prop_ty = prop.ty().into_owned();
                         prevent_generalize(&mut prop_ty);
 
-                        prop_ty
+                        prop_ty.into()
                     }
                 };
 
                 let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
-                    obj_type: box obj,
+                    obj_type: obj,
                     readonly: false,
                     index_type,
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
-                return Ok(ty);
+                return Ok(ty.into());
             }
 
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
@@ -3300,7 +3300,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Constructor(c) => match prop {
-                Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span, Default::default())),
+                Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span, Default::default()).into()),
                 _ => {
                     return self
                         .access_property(span, &c.type_ann, prop, type_mode, id_ctx, opts)
@@ -3315,11 +3315,12 @@ impl Analyzer<'_, '_> {
                         members: Default::default(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 if let Key::Computed(key) = prop {
-                    return Ok(*key.ty.clone());
+                    return Ok(key.ty.clone());
                 }
             }
 
@@ -3352,7 +3353,7 @@ impl Analyzer<'_, '_> {
 
                 // Function does not have information about types of properties.
                 match type_mode {
-                    TypeOfMode::LValue => return Ok(Type::any(span, Default::default())),
+                    TypeOfMode::LValue => return Ok(Type::any(span, Default::default()).into()),
                     TypeOfMode::RValue => {}
                 }
             }
@@ -3400,7 +3401,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Union(ref union_ty) => {
-                let is_all_fn = union_ty.types.iter().all(|v| matches!(v, Type::Function(f)));
+                let is_all_fn = union_ty.types.iter().all(|v| matches!(&**v, Type::Function(f)));
                 if is_all_fn {
                     // We should return typeof function name
                     return Type::Query(QueryType {
@@ -3552,7 +3553,8 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
 
         let mut modules = vec![];
@@ -3568,7 +3570,7 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::NotVariable {
                 span,
                 left: span,
-                ty: Some(box ty.clone()),
+                ty: Some(ty.clone()),
             }
             .into());
         }
@@ -3581,13 +3583,13 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Change return type of type_of_raw_var to Option and inject module
         // from here.
-        match ty {
+        match &*ty {
             Type::Module(..) => {
                 need_intersection = false;
             }
             Type::Intersection(i) => {
                 for ty in &i.types {
-                    if let Type::Module(..) = ty {
+                    if let Type::Module(..) = &**ty {
                         need_intersection = false;
                         break;
                     }
@@ -3599,7 +3601,7 @@ impl Analyzer<'_, '_> {
         if let TypeOfMode::LValue = type_mode {
             if let Some(types) = self.find_type(&id)? {
                 for ty in types {
-                    if let Type::Module(..) = ty {
+                    if let Type::Module(..) = &**ty {
                         return Err(ErrorKind::NotVariable {
                             span,
                             left: span,
@@ -3616,13 +3618,13 @@ impl Analyzer<'_, '_> {
                 for ty in types {
                     debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                    match ty {
+                    match &**ty {
                         Type::Module(..) => modules.push(ty.clone().into_owned()),
                         Type::Intersection(intersection) => {
                             for ty in &intersection.types {
                                 debug_assert!(ty.is_clone_cheap());
 
-                                if let Type::Module(..) = ty {
+                                if let Type::Module(..) = &**ty {
                                     modules.push(ty.clone())
                                 }
                             }
