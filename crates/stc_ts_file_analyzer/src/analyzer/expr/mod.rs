@@ -2248,7 +2248,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box obj,
+                    obj_type: obj.into(),
                     index_type: prop_ty,
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -2296,7 +2296,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box obj,
+                    obj_type: obj.into(),
                     index_type: prop_ty,
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -2367,7 +2367,7 @@ impl Analyzer<'_, '_> {
                     Err(err) => err,
                 };
                 if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.disallow_unknown_object_property {
-                    return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                    return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()).into());
                 }
 
                 return Err(err);
@@ -2380,26 +2380,26 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Key::Computed(prop) = prop {
-                    match prop.ty {
+                    match &*prop.ty {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                             ..
                         })
                         | Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
-                        }) => return Ok(*elem_type),
+                        }) => return Ok(elem_type),
 
                         _ => {}
                     }
                 }
                 if let Key::Num(n) = prop {
-                    return Ok(*elem_type.clone());
+                    return Ok(elem_type.clone());
                 }
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
                 let has_better_default = !opts.disallow_indexing_array_with_string
-                    && match prop.ty() {
+                    && match &*prop.ty() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2435,7 +2435,7 @@ impl Analyzer<'_, '_> {
                         if !has_better_default {
                             return Err(err);
                         }
-                        match prop.ty() {
+                        match &*prop.ty() {
                             // newWithSpreadES5.ts contains
                             //
                             //
@@ -2450,7 +2450,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                                 ..
                             })
-                            | Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => Ok(Type::any(span, Default::default())),
+                            | Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => Ok(Type::any(span, Default::default()).into()),
                             _ => Err(err),
                         }
                     });
