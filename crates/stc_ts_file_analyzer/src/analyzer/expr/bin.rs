@@ -1553,8 +1553,8 @@ impl Analyzer<'_, '_> {
                     ErrorKind::CannotCompareWithOp {
                         span,
                         op,
-                        left: box l.clone(),
-                        right: box r.clone(),
+                        left: l.clone().into(),
+                        right: r.clone().into(),
                     }
                     .into(),
                 );
