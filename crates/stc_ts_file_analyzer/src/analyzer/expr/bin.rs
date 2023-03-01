@@ -1745,7 +1745,7 @@ impl Analyzer<'_, '_> {
 
     /// The right operand to be of type Any or a subtype of the 'Function'
     /// interface type.
-    fn validate_rhs_of_instanceof(&mut self, span: Span, type_for_error: &Type, ty: Type) -> ArcCowType {
+    fn validate_rhs_of_instanceof(&mut self, span: Span, type_for_error: &Type, ty: ArcCowType) -> ArcCowType {
         if ty.is_any() {
             return ty;
         }
@@ -1781,7 +1781,7 @@ impl Analyzer<'_, '_> {
                 self.storage.report(
                     ErrorKind::InvalidRhsInInstanceOf {
                         span,
-                        ty: box type_for_error.clone(),
+                        ty: type_for_error.clone().into(),
                     }
                     .into(),
                 );
@@ -1791,7 +1791,7 @@ impl Analyzer<'_, '_> {
                 self.storage.report(
                     ErrorKind::InvalidRhsInInstanceOf {
                         span,
-                        ty: box type_for_error.clone(),
+                        ty: type_for_error.clone().into(),
                     }
                     .into(),
                 );
@@ -1809,7 +1809,8 @@ impl Analyzer<'_, '_> {
                     types,
                     metadata: u.metadata,
                     tracker: Default::default(),
-                });
+                })
+                .into();
             }
 
             // Ok
@@ -1903,7 +1904,7 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(prop_ty) = prop_res {
                     let prop_ty = self.normalize(Some(prop_ty.span()), Cow::Owned(prop_ty), Default::default())?;
-                    let possible = match prop_ty {
+                    let possible = match &*prop_ty {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
                         _ => {
@@ -1934,7 +1935,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                     excluded.freezed(),
                 ));
             }
@@ -1959,8 +1961,8 @@ impl Analyzer<'_, '_> {
             return Ok(orig_ty.clone());
         }
 
-        let orig_ty = self.normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())?;
-        let equals_to = self.normalize(Some(span), Cow::Borrowed(equals_to), Default::default())?;
+        let orig_ty = self.normalize(Some(span), orig_ty, Default::default())?;
+        let equals_to = self.normalize(Some(span), equals_to, Default::default())?;
 
         if orig_ty.type_eq(&equals_to) {
             return Ok(orig_ty.into_owned());
