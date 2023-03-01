@@ -78,9 +78,9 @@ impl Analyzer<'_, '_> {
     pub(crate) fn add_vars(
         &mut self,
         pat: &RPat,
-        ty: Option<Type>,
-        actual: Option<Type>,
-        default: Option<Type>,
+        ty: Option<ArcCowType>,
+        actual: Option<ArcCowType>,
+        default: Option<ArcCowType>,
         opts: DeclareVarsOpts,
     ) -> VResult<Option<ArcCowType>> {
         if let Some(ty) = &ty {
@@ -302,7 +302,7 @@ impl Analyzer<'_, '_> {
                                             ErrorKind::TupleIndexError { .. } => match elem {
                                                 RPat::Assign(p) => {
                                                     let type_ann = p.left.get_ty();
-                                                    let type_ann: Option<Type> =
+                                                    let type_ann: Option<ArcCowType> =
                                                         type_ann.and_then(|v| v.validate_with(self).report(&mut self.storage));
                                                     let type_ann = type_ann.or_else(|| default_ty.clone());
 
