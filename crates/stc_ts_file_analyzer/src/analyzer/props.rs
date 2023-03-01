@@ -545,9 +545,9 @@ impl Analyzer<'_, '_> {
             optional: false,
             params: Default::default(),
             type_ann: if computed {
-                type_ann.map(Box::new)
+                type_ann
             } else {
-                Some(box Type::any(n.span, Default::default()))
+                Some(Type::any(n.span, Default::default()).into())
             },
             type_params: Default::default(),
             metadata: Default::default(),

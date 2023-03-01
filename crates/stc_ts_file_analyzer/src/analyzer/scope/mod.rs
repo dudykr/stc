@@ -2053,11 +2053,14 @@ impl Expander<'_, '_, '_> {
             RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
                     if *class == *i {
-                        return Ok(Some(Type::This(ThisType {
-                            span,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })));
+                        return Ok(Some(
+                            Type::This(ThisType {
+                                span,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                            .into(),
+                        ));
                     }
                 }
                 if i.sym == js_word!("void") {
