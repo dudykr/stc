@@ -1231,7 +1231,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
-                                    .freezed(),
+                                    .into_freezed_cow(),
                                     opts,
                                 )?;
                             }
@@ -1374,7 +1374,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Operator,
-        arg: &Type,
+        arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         match param.op {
@@ -1462,7 +1462,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Handle union
-    fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
+    fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut ArcCowType) {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             *ty = Type::any(
                 ty.span(),
@@ -1470,7 +1470,8 @@ impl Analyzer<'_, '_> {
                     common: ty.metadata(),
                     ..Default::default()
                 },
-            );
+            )
+            .into();
             return;
         }
 
@@ -1481,11 +1482,12 @@ impl Analyzer<'_, '_> {
                     common: ty.metadata(),
                     ..Default::default()
                 },
-            );
+            )
+            .into();
             return;
         }
 
-        if let Type::Tuple(..) = ty {
+        if let Type::Tuple(..) = ty.normalize() {
             match ty.normalize_mut() {
                 Type::Tuple(ty) => {
                     for elem in ty.elems.iter_mut() {
