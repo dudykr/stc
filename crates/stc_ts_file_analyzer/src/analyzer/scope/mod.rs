@@ -1130,7 +1130,7 @@ impl Analyzer<'_, '_> {
         ty
     }
 
-    pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<Type>>> {
+    pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<ArcCowType>>> {
         let _tracing = dev_span!("find_type", name = tracing::field::debug(name));
 
         if let Some(v) = self.find_local_type(name) {

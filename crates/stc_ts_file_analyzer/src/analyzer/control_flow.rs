@@ -1,5 +1,5 @@
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::Borrow,
     collections::hash_map::Entry,
     hash::Hash,
     mem::{replace, take},
@@ -1034,7 +1034,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let elem_ty = self
-                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                            .get_element_from_iterator(span, &ty, i)
                             .context("tried to get an element of type to assign with an array pattern")
                             .report(&mut self.storage);
                         if let Some(elem_ty) = elem_ty {
@@ -1383,7 +1383,7 @@ impl Analyzer<'_, '_> {
                 let mut ty = Type::new_union(span, new_obj_types);
                 ty.fix();
 
-                return Ok(Some((Name::from(top.clone()), ty)));
+                return Ok(Some((Name::from(top.clone()), ty.into_freezed())));
             }
         }
 
