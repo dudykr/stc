@@ -430,23 +430,27 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(KeywordType {
+                ty: Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }),
+                })
+                .into(),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(KeywordType {
-                    span: DUMMY_SP,
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
+                type_ann: Some(
+                    Type::Keyword(KeywordType {
+                        span: DUMMY_SP,
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ),
                 is_static: false,
             }));
         }
@@ -459,23 +463,27 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(KeywordType {
+                ty: Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }),
+                })
+                .into(),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(KeywordType {
-                    span: DUMMY_SP,
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
+                type_ann: Some(
+                    Type::Keyword(KeywordType {
+                        span: DUMMY_SP,
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ),
                 is_static: false,
             }));
         }
