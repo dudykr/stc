@@ -577,7 +577,7 @@ impl Analyzer<'_, '_> {
         }
 
         let p;
-        let param = match param {
+        let param = match param.normalize() {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
                 p = box param_normalized.clone().fold_with(&mut MappedIndexedSimplifier).into_freezed_cow();
@@ -599,7 +599,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param_normalized, arg) {
+        match (param.normalize(), arg.normalize()) {
             (Type::Union(p), _) => {
                 if !opts.skip_initial_union_check {
                     self.infer_type_using_union(
