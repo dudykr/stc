@@ -1296,7 +1296,7 @@ impl Analyzer<'_, '_> {
                 // Check if property matches the type fact.
                 if let Some(type_facts) = type_facts {
                     let orig = prop_ty.clone();
-                    prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty);
+                    prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty.into_owned()).into();
 
                     // TODO(kdy1): See if which one is correct.
                     //
@@ -1311,7 +1311,8 @@ impl Analyzer<'_, '_> {
                                 common: src.metadata(),
                                 ..Default::default()
                             },
-                        ));
+                        )
+                        .into());
                     }
                 }
             }

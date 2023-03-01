@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, IntersectionMetadata, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union, UnionMetadata,
+    ArcCowType, ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, IntersectionMetadata,
+    KeywordType, KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{cache::Freeze, dev_span, stack};
@@ -25,10 +25,12 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+    pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: ArcCowType) -> ArcCowType {
         if self.config.is_builtin {
             return ty;
         }
+
+        let mut ty = ty.into_owned();
 
         let _tracing = dev_span!("apply_type_facts_to_type");
 
@@ -150,7 +152,7 @@ impl Analyzer<'_, '_> {
 
         debug!("[types/fact] {} => {}\nTypeFacts: {:?}", before, after, facts);
 
-        ty.fixed()
+        ty.fixed().into_cow()
     }
 }
 
