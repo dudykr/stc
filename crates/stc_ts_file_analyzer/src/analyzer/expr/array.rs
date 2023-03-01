@@ -483,7 +483,7 @@ impl Analyzer<'_, '_> {
                 .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
                 .context("tried to get element type of an async iterator")?;
 
-            return Ok(Cow::Owned(elem_ty.into_owned()));
+            return Ok(elem_ty.into());
         }
 
         let elem_ty = self
@@ -497,10 +497,10 @@ impl Analyzer<'_, '_> {
             })?;
 
         if let Ok(elem_ty) = self.get_awaited_type(span, Cow::Borrowed(&elem_ty), false).map(Cow::into_owned) {
-            return Ok(Cow::Owned(elem_ty));
+            return Ok(elem_ty.into());
         }
 
-        Ok(Cow::Owned(elem_ty.into_owned()))
+        Ok(elem_ty.into())
     }
 
     pub(crate) fn get_value_type_from_iterator_result<'a>(&mut self, span: Span, iterator_result: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
@@ -536,7 +536,7 @@ impl Analyzer<'_, '_> {
 
         elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
 
-        Ok(Cow::Owned(elem_ty))
+        Ok(elem_ty)
     }
 
     pub(crate) fn get_rest_elements<'a>(

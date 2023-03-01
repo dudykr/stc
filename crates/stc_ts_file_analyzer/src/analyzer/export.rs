@@ -60,8 +60,12 @@ impl Analyzer<'_, '_> {
                 RDecl::TsEnum(ref e) => {
                     let span = e.span();
 
-                    let ty = e.validate_with(a).report(&mut a.storage).map(Type::from).map(|ty| ty.freezed());
-                    let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()));
+                    let ty = e
+                        .validate_with(a)
+                        .report(&mut a.storage)
+                        .map(Type::from)
+                        .map(|ty| ty.into_freezed());
+                    let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()).into());
                     a.register_type(e.id.clone().into(), ty);
 
                     a.storage
@@ -121,7 +125,7 @@ impl Analyzer<'_, '_> {
                 if f.function.return_type.is_none() {
                     if let Some(m) = &mut self.mutations {
                         if m.for_fns.entry(f.function.node_id).or_default().ret_ty.is_none() {
-                            m.for_fns.entry(f.function.node_id).or_default().ret_ty = Some(*fn_ty.ret_ty.clone());
+                            m.for_fns.entry(f.function.node_id).or_default().ret_ty = Some(fn_ty.ret_ty.clone());
                         }
                     }
                 }
@@ -140,7 +144,7 @@ impl Analyzer<'_, '_> {
                 let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with_args(self, None)?;
-                let class_ty = Type::ClassDef(class_ty).freezed();
+                let class_ty = Type::ClassDef(class_ty).into_freezed();
                 self.register_type(var_name.clone(), class_ty.clone());
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
@@ -234,7 +238,11 @@ impl Analyzer<'_, '_> {
             None => unreachable!(".register_type() should be called before calling .export({})", orig_name),
         };
 
-        let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.freezed()).collect::<Vec<_>>();
+        let iter = types
+            .into_iter()
+            .map(|v| v.into_owned())
+            .map(|v| v.into_freezed())
+            .collect::<Vec<_>>();
         for ty in iter {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
