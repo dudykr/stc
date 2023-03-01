@@ -958,35 +958,44 @@ impl Analyzer<'_, '_> {
                     let key_types = keys
                         .iter()
                         .filter_map(|key| match key {
-                            Key::BigInt(v) => Some(Type::Lit(LitType {
-                                span: v.span.with_ctxt(SyntaxContext::empty()),
-                                lit: RTsLit::BigInt(v.clone()),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })),
-                            Key::Num(v) => Some(Type::Lit(LitType {
-                                span: v.span.with_ctxt(SyntaxContext::empty()),
-                                lit: RTsLit::Number(v.clone()),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })),
-                            Key::Normal { span, sym } => Some(Type::Lit(LitType {
-                                span: span.with_ctxt(SyntaxContext::empty()),
-                                lit: RTsLit::Str(RStr {
-                                    span: *span,
-                                    value: sym.clone(),
-                                    raw: None,
-                                }),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })),
+                            Key::BigInt(v) => Some(
+                                Type::Lit(LitType {
+                                    span: v.span.with_ctxt(SyntaxContext::empty()),
+                                    lit: RTsLit::BigInt(v.clone()),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .into_cow(),
+                            ),
+                            Key::Num(v) => Some(
+                                Type::Lit(LitType {
+                                    span: v.span.with_ctxt(SyntaxContext::empty()),
+                                    lit: RTsLit::Number(v.clone()),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .into_cow(),
+                            ),
+                            Key::Normal { span, sym } => Some(
+                                Type::Lit(LitType {
+                                    span: span.with_ctxt(SyntaxContext::empty()),
+                                    lit: RTsLit::Str(RStr {
+                                        span: *span,
+                                        value: sym.clone(),
+                                        raw: None,
+                                    }),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .into_cow(),
+                            ),
 
                             // TODO
                             _ => None,
                         })
                         .collect_vec();
                     if key_types.is_empty() {
-                        return Ok(ty.into_type());
+                        return Ok(ty);
                     }
                     let keys = Type::Union(Union {
                         span,
@@ -1000,7 +1009,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation {
                             span,
-                            params: vec![ty.clone().into_type(), keys],
+                            params: vec![ty.clone(), keys],
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
