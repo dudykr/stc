@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
                 }) = ty
                 {
                     if let Some(ty) = type_args.params.first() {
-                        return ty;
+                        return &**ty;
                     }
                 }
 
@@ -61,8 +61,8 @@ impl Analyzer<'_, '_> {
                 .context("tried to validate the argument of an await expr")?;
             arg_ty.freeze();
 
-            if let Ok(arg) = a.get_awaited_type(span, Cow::Borrowed(&arg_ty), false) {
-                return Ok(arg.into_owned());
+            if let Ok(arg) = a.get_awaited_type(span, &arg_ty, false) {
+                return Ok(arg);
             }
 
             Ok(arg_ty)
@@ -106,12 +106,12 @@ impl Analyzer<'_, '_> {
 
         Ok(res
             .and_then(|then_ty| {
-                if let Type::Function(f) = then_ty {
+                if let Type::Function(f) = &*then_ty {
                     // Default type of the first type parameter is awaited type.
                     if let Some(type_params) = &f.type_params {
                         if let Some(ty) = type_params.params.first() {
                             if let Some(ty) = &ty.default {
-                                return Some(Cow::Owned(*ty.clone()));
+                                return Some(ty.clone());
                             }
                         }
                     }
