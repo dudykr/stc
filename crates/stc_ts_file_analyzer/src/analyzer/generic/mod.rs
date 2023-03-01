@@ -476,7 +476,14 @@ impl Analyzer<'_, '_> {
     /// arr([1, u]) // Ok
     /// arr([{}, u]) // Ok
     /// ```
-    fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &ArcCowType,
+        arg: &ArcCowType,
+        opts: InferTypeOpts,
+    ) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -505,7 +512,14 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Optimize
-    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type_inner(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &ArcCowType,
+        arg: &ArcCowType,
+        mut opts: InferTypeOpts,
+    ) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -1016,7 +1030,7 @@ impl Analyzer<'_, '_> {
                         elems: vec![TupleElement {
                             span,
                             label: None,
-                            ty: box arg.clone(),
+                            ty: arg.clone(),
                             tracker: Default::default(),
                         }],
                         metadata: Default::default(),
