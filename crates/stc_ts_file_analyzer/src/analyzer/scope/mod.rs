@@ -918,7 +918,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                     }
                     if i.sym == js_word!("this") {
-                        if let Some(this) = self.scope.this().map(Cow::into_owned) {
+                        if let Some(this) = self.scope.this() {
                             return Ok(this);
                         } else {
                             return Ok(Type::This(ThisType {

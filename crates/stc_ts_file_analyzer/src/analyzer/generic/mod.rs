@@ -695,7 +695,7 @@ impl Analyzer<'_, '_> {
                     span,
                     inferred,
                     arg,
-                    &[*target.true_type.clone(), *target.false_type.clone()],
+                    &[target.true_type.clone(), target.false_type.clone()],
                     if inferred.contravariant {
                         InferencePriority::ContravariantConditional
                     } else {
