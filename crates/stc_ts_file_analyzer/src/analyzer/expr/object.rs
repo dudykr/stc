@@ -36,7 +36,8 @@ impl Analyzer<'_, '_> {
                 members: vec![],
                 metadata: Default::default(),
                 tracker: Default::default(),
-            });
+            })
+            .into_cow();
 
             let mut known_keys = vec![];
             for prop in node.props.iter() {
@@ -107,8 +108,8 @@ impl Analyzer<'_, '_> {
 
     fn append_prop_or_spread_to_type(
         &mut self,
-        known_keys: &mut Vec<Key>,
-        to: Type,
+        known_keys: &mut Vec<&Key>,
+        to: ArcCowType,
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
     ) -> VResult<ArcCowType> {
@@ -116,7 +117,7 @@ impl Analyzer<'_, '_> {
 
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
-                let prop_ty: Type = expr.validate_with_default(self)?.freezed();
+                let prop_ty: ArcCowType = expr.validate_with_default(self)?.freezed();
 
                 if prop_ty.is_unknown() {
                     self.storage.report(
@@ -126,7 +127,7 @@ impl Analyzer<'_, '_> {
                                 hi: prop_ty.span().hi,
                                 ctxt: SyntaxContext::empty(),
                             },
-                            ty: box prop_ty.clone(),
+                            ty: prop_ty.clone(),
                         }
                         .into(),
                     )
@@ -149,7 +150,6 @@ impl Analyzer<'_, '_> {
                     }) => {
                         if let Some(key) = p.key() {
                             let key_ty = key.ty();
-                            let key = key.into_owned();
 
                             let span = key.span();
 
@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        if let Type::Function(..) = to {
+        if let Type::Function(..) = &*to {
             // objectSpread.ts says
             //
             //
@@ -214,18 +214,16 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        let mut rhs = self
-            .normalize(
-                Some(span),
-                Cow::Owned(rhs),
-                NormalizeTypeOpts {
-                    preserve_intersection: true,
-                    preserve_union: true,
-                    preserve_global_this: true,
-                    ..Default::default()
-                },
-            )?
-            .into_owned();
+        let mut rhs = self.normalize(
+            Some(span),
+            &rhs,
+            NormalizeTypeOpts {
+                preserve_intersection: true,
+                preserve_union: true,
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        )?;
 
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(rhs);

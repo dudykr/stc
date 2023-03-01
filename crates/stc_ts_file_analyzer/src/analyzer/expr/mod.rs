@@ -3385,12 +3385,12 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_generics_with_type_args(
         &mut self,
         span: Span,
-        ty: Type,
+        ty: ArcCowType,
         type_args: &TypeParamInstantiation,
     ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("expand_generics_with_type_args");
 
-        match ty {
+        match &*ty {
             Type::Interface(Interface { type_params, body, .. }) => {
                 let mut params = HashMap::default();
 

@@ -16,7 +16,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(ErrorKind::InvalidUsageOfNewTarget { span: e.span() }.into())
                 }
 
-                Ok(Type::any(e.span, Default::default()))
+                Ok(Type::any(e.span, Default::default()).into())
             }
 
             _ => {
