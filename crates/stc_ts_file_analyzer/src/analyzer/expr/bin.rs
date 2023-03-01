@@ -1954,7 +1954,7 @@ impl Analyzer<'_, '_> {
     /// ## orig_ty
     ///
     /// Original type of the variable.
-    fn narrow_with_equality(&mut self, orig_ty: &ArcCowType, equals_to: &Type) -> VResult<ArcCowType> {
+    fn narrow_with_equality(&mut self, orig_ty: &ArcCowType, equals_to: &ArcCowType) -> VResult<ArcCowType> {
         let span = equals_to.span();
 
         if orig_ty.type_eq(equals_to) {
@@ -1965,7 +1965,7 @@ impl Analyzer<'_, '_> {
         let equals_to = self.normalize(Some(span), equals_to, Default::default())?;
 
         if orig_ty.type_eq(&equals_to) {
-            return Ok(orig_ty.into_owned());
+            return Ok(orig_ty);
         }
 
         // Exclude nevers.
@@ -1992,7 +1992,8 @@ impl Analyzer<'_, '_> {
                 },
                 tracker: Default::default(),
             })
-            .fixed());
+            .fixed()
+            .into());
         }
 
         // At here two variants are different from each other because we checked with
@@ -2004,11 +2005,12 @@ impl Analyzer<'_, '_> {
                     common: equals_to.metadata(),
                     ..Default::default()
                 },
-            ));
+            )
+            .into());
         }
 
         // Defaults to new type.
-        Ok(equals_to.into_owned())
+        Ok(equals_to)
     }
 
     fn report_errors_for_bin_expr(&mut self, span: Span, op: BinaryOp, lt: &Type, rt: &Type) {
