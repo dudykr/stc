@@ -16,8 +16,8 @@ where
             ArcCow::Arc(_) => (),
             ArcCow::Owned(v) => {
                 // Deep
-                v.visit_mut_with(self);
-                let v = *v.take();
+                (**v).visit_mut_with(self);
+                let v = (**v).take();
 
                 *n = ArcCow::Arc(Arc::new(v))
             }
