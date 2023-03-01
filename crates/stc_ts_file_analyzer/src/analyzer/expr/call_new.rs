@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
 
                 self.scope.mark_as_super_called();
 
-                return Ok(Type::any(span, Default::default()));
+                return Ok(Type::any(span, Default::default()).into());
             }
             RCallee::Expr(callee) => callee,
             RCallee::Import(callee) => {
@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
                         .into())
                     }
                 };
-                let src = match src {
+                let src = match &*src {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
                     ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
                     ty if ty.is_union_type() => {
@@ -140,7 +140,8 @@ impl Analyzer<'_, '_> {
                                 }),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }));
+                            })
+                            .into());
                         }
                         return Err(ErrorKind::NonStringDynamicImport { span: callee.span }.into());
                     }
@@ -160,7 +161,8 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     } else {
                         return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
                     }

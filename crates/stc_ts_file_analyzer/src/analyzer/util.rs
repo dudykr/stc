@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Use Cow
-    pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
+    pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> ArcCowType {
         let _tracing = dev_span!("make_instance_or_report");
 
         if span.is_dummy() {
