@@ -1063,7 +1063,7 @@ impl Analyzer<'_, '_> {
                             // TODO(kdy1): Change error message from no callable
                             // property to property exists but not callable.
 
-                            if let Some(ty) = value.as_deref() {
+                            if let Some(ty) = value.as_ref() {
                                 return self
                                     .extract(span, expr, ty, kind, args, arg_types, spread_arg_types, type_args, type_ann, opts)
                                     .map(Some);
@@ -1665,7 +1665,7 @@ impl Analyzer<'_, '_> {
             }};
         }
 
-        match ty {
+        match &**ty {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO(kdy1): Check if all types has constructor signature
                 Ok(make_instance_type(ty.clone()))
@@ -1674,7 +1674,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
-            }) => Ok(Type::any(span, Default::default())),
+            }) => Ok(Type::any(span, Default::default()).into()),
 
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -1746,7 +1746,7 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => self.get_best_return_type(
                 span,
                 expr,
-                ty.clone(),
+                ty.clone().into_owned(),
                 kind,
                 type_args,
                 args,
@@ -1776,10 +1776,11 @@ impl Analyzer<'_, '_> {
                         if type_args.params.len() == 1 {
                             return Ok(Type::Array(Array {
                                 span,
-                                elem_type: box type_args.params.first().cloned().unwrap(),
+                                elem_type: type_args.params.first().cloned().unwrap().into(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }));
+                            })
+                            .into());
                         }
                     }
                 }
@@ -1840,12 +1841,12 @@ impl Analyzer<'_, '_> {
 
             Type::ClassDef(ref def) if kind == ExtractKind::New => {
                 // TODO(kdy1): Remove clone
-                Ok(Class {
+                Ok(Type::from(Class {
                     span,
                     def: box def.clone(),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }
+                })
                 .into())
             }
 
