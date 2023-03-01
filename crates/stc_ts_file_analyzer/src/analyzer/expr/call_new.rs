@@ -2603,7 +2603,8 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })
+                                .into_freezed(),
                             );
                         }
                     }
@@ -2944,7 +2945,7 @@ impl Analyzer<'_, '_> {
             self.add_call_facts(&params, args, &mut ret_ty);
         }
 
-        Ok(ret_ty)
+        Ok(ret_ty.into())
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread], is_generic: bool) {
@@ -2985,7 +2986,7 @@ impl Analyzer<'_, '_> {
             if arg.spread.is_some() {
                 if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
-                        match arg.ty {
+                        match &*arg.ty {
                             Type::Tuple(..) => {
                                 report_err!(ErrorKind::ExpectedAtLeastNArgsButGotMOrMore {
                                     span: arg.span(),
@@ -3025,7 +3026,7 @@ impl Analyzer<'_, '_> {
 
             if let (Some(param), Some(arg)) = (param, arg) {
                 if let RPat::Rest(..) = &param.pat {
-                    let param_ty = self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
+                    let param_ty = self.normalize(Some(arg.span()), &param.ty, Default::default());
 
                     let param_ty = match param_ty {
                         Ok(v) => v,
@@ -3043,7 +3044,7 @@ impl Analyzer<'_, '_> {
                     //      or
                     //   arg: (true, 'str', 10)
                     if arg.spread.is_none() {
-                        match param_ty {
+                        match &*param_ty {
                             Type::Tuple(param_ty) if !param_ty.elems.is_empty() => {
                                 let res = self
                                     .assign_with_opts(
@@ -3134,7 +3135,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    match param_ty {
+                    match &*param_ty {
                         Type::Array(arr) => {
                             // We should change type if the parameter is a rest parameter.
                             let res = self.assign(arg.span(), &mut Default::default(), &arr.elem_type, &arg.ty);
