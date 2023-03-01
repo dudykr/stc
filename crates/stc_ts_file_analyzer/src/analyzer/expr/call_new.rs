@@ -394,9 +394,10 @@ impl Analyzer<'_, '_> {
                     .validate_with_default(self)
                     .unwrap_or_else(|err| {
                         self.storage.report(err);
-                        Type::any(span, Default::default())
+                        Type::any(span, Default::default()).into()
                     })
-                    .generalize_lit();
+                    .generalize_lit()
+                    .into_cow();
                 {
                     // Handle toString()
 
@@ -406,7 +407,8 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                 }
 
@@ -491,6 +493,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
+                        .into()
                     });
                 match &*callee_ty {
                     Type::Keyword(KeywordType {
