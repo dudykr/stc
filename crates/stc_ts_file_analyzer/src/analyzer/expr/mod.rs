@@ -4090,16 +4090,17 @@ impl Analyzer<'_, '_> {
                             span,
                             // TODO(kdy1): Check length (After implementing error recovery for the
                             // parser)
-                            elem_type: box type_args.clone().params.into_iter().next().unwrap(),
+                            elem_type: type_args.clone().params.into_iter().next().unwrap(),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                 }
 
                 if let Some(types) = self.find_type(&i.into())? {
                     for ty in types {
-                        match ty {
+                        match &**ty {
                             Type::Namespace(_)
                             | Type::Module(_)
                             | Type::Instance(..)
@@ -4125,7 +4126,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty {
+                                    match &*ty {
                                         Type::Interface(Interface {
                                             type_params: Some(type_params),
                                             ..
@@ -4176,7 +4177,6 @@ impl Analyzer<'_, '_> {
                             Type::Intersection(ty) => {}
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
-                            Type::Arc(_) => {}
                         }
                     }
                 }

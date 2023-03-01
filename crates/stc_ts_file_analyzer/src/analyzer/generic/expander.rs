@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
-    ) -> VResult<FxHashMap<Id, Type>> {
+    ) -> VResult<FxHashMap<Id, ArcCowType>> {
         let _tracing = dev_span!("instantiate_type_params_using_args");
 
         let mut params = FxHashMap::default();
