@@ -644,7 +644,7 @@ impl Analyzer<'_, '_> {
                         )),
                         type_args: Some(box TypeParamInstantiation {
                             span,
-                            params: vec![*obj.elem_type.clone()],
+                            params: vec![obj.elem_type.clone()],
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
@@ -3896,5 +3896,5 @@ fn test_arg_check_result_order() {
 pub(super) struct CallCandidate {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Box<ArcCowType>,
+    pub ret_ty: ArcCowType,
 }
