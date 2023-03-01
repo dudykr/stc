@@ -21,10 +21,10 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
-    Function, Id, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator,
-    OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
-    TypeParamInstantiation,
+    name::Name, Alias, ArcCowType, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature,
+    FnParam, Function, Id, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData,
+    Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType,
+    TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -932,7 +932,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         members: &[TypeElement],
         opts: AccessPropertyOpts,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("access_property_of_type_elements");
 
         let mut matching_elements = vec![];
@@ -1192,7 +1192,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         if !self.config.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }

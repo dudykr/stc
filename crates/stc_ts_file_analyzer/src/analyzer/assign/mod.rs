@@ -2372,8 +2372,8 @@ impl Analyzer<'_, '_> {
                 if body.is_empty() && !extends.is_empty() {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: to.clone().into(),
+                        right: rhs.clone().into(),
                         right_ident: opts.right_ident_span,
                         cause: errors,
                     }
@@ -2399,8 +2399,8 @@ impl Analyzer<'_, '_> {
                 if !errors.is_empty() {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: to.clone().into(),
+                        right: rhs.clone().into(),
                         right_ident: opts.right_ident_span,
                         cause: errors,
                     }
@@ -2611,7 +2611,7 @@ impl Analyzer<'_, '_> {
                             fail!();
                         }
 
-                        match lhs_elems[0].ty {
+                        match &*lhs_elems[0].ty {
                             Type::Rest(RestType { ty: l_ty, .. }) => {
                                 self.assign_inner(
                                     data,
