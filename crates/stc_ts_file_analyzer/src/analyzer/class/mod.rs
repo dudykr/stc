@@ -12,8 +12,9 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
-    Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    rprop_name_to_expr, Accessor, ArcCowType, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam,
+    Id, IdCtx, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr,
+    Type,
 };
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, AHashSet};
@@ -464,14 +465,15 @@ impl Analyzer<'_, '_> {
                     .flatten()
                     .flatten()
                 {
-                    Some(ty) => box ty,
+                    Some(ty) => ty.into(),
                     None => {
                         let e: Option<_> = $e.validate_with(self).transpose()?;
-                        box e.unwrap_or_else(|| {
+                        e.unwrap_or_else(|| {
                             let mut ty = Type::any(span, Default::default());
                             self.mark_as_implicitly_typed(&mut ty);
                             ty
                         })
+                        .into()
                     }
                 }
             }};
@@ -549,9 +551,11 @@ impl Analyzer<'_, '_> {
                 Ok((
                     type_params,
                     params,
-                    box declared_ret_ty
-                        .or(inferred_ret_ty)
-                        .unwrap_or_else(|| Type::any(key_span, Default::default())),
+                    ArcCowType::new_freezed(
+                        declared_ret_ty
+                            .or(inferred_ret_ty)
+                            .unwrap_or_else(|| Type::any(key_span, Default::default())),
+                    ),
                 ))
             },
         )?;
@@ -1448,7 +1452,7 @@ impl Analyzer<'_, '_> {
         let mut new_members = vec![];
 
         let res: VResult<()> = try {
-            if let Type::ClassDef(sc) = super_ty {
+            if let Type::ClassDef(sc) = &*super_ty {
                 'outer: for sm in &sc.body {
                     match sm {
                         ClassMember::Property(super_property) => {

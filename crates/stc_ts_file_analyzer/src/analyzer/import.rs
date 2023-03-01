@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
-use stc_ts_types::{Id, ModuleId, Type};
+use stc_ts_types::{ArcCowType, Id, ModuleId, Type};
 use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{comments::Comments, Span, Spanned, GLOBALS};
@@ -22,7 +22,7 @@ impl Analyzer<'_, '_> {
     /// `(cur_mod_id, empty_data)` on import errors.
     ///
     /// TODO: Make this returns None when import failed
-    pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Type) {
+    pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, ArcCowType) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let dep_id = self.loader.module_id(&base, dst);

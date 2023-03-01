@@ -1009,7 +1009,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTplLitType) -> VResult<TplType> {
-        let types = t.types.iter().map(|ty| ty.validate_with(self)).collect::<Result<_, _>>()?;
+        let types = t
+            .types
+            .iter()
+            .map(|ty| ty.validate_with(self).map(From::from))
+            .collect::<Result<_, _>>()?;
 
         Ok(TplType {
             span: t.span,

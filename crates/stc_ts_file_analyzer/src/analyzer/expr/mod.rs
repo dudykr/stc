@@ -2329,7 +2329,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         return Err(ErrorKind::NoSuchProperty {
                             span: prop.span(),
-                            obj: Some(box obj),
+                            obj: Some(obj.into()),
                             prop: Some(box prop.clone()),
                         }
                         .into());

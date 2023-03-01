@@ -3539,7 +3539,7 @@ impl Analyzer<'_, '_> {
                 //     _ => {}
                 // }
 
-                match param.ty {
+                match &*param.ty {
                     Type::Param(..) => {}
                     Type::Instance(param) if param.ty.is_type_param() => {}
                     _ => {

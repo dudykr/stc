@@ -658,8 +658,8 @@ impl Analyzer<'_, '_> {
         let mut rhs = self.normalize_for_assign(span, rhs, opts).context("tried to normalize rhs")?;
         rhs.freeze();
 
-        let to = to;
-        let rhs = rhs;
+        let to = &*to;
+        let rhs = &*rhs;
 
         macro_rules! fail {
             () => {{
