@@ -621,7 +621,7 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
                 }) => {
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into_cow());
                 }
 
                 Type::Array(obj) => {
