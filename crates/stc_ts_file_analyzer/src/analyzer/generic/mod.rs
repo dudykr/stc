@@ -1562,7 +1562,7 @@ impl Analyzer<'_, '_> {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ty,
                                     ..
-                                }) => match ty {
+                                }) => match ty.normalize() {
                                     Type::Param(TypeParam { name, .. }) => Some(Res {
                                         name: name.clone(),
                                         key_name: key_name.clone(),
