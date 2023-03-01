@@ -531,7 +531,7 @@ impl Analyzer<'_, '_> {
                 let source = matches
                     .as_ref()
                     .map(|matches| matches[i].clone())
-                    .unwrap_or_else(|| Type::never(span, Default::default()));
+                    .unwrap_or_else(|| Type::never(span, Default::default()).into());
 
                 // If we are inferring from a string literal type to a type
                 // variable whose constraint includes one of the
@@ -566,7 +566,7 @@ impl Analyzer<'_, '_> {
                         source
                             .types
                             .iter()
-                            .map(|ty| self.get_string_like_type_for_type(ty).into_owned())
+                            .map(|ty| self.get_string_like_type_for_type(ty).into_owned().into_cow())
                             .collect(),
                     ))
                 } else {
@@ -854,7 +854,7 @@ impl Analyzer<'_, '_> {
 
                 if opts.priority == e.get().priority {
                     // Identical
-                    if e.get().inferred_type.type_eq(&*arg) {
+                    if e.get().inferred_type.normalize().type_eq(&*arg) {
                         return Ok(());
                     }
 
@@ -916,7 +916,7 @@ impl Analyzer<'_, '_> {
                                 new_elem.ty = new_elem.ty.generalize_lit().into();
                                 prev.elems.push(new_elem);
 
-                                Type::Tuple(prev).freezed()
+                                Type::Tuple(prev).into_freezed_cow()
                             } else {
                                 e.get().inferred_type.clone()
                             }
