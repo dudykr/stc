@@ -1683,9 +1683,9 @@ impl Analyzer<'_, '_> {
         &mut self,
         kind: VarKind,
         pat: &RPat,
-        ty: Type,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
+        ty: ArcCowType,
+        actual_ty: Option<ArcCowType>,
+        default_ty: Option<ArcCowType>,
     ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("declare_complex_vars");
 
