@@ -1903,7 +1903,7 @@ impl Analyzer<'_, '_> {
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                 if let Ok(prop_ty) = prop_res {
-                    let prop_ty = self.normalize(Some(prop_ty.span()), Cow::Owned(prop_ty), Default::default())?;
+                    let prop_ty = self.normalize(Some(prop_ty.span()), &prop_ty, Default::default())?;
                     let possible = match &*prop_ty {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
@@ -2117,19 +2117,22 @@ impl Analyzer<'_, '_> {
                                         kind: TsKeywordTypeKind::TsStringKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into(),
                                 ],
                                 metadata: Default::default(),
                                 tracker: Default::default(),
@@ -2403,7 +2406,7 @@ impl Analyzer<'_, '_> {
         tl: &TypeLit,
         r: &Type,
         name: Name,
-        additional_target: &mut FxHashMap<Name, Vec<Type>>,
+        additional_target: &mut FxHashMap<Name, Vec<ArcCowType>>,
         is_loose_comparison: bool,
     ) {
         if let Ok(property) = self.access_property(
