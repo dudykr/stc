@@ -834,7 +834,7 @@ impl Analyzer<'_, '_> {
                     }) => return self.infer_type(span, inferred, &param_arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
-                        let arg = Type::new_union(span, arg.elems.iter().map(|element| *element.ty.clone())).freezed();
+                        let arg = Type::new_union(span, arg.elems.iter().map(|element| element.ty.clone())).into_freezed_cow();
                         return self.infer_type(span, inferred, &param_arr.elem_type, &arg, opts);
                     }
 
@@ -2392,7 +2392,7 @@ fn array_elem_type(t: &Type) -> Option<&ArcCowType> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<ArcCowType> {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: ArcCowType, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         if self.config.is_builtin {
             return Ok(ty);
         }
