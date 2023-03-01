@@ -1121,7 +1121,7 @@ impl Analyzer<'_, '_> {
                 // I guess it's because javascript work in that way.
 
                 if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() && prop.is_computed() {
-                    return Ok(Some(Type::any(span, Default::default())));
+                    return Ok(Some(Type::any(span, Default::default()).into()));
                 }
 
                 let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
@@ -1132,20 +1132,18 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::ReadOnly { span }.into());
                     }
                     if let Some(type_ann) = type_ann {
-                        return Ok(Some(*type_ann.clone()));
+                        return Ok(Some(type_ann.clone()));
                     }
 
-                    return Ok(Some(Type::any(span, Default::default())));
+                    return Ok(Some(Type::any(span, Default::default()).into()));
                 }
 
                 if (**index_ty).type_eq(&*prop_ty) {
-                    return Ok(Some(
-                        type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())),
-                    ));
+                    return Ok(Some(type_ann.clone().unwrap_or_else(|| Type::any(span, Default::default()).into())));
                 }
 
-                if let Type::EnumVariant(..) = prop_ty {
-                    matching_elements.extend(type_ann.clone().map(|v| *v));
+                if let Type::EnumVariant(..) = &*prop_ty {
+                    matching_elements.extend(type_ann.clone());
                     continue;
                 }
             }
@@ -1157,12 +1155,13 @@ impl Analyzer<'_, '_> {
                 warn!("Creating a indexed access type from a type literal");
                 let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
-                    obj_type: box obj.clone(),
-                    index_type: box prop.ty().into_owned(),
+                    obj_type: obj.clone().into(),
+                    index_type: prop.ty().into_owned().into(),
                     readonly: false,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .into();
 
                 return Ok(Some(ty));
             }
@@ -1178,7 +1177,7 @@ impl Analyzer<'_, '_> {
 
         for el in matching_elements.into_iter() {
             if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
-                res_vec.push(res.into_owned());
+                res_vec.push(res);
             }
         }
         res_vec.dedup_type();
@@ -1186,8 +1185,8 @@ impl Analyzer<'_, '_> {
             return Ok(res_vec.pop());
         }
         let result = match type_mode {
-            TypeOfMode::LValue => Type::new_intersection(span, res_vec),
-            TypeOfMode::RValue => Type::new_union(span, res_vec),
+            TypeOfMode::LValue => Type::new_intersection(span, res_vec).into(),
+            TypeOfMode::RValue => Type::new_union(span, res_vec).into(),
         };
         Ok(Some(result))
     }
