@@ -1930,7 +1930,7 @@ impl Analyzer<'_, '_> {
                         let mut key_ty = Type::new_union(span, key_ty);
                         prevent_generalize(&mut key_ty);
                         key_ty.freeze();
-                        self.insert_inferred(span, inferred, type_param, Cow::Owned(key_ty), opts)?;
+                        self.insert_inferred(span, inferred, type_param, &key_ty, opts)?;
                     }
 
                     let param_ty = param.ty.as_ref().unwrap();
@@ -2014,7 +2014,7 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            let ty = inferred.type_params.remove(name).map(|v| box v.inferred_type);
+                                            let ty = inferred.type_params.remove(name).map(|v| v.inferred_type);
 
                                             type_elements
                                                 .entry(name.clone())
@@ -2318,7 +2318,7 @@ impl Analyzer<'_, '_> {
                     // TODO: Union
                     inferred.defaults.insert(
                         param.name.clone(),
-                        Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
+                        Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()).into_freezed_cow(),
                     );
                 }
             }
