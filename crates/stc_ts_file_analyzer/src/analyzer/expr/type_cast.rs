@@ -249,10 +249,10 @@ impl Analyzer<'_, '_> {
             )?
             .freezed();
 
-        let from = from;
-        let to = to;
+        let from = &*from;
+        let to = &*to;
 
-        if from.type_eq(&to) {
+        if from.type_eq(to) {
             return Ok(true);
         }
 
@@ -265,17 +265,17 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if let Type::TypeLit(to) = &*to {
+        if let Type::TypeLit(to) = to {
             if to.members.is_empty() {
                 return Ok(true);
             }
         }
 
-        if from.type_eq(&to) {
+        if from.type_eq(to) {
             return Ok(true);
         }
 
-        match (&*from, &*to) {
+        match (from, to) {
             (
                 Type::Lit(LitType {
                     lit: RTsLit::Number(..), ..

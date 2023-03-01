@@ -1805,7 +1805,7 @@ impl Analyzer<'_, '_> {
             obj.freeze();
         }
 
-        match obj {
+        match &*obj {
             Type::Lit(obj) => {
                 // Even if literal generalization is prevented, it should be
                 // expanded in this case.
