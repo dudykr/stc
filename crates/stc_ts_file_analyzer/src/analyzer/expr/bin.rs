@@ -156,9 +156,9 @@ impl Analyzer<'_, '_> {
                             _ => match op {
                                 op!("||") | op!("??") => {
                                     truthy_lt = lt.clone().map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty));
-                                    truthy_lt.as_ref()
+                                    truthy_lt.as_deref()
                                 }
-                                _ => lt.as_ref(),
+                                _ => lt.as_deref(),
                             },
                         },
                         _ => None,
@@ -700,7 +700,8 @@ impl Analyzer<'_, '_> {
                         kind,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 if c.any(|(_, ty)| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)) {

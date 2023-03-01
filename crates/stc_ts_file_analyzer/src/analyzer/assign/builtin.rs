@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};

@@ -706,12 +706,13 @@ impl Analyzer<'_, '_> {
                 &Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::Symbol(Symbol {
+                    ty: Type::Symbol(Symbol {
                         span,
                         id: SymbolId::iterator(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                 }),
                 None,
                 &[],
