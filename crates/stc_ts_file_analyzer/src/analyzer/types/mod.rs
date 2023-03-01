@@ -218,7 +218,7 @@ impl Analyzer<'_, '_> {
                             .expand_intrinsic_types(actual_span, i)
                             .context("tried to expand intrinsic type as a part of normalization")?;
 
-                        return Ok((ty));
+                        return Ok(ty);
                     }
 
                     // Leaf types.
@@ -231,12 +231,13 @@ impl Analyzer<'_, '_> {
 
                         elem_type.assert_valid();
 
-                        return Ok((Type::Array(Array {
+                        return Ok(Type::Array(Array {
                             span: arr.span,
                             elem_type,
                             metadata: arr.metadata,
                             tracker: Default::default(),
-                        })));
+                        })
+                        .into());
                     }
 
                     // Not normalizable.
@@ -358,20 +359,20 @@ impl Analyzer<'_, '_> {
                             types.retain(|ty| !ty.is_never());
 
                             if types.is_empty() {
-                                return Ok((Type::never(
+                                return Ok(Type::never(
                                     ty.span,
                                     KeywordTypeMetadata {
                                         common: ty.metadata.common,
                                     },
-                                )));
+                                ));
                             }
                             if types.len() == 1 {
-                                return Ok((types.into_iter().next().unwrap()));
+                                return Ok(types.into_iter().next().unwrap());
                             }
 
                             let ty = Type::Union(Union { types, ..*ty }).freezed();
 
-                            return Ok((ty));
+                            return Ok(ty);
                         }
                     }
 
@@ -381,7 +382,7 @@ impl Analyzer<'_, '_> {
                                 .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
                                 .context("failed to normalize an intersection type")?
                             {
-                                return Ok((new_ty));
+                                return Ok(new_ty);
                             }
                         }
                     }
@@ -392,7 +393,7 @@ impl Analyzer<'_, '_> {
                         // TODO(kdy1): Cleanup
                         c = match self.expand_conditional_type(actual_span, Type::Conditional(c)).foldable() {
                             Type::Conditional(c) => c,
-                            ty => return Ok((ty)),
+                            ty => return Ok(ty),
                         };
 
                         ALLOW_DEEP_CLONE.set(&(), || {
