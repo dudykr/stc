@@ -975,13 +975,14 @@ impl Analyzer<'_, '_> {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            });
+                            })
+                            .into_cow();
 
                             if m.optional {
-                                let mut types = vec![Type::undefined(span, Default::default()), prop_ty.clone()];
+                                let mut types = vec![Type::undefined(span, Default::default()).into(), prop_ty.clone()];
                                 types.dedup_type();
                                 matching_elements.push(Type::new_union(span, types));
                             } else {
