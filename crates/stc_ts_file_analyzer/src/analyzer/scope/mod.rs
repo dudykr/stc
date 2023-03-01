@@ -1271,7 +1271,7 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+        let ty = self.normalize(Some(span), ty, Default::default());
         if let Ok(ty) = ty {
             let ty = ty.into_type();
             ty.assert_valid();
@@ -1281,7 +1281,7 @@ impl Analyzer<'_, '_> {
                 key,
                 dump_type_as_string(&ty)
             );
-            self.scope.destructure_vars.insert(key, ty.freezed());
+            self.scope.destructure_vars.insert(key, ty);
             Ok(true)
         } else {
             debug!("[({})/vars/destructor]: Declaring {:?} without type", self.scope.depth(), key);
