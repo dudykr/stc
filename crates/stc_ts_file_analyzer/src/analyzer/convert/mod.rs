@@ -813,8 +813,8 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        if let Type::Param(..) = &*ty {
-                            return Ok(ty.into());
+                        if let Type::Param(..) = &**ty {
+                            return Ok(ty.into_owned());
                         }
                     }
 
@@ -1273,6 +1273,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
+                .into_freezed()
             });
         }
     }

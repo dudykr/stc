@@ -68,7 +68,8 @@ impl Analyzer<'_, '_> {
                                         default: None,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }),
+                                    })
+                                    .into_freezed(),
                                 );
                             }
                         }
@@ -111,7 +112,8 @@ impl Analyzer<'_, '_> {
                                     default: None,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })
+                                .into_freezed(),
                             );
                         }
                     }
