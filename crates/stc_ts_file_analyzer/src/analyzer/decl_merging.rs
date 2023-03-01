@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle declaration merging.
-    fn merge_declaration_types(&mut self, span: Span, orig: Type, new: Type) -> VResult<ArcCowType> {
+    fn merge_declaration_types(&mut self, span: Span, orig: ArcCowType, new: ArcCowType) -> VResult<ArcCowType> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
 
@@ -152,7 +152,7 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> VResult<(Type, bool)> {
+    pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: ArcCowType) -> VResult<(ArcCowType, bool)> {
         let orig = self.find_type(&name)?;
         let mut orig = match orig {
             Some(v) => v,

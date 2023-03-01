@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
 
         let alias = {
             self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
-                let type_params = try_opt!(d.type_params.validate_with(child)).map(From::from);
+                let type_params = try_opt!(d.type_params.validate_with(child));
 
                 let mut ty = match &*d.type_ann {
                     RTsType::TsKeywordType(RTsKeywordType {
@@ -471,7 +471,7 @@ impl Analyzer<'_, '_> {
                         Some(Type::any(d.span, Default::default()).into())
                     }
                 },
-                None => Some(Type::any(d.span, Default::default().into())),
+                None => Some(Type::any(d.span, Default::default()).into()),
             }
         };
 
@@ -909,7 +909,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsRestType) -> VResult<RestType> {
         Ok(RestType {
             span: t.span,
-            ty: box t.type_ann.validate_with(self)?,
+            ty: t.type_ann.validate_with(self)?,
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -921,7 +921,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsOptionalType) -> VResult<OptionalType> {
         Ok(OptionalType {
             span: t.span,
-            ty: box t.type_ann.validate_with(self)?,
+            ty: t.type_ann.validate_with(self)?,
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -933,7 +933,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQuery) -> VResult<QueryType> {
         Ok(QueryType {
             span: t.span,
-            expr: box t.expr_name.validate_with(self)?,
+            expr: t.expr_name.validate_with(self)?,
             metadata: Default::default(),
             tracker: Default::default(),
         })

@@ -1066,7 +1066,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span, Default::default()));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()).into());
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
                                 .report(&mut self.storage);
@@ -1294,7 +1294,7 @@ impl Analyzer<'_, '_> {
                 // Check if property matches the type fact.
                 if let Some(type_facts) = type_facts {
                     let orig = prop_ty.clone();
-                    prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty.into_owned()).into();
+                    prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty).into();
 
                     // TODO(kdy1): See if which one is correct.
                     //
@@ -1346,7 +1346,7 @@ impl Analyzer<'_, '_> {
         let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let obj = self.normalize(
             Some(span),
-            Cow::Owned(obj),
+            &obj,
             NormalizeTypeOpts {
                 preserve_global_this: true,
                 preserve_union: true,

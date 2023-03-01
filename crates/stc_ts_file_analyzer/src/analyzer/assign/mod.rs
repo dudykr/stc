@@ -2920,7 +2920,7 @@ impl Analyzer<'_, '_> {
     fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
-            .normalize(Some(span), Cow::Borrowed(r), NormalizeTypeOpts { ..Default::default() })
+            .normalize(Some(span), r, NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
         r.freeze();
 
