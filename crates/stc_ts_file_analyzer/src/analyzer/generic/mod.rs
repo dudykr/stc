@@ -353,8 +353,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn infer_ts_infer_types(
         &mut self,
         span: Span,
-        base: &Type,
-        concrete: &Type,
+        base: &ArcCowType,
+        concrete: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, Type>> {
         let _tracing = dev_span!("infer_ts_infer_types");
