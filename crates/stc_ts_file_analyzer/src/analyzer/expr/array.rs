@@ -575,7 +575,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(iterator.into_owned()))
     }
 
-    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: &Type, opts: GetIteratorOpts) -> VResult<ArcCowType> {
         let start = Instant::now();
         let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
 
@@ -775,11 +775,12 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
 
         match &*iterator {
-            Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
+            Type::Array(arr) => return Ok(arr.elem_type.clone()),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {
                     return Ok(Type::any(
@@ -787,7 +788,8 @@ impl Analyzer<'_, '_> {
                         KeywordTypeMetadata {
                             common: tuple.metadata.common,
                         },
-                    ));
+                    )
+                    .into());
                 }
                 let types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
                 return Ok(Type::Union(Union {
@@ -798,7 +800,8 @@ impl Analyzer<'_, '_> {
                     },
                     tracker: Default::default(),
                 })
-                .fixed());
+                .fixed()
+                .into());
             }
             Type::Union(u) => {
                 let types = u
@@ -829,10 +832,7 @@ impl Analyzer<'_, '_> {
                 let mut types = i
                     .types
                     .iter()
-                    .map(|iterator| {
-                        self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value, Default::default())
-                    })
-                    .map(|ty| ty.map(Cow::into_owned))
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), &iterator, try_next_value, Default::default()))
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
 
@@ -841,7 +841,8 @@ impl Analyzer<'_, '_> {
                     types,
                     metadata: i.metadata,
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             _ => {}
