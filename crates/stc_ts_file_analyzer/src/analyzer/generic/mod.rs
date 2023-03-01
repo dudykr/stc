@@ -2634,9 +2634,6 @@ struct MappedIndexedSimplifier;
 
 impl Fold<Type> for MappedIndexedSimplifier {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
         ty = ty.fold_children_with(self);
 
         match ty {
