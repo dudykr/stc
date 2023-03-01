@@ -399,8 +399,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::InvalidOpAssign {
                             span,
                             op,
-                            lhs: box l.into_owned().clone(),
-                            rhs: box r.into_owned().clone(),
+                            lhs: l.into_owned().clone().into(),
+                            rhs: r.into_owned().clone().into(),
                         }
                         .into());
                     }
@@ -423,8 +423,8 @@ impl Analyzer<'_, '_> {
                     .convert_err(|err| ErrorKind::InvalidOpAssign {
                         span,
                         op,
-                        lhs: box l.into_owned().clone(),
-                        rhs: box r.into_owned().clone(),
+                        lhs: l.into_owned().clone().into(),
+                        rhs: r.into_owned().clone().into(),
                     });
             }
             _ => {}
@@ -483,8 +483,8 @@ impl Analyzer<'_, '_> {
             | ErrorKind::ObjectAssignFailed { .. } => err,
             _ => ErrorKind::AssignFailed {
                 span: opts.span,
-                left: box left.clone(),
-                right: box right.clone(),
+                left: left.clone().into(),
+                right: right.clone().into(),
                 right_ident: opts.right_ident_span,
                 cause: vec![err.into()],
             },
@@ -778,7 +778,7 @@ impl Analyzer<'_, '_> {
             }};
         }
 
-        if to.type_eq(rhs) {
+        if to.type_eq(&*rhs) {
             return Ok(());
         }
 
@@ -790,7 +790,7 @@ impl Analyzer<'_, '_> {
             .context("global this"));
         }
 
-        if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
+        if let Some(res) = self.assign_to_builtin(data, &to, &rhs, opts) {
             return res;
         }
 
