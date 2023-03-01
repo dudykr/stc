@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, IdCtx, ModuleId};
+use stc_ts_types::{ArcCowType, Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
                         a.storage.export_type(span, a.ctx.module_id, id.clone().into(), id.clone().into());
                     }
                     RTsModuleName::Str(..) => {
-                        let module: Option<Type> = module.validate_with(a)?;
+                        let module: Option<ArcCowType> = module.validate_with(a)?;
                         let module = match module {
                             Some(v) => v,
                             None => {
@@ -488,7 +488,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.data.imports.get(&(ctxt, from)) {
-            match data {
+            match &**data {
                 Type::Module(data) => {
                     if let Some(ty) = data.exports.vars.get(orig.sym()) {
                         did_work = true;

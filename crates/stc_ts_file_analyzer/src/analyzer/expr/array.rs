@@ -365,7 +365,7 @@ impl Analyzer<'_, '_> {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchProperty { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. } => {
-                    if let Type::Union(iterator) = iterator {
+                    if let Type::Union(iterator) = &*iterator {
                         if iterator.types.iter().all(|ty| ty.is_tuple()) {
                             return ErrorKind::NoSuchProperty {
                                 span,
@@ -666,8 +666,7 @@ impl Analyzer<'_, '_> {
                     let types = u
                         .types
                         .iter()
-                        .map(|v| self.get_iterator(span, Cow::Borrowed(v), opts))
-                        .map(|res| res.map(Cow::into_owned))
+                        .map(|v| self.get_iterator(span, v, opts))
                         .collect::<Result<_, _>>()
                         .convert_err(|err| match err {
                             ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {

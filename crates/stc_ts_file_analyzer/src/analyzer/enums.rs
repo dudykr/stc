@@ -149,7 +149,7 @@ impl Analyzer<'_, '_> {
             .map(Type::Enum)
             .map(Type::into_freezed)
             .report(&mut self.storage)
-            .unwrap_or_else(|| Type::any(span, Default::default()));
+            .unwrap_or_else(|| Type::any(span, Default::default()).into());
 
         self.register_type(name.clone(), stored_ty.clone());
 
@@ -278,7 +278,7 @@ impl Evaluator<'_> {
                     let res = expr.validate_with_default(analyzer)?;
                     let res = analyzer.expand_enum_variant(res)?;
 
-                    if let Type::Lit(ty) = res {
+                    if let Type::Lit(ty) = &*res {
                         return Ok(ty.lit.clone());
                     }
                 }
@@ -575,7 +575,7 @@ impl Analyzer<'_, '_> {
     /// const a = o[e]
     /// ```
     pub(super) fn expand_enum(&self, ty: ArcCowType) -> VResult<ArcCowType> {
-        let e = match ty {
+        let e = match &*ty {
             Type::Enum(e) => e,
             _ => return Ok(ty),
         };
@@ -621,7 +621,7 @@ impl Analyzer<'_, '_> {
             if let Some(variant_name) = &ev.name {
                 if let Some(types) = self.find_type(&ev.enum_name)? {
                     for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = &*ty {
+                        if let Type::Enum(Enum { members, .. }) = &**ty {
                             if let Some(v) = members.iter().find(|m| match m.id {
                                 RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
                                     sym == variant_name
