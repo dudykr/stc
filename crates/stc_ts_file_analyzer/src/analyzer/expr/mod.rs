@@ -1176,7 +1176,7 @@ impl Analyzer<'_, '_> {
         let mut res_vec = vec![];
 
         for el in matching_elements.into_iter() {
-            if let Ok(res) = self.normalize(Some(span), Cow::Owned(el), Default::default()) {
+            if let Ok(res) = self.normalize(Some(span), &el, Default::default()) {
                 res_vec.push(res);
             }
         }
