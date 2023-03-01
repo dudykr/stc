@@ -1461,7 +1461,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             };
-                            self.register_type(param.name.clone(), Type::Param(param.clone()));
+                            self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
                         }
                     }
 
@@ -1503,7 +1503,8 @@ impl Analyzer<'_, '_> {
                                 span,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }));
+                            })
+                            .into());
                         };
                         let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
@@ -1556,7 +1557,7 @@ impl Analyzer<'_, '_> {
                     if opts.disallow_invoking_implicit_constructors {
                         return Err(ErrorKind::NoNewSignature {
                             span,
-                            callee: box ty.clone(),
+                            callee: ty.clone().into(),
                         }
                         .into());
                     }
@@ -1608,26 +1609,30 @@ impl Analyzer<'_, '_> {
                     if let Some(class_name) = self.scope.this_class_name() {
                         return Ok(Type::Instance(Instance {
                             span,
-                            ty: box Type::Query(QueryType {
+                            ty: Type::Query(QueryType {
                                 span,
                                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(class_name.into())),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }),
+                            })
+                            .into(),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                     return Ok(Type::Instance(Instance {
                         span,
-                        ty: box Type::StaticThis(StaticThis {
+                        ty: Type::StaticThis(StaticThis {
                             span,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })
+                        .into(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 Type::Function(..) if self.rule().no_implicit_any => {
