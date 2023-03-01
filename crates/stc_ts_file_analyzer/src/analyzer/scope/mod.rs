@@ -706,7 +706,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<ArcCowType> {
+    pub(super) fn expand(&mut self, span: Span, ty: ArcCowType, opts: ExpandOpts) -> VResult<ArcCowType> {
         let _tracing = dev_span!("expand");
 
         if !self.config.is_builtin {

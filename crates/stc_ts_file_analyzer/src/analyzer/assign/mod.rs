@@ -1284,7 +1284,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = t {
+                                if let Type::Enum(en) = &*t {
                                     if let Some(v) = en.members.iter().find(|m| match m.id {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
@@ -1311,7 +1311,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = t {
+                                if let Type::Enum(en) = &*t {
                                     if let Some(v) = en.members.iter().find(|m| match m.id {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
@@ -1431,8 +1431,8 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Lit(ref lhs) => match &*rhs {
-                Type::Lit(rhs) => {
-                    if is_lit_eq_ignore_span(lhs, &rhs) {
+                Type::Lit(rhs_lit) => {
+                    if is_lit_eq_ignore_span(lhs, &rhs_lit) {
                         return Ok(());
                     } else {
                         return Err(ErrorKind::AssignFailed {
