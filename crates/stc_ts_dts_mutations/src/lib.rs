@@ -1,7 +1,7 @@
 use fxhash::FxHashMap;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RClassMember, RExpr, RStmt};
-use stc_ts_types::{Type, TypeParamDecl};
+use stc_ts_types::{ArcCowType, TypeParamDecl};
 
 /// Stores ast mutation information.
 ///
@@ -30,7 +30,7 @@ pub struct Mutations {
 pub struct PatMut {
     /// None: No change
     pub optional: Option<bool>,
-    pub ty: Option<Type>,
+    pub ty: Option<ArcCowType>,
 }
 
 #[derive(Default)]
@@ -40,7 +40,7 @@ pub struct VarDeclMut {
 
 #[derive(Default)]
 pub struct FunctionMut {
-    pub ret_ty: Option<Type>,
+    pub ret_ty: Option<ArcCowType>,
 }
 
 #[derive(Default)]
@@ -50,7 +50,7 @@ pub struct CallableMut {
 
 #[derive(Default)]
 pub struct ExprMut {
-    pub type_ann: Option<Type>,
+    pub type_ann: Option<ArcCowType>,
 }
 
 #[derive(Default)]
@@ -66,7 +66,7 @@ pub struct ClassMemberMut {
 
 #[derive(Default)]
 pub struct ClassPropMut {
-    pub ty: Option<Type>,
+    pub ty: Option<ArcCowType>,
 }
 
 #[derive(Default)]

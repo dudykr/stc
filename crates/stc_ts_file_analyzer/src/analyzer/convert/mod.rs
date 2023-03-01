@@ -463,7 +463,8 @@ impl Analyzer<'_, '_> {
                                     id: SymbolId::known(key),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                });
+                                })
+                                .into();
                             }
                         }
 
@@ -471,10 +472,10 @@ impl Analyzer<'_, '_> {
                     }
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span, Default::default()))
+                        Some(Type::any(d.span, Default::default()).into())
                     }
                 },
-                None => Some(box Type::any(d.span, Default::default())),
+                None => Some(Type::any(d.span, Default::default().into())),
             }
         };
 

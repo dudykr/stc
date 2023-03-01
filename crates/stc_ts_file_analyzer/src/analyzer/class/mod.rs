@@ -1882,7 +1882,7 @@ impl Analyzer<'_, '_> {
                                         let ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                         let mut ty = try_opt!(ty.validate_with(&mut *child.with_ctx(ctx)));
                                         if ty.is_none() {
-                                            ty = Some(right.validate_with_default(&mut *child.with_ctx(ctx))?.generalize_lit());
+                                            ty = Some(right.validate_with_default(&mut *child.with_ctx(ctx))?.generalize_lit().into());
                                         }
                                         (i, ty)
                                     }
@@ -1906,7 +1906,7 @@ impl Analyzer<'_, '_> {
                                             span: i.id.span,
                                             sym: i.id.sym.clone(),
                                         },
-                                        value: ty.map(Box::new),
+                                        value: ty.map(From::from),
                                         is_static: false,
                                         accessibility: p.accessibility,
                                         is_abstract: false,
