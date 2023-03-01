@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ret_ty = if actual.is_empty() {
-                    Type::void(span, Default::default())
+                    Type::void(span, Default::default()).into_cow()
                 } else {
                     self.simplify(Type::new_union(span, actual).into_cow())
                 };
@@ -296,14 +296,14 @@ impl Analyzer<'_, '_> {
             return Ok(ret_ty);
         }
 
-        if let Some(declared) = self.scope.declared_return_type().cloned() {
+        if let Some(declared) = self.scope.declared_return_type() {
             if !is_async && !is_generator {
                 if ret_ty.is_none() && !is_unreachable {
                     if let Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                         span,
                         ..
-                    }) = declared
+                    }) = declared.normalize()
                     {
                         self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
                     }
