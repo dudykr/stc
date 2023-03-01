@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{ArcCowType, Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
@@ -229,7 +227,7 @@ impl Analyzer<'_, '_> {
         let from = self
             .normalize(
                 Some(span),
-                Cow::Borrowed(from),
+                from,
                 NormalizeTypeOpts {
                     preserve_intersection: true,
                     preserve_union: true,
@@ -241,7 +239,7 @@ impl Analyzer<'_, '_> {
         let to = self
             .normalize(
                 Some(span),
-                Cow::Borrowed(to),
+                to,
                 NormalizeTypeOpts {
                     preserve_intersection: true,
                     preserve_union: true,
@@ -254,7 +252,7 @@ impl Analyzer<'_, '_> {
         let from = from;
         let to = to;
 
-        if from.type_eq(to) {
+        if from.type_eq(&to) {
             return Ok(true);
         }
 
@@ -267,17 +265,17 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if let Type::TypeLit(to) = to {
+        if let Type::TypeLit(to) = &*to {
             if to.members.is_empty() {
                 return Ok(true);
             }
         }
 
-        if from.type_eq(to) {
+        if from.type_eq(&to) {
             return Ok(true);
         }
 
-        match (from, to) {
+        match (&*from, &*to) {
             (
                 Type::Lit(LitType {
                     lit: RTsLit::Number(..), ..

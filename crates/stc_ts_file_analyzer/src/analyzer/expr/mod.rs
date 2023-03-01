@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
             if let Some(mutations) = &mut self.mutations {
                 if let Some(node_id) = e.node_id() {
                     if !node_id.is_invalid() {
-                        type_ann = mutations.for_exprs.get(&node_id).and_then(|v| v.type_ann.clone()).map(Cow::Owned);
+                        type_ann = mutations.for_exprs.get(&node_id).and_then(|v| v.type_ann.clone());
                     }
                 }
             }
