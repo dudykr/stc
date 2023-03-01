@@ -376,7 +376,7 @@ impl Analyzer<'_, '_> {
                     key,
                     optional: false,
                     params: Default::default(),
-                    type_ann: Some(box ty),
+                    type_ann: Some(ty),
                     type_params: Default::default(),
                     metadata: Default::default(),
                     accessor: Default::default(),
@@ -406,7 +406,7 @@ impl Analyzer<'_, '_> {
                             key,
                             optional: false,
                             params: vec![param],
-                            type_ann: Some(box Type::any(param_span, Default::default())),
+                            type_ann: Some(Type::any(param_span, Default::default()).into()),
                             type_params: Default::default(),
                             metadata: Default::default(),
                             accessor: Accessor {
@@ -439,7 +439,7 @@ impl Analyzer<'_, '_> {
                             p.function.span,
                             p.function.node_id,
                             p.function.params.iter().map(|v| &v.pat),
-                            method_type_ann.as_ref(),
+                            method_type_ann.as_deref(),
                         );
 
                         // We mark as wip

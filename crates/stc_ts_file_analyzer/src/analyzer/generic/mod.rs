@@ -299,13 +299,13 @@ impl Analyzer<'_, '_> {
             }
 
             if matches!(
-                type_param.constraint.as_deref().map(Type::normalize),
+                type_param.constraint.as_deref(),
                 Some(Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..))
             ) {
                 let ty = self
                     .expand(
                         span,
-                        *type_param.constraint.clone().unwrap(),
+                        type_param.constraint.clone().unwrap(),
                         ExpandOpts {
                             full: true,
                             expand_union: false,
