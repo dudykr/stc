@@ -606,7 +606,7 @@ impl Analyzer<'_, '_> {
         Ok(iterator)
     }
 
-    fn get_iterator_inner<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
+    fn get_iterator_inner<'a>(&mut self, span: Span, ty: &Type, opts: GetIteratorOpts) -> VResult<ArcCowType> {
         let ty_str = force_dump_type_as_string(&ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
