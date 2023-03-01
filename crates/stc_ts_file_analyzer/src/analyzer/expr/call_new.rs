@@ -366,7 +366,8 @@ impl Analyzer<'_, '_> {
                     id: SymbolId::generate(),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             // Use general callee validation.
@@ -514,7 +515,7 @@ impl Analyzer<'_, '_> {
                             .types
                             .iter()
                             .cloned()
-                            .filter(|callee| !matches!(callee, Type::Module(..) | Type::Namespace(..)))
+                            .filter(|callee| !matches!(&**callee, Type::Module(..) | Type::Namespace(..)))
                             .collect::<Vec<_>>();
 
                         match types.len() {
@@ -708,7 +709,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Ok(Type::new_union(span, types));
+                    return Ok(Type::new_union(span, types).into());
                 }
 
                 Type::Interface(ref i) => {
@@ -827,7 +828,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Handle methods from `Object`.
-            match obj_type {
+            match &*obj_type {
                 Type::Interface(Interface { name, .. }) if *name.sym() == js_word!("Object") => {}
                 _ => {
                     if !opts.do_not_check_object {
@@ -865,11 +866,11 @@ impl Analyzer<'_, '_> {
             }
 
             // Use proper error.
-            if let Type::Class(..) = obj_type {
+            if let Type::Class(..) = &*obj_type {
                 return Err(match kind {
                     ExtractKind::Call => ErrorKind::NoCallablePropertyWithName {
                         span,
-                        obj: box obj_type.clone(),
+                        obj: obj_type.clone().into(),
                         key: box prop.clone(),
                     }
                     .into(),
@@ -893,7 +894,7 @@ impl Analyzer<'_, '_> {
 
             let callee_before_expanding = force_dump_type_as_string(&callee);
             let callee = self
-                .normalize(Some(span), Cow::Owned(callee), NormalizeTypeOpts { ..Default::default() })?
+                .normalize(Some(span), &callee, NormalizeTypeOpts { ..Default::default() })?
                 .into_owned();
 
             if let Type::ClassDef(cls) = callee {
@@ -939,12 +940,12 @@ impl Analyzer<'_, '_> {
                 match err {
                     ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
                         span,
-                        obj: box obj_type.clone(),
+                        obj: obj_type.clone().into(),
                         key: box prop.clone(),
                     },
                     ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
                         span,
-                        obj: box obj_type.clone(),
+                        obj: obj_type.clone().into(),
                         key: box prop.clone(),
                     },
                     _ => err,
@@ -1029,7 +1030,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("call_property_of_class");
 
         let candidates = {

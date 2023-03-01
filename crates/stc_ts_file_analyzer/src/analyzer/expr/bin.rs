@@ -2506,8 +2506,8 @@ fn is_str_like_for_addition(t: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
-        Type::Intersection(Intersection { types, .. }) => types.iter().any(is_str_like_for_addition),
-        Type::Union(Union { types, .. }) => types.iter().all(is_str_like_for_addition),
+        Type::Intersection(Intersection { types, .. }) => types.iter().any(|ty| is_str_like_for_addition(ty)),
+        Type::Union(Union { types, .. }) => types.iter().all(|ty| is_str_like_for_addition(ty)),
         _ => false,
     }
 }
