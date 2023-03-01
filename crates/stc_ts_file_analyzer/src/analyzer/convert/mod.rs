@@ -940,7 +940,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQuery) -> VResult<QueryType> {
         Ok(QueryType {
             span: t.span,
-            expr: t.expr_name.validate_with(self)?,
+            expr: box t.expr_name.validate_with(self)?,
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -1047,14 +1047,13 @@ impl Analyzer<'_, '_> {
             is_not_topmost_type: true,
             ..self.ctx
         };
-        let ty = self.with_ctx(ctx).with(|a| {
-            let ty = match ty {
+        let ty = self.with_ctx(ctx).with(|a| -> VResult<ArcCowType> {
+            let ty: Type = match ty {
                 RTsType::TsThisType(this) => Type::This(ThisType {
                     span: this.span,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                })
-                .into_cow(),
+                }),
                 RTsType::TsLitType(ty) => {
                     if let RTsLit::Tpl(t) = &ty.lit {
                         return Ok(t.validate_with(a)?.into());
@@ -1096,8 +1095,8 @@ impl Analyzer<'_, '_> {
                     })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => u.validate_with(a)?,
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => i.validate_with(a)?,
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => return u.validate_with(a),
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => return i.validate_with(a),
                 RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => Type::Function(f.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(c)) => Type::Constructor(c.validate_with(a)?),
@@ -1106,19 +1105,19 @@ impl Analyzer<'_, '_> {
                 RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(a)?),
                 RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(a)?),
                 RTsType::TsParenthesizedType(ty) => return ty.validate_with(a),
-                RTsType::TsTypeRef(ty) => ty.validate_with(a)?,
+                RTsType::TsTypeRef(ty) => return ty.validate_with(a),
                 RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(a)?),
                 RTsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(a)?),
                 RTsType::TsRestType(ty) => Type::Rest(ty.validate_with(a)?),
                 RTsType::TsInferType(ty) => Type::Infer(ty.validate_with(a)?),
-                RTsType::TsIndexedAccessType(ty) => ty.validate_with(a)?,
+                RTsType::TsIndexedAccessType(ty) => return ty.validate_with(a),
                 RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(a)?),
                 RTsType::TsImportType(ty) => Type::Import(ty.validate_with(a)?),
             };
 
             ty.assert_valid();
 
-            Ok(ty)
+            Ok(ty.into_cow())
         })?;
 
         if is_topmost_type {
