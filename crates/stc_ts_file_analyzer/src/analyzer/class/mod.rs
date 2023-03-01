@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
             && self.ctx.in_class_with_super
             && c.body.is_some()
             && !matches!(
-                super_class.map(Type::normalize),
+                super_class,
                 Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
@@ -771,7 +771,7 @@ impl Analyzer<'_, '_> {
             let ret_ty = if self.may_generalize(&ret_ty) {
                 ret_ty.clone().generalize_lit().into_cow()
             } else {
-                *ret_ty.clone()
+                ret_ty.clone()
             };
             if let Some(m) = &mut self.mutations {
                 m.for_fns.entry(node_id).or_default().ret_ty = Some(ret_ty);

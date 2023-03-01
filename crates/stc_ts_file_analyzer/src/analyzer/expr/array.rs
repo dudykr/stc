@@ -131,9 +131,8 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {
                             let elem_type = self
-                                .get_iterator_element_type(span, Cow::Owned(element_type), false, Default::default())
-                                .context("tried to calculated the element type of a iterable provided to spread")?
-                                .into_owned();
+                                .get_iterator_element_type(span, &element_type, false, Default::default())
+                                .context("tried to calculated the element type of a iterable provided to spread")?;
 
                             can_be_tuple = false;
                             elements.push(TupleElement {
@@ -285,8 +284,7 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| match err {
                             ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span },
                             _ => err,
-                        })
-                        .map(Cow::into_owned);
+                        });
                     match res {
                         Ok(ty) => {
                             ty.assert_valid();
@@ -300,14 +298,17 @@ impl Analyzer<'_, '_> {
 
                 if !errors.is_empty() {
                     if can_use_undefined && errors.len() != u.types.len() {
-                        types.push(Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
+                        types.push(
+                            Type::Keyword(KeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                            .into(),
+                        );
                         types.dedup_type();
-                        return Ok(Cow::Owned(Type::new_union(span, types)));
+                        return Ok(Type::new_union(span, types).into());
                     }
 
                     return Err(ErrorKind::NoSuchProperty {
@@ -320,7 +321,7 @@ impl Analyzer<'_, '_> {
 
                 types.dedup_type();
 
-                return Ok(Cow::Owned(Type::new_union(span, types)));
+                return Ok(Type::new_union(span, types).into());
             }
 
             Type::Array(..) | Type::Tuple(..) => {
@@ -338,7 +339,6 @@ impl Analyzer<'_, '_> {
                         IdCtx::Var,
                         Default::default(),
                     )
-                    .map(Cow::Owned)
                     .context("tried to access property of a type to calculate element type");
             }
             _ => {}
