@@ -572,7 +572,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
-                                    .map(|ty| ty.generalize_lit())
+                                    .map(|ty| ty.generalize_lit().into_freezed_cow())
                                     .context("tried to access property to declare variables")
                             });
 
@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
                                         )
                                         .ok()
                                 })
-                                .map(|ty| ty.generalize_lit())
+                                .map(|ty| ty.generalize_lit().into_freezed_cow())
                                 .freezed();
 
                             let real_property_type = match prop_ty {
