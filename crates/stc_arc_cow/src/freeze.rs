@@ -14,7 +14,7 @@ where
     fn visit_mut(&mut self, n: &mut ArcCow<T>) {
         match n {
             ArcCow::Arc(_) => (),
-            ArcCow::Raw(v) => {
+            ArcCow::Owned(v) => {
                 // Deep
                 v.visit_mut_with(self);
                 let v = *v.take();
