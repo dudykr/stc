@@ -305,7 +305,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) = declared.normalize()
                     {
-                        self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                        self.storage.report(ErrorKind::CannotFunctionReturningNever { span: *span }.into());
                     }
                 }
                 // Noop

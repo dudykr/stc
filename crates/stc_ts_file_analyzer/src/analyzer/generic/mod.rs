@@ -282,19 +282,13 @@ impl Analyzer<'_, '_> {
                     inferred.type_params.insert(type_param.name.clone(), actual);
                 } else {
                     info!("infer_arg_type: {} => {} because of the extends clause", type_param.name, p.name);
-                    self.insert_inferred(span, &mut inferred, type_param, Cow::Owned(Type::Param(p.clone())), opts)?;
+                    self.insert_inferred(span, &mut inferred, type_param, &Type::Param(p.clone()), opts)?;
                 }
                 continue;
             }
 
             if type_param.constraint.is_some() && is_literals(type_param.constraint.as_ref().unwrap()) {
-                self.insert_inferred(
-                    span,
-                    &mut inferred,
-                    type_param,
-                    Cow::Borrowed(type_param.constraint.as_deref().unwrap()),
-                    opts,
-                )?;
+                self.insert_inferred(span, &mut inferred, type_param, type_param.constraint.as_deref().unwrap(), opts)?;
                 continue;
             }
 
