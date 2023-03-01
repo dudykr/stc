@@ -236,8 +236,7 @@ impl Analyzer<'_, '_> {
                                 Cow::Owned(Type::any(span, Default::default()))
                             })
                         })
-                        .freezed()
-                        .map(Cow::into_owned);
+                        .freezed();
 
                     let default_ty = default;
                     let default = default_ty
@@ -257,8 +256,7 @@ impl Analyzer<'_, '_> {
                                 Cow::Owned(Type::any(span, Default::default()))
                             })
                         })
-                        .freezed()
-                        .map(Cow::into_owned);
+                        .freezed();
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
@@ -352,9 +350,7 @@ impl Analyzer<'_, '_> {
                                         })
                                         .ok()
                                 })
-                                .map(Cow::into_owned)
-                                .map(|ty| ty.generalize_lit())
-                                .freezed();
+                                .map(|ty| ty.generalize_lit().into_freezed());
 
                             // TODO(kdy1): actual_ty
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
@@ -545,7 +541,8 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     tracker: Default::default(),
-                });
+                })
+                .into_cow();
 
                 // TODO(kdy1): Normalize static
                 //
