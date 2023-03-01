@@ -2897,9 +2897,9 @@ impl Analyzer<'_, '_> {
             }
             Type::Tpl(tpl) => match to.kind {
                 IntrinsicKind::Uppercase => {
-                    let is_not_uppercase = tpl.quasis.iter().all(|s| s.value == s.value.to_uppercase());
+                    let is_uppercase = tpl.quasis.iter().all(|s| s.value == s.value.to_uppercase());
 
-                    if is_not_uppercase {
+                    if !is_uppercase {
                         return Err(ErrorKind::AssignFailed {
                             span: r.span(),
                             left: box Type::StringMapping(to.clone()),
@@ -2913,9 +2913,9 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
                 IntrinsicKind::Lowercase => {
-                    let is_not_uppercase = tpl.quasis.iter().all(|s| s.value == s.value.to_lowercase());
+                    let is_lowercase = tpl.quasis.iter().all(|s| s.value == s.value.to_lowercase());
 
-                    if is_not_uppercase {
+                    if !is_lowercase {
                         return Err(ErrorKind::AssignFailed {
                             span: r.span(),
                             left: box Type::StringMapping(to.clone()),
