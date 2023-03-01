@@ -2324,7 +2324,7 @@ impl Analyzer<'_, '_> {
 
         if let Type::Union(Union { types, .. }) = origin_ty {
             for ty in types {
-                match ty {
+                match &*ty {
                     Type::Interface(interface) => {
                         if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(ty)) {
                             let tl = tl.into_owned();

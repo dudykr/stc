@@ -521,9 +521,10 @@ impl Analyzer<'_, '_> {
                                     common: u.metadata.common,
                                     ..Default::default()
                                 },
-                            ),
-                            1 => types.into_iter().next().unwrap(),
-                            _ => Type::Union(Union { types, ..*u }),
+                            )
+                            .into(),
+                            1 => types.into_iter().next().unwrap().into(),
+                            _ => Type::Union(Union { types, ..*u }).into(),
                         }
                     }
                     _ => callee_ty,
@@ -531,7 +532,7 @@ impl Analyzer<'_, '_> {
             };
 
             if let Some(type_args) = &type_args {
-                let type_params = match callee_ty {
+                let type_params = match &*callee_ty {
                     Type::Function(f) => f.type_params.as_ref(),
                     _ => None,
                 };

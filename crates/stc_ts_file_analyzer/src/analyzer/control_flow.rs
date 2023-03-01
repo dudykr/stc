@@ -850,7 +850,7 @@ impl Analyzer<'_, '_> {
 
         let is_in_loop = self.scope.is_in_loop_body();
         let orig_ty = self
-            .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
+            .normalize(Some(ty.span().or_else(|| span)), ty, Default::default())
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .into_freezed();
@@ -1089,7 +1089,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span, Default::default()))
+                                .unwrap_or_else(|_| Type::any(span, Default::default()).into())
                                 .freezed();
 
                             self.try_assign_pat_with_opts(
