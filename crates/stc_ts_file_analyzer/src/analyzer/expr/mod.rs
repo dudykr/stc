@@ -1564,7 +1564,7 @@ impl Analyzer<'_, '_> {
                     {
                         if let Some(declaring) = &self.scope.declaring_prop() {
                             if prop == declaring.sym() {
-                                return Ok(Type::any(span, Default::default()));
+                                return Ok(Type::any(span, Default::default()).into());
                             }
                         }
                     }
@@ -1593,7 +1593,7 @@ impl Analyzer<'_, '_> {
 
                             ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
-                                    return Ok(*property
+                                    return Ok(property
                                         .value
                                         .clone()
                                         .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }).into()));
@@ -1612,7 +1612,7 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::UsePropBeforeInit {
                         span,
-                        obj: Some(box obj.clone()),
+                        obj: Some(obj.clone().into()),
                         prop: Some(box prop.clone()),
                     }
                     .context("tried to access this in a static class member"));
@@ -1621,17 +1621,17 @@ impl Analyzer<'_, '_> {
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
 
                     // TODO(kdy1): Remove clone
                     let members = self.scope.object_lit_members().to_vec();
                     if let Some(mut v) = self.access_property_of_type_elements(span, obj, prop, type_mode, &members, opts)? {
-                        v.metadata_mut().infected_by_this_in_object_literal = true;
+                        v.normalize_mut().metadata_mut().infected_by_this_in_object_literal = true;
                         return Ok(v);
                     }
 
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
@@ -1652,13 +1652,14 @@ impl Analyzer<'_, '_> {
                                             ret_ty: member.ret_ty.clone(),
                                             metadata: Default::default(),
                                             tracker: Default::default(),
-                                        }));
+                                        })
+                                        .into());
                                     }
                                 }
 
                                 ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
                                     if !is_static && member.key.type_eq(prop) {
-                                        let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+                                        let ty = member.value.clone().unwrap_or_else(|| Type::any(span, Default::default()).into());
 
                                         return Ok(ty);
                                     }
