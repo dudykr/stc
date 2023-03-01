@@ -200,18 +200,17 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_mapped {
                             let ty = self.expand_mapped(actual_span, m)?;
                             if let Some(ty) = ty {
-                                return Ok(Cow::Owned(
-                                    self.normalize(span, Cow::Owned(ty), opts)
-                                        .context("tried to expand a mapped type as a part of normalization")?
-                                        .into_type(),
-                                ));
+                                return Ok((self
+                                    .normalize(span, ty, opts)
+                                    .context("tried to expand a mapped type as a part of normalization")?
+                                    .into_type(),));
                             }
                         }
                     }
 
                     Type::Alias(a) => {
                         // TODO(kdy1): Optimize
-                        return Ok(Cow::Owned(self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_type()));
+                        return Ok(self.normalize(span, &a.ty, opts)?.into_type());
                     }
 
                     Type::StringMapping(i) => {
@@ -219,7 +218,7 @@ impl Analyzer<'_, '_> {
                             .expand_intrinsic_types(actual_span, i)
                             .context("tried to expand intrinsic type as a part of normalization")?;
 
-                        return Ok(Cow::Owned(ty));
+                        return Ok((ty));
                     }
 
                     // Leaf types.
@@ -232,7 +231,7 @@ impl Analyzer<'_, '_> {
 
                         elem_type.assert_valid();
 
-                        return Ok(Cow::Owned(Type::Array(Array {
+                        return Ok((Type::Array(Array {
                             span: arr.span,
                             elem_type,
                             metadata: arr.metadata,
@@ -329,7 +328,7 @@ impl Analyzer<'_, '_> {
 
                                 return self.normalize(
                                     span,
-                                    Cow::Owned(Type::new_union(actual_span, new_types)),
+                                    (Type::new_union(actual_span, new_types)),
                                     NormalizeTypeOpts {
                                         merge_union_elements: false,
                                         ..opts
@@ -359,7 +358,7 @@ impl Analyzer<'_, '_> {
                             types.retain(|ty| !ty.is_never());
 
                             if types.is_empty() {
-                                return Ok(Cow::Owned(Type::never(
+                                return Ok((Type::never(
                                     ty.span,
                                     KeywordTypeMetadata {
                                         common: ty.metadata.common,
@@ -367,12 +366,12 @@ impl Analyzer<'_, '_> {
                                 )));
                             }
                             if types.len() == 1 {
-                                return Ok(Cow::Owned(types.into_iter().next().unwrap()));
+                                return Ok((types.into_iter().next().unwrap()));
                             }
 
                             let ty = Type::Union(Union { types, ..*ty }).freezed();
 
-                            return Ok(Cow::Owned(ty));
+                            return Ok((ty));
                         }
                     }
 
@@ -382,7 +381,7 @@ impl Analyzer<'_, '_> {
                                 .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
                                 .context("failed to normalize an intersection type")?
                             {
-                                return Ok(Cow::Owned(new_ty));
+                                return Ok((new_ty));
                             }
                         }
                     }
@@ -393,7 +392,7 @@ impl Analyzer<'_, '_> {
                         // TODO(kdy1): Cleanup
                         c = match self.expand_conditional_type(actual_span, Type::Conditional(c)).foldable() {
                             Type::Conditional(c) => c,
-                            ty => return Ok(Cow::Owned(ty)),
+                            ty => return Ok((ty)),
                         };
 
                         ALLOW_DEEP_CLONE.set(&(), || {
