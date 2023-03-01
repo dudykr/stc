@@ -1705,7 +1705,8 @@ impl Analyzer<'_, '_> {
                         index_type: prop_ty,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 Type::StaticThis(StaticThis { span, metadata, .. }) => {
@@ -1721,20 +1722,22 @@ impl Analyzer<'_, '_> {
                                         ret_ty: member.ret_ty.clone(),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }));
+                                    })
+                                    .into());
                                 }
                             }
 
                             ClassMember::Property(property) => {
                                 if property.key.type_eq(prop) {
-                                    return Ok(*property.value.clone().unwrap_or_else(|| {
-                                        box Type::any(
+                                    return Ok(property.value.clone().unwrap_or_else(|| {
+                                        Type::any(
                                             *span,
                                             KeywordTypeMetadata {
                                                 common: metadata.common,
                                                 ..Default::default()
                                             },
                                         )
+                                        .into()
                                     }));
                                 }
                             }
