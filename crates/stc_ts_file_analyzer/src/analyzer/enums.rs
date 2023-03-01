@@ -612,7 +612,7 @@ impl Analyzer<'_, '_> {
         let mut ty = Type::new_union(span, values);
         ty.reposition(e.span);
 
-        Ok(ty)
+        Ok(ty.into())
     }
 
     /// Expands an enum variant as a literal.

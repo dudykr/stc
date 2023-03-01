@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let elem_type_ann = iterator
                         .as_deref()
-                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
+                        .and_then(|iterator| self.get_element_from_iterator(span, iterator, idx).ok());
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match &*ty {
@@ -692,8 +692,7 @@ impl Analyzer<'_, '_> {
                     let types = i
                         .types
                         .iter()
-                        .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v), opts))
-                        .map(|res| res.map(Cow::into_owned))
+                        .map(|v| self.get_iterator(v.span(), v, opts))
                         .collect::<Result<_, _>>()?;
                     let new = Type::Intersection(Intersection {
                         span: i.span,
@@ -819,15 +818,14 @@ impl Analyzer<'_, '_> {
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                return Ok(Cow::Owned(
-                    Type::Union(Union {
-                        span: u.span,
-                        types,
-                        metadata: u.metadata,
-                        tracker: Default::default(),
-                    })
-                    .fixed(),
-                ));
+                return Ok(Type::Union(Union {
+                    span: u.span,
+                    types,
+                    metadata: u.metadata,
+                    tracker: Default::default(),
+                })
+                .fixed()
+                .into());
             }
 
             Type::Intersection(i) => {
