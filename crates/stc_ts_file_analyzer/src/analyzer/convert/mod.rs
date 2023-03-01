@@ -654,7 +654,7 @@ impl Analyzer<'_, '_> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
-            ty: box ty.type_ann.validate_with(self)?,
+            ty: ty.type_ann.validate_with(self)?,
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -708,7 +708,7 @@ impl Analyzer<'_, '_> {
             let mut params: Vec<_> = t.params.validate_with(child)?;
             params.freeze();
 
-            let mut ret_ty = box t.type_ann.validate_with(child)?;
+            let mut ret_ty = t.type_ann.validate_with(child)?;
 
             if !child.config.is_builtin {
                 for param in params.iter() {

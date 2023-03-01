@@ -63,6 +63,7 @@ impl_fix!(TypeOrSpread);
 impl_fix!(Conditional);
 impl_fix!(FnParam);
 impl_fix!(TypeParam);
+impl_fix!(ArcCowType);
 
 struct Fixer;
 
