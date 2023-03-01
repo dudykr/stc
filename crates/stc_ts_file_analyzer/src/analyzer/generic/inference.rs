@@ -544,7 +544,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
-    pub(crate) fn infer_types_from_tpl_lit_type(&mut self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
+    pub(crate) fn infer_types_from_tpl_lit_type(
+        &mut self,
+        span: Span,
+        source: &Type,
+        target: &TplType,
+    ) -> VResult<Option<Vec<ArcCowType>>> {
         match source {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
@@ -607,9 +612,9 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         source_texts: &[Atom],
-        source_types: &[Type],
+        source_types: &[ArcCowType],
         target: &TplType,
-    ) -> VResult<Option<Vec<Type>>> {
+    ) -> VResult<Option<Vec<ArcCowType>>> {
         let last_source_index = source_texts.len() - 1;
         let source_start_text = &source_texts[0];
         let source_end_text = &source_texts[last_source_index];
@@ -626,7 +631,7 @@ impl Analyzer<'_, '_> {
         }
 
         let remaining_end_text = &source_end_text[0..source_end_text.len() - target_end_text.len()];
-        let mut matches = Vec::<Type>::new();
+        let mut matches = Vec::<ArcCowType>::new();
         let mut seg = 0;
         let mut pos = target_start_text.len();
 
@@ -660,7 +665,8 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                };
+                }
+                .into();
 
                 matches.push(match_type);
                 seg = $s;
@@ -756,7 +762,7 @@ impl Analyzer<'_, '_> {
 
         info!("Inferred {} as {}", name, dump_type_as_string(&ty));
 
-        if let Type::Param(ty) = ty {
+        if let Type::Param(ty) = &*ty {
             if name == ty.name {
                 return Ok(());
             }
