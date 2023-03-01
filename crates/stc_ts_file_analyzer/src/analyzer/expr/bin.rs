@@ -520,6 +520,7 @@ impl Analyzer<'_, '_> {
                                     metadata: *metadata,
                                     tracker: Default::default(),
                                 })
+                                .into()
                             } else {
                                 r
                             }
@@ -546,7 +547,7 @@ impl Analyzer<'_, '_> {
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
                             self.storage.report(
                                 ErrorKind::InvalidLhsInInstanceOf {
-                                    ty: box lt.clone(),
+                                    ty: lt.clone().into(),
                                     span: left.span(),
                                 }
                                 .into(),
@@ -606,7 +607,7 @@ impl Analyzer<'_, '_> {
                                         tracker: Default::default(),
                                     })
                                     .fixed()
-                                    .freezed(),
+                                    .into_freezed(),
                                 );
                             } else {
                                 self.cur_facts.true_facts.vars.insert(name.clone(), filtered_ty.clone());
@@ -627,7 +628,7 @@ impl Analyzer<'_, '_> {
                 no_unknown!(rt);
             }};
             ($ty:expr) => {{
-                match &$ty {
+                match &*$ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -649,7 +650,7 @@ impl Analyzer<'_, '_> {
                     right: (&**right, &rt),
                 };
 
-                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match lt {
+                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match &**lt {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -667,10 +668,11 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
-                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match *lt {
+                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match &**lt {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
@@ -684,7 +686,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 // Rule:
@@ -757,8 +760,8 @@ impl Analyzer<'_, '_> {
                 Err(ErrorKind::InvalidBinaryOp {
                     span,
                     op,
-                    left: box lt,
-                    right: box rt,
+                    left: lt.into(),
+                    right: rt.into(),
                 }
                 .into())
             }
