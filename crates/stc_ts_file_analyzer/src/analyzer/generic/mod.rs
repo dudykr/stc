@@ -781,17 +781,20 @@ impl Analyzer<'_, '_> {
                     match inferred.defaults.entry(name.clone()) {
                         Entry::Occupied(..) => {}
                         Entry::Vacant(e) => {
-                            e.insert(Type::Param(TypeParam {
-                                span: arg_normalized.span(),
-                                name: name.clone(),
-                                constraint: None,
-                                default: None,
-                                metadata: TypeParamMetadata {
-                                    common: arg_normalized.metadata(),
-                                    ..Default::default()
-                                },
-                                tracker: Default::default(),
-                            }));
+                            e.insert(
+                                Type::Param(TypeParam {
+                                    span: arg_normalized.span(),
+                                    name: name.clone(),
+                                    constraint: None,
+                                    default: None,
+                                    metadata: TypeParamMetadata {
+                                        common: arg_normalized.metadata(),
+                                        ..Default::default()
+                                    },
+                                    tracker: Default::default(),
+                                })
+                                .into_freezed_cow(),
+                            );
                         }
                     }
 
@@ -811,7 +814,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Interface(param) => match arg {
+            Type::Interface(param) => match arg.normalize() {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg, opts)?,
                 Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg, opts),
                 _ => {}
