@@ -245,7 +245,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let target = Type::new_union(span, targets).into_freezed();
+        let target = Type::new_union(span, targets).into_freezed_cow();
 
         if sources.is_empty() {
             return self.infer_from_types(
@@ -261,7 +261,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let source = Type::new_union(span, sources).into_freezed();
+        let source = Type::new_union(span, sources).into_freezed_cow();
 
         self.infer_from_types(
             span,
