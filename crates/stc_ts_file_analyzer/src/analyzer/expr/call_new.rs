@@ -1019,7 +1019,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         expr: ReEvalMode,
         kind: ExtractKind,
-        this: &Type,
+        this: &ArcCowType,
         c: &ClassDef,
         prop: &Key,
         is_static_call: bool,
@@ -1096,7 +1096,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = &c.super_class {
             let ty = if is_static_call {
-                *ty.clone()
+                ty.clone()
             } else {
                 self.instantiate_class(span, ty)
                     .context("tried to instantiate a class to call property of a super class")?
@@ -1169,18 +1169,17 @@ impl Analyzer<'_, '_> {
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
                         .unwrap_or_else(|_| ty);
-                    ty.normalize_mut();
 
                     // TODO(kdy1): PERF
 
-                    match ty {
+                    match &*ty {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => candidates.push(CallCandidate {
                             // TODO(kdy1): Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: box Type::any(span, Default::default()),
+                            ret_ty: Type::any(span, Default::default()).into(),
                             type_params: Default::default(),
                         }),
 
@@ -1242,7 +1241,7 @@ impl Analyzer<'_, '_> {
                 .env
                 .get_global_type(span, &js_word!("Object"))
                 .expect("`interface Object` is must");
-            let methods = match i {
+            let methods = match &*i {
                 Type::Interface(i) => &*i.body,
 
                 _ => &[],
