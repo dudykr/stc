@@ -737,7 +737,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult<ArcCowType> {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: ArcCowType) -> VResult<ArcCowType> {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;

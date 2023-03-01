@@ -1223,14 +1223,14 @@ impl Analyzer<'_, '_> {
                 // See if key is number.
                 if let Type::Lit(LitType {
                     lit: RTsLit::Number(prop), ..
-                }) = prop.ty()
+                }) = &*prop.ty()
                 {
                     return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts);
                 }
             }
 
             // See if key is string.
-            match prop.ty() {
+            match &*prop.ty() {
                 Type::Lit(LitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
@@ -1309,11 +1309,11 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: constraint_ty,
                         ..
-                    }) = constraint
+                    }) = &**constraint
                     {
                         //
-                        if constraint_ty.as_ref().type_eq(obj) {
-                            return Ok(Type::any(DUMMY_SP, Default::default()));
+                        if constraint_ty.normalize().type_eq(obj) {
+                            return Ok(Type::any(DUMMY_SP, Default::default()).into());
                         }
                     }
                 }
