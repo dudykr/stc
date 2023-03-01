@@ -485,11 +485,11 @@ impl Scope<'_> {
         }
     }
 
-    pub fn declared_return_type(&self) -> Option<&Type> {
+    pub fn declared_return_type(&self) -> Option<ArcCowType> {
         match &self.declared_return_type {
             Some(v) => {
                 v.assert_clone_cheap();
-                return Some(v);
+                return Some(v.clone());
             }
             None => {}
         }

@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
 
             {
                 if let Some(span) = unconditional_throw {
-                    values.return_types.push(Type::never(span, Default::default()));
+                    values.return_types.push(Type::never(span, Default::default()).into());
                 }
             }
 
@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
             for mut ty in values.return_types {
                 ty = ty.fold_with(&mut KeyInliner { analyzer: self });
                 if values.should_generalize {
-                    ty = ty.generalize_lit();
+                    ty = ty.generalize_lit().into();
                 }
 
                 actual.push(ty);
@@ -510,17 +510,14 @@ impl Analyzer<'_, '_> {
             }
             .freezed();
 
-            if let Some(declared) = self.scope.declared_return_type().cloned() {
+            if let Some(declared) = self.scope.declared_return_type() {
                 match if self.ctx.in_async {
                     self.get_async_iterator_element_type(e.span, Cow::Owned(declared))
                         .context("tried to get an element type from an async iterator for normal yield")
                 } else {
                     self.get_iterator_element_type(e.span, Cow::Owned(declared), true, GetIteratorOpts { ..Default::default() })
                         .context("tried to get an element type from an iterator for normal yield")
-                }
-                .map(Cow::into_owned)
-                .map(Freeze::freezed)
-                {
+                } {
                     Ok(declared) => {
                         let declared = Type::Instance(Instance {
                             span: declared.span(),
@@ -543,7 +540,7 @@ impl Analyzer<'_, '_> {
                             Ok(()) => {}
                             Err(err) => {
                                 self.storage.report(err);
-                                return Ok(Type::any(span, Default::default()));
+                                return Ok(Type::any(span, Default::default()).into());
                             }
                         }
                     }
@@ -555,7 +552,7 @@ impl Analyzer<'_, '_> {
                             }
                             .into(),
                         );
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
                 }
             }
