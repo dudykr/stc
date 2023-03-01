@@ -2233,9 +2233,17 @@ impl Analyzer<'_, '_> {
         }
 
         Err(if kind == ExtractKind::Call {
-            ErrorKind::NoCallSignature { span, callee: box callee }.context("tried to calculate return type")
+            ErrorKind::NoCallSignature {
+                span,
+                callee: callee.into(),
+            }
+            .context("tried to calculate return type")
         } else {
-            ErrorKind::NoNewSignature { span, callee: box callee }.context("tried to calculate return type")
+            ErrorKind::NoNewSignature {
+                span,
+                callee: callee.into(),
+            }
+            .context("tried to calculate return type")
         })
     }
 
@@ -2319,7 +2327,7 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => match param.ty.normalize_instance() {
                     Type::Tuple(param_ty) => {
                         for elem in &param_ty.elems {
-                            match elem.ty {
+                            match &*elem.ty {
                                 Type::Rest(..) => {
                                     max_param = None;
                                     break;
@@ -2423,7 +2431,7 @@ impl Analyzer<'_, '_> {
                 real_idx += 1;
                 continue;
             }
-            match arg_type.ty {
+            match &*arg_type.ty {
                 Type::Tuple(tuple) => real_idx += tuple.elems.len(),
                 _ => {
                     // rest params are always at the end so we can check if it
@@ -2585,7 +2593,7 @@ impl Analyzer<'_, '_> {
                     if let Type::Function(Function {
                         type_params: Some(type_params),
                         ..
-                    }) = at.ty
+                    }) = &*at.ty
                     {
                         for tp in type_params.params.iter() {
                             default_unknown_map.insert(
@@ -2605,7 +2613,7 @@ impl Analyzer<'_, '_> {
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
-                self.register_type(param.name.clone(), Type::Param(param.clone()));
+                self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
             }
 
             // Assert deep clone
@@ -2639,7 +2647,7 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> VResult<_> {
-                    let ty = box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
+                    let ty = self.expand_type_params(&inferred.types, v.ty, Default::default())?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2658,7 +2666,7 @@ impl Analyzer<'_, '_> {
                 print_type(&format!("Expanded parameter at {}", idx), &param.ty);
                 print_type(&format!("Original argument at {}", idx), &arg_ty.ty);
 
-                let (type_param_decl, actual_params) = match param.ty {
+                let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
                         new_args.push(arg_ty.clone());

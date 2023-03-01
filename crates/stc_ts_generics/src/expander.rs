@@ -21,7 +21,7 @@ use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
 
 #[derive(Debug)]
 pub struct InferTypeResult {
-    pub types: FxHashMap<Id, Type>,
+    pub types: FxHashMap<Id, ArcCowType>,
     pub errored: FxHashSet<Id>,
 }
 
