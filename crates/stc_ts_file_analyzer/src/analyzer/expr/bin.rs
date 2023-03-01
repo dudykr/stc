@@ -718,7 +718,7 @@ impl Analyzer<'_, '_> {
                 //  - undefined is invalid operand
                 if c.both(|(_, ty)| {
                     matches!(
-                        *ty,
+                        &**ty,
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
@@ -737,7 +737,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
                 // At this point rhs cannot be string.
                 //
@@ -749,7 +750,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 Err(ErrorKind::InvalidBinaryOp {
@@ -768,7 +770,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
 
             op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("%") | op!("|") | op!("&") | op!("^") | op!("**") => {
@@ -779,7 +782,7 @@ impl Analyzer<'_, '_> {
                     let rt = rt;
 
                     if !reported_null_or_undefined {
-                        self.report_possibly_null_or_undefined(lt.span(), lt).report(&mut self.storage);
+                        self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
                     }
 
                     if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
@@ -794,7 +797,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !reported_null_or_undefined {
-                        self.report_possibly_null_or_undefined(rt.span(), rt).report(&mut self.storage);
+                        self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
                     }
 
                     if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
@@ -870,7 +873,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
 
             op!("in") => {
@@ -878,7 +882,7 @@ impl Analyzer<'_, '_> {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
-                        _ => match lt {
+                        _ => match &*lt {
                             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(s.value.clone()),
                             _ => None,
                         },
