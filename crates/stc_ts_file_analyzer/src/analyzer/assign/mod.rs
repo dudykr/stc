@@ -1915,10 +1915,9 @@ impl Analyzer<'_, '_> {
                     //  In TypeScript, type `{}` means "any non-nullish value".
                     //  So, `unknown` is assignable to `{} | null | undefined`.
 
-                    let empty_member: Vec<TypeElement> = Vec::new();
                     if lu.types.iter().any(|ty| {
                         matches!(
-                            ty,
+                            &**ty,
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsNullKeyword,
                                 ..
@@ -1926,17 +1925,16 @@ impl Analyzer<'_, '_> {
                         )
                     }) && lu.types.iter().any(|ty| {
                         matches!(
-                            ty,
+                            &**ty,
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 ..
                             })
                         )
-                    }) && lu
-                        .types
-                        .iter()
-                        .any(|ty| matches!(ty, Type::TypeLit(TypeLit { members: empty_member, .. })))
-                    {
+                    }) && lu.types.iter().any(|ty| match &**ty {
+                        Type::TypeLit(TypeLit { members, .. }) => members.is_empty(),
+                        _ => false,
+                    }) {
                         return Ok(());
                     }
                 }

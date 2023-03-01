@@ -2080,7 +2080,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(m.span, Default::default()).into()),
                             });
                         }
 
@@ -2088,7 +2088,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default()).into()),
                             });
                         }
                         _ => {}

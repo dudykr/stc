@@ -125,12 +125,13 @@ impl Analyzer<'_, '_> {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
-                ty: box Type::Keyword(KeywordType {
+                ty: Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }),
+                })
+                .into(),
                 metadata: OperatorMetadata { common: ty.metadata() },
                 tracker: Default::default(),
             }),
@@ -400,7 +401,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
+                    ty: ty.unwrap_or_else(|| Type::any(i.id.span, Default::default().into())),
                 })
             }
             RTsParamPropParam::Assign(RAssignPat {
@@ -408,7 +409,7 @@ impl Analyzer<'_, '_> {
                 right,
                 ..
             }) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
+                let ty: Option<_> = i.type_ann.validate_with(self).transpose()?.freezed();
 
                 let right = right.validate_with_default(self).report(&mut self.storage).freezed();
 

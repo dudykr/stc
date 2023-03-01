@@ -460,9 +460,9 @@ impl Analyzer<'_, '_> {
             if let Some(tuple) = ty.as_tuple_mut() {
                 let span = tuple.span;
 
-                let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
+                let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| elem.ty).collect();
                 elem_types.dedup_type();
-                let elem_type = box Type::new_union(DUMMY_SP, elem_types);
+                let elem_type = Type::new_union(DUMMY_SP, elem_types).into();
                 *ty = Type::Array(Array {
                     span,
                     elem_type,
