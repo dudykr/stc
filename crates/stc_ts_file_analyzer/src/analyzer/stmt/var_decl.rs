@@ -324,7 +324,7 @@ impl Analyzer<'_, '_> {
 
                         // infer type from value.
                         let ty = {
-                            match value_ty {
+                            match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_var_decls.entry(v.node_id).or_default().remove_init = true;

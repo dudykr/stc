@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     return Ok(Type::Rest(RestType {
                         span,
-                        ty: box self.default_type_for_pat(&r.arg)?,
+                        ty: self.default_type_for_pat(&r.arg)?,
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
@@ -235,10 +235,11 @@ impl Analyzer<'_, '_> {
                             }
                             Type::Instance(Instance {
                                 span,
-                                ty: box ty,
+                                ty,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
+                            .into_cow()
                         })
                     })
             })
