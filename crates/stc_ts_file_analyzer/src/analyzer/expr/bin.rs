@@ -916,12 +916,10 @@ impl Analyzer<'_, '_> {
                 let can_generalize = type_ann.is_none() && !matches!((&**left, &**right), (_, RExpr::Ident(..)));
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
-                    lt = lt.generalize_lit();
-                    lt = lt.force_generalize_top_level_literals();
+                    lt = lt.generalize_lit().force_generalize_top_level_literals().into();
                 }
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
-                    rt = rt.generalize_lit();
-                    rt = rt.force_generalize_top_level_literals();
+                    rt = rt.generalize_lit().force_generalize_top_level_literals().into();
                 }
 
                 if lt.type_eq(&rt) {
@@ -933,7 +931,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = &*lt
                 {
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
 
                 match op {
