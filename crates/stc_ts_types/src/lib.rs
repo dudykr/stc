@@ -2942,6 +2942,7 @@ impl From<RTplElement> for TplElem {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
+/// A [Type] which is cheap to clone.
 #[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct ArcType {
     ty: Arc<Type>,
