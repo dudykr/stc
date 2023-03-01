@@ -318,7 +318,7 @@ impl Analyzer<'_, '_> {
                 .params
                 .into_iter()
                 .skip(arg_cnt)
-                .map(|param| (param.span, param.default.map(|v| *v)))
+                .map(|param| (param.span, param.default))
             {
                 if let Some(default) = default {
                     args.params.push(default);
@@ -326,7 +326,7 @@ impl Analyzer<'_, '_> {
                     self.storage
                         .report(ErrorKind::ImplicitAny { span }.context("qualify_ref_type_args"));
                     args.params
-                        .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                        .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()).into());
                 }
             }
         }
@@ -335,7 +335,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Handle recursive function
-    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> ArcCowType {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
