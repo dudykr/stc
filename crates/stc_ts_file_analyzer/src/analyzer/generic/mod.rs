@@ -638,7 +638,7 @@ impl Analyzer<'_, '_> {
         if opts.for_fn_assignment {
             if let Type::Param(arg) = arg_normalized {
                 if !param_normalized.is_type_param() {
-                    self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
+                    self.insert_inferred(span, inferred, arg, param, opts)?;
                     return Ok(());
                 }
             }
@@ -657,9 +657,7 @@ impl Analyzer<'_, '_> {
                         },
                     )
                     .context("tried to normalize enum")?
-                    .freezed()
-                    .into_type()
-                    .freezed();
+                    .into_freezed_cow();
                 return self.infer_type_inner(span, inferred, param, &arg, opts);
             }
 
@@ -815,7 +813,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(arg), opts)?;
+                self.insert_inferred(span, inferred, &param.type_param, arg, opts)?;
                 return Ok(());
             }
 
