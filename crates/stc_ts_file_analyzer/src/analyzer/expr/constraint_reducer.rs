@@ -18,13 +18,14 @@ pub fn reduce(m: &Mapped) -> Option<Type> {
                 false
             },
             |ty| {
-                if let Type::Param(TypeParam {
-                    constraint: Some(box arr_ty @ Type::Array(..)),
-                    ..
-                }) = ty
-                {
-                    let arr_ty = arr_ty.take();
-                    return Some(arr_ty);
+                match ty {
+                    Type::Param(TypeParam {
+                        constraint: Some(arr_ty), ..
+                    }) if arr_ty.is_array() => {
+                        let arr_ty = arr_ty.take();
+                        return Some(arr_ty.into());
+                    }
+                    _ => (),
                 }
 
                 None
