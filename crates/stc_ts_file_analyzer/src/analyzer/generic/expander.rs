@@ -167,7 +167,7 @@ impl Analyzer<'_, '_> {
                 let child = self
                     .expand(
                         child.span(),
-                        child.clone(),
+                        child.clone().into(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
                     )
                     .unwrap()
                     .freezed();
-                if let Type::Ref(..) = child {
+                if let Type::Ref(..) = &*child {
                     return None;
                 }
 

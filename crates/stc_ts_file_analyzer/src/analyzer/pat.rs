@@ -63,14 +63,14 @@ impl Analyzer<'_, '_> {
                             // any
                             let ty = match elem {
                                 Some(v) => self.default_type_for_pat(v)?,
-                                None => Type::any(span, Default::default()),
+                                None => Type::any(span, Default::default()).into(),
                             };
 
                             Ok(TupleElement {
                                 span,
                                 // TODO?
                                 label: None,
-                                ty: box ty,
+                                ty,
                                 tracker: Default::default(),
                             })
                         })

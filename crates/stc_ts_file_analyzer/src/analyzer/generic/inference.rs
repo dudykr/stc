@@ -469,8 +469,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `getSingleTypeVariableFromIntersectionTypes` of `tsc`.
-    fn get_single_type_variable_from_intersection_types(&mut self, span: Span, inferred: &mut InferData, types: &[Type]) -> Option<Type> {
-        let mut type_var: Option<Type> = None;
+    fn get_single_type_variable_from_intersection_types(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        types: &[Type],
+    ) -> Option<ArcCowType> {
+        let mut type_var: Option<ArcCowType> = None;
 
         for ty in types {
             if let Type::Intersection(t) = ty {
