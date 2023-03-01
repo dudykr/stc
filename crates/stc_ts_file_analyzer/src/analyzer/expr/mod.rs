@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _stack = stack::start(64);
         let _ctx = panic_ctx!(format!(
             "validate {}\n{}\nExpr: {:?}",
@@ -1376,7 +1376,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         if !self.config.is_builtin {
             debug_assert!(!span.is_dummy());
 
