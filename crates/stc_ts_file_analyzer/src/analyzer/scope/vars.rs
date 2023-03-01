@@ -310,10 +310,10 @@ impl Analyzer<'_, '_> {
                                                         .right
                                                         .validate_with_args(
                                                             self,
-                                                            (TypeOfMode::RValue, None, type_ann.as_ref().or(Some(ty))),
+                                                            (TypeOfMode::RValue, None, type_ann.as_deref().or(Some(ty))),
                                                         )
                                                         .report(&mut self.storage)
-                                                        .unwrap_or_else(|| Type::any(span, Default::default()));
+                                                        .unwrap_or_else(|| Type::any(span, Default::default()).into());
 
                                                     Ok(right)
                                                 }

@@ -1622,7 +1622,7 @@ impl Analyzer<'_, '_> {
                             if let Some(key) = arg_member.key() {
                                 match key {
                                     Key::Num(..) | Key::Normal { .. } => {
-                                        key_types.push(key.ty().into_owned());
+                                        key_types.push(key.ty().into_owned().into_cow());
                                     }
                                     _ => {
                                         unimplemented!("Inference of keys except ident in mapped type.\nKey: {:?}", key)
@@ -2162,7 +2162,7 @@ impl Analyzer<'_, '_> {
                         },
                     ) = constraint
                     {
-                        if let Type::Mapped(..) = operator.ty {
+                        if let Type::Mapped(..) = operator.ty.normalize() {
                             let reversed_param_ty = param.ty.as_ref().unwrap().clone().fold_with(&mut MappedReverser::default());
 
                             self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
