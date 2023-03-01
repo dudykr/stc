@@ -2088,7 +2088,7 @@ impl Expander<'_, '_, '_> {
                             }
                         }
                         // We should expand alias again.
-                        let is_alias = matches!(t, Type::Alias(..));
+                        let is_alias = matches!(t.normalize(), Type::Alias(..));
 
                         match t.normalize() {
                             Type::Intersection(..) => return Ok(Some(t.into_owned())),
@@ -2106,7 +2106,7 @@ impl Expander<'_, '_, '_> {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
                                 verify!(ty);
-                                return Ok(Some(ty.clone()));
+                                return Ok(Some(t.into_owned()));
                             }
 
                             ty @ Type::Param(..) => {
@@ -2116,7 +2116,7 @@ impl Expander<'_, '_, '_> {
 
                                 verify!(ty);
 
-                                return Ok(Some(ty.clone()));
+                                return Ok(Some(t.into_owned()));
                             }
 
                             Type::Interface(Interface { type_params, .. })
