@@ -371,7 +371,7 @@ impl Analyzer<'_, '_> {
         let (dep, data) = self.get_imported_items(span, &node.src.value);
 
         if ctxt != dep {
-            match data {
+            match &*data {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
                         self.storage.reexport_var(span, dep, id.clone(), ty.clone());
