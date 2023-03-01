@@ -896,7 +896,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_ok()
                         {
-                            arg.into_owned()
+                            arg.into_owned().into_freezed_cow()
                         } else if opts.is_inferring_rest_type
                             && matches!(&*e.get().inferred_type, Type::Tuple(..))
                             && match &*arg {
@@ -921,7 +921,7 @@ impl Analyzer<'_, '_> {
                                 e.get().inferred_type.clone()
                             }
                         } else {
-                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned()]).freezed()
+                            Type::new_union(span, vec![e.get().inferred_type.clone(), arg.into_owned().into()]).into_freezed_cow()
                         };
                         new.assert_clone_cheap();
                         e.get_mut().inferred_type = new;
@@ -1038,24 +1038,27 @@ impl Analyzer<'_, '_> {
             }
             _ => None,
         }) {
-            return Some(self.infer_type(
-                span,
-                inferred,
-                &Type::Array(Array {
-                    span: param.span(),
-                    elem_type: box elem_type.clone(),
-                    metadata: ArrayMetadata {
-                        common: param.metadata(),
-                        ..Default::default()
+            return Some(
+                self.infer_type(
+                    span,
+                    inferred,
+                    &Type::Array(Array {
+                        span: param.span(),
+                        elem_type: elem_type.clone().into(),
+                        metadata: ArrayMetadata {
+                            common: param.metadata(),
+                            ..Default::default()
+                        },
+                        tracker: Default::default(),
+                    })
+                    .into_freezed_cow(),
+                    arg,
+                    InferTypeOpts {
+                        append_type_as_union: true,
+                        ..opts
                     },
-                    tracker: Default::default(),
-                }),
-                arg,
-                InferTypeOpts {
-                    append_type_as_union: true,
-                    ..opts
-                },
-            ));
+                ),
+            );
         }
 
         if let Type::Array(Array { elem_type, .. }) = param {
