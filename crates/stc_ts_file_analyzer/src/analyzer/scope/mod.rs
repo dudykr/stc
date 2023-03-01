@@ -912,11 +912,11 @@ impl Analyzer<'_, '_> {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }
 
-        let mut ty = (|| -> VResult<_> {
+        let mut ty = (|| -> VResult<ArcCowType> {
             let mut ty = match name {
                 RTsEntityName::Ident(i) => {
                     if i.sym == js_word!("undefined") {
-                        return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                        return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()).into());
                     }
                     if i.sym == js_word!("this") {
                         if let Some(this) = self.scope.this() {
@@ -926,7 +926,8 @@ impl Analyzer<'_, '_> {
                                 span,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }));
+                            })
+                            .into());
                         }
                     }
 
@@ -974,7 +975,7 @@ impl Analyzer<'_, '_> {
                     if let Type::Query(QueryType {
                         expr: box QueryExpr::TsEntityName(q),
                         ..
-                    }) = ty
+                    }) = ty.normalize()
                     {
                         if q.type_eq(name) {
                             return false;
