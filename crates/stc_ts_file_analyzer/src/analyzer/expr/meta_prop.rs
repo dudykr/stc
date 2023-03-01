@@ -1,7 +1,7 @@
 use stc_ts_ast_rnode::RMetaPropExpr;
 use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::Type;
+use stc_ts_types::{ArcCowType, Type};
 use swc_common::Spanned;
 use swc_ecma_ast::MetaPropKind;
 
