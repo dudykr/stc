@@ -2374,7 +2374,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn array_elem_type(t: &Type) -> Option<&Type> {
+fn array_elem_type(t: &Type) -> Option<&ArcCowType> {
     if let Type::Array(a) = t {
         return Some(&a.elem_type);
     }
