@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
                 };
                 let src = match &*src {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
-                    ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
+                    ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default()).into()),
                     ty if ty.is_union_type() => {
                         let span = ty.span();
                         let types = ty.clone().expect_union_type().types;
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                                 type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), span.with_ctxt(SyntaxContext::empty()))),
                                 type_args: Some(box TypeParamInstantiation {
                                     span,
-                                    params: vec![Type::any(span, Default::default())],
+                                    params: vec![Type::any(span, Default::default()).into()],
                                 }),
                                 metadata: Default::default(),
                                 tracker: Default::default(),

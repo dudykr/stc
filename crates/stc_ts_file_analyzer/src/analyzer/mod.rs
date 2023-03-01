@@ -258,7 +258,7 @@ struct AnalyzerData {
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
     /// Value should [Type::Arc] of [Type::Module]
-    imports: FxHashMap<(ModuleId, ModuleId), Type>,
+    imports: FxHashMap<(ModuleId, ModuleId), ArcCowType>,
     /// See docs of ModuleItemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
@@ -976,7 +976,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsModuleDecl) -> VResult<Option<Type>> {
+    fn validate(&mut self, decl: &RTsModuleDecl) -> VResult<Option<ArcCowType>> {
         let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
