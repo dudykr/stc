@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
         if self.ctx.in_export_default_expr && elements.is_empty() {
             return Ok(Type::Array(Array {
                 span,
-                elem_type: box Type::any(span, Default::default()),
+                elem_type: Type::any(span, Default::default()).into(),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -265,11 +265,11 @@ impl Analyzer<'_, '_> {
         match &*iterator {
             Type::Ref(..) => {
                 let iterator = self
-                    .expand_top_ref(span, iterator, Default::default())
+                    .expand_top_ref(span, Cow::Borrowed(iterator), Default::default())
                     .context("tried to expand iterator to get nth element")?;
 
                 return self
-                    .get_element_from_iterator(span, iterator, n)
+                    .get_element_from_iterator(span, &iterator, n)
                     .context("tried to get element from an expanded iterator");
             }
 
@@ -280,7 +280,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
                 for (idx, iterator_elem) in u.types.iter().enumerate() {
                     let res = self
-                        .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
+                        .get_element_from_iterator(span, iterator_elem, n)
                         .with_context(|| format!("failed to get element type from {}th element", idx))
                         .convert_err(|err| match err {
                             ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span },
@@ -314,7 +314,7 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::NoSuchProperty {
                         span,
-                        obj: Some(box iterator.into_owned()),
+                        obj: Some(iterator.clone().into()),
                         prop: None,
                     }
                     .into());
