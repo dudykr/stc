@@ -38,8 +38,8 @@ pub(in crate::analyzer) struct ReturnValues {
     /// If all cases are handled, `return literal` like `return 5` and never
     /// type is used, we should not generalize the return value.
     should_generalize: bool,
-    pub return_types: Vec<Type>,
-    yield_types: Vec<Type>,
+    pub return_types: Vec<ArcCowType>,
+    yield_types: Vec<ArcCowType>,
     /// Are we in if or switch statement?
     pub(super) in_conditional: bool,
 }
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                 return Ok(actual.pop());
             }
 
-            let ty = Type::new_union(span, actual);
+            let ty = Type::new_union(span, actual).into_cow();
             let ty = self.simplify(ty);
 
             // print_type("Return",  &ty);
