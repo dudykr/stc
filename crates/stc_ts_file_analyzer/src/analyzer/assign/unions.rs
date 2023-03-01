@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
     fn expand_union_for_assignment(&mut self, span: Span, t: &Type) -> Option<Union> {
         let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
 
-        match t {
+        match &*t {
             Type::Keyword(KeywordType {
                 span,
                 metadata,

@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())).into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
@@ -290,7 +290,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())).into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })

@@ -1220,7 +1220,7 @@ impl Analyzer<'_, '_> {
                                                         type_params: rm.type_params.clone(),
                                                         params: rm.params.clone(),
                                                         ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                            box Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
+                                                            Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()).into()
                                                         }),
                                                         metadata: Default::default(),
                                                         tracker: Default::default(),
@@ -1377,7 +1377,7 @@ impl Analyzer<'_, '_> {
                                                     type_params: rm.type_params.clone(),
                                                     params: rm.params.clone(),
                                                     ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                        box Type::any(rm.span.with_ctxt(SyntaxContext::empty()), Default::default())
+                                                        Type::any(rm.span.with_ctxt(SyntaxContext::empty()), Default::default()).into()
                                                     }),
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
