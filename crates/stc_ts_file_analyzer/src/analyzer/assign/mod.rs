@@ -723,7 +723,7 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_inner(
                             data,
-                            to,
+                            &to,
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -739,7 +739,7 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_inner(
                             data,
-                            to,
+                            &to,
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -754,7 +754,7 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_inner(
                         data,
-                        to,
+                        &to,
                         &Type::new_union(
                             span,
                             vec![
@@ -824,26 +824,26 @@ impl Analyzer<'_, '_> {
             ..opts
         };
 
-        match (to, rhs) {
+        match (&*to, &*rhs) {
             (Type::Rest(lr), r) => {
                 if r.is_unknown() {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: to.clone().into(),
+                        right: rhs.clone().into(),
                         right_ident: opts.right_ident_span,
                         cause: vec![],
                     }
                     .into());
                 }
 
-                if let Type::Array(la) = lr.ty {
+                if let Type::Array(la) = &*lr.ty {
                     return self.assign_with_opts(data, &la.elem_type, r, opts);
                 }
             }
 
             (l, Type::Rest(rr)) => {
-                if let Type::Array(ra) = rr.ty {
+                if let Type::Array(ra) = &*rr.ty {
                     return self.assign_with_opts(data, l, &ra.elem_type, opts);
                 }
             }

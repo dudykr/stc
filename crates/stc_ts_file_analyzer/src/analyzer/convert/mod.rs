@@ -127,10 +127,10 @@ impl Analyzer<'_, '_> {
         };
         let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
             .map(Type::freezed)
-            .map(Box::new);
+            .map(From::from);
         let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
             .map(Type::freezed)
-            .map(Box::new);
+            .map(From::from);
 
         let has_constraint = constraint.is_some();
 
@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
 
         let alias = {
             self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
-                let type_params = try_opt!(d.type_params.validate_with(child)).map(Box::new);
+                let type_params = try_opt!(d.type_params.validate_with(child)).map(From::from);
 
                 let mut ty = match &*d.type_ann {
                     RTsType::TsKeywordType(RTsKeywordType {
@@ -276,7 +276,7 @@ impl Analyzer<'_, '_> {
             let mut ty = Interface {
                 span: d.span,
                 name: d.id.clone().into(),
-                type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(Box::new))),
+                type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(From::from))),
                 extends: d.extends.validate_with(child)?.freezed(),
                 body: d.body.validate_with(child)?,
                 metadata: Default::default(),
@@ -361,7 +361,7 @@ impl Analyzer<'_, '_> {
             span: d.span,
             params: d.params.validate_with(self)?,
             type_params,
-            ret_ty: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
+            ret_ty: try_opt!(d.type_ann.validate_with(self)).map(From::from),
         })
     }
 }
@@ -371,7 +371,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsCallSignatureDecl) -> VResult<CallSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
         let params: Vec<FnParam> = d.params.validate_with(self)?;
-        let ret_ty = try_opt!(d.type_ann.validate_with(self)).map(Box::new);
+        let ret_ty = try_opt!(d.type_ann.validate_with(self)).map(From::from);
 
         self.report_error_for_duplicate_params(&params);
 
@@ -407,7 +407,7 @@ impl Analyzer<'_, '_> {
                 optional: d.optional,
                 type_params,
                 params,
-                ret_ty: try_opt!(d.type_ann.validate_with(child)).map(Box::new),
+                ret_ty: try_opt!(d.type_ann.validate_with(child)).map(From::from),
                 metadata: Default::default(),
             })
         })
@@ -421,7 +421,7 @@ impl Analyzer<'_, '_> {
             span: d.span,
             params: d.params.validate_with(self)?,
             readonly: d.readonly,
-            type_ann: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
+            type_ann: try_opt!(d.type_ann.validate_with(self)).map(From::from),
             is_static: d.is_static,
         })
     }
@@ -556,7 +556,7 @@ impl Analyzer<'_, '_> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
-            type_args: try_opt!(e.type_args.validate_with(self)).map(Box::new),
+            type_args: try_opt!(e.type_args.validate_with(self)).map(From::from),
             tracker: Default::default(),
         })
     }
@@ -638,9 +638,9 @@ impl Analyzer<'_, '_> {
             span: ty.span,
             readonly: ty.readonly,
             optional: ty.optional,
-            name_type: try_opt!(ty.name_type.validate_with(self)).map(Box::new),
+            name_type: try_opt!(ty.name_type.validate_with(self)).map(From::from),
             type_param,
-            ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
+            ty: try_opt!(ty.type_ann.validate_with(self)).map(From::from),
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -744,7 +744,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             type_params,
             params: t.params.validate_with(self)?,
-            type_ann: t.type_ann.validate_with(self).map(Box::new)?,
+            type_ann: t.type_ann.validate_with(self).map(From::from)?,
             is_abstract: t.is_abstract,
             metadata: Default::default(),
             tracker: Default::default(),
@@ -763,7 +763,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
         let span = t.span;
-        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new).freezed();
+        let type_args = try_opt!(t.type_params.validate_with(self)).map(From::from).freezed();
         let mut contains_infer = false;
 
         let mut reported_type_not_found = false;
@@ -886,7 +886,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             arg: t.arg.clone(),
             qualifier: t.qualifier.clone(),
-            type_params: try_opt!(t.type_args.validate_with(self)).map(Box::new),
+            type_params: try_opt!(t.type_args.validate_with(self)).map(From::from),
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -944,7 +944,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypePredicate) -> VResult<Predicate> {
-        let mut ty = try_opt!(t.type_ann.validate_with(self)).map(Box::new);
+        let mut ty = try_opt!(t.type_ann.validate_with(self)).map(From::from);
         match &mut ty {
             Some(ty) => {
                 self.prevent_expansion(ty);
@@ -1358,7 +1358,7 @@ impl Analyzer<'_, '_> {
                     }
                     let ty = if let Some(value_node_id) = p.value.node_id() {
                         if let Some(m) = &mut self.mutations {
-                            m.for_pats.entry(value_node_id).or_default().ty.take().map(Box::new)
+                            m.for_pats.entry(value_node_id).or_default().ty.take().map(From::from)
                         } else {
                             None
                         }
