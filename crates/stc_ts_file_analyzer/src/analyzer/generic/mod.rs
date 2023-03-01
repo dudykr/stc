@@ -2186,10 +2186,10 @@ impl Analyzer<'_, '_> {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
                     ..
-                }) = constraint
+                }) = constraint.normalize()
                 {
                     if let Some(param_ty) = &param.ty {
-                        if let Type::TypeLit(arg_lit) = arg {
+                        if let Type::TypeLit(arg_lit) = arg.normalize() {
                             let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
                             print_type("reversed", &reversed_param_ty);
 
@@ -2210,9 +2210,9 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Tuple,
-        param_ty: &Type,
+        param_ty: &ArcCowType,
         arg: &Tuple,
-        arg_ty: &Type,
+        arg_ty: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let len = param.elems.len().max(arg.elems.len());
