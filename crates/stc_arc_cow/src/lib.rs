@@ -1,4 +1,5 @@
 #![allow(incomplete_features)]
+#![feature(box_syntax)]
 #![feature(specialization)]
 
 use triomphe::Arc;
@@ -16,7 +17,7 @@ where
     T: 'static,
 {
     Arc(Arc<T>),
-    Raw(T),
+    Raw(Box<T>),
 }
 
 impl_traits!(ArcCow, Raw);
@@ -34,8 +35,15 @@ impl<T> ArcCow<T> {
 }
 
 impl<T> From<T> for ArcCow<T> {
-    #[inline]
+    #[inline(always)]
     fn from(data: T) -> Self {
+        ArcCow::Raw(box data)
+    }
+}
+
+impl<T> From<Box<T>> for ArcCow<T> {
+    #[inline(always)]
+    fn from(data: Box<T>) -> Self {
         ArcCow::Raw(data)
     }
 }
@@ -51,7 +59,7 @@ where
                 Ok(v) => v,
                 Err(v) => (*v).clone(),
             },
-            Self::Raw(v) => v,
+            Self::Raw(v) => *v,
         }
     }
 }

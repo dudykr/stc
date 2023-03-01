@@ -17,7 +17,7 @@ where
             ArcCow::Raw(v) => {
                 // Deep
                 v.visit_mut_with(self);
-                let v = v.take();
+                let v = *v.take();
 
                 *n = ArcCow::Arc(Arc::new(v))
             }
