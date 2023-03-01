@@ -4191,7 +4191,8 @@ impl Analyzer<'_, '_> {
                     type_args: type_args.cloned().map(Box::new),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
             RExpr::Member(RMemberExpr {
                 obj,
@@ -4249,10 +4250,11 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })
+                        .into(),
                     ],
                 )
-                .freezed())
+                .into_freezed())
             }
 
             _ => {
@@ -4304,7 +4306,7 @@ impl Analyzer<'_, '_> {
                     // Recover error if possible.
                     if computed {
                         errors.push(err);
-                        Type::any(span, Default::default())
+                        Type::any(span, Default::default()).into()
                     } else {
                         return Err(err);
                     }
@@ -4338,7 +4340,7 @@ impl Analyzer<'_, '_> {
                 Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::any(span, Default::default()),
+                    ty: Type::any(span, Default::default()).into(),
                 })
             });
         prop.freeze();

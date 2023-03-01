@@ -531,7 +531,7 @@ impl Scope<'_> {
         self.vars.insert(name, v);
     }
 
-    pub fn get_type_from_name(&self, name: &Name) -> Option<Type> {
+    pub fn get_type_from_name(&self, name: &Name) -> Option<ArcCowType> {
         if let Some(ty) = self.facts.vars.get(name) {
             return Some(ty.clone());
         }
