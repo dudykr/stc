@@ -2463,8 +2463,8 @@ impl Expander<'_, '_, '_> {
 
                     //
                     if trying_primitive_expansion {
-                        match ty {
-                            Some(ty @ Type::Keyword(..)) => return ty,
+                        match &ty {
+                            Some(ty) if ty.is_keyword() => return ty,
                             _ => return Type::Ref(r.clone()),
                         }
                     } else {
