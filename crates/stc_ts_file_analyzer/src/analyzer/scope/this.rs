@@ -39,16 +39,19 @@ impl Analyzer<'_, '_> {
                     }) => {
                         if *p.sym() == *sym {
                             // TODO: Use function type
-                            return Some(Type::any(
-                                span,
-                                KeywordTypeMetadata {
-                                    common: CommonTypeMetadata {
-                                        implicit: true,
+                            return Some(
+                                Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: CommonTypeMetadata {
+                                            implicit: true,
+                                            ..Default::default()
+                                        },
                                         ..Default::default()
                                     },
-                                    ..Default::default()
-                                },
-                            ));
+                                )
+                                .into(),
+                            );
                         }
                     }
                     ClassMember::Property(ClassProperty {
@@ -69,6 +72,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
+                                .into()
                             }));
                         }
                     }

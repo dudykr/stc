@@ -24,16 +24,13 @@ struct FnReturnTypeHandler<'a, 'b, 'c> {
 
 impl VisitMut<Type> for FnReturnTypeHandler<'_, '_, '_> {
     fn visit_mut(&mut self, ret_ty: &mut Type) {
-        // TODO(kdy1): PERF
-        ret_ty.normalize_mut();
-
         ret_ty.visit_mut_children_with(self);
 
         if ret_ty.is_query() {
             if let Type::Query(QueryType {
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(var_name)),
                 ..
-            }) = ret_ty.normalize_mut()
+            }) = ret_ty
             {
                 // We only check for typeof for variables declared in current scope.
                 //
@@ -45,7 +42,7 @@ impl VisitMut<Type> for FnReturnTypeHandler<'_, '_, '_> {
                     ..
                 }) = self.analyzer.scope.vars.get(&var_name.clone().into())
                 {
-                    *ret_ty = ty.clone();
+                    *ret_ty = ty.clone().into_type();
                 }
             }
         }

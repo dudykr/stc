@@ -171,7 +171,7 @@ impl Analyzer<'_, '_> {
             let mut inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
                     let mut inferred_return_type = match &*inferred_return_type {
-                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?).into(),
+                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty.clone())?).into(),
                         _ => inferred_return_type,
                     };
 
