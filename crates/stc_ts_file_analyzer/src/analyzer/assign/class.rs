@@ -16,7 +16,7 @@ use crate::{
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, l: &ClassDef, r: &Type, opts: AssignOpts) -> VResult<()> {
-        let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
+        let r = self.normalize(Some(opts.span), r, Default::default())?;
 
         match &*r {
             Type::ClassDef(rc) => {
@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
-        let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
+        let r = self.normalize(Some(opts.span), r, Default::default())?;
 
         match &*r {
             Type::Class(rc) => {

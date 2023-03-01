@@ -12,14 +12,14 @@ impl Analyzer<'_, '_> {
     pub(crate) fn can_be_casted_to_number_in_rhs(&mut self, span: Span, ty: &Type) -> bool {
         let ty = match self.normalize(
             Some(span),
-            Cow::Borrowed(ty),
+            ty,
             NormalizeTypeOpts {
                 preserve_global_this: true,
                 preserve_union: true,
                 ..Default::default()
             },
         ) {
-            Ok(v) => v.into_owned(),
+            Ok(v) => v,
             _ => return false,
         };
 
@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        match ty {
+        match &*ty {
             Type::EnumVariant(e) => {
                 // TODO(kdy1): Check if value is string
                 true

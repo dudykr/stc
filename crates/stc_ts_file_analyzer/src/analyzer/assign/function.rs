@@ -657,7 +657,7 @@ impl Analyzer<'_, '_> {
 
         if let RPat::Rest(..) = l.pat {
             let l_ty = self
-                .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
+                .normalize(Some(span), &l.ty, Default::default())
                 .context("tried to normalize lhs")?;
 
             let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
