@@ -1334,7 +1334,7 @@ impl Analyzer<'_, '_> {
                             self.scope.is_call_arg_count_unknown = true;
 
                             let elem_type = self
-                                .get_iterator_element_type(arg.span(), arg_ty, false, Default::default())
+                                .get_iterator_element_type(arg.span(), &arg_ty, false, Default::default())
                                 .context("tried to get element type of an iterator for spread syntax in arguments")?;
 
                             new_arg_types.push(TypeOrSpread {
@@ -1377,7 +1377,7 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
         match ty {
             Type::Ref(..) | Type::Query(..) | Type::Instance(..) => {
-                let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+                let ty = self.normalize(None, ty, Default::default())?;
                 return self.extract(span, expr, &ty, kind, args, arg_types, spread_arg_types, type_args, type_ann, opts);
             }
 
@@ -1394,7 +1394,7 @@ impl Analyzer<'_, '_> {
                             .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into());
                     }
 
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
                 _ => {}
             }
@@ -1403,18 +1403,21 @@ impl Analyzer<'_, '_> {
         if let ExtractKind::New = kind {
             match ty {
                 Type::ClassDef(ref cls) => {
-                    self.scope.this = Some(Type::Class(Class {
-                        span,
-                        def: box cls.clone(),
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
+                    self.scope.this = Some(
+                        Type::Class(Class {
+                            span,
+                            def: box cls.clone(),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        })
+                        .into_freezed(),
+                    );
 
                     if cls.is_abstract {
                         if opts.disallow_invoking_implicit_constructors {
                             return Err(ErrorKind::NoNewSignature {
                                 span,
-                                callee: box ty.clone(),
+                                callee: ty.clone().into(),
                             }
                             .into());
                         }
@@ -1429,7 +1432,8 @@ impl Analyzer<'_, '_> {
                             def: box cls.clone(),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
 
                     if let Some(type_params) = &cls.type_params {
@@ -1450,7 +1454,7 @@ impl Analyzer<'_, '_> {
                                             return Err(ErrorKind::NotSatisfyConstraint {
                                                 span,
                                                 left: constraint.clone(),
-                                                right: box type_arg.clone(),
+                                                right: type_arg.clone().into(),
                                             }
                                             .into());
                                         }
