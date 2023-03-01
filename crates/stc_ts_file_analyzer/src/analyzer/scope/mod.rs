@@ -2089,7 +2089,7 @@ impl Expander<'_, '_, '_> {
                         // We should expand alias again.
                         let is_alias = matches!(t, Type::Alias(..));
 
-                        match t {
+                        match t.normalize() {
                             Type::Intersection(..) => return Ok(Some(t.into_owned())),
 
                             // Result of type expansion should not be Ref unless really required.
