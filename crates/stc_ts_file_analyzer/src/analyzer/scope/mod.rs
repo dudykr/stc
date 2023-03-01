@@ -1275,7 +1275,6 @@ impl Analyzer<'_, '_> {
 
         let ty = self.normalize(Some(span), ty, Default::default());
         if let Ok(ty) = ty {
-            let ty = ty.into_type();
             ty.assert_valid();
             debug!(
                 "[({})/vars/destructor]: Declaring {:?} as {}",
@@ -2317,11 +2316,6 @@ impl Expander<'_, '_, '_> {
 
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
-            Type::Arc(..) => {
-                ty.normalize_mut();
-                // TODO(kdy1): PERF
-                return ty.fold_with(self);
-            }
             _ => {}
         }
 
