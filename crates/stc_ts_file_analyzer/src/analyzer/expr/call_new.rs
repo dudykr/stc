@@ -3677,7 +3677,7 @@ impl Analyzer<'_, '_> {
                 if let Some(mutations) = &mut self.mutations {
                     if let Some(node_id) = arg.node_id() {
                         if !node_id.is_invalid() {
-                            mutations.for_exprs.entry(node_id).or_default().type_ann = Some(type_ann.clone());
+                            mutations.for_exprs.entry(node_id).or_default().type_ann = Some(type_ann.clone().into_freezed());
                         }
                     }
                 }
@@ -3702,7 +3702,7 @@ impl Analyzer<'_, '_> {
                     arg.validate_with(this).report(&mut this.storage).unwrap_or_else(|| TypeOrSpread {
                         span: arg.span(),
                         spread: arg.spread,
-                        ty: box Type::any(arg.expr.span(), Default::default()),
+                        ty: Type::any(arg.expr.span(), Default::default()).into(),
                     })
                 })
                 .collect();
@@ -3756,26 +3756,14 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
 
 impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
         ty.visit_mut_children_with(self);
 
         match ty {
-            Type::IndexedAccessType(IndexedAccessType {
-                obj_type:
-                    box Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        metadata,
-                        ..
-                    }),
-                ..
-            }) => {
+            Type::IndexedAccessType(IndexedAccessType { span, obj_type, .. }) if obj_type.is_any() => {
                 *ty = Type::Keyword(KeywordType {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
-                    metadata: *metadata,
+                    metadata: Default::default(),
                     tracker: Default::default(),
                 });
             }
