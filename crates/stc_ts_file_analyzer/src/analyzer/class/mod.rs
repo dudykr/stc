@@ -2288,9 +2288,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
+            let ty = self.normalize(Some(span), ty, Default::default())?;
 
-            if let Type::Function(..) = ty {
+            if let Type::Function(..) = &*ty {
                 Err(ErrorKind::NotConstructorType { span: ty.span() })?
             }
         };

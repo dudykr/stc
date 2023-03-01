@@ -1112,9 +1112,9 @@ impl Analyzer<'_, '_> {
         })?;
 
         if is_topmost_type {
-            Ok(ty.freezed())
+            Ok(ty.into_freezed())
         } else {
-            Ok(ty)
+            Ok(ty.into_cow())
         }
     }
 }

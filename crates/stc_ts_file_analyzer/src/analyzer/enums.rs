@@ -623,7 +623,8 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                         tracker: Default::default(),
-                                    }));
+                                    })
+                                    .into());
                                 }
                             }
                         }
