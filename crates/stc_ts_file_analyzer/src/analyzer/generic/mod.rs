@@ -64,7 +64,7 @@ pub(super) struct InferData {
     /// ```
     defaults: FxHashMap<Id, ArcCowType>,
 
-    dejavu: Vec<(Type, Type)>,
+    dejavu: Vec<(ArcCowType, ArcCowType)>,
 
     skip_generalization: bool,
 

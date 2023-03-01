@@ -202,7 +202,7 @@ impl Fold<Type> for Simplifier<'_> {
                                 return Type::IndexedAccessType(IndexedAccessType {
                                     span,
                                     readonly,
-                                    obj_type: box Type::Keyword(k),
+                                    obj_type: Type::Keyword(k).into(),
                                     index_type,
                                     metadata: IndexedAccessTypeMetadata {
                                         common: metadata.common,
