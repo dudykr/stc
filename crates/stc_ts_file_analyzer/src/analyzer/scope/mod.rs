@@ -20,9 +20,9 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType,
-    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement,
-    TypeParam, TypeParamInstantiation,
+    name::Name, type_id::DestructureId, ArcCowType, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id,
+    IndexedAccessType, Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType,
+    TypeElement, TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -1312,13 +1312,13 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: VarKind,
         name: Id,
-        ty: Option<Type>,
-        actual_ty: Option<Type>,
+        ty: Option<ArcCowType>,
+        actual_ty: Option<ArcCowType>,
         initialized: bool,
         allow_multiple: bool,
         is_override: bool,
         is_fn_decl_with_body: bool,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 

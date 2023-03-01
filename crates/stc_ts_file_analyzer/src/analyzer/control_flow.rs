@@ -1046,7 +1046,7 @@ impl Analyzer<'_, '_> {
                             let prop_ty = self
                                 .access_property(
                                     span,
-                                    ty,
+                                    &ty,
                                     &key,
                                     TypeOfMode::RValue,
                                     IdCtx::Var,
@@ -1070,7 +1070,7 @@ impl Analyzer<'_, '_> {
                             let prop_ty = self
                                 .access_property(
                                     span,
-                                    ty,
+                                    &ty,
                                     &key,
                                     TypeOfMode::RValue,
                                     IdCtx::Var,

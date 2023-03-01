@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
                 in_static_property_initializer: is_static,
                 ..self.ctx
             };
-            try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
+            try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_deref())))
         };
 
         if !self.config.is_builtin {
@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(ty.or(value_ty).map(|ty| match ty {
+        Ok(ty.or(value_ty).map(|ty| match &*ty {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
@@ -382,7 +382,7 @@ impl Analyzer<'_, '_> {
 
         match &p.param {
             RTsParamPropParam::Ident(ref i) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
+                let ty: Option<_> = i.type_ann.validate_with(self).transpose()?.freezed();
 
                 self.declare_var(
                     i.id.span,
@@ -443,7 +443,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
+                    ty: ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())).into(),
                 })
             }
             _ => unreachable!(),
