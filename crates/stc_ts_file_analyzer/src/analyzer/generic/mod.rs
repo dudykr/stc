@@ -2003,7 +2003,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Type::TypeLit(arg) = arg {
+                    if let Type::TypeLit(arg) = arg.normalize() {
                         let mut type_elements = FxHashMap::<_, Vec<_>>::default();
 
                         if let Some(param_ty) = &param.ty {
@@ -2073,7 +2073,7 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::KeyOf,
                         ..
                     },
-                ) = constraint
+                ) = constraint.normalize()
                 {
                     if let Type::IndexedAccessType(
                         iat @ IndexedAccessType {
@@ -2081,9 +2081,9 @@ impl Analyzer<'_, '_> {
                             index_type: box Type::Param(..),
                             ..
                         },
-                    ) = operator.ty
+                    ) = operator.ty.normalize()
                     {
-                        if let Type::Param(..) = iat.obj_type {
+                        if let Type::Param(..) = iat.obj_type.normalize() {
                             if let Type::Param(..) = iat.index_type {
                                 let param_ty = param.ty.clone().unwrap();
                                 let name = param.type_param.name.clone();
