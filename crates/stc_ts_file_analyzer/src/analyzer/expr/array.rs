@@ -661,9 +661,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     return self
-                        .get_iterator(span, Cow::Borrowed(constraint), opts)
-                        .map(Cow::into_owned)
-                        .map(Cow::Owned)
+                        .get_iterator(span, constraint, opts)
                         .context("tried to get iterator from type parameter constraint");
                 }
                 Type::Union(u) => {
@@ -685,7 +683,7 @@ impl Analyzer<'_, '_> {
                         metadata: u.metadata,
                         tracker: Default::default(),
                     });
-                    return Ok(Cow::Owned(new));
+                    return Ok(new);
                 }
                 Type::Intersection(i) => {
                     let types = i
@@ -699,7 +697,7 @@ impl Analyzer<'_, '_> {
                         metadata: i.metadata,
                         tracker: Default::default(),
                     });
-                    return Ok(Cow::Owned(new));
+                    return Ok(new);
                 }
                 _ => {}
             }
