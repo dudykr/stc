@@ -981,8 +981,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         type_params: &[TypeParam],
-        param: &Type,
-        arg: &Type,
+        param: &ArcCowType,
+        arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<FxHashMap<Id, ArcCowType>> {
         let _tracing = dev_span!("infer_type_with_types");

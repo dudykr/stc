@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
-                .freezed();
+                .into_freezed_cow();
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -238,7 +238,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
-                .freezed();
+                .into_freezed_cow();
 
                 let map = self.infer_type_with_types(
                     span,
@@ -285,7 +285,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
-                .freezed();
+                .into_freezed_cow();
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
-                .freezed();
+                .into_freezed_cow();
 
                 let map = self.infer_type_with_types(
                     span,
