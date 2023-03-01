@@ -397,8 +397,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        source: &Type,
-        target: &Type,
+        source: &ArcCowType,
+        target: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         self.infer_type(span, inferred, target, source, opts)
@@ -408,8 +408,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        source: &Type,
-        target: &Type,
+        source: &ArcCowType,
+        target: &ArcCowType,
         new_priority: InferencePriority,
         mut opts: InferTypeOpts,
     ) -> VResult<()> {
@@ -473,12 +473,12 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        types: &[Type],
+        types: &[ArcCowType],
     ) -> Option<ArcCowType> {
         let mut type_var: Option<ArcCowType> = None;
 
         for ty in types {
-            if let Type::Intersection(t) = ty {
+            if let Type::Intersection(t) = &**ty {
                 if let Some(t) = t.types.iter().find(|t| self.get_inference_info_for_type(inferred, ty).is_some()) {
                     if let Some(type_var) = type_var {
                         if !type_var.type_eq(t) {

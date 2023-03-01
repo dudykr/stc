@@ -127,7 +127,6 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         if let Type::Param(param) = ty {
