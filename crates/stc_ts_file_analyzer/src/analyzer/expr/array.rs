@@ -174,8 +174,8 @@ impl Analyzer<'_, '_> {
             });
             let mut types: Vec<_> = elements
                 .into_iter()
-                .map(|element| *element.ty)
-                .map(|ty| if type_ann.is_none() { ty.generalize_lit() } else { ty })
+                .map(|element| element.ty)
+                .map(|ty| if type_ann.is_none() { ty.generalize_lit().into_cow() } else { ty })
                 .collect();
             types.dedup_type();
             if types.is_empty() {
@@ -548,10 +548,11 @@ impl Analyzer<'_, '_> {
 
             // TODO: Handle [Type::Rest]
 
-            return Ok(Cow::Owned(Type::Tuple(Tuple {
+            return Ok(Type::Tuple(Tuple {
                 elems: ty.elems.into_iter().skip(start_index).collect(),
                 ..ty
-            })));
+            })
+            .into());
         }
 
         match &*iterator {

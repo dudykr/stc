@@ -812,7 +812,8 @@ impl Analyzer<'_, '_> {
                     span,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
 
             op!("===") | op!("!==") | op!("!=") | op!("==") => Ok(Type::Keyword(KeywordType {
@@ -827,7 +828,7 @@ impl Analyzer<'_, '_> {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
                     self.storage.report(
                         ErrorKind::InvalidLhsInInstanceOf {
-                            ty: box lt.clone(),
+                            ty: lt.clone().into(),
                             span: left.span(),
                         }
                         .into(),
