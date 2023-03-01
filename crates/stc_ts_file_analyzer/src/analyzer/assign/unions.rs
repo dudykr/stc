@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
                             span,
                             &mut to_types[idx],
                             &TypeElement::Property(PropertySignature {
-                                type_ann: Some(box el_ty.clone()),
+                                type_ann: Some(el_ty.clone()),
                                 ..el.clone()
                             }),
                         )?;
@@ -130,10 +130,9 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> VResult<()> {
+    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut ArcCowType, el: &TupleElement) -> VResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
-            let to_for_clone = ArcCowType::new_freezed(to.clone());
-            let mut to_types = (0..el_ty.types.len()).map(|_| to_for_clone.clone()).collect_vec();
+            let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
             for (idx, el_ty) in el_ty.types.iter().enumerate() {
                 self.append_tuple_element_to_type(
@@ -153,7 +152,8 @@ impl Analyzer<'_, '_> {
                 types: to_types,
                 metadata: el_ty.metadata,
                 tracker: Default::default(),
-            });
+            })
+            .into();
 
             return Ok(());
         }

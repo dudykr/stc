@@ -861,7 +861,7 @@ impl Analyzer<'_, '_> {
                     .validate_with_default(self)
                     .context("tried to validate type of default expression in an assignment pattern");
 
-                self.try_assign_pat_with_opts(span, &assign.left, ty, opts)
+                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
                     .report(&mut self.storage);
 
                 res.and_then(|default_value_type| self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts))

@@ -226,9 +226,7 @@ impl Analyzer<'_, '_> {
 
         let key = Key::Private(p.key.clone().into());
 
-        let value = self
-            .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
-            .map(Box::new);
+        let value = self.validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?;
 
         if !self.ctx.in_declare && self.rule().no_implicit_any {
             if value.is_none() {
@@ -1653,7 +1651,7 @@ impl Analyzer<'_, '_> {
                                         .types
                                         .iter()
                                         .map(|ty| {
-                                            if let Type::Class(c) = ty {
+                                            if let Type::Class(c) = &**ty {
                                                 has_class_in_super = true;
                                                 // class A -> typeof A
                                                 return c
