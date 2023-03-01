@@ -988,9 +988,9 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Tuple(param) => match arg_normalized {
+            Type::Tuple(pt) => match arg_normalized {
                 Type::Array(arg) => {
-                    for elem in &param.elems {
+                    for elem in &pt.elems {
                         match &*elem.ty {
                             Type::Rest(rest) => {
                                 self.infer_type(span, inferred, &rest.ty, &arg.elem_type, opts)?;
@@ -1001,7 +1001,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, p, arg, a, opts),
+                Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, pt, param, arg, a, opts),
                 _ => {
                     dbg!();
                 }

@@ -4452,12 +4452,12 @@ impl Analyzer<'_, '_> {
                     v
                 } else {
                     self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
-                    Type::any(span, Default::default())
+                    Type::any(span, Default::default()).into()
                 }
             } else {
                 self.storage
                     .report(ErrorKind::SuperCanBeOnlyReferencedInDerivedClass { span }.into());
-                Type::any(span, Default::default())
+                Type::any(span, Default::default()).into()
             }
         };
         obj_ty.freeze();
