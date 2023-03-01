@@ -358,8 +358,8 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| {
                         let mut ty = default_value_ty.generalize_lit().into_cow();
 
-                        if matches!(ty, Type::Tuple(..)) {
-                            match ty {
+                        if matches!(&*ty, Type::Tuple(..)) {
+                            match ty.normalize() {
                                 Type::Tuple(tuple) => {
                                     let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
 
@@ -373,7 +373,8 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                         tracker: Default::default(),
-                                    });
+                                    })
+                                    .into();
                                 }
                                 _ => {
                                     unreachable!();
