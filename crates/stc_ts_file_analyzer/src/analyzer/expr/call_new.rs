@@ -3171,7 +3171,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if arg.spread.is_some() {
-                    let res = self.get_iterator_element_type(arg.span(), Cow::Borrowed(&arg.ty), false, Default::default());
+                    let res = self.get_iterator_element_type(arg.span(), &arg.ty, false, Default::default());
                     match res {
                         Ok(arg_elem_ty) => {
                             // We should change type if the parameter is a rest parameter.
@@ -3215,7 +3215,7 @@ impl Analyzer<'_, '_> {
                         return;
                     }
                 } else {
-                    let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty, Type::TypeLit(..));
+                    let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(&*arg.ty, Type::TypeLit(..));
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
                         &param.ty,
@@ -3335,17 +3335,17 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self
-            .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
+            .normalize(Some(span), orig_ty, Default::default())
             .context("tried to normalize original type")?
             .freezed();
 
         let new_ty = self
-            .normalize(Some(span), Cow::Owned(new_ty), Default::default())
+            .normalize(Some(span), new_ty, Default::default())
             .context("tried to normalize new type")?
             .freezed();
 
         let use_simple_intersection = (|| {
-            if let (Type::Interface(orig), Type::Interface(new)) = (orig_ty, new_ty) {
+            if let (Type::Interface(orig), Type::Interface(new)) = (&*orig_ty, &*new_ty) {
                 if orig.extends.is_empty() && new.extends.is_empty() {
                     return true;
                 }
@@ -3360,21 +3360,22 @@ impl Analyzer<'_, '_> {
                 types: vec![orig_ty.into_owned(), new_ty.into_owned()],
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into_freezed());
         }
 
-        match new_ty {
+        match &*new_ty {
             Type::Keyword(keyword) => {
                 if let TsKeywordTypeKind::TsObjectKeyword = keyword.kind {
                     if orig_ty.is_any() {
-                        return Ok(orig_ty.into_owned());
+                        return Ok(orig_ty);
                     }
                 }
             }
 
             Type::Lit(..) => {}
             _ => {
-                match orig_ty {
+                match &*orig_ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -3398,19 +3399,20 @@ impl Analyzer<'_, '_> {
                             },
                         ) {
                             if v {
-                                if let Type::ClassDef(def) = orig_ty {
+                                if let Type::ClassDef(def) = &*orig_ty {
                                     return Ok(Type::Class(Class {
                                         span,
                                         def: box def.clone(),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }));
+                                    })
+                                    .into());
                                 }
-                                return Ok(orig_ty.into_owned());
+                                return Ok(orig_ty);
                             }
                         }
 
-                        return Ok(new_ty.into_owned());
+                        return Ok(new_ty);
                     }
                 }
 
@@ -3436,7 +3438,7 @@ impl Analyzer<'_, '_> {
                 if did_upcast {
                     new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
-                return Ok(new_ty);
+                return Ok(new_ty.into());
             }
         }
 
@@ -3446,7 +3448,8 @@ impl Analyzer<'_, '_> {
                 def: box def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
 
         Ok(new_ty.into_owned())
