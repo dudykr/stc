@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                    .freezed(),
+                    .into_freezed(),
                 );
             }
 
@@ -237,8 +237,8 @@ impl Analyzer<'_, '_> {
                 ty.freeze();
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
-                    ty: box ty,
-                    type_params,
+                    ty,
+                    type_params: type_params.map(From::from),
                     metadata: AliasMetadata {
                         common: CommonTypeMetadata {
                             contains_infer_type,
@@ -251,7 +251,8 @@ impl Analyzer<'_, '_> {
                 .freezed();
                 Ok(alias)
             })?
-        };
+        }
+        .into_freezed();
         self.register_type(d.id.clone().into(), alias.clone());
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
