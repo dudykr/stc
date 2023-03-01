@@ -941,7 +941,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if is_str_lit_or_union(&lt) && is_str_lit_or_union(&rt) {
-                            return Ok(Type::new_union(span, vec![lt, rt]));
+                            return Ok(Type::new_union(span, vec![lt, rt]).into());
                         }
 
                         if let Known(v) = lt.as_bool() {
@@ -955,7 +955,7 @@ impl Analyzer<'_, '_> {
                         // Remove falsy types from lhs
                         let lt = lt.remove_falsy();
 
-                        return Ok(Type::new_union(span, vec![lt, rt]));
+                        return Ok(Type::new_union(span, vec![lt, rt]).into());
                     }
 
                     op!("&&") => {
@@ -1368,19 +1368,19 @@ impl Analyzer<'_, '_> {
                     return Ok(result);
                 }
             }
-            return Ok(ty.into_owned());
+            return Ok(ty.clone().into());
         }
 
         match &*ty {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
-                    Cow::Owned(Type::Class(Class {
+                    &Type::Class(Class {
                         span,
                         def: box ty.clone(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    })),
+                    }),
                     &orig_ty,
                 )
             }
@@ -1394,7 +1394,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(*ret_ty.clone());
                                 }
                                 return self
-                                    .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
+                                    .narrow_with_instanceof(span, ret_ty, &orig_ty)
                                     .context("tried to narrow constructor return type");
                             }
                         }
@@ -1443,10 +1443,10 @@ impl Analyzer<'_, '_> {
                 {
                     if ty.is_class() {
                         if orig_ty.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || orig_ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
-                            return Ok(ty.into_owned());
+                            return Ok(ty.clone().into());
                         }
                     }
-                    return Ok(Type::never(span, Default::default()));
+                    return Ok(Type::never(span, Default::default()).into());
                 }
             }
         }
@@ -1825,7 +1825,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(
                         ErrorKind::InvalidRhsInInstanceOf {
                             span,
-                            ty: box type_for_error.clone(),
+                            ty: type_for_error.clone().into(),
                         }
                         .into(),
                     );
