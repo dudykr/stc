@@ -501,7 +501,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty.into())
     }
 
-    pub(crate) fn get_value_type_from_iterator_result<'a>(&mut self, span: Span, iterator_result: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_value_type_from_iterator_result<'a>(&mut self, span: Span, iterator_result: &Type) -> VResult<ArcCowType> {
         let mut elem_ty = self
             .access_property(
                 span,
@@ -538,12 +538,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty)
     }
 
-    pub(crate) fn get_rest_elements<'a>(
-        &mut self,
-        span: Option<Span>,
-        iterator: Cow<'a, Type>,
-        start_index: usize,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_rest_elements<'a>(&mut self, span: Option<Span>, iterator: &Type, start_index: usize) -> VResult<ArcCowType> {
         let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
@@ -558,7 +553,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator {
+        match &*iterator {
             // TODO
             Type::TypeLit(_) => {}
 
@@ -683,7 +678,7 @@ impl Analyzer<'_, '_> {
                         metadata: u.metadata,
                         tracker: Default::default(),
                     });
-                    return Ok(new);
+                    return Ok(new.into());
                 }
                 Type::Intersection(i) => {
                     let types = i
@@ -697,7 +692,7 @@ impl Analyzer<'_, '_> {
                         metadata: i.metadata,
                         tracker: Default::default(),
                     });
-                    return Ok(new);
+                    return Ok(new.into());
                 }
                 _ => {}
             }
@@ -735,7 +730,6 @@ impl Analyzer<'_, '_> {
                 | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span },
                 _ => err,
             })
-            .map(Cow::Owned)
             .context("tried to call `[Symbol.iterator]()`")
         })();
 
