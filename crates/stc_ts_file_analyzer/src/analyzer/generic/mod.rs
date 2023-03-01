@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                 continue;
             }
 
-            if let Some(Type::Param(ref p)) = type_param.constraint.as_deref().map(Type::normalize) {
+            if let Some(Type::Param(ref p)) = type_param.constraint.as_deref() {
                 // TODO(kdy1): Handle complex inheritance like
                 //      function foo<A extends B, B extends C>(){ }
 
@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
         base: &ArcCowType,
         concrete: &ArcCowType,
         opts: InferTypeOpts,
-    ) -> VResult<FxHashMap<Id, Type>> {
+    ) -> VResult<FxHashMap<Id, ArcCowType>> {
         let _tracing = dev_span!("infer_ts_infer_types");
 
         let mut inferred = InferData::default();
@@ -988,7 +988,7 @@ impl Analyzer<'_, '_> {
             Type::Tuple(param) => match arg_normalized {
                 Type::Array(arg) => {
                     for elem in &param.elems {
-                        match elem.ty {
+                        match &*elem.ty {
                             Type::Rest(rest) => {
                                 self.infer_type(span, inferred, &rest.ty, &arg.elem_type, opts)?;
                             }
