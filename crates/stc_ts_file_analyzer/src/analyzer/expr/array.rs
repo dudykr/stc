@@ -400,13 +400,14 @@ impl Analyzer<'_, '_> {
                         common: u.metadata.common,
                         ..Default::default()
                     },
-                )]
+                )
+                .into()]
             }
         }
 
-        elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
+        elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty).into();
 
-        Ok(Cow::Owned(elem_ty))
+        Ok(elem_ty)
     }
 
     pub(crate) fn get_async_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {

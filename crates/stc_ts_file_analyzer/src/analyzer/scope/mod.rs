@@ -997,8 +997,8 @@ impl Analyzer<'_, '_> {
         }
 
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
-            ty: Some(Type::any(DUMMY_SP, Default::default())),
-            actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
+            ty: Some(Type::any(DUMMY_SP, Default::default()).into()),
+            actual_ty: Some(Type::any(DUMMY_SP, Default::default()).into()),
             kind: VarKind::Error,
             initialized: true,
             copied: false,

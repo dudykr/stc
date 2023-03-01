@@ -1956,9 +1956,9 @@ impl Analyzer<'_, '_> {
                         if let Type::Param(TypeParam {
                             constraint: Some(constraint),
                             ..
-                        }) = param
+                        }) = &**param
                         {
-                            if let Type::Union(..) = constraint {
+                            if let Type::Union(..) = &**constraint {
                                 if let Some(res) = self.assign_to_union(data, to, constraint, opts) {
                                     return Some(res.context("tried to assign intrinsic union using `assign_to_union`"));
                                 }
@@ -2092,7 +2092,9 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
                             // Allow assigning enum with numeric values to
                             // string.
-                            if let Ok(Type::Lit(LitType { lit: RTsLit::Str(..), .. })) = self.expand_enum_variant(rhs.clone()) {
+                            if let Ok(Type::Lit(LitType { lit: RTsLit::Str(..), .. })) =
+                                self.expand_enum_variant(rhs.clone().into_cow()).as_deref()
+                            {
                                 return Ok(());
                             }
 
@@ -2132,7 +2134,7 @@ impl Analyzer<'_, '_> {
                             // number.
                             if let Ok(Type::Lit(LitType {
                                 lit: RTsLit::Number(..), ..
-                            })) = self.expand_enum_variant(rhs.clone())
+                            })) = self.expand_enum_variant(rhs.clone().into_cow()).as_deref()
                             {
                                 return Ok(());
                             }
@@ -2226,7 +2228,7 @@ impl Analyzer<'_, '_> {
                         Type::TypeLit(..) => {
                             let left = self.normalize(
                                 Some(span),
-                                Cow::Borrowed(to),
+                                to,
                                 NormalizeTypeOpts {
                                     normalize_keywords: true,
                                     ..Default::default()
