@@ -3770,11 +3770,11 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
 
             Type::IndexedAccessType(IndexedAccessType {
                 span,
-                obj_type: ref obj_ty @ box Type::Ref(..),
+                obj_type: ref obj_ty,
                 index_type,
                 metadata,
                 ..
-            }) if is_str_lit_or_union(index_type) => {
+            }) if obj_ty.is_ref_type() && is_str_lit_or_union(index_type) => {
                 let mut types: Vec<Type> = vec![];
 
                 for index_ty in index_type.iter_union() {
