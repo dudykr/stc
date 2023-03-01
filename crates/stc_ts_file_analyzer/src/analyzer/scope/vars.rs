@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
                                         label: Some(*elem.arg.clone()),
                                         ty: Type::Rest(RestType {
                                             span: elem.span,
-                                            ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                            ty: rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default()).into()),
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })
