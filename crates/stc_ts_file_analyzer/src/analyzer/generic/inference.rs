@@ -727,7 +727,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         tp: &TypeParam,
-        ty: Cow<Type>,
+        ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
@@ -761,7 +761,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         name: Id,
-        ty: Cow<Type>,
+        ty: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let marks = self.marks();

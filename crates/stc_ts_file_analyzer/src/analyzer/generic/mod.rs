@@ -314,23 +314,23 @@ impl Analyzer<'_, '_> {
                     )?
                     .freezed();
                 if !inferred.type_params.contains_key(&type_param.name) {
-                    self.insert_inferred(span, &mut inferred, type_param, ty, opts)?;
+                    self.insert_inferred(span, &mut inferred, type_param, &ty, opts)?;
                 }
                 continue;
             }
             if !inferred.type_params.contains_key(&type_param.name) {
                 if let Some(default_ty) = inferred.defaults.remove(&type_param.name) {
-                    self.insert_inferred(span, &mut inferred, type_param, default_ty, opts)?;
+                    self.insert_inferred(span, &mut inferred, type_param, &default_ty, opts)?;
                 } else {
                     if let Some(default) = &type_param.default {
-                        self.insert_inferred(span, &mut inferred, type_param, Cow::Borrowed(default), opts)?;
+                        self.insert_inferred(span, &mut inferred, type_param, default, opts)?;
                         continue;
                     }
 
                     if let Some(default_ty) = default_ty {
                         error!("infer: A type parameter {} defaults to {:?}", type_param.name, default_ty);
 
-                        self.insert_inferred(span, &mut inferred, type_param, Cow::Borrowed(default_ty), opts)?;
+                        self.insert_inferred(span, &mut inferred, type_param, default_ty, opts)?;
                     }
                 }
             }
