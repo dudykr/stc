@@ -1036,30 +1036,18 @@ impl Analyzer<'_, '_> {
 
             for (kwd, interface) in special_cases {
                 match to {
-                    Type::Keyword(k) if k.kind == *kwd => match rhs {
-                        Type::Instance(Instance {
-                            ty: box Type::Interface(ref i),
-                            ..
-                        })
-                        | Type::Interface(ref i) => {
+                    Type::Keyword(k) if k.kind == *kwd => match rhs.normalize_instance() {
+                        Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
                                 return Err(ErrorKind::AssignedWrapperToPrimitive { span }.into());
                             }
                         }
                         _ => {}
                     },
-                    Type::Instance(Instance {
-                        ty: box Type::Interface(ref i),
-                        ..
-                    })
-                    | Type::Interface(ref i)
-                        if i.name.as_str() == *interface =>
-                    {
-                        match rhs {
-                            Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
-                            _ => {}
-                        }
-                    }
+                    Type::Interface(ref i) if i.name.as_str() == *interface => match rhs {
+                        Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
+                        _ => {}
+                    },
                     _ => {}
                 }
             }
