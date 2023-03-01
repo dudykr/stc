@@ -15,7 +15,7 @@ use ansi_term::Color::Yellow;
 use derivative::Derivative;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
-use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
+use stc_ts_types::{name::Name, CowType, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
 use swc_atoms::JsWord;
 use swc_common::{
@@ -132,7 +132,7 @@ pub enum ErrorKind {
     /// TS2698
     NonObjectInSpread {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     /// TS2312
@@ -676,8 +676,8 @@ pub enum ErrorKind {
     /// TS2678
     SwitchCaseTestNotCompatible {
         span: Span,
-        disc: Box<Type>,
-        test: Box<Type>,
+        disc: CowType,
+        test: CowType,
     },
 
     /// TS2540
@@ -694,7 +694,7 @@ pub enum ErrorKind {
     TypeInvalidForUpdateArg {
         span: Span,
         /// Type of the arguments.
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     PrivatePropertyIsDifferent {
@@ -708,15 +708,15 @@ pub enum ErrorKind {
     CannotCompareWithOp {
         span: Span,
         op: BinaryOp,
-        left: Box<Type>,
-        right: Box<Type>,
+        left: CowType,
+        right: CowType,
     },
 
     InvalidBinaryOp {
         span: Span,
         op: BinaryOp,
-        left: Box<Type>,
-        right: Box<Type>,
+        left: CowType,
+        right: CowType,
     },
 
     /// TS2339
@@ -735,7 +735,7 @@ pub enum ErrorKind {
 
     ObjectIsPossiblyUndefinedWithType {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     ObjectIsPossiblyNullOrUndefined {
@@ -761,8 +761,8 @@ pub enum ErrorKind {
     /// TS2344
     NotSatisfyConstraint {
         span: Span,
-        left: Box<Type>,
-        right: Box<Type>,
+        left: CowType,
+        right: CowType,
     },
 
     /// TS2345
@@ -834,7 +834,7 @@ pub enum ErrorKind {
     /// TS2539
     CannotAssignToNonVariable {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     /// TS2708
@@ -883,8 +883,8 @@ pub enum ErrorKind {
     NoOverlap {
         span: Span,
         value: bool,
-        left: Box<Type>,
-        right: Box<Type>,
+        left: CowType,
+        right: CowType,
     },
 
     CannotAssignToReadonlyProperty {
@@ -1005,7 +1005,7 @@ pub enum ErrorKind {
 
     NoSuchProperty {
         span: Span,
-        obj: Option<Box<Type>>,
+        obj: Option<CowType>,
         prop: Option<Box<Key>>,
     },
 
@@ -1026,7 +1026,7 @@ pub enum ErrorKind {
         // Span of rhs
         span: Span,
         left: Span,
-        ty: Option<Box<Type>>,
+        ty: Option<CowType>,
     },
 
     /// TS2304
@@ -1086,11 +1086,11 @@ pub enum ErrorKind {
     AssignFailed {
         span: Span,
         #[derivative(Debug = "ignore")]
-        left: Box<Type>,
+        left: CowType,
         #[derivative(Debug = "ignore")]
         right_ident: Option<Span>,
         #[derivative(Debug = "ignore")]
-        right: Box<Type>,
+        right: CowType,
         cause: Vec<Error>,
     },
 
@@ -1162,20 +1162,20 @@ pub enum ErrorKind {
     /// TS2351
     NoNewSignature {
         span: Span,
-        callee: Box<Type>,
+        callee: CowType,
     },
 
     /// TS2348
     NoConstructablePropertyWithName {
         span: Span,
-        obj: Box<Type>,
+        obj: CowType,
         key: Box<Key>,
     },
 
     /// TS2349
     NoCallSignature {
         span: Span,
-        callee: Box<Type>,
+        callee: CowType,
     },
 
     WrongTypeParams {
@@ -1256,7 +1256,7 @@ pub enum ErrorKind {
 
     InvalidRhsForInOperator {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     /// TS2362
@@ -1267,7 +1267,7 @@ pub enum ErrorKind {
     /// TS2363
     WrongTypeForRhsOfNumericOperation {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     TS2365 {
@@ -1308,7 +1308,7 @@ pub enum ErrorKind {
     /// TS2464
     InvalidTypeForComputedProperty {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     /// TS2369
@@ -1351,14 +1351,14 @@ pub enum ErrorKind {
     InvalidLhsInInstanceOf {
         span: Span,
         /// Type of the lhs
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     /// `TS2359`
     InvalidRhsInInstanceOf {
         span: Span,
         /// Type of the rhs
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     /// `TS2469`
@@ -1395,8 +1395,8 @@ pub enum ErrorKind {
     InvalidOpAssign {
         span: Span,
         op: AssignOp,
-        lhs: Box<Type>,
-        rhs: Box<Type>,
+        lhs: CowType,
+        rhs: CowType,
     },
 
     AssignOpCannotBeApplied {
@@ -1442,7 +1442,7 @@ pub enum ErrorKind {
     /// TS2489
     NoCallablePropertyWithName {
         span: Span,
-        obj: Box<Type>,
+        obj: CowType,
         key: Box<Key>,
     },
 
@@ -1464,7 +1464,7 @@ pub enum ErrorKind {
     /// TS2407
     RightHandSideMustBeObject {
         span: Span,
-        ty: Box<Type>,
+        ty: CowType,
     },
 
     MustHaveSymbolAsyncIteratorThatReturnsIterator {
@@ -1539,13 +1539,13 @@ pub enum ErrorKind {
     /// TS2729
     UsePropBeforeInit {
         span: Span,
-        obj: Option<Box<Type>>,
+        obj: Option<CowType>,
         prop: Option<Box<Key>>,
     },
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ErrorKind, [u8; 80]);
+assert_eq_size!(ErrorKind, [u8; 88]);
 
 impl Error {
     pub fn convert<F>(mut self, op: F) -> Self

@@ -665,15 +665,15 @@ impl Analyzer<'_, '_> {
             () => {{
                 return Err(ErrorKind::AssignFailed {
                     span,
-                    left: box to.clone(),
-                    right: box rhs.clone(),
+                    left: to.clone().into(),
+                    right: rhs.clone().into(),
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
                 .context(format!(
                     "LHS (final): {}\nRHS (final): {}",
-                    force_dump_type_as_string(to),
-                    force_dump_type_as_string(rhs)
+                    force_dump_type_as_string(&to),
+                    force_dump_type_as_string(&rhs)
                 )));
             }};
         }

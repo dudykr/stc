@@ -1700,6 +1700,13 @@ impl From<Type> for CowType {
     }
 }
 
+impl From<Cow<'_, Type>> for CowType {
+    #[inline]
+    fn from(ty: Cow<Type>) -> Self {
+        CowType::Owned(box ty.into_owned())
+    }
+}
+
 pub trait TypeIterExt {}
 
 struct AssertCloneCheap;
