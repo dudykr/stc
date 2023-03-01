@@ -164,11 +164,11 @@ impl Analyzer<'_, '_> {
         targets: &[ArcCowType],
         matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
         opts: InferTypeOpts,
-    ) -> VResult<(Vec<Type>, Vec<Type>)> {
+    ) -> VResult<(Vec<ArcCowType>, Vec<ArcCowType>)> {
         let _tracing = dev_span!("infer_from_matching_types");
 
-        let mut matched_sources: Vec<Type> = vec![];
-        let mut matched_targets: Vec<Type> = vec![];
+        let mut matched_sources: Vec<ArcCowType> = vec![];
+        let mut matched_targets: Vec<ArcCowType> = vec![];
 
         for t in targets {
             for s in sources {
@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Union,
-        arg: &Type,
+        arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<()> {
         let _tracing = dev_span!("infer_type_using_union");
