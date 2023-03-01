@@ -73,12 +73,12 @@ pub(crate) struct Scope<'a> {
     pub declaring: Vec<Id>,
     pub declaring_parameters: Vec<Id>,
 
-    pub declared_return_type: Option<Type>,
+    pub declared_return_type: Option<ArcCowType>,
 
     pub declaring_type_params: FxHashSet<Id>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
-    types: FxHashMap<Id, Type>,
+    types: FxHashMap<Id, ArcCowType>,
     pub(super) facts: CondFacts,
 
     pub(super) declaring_fn: Option<Id>,
@@ -86,7 +86,7 @@ pub(crate) struct Scope<'a> {
     /// literal.
     pub(super) declaring_prop: Option<Id>,
 
-    pub(super) this: Option<Type>,
+    pub(super) this: Option<ArcCowType>,
 
     /// Used while validating super class and static class properties. Otherwise
     /// [None].
@@ -101,7 +101,7 @@ pub(crate) struct Scope<'a> {
 
     pub(super) this_object_members: Vec<TypeElement>,
 
-    pub(super) super_class: Option<Box<Type>>,
+    pub(super) super_class: Option<ArcCowType>,
 
     pub(super) return_values: ReturnValues,
 
@@ -111,7 +111,7 @@ pub(crate) struct Scope<'a> {
     /// Used to handle `...any` in calls.
     pub(super) is_call_arg_count_unknown: bool,
 
-    pub(super) type_params: FxHashMap<Id, Type>,
+    pub(super) type_params: FxHashMap<Id, ArcCowType>,
 
     /// If two modules have same name, the latter can reference exported members
     /// from other modules.
@@ -124,7 +124,7 @@ pub(crate) struct Scope<'a> {
     pub(super) class: ClassState,
 
     /// Save All destructure state
-    pub(super) destructure_vars: FxHashMap<DestructureId, Type>,
+    pub(super) destructure_vars: FxHashMap<DestructureId, ArcCowType>,
 }
 
 impl Scope<'_> {

@@ -843,7 +843,7 @@ impl Analyzer<'_, '_> {
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
-            .freezed();
+            .into_freezed();
 
         let ty = orig_ty;
 
@@ -1150,7 +1150,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Check if this is correct. (in object rest context)
                 let ty = Type::Array(Array {
                     span,
-                    elem_type: box ty.clone(),
+                    elem_type: ty.clone().into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
@@ -1168,7 +1168,7 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
 
                 if let Some(lhs_ty) = &lhs_ty {
-                    self.assign_with_opts(&mut Default::default(), lhs_ty, ty, AssignOpts { span, ..opts.assign })?;
+                    self.assign_with_opts(&mut Default::default(), lhs_ty, &ty, AssignOpts { span, ..opts.assign })?;
                 }
                 Ok(())
             }
