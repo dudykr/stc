@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
@@ -77,20 +75,17 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: &Type, error_on_missing_then: bool) -> VResult<ArcCowType> {
         if let Some(arg) = unwrap_builtin_with_single_arg(&ty, "Promise").or_else(|| unwrap_builtin_with_single_arg(&ty, "PromiseLike")) {
-            return self
-                .get_awaited_type(span, Cow::Borrowed(arg), false)
-                .map(Cow::into_owned)
-                .map(Cow::Owned);
+            return self.get_awaited_type(span, arg, false);
         }
 
         if let Type::Union(ty) = &*ty {
             let mut types = Vec::with_capacity(ty.types.len());
 
             for ty in &ty.types {
-                types.push(self.get_awaited_type(span, Cow::Borrowed(ty), error_on_missing_then)?.into_owned());
+                types.push(self.get_awaited_type(span, ty, error_on_missing_then)?);
             }
 
-            return Ok(Cow::Owned(Type::new_union(span, types)));
+            return Ok(Type::new_union(span, types).into());
         }
 
         let res = self.access_property(
