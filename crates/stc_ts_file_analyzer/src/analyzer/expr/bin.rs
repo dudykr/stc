@@ -2186,7 +2186,7 @@ impl Analyzer<'_, '_> {
                             errors.push(
                                 ErrorKind::InvalidRhsForInOperator {
                                     span: rs,
-                                    ty: box rt.clone(),
+                                    ty: rt.clone().into(),
                                 }
                                 .into(),
                             )
@@ -2260,7 +2260,7 @@ impl Analyzer<'_, '_> {
 
         let ty = match self.normalize(
             Some(span),
-            Cow::Borrowed(ty),
+            ty,
             NormalizeTypeOpts {
                 preserve_mapped: true,
                 ..Default::default()
@@ -2333,7 +2333,7 @@ impl Analyzer<'_, '_> {
                             let tl = tl.into_owned();
                             self.get_additional_exclude_target_for_type_lit(
                                 span,
-                                ty,
+                                &ty,
                                 &tl,
                                 r,
                                 name.clone(),
@@ -2345,7 +2345,7 @@ impl Analyzer<'_, '_> {
                     Type::TypeLit(tl) => {
                         self.get_additional_exclude_target_for_type_lit(
                             span,
-                            ty,
+                            &ty,
                             tl,
                             r,
                             name.clone(),
@@ -2374,19 +2374,21 @@ impl Analyzer<'_, '_> {
                                                     kind: TsKeywordTypeKind::TsNullKeyword,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
-                                                }),
+                                                })
+                                                .into(),
                                                 Type::Keyword(KeywordType {
                                                     span,
                                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
-                                                }),
+                                                })
+                                                .into(),
                                             ]
                                         } else {
                                             vec![]
                                         }
                                     };
-                                    temp_vec.push((*elem.ty).clone().freezed());
+                                    temp_vec.push((*elem.ty).clone().into_freezed());
                                     additional_target.insert(l_name, temp_vec);
                                 }
                             }
@@ -2420,7 +2422,7 @@ impl Analyzer<'_, '_> {
             IdCtx::Type,
             Default::default(),
         ) {
-            if property.type_eq(r) {
+            if (*property).type_eq(r) {
                 for m in tl.members.iter() {
                     if let Some(key) = m.non_computed_key() {
                         let l_name = Name::new(key.clone(), name.get_ctxt());
@@ -2438,19 +2440,21 @@ impl Analyzer<'_, '_> {
                                             kind: TsKeywordTypeKind::TsNullKeyword,
                                             metadata: Default::default(),
                                             tracker: Default::default(),
-                                        }),
+                                        })
+                                        .into(),
                                         Type::Keyword(KeywordType {
                                             span,
                                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                             metadata: Default::default(),
                                             tracker: Default::default(),
-                                        }),
+                                        })
+                                        .into(),
                                     ]
                                 } else {
                                     vec![]
                                 }
                             };
-                            temp_vec.push(act_ty.freezed());
+                            temp_vec.push(act_ty.into_freezed());
                             additional_target.insert(l_name, temp_vec);
                         }
                     }
