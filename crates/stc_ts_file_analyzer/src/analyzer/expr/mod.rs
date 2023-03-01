@@ -2077,8 +2077,8 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 return Ok(match class_prop.value {
-                                    Some(ref ty) => *ty.clone(),
-                                    None => Type::any(span, Default::default()),
+                                    Some(ref ty) => ty.clone(),
+                                    None => Type::any(span, Default::default()).into(),
                                 });
                             }
                         }
@@ -2087,12 +2087,12 @@ impl Analyzer<'_, '_> {
                                 if mtd.key.is_private() {
                                     self.storage
                                         .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                    return Ok(Type::any(span, Default::default()));
+                                    return Ok(Type::any(span, Default::default()).into());
                                 }
 
                                 if mtd.is_abstract {
                                     self.storage.report(ErrorKind::CannotAccessAbstractMember { span }.into());
-                                    return Ok(Type::any(span, Default::default()));
+                                    return Ok(Type::any(span, Default::default()).into());
                                 }
 
                                 return Ok(Type::Function(stc_ts_types::Function {
@@ -2113,7 +2113,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
-                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
+                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| obj.clone().into()),
                                     is_abstract: false,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
@@ -2157,7 +2157,7 @@ impl Analyzer<'_, '_> {
 
                 let has_better_default = !opts.disallow_indexing_class_with_computed
                     && prop.is_computed()
-                    && match prop.ty() {
+                    && match &*prop.ty() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2177,7 +2177,7 @@ impl Analyzer<'_, '_> {
                     };
 
                 if has_better_default {
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
 
                 return Err(ErrorKind::NoSuchPropertyInClass {
@@ -2209,7 +2209,7 @@ impl Analyzer<'_, '_> {
 
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
-                    Key::Normal { span, sym } => box Type::Lit(LitType {
+                    Key::Normal { span, sym } => Type::Lit(LitType {
                         span: span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Str(RStr {
                             span: *span,
@@ -2218,19 +2218,22 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::Num(n) => box Type::Lit(LitType {
+                    })
+                    .into(),
+                    Key::Num(n) => Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::BigInt(n) => box Type::Lit(LitType {
+                    })
+                    .into(),
+                    Key::BigInt(n) => Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                     Key::Private(..) => {
                         unreachable!()
                     }
@@ -2249,13 +2252,14 @@ impl Analyzer<'_, '_> {
                     index_type: prop_ty,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             Type::Infer(..) => {
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
-                    Key::Normal { span, sym } => box Type::Lit(LitType {
+                    Key::Normal { span, sym } => Type::Lit(LitType {
                         span: span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Str(RStr {
                             span: *span,
@@ -2264,19 +2268,22 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::Num(n) => box Type::Lit(LitType {
+                    })
+                    .into(),
+                    Key::Num(n) => Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::BigInt(n) => box Type::Lit(LitType {
+                    })
+                    .into(),
+                    Key::BigInt(n) => Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                     Key::Private(..) => {
                         unreachable!()
                     }
@@ -2293,7 +2300,8 @@ impl Analyzer<'_, '_> {
                     index_type: prop_ty,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             Type::Keyword(KeywordType {
@@ -2305,7 +2313,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             Type::Keyword(KeywordType {
@@ -2324,13 +2333,13 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             ..
                         }),
-                    ) = (*kind, prop.ty)
+                    ) = (*kind, &*prop.ty)
                     {
                         if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
                             self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
                         }
 
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
                 }
 
