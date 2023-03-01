@@ -74,7 +74,7 @@ impl Fold<Type> for TypeParamRenamer {
                 if self.declared.is_none() && mapped.is_type_param() {
                     return ty;
                 }
-                return mapped.clone();
+                return mapped.clone().into_type();
             }
         }
 
