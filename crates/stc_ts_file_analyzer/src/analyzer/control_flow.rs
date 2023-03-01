@@ -1442,7 +1442,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Facts {
-    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, exclude: Type, negate: bool) {
+    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: ArcCowType, exclude: ArcCowType, negate: bool) {
         ty.assert_valid();
         ty.assert_clone_cheap();
 

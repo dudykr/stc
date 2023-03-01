@@ -1737,9 +1737,9 @@ impl Analyzer<'_, '_> {
                                         };
                                     }
                                 }
-                                Some(box super_ty)
+                                Some(super_ty)
                             }
-                            _ => Some(box super_ty),
+                            _ => Some(super_ty),
                         }
                     }
 

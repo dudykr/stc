@@ -98,7 +98,6 @@ impl Analyzer<'_, '_> {
                     expr,
                 }) => {
                     let mut element_type = expr.validate_with_default(self)?;
-                    element_type.normalize_mut();
 
                     // TODO(kdy1): PERF
 
@@ -126,7 +125,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: box element_type.clone(),
+                                ty: element_type.into(),
                                 tracker: Default::default(),
                             });
                         }
@@ -631,7 +630,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match ty {
+            match &*ty {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..

@@ -2240,7 +2240,7 @@ impl Analyzer<'_, '_> {
             Err(_) => return true,
         };
 
-        match ty {
+        match &*ty {
             Type::This(..)
             | Type::Class(..)
             | Type::ClassDef(..)

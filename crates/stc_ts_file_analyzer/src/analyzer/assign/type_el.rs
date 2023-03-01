@@ -65,7 +65,7 @@ impl Analyzer<'_, '_> {
             .next();
 
         if let Some(numeric_keyed_ty) = numeric_keyed_ty {
-            let any = box Type::any(span, Default::default());
+            let any = Type::any(span, Default::default()).into();
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
             match *rhs {
@@ -290,7 +290,7 @@ impl Analyzer<'_, '_> {
                                 type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                                 type_args: Some(box TypeParamInstantiation {
                                     span: DUMMY_SP,
-                                    params: vec![*r_arr.elem_type.clone()],
+                                    params: vec![r_arr.elem_type.clone()],
                                 }),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
@@ -319,14 +319,15 @@ impl Analyzer<'_, '_> {
 
                                 let r_elem_type = Type::Union(Union {
                                     span: r_tuple.span,
-                                    types: r_tuple.elems.iter().map(|el| *el.ty.clone()).collect(),
+                                    types: r_tuple.elems.iter().map(|el| el.ty.clone()).collect(),
                                     metadata: UnionMetadata {
                                         common: r_tuple.metadata.common,
                                         ..Default::default()
                                     },
                                     tracker: Default::default(),
                                 })
-                                .fixed();
+                                .fixed()
+                                .into();
 
                                 //
                                 let r_arr = Type::Ref(Ref {
@@ -1198,7 +1199,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     TypeElement::Method(rm) => {
                                         if let Some(lp_ty) = &lp.type_ann {
-                                            if let Type::Function(lp_ty) = lp_ty {
+                                            if let Type::Function(lp_ty) = &**lp_ty {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     true,
@@ -1281,7 +1282,7 @@ impl Analyzer<'_, '_> {
                                     TypeElement::Property(rp) => {
                                         // Allow assigning property with callable type to methods.
                                         if let Some(rp_ty) = &rp.type_ann {
-                                            if let Type::Function(rf) = rp_ty {
+                                            if let Type::Function(rf) = &**rp_ty {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     true,
