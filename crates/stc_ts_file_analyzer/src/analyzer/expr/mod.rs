@@ -2683,7 +2683,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Validate that the ty has same type instead of returning union.
                 let ty = Type::new_union(span, tys);
                 ty.assert_valid();
-                return Ok(ty);
+                return Ok(ty.into());
             }
 
             Type::Tuple(Tuple { ref elems, .. }) => {
@@ -2706,14 +2706,14 @@ impl Analyzer<'_, '_> {
                             if let Some(count) = self.calculate_tuple_element_count(span, &elem.ty)? {
                                 sum += count;
                                 if val < count {
-                                    return Ok(*elem.ty.clone());
+                                    return Ok(elem.ty.clone());
                                 }
 
                                 val -= count;
                             } else {
-                                if let Type::Rest(rest_ty) = elem.ty {
+                                if let Type::Rest(rest_ty) = &*elem.ty {
                                     if opts.return_rest_tuple_element_as_is {
-                                        return Ok(*elem.ty.clone());
+                                        return Ok(elem.ty.clone());
                                     }
 
                                     let inner_result = self
@@ -2756,7 +2756,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     // debug_assert!(rest_ty.ty.is_clone_cheap());
-                                    return Ok(*rest_ty.ty.clone());
+                                    return Ok(rest_ty.ty.clone());
                                 } else {
                                     unreachable!()
                                 }
@@ -2770,10 +2770,11 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
                             if opts.use_last_element_for_tuple_on_out_of_bound {
-                                return Ok(*elems.last().unwrap().ty.clone());
+                                return Ok(elems.last().unwrap().ty.clone());
                             }
 
                             if let TypeOfMode::LValue = type_mode {
@@ -2790,7 +2791,8 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
 
                             return Err(ErrorKind::TupleIndexError {
@@ -2801,7 +2803,7 @@ impl Analyzer<'_, '_> {
                             .context("r-value context"));
                         }
 
-                        return Ok(*elems[v as usize].ty.clone());
+                        return Ok(elems[v as usize].ty.clone());
                     }
 
                     Key::Normal {
@@ -2813,7 +2815,8 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }));
+                            })
+                            .into());
                         }
 
                         return Ok(Type::Lit(LitType {
@@ -2825,7 +2828,8 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
 
                     _ => {}
@@ -2835,7 +2839,7 @@ impl Analyzer<'_, '_> {
                 types.dedup_type();
                 let obj = Type::Array(Array {
                     span,
-                    elem_type: box Type::new_union(span, types),
+                    elem_type: Type::new_union(span, types).into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
@@ -2868,7 +2872,7 @@ impl Analyzer<'_, '_> {
                                 if p.key.is_private() {
                                     self.storage
                                         .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                    return Ok(Type::any(span, Default::default()));
+                                    return Ok(Type::any(span, Default::default()).into());
                                 }
 
                                 if self.env.target() <= EsVersion::Es5 && self.ctx.obj_is_super {
@@ -2876,7 +2880,7 @@ impl Analyzer<'_, '_> {
                                         if p.key.type_eq(prop) {
                                             self.storage
                                                 .report(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span: prop.span() }.into());
-                                            return Ok(Type::any(prop.span(), Default::default()));
+                                            return Ok(Type::any(prop.span(), Default::default()).into());
                                         };
                                     }
                                 }
