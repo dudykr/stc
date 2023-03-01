@@ -1502,7 +1502,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn prevent_generalization_of_top_level_types(
         &self,
         type_params: &[TypeParam],
-        ret_ty: Option<&Type>,
+        ret_ty: Option<&ArcCowType>,
         inferred: &mut InferData,
         is_from_type_ann: bool,
     ) {
@@ -1514,7 +1514,7 @@ impl Analyzer<'_, '_> {
                     self.prevent_generalization_of_top_level_types(type_params, Some(ret_ty), inferred, is_from_type_ann)
                 }
 
-                match ret_ty {
+                match ret_ty.normalize() {
                     Type::Param(ret_ry) => {
                         if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
                             // prevent_generalize(&mut ty.inferred_type);

@@ -713,7 +713,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match param_normalized {
+        match param.normalize() {
             Type::Param(TypeParam {
                 ref name, ref constraint, ..
             }) => {

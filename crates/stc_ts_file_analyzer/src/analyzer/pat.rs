@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                     match props {
                         RObjectPatProp::KeyValue(p) => {
                             let key = p.key.validate_with(self)?;
-                            let ty = box self.default_type_for_pat(&p.value)?;
+                            let ty = self.default_type_for_pat(&p.value)?;
 
                             members.push(TypeElement::Property(PropertySignature {
                                 span: DUMMY_SP,
