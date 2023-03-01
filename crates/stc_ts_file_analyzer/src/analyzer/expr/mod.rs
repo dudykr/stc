@@ -957,15 +957,15 @@ impl Analyzer<'_, '_> {
                                 if p.optional {
                                     let mut types = vec![Type::undefined(span, Default::default()).into(), type_ann.clone()];
                                     types.dedup_type();
-                                    matching_elements.push(Type::new_union(span, types));
+                                    matching_elements.push(Type::new_union(span, types).into_cow());
                                 } else {
-                                    matching_elements.push(*type_ann.clone());
+                                    matching_elements.push(type_ann.clone().into());
                                 }
                                 continue;
                             }
 
                             // TODO(kdy1): no implicit any?
-                            matching_elements.push(Type::any(span, Default::default()));
+                            matching_elements.push(Type::any(span, Default::default()).into());
                             continue;
                         }
 
@@ -984,7 +984,7 @@ impl Analyzer<'_, '_> {
                             if m.optional {
                                 let mut types = vec![Type::undefined(span, Default::default()).into(), prop_ty.clone()];
                                 types.dedup_type();
-                                matching_elements.push(Type::new_union(span, types));
+                                matching_elements.push(Type::new_union(span, types).into_cow());
                             } else {
                                 matching_elements.push(prop_ty.clone());
                             }
@@ -1010,13 +1010,13 @@ impl Analyzer<'_, '_> {
                     //
                     //
                     if *prop_sym == js_word!("Infinity") {
-                        return Ok(Some(Type::any(span, Default::default())));
+                        return Ok(Some(Type::any(span, Default::default()).into()));
                     } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
                         let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
 
                         if let Ok(prop_num) = prop_num {
                             if key.value == prop_num {
-                                return Ok(Some(Type::any(span, Default::default())));
+                                return Ok(Some(Type::any(span, Default::default()).into()));
                             }
                         }
                     } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
@@ -1024,7 +1024,7 @@ impl Analyzer<'_, '_> {
 
                         if let Ok(prop_num) = prop_num {
                             if key.value == prop_num {
-                                return Ok(Some(Type::any(span, Default::default())));
+                                return Ok(Some(Type::any(span, Default::default()).into()));
                             }
                         }
                     } else {
@@ -1032,7 +1032,7 @@ impl Analyzer<'_, '_> {
 
                         if let Ok(prop_num) = prop_num {
                             if key.value == prop_num {
-                                return Ok(Some(Type::any(span, Default::default())));
+                                return Ok(Some(Type::any(span, Default::default()).into()));
                             }
                         }
                     }
@@ -1087,7 +1087,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if let Some(type_ann) = type_ann {
-                            return Ok(Some(*type_ann.clone()));
+                            return Ok(Some(type_ann.clone()));
                         }
                     }
                 }
