@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> VResult<ArcCowType> {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: ArcCowType, casted_ty: ArcCowType) -> VResult<ArcCowType> {
         let mut orig_ty = self.expand(
             span,
             orig_ty,
