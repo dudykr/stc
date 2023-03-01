@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
             params.freeze();
 
             for param in &params {
-                self.register_type(param.name.clone(), Type::Param(param.clone()));
+                self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
             }
 
             Ok(TypeParamDecl {
@@ -969,8 +969,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<ArcCowType> {
         let span = t.span;
 
-        let obj_type = box t.obj_type.validate_with(self)?;
-        let index_type = box t.index_type.validate_with(self)?.freezed();
+        let obj_type = t.obj_type.validate_with(self)?;
+        let index_type = t.index_type.validate_with(self)?.freezed();
 
         if !self.config.is_builtin {
             let ctx = Ctx {
@@ -1003,7 +1003,8 @@ impl Analyzer<'_, '_> {
             index_type,
             metadata: Default::default(),
             tracker: Default::default(),
-        }))
+        })
+        .into())
     }
 }
 

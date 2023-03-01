@@ -817,7 +817,8 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })),
+            })
+            .into()),
 
             op!("instanceof") => {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
@@ -835,7 +836,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
 
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
