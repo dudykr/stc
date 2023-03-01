@@ -78,7 +78,7 @@ impl Analyzer<'_, '_> {
                         .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
-                    match ty {
+                    match &*ty {
                         Type::TypeLit(..) => {
                             if !prefer_tuple {
                                 can_be_tuple = false;

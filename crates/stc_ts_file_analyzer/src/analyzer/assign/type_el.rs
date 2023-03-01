@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             });
 
-                            let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+                            let rhs = self.normalize(None, r_arr, Default::default())?;
 
                             return self
                                 .assign_to_type_elements(
@@ -729,7 +729,7 @@ impl Analyzer<'_, '_> {
                     let rhs = self
                         .normalize(
                             Some(span),
-                            Cow::Borrowed(rhs),
+                            rhs,
                             NormalizeTypeOpts {
                                 normalize_keywords: true,
                                 ..Default::default()

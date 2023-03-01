@@ -1617,7 +1617,7 @@ impl Analyzer<'_, '_> {
                                 _ => err,
                             })
                             .report(&mut child.storage)
-                            .unwrap_or_else(|| Type::any(expr.span(), Default::default()));
+                            .unwrap_or_else(|| Type::any(expr.span(), Default::default()).into());
                         child.validate_with(|a| match &*super_ty {
                             Type::Lit(..)
                             | Type::Keyword(KeywordType {

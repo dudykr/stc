@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
 
     /// Handle declaration merging. This method is used to avoid implementing
     /// same logic twice.
-    fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> VResult<Option<Type>> {
+    fn merge_from_to(&mut self, span: Span, a: ArcCowType, b: ArcCowType) -> VResult<Option<ArcCowType>> {
         if self.config.is_builtin {
             return Ok(None);
         }

@@ -28,7 +28,7 @@ impl Analyzer<'_, '_> {
     ///  - lhs = `(["a", number] | ["b", number] | ["c", string]);`
     ///  - rhs = `[("b" | "a"), 1];`
     pub(super) fn assign_to_union(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
-        let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
+        let r_res = self.flatten_unions_for_assignment(opts.span, r);
 
         match r_res {
             Ok(mut r) => {
@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> VResult<ArcCowType> {
+    fn flatten_unions_for_assignment(&mut self, span: Span, ty: &Type) -> VResult<ArcCowType> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
         match &*ty {
@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> VResult<()> {
+    fn append_type_element_to_type(&mut self, span: Span, to: &mut ArcCowType, el: &TypeElement) -> VResult<()> {
         if let TypeElement::Property(el) = el {
             if let Some(el_ty) = &el.type_ann {
                 if let Some(ty) = self.expand_union_for_assignment(span, el_ty) {
@@ -106,7 +106,8 @@ impl Analyzer<'_, '_> {
                         metadata: ty.metadata,
                         tracker: Default::default(),
                     })
-                    .fixed();
+                    .fixed()
+                    .into_cow();
 
                     return Ok(());
                 }
