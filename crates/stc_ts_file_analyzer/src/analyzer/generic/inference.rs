@@ -879,7 +879,7 @@ impl Analyzer<'_, '_> {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
                             && matches!(e.get().inferred_type, Type::Tuple(..))
-                            && match arg {
+                            && match &*arg {
                                 Type::Tuple(tuple) => tuple.elems.len() == 1,
                                 _ => false,
                             }

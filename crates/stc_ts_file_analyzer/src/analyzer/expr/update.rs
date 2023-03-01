@@ -95,7 +95,7 @@ impl Analyzer<'_, '_> {
                 _ => Ok(ty),
             })
             .or_else(|err| match &*err {
-                ErrorKind::NoSuchEnumVariant { .. } => Ok(Type::any(span, Default::default())),
+                ErrorKind::NoSuchEnumVariant { .. } => Ok(Type::any(span, Default::default()).into()),
                 _ => Err(err),
             })
             .report(&mut self.storage);
