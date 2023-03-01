@@ -27,7 +27,7 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
-use stc_arc_cow::freeze::Freezer;
+use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
     RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
@@ -194,7 +194,7 @@ pub enum Type {
     Class(Class),
 
     /// Class definition itself.
-    ClassDef(ClassDef),
+    ClassDef(ArcCow<ClassDef>),
 
     Arc(ArcType),
 
@@ -886,7 +886,7 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
-    pub def: Box<ClassDef>,
+    pub def: ArcCow<ClassDef>,
     pub metadata: ClassMetadata,
 
     pub tracker: Tracker<"Class">,

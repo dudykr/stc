@@ -6,7 +6,7 @@ use debug_unreachable::debug_unreachable;
 use crate::*;
 
 macro_rules! impl_is {
-    ($variant:ident,$type_name:ident, $is_name:ident,$as_name:ident,$as_mut_name:ident,$opt_name:ident,$expect_name:ident) => {
+    ($variant:ident,$type_name:ty, $is_name:ident,$as_name:ident,$as_mut_name:ident,$opt_name:ident,$expect_name:ident) => {
         impl Type {
             pub fn $is_name(&self) -> bool {
                 matches!(self.normalize(), Type::$variant(_))
