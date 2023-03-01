@@ -1001,7 +1001,7 @@ impl Analyzer<'_, '_> {
                         // TODO(kdy1): Change error message from no callable
                         // property to property exists but not callable.
 
-                        if let Some(prop_ty) = value.as_deref().map(Type::normalize) {
+                        if let Some(prop_ty) = value.as_deref() {
                             if let Ok(cs) = self.extract_callee_candidates(span, kind, prop_ty) {
                                 candidates.extend(cs);
                             }
@@ -1151,7 +1151,7 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.clone(),
                         params: m.params.clone(),
-                        ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                        ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(m.span, Default::default()).into()),
                     });
                 }
             }
@@ -2439,7 +2439,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: SelectOpts,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("select_and_invoke");
 
         let span = span.with_ctxt(SyntaxContext::empty());

@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
         (dep_id, data)
     }
 
-    pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
+    pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<ArcCowType>> {
         if let Some(ModuleInfo { module_id, data }) = self.data.imports_by_id.get(id) {
             match data {
                 Type::Module(data) => {

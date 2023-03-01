@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Handle index signatures.
-    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("expand_mapped");
 
         let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+    fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<ArcCowType>> {
         match m.type_param.constraint.as_deref().map(|v| v) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
@@ -142,7 +142,7 @@ impl Analyzer<'_, '_> {
         keyof_operand: &Type,
         original_keyof_operand: &Type,
         m: &Mapped,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("expand_mapped_type_with_keyof");
 
         let keyof_operand = self

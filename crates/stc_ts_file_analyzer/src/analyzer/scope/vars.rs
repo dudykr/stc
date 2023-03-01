@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
         actual: Option<Type>,
         default: Option<Type>,
         opts: DeclareVarsOpts,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         if let Some(ty) = &ty {
             ty.assert_valid();
             if !self.config.is_builtin {

@@ -815,7 +815,7 @@ impl Analyzer<'_, '_> {
         true_type: &Type,
         false_type: &Type,
         metadata: ConditionalMetadata,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         if !check_type.is_type_param() {
             return Ok(None);
         }
@@ -907,7 +907,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         types: &[ArcCowType],
         opts: NormalizeTypeOpts,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         macro_rules! never {
             () => {{
                 Ok(Some(Type::Keyword(KeywordType {
@@ -1310,7 +1310,7 @@ impl Analyzer<'_, '_> {
         elements: &[TypeElement],
         property_types: &mut Vec<TypeElement>,
         opts: NormalizeTypeOpts,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         macro_rules! never {
             () => {{
                 Ok(Some(Type::Keyword(KeywordType {

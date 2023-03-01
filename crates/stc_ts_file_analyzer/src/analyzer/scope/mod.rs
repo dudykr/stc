@@ -1684,7 +1684,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("declare_complex_vars");
 
         if ty.is_unknown() {
@@ -2032,7 +2032,7 @@ impl Expander<'_, '_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         was_top_level: bool,
         trying_primitive_expansion: bool,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
@@ -2269,7 +2269,7 @@ impl Expander<'_, '_, '_> {
         Ok(Some(Type::any(span, Default::default())))
     }
 
-    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> VResult<Option<Type>> {
+    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("Expander::expand_ref");
 
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;

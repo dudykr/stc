@@ -62,7 +62,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_jsx_intrinsic_element_list(&mut self, span: Span) -> VResult<Option<Type>> {
+    fn get_jsx_intrinsic_element_list(&mut self, span: Span) -> VResult<Option<ArcCowType>> {
         let jsx = self.get_jsx_namespace();
         let jsx = match jsx {
             Some(v) => v,
@@ -223,7 +223,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Option<ArcCowType>> {
         match e {
             RJSXElementChild::JSXText(e) => e.validate_with(self).map(Some),
             RJSXElementChild::JSXExprContainer(e) => e.validate_with_default(self),
@@ -248,7 +248,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXExprContainer, type_ann: Option<&Type>) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXExprContainer, type_ann: Option<&Type>) -> VResult<Option<ArcCowType>> {
         e.expr.validate_with_args(self, type_ann)
     }
 }
@@ -262,7 +262,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXExpr, type_ann: Option<&Type>) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXExpr, type_ann: Option<&Type>) -> VResult<Option<ArcCowType>> {
         match e {
             RJSXExpr::Expr(e) => e.validate_with_args(self, (TypeOfMode::RValue, None, type_ann)).map(Some),
             RJSXExpr::JSXEmptyExpr(..) => Ok(None),
@@ -334,7 +334,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXAttrValue, type_ann: Option<&Type>) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXAttrValue, type_ann: Option<&Type>) -> VResult<Option<ArcCowType>> {
         match e {
             RJSXAttrValue::Lit(v) => v.validate_with(self).map(Some),
             RJSXAttrValue::JSXElement(v) => v.validate_with_args(self, type_ann).map(Some),
