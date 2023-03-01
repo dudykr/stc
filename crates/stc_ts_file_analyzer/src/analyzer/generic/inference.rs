@@ -770,17 +770,20 @@ impl Analyzer<'_, '_> {
             match inferred.defaults.entry(name.clone()) {
                 Entry::Occupied(..) => {}
                 Entry::Vacant(e) => {
-                    e.insert(Type::Param(TypeParam {
-                        span: ty.span(),
-                        name,
-                        constraint: None,
-                        default: None,
-                        metadata: TypeParamMetadata {
-                            common: ty.metadata(),
-                            ..Default::default()
-                        },
-                        tracker: Default::default(),
-                    }));
+                    e.insert(
+                        Type::Param(TypeParam {
+                            span: ty.span(),
+                            name,
+                            constraint: None,
+                            default: None,
+                            metadata: TypeParamMetadata {
+                                common: ty.metadata(),
+                                ..Default::default()
+                            },
+                            tracker: Default::default(),
+                        })
+                        .into_freezed(),
+                    );
                 }
             }
 
