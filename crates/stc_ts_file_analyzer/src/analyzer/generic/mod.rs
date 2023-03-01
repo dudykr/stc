@@ -2509,7 +2509,6 @@ impl VisitMut<Type> for MappedKeyReplacer<'_> {
             }
             _ => {
                 // TODO(kdy1): PERF
-                ty.normalize_mut();
                 ty.visit_mut_children_with(self)
             }
         }
