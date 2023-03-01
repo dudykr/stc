@@ -1314,7 +1314,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                    .freezed(),
+                    .into_freezed_cow(),
                     opts,
                 );
             }
@@ -1460,7 +1460,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Mapped,
-        arg: &Type,
+        arg: &ArcCowType,
         opts: InferTypeOpts,
     ) -> VResult<bool> {
         let _tracing = dev_span!("infer_type_using_mapped_type");
@@ -1596,7 +1596,7 @@ impl Analyzer<'_, '_> {
                     name, key_name
                 );
 
-                match arg {
+                match arg.normalize() {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
                         let mut key_types = vec![];
