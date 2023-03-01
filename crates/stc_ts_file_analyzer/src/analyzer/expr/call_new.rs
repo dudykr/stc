@@ -582,7 +582,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: ExtractKind,
         expr: ReEvalMode,
-        this: &Type,
+        this: &ArcCowType,
         obj_type: &Type,
         prop: &Key,
         type_args: Option<&TypeParamInstantiation>,
@@ -692,7 +692,7 @@ impl Analyzer<'_, '_> {
                         if kind == ExtractKind::Call {
                             return Err(ErrorKind::NoCallablePropertyWithName {
                                 span,
-                                obj: box obj_type.clone(),
+                                obj: obj_type.clone().into(),
                                 key: box prop.clone(),
                             }
                             .into());
