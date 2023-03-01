@@ -184,7 +184,7 @@ impl Analyzer<'_, '_> {
                 if types.is_empty() {
                     if let Some(declared) = self.scope.declared_return_type() {
                         // TODO(kdy1): Change this to `get_iterable_element_type`
-                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
+                        if let Ok(el_ty) = self.get_iterator_element_type(span, &declared, true, Default::default()) {
                             types.push(el_ty);
                         }
                     }
@@ -502,13 +502,11 @@ impl Analyzer<'_, '_> {
 
             let item_ty = if e.delegate {
                 if self.ctx.in_async {
-                    self.get_async_iterator_element_type(e.span, Cow::Owned(ty))
+                    self.get_async_iterator_element_type(e.span, &ty)
                         .context("tried to convert argument as an async iterator for delegating yield")?
-                        .into_type()
                 } else {
-                    self.get_iterator_element_type(e.span, Cow::Owned(ty), false, GetIteratorOpts { ..Default::default() })
+                    self.get_iterator_element_type(e.span, &ty, false, GetIteratorOpts { ..Default::default() })
                         .context("tried to convert argument as an iterator for delegating yield")?
-                        .into_type()
                 }
             } else {
                 ty
@@ -564,12 +562,15 @@ impl Analyzer<'_, '_> {
 
             self.scope.return_values.yield_types.push(item_ty);
         } else {
-            self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
-                span: e.span,
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }));
+            self.scope.return_values.yield_types.push(
+                Type::Keyword(KeywordType {
+                    span: e.span,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                })
+                .into(),
+            );
         }
 
         Ok(Type::any(e.span, Default::default()))
