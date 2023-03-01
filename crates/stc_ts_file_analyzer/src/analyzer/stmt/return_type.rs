@@ -90,7 +90,7 @@ impl Analyzer<'_, '_> {
         // let mut old_ret_tys = self.scope.return_types.take();
 
         let mut is_unreachable = false;
-        let mut ret_ty = (|| -> VResult<_> {
+        let mut ret_ty = (|| -> VResult<ArcCowType> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     cannot_fallback_to_iterable_iterator,
@@ -201,8 +201,9 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
+                    .into_cow()
                 } else {
-                    Type::new_union(span, types)
+                    Type::new_union(span, types).into_cow()
                 };
 
                 let ret_ty = if actual.is_empty() {
