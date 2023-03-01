@@ -4423,7 +4423,7 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional && include_optional_chaining_undefined {
-            Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
+            Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()).into(), ty]).into())
         } else {
             if !self.config.is_builtin {
                 debug_assert_ne!(ty.span(), DUMMY_SP);
@@ -4476,7 +4476,7 @@ impl Analyzer<'_, '_> {
                 Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::any(span, Default::default()),
+                    ty: Type::any(span, Default::default()).into(),
                 })
             });
         prop.freeze();

@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
                     errored = true;
                     Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
-                        ty: box ty.clone(),
+                        ty: ty.clone(),
                     }
                     .into())
                 }
@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
 
                     Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
-                        ty: box ty.clone(),
+                        ty: ty.clone(),
                     }
                     .into())
                 }
