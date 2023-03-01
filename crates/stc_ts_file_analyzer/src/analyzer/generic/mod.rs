@@ -1508,7 +1508,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(arg) = arg {
-                    return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts);
+                    return self.infer_type_using_mapped_type(span, inferred, param, &arg.into_freezed_cow(), opts);
                 }
             }
             _ => {}
