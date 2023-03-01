@@ -264,34 +264,36 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<ArcCowType> {
-        let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
-            match &*d.id.sym {
-                "any" | "void" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span }.into());
+        let ty = self
+            .with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
+                match &*d.id.sym {
+                    "any" | "void" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "null" | "undefined" | "symbol" => {
+                        child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span }.into());
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
 
-            let mut ty = Interface {
-                span: d.span,
-                name: d.id.clone().into(),
-                type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(From::from))),
-                extends: d.extends.validate_with(child)?.freezed(),
-                body: d.body.validate_with(child)?,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            };
-            child.prevent_expansion(&mut ty.body);
-            ty.body.freeze();
+                let mut ty = Interface {
+                    span: d.span,
+                    name: d.id.clone().into(),
+                    type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(From::from))),
+                    extends: d.extends.validate_with(child)?.freezed(),
+                    body: d.body.validate_with(child)?,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                };
+                child.prevent_expansion(&mut ty.body);
+                ty.body.freeze();
 
-            child.resolve_parent_interfaces(&d.extends, true);
-            child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
-            child.report_error_for_wrong_interface_inheritance(d.id.span, &ty.body, &ty.extends);
+                child.resolve_parent_interfaces(&d.extends, true);
+                child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
+                child.report_error_for_wrong_interface_inheritance(d.id.span, &ty.body, &ty.extends);
 
-            let ty = Type::Interface(ty).freezed();
+                let ty = Type::Interface(ty).freezed();
 
-            Ok(ty)
-        })?;
+                Ok(ty)
+            })?
+            .into_freezed();
 
         // TODO(kdy1): Recover
         self.register_type(d.id.clone().into(), ty.clone());
@@ -677,7 +679,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, u: &RTsUnionType) -> VResult<ArcCowType> {
         let types = u.types.validate_with(self)?;
 
-        Ok(Type::new_union(u.span, types))
+        Ok(Type::new_union(u.span, types).into())
     }
 }
 
@@ -686,7 +688,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, u: &RTsIntersectionType) -> VResult<ArcCowType> {
         let types = u.types.validate_with(self)?;
 
-        Ok(Type::new_intersection(u.span, types))
+        Ok(Type::new_intersection(u.span, types).into())
     }
 }
 
@@ -785,12 +787,13 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Operator(Operator {
                         span,
                         op: TsTypeOperatorOp::ReadOnly,
-                        ty: box Type::Array(Array {
+                        ty: Type::Array(Array {
                             span: t.span,
                             elem_type: type_args.unwrap().params.into_iter().next().unwrap().into(),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })
+                        .into(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
@@ -810,8 +813,8 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        if let Type::Param(..) = ty {
-                            return Ok(ty.into_owned());
+                        if let Type::Param(..) = &*ty {
+                            return Ok(ty.into());
                         }
                     }
 
@@ -842,7 +845,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !reported_type_not_found {
-                self.report_error_for_unresolved_type(t.span, &t.type_name.clone().into(), type_args.as_deref())
+                self.report_error_for_unresolved_type(t.span, &t.type_name.clone().into(), type_args.as_ref())
                     .report(&mut self.storage);
             }
         }
@@ -850,7 +853,7 @@ impl Analyzer<'_, '_> {
         Ok(Type::Ref(Ref {
             span: t.span.with_ctxt(SyntaxContext::empty()),
             type_name: t.type_name.clone(),
-            type_args,
+            type_args: type_args.map(From::from),
             metadata: RefMetadata {
                 common: CommonTypeMetadata {
                     contains_infer_type: contains_infer,
@@ -859,7 +862,8 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
             tracker: Default::default(),
-        }))
+        })
+        .into())
     }
 }
 

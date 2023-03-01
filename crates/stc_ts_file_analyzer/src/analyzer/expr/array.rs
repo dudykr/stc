@@ -249,15 +249,16 @@ impl Analyzer<'_, '_> {
         debug!("Calculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
-            return Ok(iterator);
+            return Ok(iterator.clone().into_cow());
         }
         if iterator.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
-            return Ok(Cow::Owned(Type::Keyword(KeywordType {
+            return Ok(Type::Keyword(KeywordType {
                 span,
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            })));
+            })
+            .into());
         }
 
         match &*iterator {
