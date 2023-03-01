@@ -1240,7 +1240,7 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if let Type::Union(ty) = src {
+        if let Type::Union(ty) = &*src {
             let mut new_types = vec![];
             for ty in &ty.types {
                 let ty = self.narrow_types_with_property(span, ty, property, type_facts)?;
@@ -1258,7 +1258,8 @@ impl Analyzer<'_, '_> {
                 types: new_types,
                 metadata: ty.metadata,
                 tracker: Default::default(),
-            }));
+            })
+            .into());
         }
 
         let prop_res = self

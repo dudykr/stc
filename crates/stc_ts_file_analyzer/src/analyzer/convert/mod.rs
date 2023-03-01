@@ -497,13 +497,13 @@ impl Analyzer<'_, '_> {
         let type_ann = {
             match d.type_ann.validate_with(self) {
                 Some(v) => match v {
-                    Ok(ty) => Some(box ty),
+                    Ok(ty) => Some(ty),
                     Err(e) => {
                         self.storage.report(e);
                         Some(Type::any(d.span, Default::default()).into())
                     }
                 },
-                None => Some(box Type::any(d.span, Default::default())),
+                None => Some(Type::any(d.span, Default::default()).into()),
             }
         };
         Ok(PropertySignature {
@@ -662,7 +662,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsArrayType) -> VResult<Array> {
         Ok(Array {
             span: node.span,
-            elem_type: box node.elem_type.validate_with(self)?,
+            elem_type: node.elem_type.validate_with(self)?,
             metadata: Default::default(),
             tracker: Default::default(),
         })
