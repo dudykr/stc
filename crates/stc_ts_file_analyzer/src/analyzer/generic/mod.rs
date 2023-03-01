@@ -1398,7 +1398,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Prevent logging
-        match arg {
+        match arg.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
@@ -2608,12 +2608,13 @@ impl Fold<Type> for MappedReverser {
                 match member {
                     TypeElement::Property(p) => {
                         let mapped: Mapped = p.type_ann.unwrap().mapped().unwrap();
-                        let ty = box Type::TypeLit(TypeLit {
+                        let ty = Type::TypeLit(TypeLit {
                             span,
                             members: vec![TypeElement::Property(PropertySignature { type_ann: mapped.ty, ..p })],
                             metadata,
                             tracker: Default::default(),
-                        });
+                        })
+                        .into();
 
                         return Type::Mapped(Mapped { ty: Some(ty), ..mapped });
                     }

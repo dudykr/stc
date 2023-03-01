@@ -208,7 +208,7 @@ impl Analyzer<'_, '_> {
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::new_union(span, actual))
+                    self.simplify(Type::new_union(span, actual).into_cow())
                 };
 
                 let mut metadata = yield_ty.metadata();
