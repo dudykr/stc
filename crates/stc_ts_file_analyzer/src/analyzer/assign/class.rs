@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, l: &ClassDef, r: &Type, opts: AssignOpts) -> VResult<()> {
         let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
 
-        match r {
+        match &*r {
             Type::ClassDef(rc) => {
                 if l.eq_ignore_span(rc) {
                     return Ok(());
@@ -130,7 +130,7 @@ impl Analyzer<'_, '_> {
 
         let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
 
-        match r {
+        match &*r {
             Type::Class(rc) => {
                 if l.eq_ignore_span(rc) {
                     return Ok(());
@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
                         allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
                         report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
-                            Some(match r {
+                            Some(match &*r {
                                 Type::Interface(r) => !r.extends.is_empty(),
                                 _ => false,
                             })
@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::Lit(..) | Type::Keyword(..) = r {
+        if let Type::Lit(..) | Type::Keyword(..) = &*r {
             return Err(ErrorKind::SimpleAssignFailed {
                 span: opts.span,
                 cause: None,

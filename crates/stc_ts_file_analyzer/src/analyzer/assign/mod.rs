@@ -1109,7 +1109,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match to {
+        match &*to {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..

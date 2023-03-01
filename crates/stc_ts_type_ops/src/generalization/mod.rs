@@ -49,12 +49,7 @@ impl Fold<Tuple> for LitGeneralizer {
             // Remove types after `...boolean[]`
             tuple.elems.retain(|element| {
                 match element.ty.normalize() {
-                    Type::Rest(RestType { ty, .. })
-                        if match &**ty {
-                            Type::Array(Array { .. }) => true,
-                            _ => false,
-                        } =>
-                    {
+                    Type::Rest(RestType { ty, .. }) if matches!(&**ty, Type::Array(Array { .. })) => {
                         let Type::Array(Array { elem_type, .. }) = &**ty else {
                             unreachable!()
                         };

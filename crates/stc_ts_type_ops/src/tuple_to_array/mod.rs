@@ -9,7 +9,7 @@ mod metadata;
 pub struct TupleToArray;
 
 impl Fold<Type> for TupleToArray {
-    fn fold(&mut self, mut ty: Type) -> Type {
+    fn fold(&mut self, ty: Type) -> Type {
         let ty = ty.fold_children_with(self);
 
         match ty {

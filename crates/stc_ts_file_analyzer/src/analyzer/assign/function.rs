@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
 
             macro_rules! check {
                 ($pat:ident) => {{
-                    let l_pos = l_params.iter().position(|p| match p.ty {
+                    let l_pos = l_params.iter().position(|p| match &*p.ty {
                         Type::TypeLit(ty) => {
                             ty.members
                                 .iter()
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(l_pos) = l_pos {
-                        let count = match l_params[l_pos].ty {
+                        let count = match &*l_params[l_pos].ty {
                             Type::TypeLit(ty) => ty
                                 .members
                                 .iter()
@@ -225,7 +225,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())).into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
@@ -234,7 +234,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())).into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
