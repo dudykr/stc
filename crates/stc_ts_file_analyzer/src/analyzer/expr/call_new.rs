@@ -3626,9 +3626,9 @@ impl Analyzer<'_, '_> {
 
         let params = match (&c.type_params, type_ann_for_return_type) {
             (Some(type_params), Some(type_ann)) => {
-                let type_ann = self.expand_type_ann(span, Some(type_ann))?;
-                let type_params =
-                    self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann.as_ref(), Default::default())?;
+                let type_ann = self.expand_type_ann(span, Some(type_ann))?.unwrap();
+
+                let type_params = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, &type_ann, Default::default())?;
                 let params = c.params.clone().freezed();
 
                 let mut params = self.expand_type_params(&type_params, params, Default::default())?;
