@@ -551,7 +551,7 @@ impl Scope<'_> {
         ty.assert_valid();
 
         let ty = ty.freezed();
-        if let Type::Param(..) = ty {
+        if let Type::Param(..) = ty.normalize() {
             // Override type parameter.
 
             match self.types.entry(name) {
@@ -563,7 +563,7 @@ impl Scope<'_> {
                             constraint: None,
                             default: None,
                             ..
-                        }) = ty
+                        }) = ty.normalize()
                         {
                             return;
                         }

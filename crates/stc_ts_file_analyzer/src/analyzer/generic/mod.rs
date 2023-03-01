@@ -1685,9 +1685,8 @@ impl Analyzer<'_, '_> {
                                                     _ => None,
                                                 },
                                             );
-                                            mapped_param_ty.freeze();
 
-                                            self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
+                                            self.infer_type(span, inferred, &mapped_param_ty.into_freezed_cow(), arg_prop_ty, opts)?;
                                         }
 
                                         // inferred.type_elements.remove(&name)
