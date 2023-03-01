@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use itertools::Itertools;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, ErrorKind};

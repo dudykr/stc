@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
             types.dedup_type();
             if types.is_empty() {
                 types.push(if self.ctx.use_undefined_for_empty_array_lit && is_empty {
-                    Type::undefined(span, Default::default())
+                    Type::undefined(span, Default::default()).into()
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());
                     let implicit = !elems.is_empty();
@@ -195,6 +195,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
+                    .into()
                 });
             }
 
@@ -209,7 +210,7 @@ impl Analyzer<'_, '_> {
             );
             self.normalize_union(&mut ty, false);
 
-            return Ok(ty);
+            return Ok(ty.into());
         }
 
         let should_be_any = elements
@@ -784,7 +785,7 @@ impl Analyzer<'_, '_> {
                     )
                     .into());
                 }
-                let types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
+                let types = tuple.elems.iter().map(|e| e.ty.clone()).collect_vec();
                 return Ok(Type::Union(Union {
                     span: tuple.span,
                     types,
@@ -801,14 +802,8 @@ impl Analyzer<'_, '_> {
                     .types
                     .iter()
                     .map(|iterator| {
-                        self.get_iterator_element_type(
-                            iterator.span().or_else(|| span),
-                            Cow::Borrowed(iterator),
-                            try_next_value,
-                            Default::default(),
-                        )
+                        self.get_iterator_element_type(iterator.span().or_else(|| span), iterator, try_next_value, Default::default())
                     })
-                    .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
 
                 return Ok(Type::Union(Union {
@@ -841,13 +836,13 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let elem_ty = self.get_next_value_type_of_iterator(span, iterator)?;
+        let elem_ty = self.get_next_value_type_of_iterator(span, &iterator)?;
 
         Ok(elem_ty)
     }
 
     /// Returns the type of `iterator.next().value`.
-    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> VResult<ArcCowType> {
+    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: &Type) -> VResult<ArcCowType> {
         let next_ret_ty = self
             .call_property(
                 span,
@@ -876,7 +871,7 @@ impl Analyzer<'_, '_> {
             .context("tried calling `next()` to get element type of iterator")?;
 
         let elem_ty = self
-            .get_value_type_from_iterator_result(span, Cow::Owned(next_ret_ty))
+            .get_value_type_from_iterator_result(span, next_ret_ty)
             .context("tried to get type from `IteratorResult<T>`")?;
 
         Ok(elem_ty)

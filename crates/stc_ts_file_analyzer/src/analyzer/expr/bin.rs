@@ -448,13 +448,15 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsNullKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })
+                                .into(),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })
+                                .into(),
                             ]
                         } else {
                             exclude.freezed()
@@ -1835,7 +1837,7 @@ impl Analyzer<'_, '_> {
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
     ///
     /// Returns `(name, true_fact, false_fact)`.
-    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<Type>)> {
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type, Vec<ArcCowType>)> {
         let span = equals_to.span();
 
         let mut id: RIdent = name.top().into();

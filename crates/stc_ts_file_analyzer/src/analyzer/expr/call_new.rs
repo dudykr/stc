@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
         Ok(TypeOrSpread {
             span,
             spread: node.spread,
-            ty: box node.expr.validate_with_default(self)?,
+            ty: node.expr.validate_with_default(self)?,
         })
     }
 }
