@@ -961,7 +961,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(&i.id.clone().into())? {
                         for ty in types {
-                            if let Type::Module(..) = ty {
+                            if let Type::Module(..) = &*ty {
                                 return Err(ErrorKind::NotVariable {
                                     span: i.id.span,
                                     left: lhs.span(),
@@ -994,7 +994,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(ty), Default::default())
+                    .get_iterator(span, Cow::Borrowed(&ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));

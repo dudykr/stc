@@ -7,7 +7,7 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator,
+    ArcCowType, CommonTypeMetadata, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator,
     PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
@@ -62,7 +62,7 @@ impl Analyzer<'_, '_> {
         is_async: bool,
         is_generator: bool,
         stmts: &Vec<RStmt>,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("visit_stmts_for_return");
 
         let marks = self.marks();

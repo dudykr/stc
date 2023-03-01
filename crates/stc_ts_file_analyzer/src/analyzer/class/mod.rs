@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         is_static: bool,
         type_ann: &Option<Box<RTsTypeAnn>>,
         value: &Option<Box<RExpr>>,
-    ) -> VResult<Option<Type>> {
+    ) -> VResult<Option<ArcCowType>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
         let mut value_ty = {
             let ctx = Ctx {
@@ -134,7 +134,8 @@ impl Analyzer<'_, '_> {
                 .into(),
                 metadata: OperatorMetadata { common: ty.metadata() },
                 tracker: Default::default(),
-            }),
+            })
+            .into(),
             _ => ty,
         }))
     }
@@ -552,11 +553,10 @@ impl Analyzer<'_, '_> {
                 Ok((
                     type_params,
                     params,
-                    ArcCowType::new_freezed(
-                        declared_ret_ty
-                            .or(inferred_ret_ty)
-                            .unwrap_or_else(|| Type::any(key_span, Default::default())),
-                    ),
+                    declared_ret_ty
+                        .or(inferred_ret_ty)
+                        .unwrap_or_else(|| Type::any(key_span, Default::default()).into())
+                        .freezed(),
                 ))
             },
         )?;
@@ -1671,7 +1671,8 @@ impl Analyzer<'_, '_> {
                                                             tracker: Default::default(),
                                                         })
                                                     })
-                                                    .expect("Super class should be named");
+                                                    .expect("Super class should be named")
+                                                    .into();
                                             }
 
                                             ty.clone()
