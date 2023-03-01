@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
         if self.config.is_builtin {
             // `Symbol.iterator` is defined multiple times, and it results in union of
             // `symbol`s.
-            if let Type::Union(u) = &mut ty {
+            if let Type::Union(u) = ty.normalize_mut() {
                 u.types.dedup_type();
             }
         }
@@ -2124,7 +2124,7 @@ impl Analyzer<'_, '_> {
                                         .type_ann
                                         .clone()
                                         .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, Default::default())));
+                                        .unwrap_or_else(|| Type::any(span, Default::default()).into()));
                                 }
                             }
                         }
