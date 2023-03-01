@@ -1557,7 +1557,7 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
             ..
         }) => true,
 
-        Type::Union(Union { ref types, .. }) => types.iter().all(should_prevent_generalization),
+        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| should_prevent_generalization(ty)),
         _ => false,
     }
 }

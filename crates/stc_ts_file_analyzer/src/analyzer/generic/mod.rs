@@ -1676,7 +1676,7 @@ impl Analyzer<'_, '_> {
                                         // inferred.type_elements.remove(&name)
                                         None
                                     } else {
-                                        Some(box Type::any(i.span, Default::default()))
+                                        Some(Type::any(i.span, Default::default()).into())
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
                                 }
@@ -1717,9 +1717,7 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann = type_ann
-                                        .map(Box::new)
-                                        .or_else(|| Some(box Type::any(arg_method.span, Default::default())));
+                                    let type_ann = type_ann.or_else(|| Some(Type::any(arg_method.span, Default::default()).into()));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         span: arg_method.span,
@@ -1866,7 +1864,7 @@ impl Analyzer<'_, '_> {
                                 new_elems.push(TupleElement {
                                     span: elem.span,
                                     label: elem.label.clone(),
-                                    ty: box inferred_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                    ty: inferred_ty.unwrap_or_else(|| Type::any(elem.span, Default::default()).into()),
                                     tracker: Default::default(),
                                 });
                             }
