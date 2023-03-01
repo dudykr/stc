@@ -987,13 +987,13 @@ impl Analyzer<'_, '_> {
             op!("??") => {
                 let may_generalize_lt = self.may_generalize(&lt);
 
-                let mut lt = lt.remove_falsy();
+                let mut lt = lt.remove_falsy().into_cow();
                 let mut rt = rt;
                 if may_generalize_lt {
-                    lt = lt.generalize_lit();
+                    lt = lt.generalize_lit().into();
                 }
                 if self.may_generalize(&rt) {
-                    rt = rt.generalize_lit();
+                    rt = rt.generalize_lit().into();
                 }
                 //
                 if lt.type_eq(&rt) {
@@ -1005,7 +1005,7 @@ impl Analyzer<'_, '_> {
                     prevent_generalize(&mut ty);
                 }
 
-                Ok(ty)
+                Ok(ty.into())
             }
         }
     }
@@ -1047,8 +1047,8 @@ impl Analyzer<'_, '_> {
                                 ErrorKind::NoOverlap {
                                     span,
                                     value: true,
-                                    left: box l_ty.clone(),
-                                    right: box r_ty.clone(),
+                                    left: l_ty.clone().into(),
+                                    right: r_ty.clone().into(),
                                 }
                                 .into(),
                             );
@@ -1322,9 +1322,9 @@ impl Analyzer<'_, '_> {
                     IdCtx::Type,
                     Default::default(),
                 ) {
-                    if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(&out_result), Default::default()) {
+                    if let Ok(result) = self.normalize(Some(span), &out_result, Default::default()) {
                         let result = result;
-                        if orig.types.iter().any(|ty| ty.type_eq(result)) {
+                        if orig.types.iter().any(|ty| ty.type_eq(&result)) {
                             return Ok(out_result.freezed());
                         }
                     }
@@ -1333,7 +1333,7 @@ impl Analyzer<'_, '_> {
             let new_types = orig
                 .types
                 .iter()
-                .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
+                .map(|orig_ty| self.narrow_with_instanceof(span, &ty, orig_ty))
                 .collect::<Result<Vec<_>, _>>()?;
 
             for elem in new_types.iter() {
@@ -1342,7 +1342,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            return Ok(Type::new_union(orig.span, new_types).fixed());
+            return Ok(Type::new_union(orig.span, new_types).fixed().into());
         }
 
         if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
@@ -1350,7 +1350,7 @@ impl Analyzer<'_, '_> {
             || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
         {
             if ty.is_interface() {
-                return Ok(Type::never(span, Default::default()));
+                return Ok(Type::never(span, Default::default()).into());
             }
         }
 
@@ -1398,7 +1398,7 @@ impl Analyzer<'_, '_> {
                         if let TypeElement::Constructor(c) = m {
                             if let Some(ret_ty) = &c.ret_ty {
                                 if ret_ty.is_any() {
-                                    return Ok(*ret_ty.clone());
+                                    return Ok(ret_ty.clone());
                                 }
                                 return self
                                     .narrow_with_instanceof(span, ret_ty, &orig_ty)
@@ -1421,18 +1421,19 @@ impl Analyzer<'_, '_> {
             },
         ) {
             if v {
-                if let Type::ClassDef(def) = orig_ty {
+                if let Type::ClassDef(def) = &*orig_ty {
                     return Ok(Type::Class(Class {
                         span,
                         def: box def.clone(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
-                return Ok(orig_ty.into_owned());
+                return Ok(orig_ty);
             } else {
-                if let (Type::Interface(..), Type::Interface(..)) = (orig_ty, ty) {
-                    return Ok(ty.into_owned());
+                if let (Type::Interface(..), Type::Interface(..)) = (&*orig_ty, &*ty) {
+                    return Ok(ty);
                 }
 
                 if !self
