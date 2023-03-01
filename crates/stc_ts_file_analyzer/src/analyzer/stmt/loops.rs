@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to validate rhs of a for in/of loop");
             let rty = rty
                 .report(&mut child.storage)
-                .unwrap_or_else(|| Type::any(span, Default::default()));
+                .unwrap_or_else(|| Type::any(span, Default::default()).into());
 
             if let ForHeadKind::Of { is_awaited: false } = kind {
                 if child.env.target() < EsVersion::Es5 {

@@ -1215,7 +1215,7 @@ impl Analyzer<'_, '_> {
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
-                vec![Type::new_intersection(DUMMY_SP, src).fixed().freezed()].into_iter(),
+                vec![Type::new_intersection(DUMMY_SP, src).fixed().into_freezed_cow()].into_iter(),
             ));
         }
 
@@ -1886,7 +1886,7 @@ impl<'a> Scope<'a> {
     }
 
     /// This method does **not** handle imported types.
-    fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
+    fn find_type(&self, name: &Id) -> Option<ItemRef<ArcCowType>> {
         let _tracing = dev_span!("Scope::find_type", name = tracing::field::debug(name));
 
         if cfg!(debug_assertions) {
