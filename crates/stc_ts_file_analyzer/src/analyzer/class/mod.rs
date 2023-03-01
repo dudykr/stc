@@ -1438,7 +1438,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
-        let super_ty = self.normalize(Some(span), Cow::Borrowed(super_ty), Default::default());
+        let super_ty = self.normalize(Some(span), super_ty, Default::default());
         let super_ty = match super_ty {
             Ok(v) => v,
             Err(err) => {
@@ -2318,14 +2318,14 @@ impl Analyzer<'_, '_> {
         c.ident.visit_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());
-        let ty = match c.class.validate_with_args(self, None) {
+        let ty: Type = match c.class.validate_with_args(self, None) {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(c.span(), Default::default())
             }
         };
-        let ty = ty.freezed();
+        let ty = ty.into_freezed();
 
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());

@@ -770,10 +770,11 @@ impl Analyzer<'_, '_> {
                 if type_args.as_ref().unwrap().params.len() == 1 {
                     return Ok(Type::Array(Array {
                         span: t.span,
-                        elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                        elem_type: type_args.unwrap().params.into_iter().next().unwrap().into(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
             }
             RTsEntityName::Ident(ref i) if i.sym == js_word!("ReadonlyArray") && type_args.is_some() => {
@@ -783,13 +784,14 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::ReadOnly,
                         ty: box Type::Array(Array {
                             span: t.span,
-                            elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                            elem_type: type_args.unwrap().params.into_iter().next().unwrap().into(),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
             }
 

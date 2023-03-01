@@ -583,7 +583,7 @@ impl Analyzer<'_, '_> {
                         tracker: Default::default(),
                     });
 
-                    let rhs = self.normalize(Some(span), Cow::Owned(rhs), Default::default())?;
+                    let rhs = self.normalize(Some(span), &rhs, Default::default())?;
 
                     // Try builtin assignment
                     return self
