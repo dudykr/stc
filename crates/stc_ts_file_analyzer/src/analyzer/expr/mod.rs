@@ -387,31 +387,29 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| {
                             skip_right = true;
                             match &err {
-                                ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
-                                    match ty.normalize() {
-                                        Type::Module(Module {
-                                            exports:
-                                                box ModuleTypeData {
-                                                    private_types,
-                                                    types,
-                                                    private_vars,
-                                                    vars,
-                                                },
-                                            ..
-                                        }) => {
-                                            if private_types.is_empty() && private_vars.is_empty() && types.is_empty() && vars.is_empty() {
-                                                ErrorKind::CannotAssignToModule { span }
-                                            } else {
-                                                ErrorKind::CannotAssignToNamespace { span }
-                                            }
+                                ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => match ty {
+                                    Type::Module(Module {
+                                        exports:
+                                            box ModuleTypeData {
+                                                private_types,
+                                                types,
+                                                private_vars,
+                                                vars,
+                                            },
+                                        ..
+                                    }) => {
+                                        if private_types.is_empty() && private_vars.is_empty() && types.is_empty() && vars.is_empty() {
+                                            ErrorKind::CannotAssignToModule { span }
+                                        } else {
+                                            ErrorKind::CannotAssignToNamespace { span }
                                         }
-                                        Type::Namespace(..) => ErrorKind::CannotAssignToNamespace { span },
-                                        Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
-                                        Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
-                                        Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
-                                        _ => err,
                                     }
-                                }
+                                    Type::Namespace(..) => ErrorKind::CannotAssignToNamespace { span },
+                                    Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
+                                    Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
+                                    Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
+                                    _ => err,
+                                },
                                 ErrorKind::CannotAssignToNamespace { .. }
                                 | ErrorKind::CannotAssignToModule { .. }
                                 | ErrorKind::CannotAssignToClass { .. }
@@ -452,7 +450,7 @@ impl Analyzer<'_, '_> {
             let rhs_is_arrow = e.right.is_arrow_expr();
             let mut left_function_declare_not_this_type = false;
             let lhs_declared_this = if let Some(ty) = type_ann {
-                if let Type::Function(Function { params, .. }) = ty.normalize() {
+                if let Type::Function(Function { params, .. }) = ty {
                     if let [FnParam {
                         pat: RPat::Ident(RBindingIdent { id, type_ann, .. }),
                         ty,
@@ -875,7 +873,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
-        let key_ty = key_ty.normalize();
+        let key_ty = key_ty;
 
         if declared.ty().type_eq(key_ty) {
             return true;
@@ -892,7 +890,7 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
                 if let Ok(Some(types)) = self.find_type(enum_name) {
                     for ty in types {
-                        if let Type::Enum(e) = ty.normalize() {
+                        if let Type::Enum(e) = ty {
                             let e = e.clone();
                             return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
                         }
@@ -1138,7 +1136,7 @@ impl Analyzer<'_, '_> {
                     ));
                 }
 
-                if let Type::EnumVariant(..) = prop_ty.normalize() {
+                if let Type::EnumVariant(..) = prop_ty {
                     matching_elements.extend(type_ann.clone().map(|v| *v));
                     continue;
                 }
@@ -1214,18 +1212,18 @@ impl Analyzer<'_, '_> {
 
         // Try some easier assignments.
         if prop.is_computed() {
-            if matches!(obj.normalize(), Type::Tuple(..)) {
+            if matches!(obj, Type::Tuple(..)) {
                 // See if key is number.
                 if let Type::Lit(LitType {
                     lit: RTsLit::Number(prop), ..
-                }) = prop.ty().normalize()
+                }) = prop.ty()
                 {
                     return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts);
                 }
             }
 
             // See if key is string.
-            match prop.ty().normalize() {
+            match prop.ty() {
                 Type::Lit(LitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
@@ -1270,7 +1268,7 @@ impl Analyzer<'_, '_> {
                         return Ok(ty);
                     }
 
-                    match obj.normalize() {
+                    match obj {
                         Type::Enum(..) | Type::Symbol(..) => return res,
                         _ => {}
                     }
@@ -1304,7 +1302,7 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: constraint_ty,
                         ..
-                    }) = constraint.normalize()
+                    }) = constraint
                     {
                         //
                         if constraint_ty.as_ref().type_eq(obj) {
@@ -1493,7 +1491,7 @@ impl Analyzer<'_, '_> {
                         opts,
                     )
                 }
-                Key::Computed(ComputedKey { ty, .. }) => match ty.normalize() {
+                Key::Computed(ComputedKey { ty, .. }) => match ty {
                     Type::Lit(LitType {
                         lit:
                             RTsLit::Str(RStr {
@@ -1756,7 +1754,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::This(..) = obj.normalize() {
+        if let Type::This(..) = obj {
             let scope = if self.ctx.in_computed_prop_name {
                 self.scope.scope_of_computed_props()
             } else {
@@ -1778,7 +1776,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let mut obj = match obj.normalize() {
+        let mut obj = match obj {
             Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
                 Some(span),
                 Cow::Borrowed(obj),
@@ -1807,7 +1805,7 @@ impl Analyzer<'_, '_> {
             obj.freeze();
         }
 
-        match obj.normalize() {
+        match obj {
             Type::Lit(obj) => {
                 // Even if literal generalization is prevented, it should be
                 // expanded in this case.
@@ -2010,7 +2008,7 @@ impl Analyzer<'_, '_> {
                 Some(types) => {
                     //
                     for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
+                        if let Type::Enum(ref e) = ty {
                             for v in e.members.iter() {
                                 if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
                                     let new_obj_ty = Type::Lit(LitType {
@@ -2144,7 +2142,7 @@ impl Analyzer<'_, '_> {
 
                 let has_better_default = !opts.disallow_indexing_class_with_computed
                     && prop.is_computed()
-                    && match prop.ty().normalize() {
+                    && match prop.ty() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2311,7 +2309,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             ..
                         }),
-                    ) = (*kind, prop.ty.normalize())
+                    ) = (*kind, prop.ty)
                     {
                         if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
                             self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
@@ -2358,7 +2356,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Key::Computed(prop) = prop {
-                    match prop.ty.normalize() {
+                    match prop.ty {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                             ..
@@ -2377,7 +2375,7 @@ impl Analyzer<'_, '_> {
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
                 let has_better_default = !opts.disallow_indexing_array_with_string
-                    && match prop.ty().normalize() {
+                    && match prop.ty() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2413,7 +2411,7 @@ impl Analyzer<'_, '_> {
                         if !has_better_default {
                             return Err(err);
                         }
-                        match prop.ty().normalize() {
+                        match prop.ty() {
                             // newWithSpreadES5.ts contains
                             //
                             //
@@ -2685,7 +2683,7 @@ impl Analyzer<'_, '_> {
 
                                 val -= count;
                             } else {
-                                if let Type::Rest(rest_ty) = elem.ty.normalize() {
+                                if let Type::Rest(rest_ty) = elem.ty {
                                     if opts.return_rest_tuple_element_as_is {
                                         return Ok(*elem.ty.clone());
                                     }
@@ -3068,8 +3066,8 @@ impl Analyzer<'_, '_> {
                 }
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
-                    new.retain(|prop_ty| match prop_ty.normalize() {
-                        Type::IndexedAccessType(iat) => !matches!(iat.obj_type.normalize(), Type::Param(..)),
+                    new.retain(|prop_ty| match prop_ty {
+                        Type::IndexedAccessType(iat) => !matches!(iat.obj_type, Type::Param(..)),
                         _ => true,
                     });
                 }
@@ -3187,7 +3185,7 @@ impl Analyzer<'_, '_> {
 
             Type::Ref(r) => {
                 if let Key::Computed(computed) = prop {
-                    if let Type::Param(..) = obj.normalize() {
+                    if let Type::Param(..) = obj {
                         let index_type = computed.ty.clone();
 
                         warn!("Creating an indexed access type with a type parameter as the object");
@@ -3365,9 +3363,9 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        match ty.normalize() {
+        match ty {
             Type::Union(ref union_ty) => {
-                let is_all_fn = union_ty.types.iter().all(|v| matches!(v.normalize(), Type::Function(f)));
+                let is_all_fn = union_ty.types.iter().all(|v| matches!(v, Type::Function(f)));
                 if is_all_fn {
                     // We should return typeof function name
                     return Type::Query(QueryType {
@@ -3387,7 +3385,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
         let _tracing = dev_span!("expand_generics_with_type_args");
 
-        match ty.normalize() {
+        match ty {
             Type::Interface(Interface { type_params, body, .. }) => {
                 let mut params = HashMap::default();
 
@@ -3538,13 +3536,13 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Change return type of type_of_raw_var to Option and inject module
         // from here.
-        match ty.normalize() {
+        match ty {
             Type::Module(..) => {
                 need_intersection = false;
             }
             Type::Intersection(i) => {
                 for ty in &i.types {
-                    if let Type::Module(..) = ty.normalize() {
+                    if let Type::Module(..) = ty {
                         need_intersection = false;
                         break;
                     }
@@ -3556,11 +3554,11 @@ impl Analyzer<'_, '_> {
         if let TypeOfMode::LValue = type_mode {
             if let Some(types) = self.find_type(&id)? {
                 for ty in types {
-                    if let Type::Module(..) = ty.normalize() {
+                    if let Type::Module(..) = ty {
                         return Err(ErrorKind::NotVariable {
                             span,
                             left: span,
-                            ty: Some(box ty.normalize().clone()),
+                            ty: Some(box ty.clone()),
                         }
                         .into());
                     }
@@ -3573,13 +3571,13 @@ impl Analyzer<'_, '_> {
                 for ty in types {
                     debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                    match ty.normalize() {
+                    match ty {
                         Type::Module(..) => modules.push(ty.clone().into_owned()),
                         Type::Intersection(intersection) => {
                             for ty in &intersection.types {
                                 debug_assert!(ty.is_clone_cheap());
 
-                                if let Type::Module(..) = ty.normalize() {
+                                if let Type::Module(..) = ty {
                                     modules.push(ty.clone())
                                 }
                             }
@@ -3639,7 +3637,7 @@ impl Analyzer<'_, '_> {
             let ty = self.find_type(&cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
-                    if let Type::Module(module) = ty.normalize() {
+                    if let Type::Module(module) = ty {
                         //
                         if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
                             return Ok(var_ty);
@@ -3902,7 +3900,7 @@ impl Analyzer<'_, '_> {
                     return Ok(ty.clone().into_owned());
                 }
 
-                if let Type::Module(..) | Type::Alias(..) = ty.normalize() {
+                if let Type::Module(..) | Type::Alias(..) = ty {
                     return Ok(ty.clone().into_owned());
                 }
 
@@ -4043,7 +4041,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(types) = self.find_type(&i.into())? {
                     for ty in types {
-                        match ty.normalize() {
+                        match ty {
                             Type::Namespace(_)
                             | Type::Module(_)
                             | Type::Instance(..)
@@ -4069,7 +4067,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty.normalize() {
+                                    match ty {
                                         Type::Interface(Interface {
                                             type_params: Some(type_params),
                                             ..
@@ -4438,7 +4436,7 @@ impl Analyzer<'_, '_> {
 
     fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {
         let ty = match type_ann {
-            Some(ty) => ty.normalize(),
+            Some(ty) => ty,
             None => return false,
         };
 
@@ -4550,7 +4548,7 @@ impl Analyzer<'_, '_> {
                     return false;
                 }
                 matches!(
-                    el.params[0].ty.normalize(),
+                    el.params[0].ty,
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
@@ -4593,7 +4591,7 @@ impl Analyzer<'_, '_> {
             let mut cur_str = String::new();
 
             for ty in types {
-                if let Type::Lit(LitType { lit: RTsLit::Str(v), .. }) = ty.normalize() {
+                if let Type::Lit(LitType { lit: RTsLit::Str(v), .. }) = ty {
                     cur_str.push_str(quasis.next().unwrap().cooked.as_ref().unwrap());
                     cur_str.push_str(&v.value);
                     continue;

@@ -29,7 +29,7 @@ impl Analyzer<'_, '_> {
     /// After splitting, we can check if each element is assignable.
     pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
-        let r_ty = r_ty.normalize();
+        let r_ty = r_ty;
 
         let inference = self.infer_types_from_tpl_lit_type(span, r_ty, l)?;
 
@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match source.normalize() {
+        match source {
             Type::Lit(LitType {
                 lit: RTsLit::Str(value), ..
             }) => {
@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
                 if let Type::StringMapping(StringMapping {
                     kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
                     ..
-                }) = target.normalize()
+                }) = target
                 {
                     return self.is_member_of_string_mapping(span, source, target);
                 }

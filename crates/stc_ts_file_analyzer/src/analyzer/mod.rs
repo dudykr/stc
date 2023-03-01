@@ -889,7 +889,7 @@ impl Analyzer<'_, '_> {
             ty.assert_clone_cheap();
             ty.assert_valid();
 
-            let (is_type, is_var) = match ty.normalize() {
+            let (is_type, is_var) = match ty {
                 Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
                 Type::ClassDef(..) => (true, true),
                 _ => (false, true),

@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
             let any = box Type::any(span, Default::default());
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
-            match *rhs.normalize() {
+            match *rhs {
                 Type::Array(Array { ref elem_type, .. }) => return self.assign_inner(data, numeric_keyed_ty, elem_type, opts),
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
         {
             let mut unhandled_rhs = vec![];
 
-            match rhs.normalize() {
+            match rhs {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(RIdent {
                         sym: js_word!("Function"), ..
@@ -234,7 +234,7 @@ impl Analyzer<'_, '_> {
                                     report_assign_failure_for_missing_properties: opts
                                         .report_assign_failure_for_missing_properties
                                         .or_else(|| {
-                                            Some(match rhs.normalize() {
+                                            Some(match rhs {
                                                 Type::Interface(r) => {
                                                     r.extends.is_empty()
                                                         && r.body.iter().all(|el| {
@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
 
-                    match rhs.normalize() {
+                    match rhs {
                         Type::Array(r_arr) => {
                             //
                             let r_arr = Type::Ref(Ref {
@@ -688,7 +688,7 @@ impl Analyzer<'_, '_> {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ty: r_constraint,
                                     ..
-                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty)
                                 {
                                     if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, r_constraint, opts) {
                                         if let Some(l_type_ann) = &l_index.type_ann {
@@ -819,7 +819,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            match *rhs.normalize() {
+            match *rhs {
                 // Check class members
                 Type::Class(Class {
                     def: box ClassDef { ref body, .. },
@@ -978,7 +978,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let span = opts.span;
 
-        match r.normalize() {
+        match r {
             Type::Interface(ri) => {
                 let res: VResult<_> = try {
                     for parent in &ri.extends {
@@ -1198,7 +1198,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     TypeElement::Method(rm) => {
                                         if let Some(lp_ty) = &lp.type_ann {
-                                            if let Type::Function(lp_ty) = lp_ty.normalize() {
+                                            if let Type::Function(lp_ty) = lp_ty {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     true,
@@ -1281,7 +1281,7 @@ impl Analyzer<'_, '_> {
                                     TypeElement::Property(rp) => {
                                         // Allow assigning property with callable type to methods.
                                         if let Some(rp_ty) = &rp.type_ann {
-                                            if let Type::Function(rf) = rp_ty.normalize() {
+                                            if let Type::Function(rf) = rp_ty {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     true,

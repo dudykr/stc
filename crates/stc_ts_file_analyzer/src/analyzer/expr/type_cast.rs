@@ -117,7 +117,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Type::Union(ref rt) = orig.normalize() {
+        if let Type::Union(ref rt) = orig {
             let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
             if castable {
@@ -125,10 +125,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match casted.normalize() {
+        match casted {
             Type::Tuple(ref lt) => {
                 //
-                if let Type::Tuple(ref rt) = orig.normalize() {
+                if let Type::Tuple(ref rt) = orig {
                     //
                     if lt.elems.len() != rt.elems.len() {
                         Err(ErrorKind::InvalidTupleCast {
@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                if let Type::Tuple(ref rt) = orig.normalize() {
+                if let Type::Tuple(ref rt) = orig {
                     if !rt.elems.is_empty() && rt.elems[0].ty.type_eq(&lt.elem_type) {
                         return Ok(());
                     }
@@ -209,8 +209,8 @@ impl Analyzer<'_, '_> {
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
         let _tracing = dev_span!("has_overlap");
 
-        let l = l.normalize();
-        let r = r.normalize();
+        let l = l;
+        let r = r;
 
         if l.type_eq(r) {
             return Ok(true);
@@ -251,8 +251,8 @@ impl Analyzer<'_, '_> {
             )?
             .freezed();
 
-        let from = from.normalize();
-        let to = to.normalize();
+        let from = from;
+        let to = to;
 
         if from.type_eq(to) {
             return Ok(true);
@@ -407,8 +407,8 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let Type::Tpl(to) = to.normalize() {
-            if let Type::Tpl(from) = from.normalize() {
+        if let Type::Tpl(to) = to {
+            if let Type::Tpl(from) = from {
                 return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
             }
         }

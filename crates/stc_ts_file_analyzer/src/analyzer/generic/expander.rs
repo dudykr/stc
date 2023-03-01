@@ -130,8 +130,8 @@ impl Analyzer<'_, '_> {
             None
         };
 
-        let child = child.normalize();
-        let parent = parent.normalize();
+        let child = child;
+        let parent = parent;
 
         if child.is_any() {
             return Some(true);
@@ -174,7 +174,7 @@ impl Analyzer<'_, '_> {
                     )
                     .unwrap()
                     .freezed();
-                if let Type::Ref(..) = child.normalize() {
+                if let Type::Ref(..) = child {
                     return None;
                 }
 
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                         },
                     )
                     .unwrap();
-                if let Type::Ref(..) = parent.normalize() {
+                if let Type::Ref(..) = parent {
                     return None;
                 }
                 parent.freeze();

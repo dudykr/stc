@@ -551,7 +551,7 @@ impl Scope<'_> {
         ty.assert_valid();
 
         let ty = ty.freezed();
-        if let Type::Param(..) = ty.normalize() {
+        if let Type::Param(..) = ty {
             // Override type parameter.
 
             match self.types.entry(name) {
@@ -563,7 +563,7 @@ impl Scope<'_> {
                             constraint: None,
                             default: None,
                             ..
-                        }) = ty.normalize()
+                        }) = ty
                         {
                             return;
                         }
@@ -571,7 +571,7 @@ impl Scope<'_> {
                         *prev = ty;
                         return;
                     } else if let Some(prev_i) = prev.as_intersection_mut() {
-                        if let Some(index) = prev_i.types.iter().position(|v| matches!(v.normalize(), Type::Param(..))) {
+                        if let Some(index) = prev_i.types.iter().position(|v| matches!(v, Type::Param(..))) {
                             prev_i.types.remove(index);
                         }
 
@@ -808,7 +808,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let should_check_for_mixed = !self.config.is_builtin && !matches!(ty.normalize(), Type::Param(..) | Type::Module(..));
+        let should_check_for_mixed = !self.config.is_builtin && !matches!(ty, Type::Param(..) | Type::Module(..));
         if should_check_for_mixed {
             // Report an error for
             //
@@ -973,7 +973,7 @@ impl Analyzer<'_, '_> {
                     if let Type::Query(QueryType {
                         expr: box QueryExpr::TsEntityName(q),
                         ..
-                    }) = ty.normalize()
+                    }) = ty
                     {
                         if q.type_eq(name) {
                             return false;
@@ -1053,7 +1053,7 @@ impl Analyzer<'_, '_> {
             {
                 // Imported variables
                 if let Some(info) = self.data.imports_by_id.get(name) {
-                    match info.data.normalize() {
+                    match info.data {
                         Type::Module(data) => {
                             if let Some(var_ty) = data.exports.vars.get(name.sym()) {
                                 if cfg!(debug_assertions) {
@@ -1138,7 +1138,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ModuleInfo { data, .. }) = self.data.imports_by_id.get(name) {
-            match data.normalize() {
+            match data {
                 Type::Module(data) => {
                     if let Some(types) = data.exports.types.get(name.sym()) {
                         let types = types.clone();
@@ -1507,14 +1507,14 @@ impl Analyzer<'_, '_> {
 
                 v.ty = if let Some(ty) = ty.clone() {
                     Some(if let Some(var_ty) = v.ty {
-                        match ty.normalize() {
+                        match ty {
                             Type::Union(..) => {
                                 // TODO(kdy1): Check if all types are query or
                                 // function
                             }
                             Type::Query(..) | Type::Function(..) => {}
                             _ => {
-                                match var_ty.normalize() {
+                                match var_ty {
                                     // Allow overriding query type.
                                     Type::Query(..) => {}
                                     // Allow overloading query type.
@@ -1631,7 +1631,7 @@ impl Analyzer<'_, '_> {
         match kind {
             VarKind::Var(..) => {
                 for orig in orig.iter_union() {
-                    if let Type::Function(..) = orig.normalize() {
+                    if let Type::Function(..) = orig {
                         self.assign_with_opts(
                             &mut Default::default(),
                             new,
@@ -1652,7 +1652,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 for orig in orig.iter_union() {
-                    if let Type::Function(..) = orig.normalize() {
+                    if let Type::Function(..) = orig {
                         self.assign_with_opts(
                             &mut Default::default(),
                             new,
@@ -1746,7 +1746,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn is_expansion_prevented(&self, ty: &Type) -> bool {
-        if let Type::Ref(r) = ty.normalize() {
+        if let Type::Ref(r) = ty {
             if r.metadata.ignore_no_expand {
                 return false;
             }
@@ -2036,7 +2036,7 @@ impl Expander<'_, '_, '_> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
-                    match $ty.normalize() {
+                    match $ty {
                         Type::Ref(ref s) => unreachable!("ref: {:?}", s),
                         _ => {}
                     }
@@ -2085,9 +2085,9 @@ impl Expander<'_, '_, '_> {
                             }
                         }
                         // We should expand alias again.
-                        let is_alias = matches!(t.normalize(), Type::Alias(..));
+                        let is_alias = matches!(t, Type::Alias(..));
 
-                        match t.normalize() {
+                        match t {
                             Type::Intersection(..) => return Ok(Some(t.into_owned())),
 
                             // Result of type expansion should not be Ref unless really required.
@@ -2186,14 +2186,14 @@ impl Expander<'_, '_, '_> {
                                     return Ok(Some(ty));
                                 }
 
-                                match ty.normalize() {
+                                match ty {
                                     Type::Interface(..) if !trying_primitive_expansion && was_top_level => {
                                         return Ok(Some(ty.clone()));
                                     }
                                     _ => {}
                                 }
 
-                                if let Type::Alias(..) = ty.normalize() {
+                                if let Type::Alias(..) = ty {
                                     self.expand_top_level = true;
                                 }
 
@@ -2291,7 +2291,7 @@ impl Expander<'_, '_, '_> {
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
 
-            if let Type::Enum(e) = ty.normalize() {
+            if let Type::Enum(e) = ty {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
                     enum_name: e.id.clone().into(),
@@ -2349,7 +2349,7 @@ impl Expander<'_, '_, '_> {
         if is_expansion_prevented {
             #[allow(clippy::nonminimal_bool)]
             if !self.opts.ignore_expand_prevention_for_all && !(self.expand_top_level && self.opts.ignore_expand_prevention_for_top) {
-                if let Type::Ref(r) = ty.normalize() {
+                if let Type::Ref(r) = ty {
                     // Expand type arguments if it should be expanded
                     if contains_infer_type(&r.type_args) {
                         return Type::Ref(r.clone().fold_children_with(self));
@@ -2457,7 +2457,7 @@ impl Expander<'_, '_, '_> {
         };
 
         let res: VResult<_> = try {
-            match ty.normalize() {
+            match ty {
                 Type::Ref(r) => {
                     let ty = self.expand_ref(r.clone(), was_top_level)?;
 
@@ -2525,7 +2525,7 @@ impl Expander<'_, '_, '_> {
                         _ => (false, ty.clone()),
                     };
 
-                    if let Type::Tuple(obj_type) = obj_type.normalize() {
+                    if let Type::Tuple(obj_type) = obj_type {
                         let elements = obj_type
                             .elems
                             .iter()
@@ -2538,7 +2538,7 @@ impl Expander<'_, '_, '_> {
                                     let (unwrapped, ty) = unwrap_type(ty);
                                     let mut ty = ty;
                                     if unwrapped {
-                                        if let Type::Tuple(Tuple { elems, .. }) = ty.normalize() {
+                                        if let Type::Tuple(Tuple { elems, .. }) = ty {
                                             ty = *elems[idx].ty.clone()
                                         };
                                     }
@@ -2730,7 +2730,7 @@ pub struct ShallowNormalizer<'a, 'b, 'c> {
 
 impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, value: &mut Type) {
-        if let Type::IndexedAccessType(..) = value.normalize() {
+        if let Type::IndexedAccessType(..) = value {
             if let Ok(new) = self
                 .analyzer
                 .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())

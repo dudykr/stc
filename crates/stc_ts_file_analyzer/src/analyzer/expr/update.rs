@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
         let mut errored = false;
 
         let ty = res
-            .and_then(|ty| match ty.normalize() {
+            .and_then(|ty| match ty {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let Type::Union(ty) = ty.normalize() {
+        if let Type::Union(ty) = ty {
             for ty in &ty.types {
                 if !self.is_update_operand_valid(ty)? {
                     return Ok(false);

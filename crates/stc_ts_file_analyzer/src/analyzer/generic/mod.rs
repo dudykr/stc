@@ -534,17 +534,17 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let param_normalized = param.normalize();
-        let arg_normalized = arg.normalize();
+        let param_normalized = param;
+        let arg_normalized = arg;
 
         param.assert_clone_cheap();
         arg.assert_clone_cheap();
 
         /// Returns true if we can unconditionally delegate to `infer_type`.
         fn should_delegate(ty: &Type) -> bool {
-            match ty.normalize() {
+            match ty {
                 Type::Instance(..) => true,
-                Type::IndexedAccessType(t) => matches!(t.index_type.normalize(), Type::Lit(..)),
+                Type::IndexedAccessType(t) => matches!(t.index_type, Type::Lit(..)),
                 _ => false,
             }
         }
@@ -563,7 +563,7 @@ impl Analyzer<'_, '_> {
         }
 
         let p;
-        let param = match param.normalize() {
+        let param = match param {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
                 p = box param_normalized
@@ -575,7 +575,7 @@ impl Analyzer<'_, '_> {
             }
             _ => param,
         };
-        let param_normalized = param.normalize();
+        let param_normalized = param;
 
         {
             // Handle array-like types
@@ -589,7 +589,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param_normalized.normalize(), arg.normalize()) {
+        match (param_normalized, arg) {
             (Type::Union(p), _) => {
                 if !opts.skip_initial_union_check {
                     self.infer_type_using_union(
@@ -632,7 +632,7 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.for_fn_assignment {
-            if let Type::Param(arg) = arg_normalized.normalize() {
+            if let Type::Param(arg) = arg_normalized {
                 if !param_normalized.is_type_param() {
                     self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
                     return Ok(());
@@ -640,7 +640,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param.normalize(), arg.normalize()) {
+        match (param, arg) {
             (_, Type::Enum(..)) => {
                 let arg = self
                     .normalize(
@@ -703,11 +703,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match param_normalized.normalize() {
+        match param_normalized {
             Type::Param(TypeParam {
                 ref name, ref constraint, ..
             }) => {
-                let constraint = constraint.as_ref().map(|ty| ty.normalize());
+                let constraint = constraint.as_ref().map(|ty| ty);
                 if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inference {
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
@@ -740,7 +740,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(constraint) = constraint {
                     if constraint.is_str() || constraint.is_num() {
-                        match arg.normalize() {
+                        match arg {
                             // We use `default`
                             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
                             _ => {}
@@ -801,7 +801,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Interface(param) => match arg.normalize() {
+            Type::Interface(param) => match arg {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg, opts)?,
                 Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg, opts),
                 _ => {}
@@ -978,7 +978,7 @@ impl Analyzer<'_, '_> {
             Type::Tuple(param) => match arg_normalized {
                 Type::Array(arg) => {
                     for elem in &param.elems {
-                        match elem.ty.normalize() {
+                        match elem.ty {
                             Type::Rest(rest) => {
                                 self.infer_type(span, inferred, &rest.ty, &arg.elem_type, opts)?;
                             }
@@ -1108,7 +1108,7 @@ impl Analyzer<'_, '_> {
                         },
                     )?;
                     param.freeze();
-                    match param.normalize() {
+                    match param {
                         Type::Ref(..) => {
                             dbg!();
 
@@ -1160,13 +1160,13 @@ impl Analyzer<'_, '_> {
                     IndexedAccessType {
                         obj_type: box Type::Intersection(Intersection { types, .. }),
                         ..
-                    } if types.iter().all(|ty| match ty.normalize() {
+                    } if types.iter().all(|ty| match ty {
                         Type::Param(obj_type) => self.mapped_type_param_name.contains(&obj_type.name),
                         _ => false,
                     }) =>
                     {
                         for ty in types {
-                            if let Type::Param(obj_type) = ty.normalize() {
+                            if let Type::Param(obj_type) = ty {
                                 self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
                             }
                         }
@@ -1182,7 +1182,7 @@ impl Analyzer<'_, '_> {
                             constraint: Some(index_param_constraint),
                             ..
                         }),
-                    ) = (param.obj_type.normalize(), param.index_type.normalize())
+                    ) = (param.obj_type, param.index_type)
                     {
                         // param  = [string, number, ...T][P];
                         // arg = true;
@@ -1197,7 +1197,7 @@ impl Analyzer<'_, '_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: keyof_ty,
                             ..
-                        }) = index_param_constraint.normalize()
+                        }) = index_param_constraint
                         {
                             return self.infer_type(
                                 span,
@@ -1251,7 +1251,7 @@ impl Analyzer<'_, '_> {
                 self.infer_type_using_operator(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
-                if let Type::Interface(..) = arg.normalize() {
+                if let Type::Interface(..) = arg {
                 } else {
                     return Ok(());
                 }
@@ -1260,7 +1260,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (param.normalize(), arg.normalize()) {
+        match (param, arg) {
             (Type::Union(Union { types: param_types, .. }), _) => {
                 return self.infer_to_multiple_types(span, inferred, arg, param_types, true, opts);
             }
@@ -1329,7 +1329,7 @@ impl Analyzer<'_, '_> {
                         },
                     )?
                     .freezed();
-                match arg.normalize() {
+                match arg {
                     Type::Ref(..) => {}
                     _ => {
                         return self.infer_type(span, inferred, param, &arg, opts);
@@ -1388,7 +1388,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Prevent logging
-        match arg.normalize() {
+        match arg {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
@@ -1455,7 +1455,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<bool> {
         let _tracing = dev_span!("infer_type_using_mapped_type");
 
-        match arg.normalize() {
+        match arg {
             Type::Ref(arg) => {
                 let arg = self
                     .expand(
@@ -1471,7 +1471,7 @@ impl Analyzer<'_, '_> {
                     )?
                     .freezed();
 
-                match arg.normalize() {
+                match arg {
                     Type::Ref(..) => return Ok(false),
                     _ => return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts),
                 }
@@ -1524,12 +1524,12 @@ impl Analyzer<'_, '_> {
                         readonly,
                         optional,
                         ..
-                    } => match constraint.normalize() {
+                    } => match constraint {
                         Type::Operator(Operator {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: operator_arg,
                             ..
-                        }) => match operator_arg.normalize() {
+                        }) => match operator_arg {
                             Type::Param(TypeParam { name, .. }) => Some(Res {
                                 name: name.clone(),
                                 key_name: key_name.clone(),
@@ -1542,17 +1542,17 @@ impl Analyzer<'_, '_> {
                         Type::Param(TypeParam {
                             constraint: Some(constraint),
                             ..
-                        }) => match constraint.normalize() {
+                        }) => match constraint {
                             Type::Param(TypeParam {
                                 name: key_name,
                                 constraint: Some(constraint),
                                 ..
-                            }) => match constraint.normalize() {
+                            }) => match constraint {
                                 Type::Operator(Operator {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ty,
                                     ..
-                                }) => match ty.normalize() {
+                                }) => match ty {
                                     Type::Param(TypeParam { name, .. }) => Some(Res {
                                         name: name.clone(),
                                         key_name: key_name.clone(),
@@ -1586,7 +1586,7 @@ impl Analyzer<'_, '_> {
                     name, key_name
                 );
 
-                match arg.normalize() {
+                match arg {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
                         let mut key_types = vec![];
@@ -1665,8 +1665,8 @@ impl Analyzer<'_, '_> {
 
                                             replace_type(
                                                 &mut mapped_param_ty,
-                                                |ty| matches!(ty.normalize(), Type::Param(TypeParam { name: param_name, .. }) if name == *param_name),
-                                                |ty| match ty.normalize() {
+                                                |ty| matches!(ty, Type::Param(TypeParam { name: param_name, .. }) if name == *param_name),
+                                                |ty| match ty {
                                                     Type::Param(TypeParam { name: param_name, .. }) if name == *param_name => {
                                                         Some(*param_ty.clone())
                                                     }
@@ -1912,13 +1912,13 @@ impl Analyzer<'_, '_> {
             //     [P in Key]: Type;
             // };
             if let Some(constraint) = &param.type_param.constraint {
-                if let Type::Param(type_param) = constraint.normalize() {
+                if let Type::Param(type_param) = constraint {
                     debug!(
                         "[generic/inference] Found form of `P in T` where T = {}, P = {}",
                         type_param.name, param.type_param.name
                     );
 
-                    if let Type::TypeLit(arg) = arg.normalize() {
+                    if let Type::TypeLit(arg) = arg {
                         let key_ty = arg.members.iter().filter_map(|element| match element {
                             TypeElement::Property(p) => match &p.key {
                                 Key::Private(..) | Key::Computed(..) => None,
@@ -1938,7 +1938,7 @@ impl Analyzer<'_, '_> {
                         let mut tp = type_param;
 
                         loop {
-                            match &tp.constraint.as_ref().map(|v| v.normalize()) {
+                            match &tp.constraint.as_ref().map(|v| v) {
                                 Some(Type::Param(p)) => {
                                     tp = p;
                                 }
@@ -1959,7 +1959,7 @@ impl Analyzer<'_, '_> {
                             Some(box Type::Union(ty))
                                 if ty.types.iter().all(|ty| {
                                     matches!(
-                                        ty.normalize(),
+                                        ty,
                                         Type::Operator(Operator {
                                             ty: box Type::Param(..),
                                             ..
@@ -1969,7 +1969,7 @@ impl Analyzer<'_, '_> {
                             {
                                 ty.types
                                     .iter()
-                                    .map(|ty| match ty.normalize() {
+                                    .map(|ty| match ty {
                                         Type::Operator(Operator {
                                             ty: box Type::Param(p), ..
                                         }) => p.name.clone(),
@@ -1996,7 +1996,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Type::TypeLit(arg) = arg.normalize() {
+                    if let Type::TypeLit(arg) = arg {
                         let mut type_elements = FxHashMap::<_, Vec<_>>::default();
 
                         if let Some(param_ty) = &param.ty {
@@ -2066,7 +2066,7 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::KeyOf,
                         ..
                     },
-                ) = constraint.normalize()
+                ) = constraint
                 {
                     if let Type::IndexedAccessType(
                         iat @ IndexedAccessType {
@@ -2074,10 +2074,10 @@ impl Analyzer<'_, '_> {
                             index_type: box Type::Param(..),
                             ..
                         },
-                    ) = operator.ty.normalize()
+                    ) = operator.ty
                     {
-                        if let Type::Param(..) = iat.obj_type.normalize() {
-                            if let Type::Param(..) = iat.index_type.normalize() {
+                        if let Type::Param(..) = iat.obj_type {
+                            if let Type::Param(..) = iat.index_type {
                                 let param_ty = param.ty.clone().unwrap();
                                 let name = param.type_param.name.clone();
                                 let (obj_ty, index_ty) = match &**param.type_param.constraint.as_ref().unwrap() {
@@ -2093,7 +2093,7 @@ impl Analyzer<'_, '_> {
                                     _ => unreachable!(),
                                 };
                                 if name == index_ty.name {
-                                    match arg.normalize() {
+                                    match arg {
                                         Type::TypeLit(arg) => {
                                             let mut members = Vec::with_capacity(arg.members.len());
 
@@ -2150,9 +2150,9 @@ impl Analyzer<'_, '_> {
                             ty: box Type::Mapped(Mapped { ty: Some(..), .. }),
                             ..
                         },
-                    ) = constraint.normalize()
+                    ) = constraint
                     {
-                        if let Type::Mapped(..) = operator.ty.normalize() {
+                        if let Type::Mapped(..) = operator.ty {
                             let reversed_param_ty = param.ty.as_ref().unwrap().clone().fold_with(&mut MappedReverser::default());
 
                             self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
@@ -2179,10 +2179,10 @@ impl Analyzer<'_, '_> {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
                     ..
-                }) = constraint.normalize()
+                }) = constraint
                 {
                     if let Some(param_ty) = &param.ty {
-                        if let Type::TypeLit(arg_lit) = arg.normalize() {
+                        if let Type::TypeLit(arg_lit) = arg {
                             let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
                             print_type("reversed", &reversed_param_ty);
 
@@ -2348,13 +2348,13 @@ impl Analyzer<'_, '_> {
         inferred.type_params.iter_mut().for_each(|(_, ty)| {
             replace_type(
                 &mut ty.inferred_type,
-                |node| match node.normalize() {
+                |node| match node {
                     Type::Param(p) => fixed.contains_key(&p.name),
                     _ => false,
                 },
                 |node| {
                     //
-                    match node.normalize() {
+                    match node {
                         Type::Param(p) if fixed.contains_key(&p.name) => Some((*fixed.get(&p.name).unwrap()).clone()),
                         _ => None,
                     }
@@ -2369,7 +2369,7 @@ impl Analyzer<'_, '_> {
 }
 
 fn array_elem_type(t: &Type) -> Option<&Type> {
-    if let Type::Array(a) = t.normalize() {
+    if let Type::Array(a) = t {
         return Some(&a.elem_type);
     }
 
@@ -2404,7 +2404,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut usage_visitor = TypeParamUsageFinder::default();
-        ty.normalize().visit_with(&mut usage_visitor);
+        ty.visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
             debug!("rename_type_param: No type parameter is used in type");
 
@@ -2444,7 +2444,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ref mut f) = ty.as_fn_type_mut() {
             f.type_params = decl;
-        } else if matches!(ty.normalize(), Type::ClassDef(..) | Type::Class(..)) {
+        } else if matches!(ty, Type::ClassDef(..) | Type::Class(..)) {
             return Ok(ty);
         }
 
@@ -2454,7 +2454,7 @@ impl Analyzer<'_, '_> {
 
 /// This method returns true for types like `'foo'` and `'foo' | 'bar'`.
 pub(super) fn is_literals(ty: &Type) -> bool {
-    match ty.normalize() {
+    match ty {
         Type::Lit(_) => true,
         Type::Union(Union { ref types, .. }) => types.iter().all(is_literals),
         _ => false,
@@ -2504,7 +2504,7 @@ struct MappedKeyReplacer<'a> {
 
 impl VisitMut<Type> for MappedKeyReplacer<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        match ty.normalize() {
+        match ty {
             Type::Param(param) if *self.from == param.name => {
                 *ty = self.to.clone();
             }
@@ -2683,7 +2683,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
                 *element_ty = new_ty;
             }
         }
-        TruePlusMinus::Plus => match element_ty.normalize() {
+        TruePlusMinus::Plus => match element_ty {
             Type::Optional(ty) => {}
             _ => {
                 let ty = box element_ty.take();

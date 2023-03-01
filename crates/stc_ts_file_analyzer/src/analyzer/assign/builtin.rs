@@ -133,7 +133,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) if type_name.sym == *"ReadonlyArray" => {
                 if type_args.params.len() == 1 {
-                    if let Type::Array(Array { elem_type, .. }) = r.normalize() {
+                    if let Type::Array(Array { elem_type, .. }) = r {
                         return Some(
                             self.assign_inner(data, &type_args.params[0], elem_type, opts)
                                 .context("tried to assign an array to a readonly array (builtin)"),
@@ -166,7 +166,7 @@ impl Analyzer<'_, '_> {
                     l,
                     &Type::Array(Array {
                         span: r.span(),
-                        elem_type: box r_elem.clone(),
+                        elem_type: r_elem.clone().into(),
                         metadata: ArrayMetadata { common: r.metadata() },
                         tracker: Default::default(),
                     }),
@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
             //
             // lhs: (TResult1#0#0 | PromiseLike<TResult1>);
             // rhs: Promise<boolean>
-            if let Type::Union(l) = l.normalize() {
+            if let Type::Union(l) = l {
                 if l.types.len() == 2 && unwrap_builtin_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0])) {
                     return Some(Ok(()));
                 }
@@ -188,7 +188,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(feature = "fastpath") {
-            if let Type::Union(l) = l.normalize() {
+            if let Type::Union(l) = l {
                 if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
                     // Fast path for
                     //

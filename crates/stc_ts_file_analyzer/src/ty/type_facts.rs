@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
             // TODO(kdy1): PERF
             match ty.normalize_mut() {
                 Type::Union(u) => {
-                    let has_fn = u.types.iter().any(|ty| matches!(ty.normalize(), Type::Function(..)));
+                    let has_fn = u.types.iter().any(|ty| matches!(ty, Type::Function(..)));
 
                     if !has_fn {
                         u.types.push(fn_type)
@@ -175,7 +175,7 @@ impl TypeFactsHandler<'_, '_, '_> {
             return true;
         };
 
-        match ty.normalize() {
+        match ty {
             Type::Interface(..) | Type::TypeLit(..) | Type::Class(..) => return false,
             _ => {}
         }
@@ -364,12 +364,10 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u.types.retain(|v| !v.is_never());
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
-            u.types
-                .retain(|ty| !matches!(ty.normalize(), Type::Function(..) | Type::Constructor(..)));
+            u.types.retain(|ty| !matches!(ty, Type::Function(..) | Type::Constructor(..)));
         }
         if self.facts.contains(TypeFacts::TypeofEQFunction) {
-            u.types
-                .retain(|ty| matches!(ty.normalize(), Type::Function(..) | Type::Constructor(..)));
+            u.types.retain(|ty| matches!(ty, Type::Function(..) | Type::Constructor(..)));
         }
 
         if self.facts != TypeFacts::None {
@@ -377,7 +375,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                 || self.facts.contains(TypeFacts::TypeofEQBoolean)
                 || self.facts.contains(TypeFacts::TypeofEQNumber)
             {
-                u.types.retain(|ty| match ty.normalize() {
+                u.types.retain(|ty| match ty {
                     Type::Lit(LitType { lit: RTsLit::Str(..), .. })
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
@@ -464,7 +462,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             lit: RTsLit::Bool(v),
             metadata,
             ..
-        }) = ty.normalize()
+        }) = ty
         {
             if self.facts.contains(TypeFacts::Truthy) && !v.value {
                 return Type::never(
@@ -500,7 +498,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             }
         }
 
-        match ty.normalize() {
+        match ty {
             Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..) if self.facts.contains(TypeFacts::TypeofNEObject) => {
                 return Type::never(
                     span,

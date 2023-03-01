@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
                 let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
 
                 if matches!(
-                    parent.normalize(),
+                    parent,
                     Type::Mapped(..)
                         | Type::Tuple(..)
                         | Type::Function(..)

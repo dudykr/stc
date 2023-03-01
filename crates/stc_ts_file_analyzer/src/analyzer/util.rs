@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
         if !cfg!(debug_assertions) {
             return;
         }
-        let ty = match ty.normalize() {
+        let ty = match ty {
             Type::Mapped(..) => self
                 .normalize(Some(span), Cow::Borrowed(ty), Default::default())
                 .unwrap_or(Cow::Borrowed(ty)),
@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let _tracing = dev_span!("make_instance");
 
-        let ty = ty.normalize();
+        let ty = ty;
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => {
                 let ty = self.expand(
                     span,
-                    ty.normalize().clone(),
+                    ty.clone(),
                     ExpandOpts {
                         full: true,
                         expand_union: false,
@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
                     },
                 )?;
 
-                match ty.normalize() {
+                match ty {
                     Type::Ref(..) => return Ok(ty.clone()),
                     _ => return self.make_instance(span, &ty),
                 }
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
 pub(crate) fn make_instance_type(ty: Type) -> Type {
     let span = ty.span();
 
-    match ty.normalize() {
+    match ty {
         Type::Tuple(Tuple {
             ref elems, span, metadata, ..
         }) => Type::Tuple(Tuple {
@@ -268,7 +268,7 @@ impl Fold<stc_ts_types::Function> for Generalizer {
 
 impl Fold<Type> for Generalizer {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty.normalize() {
+        match ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(index_type) => return ty,
             _ => {}
         }
@@ -278,7 +278,7 @@ impl Fold<Type> for Generalizer {
             }
         }
 
-        let force = matches!(ty.normalize(), Type::TypeLit(..));
+        let force = matches!(ty, Type::TypeLit(..));
 
         let old = self.force;
         self.force = force;

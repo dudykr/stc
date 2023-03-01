@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
         let _tracing = dev_span!("validate_type_literals");
 
-        match ty.normalize() {
+        match ty {
             Type::Union(ty) => {
                 for ty in &ty.types {
                     self.validate_type_literals(ty, is_type_ann);
@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
 
-                if prop_ty.normalize().is_unknown() {
+                if prop_ty.is_unknown() {
                     self.storage.report(
                         ErrorKind::NonObjectInSpread {
                             span: Span {
@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
                     }) => {
                         if let Some(key) = p.key() {
                             let key_ty = key.ty();
-                            let key = key.normalize().into_owned();
+                            let key = key.into_owned();
 
                             let span = key.span();
 
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
         if ty.is_undefined() {
             return true;
         }
-        match ty.normalize() {
+        match ty {
             Type::Union(ty) => ty.types.iter().all(|ty| self.is_always_undefined(ty)),
             Type::Intersection(ty) => ty.types.iter().any(|ty| self.is_always_undefined(ty)),
             Type::Param(TypeParam {
@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        if let Type::Function(..) = to.normalize() {
+        if let Type::Function(..) = to {
             // objectSpread.ts says
             //
             //
@@ -240,7 +240,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match rhs.normalize() {
+        match rhs {
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
                 if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {

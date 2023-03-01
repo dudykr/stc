@@ -47,7 +47,7 @@ where
 }
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
-    match t.normalize() {
+    match t {
         Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
         Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
@@ -69,7 +69,7 @@ pub(crate) trait RemoveTypes {
 
 impl RemoveTypes for Type {
     fn remove_falsy(mut self) -> Type {
-        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
+        if matches!(self, Type::Union(..) | Type::Intersection(..)) {
             self.normalize_mut();
         }
 
@@ -102,7 +102,7 @@ impl RemoveTypes for Type {
     }
 
     fn remove_truthy(mut self) -> Type {
-        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
+        if matches!(self, Type::Union(..) | Type::Intersection(..)) {
             self.normalize_mut();
         }
 
@@ -292,7 +292,7 @@ where
 }
 
 pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
-    let ty = ty.normalize();
+    let ty = ty;
 
     match ty {
         Type::Ref(Ref {
@@ -307,7 +307,7 @@ pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
 }
 
 pub(crate) fn unwrap_builtin_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a Type> {
-    match ty.normalize() {
+    match ty {
         Type::Ref(Ref {
             type_name: RTsEntityName::Ident(n),
             type_args: Some(type_args),

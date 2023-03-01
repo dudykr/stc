@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize declared type")?;
         actual.freeze();
 
-        if let Type::Union(actual) = actual.normalize() {
+        if let Type::Union(actual) = actual {
             let mut new_types = vec![];
             for actual in &actual.types {
                 let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), actual)?;

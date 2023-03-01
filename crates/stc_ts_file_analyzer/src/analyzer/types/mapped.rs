@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
-        match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
+        match m.type_param.constraint.as_deref().map(|v| v) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ty: keyof_operand,
@@ -167,7 +167,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match keyof_operand.normalize() {
+        match keyof_operand {
             Type::Array(array) => {
                 let elem_type = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
                 let elem_type = match m.optional {
@@ -194,9 +194,9 @@ impl Analyzer<'_, '_> {
                     &mut ty,
                     |ty| {
                         // Check for indexed access type
-                        if let Type::IndexedAccessType(iat) = ty.normalize() {
+                        if let Type::IndexedAccessType(iat) = ty {
                             if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
-                                if let Type::Param(index_type) = iat.index_type.normalize() {
+                                if let Type::Param(index_type) = iat.index_type {
                                     return index_type.name == m.type_param.name;
                                 }
                             }
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                         .map(|(idx, elem)| {
                             let mut ty = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
 
-                            if let Type::Rest(elem_rest_ty) = elem.ty.normalize() {
+                            if let Type::Rest(elem_rest_ty) = elem.ty {
                                 let mut mapped_ty = m.ty.clone();
                                 // Replace `T` with `N` in mapped_ty
                                 //
@@ -276,9 +276,9 @@ impl Analyzer<'_, '_> {
                                     &mut ty,
                                     |ty| {
                                         // Check for indexed access type
-                                        if let Type::IndexedAccessType(iat) = ty.normalize() {
+                                        if let Type::IndexedAccessType(iat) = ty {
                                             if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
-                                                if let Type::Param(index_type) = iat.index_type.normalize() {
+                                                if let Type::Param(index_type) = iat.index_type {
                                                     return index_type.name == m.type_param.name;
                                                 }
                                             }
@@ -316,7 +316,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Delegate by recursively calling this function.
-        match keyof_operand.normalize() {
+        match keyof_operand {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
                 ty,
@@ -472,7 +472,7 @@ impl Analyzer<'_, '_> {
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
 
-        let ty = ty.normalize();
+        let ty = ty;
 
         match ty {
             Type::Ref(..) | Type::Alias(..) | Type::Query(..) => {
@@ -600,7 +600,7 @@ impl Analyzer<'_, '_> {
                         // Replace K with key
                         replace_type(
                             &mut new_key,
-                            |needle| match needle.normalize() {
+                            |needle| match needle {
                                 Type::Param(needle) => needle.name.sym() == type_param.name.sym(),
                                 _ => false,
                             },
@@ -652,7 +652,7 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        match ty.normalize() {
+        match ty {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                 ..
@@ -881,7 +881,7 @@ impl Analyzer<'_, '_> {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
                     ..
-                })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                })) = m.type_param.constraint.as_deref().map(|ty| ty)
                 {
                     return self
                         .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
@@ -951,7 +951,7 @@ impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
 impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
     fn visit(&mut self, n: &IndexedAccessType) {
         if (*n.obj_type).type_eq(self.obj)
-            && match n.index_type.normalize() {
+            && match n.index_type {
                 Type::Param(index) => *self.key == index.name,
                 _ => false,
             }
@@ -990,7 +990,7 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
 
         if let Type::IndexedAccessType(n) = ty {
             if (*n.obj_type).type_eq(self.obj)
-                && match n.index_type.normalize() {
+                && match n.index_type {
                     Type::Param(index) => *self.key == index.name,
                     _ => false,
                 }

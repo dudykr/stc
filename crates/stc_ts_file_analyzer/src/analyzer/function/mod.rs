@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = &mut declared_ret_ty {
-                if let Type::Ref(..) = ty.normalize() {
+                if let Type::Ref(..) = ty {
                     child.prevent_expansion(ty);
                 }
             }
@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
                         span = declared.span();
                         let declared = child.normalize(Some(span), Cow::Borrowed(declared), Default::default())?;
 
-                        match declared.normalize() {
+                        match declared {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
                 for element in elems.iter_mut() {
                     let span = element.span();
 
-                    match element.ty.normalize() {
+                    match element.ty {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..

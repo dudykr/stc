@@ -61,11 +61,11 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to normalize")?;
 
-            if matches!(ty.normalize(), Type::TypeLit(..)) {
+            if matches!(ty, Type::TypeLit(..)) {
                 ty.freeze()
             }
 
-            match ty.normalize() {
+            match ty {
                 Type::Lit(ty) => {
                     return self
                         .keyof(

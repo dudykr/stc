@@ -118,7 +118,7 @@ impl Analyzer<'_, '_> {
                     if let Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { span, value, .. }),
                         ..
-                    }) = arg.normalize()
+                    }) = arg
                     {
                         let span = *span;
 
@@ -260,13 +260,13 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
 
         match op {
-            op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
+            op!("typeof") | op!("delete") | op!("void") => match arg {
                 Type::EnumVariant(..) if op == op!("delete") => errors.push(ErrorKind::TS2704 { span: arg.span() }.into()),
 
                 _ => {}
             },
 
-            op!("~") | op!(unary, "-") | op!(unary, "+") => match arg.normalize() {
+            op!("~") | op!(unary, "-") | op!(unary, "+") => match arg {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..

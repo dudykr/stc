@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
             debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
         }
 
-        match ty.normalize() {
+        match ty {
             Type::Lit(..)
             | Type::TypeLit(..)
             | Type::Interface(..)
@@ -134,20 +134,20 @@ impl Analyzer<'_, '_> {
             };
 
             if matches!(&*ty, Type::Arc(..)) {
-                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
+                let ty = self.normalize(span, Cow::Borrowed(ty), opts)?.into_owned();
 
                 return Ok(Cow::Owned(ty));
             }
 
             if matches!(
-                ty.normalize(),
+                ty,
                 Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..) | Type::Union(..)
             ) {
                 ty.freeze();
             }
 
             {
-                match ty.normalize() {
+                match ty {
                     Type::Ref(_) => {
                         let mut new_ty = self
                             .expand_top_ref(
@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
 
                                 if let Type::EnumVariant(EnumVariant {
                                     name: Some(..), enum_name, ..
-                                }) = elem.normalize()
+                                }) = elem
                                 {
                                     *enum_counts.entry(enum_name.clone()).or_insert(0) += 1;
                                 }
@@ -276,7 +276,7 @@ impl Analyzer<'_, '_> {
                             for (enum_name, cnt) in enum_counts.iter_mut() {
                                 if let Some(types) = self.find_type(enum_name)? {
                                     for ty in types {
-                                        if let Type::Enum(e) = ty.normalize() {
+                                        if let Type::Enum(e) = ty {
                                             *cnt -= e.members.len() as i32;
 
                                             if *cnt == 0 {
@@ -316,7 +316,7 @@ impl Analyzer<'_, '_> {
                                         name: Some(..),
                                         enum_name,
                                         ..
-                                    }) = elem.normalize()
+                                    }) = elem
                                     {
                                         if let Some(0) = enum_counts.get(enum_name) {
                                             // This enum is going to be added to union directly, so we skip the variants.
@@ -438,7 +438,7 @@ impl Analyzer<'_, '_> {
                             name,
                             constraint: Some(check_type_constraint),
                             ..
-                        }) = c.check_type.normalize()
+                        }) = c.check_type
                         {
                             let new_type = self
                                 .reduce_conditional_type(
@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        if let Type::Union(check_type_union) = c.check_type.normalize() {
+                        if let Type::Union(check_type_union) = c.check_type {
                             let mut all = true;
                             let mut types = vec![];
                             for check_type in &check_type_union.types {
@@ -511,7 +511,7 @@ impl Analyzer<'_, '_> {
                             //
                             // We removes `undefined` from parents of T.
 
-                            if let Type::Union(check_type_union) = check_type_constraint.normalize() {
+                            if let Type::Union(check_type_union) = check_type_constraint {
                                 let mut all = true;
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
@@ -825,7 +825,7 @@ impl Analyzer<'_, '_> {
         let mut true_type = self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
         let mut false_type = self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
 
-        if let Type::Conditional(c) = true_type.normalize() {
+        if let Type::Conditional(c) = true_type {
             if (*c.check_type).type_eq(check_type) {
                 if let Some(ty) = self.reduce_conditional_type(
                     span,
@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::Conditional(c) = false_type.normalize() {
+        if let Type::Conditional(c) = false_type {
             if (*c.check_type).type_eq(check_type) {
                 let mut check_type_constraint = check_type_constraint.clone();
                 self.exclude_type(span, &mut check_type_constraint, extends_type);
@@ -863,7 +863,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match check_type_constraint.normalize() {
+        match check_type_constraint {
             Type::Union(check_type_union) => {
                 //
                 let can_match = check_type_union.types.iter().any(|check_type_constraint| {
@@ -926,7 +926,7 @@ impl Analyzer<'_, '_> {
             ) {
                 let result = res.into_owned();
 
-                match &result.normalize() {
+                match &result {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -974,7 +974,7 @@ impl Analyzer<'_, '_> {
         let is_void = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let is_object = normalized_types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
         let is_function = normalized_types.iter().any(|ty| ty.is_fn_type());
-        let is_non_empty_type_lit = normalized_types.iter().any(|ty| match ty.normalize() {
+        let is_non_empty_type_lit = normalized_types.iter().any(|ty| match ty {
             Type::TypeLit(ty) => !ty.members.is_empty(),
             _ => false,
         });
@@ -1022,9 +1022,9 @@ impl Analyzer<'_, '_> {
                 return never!();
             }
             if let Some(first_enum) = enum_variant_iter.first() {
-                let mut enum_temp = first_enum.normalize();
+                let mut enum_temp = first_enum;
                 for elem in enum_variant_iter.into_iter() {
-                    if let Type::EnumVariant(el) = elem.normalize() {
+                    if let Type::EnumVariant(el) = elem {
                         if let Type::EnumVariant(en) = enum_temp {
                             if let Type::EnumVariant(EnumVariant { name: None, .. }) = enum_temp {
                                 enum_temp = elem;
@@ -1046,7 +1046,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             for elem in normalized_types.iter() {
-                if let Type::EnumVariant(ref ev) = elem.normalize() {
+                if let Type::EnumVariant(ref ev) = elem {
                     if let Some(variant_name) = &ev.name {
                         // enumVariant is enumMember
                         if enum_variant_len > 1 {
@@ -1061,7 +1061,7 @@ impl Analyzer<'_, '_> {
                         // enumVariant is Enum
                         if let Some(types) = self.find_type(&ev.enum_name)? {
                             for ty in types {
-                                if let Type::Enum(e) = ty.normalize() {
+                                if let Type::Enum(e) = ty {
                                     let mut str_lits = vec![];
                                     let mut num_lits = vec![];
                                     for v in e.members.iter() {
@@ -1161,7 +1161,7 @@ impl Analyzer<'_, '_> {
 
             for elem in type_iter {
                 let mut new_types = vec![];
-                match (acc_type.normalize(), elem.normalize()) {
+                match (acc_type, elem) {
                     (
                         another @ Type::Param(TypeParam {
                             constraint:
@@ -1195,8 +1195,8 @@ impl Analyzer<'_, '_> {
                             constraint: Some(another), ..
                         }),
                     ) => {
-                        let other = other.normalize();
-                        let another = another.normalize();
+                        let other = other;
+                        let another = another;
                         let result =
                             self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
@@ -1215,8 +1215,8 @@ impl Analyzer<'_, '_> {
                             constraint: Some(another), ..
                         }),
                     ) => {
-                        let other = other.normalize();
-                        let another = another.normalize();
+                        let other = other;
+                        let another = another;
                         let result =
                             self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
@@ -1282,7 +1282,7 @@ impl Analyzer<'_, '_> {
                     Type::new_union(span, new_types).freezed()
                 }
             }
-            if let Type::Union(Union { types: u_types, .. }) = acc_type.normalize() {
+            if let Type::Union(Union { types: u_types, .. }) = acc_type {
                 if normalized_len < u_types.len() {
                     return Ok(Some(
                         Type::Intersection(Intersection {
@@ -1397,7 +1397,7 @@ impl Analyzer<'_, '_> {
 
             if check_type.is_class() {
                 if let Type::Class(check_type) = check_type.normalize_mut() {
-                    if let Type::Constructor(..) = extends_type.normalize() {
+                    if let Type::Constructor(..) = extends_type {
                         return *true_type;
                     }
                 }
@@ -1585,7 +1585,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(match ty.normalize() {
+        Ok(match ty {
             Type::Class(..)
             | Type::ClassDef(..)
             | Type::Enum(..)
@@ -1721,7 +1721,7 @@ impl Analyzer<'_, '_> {
         }
         let _tracing = dev_span!("collect_class_members");
 
-        let ty = ty.normalize();
+        let ty = ty;
         match ty {
             Type::ClassDef(c) => {
                 let mut members = c
@@ -1789,7 +1789,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(Cow::Owned(t)));
                 }
 
-                Cow::Borrowed(ty) => match ty.normalize() {
+                Cow::Borrowed(ty) => match ty {
                     Type::TypeLit(t) => return Ok(Some(Cow::Borrowed(t))),
                     _ => {
                         unreachable!()
@@ -1823,7 +1823,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        let ty = ty.normalize();
+        let ty = ty;
 
         Ok(Some(match ty {
             Type::Lit(ty) => {
@@ -2165,7 +2165,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
+        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())? {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                 let new_val = apply_string_mapping(&ty.kind, &s.value);
 
@@ -2216,7 +2216,7 @@ impl Analyzer<'_, '_> {
                 metadata,
                 ..
             }) => {
-                let resolved_constraint = match constraint.normalize() {
+                let resolved_constraint = match constraint {
                     Type::Lit(LitType {
                         span: constraint_span,
                         lit: RTsLit::Str(s),
@@ -2460,7 +2460,7 @@ impl Analyzer<'_, '_> {
             Err(..) => Cow::Borrowed(excluded),
         };
 
-        if let Type::Union(excluded) = excluded.normalize() {
+        if let Type::Union(excluded) = excluded {
             //
             for excluded in &excluded.types {
                 self.exclude_type(span, ty, excluded)

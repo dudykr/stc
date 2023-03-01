@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(ref ty) = ty {
                             // TODO(kdy1): Add support for expressions like '' + ''.
-                            match ty.normalize() {
+                            match ty {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}
@@ -243,7 +243,7 @@ impl Analyzer<'_, '_> {
 
         let ty = ty.clone().generalize_lit();
 
-        if let Type::Function(..) = ty.normalize() {
+        if let Type::Function(..) = ty {
             return false;
         }
         let ty = self.normalize(None, Cow::Owned(ty), Default::default());
@@ -256,7 +256,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match ty.normalize() {
+        match ty {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ..
-                }) = ty.normalize()
+                }) = ty
                 {
                     return true;
                 }

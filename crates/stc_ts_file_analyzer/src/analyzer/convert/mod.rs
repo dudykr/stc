@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
 
                 debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
 
-                match types[0].normalize() {
+                match types[0] {
                     Type::Param(p) => {
                         assert!(p.constraint.is_some(), "should store constraint");
                     }
@@ -808,7 +808,7 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        if let Type::Param(..) = ty.normalize() {
+                        if let Type::Param(..) = ty {
                             return Ok(ty.into_owned());
                         }
                     }
@@ -1139,7 +1139,7 @@ impl Analyzer<'_, '_> {
             }) = elem
             {
                 if let Some(key) = elem.key() {
-                    let key = key.normalize();
+                    let key = key;
                     let key_ty = key.ty();
 
                     if key_ty.is_symbol() {

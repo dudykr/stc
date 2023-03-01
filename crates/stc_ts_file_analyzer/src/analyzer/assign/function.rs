@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
             if cfg!(feature = "fastpath") && l_params.len() == 1 && l_params[0].ty.is_type_param() && l_params[0].ty.span().is_dummy() {
                 if let Some(l_ret_ty) = l_ret_ty {
                     if let Some(r_ret_ty) = unwrap_builtin_with_single_arg(r_ret_ty, "Promise") {
-                        if let Type::Union(l_ret_ty) = l_ret_ty.normalize() {
+                        if let Type::Union(l_ret_ty) = l_ret_ty {
                             // Exact match
                             if l_ret_ty.types.len() == 4
                                 && l_ret_ty.types[0].is_type_param()
@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
 
             macro_rules! check {
                 ($pat:ident) => {{
-                    let l_pos = l_params.iter().position(|p| match p.ty.normalize() {
+                    let l_pos = l_params.iter().position(|p| match p.ty {
                         Type::TypeLit(ty) => {
                             ty.members
                                 .iter()
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(l_pos) = l_pos {
-                        let count = match l_params[l_pos].ty.normalize() {
+                        let count = match l_params[l_pos].ty {
                             Type::TypeLit(ty) => ty
                                 .members
                                 .iter()
@@ -411,7 +411,7 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("assign_to_function");
 
         let span = opts.span;
-        let r = r.normalize();
+        let r = r;
 
         match r {
             // var fnr2: () => any = fnReturn2();
@@ -524,7 +524,7 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("assign_to_constructor");
 
         let span = opts.span;
-        let r = r.normalize();
+        let r = r;
 
         match r {
             Type::Constructor(rc) => {
@@ -691,7 +691,7 @@ impl Analyzer<'_, '_> {
             }
         } else {
             if opts.for_overload {
-                let rhs = &r.normalize();
+                let rhs = &r;
 
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
@@ -733,7 +733,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign the type of a parameter to another")
                 }
             } else {
-                let rhs = r.normalize();
+                let rhs = r;
                 if let Type::EnumVariant(..) = *rhs {
                     if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
                         match lit {

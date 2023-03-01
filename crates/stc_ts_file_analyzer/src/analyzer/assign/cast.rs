@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        match ty.normalize() {
+        match ty {
             Type::EnumVariant(e) => {
                 // TODO(kdy1): Check if value is string
                 true

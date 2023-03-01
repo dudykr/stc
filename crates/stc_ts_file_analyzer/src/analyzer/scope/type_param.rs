@@ -85,7 +85,7 @@ struct TypeParamEscapeVisitor<'a, 'b, 'c> {
 
 impl Visit<Type> for TypeParamEscapeVisitor<'_, '_, '_> {
     fn visit(&mut self, ty: &Type) {
-        if let Type::Param(ty) = ty.normalize() {
+        if let Type::Param(ty) = ty {
             if self.declared.contains(&ty.name) {
                 return;
             }

@@ -500,7 +500,7 @@ impl Analyzer<'_, '_> {
 
         fn need_work(ty: &Type) -> bool {
             !matches!(
-                ty.normalize(),
+                ty,
                 Type::Lit(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
@@ -845,7 +845,7 @@ impl Analyzer<'_, '_> {
             .into_owned()
             .freezed();
 
-        let ty = orig_ty.normalize();
+        let ty = orig_ty;
 
         ty.assert_valid();
 
@@ -961,11 +961,11 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(&i.id.clone().into())? {
                         for ty in types {
-                            if let Type::Module(..) = ty.normalize() {
+                            if let Type::Module(..) = ty {
                                 return Err(ErrorKind::NotVariable {
                                     span: i.id.span,
                                     left: lhs.span(),
-                                    ty: Some(box ty.normalize().clone()),
+                                    ty: Some(box ty.clone()),
                                 }
                                 .into());
                             }
@@ -1240,7 +1240,7 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if let Type::Union(ty) = src.normalize() {
+        if let Type::Union(ty) = src {
             let mut new_types = vec![];
             for ty in &ty.types {
                 let ty = self.narrow_types_with_property(span, ty, property, type_facts)?;
@@ -1287,7 +1287,7 @@ impl Analyzer<'_, '_> {
 
                     // TODO(kdy1): See if which one is correct.
                     //
-                    // if !orig.normalize().type_eq(prop_ty.normalize()) {
+                    // if !orig.type_eq(prop_ty) {
                     //     return Ok(Type::never(src.span()));
                     // }
 
@@ -1342,7 +1342,7 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if let Type::Union(u) = obj.normalize() {
+        if let Type::Union(u) = obj {
             if name.len() == 2 {
                 let mut new_obj_types = vec![];
 

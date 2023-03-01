@@ -78,7 +78,7 @@ impl Analyzer<'_, '_> {
                         .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
-                    match ty.normalize() {
+                    match ty {
                         Type::TypeLit(..) => {
                             if !prefer_tuple {
                                 can_be_tuple = false;
@@ -259,7 +259,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.normalize() {
+        match iterator {
             Type::Ref(..) => {
                 let iterator = self
                     .expand_top_ref(span, iterator, Default::default())
@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchProperty { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. } => {
-                    if let Type::Union(iterator) = iterator.normalize() {
+                    if let Type::Union(iterator) = iterator {
                         if iterator.types.iter().all(|ty| ty.is_tuple()) {
                             return ErrorKind::NoSuchProperty {
                                 span,
@@ -554,7 +554,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.normalize() {
+        match iterator {
             // TODO
             Type::TypeLit(_) => {}
 
@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
 
         let iterator = iterator?;
 
-        if let Type::Class(..) = iterator.normalize() {
+        if let Type::Class(..) = iterator {
             if let Ok(return_prop_ty) = self.access_property(
                 span,
                 &iterator,
@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match ty.normalize() {
+            match ty {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
@@ -775,7 +775,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.normalize() {
+        match iterator {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {
@@ -898,8 +898,8 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        match ty.normalize() {
-            Type::Rest(rest) => match ty.normalize() {
+        match ty {
+            Type::Rest(rest) => match ty {
                 Type::Tuple(tuple) => {
                     let mut sum = 0;
                     for elem in tuple.elems.iter() {

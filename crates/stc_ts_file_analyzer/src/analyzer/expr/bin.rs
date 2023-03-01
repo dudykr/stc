@@ -306,8 +306,8 @@ impl Analyzer<'_, '_> {
 
                 // Try narrowing type
                 let c = Comparator {
-                    left: (&**left, lt.normalize()),
-                    right: (&**right, rt.normalize()),
+                    left: (&**left, lt),
+                    right: (&**right, rt),
                 };
 
                 let mut has_switch_case_test_not_compatible = false;
@@ -499,7 +499,7 @@ impl Analyzer<'_, '_> {
                             metadata,
                             default,
                             ..
-                        }) = c.left.1.normalize()
+                        }) = c.left.1
                         {
                             if param.is_unknown() || param.is_any() {
                                 Type::Param(TypeParam {
@@ -769,8 +769,8 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if op == op!("**") {
-                    let lt = lt.normalize();
-                    let rt = rt.normalize();
+                    let lt = lt;
+                    let rt = rt;
 
                     if !reported_null_or_undefined {
                         self.report_possibly_null_or_undefined(lt.span(), lt).report(&mut self.storage);
@@ -869,7 +869,7 @@ impl Analyzer<'_, '_> {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
-                        _ => match lt.normalize() {
+                        _ => match lt {
                             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(s.value.clone()),
                             _ => None,
                         },
@@ -922,7 +922,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
-                }) = lt.normalize()
+                }) = lt
                 {
                     return Ok(Type::any(span, Default::default()));
                 }
@@ -1213,8 +1213,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn can_compare_with_eq(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
-        let disc_ty = disc_ty.normalize();
-        let case_ty = case_ty.normalize();
+        let disc_ty = disc_ty;
+        let case_ty = case_ty;
 
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
@@ -1289,7 +1289,7 @@ impl Analyzer<'_, '_> {
 
         let _stack = stack::track(span)?;
 
-        if let Type::Union(orig) = orig_ty.normalize() {
+        if let Type::Union(orig) = orig_ty {
             if ty.is_interface() || ty.is_type_lit() {
                 if let Ok(out_result) = self.access_property(
                     span,
@@ -1303,7 +1303,7 @@ impl Analyzer<'_, '_> {
                     Default::default(),
                 ) {
                     if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(&out_result), Default::default()) {
-                        let result = result.normalize();
+                        let result = result;
                         if orig.types.iter().any(|ty| ty.type_eq(result)) {
                             return Ok(out_result.freezed());
                         }
@@ -1358,7 +1358,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty.into_owned());
         }
 
-        match ty.normalize() {
+        match ty {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
@@ -1401,7 +1401,7 @@ impl Analyzer<'_, '_> {
             },
         ) {
             if v {
-                if let Type::ClassDef(def) = orig_ty.normalize() {
+                if let Type::ClassDef(def) = orig_ty {
                     return Ok(Type::Class(Class {
                         span,
                         def: box def.clone(),
@@ -1411,7 +1411,7 @@ impl Analyzer<'_, '_> {
                 }
                 return Ok(orig_ty.into_owned());
             } else {
-                if let (Type::Interface(..), Type::Interface(..)) = (orig_ty.normalize(), ty.normalize()) {
+                if let (Type::Interface(..), Type::Interface(..)) = (orig_ty, ty) {
                     return Ok(ty.into_owned());
                 }
 
@@ -1438,7 +1438,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::ClassDef(def) = ty.normalize() {
+        if let Type::ClassDef(def) = ty {
             return Ok(Type::Class(Class {
                 span,
                 def: box def.clone(),
@@ -1479,8 +1479,8 @@ impl Analyzer<'_, '_> {
             .into_owned()
             .freezed();
 
-        let l = l.normalize();
-        let r = r.normalize();
+        let l = l;
+        let r = r;
 
         if let (Type::TypeLit(lt), Type::TypeLit(rt)) = (l, r) {
             // It's an error if type of the parameter of index signature is same but type
@@ -1528,8 +1528,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn verify_rel_cmp_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
-        let l = l.normalize();
-        let r = r.normalize();
+        let l = l;
+        let r = r;
 
         macro_rules! error {
             () => {{
@@ -1697,7 +1697,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
-        let ty = ty.normalize();
+        let ty = ty;
 
         if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
             return true;
@@ -1728,7 +1728,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): We should assign this to builtin interface `Function`.
-        match ty.normalize() {
+        match ty {
             // Error
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1850,7 +1850,7 @@ impl Analyzer<'_, '_> {
             return Ok((name, narrowed.clone(), vec![narrowed]));
         }
 
-        let eq_ty = equals_to.normalize();
+        let eq_ty = equals_to;
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 
@@ -1865,7 +1865,7 @@ impl Analyzer<'_, '_> {
 
         let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
-        if let Type::Union(u) = ty.normalize() {
+        if let Type::Union(u) = ty {
             let mut has_undefined = false;
             let mut candidates = vec![];
             let mut excluded = vec![];
@@ -1880,7 +1880,7 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(prop_ty) = prop_res {
                     let prop_ty = self.normalize(Some(prop_ty.span()), Cow::Owned(prop_ty), Default::default())?;
-                    let possible = match prop_ty.normalize() {
+                    let possible = match prop_ty {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
                         _ => {
@@ -1990,8 +1990,8 @@ impl Analyzer<'_, '_> {
         let ls = lt.span();
         let rs = rt.span();
 
-        let lt = lt.normalize();
-        let rt = rt.normalize();
+        let lt = lt;
+        let rt = rt;
 
         let mut errors = Errors::default();
 
@@ -2005,7 +2005,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) = lt.normalize()
+                }) = lt
                 {
                     errors.push(ErrorKind::TS1345 { span }.into())
                 }
@@ -2020,7 +2020,7 @@ impl Analyzer<'_, '_> {
                         return;
                     }
 
-                    match ty.normalize() {
+                    match ty {
                         Type::Keyword(KeywordType {
                             span,
                             kind:
@@ -2042,14 +2042,14 @@ impl Analyzer<'_, '_> {
 
                 if (op == op!("&") || op == op!("^") || op == op!("|"))
                     && matches!(
-                        lt.normalize(),
+                        lt,
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
                         }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
                     )
                     && matches!(
-                        rt.normalize(),
+                        rt,
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
@@ -2064,7 +2064,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
-                match lt.normalize() {
+                match lt {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
@@ -2121,7 +2121,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match rt.normalize() {
+                match rt {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
@@ -2172,7 +2172,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_lhs_of_in(&mut self, ty: &Type) -> bool {
-        let ty = ty.normalize();
+        let ty = ty;
 
         match ty {
             Type::Ref(..) => {
@@ -2240,7 +2240,7 @@ impl Analyzer<'_, '_> {
             Err(_) => return true,
         };
 
-        match ty.normalize() {
+        match ty {
             Type::This(..)
             | Type::Class(..)
             | Type::ClassDef(..)
@@ -2295,9 +2295,9 @@ impl Analyzer<'_, '_> {
     ) -> FxHashMap<Name, Vec<Type>> {
         let mut additional_target: FxHashMap<Name, Vec<Type>> = Default::default();
 
-        if let Type::Union(Union { types, .. }) = origin_ty.normalize() {
+        if let Type::Union(Union { types, .. }) = origin_ty {
             for ty in types {
-                match ty.normalize() {
+                match ty {
                     Type::Interface(interface) => {
                         if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(ty)) {
                             let tl = tl.into_owned();
@@ -2381,7 +2381,7 @@ impl Analyzer<'_, '_> {
     ) {
         if let Ok(property) = self.access_property(
             span,
-            origin_ty.normalize(),
+            origin_ty,
             &Key::Normal {
                 span,
                 sym: name.top().sym().clone(),
@@ -2461,7 +2461,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
 }
 
 fn is_str_like_for_addition(t: &Type) -> bool {
-    match t.normalize() {
+    match t {
         Type::Lit(LitType { lit: RTsLit::Str(..), .. }) | Type::Tpl(..) => true,
         Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,

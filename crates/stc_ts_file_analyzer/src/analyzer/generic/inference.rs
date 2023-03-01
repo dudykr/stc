@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
         if is_target_union {
             let mut naked_type_var = None;
 
-            let sources = if let Type::Union(source) = source.normalize() {
+            let sources = if let Type::Union(source) = source {
                 Cow::Borrowed(&source.types)
             } else {
                 Cow::Owned(vec![source.clone()])
@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
         let mut type_var: Option<Type> = None;
 
         for ty in types {
-            if let Type::Intersection(t) = ty.normalize() {
+            if let Type::Intersection(t) = ty {
                 if let Some(t) = t.types.iter().find(|t| self.get_inference_info_for_type(inferred, ty).is_some()) {
                     if let Some(type_var) = type_var {
                         if !type_var.type_eq(t) {
@@ -540,7 +540,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
     pub(crate) fn infer_types_from_tpl_lit_type(&mut self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
-        match source.normalize() {
+        match source {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
             }) => self.infer_from_lit_parts_to_tpl_lit(span, &[source.value.clone().into()], &[], target),
@@ -751,7 +751,7 @@ impl Analyzer<'_, '_> {
 
         info!("Inferred {} as {}", name, dump_type_as_string(&ty));
 
-        if let Type::Param(ty) = ty.normalize() {
+        if let Type::Param(ty) = ty {
             if name == ty.name {
                 return Ok(());
             }
@@ -794,7 +794,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        let arg = match arg.normalize() {
+        let arg = match arg {
             Type::Union(arg) if opts.exclude_null_and_undefined => {
                 Cow::Owned(Type::new_union(arg.span, arg.types.iter().filter(|ty| !ty.is_null_or_undefined()).cloned()).freezed())
             }
@@ -803,7 +803,7 @@ impl Analyzer<'_, '_> {
         arg.assert_clone_cheap();
 
         // TODO(kdy1): Verify if this is correct
-        if let Type::Param(arg) = arg.normalize() {
+        if let Type::Param(arg) = arg {
             if let Some(inverse) = inferred.type_params.get(&arg.name) {
                 if inverse.priority < opts.priority {
                     return Ok(());
@@ -878,8 +878,8 @@ impl Analyzer<'_, '_> {
                         {
                             arg.into_owned()
                         } else if opts.is_inferring_rest_type
-                            && matches!(e.get().inferred_type.normalize(), Type::Tuple(..))
-                            && match arg.normalize() {
+                            && matches!(e.get().inferred_type, Type::Tuple(..))
+                            && match arg {
                                 Type::Tuple(tuple) => tuple.elems.len() == 1,
                                 _ => false,
                             }
@@ -1000,10 +1000,10 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> Option<VResult<()>> {
-        let param = param.normalize();
-        let arg = arg.normalize();
+        let param = param;
+        let arg = arg;
 
-        if let Some(elem_type) = unwrap_builtin_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
+        if let Some(elem_type) = unwrap_builtin_with_single_arg(param, "ReadonlyArray").or_else(|| match param {
             Type::Interface(Interface { name, body, .. }) => {
                 if name == "ReadonlyArray" {
                     body.iter()
@@ -1038,8 +1038,8 @@ impl Analyzer<'_, '_> {
             ));
         }
 
-        if let Type::Array(Array { elem_type, .. }) = param.normalize() {
-            match arg.normalize() {
+        if let Type::Array(Array { elem_type, .. }) = param {
+            match arg {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(type_name),
                     type_args: Some(type_args),
@@ -1071,7 +1071,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        match arg.normalize() {
+        match arg {
             Type::Interface(arg) => {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg, opts)?;
             }
@@ -1133,8 +1133,8 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<bool> {
-        let p = param.normalize();
-        let a = arg.normalize();
+        let p = param;
+        let a = arg;
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
@@ -1462,7 +1462,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        if let Type::Tuple(..) = ty.normalize() {
+        if let Type::Tuple(..) = ty {
             match ty.normalize_mut() {
                 Type::Tuple(ty) => {
                     for elem in ty.elems.iter_mut() {
@@ -1489,7 +1489,7 @@ impl Analyzer<'_, '_> {
                     self.prevent_generalization_of_top_level_types(type_params, Some(ret_ty), inferred, is_from_type_ann)
                 }
 
-                match ret_ty.normalize() {
+                match ret_ty {
                     Type::Param(ret_ry) => {
                         if let Some(ty) = inferred.type_params.get_mut(&ret_ry.name) {
                             // prevent_generalize(&mut ty.inferred_type);
@@ -1538,7 +1538,7 @@ impl Analyzer<'_, '_> {
 }
 
 fn should_prevent_generalization(constraint: &Type) -> bool {
-    match constraint.normalize() {
+    match constraint {
         Type::Lit(LitType {
             lit: RTsLit::Str(..) | RTsLit::Number(..) | RTsLit::Bool(..),
             ..

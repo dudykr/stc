@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Union(ty) = &mut ty {
                     ty.types.retain(|ty| {
                         !matches!(
-                            ty.normalize(),
+                            ty,
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
@@ -207,7 +207,7 @@ impl Analyzer<'_, '_> {
                         });
                     }
                 }
-                match param.ty.normalize() {
+                match param.ty {
                     ty @ Type::Union(..) => {
                         temp_els.push(TupleElement {
                             span: param.span,
@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
                     Type::Param(TypeParam {
                         constraint: Some(box ty), ..
                     }) => {
-                        if let ty @ Type::Union(..) = ty.normalize() {
+                        if let ty @ Type::Union(..) = ty {
                             temp_els.push(TupleElement {
                                 span: param.span,
                                 label: None,
@@ -231,7 +231,7 @@ impl Analyzer<'_, '_> {
                     ty @ Type::Ref(..) => {
                         let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
                         if let Ok(ty) = ty {
-                            if let ty @ Type::Union(..) = ty.normalize() {
+                            if let ty @ Type::Union(..) = ty {
                                 temp_els.push(TupleElement {
                                     span: param.span,
                                     label: None,

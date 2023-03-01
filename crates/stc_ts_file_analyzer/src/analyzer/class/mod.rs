@@ -1314,7 +1314,7 @@ impl Analyzer<'_, '_> {
 
         let ty = self.expand_enum_variant(ty)?;
 
-        match *ty.normalize() {
+        match *ty {
             Type::Lit(..) => {}
 
             _ if is_symbol_access || ty.is_symbol_like() => {}
@@ -1448,7 +1448,7 @@ impl Analyzer<'_, '_> {
         let mut new_members = vec![];
 
         let res: VResult<()> = try {
-            if let Type::ClassDef(sc) = super_ty.normalize() {
+            if let Type::ClassDef(sc) = super_ty {
                 'outer: for sm in &sc.body {
                     match sm {
                         ClassMember::Property(super_property) => {
@@ -1615,7 +1615,7 @@ impl Analyzer<'_, '_> {
                             })
                             .report(&mut child.storage)
                             .unwrap_or_else(|| Type::any(expr.span(), Default::default()));
-                        child.validate_with(|a| match super_ty.normalize() {
+                        child.validate_with(|a| match super_ty {
                             Type::Lit(..)
                             | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1632,7 +1632,7 @@ impl Analyzer<'_, '_> {
                             _ => Ok(()),
                         });
 
-                        match super_ty.normalize() {
+                        match super_ty {
                             // We should handle mixin
                             Type::Intersection(i) if need_base_class => {
                                 let mut has_class_in_super = false;
@@ -1648,7 +1648,7 @@ impl Analyzer<'_, '_> {
                                         .types
                                         .iter()
                                         .map(|ty| {
-                                            if let Type::Class(c) = ty.normalize() {
+                                            if let Type::Class(c) = ty {
                                                 has_class_in_super = true;
                                                 // class A -> typeof A
                                                 return c
@@ -2275,7 +2275,7 @@ impl Analyzer<'_, '_> {
             if let Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(i),
                 ..
-            }) = ty.normalize()
+            }) = ty
             {
                 if let Some(name) = &self.scope.this_class_name {
                     if *name == i {
@@ -2286,7 +2286,7 @@ impl Analyzer<'_, '_> {
 
             let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
-            if let Type::Function(..) = ty.normalize() {
+            if let Type::Function(..) = ty {
                 Err(ErrorKind::NotConstructorType { span: ty.span() })?
             }
         };
@@ -2298,7 +2298,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        Ok(match ty.normalize() {
+        Ok(match ty {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
                 def: box def.clone(),

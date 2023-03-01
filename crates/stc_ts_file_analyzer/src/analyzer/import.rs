@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
         if let Some(ModuleInfo { module_id, data }) = self.data.imports_by_id.get(id) {
-            match data.normalize() {
+            match data {
                 Type::Module(data) => {
                     if let Some(dep) = data.exports.vars.get(id.sym()).cloned() {
                         debug_assert!(dep.is_clone_cheap());
@@ -148,7 +148,7 @@ impl Analyzer<'_, '_> {
         // Check for entry only if import was successful.
         if is_import_successful {
             if let Some(data) = self.data.imports.get(&(ctxt, target)) {
-                match data.normalize() {
+                match data {
                     Type::Module(data) => {
                         if let Some(ty) = data.exports.vars.get(orig.sym()).cloned() {
                             found_entry = true;

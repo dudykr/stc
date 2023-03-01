@@ -13,7 +13,7 @@ use crate::VResult;
 impl Analyzer<'_, '_> {
     /// `isTypeCloselyMatchedBy` of `tsc`.
     pub(crate) fn is_type_closely_matched_by(&mut self, source: &Type, target: &Type) -> bool {
-        match (source.normalize(), target.normalize()) {
+        match (source, target) {
             (Type::Ref(source), Type::Ref(target)) => source.type_name.type_eq(&target.type_name),
             _ => false,
         }
@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
         if let Type::StringMapping(StringMapping {
             kind: IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize | IntrinsicKind::Uppercase | IntrinsicKind::Lowercase,
             ..
-        }) = target.normalize()
+        }) = target
         {
             // TODO: Port https://github.com/microsoft/TypeScript/blob/eb5419fc8d980859b98553586dfb5f40d811a745/src/compiler/checker.ts#L22574-L22589
             return Ok(true);

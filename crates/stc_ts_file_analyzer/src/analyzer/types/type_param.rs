@@ -72,7 +72,7 @@ impl Visit<Type> for TypeParamUsageFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);
 
-        if let Type::Param(p) = ty.normalize() {
+        if let Type::Param(p) = ty {
             self.used.insert(p.name.clone());
         }
     }

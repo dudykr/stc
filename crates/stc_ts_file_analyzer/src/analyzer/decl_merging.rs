@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
         debug_assert!(a.is_clone_cheap());
         debug_assert!(b.is_clone_cheap());
 
-        match (a.normalize(), b.normalize()) {
+        match (a, b) {
             (Type::ClassDef(a), Type::Interface(bi)) => {
                 // TODO: Handle the number of type parameters.
                 let mut type_params = FxHashMap::default();

@@ -224,7 +224,7 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        if let Type::Mapped(m) = rhs.normalize() {
+        if let Type::Mapped(m) = rhs {
             // { [P in keyof K]: T[P]; }
             // =>
             // Extract<keyof K, string>
@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
                     op: TsTypeOperatorOp::KeyOf,
                     ..
                 }),
-            ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+            ) = m.type_param.constraint.as_deref().map(|ty| ty)
             {
                 // Extract<keyof T
                 return Ok(Type::Ref(Ref {

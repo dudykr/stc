@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
                     }),
                     type_args: Some(type_args),
                     ..
-                }) = ty.normalize()
+                }) = ty
                 {
                     if let Some(ty) = type_args.params.first() {
                         return ty;
@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
                 .map(Cow::Owned);
         }
 
-        if let Type::Union(ty) = ty.normalize() {
+        if let Type::Union(ty) = ty {
             let mut types = Vec::with_capacity(ty.types.len());
 
             for ty in &ty.types {
@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
         Ok(res
             .and_then(|then_ty| {
-                if let Type::Function(f) = then_ty.normalize() {
+                if let Type::Function(f) = then_ty {
                     // Default type of the first type parameter is awaited type.
                     if let Some(type_params) = &f.type_params {
                         if let Some(ty) = type_params.params.first() {
