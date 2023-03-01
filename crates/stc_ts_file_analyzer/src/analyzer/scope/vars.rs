@@ -883,7 +883,7 @@ impl Analyzer<'_, '_> {
         let ty = (|| -> VResult<_> {
             let mut ty = self.normalize(
                 Some(span),
-                Cow::Borrowed(ty),
+                ty,
                 NormalizeTypeOpts {
                     preserve_mapped: false,
                     ..Default::default()
@@ -1018,11 +1018,11 @@ impl Analyzer<'_, '_> {
         Ok(ty.fixed())
     }
 
-    fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<ArcCowType> {
+    fn ensure_iterable(&mut self, span: Span, ty: ArcCowType) -> VResult<ArcCowType> {
         run(|| {
             if let Ok(..) = self.get_iterator(
                 span,
-                Cow::Borrowed(&ty),
+                &ty,
                 GetIteratorOpts {
                     disallow_str: true,
                     ..Default::default()
@@ -1033,7 +1033,7 @@ impl Analyzer<'_, '_> {
 
             Ok(Type::Array(Array {
                 span,
-                elem_type: box ty,
+                elem_type: ty,
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -1061,7 +1061,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Some(Type::Instance(Instance { ty: box result, .. })) => {
+            Some(Type::Instance(Instance { ty: result, .. })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
                     return self.regist_destructure(span, Some(result.into_type()), des_key);
                 }
@@ -1069,13 +1069,13 @@ impl Analyzer<'_, '_> {
 
             Some(Type::Tuple(Tuple { elems, .. })) => {
                 if elems.len() == 1 {
-                    if let Some(TupleElement { ty: box ty, .. }) = elems.first() {
+                    if let Some(TupleElement { ty: ty, .. }) = elems.first() {
                         return self.regist_destructure(span, Some(ty.clone()), des_key);
                     }
                 }
             }
 
-            Some(Type::Rest(RestType { ty: box ty, .. })) => {
+            Some(Type::Rest(RestType { ty: ty, .. })) => {
                 return self.regist_destructure(span, Some(ty.clone()), des_key);
             }
             _ => {}
