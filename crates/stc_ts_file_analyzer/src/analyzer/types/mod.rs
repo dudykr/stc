@@ -329,7 +329,7 @@ impl Analyzer<'_, '_> {
 
                                 return self.normalize(
                                     span,
-                                    (Type::new_union(actual_span, new_types)),
+                                    Type::new_union(actual_span, new_types),
                                     NormalizeTypeOpts {
                                         merge_union_elements: false,
                                         ..opts
