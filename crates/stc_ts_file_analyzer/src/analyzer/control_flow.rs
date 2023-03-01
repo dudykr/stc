@@ -1097,7 +1097,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(r) => {
                             if r.type_ann.is_none() {
                                 if let Some(m) = &mut self.mutations {
-                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span, Default::default()));
+                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span, Default::default()).into());
                                 }
                             }
 

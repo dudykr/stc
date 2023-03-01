@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
         let stored_ty = ty
             .clone()
             .map(Type::Enum)
-            .map(Type::freezed)
+            .map(Type::into_freezed)
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span, Default::default()));
 

@@ -1618,7 +1618,7 @@ impl Analyzer<'_, '_> {
                             })
                             .report(&mut child.storage)
                             .unwrap_or_else(|| Type::any(expr.span(), Default::default()));
-                        child.validate_with(|a| match super_ty {
+                        child.validate_with(|a| match &*super_ty {
                             Type::Lit(..)
                             | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1635,7 +1635,7 @@ impl Analyzer<'_, '_> {
                             _ => Ok(()),
                         });
 
-                        match super_ty {
+                        match &*super_ty {
                             // We should handle mixin
                             Type::Intersection(i) if need_base_class => {
                                 let mut has_class_in_super = false;

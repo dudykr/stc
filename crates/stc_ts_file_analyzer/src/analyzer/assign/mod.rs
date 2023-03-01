@@ -2844,7 +2844,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
-            let ty = ty;
+            let ty = &*ty;
 
             if let Type::TypeLit(ty) = ty {
                 //
@@ -2856,16 +2856,19 @@ impl Analyzer<'_, '_> {
                         ..
                     }) = member
                     {
-                        keys.push(Type::Lit(LitType {
-                            span: *span,
-                            lit: RTsLit::Str(RStr {
+                        keys.push(
+                            Type::Lit(LitType {
                                 span: *span,
-                                value: key.clone(),
-                                raw: None,
-                            }),
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
+                                lit: RTsLit::Str(RStr {
+                                    span: *span,
+                                    value: key.clone(),
+                                    raw: None,
+                                }),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
+                            .into(),
+                        );
                     }
                 }
 
@@ -2873,7 +2876,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = self
-                .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
+                .convert_type_to_type_lit(span, Cow::Borrowed(&ty))?
                 .map(Cow::into_owned)
                 .map(Type::TypeLit)
             {
