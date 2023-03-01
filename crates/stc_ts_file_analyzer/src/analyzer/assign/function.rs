@@ -694,7 +694,7 @@ impl Analyzer<'_, '_> {
                 let rhs = &r;
 
                 if let Type::EnumVariant(..) = *rhs {
-                    if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
+                    if let Ok(lit) = self.expand_enum_variant(rhs.clone().into_cow()) {
                         match &*lit {
                             Type::Lit(LitType {
                                 lit: RTsLit::Number(..), ..
