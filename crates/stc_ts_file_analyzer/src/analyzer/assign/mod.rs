@@ -1187,7 +1187,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(items) = items {
                             for t in items {
-                                if let Type::Enum(en) = t {
+                                if let Type::Enum(en) = &*t {
                                     if en.has_num {
                                         return Ok(());
                                     }
@@ -1989,7 +1989,7 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                let normalized = lu.types.iter().any(|ty| match ty {
+                let normalized = lu.types.iter().any(|ty| match &**ty {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });

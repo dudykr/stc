@@ -495,7 +495,7 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
+    fn downcast_types(&mut self, span: Span, types: Vec<ArcCowType>) -> VResult<Vec<ArcCowType>> {
         let _tracing = dev_span!("downcast_types");
 
         fn need_work(ty: &Type) -> bool {
@@ -741,7 +741,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
                     let mut lhs_ty = match lhs_ty {
                         Ok(v) => v,
-                        _ => Type::any(lhs.span(), Default::default()),
+                        _ => Type::any(lhs.span(), Default::default()).into(),
                     };
                     lhs_ty.freeze();
 

@@ -1312,10 +1312,11 @@ impl Analyzer<'_, '_> {
                             };
                             Type::Rest(RestType {
                                 span,
-                                ty: box elem_ty,
+                                ty: elem_ty,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
+                            .into()
                         }
 
                         _ => Type::any(DUMMY_SP, Default::default()),
@@ -1325,7 +1326,7 @@ impl Analyzer<'_, '_> {
                         span,
                         // TODO?
                         label: None,
-                        ty: box ty,
+                        ty,
                         tracker: Default::default(),
                     }
                 })

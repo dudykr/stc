@@ -749,7 +749,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
+        let ret_ty = declared_ret_ty.unwrap_or_else(|| {
             inferred_ret_ty.map(|ty| ty.generalize_lit().into()).unwrap_or_else(|| {
                 Type::Keyword(KeywordType {
                     span: c_span,
