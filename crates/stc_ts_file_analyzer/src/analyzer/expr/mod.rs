@@ -1701,7 +1701,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly: false,
-                        obj_type: box Type::This(this.clone()),
+                        obj_type: Type::This(this.clone()).into(),
                         index_type: prop_ty,
                         metadata: Default::default(),
                         tracker: Default::default(),
@@ -1756,7 +1756,7 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::NoSuchProperty {
                         span: *span,
-                        obj: Some(box obj.clone()),
+                        obj: Some(obj.clone().into()),
                         prop: Some(box prop.clone()),
                     }
                     .into());
@@ -1776,7 +1776,7 @@ impl Analyzer<'_, '_> {
                 if this.normalize_instance().is_this() {
                     return Err(ErrorKind::NoSuchProperty {
                         span,
-                        obj: Some(box obj.clone()),
+                        obj: Some(obj.clone().into()),
                         prop: Some(box prop.clone()),
                     }
                     .context("tried to access property of `this`"));
@@ -1791,21 +1791,21 @@ impl Analyzer<'_, '_> {
         let mut obj = match obj {
             Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
                 Some(span),
-                Cow::Borrowed(obj),
+                obj,
                 NormalizeTypeOpts {
                     preserve_intersection: true,
                     preserve_global_this: true,
                     ..Default::default()
                 },
             )?,
-            _ => Cow::Borrowed(obj),
+            _ => obj.clone().into_cow(),
         };
         if !self.config.is_builtin {
             obj.freeze();
         }
         let mut obj = self.expand(
             span,
-            obj.into_owned(),
+            obj,
             ExpandOpts {
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: true,
