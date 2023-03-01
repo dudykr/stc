@@ -2846,7 +2846,7 @@ impl Analyzer<'_, '_> {
                 }
                 IntrinsicKind::Capitalize => {
                     if let Some(value) = &value.raw {
-                        let ch = value.to_string().chars().next();
+                        let ch = value.chars().next();
 
                         if let Some(ch) = ch {
                             if !ch.is_uppercase() {
@@ -2864,7 +2864,7 @@ impl Analyzer<'_, '_> {
                 }
                 IntrinsicKind::Uncapitalize => {
                     if let Some(value) = &value.raw {
-                        let ch = value.to_string().chars().next();
+                        let ch = value.chars().next();
 
                         if let Some(ch) = ch {
                             if !ch.is_lowercase() {
