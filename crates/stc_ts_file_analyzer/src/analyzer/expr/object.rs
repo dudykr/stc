@@ -335,7 +335,7 @@ impl Analyzer<'_, '_> {
         Ok(Type::new_intersection(span, vec![to, rhs]))
     }
 
-    pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<ArcCowType> {
+    pub(crate) fn append_type_element(&mut self, to: ArcCowType, rhs: TypeElement) -> VResult<ArcCowType> {
         let _tracing = dev_span!("append_type_element");
 
         if to.is_any() || to.is_unknown() {

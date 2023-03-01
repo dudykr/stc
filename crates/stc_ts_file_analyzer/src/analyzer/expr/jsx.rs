@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
         ))
     }
 
-    fn get_jsx_namespace(&mut self) -> Option<Type> {
+    fn get_jsx_namespace(&mut self) -> Option<ArcCowType> {
         let top_level_ctxt = self.storage.top_level_ctxt(self.ctx.module_id);
 
         let types = self.find_type(&Id::new("JSX".into(), top_level_ctxt)).ok().flatten()?;
@@ -109,7 +109,8 @@ impl Analyzer<'_, '_> {
             members: vec![],
             metadata: Default::default(),
             tracker: Default::default(),
-        });
+        })
+        .into_cow();
         for attr in attrs {
             match attr {
                 RJSXAttrOrSpread::JSXAttr(attr) => match &attr.name {
@@ -119,15 +120,18 @@ impl Analyzer<'_, '_> {
                                 // TODO(kdy1): Pass down type annotation
                                 v.validate_with_args(self, None)?
                             }
-                            None => Some(Type::Lit(LitType {
-                                span: attr_name.span,
-                                lit: RTsLit::Bool(RBool {
+                            None => Some(
+                                Type::Lit(LitType {
                                     span: attr_name.span,
-                                    value: true,
-                                }),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })),
+                                    lit: RTsLit::Bool(RBool {
+                                        span: attr_name.span,
+                                        value: true,
+                                    }),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .into(),
+                            ),
                         };
 
                         if let Some(value) = value {
@@ -143,7 +147,7 @@ impl Analyzer<'_, '_> {
                                     },
                                     optional: false,
                                     params: Default::default(),
-                                    type_ann: Some(box value),
+                                    type_ann: Some(value),
                                     type_params: None,
                                     metadata: Default::default(),
                                     accessor: Default::default(),
