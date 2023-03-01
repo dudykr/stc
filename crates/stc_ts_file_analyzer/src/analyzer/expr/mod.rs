@@ -190,11 +190,11 @@ impl Analyzer<'_, '_> {
                     };
                     if let Some(scope) = scope {
                         if let Some(ty) = scope.this() {
-                            let mut ty = ty.into_owned();
+                            let mut ty = ty;
                             let name = Name::from(Id::word(js_word!("this")));
 
                             if !self.config.is_builtin {
-                                ty = self.apply_type_facts(&name, ty);
+                                ty = self.apply_type_facts(&name, ty).into();
 
                                 ty.assert_valid();
 
@@ -214,13 +214,15 @@ impl Analyzer<'_, '_> {
                             span,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }))
+                        })
+                        .into())
                     } else {
                         Ok(Type::from(ThisType {
                             span,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }))
+                        })
+                        .into())
                     }
                 }
 

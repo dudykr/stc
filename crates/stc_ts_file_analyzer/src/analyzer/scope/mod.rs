@@ -628,9 +628,9 @@ impl Scope<'_> {
         }
     }
 
-    pub fn this(&self) -> Option<Cow<Type>> {
+    pub fn this(&self) -> Option<ArcCowType> {
         if let Some(ref this) = self.this {
-            return Some(Cow::Borrowed(this));
+            return Some(this.clone());
         }
 
         self.parent?.this()

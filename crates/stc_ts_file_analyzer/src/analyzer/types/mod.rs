@@ -1703,7 +1703,7 @@ impl Analyzer<'_, '_> {
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
-    pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
+    pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: ArcCowType) -> ArcCowType {
         let _tracing = dev_span!("apply_type_facts", name = tracing::field::debug(name));
 
         let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);

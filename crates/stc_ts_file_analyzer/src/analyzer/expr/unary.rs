@@ -98,6 +98,7 @@ impl Analyzer<'_, '_> {
                             tracker: Default::default(),
                         })
                         .map(Type::Lit)
+                        .map(|v| v.into_cow())
                         .collect(),
                         metadata: Default::default(),
                         tracker: Default::default(),
@@ -113,14 +114,14 @@ impl Analyzer<'_, '_> {
                 .into());
             }
 
-            op!("void") => return Ok(Type::undefined(span, Default::default())),
+            op!("void") => return Ok(Type::undefined(span, Default::default()).into()),
 
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg_ty {
                     if let Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { span, value, .. }),
                         ..
-                    }) = arg
+                    }) = &**arg
                     {
                         let span = *span;
 
@@ -133,7 +134,8 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                 }
 
@@ -142,7 +144,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             op!("~") => {
@@ -151,7 +154,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
             _ => {}
         }
@@ -160,7 +164,7 @@ impl Analyzer<'_, '_> {
             if let Some(Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            })) = arg_ty
+            })) = &**arg_ty
             {
                 debug_assert!(!arg.span().is_dummy());
                 return Err(ErrorKind::Unknown { span: arg.span() }.into());
@@ -185,7 +189,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }))
+                })
+                .into())
             }
 
             _ => {}
@@ -301,10 +306,10 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn negate(ty: Type) -> Type {
+fn negate(ty: ArcCowType) -> ArcCowType {
     if let Type::Lit(LitType {
         ref lit, span, metadata, ..
-    }) = ty
+    }) = &*ty
     {
         match *lit {
             RTsLit::Bool(ref v) => {
@@ -366,7 +371,7 @@ fn negate(ty: Type) -> Type {
         }
     }
 
-    KeywordType {
+    Type::from(KeywordType {
         span: ty.span(),
         kind: TsKeywordTypeKind::TsBooleanKeyword,
         metadata: KeywordTypeMetadata {
@@ -374,6 +379,6 @@ fn negate(ty: Type) -> Type {
             ..Default::default()
         },
         tracker: Default::default(),
-    }
+    })
     .into()
 }
