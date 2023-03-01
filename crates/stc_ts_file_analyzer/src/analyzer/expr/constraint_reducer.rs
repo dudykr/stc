@@ -8,12 +8,12 @@ pub fn reduce(m: &Mapped) -> Option<Type> {
         replace_type(
             constraint,
             |ty| {
-                if let Type::Param(TypeParam {
-                    constraint: Some(box arr_ty @ Type::Array(..)),
-                    ..
-                }) = ty
-                {
-                    return true;
+                match ty {
+                    Type::Param(TypeParam {
+                        constraint: Some(box arr_ty),
+                        ..
+                    }) if arr_ty.is_array() => return true,
+                    _ => (),
                 }
 
                 false

@@ -3736,9 +3736,6 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
             return ty;
         }
 
-        // TODO(kdy1): PERF
-        ty.normalize_mut();
-
         ty = ty.fold_children_with(self);
 
         ty.generalize_lit()
@@ -3775,7 +3772,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 metadata,
                 ..
             }) if obj_ty.is_ref_type() && is_str_lit_or_union(index_type) => {
-                let mut types: Vec<Type> = vec![];
+                let mut types: Vec<ArcCowType> = vec![];
 
                 for index_ty in index_type.iter_union() {
                     let (lit_span, value) = match index_ty {
@@ -3832,27 +3829,30 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 type_args: Some(type_args),
                 metadata,
                 ..
-            }) if type_args.params.len() == 1 && type_args.params.iter().any(|ty| matches!(ty, Type::Union(..))) => {
+            }) if type_args.params.len() == 1 && type_args.params.iter().any(|ty| matches!(&**ty, Type::Union(..))) => {
                 // TODO(kdy1): Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
                     type_args.freeze();
 
                     for stored_ty in types {
-                        if let Type::Alias(Alias { ty: aliased_ty, .. }) = stored_ty {
+                        if let Type::Alias(Alias { ty: aliased_ty, .. }) = &**stored_ty {
                             let mut types = vec![];
 
-                            if let Type::Union(type_arg) = &type_args.params[0] {
+                            if let Type::Union(type_arg) = &*type_args.params[0] {
                                 for ty in &type_arg.types {
-                                    types.push(Type::Ref(Ref {
-                                        span: *span,
-                                        type_name: RTsEntityName::Ident(i.clone()),
-                                        type_args: Some(box TypeParamInstantiation {
-                                            span: type_args.span,
-                                            params: vec![ty.clone()],
-                                        }),
-                                        metadata: *metadata,
-                                        tracker: Default::default(),
-                                    }))
+                                    types.push(
+                                        Type::Ref(Ref {
+                                            span: *span,
+                                            type_name: RTsEntityName::Ident(i.clone()),
+                                            type_args: Some(box TypeParamInstantiation {
+                                                span: type_args.span,
+                                                params: vec![ty.clone()],
+                                            }),
+                                            metadata: *metadata,
+                                            tracker: Default::default(),
+                                        })
+                                        .into(),
+                                    )
                                 }
                             } else {
                                 unreachable!()
