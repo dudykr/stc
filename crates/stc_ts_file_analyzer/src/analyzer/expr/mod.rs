@@ -3186,7 +3186,7 @@ impl Analyzer<'_, '_> {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
                     ..
-                })) = constraint.as_ref().map(Type::normalize)
+                })) = &constraint
                 {
                     // Check if we can index the object with given key.
                     if let Ok(index_type) = self.keyof(span, ty) {
@@ -3199,7 +3199,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         ) {
-                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())));
+                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span, Default::default())).into());
                         }
                     }
                 }
@@ -3209,16 +3209,17 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box obj,
-                    index_type: box prop.ty().into_owned(),
+                    obj_type: obj,
+                    index_type: prop.ty().into_owned().into(),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             Type::Ref(r) => {
                 if let Key::Computed(computed) = prop {
-                    if let Type::Param(..) = obj {
+                    if let Type::Param(..) = &*obj {
                         let index_type = computed.ty.clone();
 
                         warn!("Creating an indexed access type with a type parameter as the object");
@@ -3227,11 +3228,12 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::IndexedAccessType(IndexedAccessType {
                             span,
                             readonly: false,
-                            obj_type: box obj,
+                            obj_type: obj,
                             index_type,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                 } else {
                     match &r.type_name {
