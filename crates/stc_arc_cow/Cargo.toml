@@ -8,6 +8,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+serde = {version = "1", features = ["derive"]}
 stc_visit = {path = "../stc_visit"}
 swc_common = "0.29.31"
 tracing = "0.1.37"
