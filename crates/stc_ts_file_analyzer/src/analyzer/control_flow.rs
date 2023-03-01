@@ -925,7 +925,7 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        let mut narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
+                        let mut narrowed_ty = self.narrowed_type_of_assignment(span, &declared_ty, &ty)?;
                         narrowed_ty.assert_valid();
                         narrowed_ty.freeze();
                         actual_ty = Some(narrowed_ty);

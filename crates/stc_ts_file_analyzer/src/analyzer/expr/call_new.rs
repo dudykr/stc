@@ -919,7 +919,7 @@ impl Analyzer<'_, '_> {
             .or_else(|err| {
                 if obj_type.is_type_param() {
                     if prop.is_computed() {
-                        return Ok(Type::any(span, Default::default()));
+                        return Ok(Type::any(span, Default::default()).into());
                     }
                 }
 
@@ -929,7 +929,7 @@ impl Analyzer<'_, '_> {
                 if obj_type.is_type_param() {
                     return ErrorKind::NoSuchProperty {
                         span,
-                        obj: Some(box obj_type.clone()),
+                        obj: Some(obj_type.clone().into()),
                         prop: Some(box prop.clone()),
                     };
                 }
