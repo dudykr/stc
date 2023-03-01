@@ -2060,7 +2060,7 @@ impl Analyzer<'_, '_> {
                         } else {
                             ErrorKind::WrongTypeForRhsOfNumericOperation {
                                 span: ty.span(),
-                                ty: box ty.clone(),
+                                ty: ty.clone().into(),
                             }
                             .into()
                         }),

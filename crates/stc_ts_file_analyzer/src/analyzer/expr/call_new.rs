@@ -605,7 +605,7 @@ impl Analyzer<'_, '_> {
             let obj_type = self
                 .normalize(
                     Some(span),
-                    Cow::Borrowed(obj_type),
+                    obj_type,
                     NormalizeTypeOpts {
                         preserve_intersection: true,
                         preserve_global_this: true,
@@ -626,7 +626,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(obj) => {
                     if let Key::Computed(key) = prop {
-                        if let Type::Symbol(key_ty) = key.ty {
+                        if let Type::Symbol(key_ty) = &*key.ty {
                             if key_ty.id == SymbolId::iterator() {
                                 return Ok(obj_type);
                             }
