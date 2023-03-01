@@ -6,7 +6,7 @@ use stc_ts_generics::{
     ExpandGenericOpts,
 };
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Id, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_ts_types::{ArcCowType, Id, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
@@ -90,7 +90,12 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
+    pub(in super::super) fn expand_type_params<T>(
+        &mut self,
+        params: &FxHashMap<Id, ArcCowType>,
+        ty: T,
+        opts: ExpandGenericOpts,
+    ) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {

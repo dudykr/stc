@@ -14,8 +14,8 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
-    TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    ArcCowType, Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType,
+    Operator, Ref, TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> VResult<FxHashMap<Id, Type>> {
+    ) -> VResult<FxHashMap<Id, ArcCowType>> {
         let _tracing = dev_span!("infer_type_with_types");
 
         if cfg!(debug_assertions) {

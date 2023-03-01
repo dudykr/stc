@@ -29,7 +29,7 @@ pub struct InferTypeResult {
 /// such operation.
 pub struct GenericExpander<'a> {
     pub cm: Arc<SourceMap>,
-    pub params: &'a FxHashMap<Id, Type>,
+    pub params: &'a FxHashMap<Id, ArcCowType>,
     /// Expand fully?
     pub fully: bool,
     pub dejavu: FxHashSet<Id>,
@@ -57,7 +57,7 @@ impl GenericExpander<'_> {
                         self.dejavu.insert(param.name.clone());
                         let ty = ty.clone().fold_with(self);
                         self.dejavu.remove(&param.name);
-                        return ty;
+                        return ty.into_owned();
                     }
                 }
             }
@@ -151,7 +151,7 @@ impl GenericExpander<'_> {
                         match operator.ty.normalize() {
                             Type::Param(param) if self.params.contains_key(&param.name) => {
                                 let ty = self.params.get(&param.name).unwrap();
-                                match ty {
+                                match &**ty {
                                     Type::TypeLit(ty)
                                         if ty
                                             .members
@@ -580,7 +580,7 @@ impl Fold<Method> for GenericExpander<'_> {
 /// This [Visit] implementation is used to check if one of the type parameters
 /// are used.
 struct GenericChecker<'a> {
-    params: &'a FxHashMap<Id, Type>,
+    params: &'a FxHashMap<Id, ArcCowType>,
     found: bool,
 }
 

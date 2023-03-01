@@ -5,7 +5,7 @@ use backtrace::Backtrace;
 use fxhash::FxHashMap;
 use rnode::{Fold, FoldWith, RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
-use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
+use stc_ts_types::{ArcCowType, Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
 use stc_utils::cache::ALLOW_DEEP_CLONE;
 use swc_common::{sync::Lrc, SourceMap, SourceMapper, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -16,7 +16,7 @@ use tracing::{info, Level};
 
 pub mod debugger;
 
-pub fn dump_type_map(map: &FxHashMap<Id, Type>) -> String {
+pub fn dump_type_map(map: &FxHashMap<Id, ArcCowType>) -> String {
     if !cfg!(debug_assertions) {
         return String::new();
     }
