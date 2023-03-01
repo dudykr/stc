@@ -474,8 +474,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let save_ty = ty.clone().map(|ty| {
-                        if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default()) {
-                            let mut ty = ty.into_type();
+                        if let Ok(ty) = self.normalize(Some(span), &ty, Default::default()) {
                             if let Type::Union(Union { types, .. }) = ty.normalize_mut() {
                                 'outer: for member in types.iter_mut() {
                                     if let Type::Tuple(tuple) = member.normalize_mut() {
@@ -504,7 +503,8 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                         tracker: Default::default(),
-                    });
+                    })
+                    .into_cow();
 
                     if let Some(ty) = &ty {
                         let t = ty.normalize_instance();
