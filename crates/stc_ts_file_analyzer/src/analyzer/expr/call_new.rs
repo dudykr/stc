@@ -2125,12 +2125,13 @@ impl Analyzer<'_, '_> {
                             type_params: c.type_params.clone(),
                             params: c.params.clone(),
                             ret_ty: c.ret_ty.clone().unwrap_or_else(|| {
-                                box Type::Class(Class {
+                                Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })
+                                .into()
                             }),
                         });
                     }
@@ -2146,12 +2147,13 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: Default::default(),
                         params: Default::default(),
-                        ret_ty: box Type::Class(Class {
+                        ret_ty: Type::Class(Class {
                             span,
                             def: box cls.clone(),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })
+                        .into(),
                     });
                 }
 
@@ -2207,7 +2209,7 @@ impl Analyzer<'_, '_> {
         }
 
         if callee.is_any() {
-            return Ok(Type::any(span, Default::default()));
+            return Ok(Type::any(span, Default::default()).into());
         }
 
         match callee {
