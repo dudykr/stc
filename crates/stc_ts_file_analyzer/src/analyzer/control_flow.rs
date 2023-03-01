@@ -1446,7 +1446,7 @@ impl Analyzer<'_, '_> {
         } else {
             vec![cons, alt]
         };
-        let ty = Type::new_union(span, new_types).fixed();
+        let ty = Type::new_union(span, new_types).fixed().into_freezed();
         ty.assert_valid();
         Ok(ty)
     }

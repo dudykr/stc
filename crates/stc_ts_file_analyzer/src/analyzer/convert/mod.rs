@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
             tracker: Default::default(),
         };
-        self.register_type(param.name.clone(), param.clone().into());
+        self.register_type(param.name.clone(), Type::from(param.clone()).into_freezed());
 
         if cfg!(debug_assertions) && has_constraint {
             if let Ok(types) = self.find_type(&p.name.clone().into()) {
@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
 
                 debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
 
-                match types[0] {
+                match &*types[0] {
                     Type::Param(p) => {
                         assert!(p.constraint.is_some(), "should store constraint");
                     }
@@ -1420,6 +1420,7 @@ impl Analyzer<'_, '_> {
                     },
                     tracker: Default::default(),
                 })
+                .into_freezed()
             });
         }
     }
