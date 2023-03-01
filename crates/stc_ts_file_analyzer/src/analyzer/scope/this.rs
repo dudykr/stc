@@ -2,26 +2,29 @@ use std::borrow::Cow;
 
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_type_ops::this::contains_this;
-use stc_ts_types::{ClassMember, ClassProperty, CommonTypeMetadata, Id, Key, KeywordTypeMetadata, Method, Type};
+use stc_ts_types::{ArcCowType, ClassMember, ClassProperty, CommonTypeMetadata, Id, Key, KeywordTypeMetadata, Method, Type};
 use swc_common::Span;
 
 use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn get_property_type_from_this(&mut self, span: Span, p: &Id) -> Option<Type> {
+    pub(crate) fn get_property_type_from_this(&mut self, span: Span, p: &Id) -> Option<ArcCowType> {
         if self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class() {
             if let Some(declaring) = &self.scope.declaring_prop() {
                 if *p.sym() == *declaring.sym() {
-                    return Some(Type::any(
-                        span,
-                        KeywordTypeMetadata {
-                            common: CommonTypeMetadata {
-                                implicit: true,
+                    return Some(
+                        Type::any(
+                            span,
+                            KeywordTypeMetadata {
+                                common: CommonTypeMetadata {
+                                    implicit: true,
+                                    ..Default::default()
+                                },
                                 ..Default::default()
                             },
-                            ..Default::default()
-                        },
-                    ));
+                        )
+                        .into(),
+                    );
                 }
             }
         }

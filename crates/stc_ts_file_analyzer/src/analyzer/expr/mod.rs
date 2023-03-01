@@ -3932,7 +3932,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            return Ok(Type::any(span, Default::default()));
+            return Ok(Type::any(span, Default::default()).into());
         }
 
         if self.ctx.use_properties_of_this_implicitly {
@@ -3950,7 +3950,7 @@ impl Analyzer<'_, '_> {
                     return Ok(ty.clone().into_owned());
                 }
 
-                if let Type::Module(..) | Type::Alias(..) = ty {
+                if let Type::Module(..) | Type::Alias(..) = &**ty {
                     return Ok(ty.clone().into_owned());
                 }
 
@@ -3997,7 +3997,8 @@ impl Analyzer<'_, '_> {
                             },
                         },
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
             }
 
@@ -4010,7 +4011,8 @@ impl Analyzer<'_, '_> {
                     ))),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             if self.config.is_builtin {
@@ -4024,7 +4026,8 @@ impl Analyzer<'_, '_> {
                         ))),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
                 unreachable!("no such variable for builtin")
             }
