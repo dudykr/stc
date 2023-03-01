@@ -5,7 +5,9 @@ use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
-use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, TypeParam, Union, UnionMetadata};
+use stc_ts_types::{
+    Accessor, ArcCowType, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, TypeParam, Union, UnionMetadata,
+};
 use stc_utils::{cache::Freeze, dev_span};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;

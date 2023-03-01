@@ -55,7 +55,8 @@ impl Analyzer<'_, '_> {
                 let mut tuple = Type::Tuple(Tuple {
                     elems: Default::default(),
                     ..*ty
-                });
+                })
+                .into_cow();
 
                 for el in &ty.elems {
                     self.append_tuple_element_to_type(span, &mut tuple, el)

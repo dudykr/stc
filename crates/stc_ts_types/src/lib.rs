@@ -1725,6 +1725,11 @@ impl Type {
         ArcCowType::new_freezed(self)
     }
 
+    #[inline]
+    pub fn into_cow(self) -> ArcCowType {
+        ArcCowType::Owned(box self)
+    }
+
     #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn assert_clone_cheap(&self) {
         if !cfg!(debug_assertions) {
