@@ -2010,7 +2010,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Defaults to new type.
-        Ok(equals_to)
+        Ok(equals_to.clone())
     }
 
     fn report_errors_for_bin_expr(&mut self, span: Span, op: BinaryOp, lt: &Type, rt: &Type) {
