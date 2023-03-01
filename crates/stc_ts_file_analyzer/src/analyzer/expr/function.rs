@@ -58,7 +58,7 @@ impl Analyzer<'_, '_> {
                 Some(Ok(ty)) => Some(ty),
                 Some(Err(err)) => {
                     child.storage.report(err);
-                    Some(Type::any(f.span, Default::default()))
+                    Some(Type::any(f.span, Default::default()).into())
                 }
                 None => None,
             };

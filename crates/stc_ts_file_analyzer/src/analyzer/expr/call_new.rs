@@ -3329,7 +3329,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<ArcCowType> {
+    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: ArcCowType) -> VResult<ArcCowType> {
         let _tracing = dev_span!("narrow_with_predicate");
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -3340,7 +3340,7 @@ impl Analyzer<'_, '_> {
             .freezed();
 
         let new_ty = self
-            .normalize(Some(span), new_ty, Default::default())
+            .normalize(Some(span), &new_ty, Default::default())
             .context("tried to normalize new type")?
             .freezed();
 
@@ -3357,7 +3357,7 @@ impl Analyzer<'_, '_> {
         if use_simple_intersection {
             return Ok(Type::Intersection(Intersection {
                 span,
-                types: vec![orig_ty.into_owned(), new_ty.into_owned()],
+                types: vec![orig_ty, new_ty],
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -3381,10 +3381,10 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         if new_ty.is_fn_type() {
-                            return Ok(orig_ty.into_owned());
+                            return Ok(orig_ty);
                         }
 
-                        return Ok(new_ty.into_owned());
+                        return Ok(new_ty);
                     }
                     Type::Union(..) | Type::Interface(..) => {}
 
@@ -3419,18 +3419,19 @@ impl Analyzer<'_, '_> {
                 let mut new_types = vec![];
 
                 let mut did_upcast = false;
+                // TODO: Optimize `iter_union` to return CowArcTYpe
                 for ty in orig_ty.iter_union() {
                     if let Some(true) = self.extends(span, &new_ty, ty, Default::default()) {
                         did_upcast = true;
-                        new_types.push(new_ty.clone().into_owned());
+                        new_types.push(new_ty.clone());
                     } else if let Some(true) = self.extends(span, ty, &new_ty, Default::default()) {
-                        new_types.push(ty.clone());
+                        new_types.push(ty.clone().into());
                     }
                 }
 
                 // TODO(kdy1): Use super class instead of
                 if !did_upcast && new_types.is_empty() {
-                    new_types.push(new_ty.clone().into_owned());
+                    new_types.push(new_ty.clone());
                 }
 
                 new_types.dedup_type();
@@ -3442,7 +3443,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::ClassDef(def) = new_ty {
+        if let Type::ClassDef(def) = &*new_ty {
             return Ok(Type::Class(Class {
                 span,
                 def: box def.clone(),
@@ -3452,12 +3453,12 @@ impl Analyzer<'_, '_> {
             .into());
         }
 
-        Ok(new_ty.into_owned())
+        Ok(new_ty)
     }
 
     #[extra_validator]
-    fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &Type) {
-        match new_ty {
+    fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &ArcCowType) {
+        match &**new_ty {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 if let Some(previous_types) = self.find_var_type(&var_name.clone(), TypeOfMode::RValue).map(Cow::into_owned) {
@@ -3555,7 +3556,7 @@ impl Analyzer<'_, '_> {
         self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
             if let Some(type_params) = type_params {
                 for param in type_params {
-                    analyzer.register_type(param.name.clone(), Type::Param(param.clone()));
+                    analyzer.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
                 }
             }
 
