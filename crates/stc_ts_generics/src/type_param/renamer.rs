@@ -1,10 +1,10 @@
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith};
-use stc_ts_types::{Function, Id, MethodSignature, Type, TypeParamDecl};
+use stc_ts_types::{ArcCowType, Function, Id, MethodSignature, Type, TypeParamDecl};
 
 #[derive(Debug)]
 pub struct TypeParamRenamer {
-    pub inferred: FxHashMap<Id, Type>,
+    pub inferred: FxHashMap<Id, ArcCowType>,
     /// Declared type parameters. Only type parameters in this set will be
     /// replaced.
     ///

@@ -2435,7 +2435,6 @@ impl Analyzer<'_, '_> {
 
             // TODO(kdy1): PERF
             return Ok(ty
-                .foldable()
                 .fold_with(&mut TypeParamRenamer {
                     inferred: map.types,
                     declared: Default::default(),
@@ -2451,11 +2450,11 @@ impl Analyzer<'_, '_> {
 
         if let Some(ref mut f) = ty.as_fn_type_mut() {
             f.type_params = decl;
-        } else if matches!(ty, Type::ClassDef(..) | Type::Class(..)) {
+        } else if matches!(ty.normalize(), Type::ClassDef(..) | Type::Class(..)) {
             return Ok(ty);
         }
 
-        Ok(ty.foldable().fold_with(&mut TypeParamRemover::new()).fixed())
+        Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
     }
 }
 
