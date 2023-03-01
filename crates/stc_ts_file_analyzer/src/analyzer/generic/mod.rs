@@ -62,7 +62,7 @@ pub(super) struct InferData {
     /// var empty = one(() => {
     /// });
     /// ```
-    defaults: FxHashMap<Id, Type>,
+    defaults: FxHashMap<Id, ArcCowType>,
 
     dejavu: Vec<(Type, Type)>,
 
@@ -1640,7 +1640,7 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann = type_ann.or_else(|| Some(Type::any(arg_prop.span, Default::default())).into());
+                                    let type_ann = type_ann.or_else(|| Some(Type::any(arg_prop.span, Default::default()).into()));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),

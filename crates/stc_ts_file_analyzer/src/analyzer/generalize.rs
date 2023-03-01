@@ -696,11 +696,11 @@ impl Fold<Type> for Simplifier<'_> {
                     }),
                 index_type: box Type::Union(ref keys),
                 ..
-            }) if keys.types.iter().all(is_str_lit_or_union) => {
+            }) if keys.types.iter().all(|ty| is_str_lit_or_union(ty)) => {
                 let new_types = keys
                     .types
                     .iter()
-                    .map(|key| match key {
+                    .map(|key| match &**key {
                         Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.clone(),
                         _ => unreachable!(),
                     })
@@ -716,10 +716,10 @@ impl Fold<Type> for Simplifier<'_> {
                             ClassMember::Method(_) => unimplemented!(),
                             ClassMember::Property(p) => {
                                 if let Some(value) = &p.value {
-                                    return Some(*value.clone());
+                                    return Some(value.clone());
                                 }
 
-                                Some(Type::any(p.span, Default::default()))
+                                Some(Type::any(p.span, Default::default()).into())
                             }
                             ClassMember::Constructor(_) => unreachable!(),
                             ClassMember::IndexSignature(_) => unreachable!(),

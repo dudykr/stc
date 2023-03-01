@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        source: &Type,
+        source: &ArcCowType,
         targets: &[ArcCowType],
         is_target_union: bool,
         opts: InferTypeOpts,
@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
         if is_target_union {
             let mut naked_type_var = None;
 
-            let sources = if let Type::Union(source) = source {
+            let sources = if let Type::Union(source) = &**source {
                 Cow::Borrowed(&source.types)
             } else {
                 Cow::Owned(vec![source.clone()])
@@ -1209,7 +1209,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
@@ -1233,7 +1233,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
