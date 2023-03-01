@@ -617,10 +617,9 @@ impl Analyzer<'_, '_> {
                     },
                 )
                 .context("failed to normalize for call_property")?
-                .freezed()
-                .into_owned();
+                .freezed();
 
-            match obj_type {
+            match &*obj_type {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..

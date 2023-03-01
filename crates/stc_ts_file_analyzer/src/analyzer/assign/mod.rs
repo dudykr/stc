@@ -1853,7 +1853,7 @@ impl Analyzer<'_, '_> {
                     if opts.allow_iterable_on_rhs {
                         let res: VResult<_> = try {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
+                                .get_iterator(span, rhs, Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self

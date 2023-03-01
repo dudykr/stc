@@ -495,7 +495,7 @@ impl Analyzer<'_, '_> {
                 _ => err,
             })?;
 
-        if let Ok(elem_ty) = self.get_awaited_type(span, Cow::Borrowed(&elem_ty), false).map(Cow::into_owned) {
+        if let Ok(elem_ty) = self.get_awaited_type(span, &elem_ty, false) {
             return Ok(elem_ty.into());
         }
 
