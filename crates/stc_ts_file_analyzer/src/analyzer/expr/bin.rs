@@ -230,7 +230,7 @@ impl Analyzer<'_, '_> {
             self.cur_facts = prev_facts;
         }
 
-        let (mut lt, mut rt): (Type, Type) = match (lt, rt) {
+        let (mut lt, mut rt): (ArcCowType, ArcCowType) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(ErrorKind::Errors { span, errors }.into()),
         };
@@ -501,17 +501,20 @@ impl Analyzer<'_, '_> {
                             metadata,
                             default,
                             ..
-                        }) = c.left.1
+                        }) = &*c.left.1
                         {
                             if param.is_unknown() || param.is_any() {
                                 Type::Param(TypeParam {
                                     span: *param_span,
-                                    constraint: Some(box Type::Keyword(KeywordType {
-                                        span: *param_span,
-                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })),
+                                    constraint: Some(
+                                        Type::Keyword(KeywordType {
+                                            span: *param_span,
+                                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                        .into(),
+                                    ),
                                     name: param_name.clone(),
                                     default: default.clone(),
                                     metadata: *metadata,
@@ -1279,12 +1282,12 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<ArcCowType> {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: &Type, orig_ty: &Type) -> VResult<ArcCowType> {
         let _tracing = dev_span!("narrow_with_instanceof");
 
         let mut orig_ty = self.normalize(
             Some(span),
-            Cow::Borrowed(orig_ty),
+            orig_ty,
             NormalizeTypeOpts {
                 preserve_global_this: true,
                 preserve_union: true,
@@ -1295,7 +1298,7 @@ impl Analyzer<'_, '_> {
 
         let _stack = stack::track(span)?;
 
-        if let Type::Union(orig) = orig_ty {
+        if let Type::Union(orig) = &*orig_ty {
             if ty.is_interface() || ty.is_type_lit() {
                 if let Ok(out_result) = self.access_property(
                     span,
@@ -1364,7 +1367,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty.into_owned());
         }
 
-        match ty {
+        match &*ty {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
