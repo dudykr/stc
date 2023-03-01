@@ -430,7 +430,7 @@ impl Analyzer<'_, '_> {
                         })
                         .report(&mut analyzer.storage);
 
-                    (any_span, ty_of_left.as_ref())
+                    (any_span, ty_of_left.as_deref())
                 }
 
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
@@ -438,7 +438,7 @@ impl Analyzer<'_, '_> {
                         .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
                         .report(&mut analyzer.storage);
 
-                    (None, ty_of_left.as_ref())
+                    (None, ty_of_left.as_deref())
                 }
 
                 _ => {
@@ -500,7 +500,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(stc_ts_types::Function { params, .. }) = ty.as_fn_type_mut() {
                                     if !rhs_is_arrow {
                                         if !left_function_declare_not_this_type {
-                                            analyzer.scope.this = Some(*params[0].ty.to_owned());
+                                            analyzer.scope.this = Some(params[0].ty.clone());
                                         } else {
                                             // bound this (lhs to rhs)
                                             if let RPatOrExpr::Pat(box RPat::Expr(box RExpr::Member(RMemberExpr {
@@ -530,15 +530,14 @@ impl Analyzer<'_, '_> {
                             if let Some(stc_ts_types::Function { params, .. }) = ty.as_fn_type_mut() {
                                 if let Some(this) = &analyzer.scope.this {
                                     params[0] = FnParam {
-                                        ty: Box::new(
-                                            Type::Instance(Instance {
-                                                span: params[0].span,
-                                                ty: Box::new(this.clone()),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })
-                                            .freezed(),
-                                        ),
+                                        ty: Type::Instance(Instance {
+                                            span: params[0].span,
+                                            ty: this.clone(),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                        .into_freezed(),
+
                                         ..params[0].clone()
                                     };
                                 }
@@ -1586,7 +1585,8 @@ impl Analyzer<'_, '_> {
                                         ret_ty: member.ret_ty.clone(),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    }));
+                                    })
+                                    .into());
                                 }
                             }
 
@@ -1595,7 +1595,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(*property
                                         .value
                                         .clone()
-                                        .unwrap_or_else(|| box Type::any(span, KeywordTypeMetadata { ..Default::default() })));
+                                        .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }).into()));
                                 }
                             }
 
