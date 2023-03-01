@@ -691,7 +691,7 @@ impl Analyzer<'_, '_> {
                                         )
                                         .ok()
                                 })
-                                .map(|ty| ty.generalize_lit())
+                                .map(|ty| ty.generalize_lit().into_cow())
                                 .freezed();
 
                             let real_property_type = match prop_ty {

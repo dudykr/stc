@@ -1465,7 +1465,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<bool> {
         let _tracing = dev_span!("infer_type_using_mapped_type");
 
-        match arg {
+        match arg.normalize() {
             Type::Ref(arg) => {
                 let arg = self
                     .expand(
