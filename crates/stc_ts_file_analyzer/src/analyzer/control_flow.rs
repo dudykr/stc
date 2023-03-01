@@ -776,12 +776,12 @@ impl Analyzer<'_, '_> {
                         op!("??=") | op!("||=") => {
                             lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty);
 
-                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                            Type::new_union(span, vec![ArcCowType::new_freezed(lhs_ty), rhs_ty.clone()])
                         }
                         op!("&&=") => {
                             lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty);
 
-                            Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
+                            Type::new_union(span, vec![ArcCowType::new_freezed(lhs_ty), rhs_ty.clone()])
                         }
                         _ => rhs_ty.clone(),
                     }

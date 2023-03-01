@@ -468,7 +468,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        Some(box ty)
+                        Some(ty)
                     }
                     Err(e) => {
                         self.storage.report(e);

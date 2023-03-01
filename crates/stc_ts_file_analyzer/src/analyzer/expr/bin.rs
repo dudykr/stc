@@ -13,8 +13,8 @@ use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple, TypeElement, TypeLit, TypeParam,
-    TypeParamInstantiation, Union, UnionMetadata,
+    name::Name, ArcCowType, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Tuple, TypeElement, TypeLit,
+    TypeParam, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
@@ -1273,7 +1273,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<ArcCowType> {
         let _tracing = dev_span!("narrow_with_instanceof");
 
         let mut orig_ty = self.normalize(
