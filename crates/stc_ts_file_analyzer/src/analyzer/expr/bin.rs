@@ -931,7 +931,7 @@ impl Analyzer<'_, '_> {
                 if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
-                }) = lt
+                }) = &*lt
                 {
                     return Ok(Type::any(span, Default::default()));
                 }
@@ -1879,7 +1879,7 @@ impl Analyzer<'_, '_> {
 
         let ty = self.type_of_name(span, &name.slice_to(name.len() - 1), TypeOfMode::RValue, None)?;
 
-        let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
+        let ty = self.normalize(Some(span), &ty, Default::default())?.into_owned();
 
         if let Type::Union(u) = ty {
             let mut has_undefined = false;

@@ -479,14 +479,14 @@ impl Analyzer<'_, '_> {
                 .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
 
             let elem_ty = self
-                .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
+                .get_value_type_from_iterator_result(span, &item)
                 .context("tried to get element type of an async iterator")?;
 
             return Ok(elem_ty.into());
         }
 
         let elem_ty = self
-            .get_iterator_element_type(span, ty, true, Default::default())
+            .get_iterator_element_type(span, &ty, true, Default::default())
             .context("tried to get element of iterator as a fallback logic for async iterator")
             .convert_err(|err| match err {
                 ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
