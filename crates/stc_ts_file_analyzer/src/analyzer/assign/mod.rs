@@ -293,14 +293,14 @@ impl Analyzer<'_, '_> {
                     Type::TypeLit(..) => {
                         return Err(ErrorKind::WrongTypeForRhsOfNumericOperation {
                             span,
-                            ty: rhs.clone().into(),
+                            ty: rhs.into_owned().into(),
                         }
                         .into())
                     }
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
                         return Err(ErrorKind::WrongTypeForRhsOfNumericOperation {
                             span,
-                            ty: rhs.clone().inbto(),
+                            ty: rhs.into_owned().into(),
                         }
                         .into())
                     }
@@ -313,7 +313,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    if let Type::Enum(l) = lhs {
+                    if let Type::Enum(l) = &*lhs {
                         //
                         if !l.has_str {
                             return Ok(());
@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::TypeLit(lhs) = lhs {
+        if let Type::TypeLit(lhs) = &*lhs {
             if lhs.members.is_empty() {
                 if rhs.is_str() {
                     return Ok(());
@@ -413,8 +413,8 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_with_opts(
                         &mut Default::default(),
-                        lhs,
-                        rhs,
+                        &lhs,
+                        &rhs,
                         AssignOpts {
                             span,
                             ..Default::default()
@@ -1495,7 +1495,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
+        match &*rhs {
             Type::Ref(..) => {
                 let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
                 new_rhs.freeze();
@@ -1738,7 +1738,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match to {
+        match &*to {
             Type::Mapped(to) => return self.assign_to_mapped(data, to, rhs, opts),
             Type::Param(TypeParam {
                 constraint: Some(ref c), ..
