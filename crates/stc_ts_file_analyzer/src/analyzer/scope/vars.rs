@@ -165,7 +165,7 @@ impl Analyzer<'_, '_> {
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Type::any(span, Default::default()));
+                    .unwrap_or_else(|| Type::any(span, Default::default()).into());
 
                 if self.ctx.is_fn_param && type_ann.is_none() {
                     // If the declaration includes an initializer expression (which is permitted

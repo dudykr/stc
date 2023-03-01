@@ -1611,7 +1611,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
+    pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<ArcCowType>> {
         let _tracing = dev_span!("expand_type_ann");
 
         let ty = match ty {

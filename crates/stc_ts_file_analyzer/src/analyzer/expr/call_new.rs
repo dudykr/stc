@@ -2624,7 +2624,7 @@ impl Analyzer<'_, '_> {
                 let _ = params.clone();
                 let _ = spread_arg_types.to_vec();
                 ret_ty.assert_clone_cheap();
-                let _ = type_ann.clone().map(Cow::into_owned);
+                let _ = type_ann.clone();
             }
 
             debug!("Inferring arg types for a call");
@@ -2635,8 +2635,8 @@ impl Analyzer<'_, '_> {
                 &params,
                 spread_arg_types,
                 None,
-                Some(&ret_ty),
-                type_ann.as_deref(),
+                Some(&ret_ty.clone().into_freezed_cow()),
+                type_ann.as_ref(),
                 InferTypeOpts {
                     is_type_ann: type_ann.is_some(),
                     ..Default::default()
