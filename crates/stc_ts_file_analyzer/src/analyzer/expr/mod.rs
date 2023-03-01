@@ -1772,7 +1772,7 @@ impl Analyzer<'_, '_> {
             } else {
                 Some(&self.scope)
             };
-            if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
+            if let Some(this) = scope.and_then(|scope| scope.this()) {
                 if this.normalize_instance().is_this() {
                     return Err(ErrorKind::NoSuchProperty {
                         span,
@@ -1859,7 +1859,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }));
+                })
+                .into());
             }
 
             Type::Tpl(obj) => {
@@ -1889,7 +1890,7 @@ impl Analyzer<'_, '_> {
             Type::Symbol(..) => {
                 return Err(ErrorKind::NoSuchProperty {
                     span,
-                    obj: Some(box obj.clone()),
+                    obj: Some(obj.clone().into()),
                     prop: Some(box prop.clone()),
                 }
                 .into())
@@ -1912,7 +1913,8 @@ impl Analyzer<'_, '_> {
                                     name: None,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
 
                             return Err(ErrorKind::NoSuchEnumVariant { span, name: sym.clone() }.into());
@@ -1959,7 +1961,8 @@ impl Analyzer<'_, '_> {
                             name: Some(sym.clone()),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                     Key::Num(RNumber { value, .. }) => {
                         let idx = value.round() as usize;
@@ -1984,7 +1987,8 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
 
                     _ => {
@@ -2002,7 +2006,8 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }));
+                        })
+                        .into());
                     }
                 }
             }
@@ -2020,7 +2025,7 @@ impl Analyzer<'_, '_> {
                 Some(types) => {
                     //
                     for ty in types {
-                        if let Type::Enum(ref e) = ty {
+                        if let Type::Enum(ref e) = &**ty {
                             for v in e.members.iter() {
                                 if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
                                     let new_obj_ty = Type::Lit(LitType {
@@ -2055,14 +2060,14 @@ impl Analyzer<'_, '_> {
                                         if class_prop.key.type_eq(prop) {
                                             self.storage
                                                 .report(ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { span: prop.span() }.into());
-                                            return Ok(Type::any(prop.span(), Default::default()));
+                                            return Ok(Type::any(prop.span(), Default::default()).into());
                                         };
                                     }
                                 }
                                 if class_prop.key.is_private() {
                                     self.storage
                                         .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
-                                    return Ok(Type::any(span, Default::default()));
+                                    return Ok(Type::any(span, Default::default()).into());
                                 }
 
                                 if let Some(declaring) = self.scope.declaring_prop.as_ref() {
@@ -2097,7 +2102,8 @@ impl Analyzer<'_, '_> {
                                     ret_ty: mtd.ret_ty.clone(),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
                         }
 
@@ -2111,7 +2117,8 @@ impl Analyzer<'_, '_> {
                                     is_abstract: false,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }));
+                                })
+                                .into());
                             }
                         }
 
@@ -2127,11 +2134,7 @@ impl Analyzer<'_, '_> {
                                     || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
 
                                 if indexed {
-                                    return Ok(index
-                                        .type_ann
-                                        .clone()
-                                        .map(|v| *v)
-                                        .unwrap_or_else(|| Type::any(span, Default::default()).into()));
+                                    return Ok(index.type_ann.clone().unwrap_or_else(|| Type::any(span, Default::default()).into()));
                                 }
                             }
                         }

@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
             if let Some(Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            })) = &**arg_ty
+            })) = arg_ty.as_deref()
             {
                 debug_assert!(!arg.span().is_dummy());
                 return Err(ErrorKind::Unknown { span: arg.span() }.into());
