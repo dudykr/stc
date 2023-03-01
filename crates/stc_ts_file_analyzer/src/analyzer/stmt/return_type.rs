@@ -90,7 +90,7 @@ impl Analyzer<'_, '_> {
         // let mut old_ret_tys = self.scope.return_types.take();
 
         let mut is_unreachable = false;
-        let mut ret_ty = (|| -> VResult<ArcCowType> {
+        let mut ret_ty = (|| -> VResult<Option<ArcCowType>> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     cannot_fallback_to_iterable_iterator,
@@ -361,7 +361,7 @@ impl Analyzer<'_, '_> {
             };
             let mut a = self.with_ctx(ctx);
 
-            let type_ann = a.scope.declared_return_type().cloned();
+            let type_ann = a.scope.declared_return_type();
             node.arg.validate_with_args(&mut *a, (TypeOfMode::RValue, None, type_ann.as_ref()))
         } {
             res?
@@ -372,6 +372,7 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
+            .into()
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
         ty.freeze();
