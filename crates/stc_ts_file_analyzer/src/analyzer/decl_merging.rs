@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
                 is_optional: m.optional,
                 type_params: m.type_params.clone(),
                 params: m.params.clone(),
-                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(m.span, Default::default()).into()),
             }))),
             TypeElement::Index(i) => Ok(Some(ClassMember::IndexSignature(i.clone()))),
         }
@@ -122,15 +122,18 @@ impl Analyzer<'_, '_> {
 
                 // Convert to a type literal first.
                 if let Some(b) = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&b))
                     .context("tried to convert an interface to a type literal")?
                 {
                     new_members.extend(b.into_owned().members);
 
-                    return Ok(Some(Type::Interface(Interface {
-                        body: new_members,
-                        ..a.clone()
-                    })));
+                    return Ok(Some(
+                        Type::Interface(Interface {
+                            body: new_members,
+                            ..a.clone()
+                        })
+                        .into(),
+                    ));
                 }
             }
 

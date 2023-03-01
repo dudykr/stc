@@ -878,21 +878,21 @@ impl Analyzer<'_, '_> {
             .get_value_type_from_iterator_result(span, Cow::Owned(next_ret_ty))
             .context("tried to get type from `IteratorResult<T>`")?;
 
-        Ok(elem_ty.into_owned())
+        Ok(elem_ty)
     }
 
     pub(crate) fn calculate_tuple_element_count(&mut self, span: Span, ty: &Type) -> VResult<Option<usize>> {
         let ty = self.normalize(
             Some(span),
-            Cow::Borrowed(ty),
+            ty,
             NormalizeTypeOpts {
                 preserve_global_this: true,
                 ..Default::default()
             },
         )?;
 
-        match ty {
-            Type::Rest(rest) => match ty {
+        match &*ty {
+            Type::Rest(rest) => match &*ty {
                 Type::Tuple(tuple) => {
                     let mut sum = 0;
                     for elem in tuple.elems.iter() {
