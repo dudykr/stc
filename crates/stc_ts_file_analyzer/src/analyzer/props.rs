@@ -273,18 +273,11 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                 ..
             })
-            | Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ty:
-                    box Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    }),
-                ..
-            })
             | Type::EnumVariant(..)
             | Type::Symbol(..)
             | Type::Tpl(..) => true,
+
+            ty if ty.is_unique_symbol() => true,
 
             Type::Param(TypeParam { constraint: Some(ty), .. }) => {
                 if self.is_type_valid_for_computed_key(span, ty) {
