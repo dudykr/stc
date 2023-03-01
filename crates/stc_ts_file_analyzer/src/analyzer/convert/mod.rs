@@ -1043,7 +1043,8 @@ impl Analyzer<'_, '_> {
                     span: this.span,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }),
+                })
+                .into_cow(),
                 RTsType::TsLitType(ty) => {
                     if let RTsLit::Tpl(t) = &ty.lit {
                         return Ok(t.validate_with(a)?.into());

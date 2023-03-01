@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator {
+        match &*iterator {
             Type::Ref(..) => {
                 let iterator = self
                     .expand_top_ref(span, iterator, Default::default())

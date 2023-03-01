@@ -784,12 +784,14 @@ impl Analyzer<'_, '_> {
 
                     match op {
                         op!("??=") | op!("||=") => {
-                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty).into_freezed();
+                            lhs_ty = self
+                                .apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty.into_owned())
+                                .into_freezed();
 
                             Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
                         }
                         op!("&&=") => {
-                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty).into_freezed();
+                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::Falsy, lhs_ty.into_owned()).into_freezed();
 
                             Type::new_union(span, vec![lhs_ty, rhs_ty.clone()])
                         }
