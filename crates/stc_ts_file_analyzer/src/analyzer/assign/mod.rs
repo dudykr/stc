@@ -707,7 +707,7 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_inner(
                             data,
-                            to,
+                            &to,
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -763,13 +763,15 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })
+                                .into(),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })
+                                .into(),
                             ],
                         ),
                         opts,
@@ -802,7 +804,7 @@ impl Analyzer<'_, '_> {
         }
 
         if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
-            match rhs {
+            match &*rhs {
                 Type::Param(TypeParam { constraint: Some(ty), .. }) if ty.is_never() => return Ok(()),
                 Type::Intersection(Intersection { types, .. }) => {
                     let result_ty = self.normalize_intersection_types(span, types, Default::default())?;
@@ -1405,7 +1407,7 @@ impl Analyzer<'_, '_> {
                 return Err(ErrorKind::Errors { span, errors }.into());
             }
 
-            Type::Class(l) => match rhs {
+            Type::Class(l) => match &*rhs {
                 Type::Interface(..)
                 | Type::Ref(..)
                 | Type::TypeLit(..)
@@ -1424,20 +1426,20 @@ impl Analyzer<'_, '_> {
             },
             Type::ClassDef(l) => {
                 return self
-                    .assign_to_class_def(data, l, rhs, opts)
+                    .assign_to_class_def(data, l, &rhs, opts)
                     .context("tried to assign a type to a class definition")
             }
 
-            Type::Lit(ref lhs) => match rhs {
+            Type::Lit(ref lhs) => match &*rhs {
                 Type::Lit(rhs) => {
-                    if is_lit_eq_ignore_span(lhs, rhs) {
+                    if is_lit_eq_ignore_span(lhs, &rhs) {
                         return Ok(());
                     } else {
                         return Err(ErrorKind::AssignFailed {
                             span: opts.left_ident_span.unwrap_or(span),
-                            left: box to.clone(),
+                            left: to.clone().into(),
                             right_ident: opts.right_ident_span,
-                            right: box rhs.clone().into(),
+                            right: rhs.clone().into(),
                             cause: vec![],
                         }
                         .into());
@@ -1464,7 +1466,7 @@ impl Analyzer<'_, '_> {
                 }
                 _ => {
                     if let RTsLit::Str(lhs) = &lhs.lit {
-                        if let Type::Tpl(rhs) = rhs {
+                        if let Type::Tpl(rhs) = &*rhs {
                             if rhs.types.is_empty() {
                                 if *lhs.value == *rhs.quasis[0].value {
                                     return Ok(());
