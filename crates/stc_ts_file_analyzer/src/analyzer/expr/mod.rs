@@ -3131,12 +3131,12 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint {
+                match &constraint {
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Array(..),
+                        ty: arr_ty,
                         ..
-                    })) => {
+                    })) if arr_ty.is_array() => {
                         if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
                             return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
                         }
@@ -3148,7 +3148,7 @@ impl Analyzer<'_, '_> {
                         // };
                         if let Ok(()) = self.assign(span, &mut Default::default(), index, &prop.ty()) {
                             // We handle `Partial<string>` at here.
-                            let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
+                            let ty = m.ty.clone().unwrap_or_else(|| Type::any(span, Default::default()).into());
 
                             let ty = match m.optional {
                                 Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => {
@@ -3157,11 +3157,12 @@ impl Analyzer<'_, '_> {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    });
+                                    })
+                                    .into_cow();
                                     let mut types = vec![undefined, ty];
                                     types.dedup_type();
 
-                                    Type::new_union(span, types)
+                                    Type::new_union(span, types).into()
                                 }
                                 Some(TruePlusMinus::Minus) => self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty),
                                 _ => ty,
