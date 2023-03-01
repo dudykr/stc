@@ -125,12 +125,8 @@ impl Analyzer<'_, '_> {
             in_actual_type: true,
             ..self.ctx
         };
-        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::freezed)
-            .map(From::from);
-        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::freezed)
-            .map(From::from);
+        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx))).freezed();
+        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx))).freezed();
 
         let has_constraint = constraint.is_some();
 
