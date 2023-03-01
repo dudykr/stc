@@ -366,7 +366,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let inexact = obj
                     .types
                     .iter()
-                    .filter_map(|ty| match ty {
+                    .filter_map(|ty| match ty.normalize() {
                         Type::TypeLit(ty) => Some(ty),
                         _ => None,
                     })

@@ -361,13 +361,13 @@ impl Analyzer<'_, '_> {
                         if matches!(ty, Type::Tuple(..)) {
                             match ty {
                                 Type::Tuple(tuple) => {
-                                    let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+                                    let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
 
                                     types.dedup_type();
 
                                     ty = Type::Array(Array {
                                         span: tuple.span,
-                                        elem_type: box Type::new_union(tuple.span, types),
+                                        elem_type: Type::new_union(tuple.span, types).into(),
                                         metadata: ArrayMetadata {
                                             common: tuple.metadata.common,
                                             ..Default::default()
