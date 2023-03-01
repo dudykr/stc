@@ -2498,12 +2498,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 if prop.is_computed() && !opts.do_not_use_any_for_object {
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
 
                 return Err(ErrorKind::NoSuchProperty {
                     span,
-                    obj: Some(box obj),
+                    obj: Some(obj.into()),
                     prop: Some(box prop.clone()),
                 }
                 .into());
@@ -2541,7 +2541,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_mode == TypeOfMode::LValue {
-                    return Ok(Type::any(span, Default::default()));
+                    return Ok(Type::any(span, Default::default()).into());
                 }
 
                 if members.iter().any(|e| e.is_call()) {
@@ -2564,12 +2564,13 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .into());
                 }
 
                 return Err(ErrorKind::NoSuchProperty {
                     span,
-                    obj: Some(box obj),
+                    obj: Some(obj.into()),
                     prop: Some(box prop.clone()),
                 }
                 .into());
@@ -2653,21 +2654,24 @@ impl Analyzer<'_, '_> {
                 } else {
                     if !errors.is_empty() {
                         if is_all_tuple && errors.len() != types.len() {
-                            tys.push(Type::Keyword(KeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            }));
+                            tys.push(
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .into(),
+                            );
                             tys.dedup_type();
-                            let ty = Type::new_union(span, tys);
+                            let ty = Type::new_union(span, tys).into();
                             ty.assert_valid();
                             return Ok(ty);
                         }
 
                         return Err(ErrorKind::NoSuchProperty {
                             span,
-                            obj: Some(box obj),
+                            obj: Some(obj.into()),
                             prop: Some(box prop.clone()),
                         }
                         .into());
