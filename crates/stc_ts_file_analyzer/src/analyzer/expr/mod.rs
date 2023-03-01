@@ -602,7 +602,7 @@ impl Analyzer<'_, '_> {
             let ret_ty = analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             if let Some(span) = any_span {
-                return Ok(Type::any(span, Default::default()));
+                return Ok(Type::any(span, Default::default()).into());
             }
 
             Ok(ret_ty)
@@ -721,7 +721,7 @@ impl Analyzer<'_, '_> {
             }
         }
         if is_any {
-            return Ok(Type::any(span, Default::default()));
+            return Ok(Type::any(span, Default::default()).into());
         }
 
         return exprs.last().unwrap().validate_with_args(self, (mode, None, type_ann));
@@ -897,7 +897,7 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
                 if let Ok(Some(types)) = self.find_type(enum_name) {
                     for ty in types {
-                        if let Type::Enum(e) = ty {
+                        if let Type::Enum(e) = &**ty {
                             let e = e.clone();
                             return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
                         }
@@ -955,7 +955,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ref type_ann) = p.type_ann {
                                 if p.optional {
-                                    let mut types = vec![Type::undefined(span, Default::default()), *type_ann.clone()];
+                                    let mut types = vec![Type::undefined(span, Default::default()).into(), type_ann.clone()];
                                     types.dedup_type();
                                     matching_elements.push(Type::new_union(span, types));
                                 } else {

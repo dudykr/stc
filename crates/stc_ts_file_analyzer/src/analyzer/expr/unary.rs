@@ -311,6 +311,9 @@ fn negate(ty: ArcCowType) -> ArcCowType {
         ref lit, span, metadata, ..
     }) = &*ty
     {
+        let span = *span;
+        let metadata = *metadata;
+
         match *lit {
             RTsLit::Bool(ref v) => {
                 return Type::Lit(LitType {
@@ -321,7 +324,8 @@ fn negate(ty: ArcCowType) -> ArcCowType {
                     span,
                     metadata,
                     tracker: Default::default(),
-                });
+                })
+                .into();
             }
             RTsLit::Number(ref v) => {
                 return Type::Lit(LitType {
@@ -343,7 +347,8 @@ fn negate(ty: ArcCowType) -> ArcCowType {
                     span,
                     metadata,
                     tracker: Default::default(),
-                });
+                })
+                .into();
             }
             RTsLit::Tpl(ref v) => {
                 return Type::Lit(LitType {
@@ -354,7 +359,8 @@ fn negate(ty: ArcCowType) -> ArcCowType {
                     span,
                     metadata,
                     tracker: Default::default(),
-                });
+                })
+                .into();
             }
             RTsLit::BigInt(ref v) => {
                 return Type::Lit(LitType {
@@ -366,7 +372,8 @@ fn negate(ty: ArcCowType) -> ArcCowType {
                     span,
                     metadata,
                     tracker: Default::default(),
-                });
+                })
+                .into();
             }
         }
     }
