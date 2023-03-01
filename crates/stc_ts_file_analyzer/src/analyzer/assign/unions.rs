@@ -5,7 +5,8 @@ use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
+    CowType, KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
+    UnionMetadata,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, DUMMY_SP};
@@ -131,7 +132,8 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Use Cow<TupleElement>
     fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> VResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
-            let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
+            let to_for_clone = CowType::new_freezed(to.clone());
+            let mut to_types = (0..el_ty.types.len()).map(|_| to_for_clone.clone()).collect_vec();
 
             for (idx, el_ty) in el_ty.types.iter().enumerate() {
                 self.append_tuple_element_to_type(
@@ -140,7 +142,7 @@ impl Analyzer<'_, '_> {
                     &TupleElement {
                         span: el.span,
                         label: el.label.clone(),
-                        ty: box el_ty.clone(),
+                        ty: el_ty.clone(),
                         tracker: Default::default(),
                     },
                 )?;
@@ -156,7 +158,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match to.normalize_mut() {
+        match to {
             Type::Union(to) => {
                 for to in &mut to.types {
                     self.append_tuple_element_to_type(span, to, el)?;
@@ -194,7 +196,8 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: LitTypeMetadata::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                     Type::Lit(LitType {
                         span: DUMMY_SP,
                         lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
@@ -203,7 +206,8 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: LitTypeMetadata::default(),
                         tracker: Default::default(),
-                    }),
+                    })
+                    .into(),
                 ],
                 metadata: UnionMetadata {
                     common: metadata.common,

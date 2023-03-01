@@ -951,7 +951,7 @@ impl Analyzer<'_, '_> {
             let to = self
                 .normalize(
                     Some(opts.span),
-                    Cow::Borrowed(rhs),
+                    Cow::Borrowed(&rhs),
                     NormalizeTypeOpts {
                         preserve_typeof: true,
                         preserve_global_this: true,
@@ -962,7 +962,7 @@ impl Analyzer<'_, '_> {
                 )?
                 .freezed();
 
-            if let Ok(()) = self.assign_with_opts(data, &to, rhs, opts) {
+            if let Ok(()) = self.assign_with_opts(data, &to, &rhs, opts) {
                 return Ok(());
             }
         }
@@ -1501,7 +1501,7 @@ impl Analyzer<'_, '_> {
                 new_rhs.freeze();
                 // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
-                    .assign_inner(data, to, &new_rhs, opts)
+                    .assign_inner(data, &to, &new_rhs, opts)
                     .context("tried to assign a type expanded from a reference to another type");
             }
 

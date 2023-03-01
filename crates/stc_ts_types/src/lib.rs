@@ -1609,6 +1609,12 @@ impl Deref for CowType {
 
 impl CowType {
     #[inline]
+    pub fn new_freezed(mut ty: Type) -> Self {
+        ty.freeze();
+        CowType::Arc(ArcType { ty: Arc::new(ty) })
+    }
+
+    #[inline]
     pub fn into_owned(self) -> Type {
         match self {
             CowType::Owned(ty) => *ty,
