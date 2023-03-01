@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let ty = ty.unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit();
+                        let mut ty = default_value_ty.generalize_lit().into_cow();
 
                         if matches!(ty, Type::Tuple(..)) {
                             match ty {
@@ -403,7 +403,7 @@ impl Analyzer<'_, '_> {
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
                     PatMode::Decl => None,
-                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
+                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()).into())),
                 },
                 _ => None,
             },
@@ -443,7 +443,7 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => false,
                 _ => true,
             },
-            ty: box ty,
+            ty,
         })
     }
 }
@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
             let res: Result<_, _> = try {
                 let value_ty = right.validate_with_default(self)?;
 
-                match value_ty {
+                match value_ty.normalize() {
                     Type::Array(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
