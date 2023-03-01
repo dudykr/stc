@@ -548,8 +548,8 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let param_normalized = param;
-        let arg_normalized = arg;
+        let param_normalized = &**param;
+        let arg_normalized = &**arg;
 
         param.assert_clone_cheap();
         arg.assert_clone_cheap();
