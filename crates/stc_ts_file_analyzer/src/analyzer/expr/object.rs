@@ -240,11 +240,11 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match rhs {
+        match &*rhs {
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
                 if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {
-                    return self.append_type(span, to, Type::TypeLit(rhs.into_owned()), opts);
+                    return self.append_type(span, to, Type::TypeLit(rhs.into_owned()).into_cow(), opts);
                 }
             }
 
@@ -252,9 +252,8 @@ impl Analyzer<'_, '_> {
         }
 
         if !opts.do_not_check_for_undefined && self.is_always_undefined(&rhs) {
-            self.storage
-                .report(ErrorKind::NonObjectInSpread { span, ty: box rhs.clone() }.into());
-            return Ok(Type::any(to.span(), Default::default()));
+            self.storage.report(ErrorKind::NonObjectInSpread { span, ty: rhs.clone() }.into());
+            return Ok(Type::any(to.span(), Default::default()).into());
         }
 
         let mut to = to.foldable();
@@ -265,13 +264,11 @@ impl Analyzer<'_, '_> {
                 lit.metadata.inexact = true;
                 let common_metadata = lit.metadata.common;
 
-                rhs = rhs.foldable();
-
-                match rhs {
+                match &*rhs {
                     Type::TypeLit(mut rhs) => {
                         remove_readonly(&mut rhs.members);
                         lit.members.extend(rhs.members);
-                        return Ok(to);
+                        return Ok(to.into());
                     }
                     Type::Union(rhs) => {
                         return Ok(Type::Union(Union {
@@ -297,7 +294,8 @@ impl Analyzer<'_, '_> {
                             },
                             tracker: Default::default(),
                         })
-                        .fixed())
+                        .fixed()
+                        .into())
                     }
                     _ => {}
                 }
