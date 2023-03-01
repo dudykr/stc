@@ -190,12 +190,13 @@ impl Analyzer<'_, '_> {
                         params_tuple_els.push(TupleElement {
                             span: param.span,
                             label: None,
-                            ty: box Type::Rest(RestType {
+                            ty: Type::Rest(RestType {
                                 span: param.span,
                                 ty: param.ty.clone(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }),
+                            })
+                            .into(),
                             tracker: Default::default(),
                         });
                     }
@@ -208,35 +209,33 @@ impl Analyzer<'_, '_> {
                         });
                     }
                 }
-                match param.ty {
+                match &*param.ty {
                     ty @ Type::Union(..) => {
                         temp_els.push(TupleElement {
                             span: param.span,
                             label: None,
-                            ty: Box::new(ty.clone().freezed()),
+                            ty: ty.clone().into_freezed(),
                             tracker: Default::default(),
                         });
                     }
-                    Type::Param(TypeParam {
-                        constraint: Some(box ty), ..
-                    }) => {
-                        if let ty @ Type::Union(..) = ty {
+                    Type::Param(TypeParam { constraint: Some(ty), .. }) => {
+                        if let ty @ Type::Union(..) = &**ty {
                             temp_els.push(TupleElement {
                                 span: param.span,
                                 label: None,
-                                ty: Box::new(ty.clone().freezed()),
+                                ty: ty.clone().into_freezed(),
                                 tracker: Default::default(),
                             });
                         }
                     }
                     ty @ Type::Ref(..) => {
-                        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+                        let ty = self.normalize(Some(span), ty, Default::default());
                         if let Ok(ty) = ty {
-                            if let ty @ Type::Union(..) = ty {
+                            if let ty @ Type::Union(..) = &*ty {
                                 temp_els.push(TupleElement {
                                     span: param.span,
                                     label: None,
-                                    ty: Box::new(ty.clone().freezed()),
+                                    ty: ty.clone().into_freezed(),
                                     tracker: Default::default(),
                                 });
                             }
