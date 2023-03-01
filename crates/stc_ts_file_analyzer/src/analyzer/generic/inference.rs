@@ -36,15 +36,15 @@ pub(super) struct InferenceInfo {
     pub type_param: Id,
 
     /// Candidates in covariant positions (or undefined)
-    pub candidates: Vec<Type>,
+    pub candidates: Vec<ArcCowType>,
 
     /// Candidates in contravariant positions (or undefined)
-    pub contra_candidates: Vec<Type>,
+    pub contra_candidates: Vec<ArcCowType>,
 
     /// Cache for resolved inferred type
     ///
     /// TODO(kdy1): Make this `Option<Type>`, to match `tsc`.
-    pub inferred_type: Type,
+    pub inferred_type: ArcCowType,
 
     /// Priority of current inference set
     pub priority: InferencePriority,
@@ -893,7 +893,7 @@ impl Analyzer<'_, '_> {
                                 prev.metadata.prevent_tuple_to_array = true;
 
                                 let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
-                                new_elem.ty = box new_elem.ty.generalize_lit();
+                                new_elem.ty = new_elem.ty.generalize_lit().into();
                                 prev.elems.push(new_elem);
 
                                 Type::Tuple(prev).freezed()
