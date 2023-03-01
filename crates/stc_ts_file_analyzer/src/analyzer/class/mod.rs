@@ -752,7 +752,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
-            inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
+            inferred_ret_ty.map(|ty| ty.generalize_lit().into()).unwrap_or_else(|| {
                 Type::Keyword(KeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
@@ -771,7 +771,7 @@ impl Analyzer<'_, '_> {
             let node_id = c.function.node_id;
 
             let ret_ty = if self.may_generalize(&ret_ty) {
-                ret_ty.clone().generalize_lit()
+                ret_ty.clone().generalize_lit().into()
             } else {
                 *ret_ty.clone()
             };

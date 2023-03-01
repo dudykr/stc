@@ -504,7 +504,7 @@ impl Analyzer<'_, '_> {
                     Ok(ty) => Some(box ty),
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span, Default::default()))
+                        Some(Type::any(d.span, Default::default()).into())
                     }
                 },
                 None => Some(box Type::any(d.span, Default::default())),

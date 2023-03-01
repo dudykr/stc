@@ -256,9 +256,9 @@ impl Merge for Type {
     fn or(&mut self, r: Self) {
         let l_span = self.span();
 
-        let l = replace(self, Type::never(l_span, Default::default()));
+        let l = replace(self, Type::never(l_span, Default::default())).into();
 
-        *self = Type::new_union(l_span, vec![l, r]);
+        *self = Type::new_union(l_span, vec![l, r.into()]);
     }
 }
 
@@ -766,7 +766,7 @@ impl Analyzer<'_, '_> {
                                 let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
 
                                 if let Some(var) = self.scope.vars.get_mut(&Id::from(left)) {
-                                    var.actual_ty = Some(new_actual_ty.freezed());
+                                    var.actual_ty = Some(ArcCowType::new_freezed(new_actual_ty));
                                 }
                             }
                         }

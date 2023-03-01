@@ -2014,8 +2014,8 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::AssignFailed {
                         span,
                         cause: errors,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: to.clone().into(),
+                        right: rhs.clone().into(),
                         right_ident: opts.right_ident_span,
                     }
                     .into());
