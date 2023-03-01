@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
                         .validate_with(a)
                         .report(&mut a.storage)
                         .map(Type::from)
-                        .map(|ty| ty.into_freezed());
+                        .map(|ty| ty.into_freezed_cow());
                     let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()).into());
                     a.register_type(e.id.clone().into(), ty);
 
@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
                     span,
                     VarKind::Fn,
                     i.clone(),
-                    Some(Type::from(fn_ty).into_freezed()),
+                    Some(Type::from(fn_ty).into_freezed_cow()),
                     None,
                     true,
                     true,
@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
                 let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with_args(self, None)?;
-                let class_ty = Type::ClassDef(class_ty).into_freezed();
+                let class_ty = Type::ClassDef(class_ty).into_freezed_cow();
                 self.register_type(var_name.clone(), class_ty.clone());
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
@@ -251,7 +251,7 @@ impl Analyzer<'_, '_> {
         let iter = types
             .into_iter()
             .map(|v| v.into_owned())
-            .map(|v| v.into_freezed())
+            .map(|v| v.into_freezed_cow())
             .collect::<Vec<_>>();
         for ty in iter {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
@@ -497,7 +497,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ty) = data.exports.types.get(orig.sym()) {
                         did_work = true;
-                        let ty = Type::new_union(span, ty.clone()).into_freezed();
+                        let ty = Type::new_union(span, ty.clone()).into_freezed_cow();
                         self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
                     }
                 }

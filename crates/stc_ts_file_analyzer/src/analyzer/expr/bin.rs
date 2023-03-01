@@ -608,7 +608,7 @@ impl Analyzer<'_, '_> {
                                         tracker: Default::default(),
                                     })
                                     .fixed()
-                                    .into_freezed(),
+                                    .into_freezed_cow(),
                                 );
                             } else {
                                 self.cur_facts.true_facts.vars.insert(name.clone(), filtered_ty.clone());
@@ -1946,7 +1946,7 @@ impl Analyzer<'_, '_> {
                     excluded.freezed(),
                 ));
             }
-            let ty = Type::new_union(span, candidates).into_freezed();
+            let ty = Type::new_union(span, candidates).into_freezed_cow();
             return Ok((actual, ty, excluded.freezed()));
         }
 
@@ -2393,7 +2393,7 @@ impl Analyzer<'_, '_> {
                                             vec![]
                                         }
                                     };
-                                    temp_vec.push((*elem.ty).clone().into_freezed());
+                                    temp_vec.push((*elem.ty).clone().into_freezed_cow());
                                     additional_target.insert(l_name, temp_vec);
                                 }
                             }
@@ -2459,7 +2459,7 @@ impl Analyzer<'_, '_> {
                                     vec![]
                                 }
                             };
-                            temp_vec.push(act_ty.into_freezed());
+                            temp_vec.push(act_ty.into_freezed_cow());
                             additional_target.insert(l_name, temp_vec);
                         }
                     }

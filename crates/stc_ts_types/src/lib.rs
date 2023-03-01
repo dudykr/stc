@@ -1725,7 +1725,7 @@ impl Visit<Type> for AssertCloneCheap {
 
 impl Type {
     #[inline]
-    pub fn into_freezed(self) -> ArcCowType {
+    pub fn into_freezed_cow(self) -> ArcCowType {
         ArcCowType::new_freezed(self)
     }
 

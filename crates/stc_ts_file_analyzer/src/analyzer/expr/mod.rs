@@ -536,7 +536,7 @@ impl Analyzer<'_, '_> {
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })
-                                        .into_freezed(),
+                                        .into_freezed_cow(),
 
                                         ..params[0].clone()
                                     };
@@ -753,7 +753,7 @@ impl Analyzer<'_, '_> {
                 .and_then(|ty| {
                     self.expand_top_ref(ty.span(), Cow::Owned(ty.into_type()), Default::default())
                         .map(Cow::into_owned)
-                        .map(Type::into_freezed)
+                        .map(Type::into_freezed_cow)
                 })
                 .and_then(|ty| self.expand_enum(ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
@@ -4254,7 +4254,7 @@ impl Analyzer<'_, '_> {
                         .into(),
                     ],
                 )
-                .into_freezed())
+                .into_freezed_cow())
             }
 
             _ => {

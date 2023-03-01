@@ -194,7 +194,7 @@ impl Analyzer<'_, '_> {
             _ => {
                 if p.type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        m.for_class_props.entry(p.node_id).or_default().ty = value.clone().map(|ty| ty.generalize_lit().into_freezed());
+                        m.for_class_props.entry(p.node_id).or_default().ty = value.clone().map(|ty| ty.generalize_lit().into_freezed_cow());
                     }
                 }
             }
@@ -2051,7 +2051,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassExpr, type_ann: Option<&Type>) -> VResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with_args(self, type_ann) {
-            Ok(ty) => Type::from(ty).into_freezed(),
+            Ok(ty) => Type::from(ty).into_freezed_cow(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(c.span(), Default::default()).into()
@@ -2326,7 +2326,7 @@ impl Analyzer<'_, '_> {
                 Type::any(c.span(), Default::default())
             }
         };
-        let ty = ty.into_freezed();
+        let ty = ty.into_freezed_cow();
 
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());

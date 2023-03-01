@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
                         temp_els.push(TupleElement {
                             span: param.span,
                             label: None,
-                            ty: ty.clone().into_freezed(),
+                            ty: ty.clone().into_freezed_cow(),
                             tracker: Default::default(),
                         });
                     }
@@ -221,7 +221,7 @@ impl Analyzer<'_, '_> {
                             temp_els.push(TupleElement {
                                 span: param.span,
                                 label: None,
-                                ty: ty.clone().into_freezed(),
+                                ty: ty.clone().into_freezed_cow(),
                                 tracker: Default::default(),
                             });
                         }
@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
                                 temp_els.push(TupleElement {
                                     span: param.span,
                                     label: None,
-                                    ty: ty.clone().into_freezed(),
+                                    ty: ty.clone().into_freezed_cow(),
                                     tracker: Default::default(),
                                 });
                             }
@@ -318,7 +318,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                    .into_freezed(),
+                    .into_freezed_cow(),
                 ),
                 Some(destructure_key),
             );

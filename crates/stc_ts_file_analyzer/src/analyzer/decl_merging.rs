@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
-                                    .into_freezed(),
+                                    .into_freezed_cow(),
                                 );
                             }
                         }
@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })
-                                .into_freezed(),
+                                .into_freezed_cow(),
                             );
                         }
                     }

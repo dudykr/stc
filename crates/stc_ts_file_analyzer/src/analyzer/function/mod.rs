@@ -420,7 +420,7 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => Type::Function(ty).fixed().into_freezed(),
+            Ok(ty) => Type::Function(ty).fixed().into_freezed_cow(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(f.span, Default::default()).into()

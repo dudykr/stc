@@ -782,7 +782,7 @@ impl Analyzer<'_, '_> {
                             },
                             tracker: Default::default(),
                         })
-                        .into_freezed(),
+                        .into_freezed_cow(),
                     );
                 }
             }

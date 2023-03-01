@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
-                    .into_freezed(),
+                    .into_freezed_cow(),
                 );
             }
 
@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
             params.freeze();
 
             for param in &params {
-                self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
+                self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed_cow());
             }
 
             Ok(TypeParamDecl {
@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
             tracker: Default::default(),
         };
-        self.register_type(param.name.clone(), Type::from(param.clone()).into_freezed());
+        self.register_type(param.name.clone(), Type::from(param.clone()).into_freezed_cow());
 
         if cfg!(debug_assertions) && has_constraint {
             if let Ok(types) = self.find_type(&p.name.clone().into()) {
@@ -252,7 +252,7 @@ impl Analyzer<'_, '_> {
                 Ok(alias)
             })?
         }
-        .into_freezed();
+        .into_freezed_cow();
         self.register_type(d.id.clone().into(), alias.clone());
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
@@ -293,7 +293,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(ty)
             })?
-            .into_freezed();
+            .into_freezed_cow();
 
         // TODO(kdy1): Recover
         self.register_type(d.id.clone().into(), ty.clone());
@@ -1121,7 +1121,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         if is_topmost_type {
-            Ok(ty.into_freezed())
+            Ok(ty.into_freezed_cow())
         } else {
             Ok(ty.into_cow())
         }
@@ -1273,7 +1273,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .into_freezed()
+                .into_freezed_cow()
             });
         }
     }
@@ -1344,7 +1344,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
             tracker: Default::default(),
         })
-        .into_freezed();
+        .into_freezed_cow();
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
         }
@@ -1428,7 +1428,7 @@ impl Analyzer<'_, '_> {
                     },
                     tracker: Default::default(),
                 })
-                .into_freezed()
+                .into_freezed_cow()
             });
         }
     }

@@ -345,7 +345,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let iterator = iterator.clone().into_freezed();
+        let iterator = iterator.clone().into_freezed_cow();
         let next_ret_ty = self
             .call_property(
                 span,
@@ -844,7 +844,7 @@ impl Analyzer<'_, '_> {
 
     /// Returns the type of `iterator.next().value`.
     fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: &Type) -> VResult<ArcCowType> {
-        let iterator = iterator.clone().into_freezed();
+        let iterator = iterator.clone().into_freezed_cow();
 
         let next_ret_ty = self
             .call_property(

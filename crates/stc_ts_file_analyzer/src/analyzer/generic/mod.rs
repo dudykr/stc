@@ -1707,7 +1707,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
-                                    .into_freezed();
+                                    .into_freezed_cow();
                                     let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
                                         let mut ty = param.ty.clone();
                                         ty.freeze();

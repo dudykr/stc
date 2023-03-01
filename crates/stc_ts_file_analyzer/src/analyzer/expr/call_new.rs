@@ -1410,7 +1410,7 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })
-                        .into_freezed(),
+                        .into_freezed_cow(),
                     );
 
                     if cls.is_abstract {
@@ -1461,7 +1461,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             };
-                            self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
+                            self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed_cow());
                         }
                     }
 
@@ -2604,7 +2604,7 @@ impl Analyzer<'_, '_> {
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })
-                                .into_freezed(),
+                                .into_freezed_cow(),
                             );
                         }
                     }
@@ -2614,7 +2614,7 @@ impl Analyzer<'_, '_> {
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
-                self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
+                self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed_cow());
             }
 
             // Assert deep clone
@@ -2685,7 +2685,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
-                        self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
+                        self.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed_cow());
                     }
                 }
 
@@ -3361,7 +3361,7 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
-            .into_freezed());
+            .into_freezed_cow());
         }
 
         match &*new_ty {
@@ -3556,7 +3556,7 @@ impl Analyzer<'_, '_> {
         self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
             if let Some(type_params) = type_params {
                 for param in type_params {
-                    analyzer.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed());
+                    analyzer.register_type(param.name.clone(), Type::Param(param.clone()).into_freezed_cow());
                 }
             }
 
@@ -3677,7 +3677,7 @@ impl Analyzer<'_, '_> {
                 if let Some(mutations) = &mut self.mutations {
                     if let Some(node_id) = arg.node_id() {
                         if !node_id.is_invalid() {
-                            mutations.for_exprs.entry(node_id).or_default().type_ann = Some(type_ann.clone().into_freezed());
+                            mutations.for_exprs.entry(node_id).or_default().type_ann = Some(type_ann.clone().into_freezed_cow());
                         }
                     }
                 }

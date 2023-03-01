@@ -348,7 +348,7 @@ impl Analyzer<'_, '_> {
                                         })
                                         .ok()
                                 })
-                                .map(|ty| ty.generalize_lit().into_freezed());
+                                .map(|ty| ty.generalize_lit().into_freezed_cow());
 
                             // TODO(kdy1): actual_ty
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
@@ -401,7 +401,7 @@ impl Analyzer<'_, '_> {
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })
-                                        .into_freezed(),
+                                        .into_freezed_cow(),
                                         tracker: Default::default(),
                                     });
 
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
                                         add_destructure_sign(ty, destructure_key);
                                     }
 
-                                    let prop_ty = prop_ty.map(Type::into_freezed);
+                                    let prop_ty = prop_ty.map(Type::into_freezed_cow);
 
                                     match &prop.value {
                                         Some(default) => {

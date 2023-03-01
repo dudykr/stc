@@ -268,7 +268,7 @@ impl Merge for ArcCowType {
 
         let l = replace(self, Type::never(l_span, Default::default()).into());
 
-        *self = Type::new_union(l_span, vec![l, r.into()]).into_freezed();
+        *self = Type::new_union(l_span, vec![l, r.into()]).into_freezed_cow();
     }
 }
 
@@ -309,7 +309,7 @@ impl AddAssign for CondFacts {
                         }
                         prev => {
                             let prev = prev.take();
-                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev.into_cow(), v]).into_freezed();
+                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev.into_cow(), v]).into_freezed_cow();
                         }
                     };
                     e.get_mut().fix();
@@ -482,7 +482,7 @@ impl Analyzer<'_, '_> {
                     },
                     tracker: Default::default(),
                 })
-                .into_freezed();
+                .into_freezed_cow();
             }
         });
 
@@ -784,7 +784,9 @@ impl Analyzer<'_, '_> {
 
                     match op {
                         op!("??=") | op!("||=") => {
-                            lhs_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty).into_freezed();
+                            lhs_ty = self
+                                .apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, lhs_ty)
+                                .into_freezed_cow();
 
                             Type::new_union(span, vec![lhs_ty, rhs_ty.clone()]).into()
                         }
@@ -853,7 +855,7 @@ impl Analyzer<'_, '_> {
             .normalize(Some(ty.span().or_else(|| span)), ty, Default::default())
             .context("tried to normalize a type to assign it to a pattern")?
             .into_type()
-            .into_freezed();
+            .into_freezed_cow();
 
         let ty = orig_ty;
 
@@ -1383,7 +1385,7 @@ impl Analyzer<'_, '_> {
                 let mut ty = Type::new_union(span, new_obj_types);
                 ty.fix();
 
-                return Ok(Some((Name::from(top.clone()), ty.into_freezed())));
+                return Ok(Some((Name::from(top.clone()), ty.into_freezed_cow())));
             }
         }
 
@@ -1447,7 +1449,7 @@ impl Analyzer<'_, '_> {
         } else {
             vec![cons, alt]
         };
-        let ty = Type::new_union(span, new_types).fixed().into_freezed();
+        let ty = Type::new_union(span, new_types).fixed().into_freezed_cow();
         ty.assert_valid();
         Ok(ty)
     }
