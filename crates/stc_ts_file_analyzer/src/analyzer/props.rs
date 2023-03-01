@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(ref ty) = ty {
                             // TODO(kdy1): Add support for expressions like '' + ''.
-                            match ty {
+                            match ty.normalize() {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}

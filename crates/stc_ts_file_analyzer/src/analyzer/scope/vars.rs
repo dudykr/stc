@@ -253,7 +253,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
                             .unwrap_or_else(|err| {
                                 self.storage.report(err);
-                                Cow::Owned(Type::any(span, Default::default()).into())
+                                Type::any(span, Default::default()).into()
                             })
                         })
                         .freezed();
@@ -444,7 +444,7 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
-                                        .map(|ty| ty.generalize_lit())
+                                        .map(|ty| ty.generalize_lit().into_freezed_cow())
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
@@ -459,12 +459,13 @@ impl Analyzer<'_, '_> {
                                 let elem_ty = self
                                     .add_vars(elem, elem_ty, None, default, opts)
                                     .report(&mut self.storage)
-                                    .flatten();
+                                    .flatten()
+                                    .freezed();
 
                                 elems.push(TupleElement {
                                     span: elem.span(),
                                     label: Some(elem.clone()),
-                                    ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
+                                    ty: elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default()).into()),
                                     tracker: Default::default(),
                                 });
                             }

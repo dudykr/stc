@@ -729,7 +729,7 @@ impl Analyzer<'_, '_> {
             opts,
         };
 
-        let ty = ty.foldable().fold_with(&mut v).fixed();
+        let ty = ty.fold_with(&mut v).fixed();
         ty.assert_valid();
 
         let new = dump_type_as_string(&ty);
@@ -765,7 +765,6 @@ impl Analyzer<'_, '_> {
                 ..opts
             },
         )
-        .map(Cow::Owned)
     }
 
     /// This should be called after calling `register_type`.
