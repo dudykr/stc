@@ -1510,14 +1510,14 @@ impl Analyzer<'_, '_> {
 
                 v.ty = if let Some(ty) = ty.clone() {
                     Some(if let Some(var_ty) = v.ty {
-                        match ty {
+                        match ty.normalize() {
                             Type::Union(..) => {
                                 // TODO(kdy1): Check if all types are query or
                                 // function
                             }
                             Type::Query(..) | Type::Function(..) => {}
                             _ => {
-                                match var_ty {
+                                match var_ty.normalize() {
                                     // Allow overriding query type.
                                     Type::Query(..) => {}
                                     // Allow overloading query type.

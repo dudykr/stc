@@ -246,14 +246,15 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     tracker: Default::default(),
-                })));
+                }))
+                .into());
             }
 
             if is_async {
                 let ret_ty = if actual.is_empty() {
-                    Type::void(span, Default::default())
+                    Type::void(span, Default::default()).into_cow()
                 } else {
-                    self.simplify(Type::new_union(span, actual))
+                    self.simplify(Type::new_union(span, actual)).into_cow()
                 };
 
                 return Ok(Some(Type::Ref(Ref {
