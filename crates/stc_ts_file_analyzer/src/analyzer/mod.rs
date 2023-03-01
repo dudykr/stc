@@ -718,11 +718,11 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, partial: &ModuleTypeData) -> VResult<Type> {
+    fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, partial: &ModuleTypeData) -> VResult<ArcCowType> {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
+    fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<ArcCowType> {
         unreachable!()
     }
 
@@ -941,7 +941,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<ArcCowType> {
         let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;

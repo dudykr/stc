@@ -563,7 +563,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&self, ty: Type) -> VResult<Type> {
+    pub(super) fn expand_enum(&self, ty: Type) -> VResult<ArcCowType> {
         let e = match ty {
             Type::Enum(e) => e,
             _ => return Ok(ty),
@@ -599,7 +599,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expands an enum variant as a literal.
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<ArcCowType> {
         if let Type::EnumVariant(ref ev) = ty {
             if let Some(variant_name) = &ev.name {
                 if let Some(types) = self.find_type(&ev.enum_name)? {

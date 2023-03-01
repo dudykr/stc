@@ -2833,7 +2833,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<ArcCowType> {
         (|| -> VResult<_> {
             let ty = self.normalize(
                 Some(span),

@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// `span` and `callee` is used only for error reporting.
-    fn make_instance_from_type_elements(&mut self, span: Span, callee: &Type, elements: &[TypeElement]) -> VResult<Type> {
+    fn make_instance_from_type_elements(&mut self, span: Span, callee: &Type, elements: &[TypeElement]) -> VResult<ArcCowType> {
         let _tracing = dev_span!("make_instance_from_type_elements");
 
         let mut ret_ty_vec = vec![];
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow
-    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult<ArcCowType> {
         let _tracing = dev_span!("make_instance");
 
         let ty = ty;

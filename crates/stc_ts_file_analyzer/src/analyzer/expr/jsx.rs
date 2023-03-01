@@ -28,7 +28,7 @@ pub enum ResolvedJsxName {
 }
 
 impl Analyzer<'_, '_> {
-    fn get_jsx_intrinsic_element(&mut self, span: Span, sym: &JsWord) -> VResult<Type> {
+    fn get_jsx_intrinsic_element(&mut self, span: Span, sym: &JsWord) -> VResult<ArcCowType> {
         if let Some(jsx) = self.get_jsx_intrinsic_element_list(span)? {
             self.access_property(
                 span,
@@ -189,7 +189,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let mut name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
 
@@ -213,7 +213,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let children = e.children.validate_with(self)?;
 
         self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXText) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXText) -> VResult<ArcCowType> {
         Ok(Type::Keyword(KeywordType {
             span: e.span,
             kind: TsKeywordTypeKind::TsStringKeyword,
@@ -254,7 +254,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXSpreadChild) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXSpreadChild) -> VResult<ArcCowType> {
         e.expr.validate_with_default(self)
     }
 }
@@ -289,7 +289,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXMemberExpr) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXMemberExpr) -> VResult<ArcCowType> {
         let obj = e.obj.validate_with(self)?;
 
         self.access_property(
@@ -312,7 +312,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXObject) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXObject) -> VResult<ArcCowType> {
         match e {
             RJSXObject::Ident(e) => e.validate_with_default(self),
             RJSXObject::JSXMemberExpr(e) => e.validate_with(self),
@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXNamespacedName) -> VResult<Type> {
+    fn validate(&mut self, e: &RJSXNamespacedName) -> VResult<ArcCowType> {
         Err(ErrorKind::Unimplemented {
             span: e.span(),
             msg: "jsx namespaced name".to_string(),

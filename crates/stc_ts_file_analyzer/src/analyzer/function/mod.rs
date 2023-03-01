@@ -475,7 +475,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &RFnExpr, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, f: &RFnExpr, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         Ok(self.visit_fn(f.ident.as_ref(), &f.function, type_ann))
     }
 }

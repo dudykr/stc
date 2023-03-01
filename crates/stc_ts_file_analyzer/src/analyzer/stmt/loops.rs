@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, span: Span, rhs: &Type) -> VResult<Type> {
+    fn get_element_type_of_for_in(&mut self, span: Span, rhs: &Type) -> VResult<ArcCowType> {
         let rhs = self
             .normalize(
                 Some(span),

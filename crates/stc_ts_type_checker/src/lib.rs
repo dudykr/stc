@@ -365,7 +365,7 @@ where
         }
     }
 
-    fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, _partial: &ModuleTypeData) -> VResult<Type> {
+    fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, _partial: &ModuleTypeData) -> VResult<ArcCowType> {
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
         let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
@@ -373,7 +373,7 @@ where
         Ok(data)
     }
 
-    fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
+    fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<ArcCowType> {
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
         let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());

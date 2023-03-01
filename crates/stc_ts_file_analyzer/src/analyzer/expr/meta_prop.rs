@@ -9,7 +9,7 @@ use crate::{analyzer::Analyzer, VResult};
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RMetaPropExpr) -> VResult<Type> {
+    fn validate(&mut self, e: &RMetaPropExpr) -> VResult<ArcCowType> {
         match e.kind {
             MetaPropKind::NewTarget => {
                 if !self.ctx.allow_new_target {

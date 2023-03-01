@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let RCallExpr {
             span,
             ref callee,
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let RNewExpr {
             span,
             ref callee,
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTaggedTpl) -> VResult<Type> {
+    fn validate(&mut self, e: &RTaggedTpl) -> VResult<ArcCowType> {
         let span = e.span;
 
         let tpl_str_arg = {
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("extract_call_new_expr_member");
 
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
@@ -589,7 +589,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("call_property");
 
         obj_type.assert_valid();
@@ -1214,7 +1214,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("call_property_of_type_elements");
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -1367,7 +1367,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         if !self.config.is_builtin {
             ty.assert_valid();
         }
@@ -1894,7 +1894,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("call_type_element");
 
         let callee_span = callee_ty.span();
@@ -1978,7 +1978,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         self.get_return_type(
             span,
             ExtractKind::Call,
@@ -2161,7 +2161,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: SelectOpts,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let has_spread = arg_types.len() != spread_arg_types.len();
@@ -2524,7 +2524,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("get_return_type");
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -3301,7 +3301,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
+    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<ArcCowType> {
         let _tracing = dev_span!("narrow_with_predicate");
 
         let span = span.with_ctxt(SyntaxContext::empty());

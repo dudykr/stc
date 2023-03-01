@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let type_ann = e.type_ann.validate_with(self)?.freezed();
 
         let ty = e
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let ty = e
             .expr
             .validate_with_args(self, (mode, type_args, type_ann))

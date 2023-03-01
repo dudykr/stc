@@ -489,7 +489,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RYieldExpr) -> VResult<Type> {
+    fn validate(&mut self, e: &RYieldExpr) -> VResult<ArcCowType> {
         let span = e.span;
 
         if let Some(res) = e.arg.validate_with_default(self) {

@@ -18,7 +18,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUnaryExpr) -> VResult<Type> {
+    fn validate(&mut self, e: &RUnaryExpr) -> VResult<ArcCowType> {
         let RUnaryExpr { span, op, arg, .. } = e;
         let span = *span;
 

@@ -24,7 +24,7 @@ pub struct AppendTypeOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let type_ann = self.expand_type_ann(node.span, type_ann)?;
         debug_assert_eq!(node.span.ctxt, SyntaxContext::empty());
 
@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
         to: Type,
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("append_prop_or_spread_to_type");
 
         match prop {
@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
-    pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<Type> {
+    pub(crate) fn append_type(&mut self, span: Span, to: Type, rhs: Type, opts: AppendTypeOpts) -> VResult<ArcCowType> {
         let _tracing = dev_span!("append_type");
 
         if to.is_any() || to.is_unknown() {
@@ -333,7 +333,7 @@ impl Analyzer<'_, '_> {
         Ok(Type::new_intersection(span, vec![to, rhs]))
     }
 
-    pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<Type> {
+    pub(crate) fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult<ArcCowType> {
         let _tracing = dev_span!("append_type_element");
 
         if to.is_any() || to.is_unknown() {

@@ -16,7 +16,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUpdateExpr) -> VResult<Type> {
+    fn validate(&mut self, e: &RUpdateExpr) -> VResult<ArcCowType> {
         let span = e.span;
 
         if let RExpr::New(..) = &*e.arg {

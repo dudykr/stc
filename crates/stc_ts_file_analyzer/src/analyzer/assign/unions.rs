@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> VResult<Type> {
+    fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> VResult<ArcCowType> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
         match &*ty {

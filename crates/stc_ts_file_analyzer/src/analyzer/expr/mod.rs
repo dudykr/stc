@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
 
         let previous_unreachable_state = self.ctx.in_unreachable;
 
-        let mut ty = (|| -> VResult<Type> {
+        let mut ty = (|| -> VResult<ArcCowType> {
             match e {
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
@@ -347,14 +347,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let ctx = Ctx {
             pat_mode: PatMode::Assign,
             ..self.ctx
@@ -659,7 +659,7 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let RSeqExpr { span, ref exprs, .. } = *e;
 
         assert!(!exprs.is_empty());
@@ -3382,7 +3382,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand type parameters using `type_args`.
-    pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
+    pub(crate) fn expand_generics_with_type_args(
+        &mut self,
+        span: Span,
+        ty: Type,
+        type_args: &TypeParamInstantiation,
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("expand_generics_with_type_args");
 
         match ty {
@@ -3443,7 +3448,7 @@ impl Analyzer<'_, '_> {
         name: &Name,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("type_of_name");
 
         assert!(!name.is_empty(), "Cannot determine type of empty name");
@@ -3491,7 +3496,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returned type reflects conditional type facts.
-    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+    pub(super) fn type_of_var(
+        &mut self,
+        i: &RIdent,
+        type_mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("type_of_var");
 
         let span = i.span();
@@ -3628,7 +3638,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
-    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult<Type> {
+    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult<ArcCowType> {
         info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
@@ -4003,13 +4013,18 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+    pub(crate) fn type_of_ts_entity_name(
+        &mut self,
+        span: Span,
+        n: &RExpr,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> VResult<ArcCowType> {
         let _tracing = dev_span!("type_of_ts_entity_name");
 
         self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 
-    fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+    fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<ArcCowType> {
         let _tracing = dev_span!("type_of_ts_entity_name_inner");
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -4209,7 +4224,7 @@ impl Analyzer<'_, '_> {
         expr: &RMemberExpr,
         type_mode: TypeOfMode,
         include_optional_chaining_undefined: bool,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let RMemberExpr {
             ref obj, ref prop, span, ..
         } = *expr;
@@ -4373,7 +4388,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_super_prop_expr(&mut self, expr: &RSuperPropExpr, type_mode: TypeOfMode) -> VResult<Type> {
+    fn type_of_super_prop_expr(&mut self, expr: &RSuperPropExpr, type_mode: TypeOfMode) -> VResult<ArcCowType> {
         let RSuperPropExpr {
             ref obj, ref prop, span, ..
         } = *expr;
@@ -4570,7 +4585,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let types = e
             .exprs
             .iter()
@@ -4676,7 +4691,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         if i.sym == js_word!("undefined") {
             return Ok(Type::Keyword(KeywordType {
                 span: i.span.with_ctxt(SyntaxContext::empty()),
@@ -4706,7 +4721,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RLit) -> VResult<Type> {
+    fn validate(&mut self, e: &RLit) -> VResult<ArcCowType> {
         match e {
             RLit::Bool(v) => Ok(Type::Lit(LitType {
                 span: v.span,

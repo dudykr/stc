@@ -1423,7 +1423,7 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
+    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<ArcCowType> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = force_dump_type_as_string(ty);
 
@@ -2167,7 +2167,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<ArcCowType> {
         let arg = &ty.type_args;
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())? {

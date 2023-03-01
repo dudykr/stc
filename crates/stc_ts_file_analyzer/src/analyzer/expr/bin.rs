@@ -43,13 +43,13 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         self.validate_bin_expr(e, type_ann)
     }
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_bin_expr(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate_bin_expr(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let RBinExpr {
             span,
             op,
@@ -1929,7 +1929,7 @@ impl Analyzer<'_, '_> {
     /// ## orig_ty
     ///
     /// Original type of the variable.
-    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> VResult<Type> {
+    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> VResult<ArcCowType> {
         let span = equals_to.span();
 
         if orig_ty.type_eq(equals_to) {

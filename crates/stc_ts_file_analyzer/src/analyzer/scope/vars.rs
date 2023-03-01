@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
 
                             let elem_ty = ty
                                 .as_ref()
-                                .try_map(|ty| -> VResult<Type> {
+                                .try_map(|ty| -> VResult<ArcCowType> {
                                     let result = self.get_element_from_iterator(span, Cow::Borrowed(ty), idx).with_context(|| {
                                         format!(
                                             "tried to get the type of {}th element from iterator to declare vars with an array pattern",
@@ -882,7 +882,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> VResult<Type> {
+    pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> VResult<ArcCowType> {
         let _tracing = dev_span!("exclude_props");
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -1025,7 +1025,7 @@ impl Analyzer<'_, '_> {
         Ok(ty.fixed())
     }
 
-    fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<Type> {
+    fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<ArcCowType> {
         run(|| {
             if let Ok(..) = self.get_iterator(
                 span,

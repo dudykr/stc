@@ -706,7 +706,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<ArcCowType> {
         let _tracing = dev_span!("expand");
 
         if !self.config.is_builtin {
@@ -737,7 +737,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult<Type> {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult<ArcCowType> {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
@@ -906,7 +906,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
+    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<ArcCowType> {
         if !self.config.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }

@@ -34,12 +34,12 @@ pub trait Load: 'static + Send + Sync {
     ///
     ///
     /// Returned value must be [Type::Arc] of [Type::Module]
-    fn load_circular_dep(&self, base: &Arc<FileName>, src: &str, partial: &ModuleTypeData) -> VResult<Type>;
+    fn load_circular_dep(&self, base: &Arc<FileName>, src: &str, partial: &ModuleTypeData) -> VResult<ArcCowType>;
 
     /// Note: This method is called in parallel.
     ///
     /// Returned value must be [Type::Arc] of [Type::Module]
-    fn load_non_circular_dep(&self, base: &Arc<FileName>, src: &str) -> VResult<Type>;
+    fn load_non_circular_dep(&self, base: &Arc<FileName>, src: &str) -> VResult<ArcCowType>;
 
     /// `module` should be [Type::Arc] of [Type::Module].
     fn declare_module(&self, name: &JsWord, module: Type);

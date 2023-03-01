@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle declaration merging.
-    fn merge_declaration_types(&mut self, span: Span, orig: Type, new: Type) -> VResult<Type> {
+    fn merge_declaration_types(&mut self, span: Span, orig: Type, new: Type) -> VResult<ArcCowType> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
 

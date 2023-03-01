@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let marks = self.marks();
 
         let span = arr.span;
@@ -853,7 +853,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns the type of `iterator.next().value`.
-    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> VResult<Type> {
+    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> VResult<ArcCowType> {
         let next_ret_ty = self
             .call_property(
                 span,

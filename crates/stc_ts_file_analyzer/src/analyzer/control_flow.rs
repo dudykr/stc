@@ -1401,7 +1401,7 @@ fn is_expr_correct_binding_pat(e: &RExpr, is_top_level: bool) -> bool {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<ArcCowType> {
         let RCondExpr {
             span,
             ref test,

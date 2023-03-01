@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Optimize
-    fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> VResult<Type> {
+    fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> VResult<ArcCowType> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
         type_params.insert(mapped_type_param, key.ty().into_owned().freezed());
@@ -901,7 +901,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
-    ) -> VResult<Type> {
+    ) -> VResult<ArcCowType> {
         let type_lit = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))?.map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {

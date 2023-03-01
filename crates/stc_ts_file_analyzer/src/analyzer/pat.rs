@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
         ty.metadata().implicit
     }
 
-    pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> VResult<Type> {
+    pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> VResult<ArcCowType> {
         let _tracing = dev_span!("default_type_for_pat");
 
         let span = pat.span();

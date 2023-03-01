@@ -176,7 +176,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<Type> {
+    fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<ArcCowType> {
         let span = d.span;
 
         let alias = {
@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<Type> {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<ArcCowType> {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
                 "any" | "void" | "never" | "unknown" | "string" | "number" | "bigint" | "boolean" | "null" | "undefined" | "symbol" => {
@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsUnionType) -> VResult<Type> {
+    fn validate(&mut self, u: &RTsUnionType) -> VResult<ArcCowType> {
         let types = u.types.validate_with(self)?;
 
         Ok(Type::new_union(u.span, types))
@@ -680,7 +680,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<Type> {
+    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<ArcCowType> {
         let types = u.types.validate_with(self)?;
 
         Ok(Type::new_intersection(u.span, types))
@@ -751,14 +751,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult<Type> {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult<ArcCowType> {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
+    fn validate(&mut self, t: &RTsTypeRef) -> VResult<ArcCowType> {
         let span = t.span;
         let type_args = try_opt!(t.type_params.validate_with(self)).freezed();
         let mut contains_infer = false;
@@ -962,7 +962,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
+    fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<ArcCowType> {
         let span = t.span;
 
         let obj_type = box t.obj_type.validate_with(self)?;
