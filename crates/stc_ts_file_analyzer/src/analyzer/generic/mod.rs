@@ -750,7 +750,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(constraint) = constraint {
                     if constraint.is_str() || constraint.is_num() {
-                        match arg {
+                        match &**arg {
                             // We use `default`
                             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
                             _ => {}
@@ -1534,12 +1534,12 @@ impl Analyzer<'_, '_> {
                         readonly,
                         optional,
                         ..
-                    } => match constraint {
+                    } => match constraint.normalize() {
                         Type::Operator(Operator {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: operator_arg,
                             ..
-                        }) => match operator_arg {
+                        }) => match operator_arg.normalize() {
                             Type::Param(TypeParam { name, .. }) => Some(Res {
                                 name: name.clone(),
                                 key_name: key_name.clone(),
@@ -1552,12 +1552,12 @@ impl Analyzer<'_, '_> {
                         Type::Param(TypeParam {
                             constraint: Some(constraint),
                             ..
-                        }) => match constraint {
+                        }) => match constraint.normalize() {
                             Type::Param(TypeParam {
                                 name: key_name,
                                 constraint: Some(constraint),
                                 ..
-                            }) => match constraint {
+                            }) => match constraint.normalize() {
                                 Type::Operator(Operator {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ty,
