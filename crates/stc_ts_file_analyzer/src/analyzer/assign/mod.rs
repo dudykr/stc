@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
 
         let l = self.normalize(
             Some(span),
-            Cow::Borrowed(lhs),
+            lhs,
             NormalizeTypeOpts {
                 preserve_global_this: true,
                 ..Default::default()
@@ -222,7 +222,7 @@ impl Analyzer<'_, '_> {
         )?;
         let r = self.normalize(
             Some(span),
-            Cow::Borrowed(rhs),
+            rhs,
             NormalizeTypeOpts {
                 preserve_global_this: true,
                 ..Default::default()
@@ -559,7 +559,7 @@ impl Analyzer<'_, '_> {
                 let ty = self
                     .normalize(
                         Some(span),
-                        Cow::Borrowed(ty),
+                        ty,
                         NormalizeTypeOpts {
                             merge_union_elements: true,
                             preserve_global_this: true,
@@ -953,7 +953,7 @@ impl Analyzer<'_, '_> {
             let to = self
                 .normalize(
                     Some(opts.span),
-                    Cow::Borrowed(&rhs),
+                    &rhs,
                     NormalizeTypeOpts {
                         preserve_typeof: true,
                         preserve_global_this: true,

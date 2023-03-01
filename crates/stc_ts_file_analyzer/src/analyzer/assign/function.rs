@@ -660,7 +660,7 @@ impl Analyzer<'_, '_> {
                 .normalize(Some(span), &l.ty, Default::default())
                 .context("tried to normalize lhs")?;
 
-            let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
+            let l_elem_type = self.get_iterator_element_type(span, &l_ty, false, GetIteratorOpts { ..Default::default() });
 
             if let Ok(l_elem_type) = l_elem_type {
                 if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
@@ -735,7 +735,7 @@ impl Analyzer<'_, '_> {
             } else {
                 let rhs = r;
                 if let Type::EnumVariant(..) = *rhs {
-                    if let Ok(lit) = self.expand_enum_variant((*rhs).clone()) {
+                    if let Ok(lit) = self.expand_enum_variant((*rhs).clone().into_cow()) {
                         match &*lit {
                             Type::Lit(LitType {
                                 lit: RTsLit::Number(..), ..

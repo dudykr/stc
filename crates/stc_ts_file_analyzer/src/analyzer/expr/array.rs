@@ -746,10 +746,10 @@ impl Analyzer<'_, '_> {
     /// ## try_next_value
     ///
     /// If it's true, this method will try `ty.next().value`.
-    pub(crate) fn get_iterator_element_type<'a>(
+    pub(crate) fn get_iterator_element_type(
         &mut self,
         span: Span,
-        ty: Cow<'a, Type>,
+        ty: &Type,
         try_next_value: bool,
         opts: GetIteratorOpts,
     ) -> VResult<ArcCowType> {
