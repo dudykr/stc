@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{ArcCowType, KeywordTypeMetadata, Type, Union, UnionMetadata};

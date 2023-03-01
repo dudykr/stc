@@ -2299,16 +2299,17 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Instantiate fully
-    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<ArcCowType> {
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &ArcCowType) -> VResult<ArcCowType> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        Ok(match ty {
+        Ok(match &**ty {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
                 def: box def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }),
+            })
+            .into_cow(),
             _ => ty.clone(),
         })
     }

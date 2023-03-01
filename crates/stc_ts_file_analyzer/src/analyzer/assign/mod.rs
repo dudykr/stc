@@ -1892,7 +1892,7 @@ impl Analyzer<'_, '_> {
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
                     if lu.types.iter().any(|ty| {
                         matches!(
-                            ty,
+                            &**ty,
                             Type::Lit(LitType {
                                 lit: RTsLit::Bool(RBool { value: true, .. }),
                                 ..
@@ -1900,7 +1900,7 @@ impl Analyzer<'_, '_> {
                         )
                     }) && lu.types.iter().any(|ty| {
                         matches!(
-                            ty,
+                            &**ty,
                             Type::Lit(LitType {
                                 lit: RTsLit::Bool(RBool { value: false, .. }),
                                 ..
