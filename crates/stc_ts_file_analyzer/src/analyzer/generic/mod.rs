@@ -2125,7 +2125,7 @@ impl Analyzer<'_, '_> {
                                                 tracker: Default::default(),
                                             });
 
-                                            self.insert_inferred_raw(span, inferred, name, Cow::Owned(list_ty), opts)?;
+                                            self.insert_inferred_raw(span, inferred, name, &list_ty, opts)?;
                                             return Ok(true);
                                         }
 

@@ -214,40 +214,42 @@ impl Analyzer<'_, '_> {
 
                 let mut metadata = yield_ty.metadata();
 
-                return Ok(Some(Type::Ref(Ref {
-                    span: yield_ty.span().or_else(|| {
-                        metadata = ret_ty.metadata();
-                        ret_ty.span()
-                    }),
-                    type_name: if is_async {
-                        RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
-                    } else {
-                        if cannot_fallback_to_iterable_iterator || self.env.get_global_type(span, &"Generator".into()).is_ok() {
-                            RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
+                return Ok(Some(
+                    Type::Ref(Ref {
+                        span: yield_ty.span().or_else(|| {
+                            metadata = ret_ty.metadata();
+                            ret_ty.span()
+                        }),
+                        type_name: if is_async {
+                            RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                         } else {
-                            RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
-                        }
-                    },
-                    type_args: Some(box TypeParamInstantiation {
-                        span,
-                        params: vec![
-                            yield_ty,
-                            ret_ty,
-                            Type::Keyword(KeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            }),
-                        ],
-                    }),
-                    metadata: RefMetadata {
-                        common: metadata,
-                        ..Default::default()
-                    },
-                    tracker: Default::default(),
-                }))
-                .into());
+                            if cannot_fallback_to_iterable_iterator || self.env.get_global_type(span, &"Generator".into()).is_ok() {
+                                RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
+                            } else {
+                                RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
+                            }
+                        },
+                        type_args: Some(box TypeParamInstantiation {
+                            span,
+                            params: vec![
+                                yield_ty,
+                                ret_ty,
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            ],
+                        }),
+                        metadata: RefMetadata {
+                            common: metadata,
+                            ..Default::default()
+                        },
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ));
             }
 
             if is_async {
