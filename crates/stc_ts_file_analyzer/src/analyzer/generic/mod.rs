@@ -1706,8 +1706,8 @@ impl Analyzer<'_, '_> {
                                             .unwrap_or_else(|| Type::any(arg_method.span, Default::default()).into()),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    });
-                                    arg_prop_ty.freeze();
+                                    })
+                                    .into_freezed();
                                     let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
                                         let mut ty = param.ty.clone();
                                         ty.freeze();

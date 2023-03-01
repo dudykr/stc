@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
                 return Ok(ty.into_type());
             }
 
-            match ty {
+            match &*ty {
                 Type::TypeLit(lit) => {
                     let mut new_members = vec![];
                     'outer: for m in &lit.members {
