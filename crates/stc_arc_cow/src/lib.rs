@@ -7,7 +7,7 @@ use std::{fmt::Debug, hash::Hash, ops::Deref};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
 use swc_common::{util::take::Take, EqIgnoreSpan, Spanned, TypeEq};
-use triomphe::{Arc, UniqueArc};
+use triomphe::Arc;
 
 use crate::freeze::Freezer;
 
