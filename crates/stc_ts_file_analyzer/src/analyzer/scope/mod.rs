@@ -1164,21 +1164,23 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("find_local_type", name = tracing::field::debug(name));
 
         #[allow(dead_code)]
-        static ANY: Lazy<Type> = Lazy::new(|| {
+        static ANY: Lazy<ArcCowType> = Lazy::new(|| {
             Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
+            .into_freezed_cow()
         });
         #[allow(dead_code)]
-        static STATIC_THIS: Lazy<Type> = Lazy::new(|| {
+        static STATIC_THIS: Lazy<ArcCowType> = Lazy::new(|| {
             Type::StaticThis(StaticThis {
                 span: DUMMY_SP,
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
+            .into_freezed_cow()
         });
 
         if let Some(class) = &self.scope.get_this_class_name() {
