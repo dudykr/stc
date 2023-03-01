@@ -545,7 +545,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
+    fn register_type(&mut self, name: Id, ty: ArcCowType, should_override: bool) {
         let _tracing = dev_span!("Scope::register_type");
 
         ty.assert_valid();

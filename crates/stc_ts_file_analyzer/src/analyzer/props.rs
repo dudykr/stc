@@ -468,13 +468,14 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
+                                    .into()
                                 });
                             inferred_ret_ty.freeze();
 
                             // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {
                                 inferred_ret_ty = if inferred_ret_ty.metadata().infected_by_this_in_object_literal {
-                                    Type::any(span, Default::default())
+                                    Type::any(span, Default::default()).into()
                                 } else {
                                     inferred_ret_ty
                                 };
