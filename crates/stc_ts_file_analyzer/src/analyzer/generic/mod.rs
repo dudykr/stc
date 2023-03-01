@@ -1456,7 +1456,7 @@ impl Analyzer<'_, '_> {
                 let arg = self
                     .expand(
                         arg.span,
-                        Type::Ref(arg.clone()),
+                        Type::Ref(arg.clone()).into(),
                         ExpandOpts {
                             full: true,
                             expand_union: true,
@@ -1467,7 +1467,7 @@ impl Analyzer<'_, '_> {
                     )?
                     .freezed();
 
-                match arg {
+                match &*arg {
                     Type::Ref(..) => return Ok(false),
                     _ => return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts),
                 }
@@ -1662,7 +1662,7 @@ impl Analyzer<'_, '_> {
                                                 |ty| matches!(ty, Type::Param(TypeParam { name: param_name, .. }) if name == *param_name),
                                                 |ty| match ty {
                                                     Type::Param(TypeParam { name: param_name, .. }) if name == *param_name => {
-                                                        Some(*param_ty.clone())
+                                                        Some(param_ty.clone())
                                                     }
 
                                                     _ => None,
@@ -1689,7 +1689,7 @@ impl Analyzer<'_, '_> {
                                         ret_ty: arg_method
                                             .ret_ty
                                             .clone()
-                                            .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
+                                            .unwrap_or_else(|| Type::any(arg_method.span, Default::default()).into()),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     });
