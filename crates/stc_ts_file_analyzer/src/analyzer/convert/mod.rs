@@ -190,7 +190,7 @@ impl Analyzer<'_, '_> {
                     }) if !child.config.is_builtin => {
                         let span = *span;
                         child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
-                        Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
+                        Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()).into()
                     }
 
                     RTsType::TsKeywordType(RTsKeywordType {
@@ -215,11 +215,13 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
+                                    .into()
                                 })
                                 .collect(),
                         },
                         metadata: Default::default(),
-                    }),
+                    })
+                    .into(),
 
                     _ => d.type_ann.validate_with(child)?,
                 };

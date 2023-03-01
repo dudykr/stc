@@ -584,18 +584,24 @@ impl Analyzer<'_, '_> {
 
         for m in &e.members {
             match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
-                    span: m.span,
-                    lit: RTsLit::Str(lit.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
-                    span: m.span,
-                    lit: RTsLit::Number(lit.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
+                RExpr::Lit(RLit::Str(lit)) => values.push(
+                    Type::Lit(LitType {
+                        span: m.span,
+                        lit: RTsLit::Str(lit.clone()),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ),
+                RExpr::Lit(RLit::Num(lit)) => values.push(
+                    Type::Lit(LitType {
+                        span: m.span,
+                        lit: RTsLit::Number(lit.clone()),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                    .into(),
+                ),
                 _ => {
                     unimplemented!("Handle enum with value other than string literal or numeric literals")
                 }
