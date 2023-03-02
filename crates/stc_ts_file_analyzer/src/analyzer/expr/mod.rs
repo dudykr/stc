@@ -888,15 +888,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                if let Ok(Some(types)) = self.find_type(enum_name) {
-                    for ty in types {
-                        if let Type::Enum(e) = ty.normalize() {
-                            let e = e.clone();
-                            return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
-                        }
-                    }
-                }
+            Type::EnumVariant(EnumVariant { def, name: None, .. }) => {
+                return self.check_if_type_matches_key(span, declared, &Type::Enum(def.cheap_clone()), allow_union);
             }
 
             Type::Enum(e) if allow_union => {
@@ -1897,7 +1890,7 @@ impl Analyzer<'_, '_> {
                             if !opts.is_key_computed {
                                 return Ok(Type::EnumVariant(EnumVariant {
                                     span,
-                                    enum_name: e.id.clone().into(),
+                                    def: e.cheap_clone(),
                                     name: None,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
@@ -1944,7 +1937,7 @@ impl Analyzer<'_, '_> {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
                             },
-                            enum_name: e.id.clone().into(),
+                            def: e.cheap_clone(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
                             tracker: Default::default(),
@@ -2000,39 +1993,31 @@ impl Analyzer<'_, '_> {
             //
             // Foo.A.toString()
             Type::EnumVariant(EnumVariant {
-                ref enum_name,
+                def,
                 ref name,
                 span,
                 metadata,
                 ..
-            }) => match self.find_type(enum_name)? {
-                Some(types) => {
-                    //
-                    for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
-                            for v in e.members.iter() {
-                                if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
-                                    let new_obj_ty = Type::Lit(LitType {
-                                        span: *span,
-                                        lit: match *v.val.clone() {
-                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                            RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
-                                            _ => unreachable!(),
-                                        },
-                                        metadata: LitTypeMetadata {
-                                            common: metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    });
-                                    return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
-                                }
-                            }
-                        }
+            }) => {
+                for v in def.members.iter() {
+                    if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
+                        let new_obj_ty = Type::Lit(LitType {
+                            span: *span,
+                            lit: match *v.val.clone() {
+                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
+                                _ => unreachable!(),
+                            },
+                            metadata: LitTypeMetadata {
+                                common: metadata.common,
+                                ..Default::default()
+                            },
+                            tracker: Default::default(),
+                        });
+                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                     }
                 }
-                _ => unreachable!("Enum named {} does not exist", enum_name),
-            },
+            }
 
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {

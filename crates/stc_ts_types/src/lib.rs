@@ -29,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
-    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
+    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -181,7 +181,7 @@ pub enum Type {
 
     Interface(Interface),
 
-    Enum(Enum),
+    Enum(ArcCow<Enum>),
 
     Mapped(Mapped),
 
@@ -860,8 +860,7 @@ pub struct Enum {
     pub span: Span,
     pub declare: bool,
     pub is_const: bool,
-    #[use_eq_ignore_span]
-    pub id: RIdent,
+    pub id: Id,
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
@@ -872,7 +871,23 @@ pub struct Enum {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Enum, [u8; 88]);
+assert_eq_size!(Enum, [u8; 72]);
+
+impl Take for Enum {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            declare: false,
+            is_const: false,
+            id: Id::new(js_word!(""), Default::default()),
+            members: vec![],
+            has_num: false,
+            has_str: false,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumMember {
@@ -1498,10 +1513,10 @@ impl Debug for TypeParam {
 }
 
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
-    pub enum_name: Id,
+    pub def: ArcCow<Enum>,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
@@ -2083,7 +2098,7 @@ impl Type {
             Type::Param(ty) => &mut ty.metadata.common,
             Type::EnumVariant(ty) => &mut ty.metadata.common,
             Type::Interface(ty) => &mut ty.metadata.common,
-            Type::Enum(ty) => &mut ty.metadata.common,
+            Type::Enum(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Mapped(ty) => &mut ty.metadata.common,
             Type::Alias(ty) => &mut ty.metadata.common,
             Type::Namespace(ty) => &mut ty.metadata.common,
@@ -2137,7 +2152,7 @@ impl Type {
 
             Type::Constructor(c) => c.span = span,
 
-            Type::Enum(e) => e.span = span,
+            Type::Enum(e) => e.normalize_mut().span = span,
 
             Type::EnumVariant(e) => e.span = span,
 
@@ -3175,4 +3190,6 @@ impl_freeze!(TypeParamDecl);
 impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(Key);
+impl_freeze!(Enum);
+impl_freeze!(ClassDef);
 impl_freeze!(Mapped);

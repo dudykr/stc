@@ -25,7 +25,7 @@ use stc_ts_types::{
     TypeParamInstantiation,
 };
 use stc_utils::{
-    cache::{Freeze, ALLOW_DEEP_CLONE},
+    cache::{AssertCloneCheap, Freeze, ALLOW_DEEP_CLONE},
     dev_span, stack,
 };
 use swc_atoms::js_word;
@@ -2103,7 +2103,7 @@ impl Expander<'_, '_, '_> {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
                                 verify!(ty);
-                                return Ok(Some(ty.clone()));
+                                return Ok(Some(t.into_owned()));
                             }
 
                             ty @ Type::Param(..) => {
@@ -2286,11 +2286,12 @@ impl Expander<'_, '_, '_> {
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
+            ty.freeze();
 
             if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
-                    enum_name: e.id.clone().into(),
+                    def: e.cheap_clone(),
                     name: None,
                     metadata: Default::default(),
                     tracker: Default::default(),
