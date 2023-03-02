@@ -603,31 +603,25 @@ impl Analyzer<'_, '_> {
     pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         if let Type::EnumVariant(ref ev) = ty.normalize() {
             if let Some(variant_name) = &ev.name {
-                if let Some(types) = self.find_type(&ev.enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = ty.normalize() {
-                            if let Some(v) = members.iter().find(|m| match m.id {
-                                RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
-                                    sym == variant_name
-                                }
-                            }) {
-                                if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
-                                    return Ok(Type::Lit(LitType {
-                                        span: v.span,
-                                        lit: match *v.val.clone() {
-                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                            RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                            _ => unreachable!(),
-                                        },
-                                        metadata: LitTypeMetadata {
-                                            common: ev.metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    }));
-                                }
-                            }
-                        }
+                if let Some(v) = ev.def.members.iter().find(|m| match m.id {
+                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                        sym == variant_name
+                    }
+                }) {
+                    if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
+                        return Ok(Type::Lit(LitType {
+                            span: v.span,
+                            lit: match *v.val.clone() {
+                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
+                                _ => unreachable!(),
+                            },
+                            metadata: LitTypeMetadata {
+                                common: ev.metadata.common,
+                                ..Default::default()
+                            },
+                            tracker: Default::default(),
+                        }));
                     }
                 }
             }
