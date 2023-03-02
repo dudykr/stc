@@ -547,9 +547,8 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
-            }
+            Type::Lit(..) | Type::Function(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
+            Type::ClassDef(c) if c.is_abstract => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
             Type::TypeLit(rt) => {
                 let r_el_cnt = rt.members.iter().filter(|m| matches!(m, TypeElement::Constructor(..))).count();
