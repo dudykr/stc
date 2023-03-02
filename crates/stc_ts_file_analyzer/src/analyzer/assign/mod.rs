@@ -1154,7 +1154,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Enum(..) => fail!(),
 
-            Type::EnumVariant(EnumVariant { name: None, .. }) => {
+            Type::EnumVariant(EnumVariant { name: None, def, .. }) => {
                 match rhs.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(..), ..
@@ -1195,27 +1195,15 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
-                        // TODO(kdy1): Check for value and disallow `string` (keyword type)
-
-                        // validEnumAssignments.ts insists that this is valid.
-                        // but if enum isn't has num, not assignable
-                        let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
-
-                        if let Some(items) = items {
-                            for t in items {
-                                if let Type::Enum(en) = t.normalize() {
-                                    if en.has_str {
-                                        return Ok(());
-                                    }
-                                }
-                            }
+                        if def.normalize().has_str {
+                            return Ok(());
                         }
 
                         fail!()
                     }
 
                     Type::EnumVariant(rhs) => {
-                        if rhs.enum_name == *enum_name {
+                        if rhs.def.id == def.id {
                             return Ok(());
                         }
                         fail!()
