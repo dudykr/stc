@@ -1208,20 +1208,14 @@ impl Analyzer<'_, '_> {
 
                 _ => {}
             },
-            Type::EnumVariant(
-                ref e @ EnumVariant {
-                    name: Some(name),
-                    enum_name,
-                    ..
-                },
-            ) => {
+            Type::EnumVariant(ref e @ EnumVariant { name: Some(name), .. }) => {
                 // Single-variant enums seem to be treated like a number.
                 // but if enum isn't has num, not assignable
                 //
                 // See typeArgumentInferenceWithObjectLiteral.ts
                 match rhs.normalize() {
                     Type::EnumVariant(en) => {
-                        if !&en.enum_name.type_eq(&e.enum_name) {
+                        if !&en.def.id.type_eq(&e.def.id) {
                             fail!()
                         }
 
