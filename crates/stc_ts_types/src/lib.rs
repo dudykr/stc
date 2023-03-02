@@ -1514,7 +1514,7 @@ impl Debug for TypeParam {
 }
 
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
     pub def: ArcCow<Enum>,
@@ -2099,7 +2099,7 @@ impl Type {
             Type::Param(ty) => &mut ty.metadata.common,
             Type::EnumVariant(ty) => &mut ty.metadata.common,
             Type::Interface(ty) => &mut ty.metadata.common,
-            Type::Enum(ty) => &mut ty.metadata.common,
+            Type::Enum(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Mapped(ty) => &mut ty.metadata.common,
             Type::Alias(ty) => &mut ty.metadata.common,
             Type::Namespace(ty) => &mut ty.metadata.common,
@@ -2153,7 +2153,7 @@ impl Type {
 
             Type::Constructor(c) => c.span = span,
 
-            Type::Enum(e) => e.span = span,
+            Type::Enum(e) => e.normalize_mut().span = span,
 
             Type::EnumVariant(e) => e.span = span,
 
