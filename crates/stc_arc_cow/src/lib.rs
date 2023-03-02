@@ -4,7 +4,6 @@
 
 use std::{fmt::Debug, hash::Hash, ops::Deref};
 
-use debug_unreachable::debug_unreachable;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use stc_utils::cache::{AssertCloneCheap, Freeze};
 use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
@@ -261,7 +260,7 @@ where
     pub fn cheap_clone(&self) -> Self {
         match self {
             ArcCow::Arc(c) => ArcCow::Arc(c.clone()),
-            ArcCow::Owned(_) => unsafe { debug_unreachable!("this is not cheap to clone") },
+            ArcCow::Owned(_) => unreachable!("this is not cheap to clone"),
         }
     }
 }
