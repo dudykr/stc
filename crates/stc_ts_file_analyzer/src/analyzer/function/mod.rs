@@ -285,22 +285,8 @@ impl Analyzer<'_, '_> {
         let actual_ty = self.type_of_ts_entity_name(span, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
 
         // TODO(kdy1): PERF
-        let type_params = match actual_ty.foldable() {
-            Type::Alias(Alias {
-                type_params: Some(type_params),
-                ..
-            })
-            | Type::Interface(Interface {
-                type_params: Some(type_params),
-                ..
-            })
-            | Type::Class(stc_ts_types::Class {
-                def: box ClassDef {
-                    type_params: Some(type_params),
-                    ..
-                },
-                ..
-            }) => type_params,
+        let type_params = match actual_ty.get_type_param_decl() {
+            Some(type_params) => type_params.clone(),
 
             _ => return Ok(ty),
         };
