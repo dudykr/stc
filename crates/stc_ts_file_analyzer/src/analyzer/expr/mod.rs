@@ -1897,7 +1897,7 @@ impl Analyzer<'_, '_> {
                             if !opts.is_key_computed {
                                 return Ok(Type::EnumVariant(EnumVariant {
                                     span,
-                                    enum_name: e.id.clone().into(),
+                                    def: e.cheap_clone(),
                                     name: None,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
