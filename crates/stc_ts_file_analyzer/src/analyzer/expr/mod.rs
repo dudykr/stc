@@ -3415,12 +3415,9 @@ impl Analyzer<'_, '_> {
                     return self.expand_type_params(&params, ty.clone(), Default::default());
                 }
             }
-            Type::Alias(Alias { type_params, .. })
-            | Type::Class(Class {
-                def: box ClassDef { type_params, .. },
-                ..
-            })
-            | Type::ClassDef(ClassDef { type_params, .. }) => {
+            Type::Alias(..) | Type::Class(..) | Type::ClassDef(..) => {
+                let type_params = ty.get_type_params();
+
                 if let Some(type_params) = type_params {
                     let mut params = HashMap::default();
 
