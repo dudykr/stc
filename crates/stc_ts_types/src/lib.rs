@@ -2291,7 +2291,7 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
-    pub fn get_type_params(&self) -> Option<&TypeParamDecl> {
+    pub fn get_type_param_decl(&self) -> Option<&TypeParamDecl> {
         match self.normalize() {
             Type::Class(ty) => ty.def.type_params.as_deref(),
             Type::ClassDef(ty) => ty.type_params.as_deref(),

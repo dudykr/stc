@@ -3415,7 +3415,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::Alias(..) | Type::Class(..) | Type::ClassDef(..) => {
-                let type_params = ty.get_type_params();
+                let type_params = ty.get_type_param_decl();
 
                 if let Some(type_params) = type_params {
                     let mut params = HashMap::default();
@@ -4065,7 +4065,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    if let Some(type_params) = ty.get_type_params() {
+                                    if let Some(type_params) = ty.get_type_param_decl() {
                                         params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
                                     } else {
                                         self.storage
