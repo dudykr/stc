@@ -27,7 +27,7 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
-use stc_arc_cow::freeze::Freezer;
+use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
     RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
@@ -893,7 +893,7 @@ pub struct Class {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Class, [u8; 32]);
+assert_eq_size!(Class, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassDef {
@@ -911,6 +911,22 @@ pub struct ClassDef {
 
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(ClassDef, [u8; 96]);
+
+impl Take for ClassDef {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            is_abstract: false,
+            name: None,
+            super_class: None,
+            body: vec![],
+            type_params: None,
+            implements: Box::new(vec![]),
+            metadata: ClassDefMetadata::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum ClassMember {

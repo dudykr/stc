@@ -57,7 +57,7 @@ impl From<Type> for RTsType {
             }
             Type::Module(t) => t.into(),
             Type::Class(t) => t.into(),
-            Type::ClassDef(t) => t.into(),
+            Type::ClassDef(t) => t.into_inner().into(),
             Type::Arc(t) => (*t.ty).clone().into(),
             Type::Optional(t) => t.into(),
             Type::Rest(t) => t.into(),
