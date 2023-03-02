@@ -1154,75 +1154,60 @@ impl Analyzer<'_, '_> {
             }
             Type::Enum(..) => fail!(),
 
-            Type::EnumVariant(EnumVariant { name: None, def, .. }) => {
-                match rhs.normalize() {
-                    Type::Lit(LitType {
-                        lit: RTsLit::Number(..), ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    }) => {
-                        if opts.do_not_convert_enum_to_string_nor_number {
-                            fail!()
-                        }
-
-                        // TODO(kdy1): Check for value and disallow `number` (keyword type)
-
-                        // validEnumAssignments.ts insists that this is valid.
-                        // but if enum isn't has num, not assignable
-                        let items = self.find_type(enum_name).context("failed to find an enum for assignment")?;
-
-                        if let Some(items) = items {
-                            for t in items {
-                                if let Type::Enum(en) = t.normalize() {
-                                    if en.has_num {
-                                        return Ok(());
-                                    }
-                                }
-                            }
-                        }
-
+            Type::EnumVariant(EnumVariant { name: None, def, .. }) => match rhs.normalize() {
+                Type::Lit(LitType {
+                    lit: RTsLit::Number(..), ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                }) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
                         fail!()
                     }
 
-                    Type::Lit(LitType { lit: RTsLit::Str(..), .. })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    }) => {
-                        if opts.do_not_convert_enum_to_string_nor_number {
-                            fail!()
-                        }
-
-                        if def.normalize().has_str {
-                            return Ok(());
-                        }
-
-                        fail!()
+                    if def.has_num {
+                        return Ok(());
                     }
-
-                    Type::EnumVariant(rhs) => {
-                        if rhs.def.id == def.id {
-                            return Ok(());
-                        }
-                        fail!()
-                    }
-
-                    Type::Lit(..)
-                    | Type::TypeLit(..)
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    }) => fail!(),
-
-                    _ => {}
+                    fail!()
                 }
-            }
+
+                Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
+                    if def.has_str {
+                        return Ok(());
+                    }
+
+                    fail!()
+                }
+
+                Type::EnumVariant(rhs) => {
+                    if rhs.def.id == def.id {
+                        return Ok(());
+                    }
+                    fail!()
+                }
+
+                Type::Lit(..)
+                | Type::TypeLit(..)
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }) => fail!(),
+
+                _ => {}
+            },
             Type::EnumVariant(
                 ref e @ EnumVariant {
                     name: Some(name),
