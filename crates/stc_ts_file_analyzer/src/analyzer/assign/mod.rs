@@ -2185,7 +2185,7 @@ impl Analyzer<'_, '_> {
 
             Type::EnumVariant(ref l @ EnumVariant { name: Some(..), .. }) => match *rhs {
                 Type::EnumVariant(ref r) => {
-                    if l.enum_name == r.enum_name && l.name == r.name {
+                    if l.def.id == r.def.id && l.name == r.name {
                         return Ok(());
                     }
                 }
@@ -2633,17 +2633,11 @@ impl Analyzer<'_, '_> {
                 fail!();
             }
 
-            Type::EnumVariant(EnumVariant { ref enum_name, .. }) => {
-                if let Some(types) = self.find_type(enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
-                            match to {
-                                Type::Interface(..) | Type::TypeLit(..) => {}
-                                _ => {
-                                    handle_enum_in_rhs!(e)
-                                }
-                            }
-                        }
+            Type::EnumVariant(EnumVariant { ref def, .. }) => {
+                match to {
+                    Type::Interface(..) | Type::TypeLit(..) => {}
+                    _ => {
+                        handle_enum_in_rhs!(def)
                     }
                 }
 
