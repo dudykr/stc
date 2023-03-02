@@ -181,7 +181,7 @@ pub enum Type {
 
     Interface(Interface),
 
-    Enum(Enum),
+    Enum(ArcCow<Enum>),
 
     Mapped(Mapped),
 
@@ -1501,7 +1501,7 @@ impl Debug for TypeParam {
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
-    pub enum_name: Id,
+    pub def: ArcCow<Enum>,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
