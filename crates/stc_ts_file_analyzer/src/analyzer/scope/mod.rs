@@ -2288,11 +2288,9 @@ impl Expander<'_, '_, '_> {
             ty.reposition(r_span);
 
             if let Type::Enum(e) = ty.normalize() {
-                e.assert_clone_cheap();
-
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
-                    enum_name: e.id.clone().into(),
+                    def: e.cheap_clone(),
                     name: None,
                     metadata: Default::default(),
                     tracker: Default::default(),
