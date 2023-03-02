@@ -2,7 +2,7 @@ use stc_visit::{VisitMut, VisitMutWith};
 use swc_common::util::take::Take;
 use triomphe::Arc;
 
-use crate::{private::PrivateArc, ArcCow};
+use crate::{private::Freezed, ArcCow};
 
 pub struct Freezer;
 
@@ -19,7 +19,7 @@ where
                 (**v).visit_mut_with(self);
                 let v = (**v).take();
 
-                *n = ArcCow::Arc(PrivateArc(Arc::new(v)))
+                *n = ArcCow::Arc(Freezed(Arc::new(v)))
             }
         }
     }

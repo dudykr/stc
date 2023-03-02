@@ -1,8 +1,8 @@
 use triomphe::Arc;
 
-pub struct PrivateArc<T>(pub(crate) Arc<T>);
+pub struct Freezed<T>(pub(crate) Arc<T>);
 
-impl<T> Clone for PrivateArc<T> {
+impl<T> Clone for Freezed<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }

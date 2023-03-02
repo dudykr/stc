@@ -11,7 +11,7 @@ use swc_common::{util::take::Take, EqIgnoreSpan, Spanned, TypeEq};
 use triomphe::Arc;
 
 use crate::freeze::Freezer;
-pub use crate::private::PrivateArc;
+pub use crate::private::Freezed;
 
 pub mod freeze;
 mod private;
@@ -20,7 +20,7 @@ pub enum ArcCow<T>
 where
     T: 'static + Take,
 {
-    Arc(PrivateArc<T>),
+    Arc(Freezed<T>),
     Owned(Box<T>),
 }
 
@@ -247,7 +247,7 @@ where
 
     pub fn new_freezed(mut data: T) -> Self {
         data.visit_mut_with(&mut Freezer);
-        Self::Arc(PrivateArc(Arc::new(data)))
+        Self::Arc(Freezed(Arc::new(data)))
     }
 }
 
@@ -258,7 +258,7 @@ where
     fn from(arc: Arc<T>) -> Self {
         (*arc).assert_clone_cheap();
 
-        ArcCow::Arc(PrivateArc(arc))
+        ArcCow::Arc(Freezed(arc))
     }
 }
 
