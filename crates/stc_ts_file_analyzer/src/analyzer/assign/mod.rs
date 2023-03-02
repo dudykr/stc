@@ -2818,7 +2818,7 @@ impl Analyzer<'_, '_> {
             }) => match to.kind {
                 IntrinsicKind::Uppercase => {
                     if let Some(value) = &value.raw {
-                        if !value.to_uppercase().eq(&value.to_string()) {
+                        if value.to_uppercase() != &**value {
                             return Err(ErrorKind::AssignFailed {
                                 span: r.span(),
                                 left: box Type::StringMapping(to.clone()),
@@ -2832,7 +2832,7 @@ impl Analyzer<'_, '_> {
                 }
                 IntrinsicKind::Lowercase => {
                     if let Some(value) = &value.raw {
-                        if !value.to_lowercase().eq(&value.to_string()) {
+                        if value.to_lowercase() != &**value {
                             return Err(ErrorKind::AssignFailed {
                                 span: r.span(),
                                 left: box Type::StringMapping(to.clone()),
