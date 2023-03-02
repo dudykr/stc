@@ -874,6 +874,22 @@ pub struct Enum {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Enum, [u8; 88]);
 
+impl Take for Enum {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            declare: false,
+            is_const: false,
+            id: RIdent::new(js_word!(""), DUMMY_SP),
+            members: vec![],
+            has_num: false,
+            has_str: false,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumMember {
     pub span: Span,
