@@ -4,8 +4,8 @@
 
 use std::{fmt::Debug, hash::Hash, ops::Deref};
 
-use freeze::AssertCloneCheap;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use stc_utils::cache::{AssertCloneCheap, Freeze};
 use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
 use swc_common::{util::take::Take, EqIgnoreSpan, Spanned, TypeEq};
 use triomphe::Arc;
@@ -251,24 +251,9 @@ where
     }
 }
 
-impl<T> AssertCloneCheap for ArcCow<T>
-where
-    T: Take,
-{
-    fn assert_clone_cheap(&self) {
-        #[cfg(debug_assertions)]
-        match self {
-            ArcCow::Arc(..) => {}
-            ArcCow::Owned(..) => {
-                unreachable!("ArcCow::Owned is not cheap to clone")
-            }
-        }
-    }
-}
-
 impl<T> From<Arc<T>> for ArcCow<T>
 where
-    T: Take + AssertCloneCheap,
+    T: Take + Freeze,
 {
     fn from(arc: Arc<T>) -> Self {
         (*arc).assert_clone_cheap();
