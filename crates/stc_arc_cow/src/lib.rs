@@ -260,7 +260,7 @@ where
     #[inline(always)]
     pub fn cheap_clone(&self) -> Self {
         match self {
-            ArcCow::Arc(_) => todo!(),
+            ArcCow::Arc(c) => ArcCow::Arc(c.clone()),
             ArcCow::Owned(_) => unsafe { debug_unreachable!("this is not cheap to clone") },
         }
     }
