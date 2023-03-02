@@ -201,7 +201,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
         }),
         Type::ClassDef(ref def) => Type::Class(Class {
             span,
-            def: box def.clone(),
+            def: def.clone(),
             metadata: ClassMetadata {
                 common: def.metadata.common,
                 ..Default::default()
