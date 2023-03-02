@@ -1944,7 +1944,7 @@ impl Analyzer<'_, '_> {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
                             },
-                            enum_name: e.id.clone().into(),
+                            def: e.cheap_clone(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
                             tracker: Default::default(),

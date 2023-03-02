@@ -534,14 +534,8 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(e) => {
                 let mut keys = vec![];
 
-                if let Some(types) = self.find_type(&e.enum_name)? {
-                    for ty in types.into_iter().map(Cow::into_owned).collect_vec() {
-                        if ty.is_enum_type() {
-                            let items = self.convert_type_to_keys_for_mapped_type(span, &ty, name_type)?;
-                            keys.extend(items.into_iter().flatten());
-                        }
-                    }
-                }
+                let items = self.convert_type_to_keys_for_mapped_type(span, &Type::Enum(e.def.cheap_clone()), name_type)?;
+                keys.extend(items.into_iter().flatten());
 
                 Ok(Some(keys))
             }
