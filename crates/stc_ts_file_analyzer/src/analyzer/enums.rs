@@ -385,7 +385,7 @@ impl Analyzer<'_, '_> {
     /// };
     /// var e: typeof E1;
     /// ```
-    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> VResult<TypeLit> {
+    pub(super) fn enum_to_type_lit(&mut self, e: &ArcCow<Enum>) -> VResult<TypeLit> {
         let mut members = vec![];
 
         for m in &e.members {
@@ -406,7 +406,7 @@ impl Analyzer<'_, '_> {
                 params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
-                    enum_name: e.id.clone().into(),
+                    def: e.cheap_clone(),
                     name: Some(key.sym),
                     metadata: Default::default(),
                     tracker: Default::default(),
