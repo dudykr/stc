@@ -4,9 +4,8 @@ use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
-    Union,
+    Array, Class, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType, KeywordTypeMetadata,
+    LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use stc_utils::{dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
@@ -655,22 +654,19 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
-                obj_type:
-                    box Type::Class(Class {
-                        def: box ClassDef { body, .. },
-                        ..
-                    }),
+                obj_type: box Type::Class(Class { def, .. }),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
-            }) if body.iter().any(|member| match member {
+            }) if def.body.iter().any(|member| match member {
                 ClassMember::Constructor(_) => false,
                 ClassMember::Method(_) => false,
                 ClassMember::Property(p) => p.key == s.value,
                 ClassMember::IndexSignature(_) => false,
             }) =>
             {
-                let member = body
-                    .into_iter()
+                let member = def
+                    .body
+                    .iter()
                     .find(|member| match member {
                         ClassMember::Constructor(_) => false,
                         ClassMember::Method(_) => false,
@@ -695,11 +691,7 @@ impl Fold<Type> for Simplifier<'_> {
 
             Type::IndexedAccessType(IndexedAccessType {
                 span,
-                obj_type:
-                    box Type::Class(Class {
-                        def: box ClassDef { ref body, .. },
-                        ..
-                    }),
+                obj_type: box Type::Class(Class { def, .. }),
                 index_type: box Type::Union(ref keys),
                 ..
             }) if keys.types.iter().all(is_str_lit_or_union) => {
@@ -711,7 +703,7 @@ impl Fold<Type> for Simplifier<'_> {
                         _ => unreachable!(),
                     })
                     .map(|key| {
-                        let member = body.iter().find(|member| match member {
+                        let member = def.body.iter().find(|member| match member {
                             ClassMember::Constructor(_) => false,
                             ClassMember::Method(_) => false,
                             ClassMember::Property(p) => p.key == key.value,
