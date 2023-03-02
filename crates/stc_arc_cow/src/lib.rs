@@ -10,14 +10,16 @@ use swc_common::{util::take::Take, EqIgnoreSpan, Spanned, TypeEq};
 use triomphe::Arc;
 
 use crate::freeze::Freezer;
+pub use crate::private::PrivateArc;
 
 pub mod freeze;
+mod private;
 
 pub enum ArcCow<T>
 where
     T: 'static + Take,
 {
-    Arc(Arc<T>),
+    Arc(PrivateArc<T>),
     Owned(Box<T>),
 }
 
@@ -40,7 +42,7 @@ where
     #[inline]
     fn deref(&self) -> &Self::Target {
         match self {
-            ArcCow::Arc(v) => v,
+            ArcCow::Arc(v) => &v.0,
             ArcCow::Owned(v) => v,
         }
     }
@@ -68,7 +70,7 @@ where
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         if let (ArcCow::Arc(l), ArcCow::Arc(r)) = (self, other) {
-            if Arc::ptr_eq(l, r) {
+            if Arc::ptr_eq(&l.0, &r.0) {
                 return true;
             }
         }
@@ -146,15 +148,7 @@ where
         Debug::fmt(&**self, f)
     }
 }
-impl<T> From<Arc<T>> for ArcCow<T>
-where
-    T: Take,
-{
-    #[inline]
-    fn from(arc: Arc<T>) -> Self {
-        Self::Arc(arc)
-    }
-}
+
 impl<T> TypeEq for ArcCow<T>
 where
     T: TypeEq + Take,
@@ -162,7 +156,7 @@ where
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
         if let (ArcCow::Arc(l), ArcCow::Arc(r)) = (self, other) {
-            if Arc::ptr_eq(l, r) {
+            if Arc::ptr_eq(&l.0, &r.0) {
                 return true;
             }
         }
@@ -219,7 +213,7 @@ where
     pub fn normalize_mut(&mut self) -> &mut T {
         match self {
             ArcCow::Arc(v) => {
-                let data = Arc::make_unique(v);
+                let data = Arc::make_unique(&mut v.0);
                 let data = (**data).take();
 
                 *self = ArcCow::Owned(box data);
@@ -235,16 +229,29 @@ where
 
 impl<T> ArcCow<T>
 where
-    T: Take,
+    T: Take + Clone + VisitMutWith<Freezer>,
 {
     /// This is deep freeze, but doesn't work if `self <- Freezed <- NonFreezed`
     /// exists.
     #[inline]
-    pub fn freeze(&mut self)
-    where
-        Self: VisitMutWith<Freezer>,
-    {
+    pub fn freeze(&mut self) {
         self.visit_mut_with(&mut Freezer);
+    }
+
+    #[inline(always)]
+    pub fn freezed(mut self) -> Self {
+        self.freeze();
+        self
+    }
+
+    pub fn new_freezed(mut data: T) -> Self {
+        data.visit_mut_with(&mut Freezer);
+        Self::Arc(PrivateArc(Arc::new(data)))
+    }
+
+    /// Assert that `self` is cheap to clone. This noop on production build.
+    pub fn assert_clone_cheap(&self) {
+        debug_assert!(matches!(self, ArcCow::Arc(_)));
     }
 }
 
@@ -275,7 +282,7 @@ where
     #[inline]
     pub fn into_inner(self) -> T {
         match self {
-            Self::Arc(v) => match Arc::try_unwrap(v) {
+            Self::Arc(v) => match Arc::try_unwrap(v.0) {
                 Ok(v) => v,
                 Err(v) => (*v).clone(),
             },
