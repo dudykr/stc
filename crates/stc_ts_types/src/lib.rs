@@ -29,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
-    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
+    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -860,8 +860,7 @@ pub struct Enum {
     pub span: Span,
     pub declare: bool,
     pub is_const: bool,
-    #[use_eq_ignore_span]
-    pub id: RIdent,
+    pub id: Id,
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
@@ -872,7 +871,7 @@ pub struct Enum {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Enum, [u8; 88]);
+assert_eq_size!(Enum, [u8; 72]);
 
 impl Take for Enum {
     fn dummy() -> Self {
@@ -880,7 +879,7 @@ impl Take for Enum {
             span: DUMMY_SP,
             declare: false,
             is_const: false,
-            id: RIdent::new(js_word!(""), DUMMY_SP),
+            id: Id::new(js_word!(""), Default::default()),
             members: vec![],
             has_num: false,
             has_str: false,

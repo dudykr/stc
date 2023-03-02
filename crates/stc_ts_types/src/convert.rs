@@ -445,7 +445,7 @@ impl From<EnumVariant> for RTsType {
             None => RTsType::TsTypeRef(RTsTypeRef {
                 node_id: NodeId::invalid(),
                 span: t.span,
-                type_name: RTsEntityName::Ident(t.def.id.clone()),
+                type_name: RTsEntityName::Ident(t.def.id.clone().into()),
                 type_params: None,
             }),
         }
