@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                     //
                     // Class instance cannot be operand, but it can be passed as argument while
                     // normalizing.
-                    return self.keyof(span, &Type::ClassDef(*def.clone()));
+                    return self.keyof(span, &Type::ClassDef(def.clone()));
                 }
 
                 Type::ClassDef(cls) => {

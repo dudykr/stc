@@ -1758,7 +1758,7 @@ impl Analyzer<'_, '_> {
                     None => Ok(Some(members)),
                 }
             }
-            Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
+            Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(c.def.clone())),
             _ => {
                 error!("unimplemented: collect_class_members: {:?}", ty);
                 Ok(None)
