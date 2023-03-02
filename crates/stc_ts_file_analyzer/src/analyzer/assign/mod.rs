@@ -1255,24 +1255,18 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
 
-                        let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
-
-                        if let Some(items) = items {
-                            for t in items {
-                                if let Type::Enum(en) = t.normalize() {
-                                    if let Some(v) = en.members.iter().find(|m| match m.id {
-                                        RTsEnumMemberId::Ident(RIdent { ref sym, .. })
-                                        | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == name,
-                                    }) {
-                                        if let RExpr::Lit(RLit::Str(l_str)) = &*v.val {
-                                            if l_str.value == r_str.value {
-                                                return Ok(());
-                                            }
-                                        }
-                                    }
+                        if let Some(v) = e.def.members.iter().find(|m| match m.id {
+                            RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                                sym == name
+                            }
+                        }) {
+                            if let RExpr::Lit(RLit::Str(l_str)) = &*v.val {
+                                if l_str.value == r_str.value {
+                                    return Ok(());
                                 }
                             }
                         }
+
                         fail!()
                     }
                     _ => fail!(),
@@ -2048,22 +2042,13 @@ impl Analyzer<'_, '_> {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
                         }) => return Ok(()),
-                        Type::EnumVariant(EnumVariant {
-                            name: None, ref enum_name, ..
-                        }) => {
+                        Type::EnumVariant(EnumVariant { name: None, ref def, .. }) => {
                             if opts.do_not_convert_enum_to_string_nor_number {
                                 fail!()
                             }
 
-                            if let Some(types) = self.find_type(enum_name)? {
-                                for ty in types {
-                                    if let Type::Enum(ref e) = *ty.normalize() {
-                                        let condition = e.has_num && !e.has_str;
-                                        if condition {
-                                            return Ok(());
-                                        }
-                                    }
-                                }
+                            if def.has_num && !def.has_str {
+                                return Ok(());
                             }
                         }
                         Type::EnumVariant(EnumVariant { ref name, .. }) => {
