@@ -2302,7 +2302,7 @@ impl Analyzer<'_, '_> {
         Ok(match ty.normalize() {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
-                def: box def.clone(),
+                def: def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }),

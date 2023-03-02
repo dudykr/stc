@@ -1457,7 +1457,7 @@ impl Analyzer<'_, '_> {
 
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,
-                def: box def,
+                def,
                 metadata: ClassMetadata {
                     common: metadata,
                     ..Default::default()
