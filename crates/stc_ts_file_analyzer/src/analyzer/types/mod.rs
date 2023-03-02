@@ -729,7 +729,7 @@ impl Analyzer<'_, '_> {
 
                             let variant = Type::EnumVariant(EnumVariant {
                                 span: e.span,
-                                enum_name: e.id.clone().into(),
+                                def: e.cheap_clone(),
                                 name: None,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
@@ -1029,7 +1029,7 @@ impl Analyzer<'_, '_> {
                             if let Type::EnumVariant(EnumVariant { name: None, .. }) = enum_temp {
                                 enum_temp = elem;
                                 continue;
-                            } else if en.enum_name != el.enum_name {
+                            } else if en.def.id != el.def.id {
                                 return never!();
                             } else {
                                 // eq two argument enum_name

@@ -681,7 +681,7 @@ impl Analyzer<'_, '_> {
                 //      let e2: E = e1
                 match *to {
                     Type::Enum(ref left_enum) => {
-                        if left_enum.id.sym == *e.id.sym {
+                        if left_enum.id.sym() == e.id.sym() {
                             return Ok(());
                         }
                         fail!()
@@ -1154,7 +1154,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Enum(..) => fail!(),
 
-            Type::EnumVariant(EnumVariant { name: None, enum_name, .. }) => {
+            Type::EnumVariant(EnumVariant { name: None, .. }) => {
                 match rhs.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(..), ..
