@@ -323,3 +323,26 @@ where
         Ok(ArcCow::from(t))
     }
 }
+
+impl<T> Freeze for ArcCow<T>
+where
+    T: Take + Clone + Freeze,
+{
+    fn is_clone_cheap(&self) -> bool {
+        match self {
+            ArcCow::Arc(..) => true,
+            ArcCow::Owned(..) => false,
+        }
+    }
+
+    fn freeze(&mut self) {
+        match self {
+            ArcCow::Arc(..) => {}
+            ArcCow::Owned(data) => {
+                (**data).freeze();
+
+                *self = ArcCow::Arc(Freezed(Arc::new((**data).take())));
+            }
+        }
+    }
+}
