@@ -2006,6 +2006,7 @@ name = "stc_arc_cow"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "stc_utils",
  "stc_visit",
  "swc_common",
  "tracing",
