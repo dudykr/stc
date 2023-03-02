@@ -10,7 +10,6 @@ use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
 use swc_common::{util::take::Take, EqIgnoreSpan, Spanned, TypeEq};
 use triomphe::Arc;
 
-use crate::freeze::Freezer;
 pub use crate::private::Freezed;
 
 pub mod freeze;
@@ -18,7 +17,7 @@ mod private;
 
 pub enum ArcCow<T>
 where
-    T: 'static + Take,
+    T: 'static + Take + Freeze,
 {
     Arc(Freezed<T>),
     Owned(Box<T>),
@@ -26,7 +25,7 @@ where
 
 impl<T> Spanned for ArcCow<T>
 where
-    T: Spanned + Take,
+    T: Spanned + Take + Freeze,
 {
     #[inline]
     fn span(&self) -> swc_common::Span {
@@ -36,7 +35,7 @@ where
 
 impl<T> Deref for ArcCow<T>
 where
-    T: Take,
+    T: Take + Freeze,
 {
     type Target = T;
 
@@ -50,7 +49,7 @@ where
 }
 impl<T> PartialEq<T> for ArcCow<T>
 where
-    T: PartialEq + Take,
+    T: PartialEq + Take + Freeze,
 {
     #[inline]
     fn eq(&self, other: &T) -> bool {
@@ -66,7 +65,7 @@ where
 
 impl<T> PartialEq for ArcCow<T>
 where
-    T: PartialEq + Take,
+    T: PartialEq + Take + Freeze,
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
@@ -84,11 +83,11 @@ where
         (**self).ne(&**other)
     }
 }
-impl<T> Eq for ArcCow<T> where T: Eq + Take {}
+impl<T> Eq for ArcCow<T> where T: Eq + Take + Freeze {}
 
 impl<T> Default for ArcCow<T>
 where
-    T: Default + Take,
+    T: Default + Take + Freeze,
 {
     #[inline]
     fn default() -> Self {
@@ -97,7 +96,7 @@ where
 }
 impl<T> Clone for ArcCow<T>
 where
-    T: Clone + Take,
+    T: Clone + Take + Freeze,
 {
     #[inline]
     fn clone(&self) -> Self {
@@ -109,7 +108,7 @@ where
 }
 impl<T> PartialOrd for ArcCow<T>
 where
-    T: PartialOrd + Take,
+    T: PartialOrd + Take + Freeze,
 {
     #[inline]
     fn partial_cmp(&self, r: &Self) -> Option<std::cmp::Ordering> {
@@ -118,7 +117,7 @@ where
 }
 impl<T> Ord for ArcCow<T>
 where
-    T: Ord + Take,
+    T: Ord + Take + Freeze,
 {
     #[inline]
     fn cmp(&self, r: &Self) -> std::cmp::Ordering {
@@ -127,7 +126,7 @@ where
 }
 impl<T> Hash for ArcCow<T>
 where
-    T: Hash + Take,
+    T: Hash + Take + Freeze,
 {
     #[inline]
     fn hash<H>(&self, hasher: &mut H)
@@ -139,7 +138,7 @@ where
 }
 impl<T> Debug for ArcCow<T>
 where
-    T: Debug + Take,
+    T: Debug + Take + Freeze,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -152,7 +151,7 @@ where
 
 impl<T> TypeEq for ArcCow<T>
 where
-    T: TypeEq + Take,
+    T: TypeEq + Take + Freeze,
 {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
@@ -166,19 +165,19 @@ where
 }
 impl<T> EqIgnoreSpan for ArcCow<T>
 where
-    T: EqIgnoreSpan + Take,
+    T: EqIgnoreSpan + Take + Freeze,
 {
     #[inline]
     fn eq_ignore_span(&self, other: &Self) -> bool {
         (**self).eq_ignore_span(&**other)
     }
 }
-impl<T> Visitable for ArcCow<T> where T: Take {}
+impl<T> Visitable for ArcCow<T> where T: Take + Freeze {}
 
 impl<T, V> VisitWith<V> for ArcCow<T>
 where
     V: ?Sized,
-    T: VisitWith<V> + Take,
+    T: VisitWith<V> + Take + Freeze,
 {
     #[inline]
     fn visit_children_with(&self, v: &mut V) {
@@ -188,7 +187,7 @@ where
 impl<T, V> VisitMutWith<V> for ArcCow<T>
 where
     V: ?Sized,
-    T: Clone + VisitMutWith<V> + Take,
+    T: Clone + VisitMutWith<V> + Take + Freeze,
 {
     #[inline]
     fn visit_mut_children_with(&mut self, v: &mut V) {
@@ -198,7 +197,7 @@ where
 impl<T, V> FoldWith<V> for ArcCow<T>
 where
     V: ?Sized,
-    T: Clone + FoldWith<V> + Take,
+    T: Clone + FoldWith<V> + Take + Freeze,
 {
     #[inline]
     fn fold_children_with(self, v: &mut V) -> Self {
@@ -207,7 +206,7 @@ where
 }
 impl<T> ArcCow<T>
 where
-    T: Clone + Take,
+    T: Clone + Take + Freeze,
 {
     #[inline(always)]
     pub fn normalize(&self) -> &T {
@@ -235,15 +234,8 @@ where
 
 impl<T> ArcCow<T>
 where
-    T: Take + Clone + VisitMutWith<Freezer>,
+    T: Take + Clone + Freeze,
 {
-    /// This is deep freeze, but doesn't work if `self <- Freezed <- NonFreezed`
-    /// exists.
-    #[inline]
-    pub fn freeze(&mut self) {
-        self.visit_mut_with(&mut Freezer);
-    }
-
     #[inline(always)]
     pub fn freezed(mut self) -> Self {
         self.freeze();
@@ -251,7 +243,7 @@ where
     }
 
     pub fn new_freezed(mut data: T) -> Self {
-        data.visit_mut_with(&mut Freezer);
+        data.freeze();
         Self::Arc(Freezed(Arc::new(data)))
     }
 
@@ -278,7 +270,7 @@ where
 
 impl<T> From<T> for ArcCow<T>
 where
-    T: Take,
+    T: Take + Freeze,
 {
     #[inline(always)]
     fn from(data: T) -> Self {
@@ -288,7 +280,7 @@ where
 
 impl<T> From<Box<T>> for ArcCow<T>
 where
-    T: Take,
+    T: Take + Freeze,
 {
     #[inline(always)]
     fn from(data: Box<T>) -> Self {
@@ -298,7 +290,7 @@ where
 
 impl<T> ArcCow<T>
 where
-    T: Clone + Take,
+    T: Clone + Take + Freeze,
 {
     #[inline]
     pub fn into_inner(self) -> T {
@@ -314,7 +306,7 @@ where
 
 impl<T> Serialize for ArcCow<T>
 where
-    T: Serialize + Take,
+    T: Serialize + Take + Freeze,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -326,7 +318,7 @@ where
 
 impl<'de, T> Deserialize<'de> for ArcCow<T>
 where
-    T: DeserializeOwned + Take,
+    T: DeserializeOwned + Take + Freeze,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
