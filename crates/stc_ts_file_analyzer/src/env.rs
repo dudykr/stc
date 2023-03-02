@@ -133,30 +133,33 @@ pub trait BuiltInGen: Sized {
                                 debug_assert_eq!(c.class.implements, vec![]);
                                 let ty = analyzer
                                     .with_child(ScopeKind::Flow, Default::default(), |analyzer: &mut Analyzer| {
-                                        Ok(Type::ClassDef(ClassDef {
-                                            span: c.class.span,
-                                            name: Some(c.ident.clone().into()),
-                                            is_abstract: c.class.is_abstract,
-                                            body: c
-                                                .class
-                                                .body
-                                                .clone()
-                                                .validate_with_default(analyzer)
-                                                .unwrap()
-                                                .into_iter()
-                                                .flatten()
-                                                .collect(),
-                                            super_class: None,
-                                            // implements: vec![],
-                                            type_params: c
-                                                .class
-                                                .type_params
-                                                .validate_with(analyzer)
-                                                .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
-                                            implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }))
+                                        Ok(Type::ClassDef(
+                                            ClassDef {
+                                                span: c.class.span,
+                                                name: Some(c.ident.clone().into()),
+                                                is_abstract: c.class.is_abstract,
+                                                body: c
+                                                    .class
+                                                    .body
+                                                    .clone()
+                                                    .validate_with_default(analyzer)
+                                                    .unwrap()
+                                                    .into_iter()
+                                                    .flatten()
+                                                    .collect(),
+                                                super_class: None,
+                                                // implements: vec![],
+                                                type_params: c
+                                                    .class
+                                                    .type_params
+                                                    .validate_with(analyzer)
+                                                    .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
+                                                implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            }
+                                            .into(),
+                                        ))
                                     })
                                     .unwrap();
 

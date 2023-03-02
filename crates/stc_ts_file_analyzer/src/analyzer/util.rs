@@ -6,7 +6,7 @@ use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr, QueryType, Ref,
+    Class, ClassMetadata, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr, QueryType, Ref,
     RefMetadata, Tuple, TypeElement, Union,
 };
 use stc_utils::{cache::ALLOW_DEEP_CLONE, dev_span};
@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(def) => {
                 return Ok(Type::Class(Class {
                     span,
-                    def: box def.clone(),
+                    def: def.clone(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }))
@@ -201,7 +201,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
         }),
         Type::ClassDef(ref def) => Type::Class(Class {
             span,
-            def: box def.clone(),
+            def: def.clone(),
             metadata: ClassMetadata {
                 common: def.metadata.common,
                 ..Default::default()
@@ -237,14 +237,11 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
             tracker: Default::default(),
         }),
 
-        Type::Enum(Enum { id, metadata, .. }) => Type::EnumVariant(EnumVariant {
+        Type::Enum(e) => Type::EnumVariant(EnumVariant {
             span,
-            enum_name: id.into(),
+            def: e.cheap_clone(),
             name: None,
-            metadata: EnumVariantMetadata {
-                common: metadata.common,
-                ..Default::default()
-            },
+            metadata: EnumVariantMetadata { ..Default::default() },
             tracker: Default::default(),
         }),
 

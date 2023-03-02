@@ -1,5 +1,6 @@
 use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
+use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
@@ -40,7 +41,7 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Enum> {
+    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<ArcCow<Enum>> {
         for m in &e.members {
             self.validate_with(|a| a.validate_enum_member_name(&m.id));
         }
@@ -128,17 +129,17 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Enum {
+            ArcCow::new_freezed(Enum {
                 span: e.span,
                 has_num: members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Num(..)))),
                 has_str,
                 declare: e.declare,
                 is_const: e.is_const,
-                id: e.id.clone(),
+                id: e.id.clone().into(),
                 members,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }
+            })
         };
 
         let span = e.span;
@@ -150,6 +151,7 @@ impl Analyzer<'_, '_> {
             .map(Type::freezed)
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span, Default::default()));
+        stored_ty.assert_clone_cheap();
 
         self.register_type(name.clone(), stored_ty.clone());
 
@@ -384,7 +386,7 @@ impl Analyzer<'_, '_> {
     /// };
     /// var e: typeof E1;
     /// ```
-    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> VResult<TypeLit> {
+    pub(super) fn enum_to_type_lit(&mut self, e: &ArcCow<Enum>) -> VResult<TypeLit> {
         let mut members = vec![];
 
         for m in &e.members {
@@ -405,7 +407,7 @@ impl Analyzer<'_, '_> {
                 params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
-                    enum_name: e.id.clone().into(),
+                    def: e.cheap_clone(),
                     name: Some(key.sym),
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -602,31 +604,25 @@ impl Analyzer<'_, '_> {
     pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         if let Type::EnumVariant(ref ev) = ty.normalize() {
             if let Some(variant_name) = &ev.name {
-                if let Some(types) = self.find_type(&ev.enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = ty.normalize() {
-                            if let Some(v) = members.iter().find(|m| match m.id {
-                                RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
-                                    sym == variant_name
-                                }
-                            }) {
-                                if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
-                                    return Ok(Type::Lit(LitType {
-                                        span: v.span,
-                                        lit: match *v.val.clone() {
-                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                            RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                            _ => unreachable!(),
-                                        },
-                                        metadata: LitTypeMetadata {
-                                            common: ev.metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    }));
-                                }
-                            }
-                        }
+                if let Some(v) = ev.def.members.iter().find(|m| match m.id {
+                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                        sym == variant_name
+                    }
+                }) {
+                    if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
+                        return Ok(Type::Lit(LitType {
+                            span: v.span,
+                            lit: match *v.val.clone() {
+                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
+                                _ => unreachable!(),
+                            },
+                            metadata: LitTypeMetadata {
+                                common: ev.metadata.common,
+                                ..Default::default()
+                            },
+                            tracker: Default::default(),
+                        }));
                     }
                 }
             }

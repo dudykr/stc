@@ -21,10 +21,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
-    Function, Id, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator,
-    OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
-    TypeParamInstantiation,
+    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Instance, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
+    QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -889,15 +888,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                if let Ok(Some(types)) = self.find_type(enum_name) {
-                    for ty in types {
-                        if let Type::Enum(e) = ty.normalize() {
-                            let e = e.clone();
-                            return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
-                        }
-                    }
-                }
+            Type::EnumVariant(EnumVariant { def, name: None, .. }) => {
+                return self.check_if_type_matches_key(span, declared, &Type::Enum(def.cheap_clone()), allow_union);
             }
 
             Type::Enum(e) if allow_union => {
@@ -1898,7 +1890,7 @@ impl Analyzer<'_, '_> {
                             if !opts.is_key_computed {
                                 return Ok(Type::EnumVariant(EnumVariant {
                                     span,
-                                    enum_name: e.id.clone().into(),
+                                    def: e.cheap_clone(),
                                     name: None,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
@@ -1945,7 +1937,7 @@ impl Analyzer<'_, '_> {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
                             },
-                            enum_name: e.id.clone().into(),
+                            def: e.cheap_clone(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
                             tracker: Default::default(),
@@ -2001,39 +1993,31 @@ impl Analyzer<'_, '_> {
             //
             // Foo.A.toString()
             Type::EnumVariant(EnumVariant {
-                ref enum_name,
+                def,
                 ref name,
                 span,
                 metadata,
                 ..
-            }) => match self.find_type(enum_name)? {
-                Some(types) => {
-                    //
-                    for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
-                            for v in e.members.iter() {
-                                if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
-                                    let new_obj_ty = Type::Lit(LitType {
-                                        span: *span,
-                                        lit: match *v.val.clone() {
-                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                            RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
-                                            _ => unreachable!(),
-                                        },
-                                        metadata: LitTypeMetadata {
-                                            common: metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    });
-                                    return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
-                                }
-                            }
-                        }
+            }) => {
+                for v in def.members.iter() {
+                    if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
+                        let new_obj_ty = Type::Lit(LitType {
+                            span: *span,
+                            lit: match *v.val.clone() {
+                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
+                                _ => unreachable!(),
+                            },
+                            metadata: LitTypeMetadata {
+                                common: metadata.common,
+                                ..Default::default()
+                            },
+                            tracker: Default::default(),
+                        });
+                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                     }
                 }
-                _ => unreachable!("Enum named {} does not exist", enum_name),
-            },
+            }
 
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {
@@ -3415,12 +3399,9 @@ impl Analyzer<'_, '_> {
                     return self.expand_type_params(&params, ty.clone(), Default::default());
                 }
             }
-            Type::Alias(Alias { type_params, .. })
-            | Type::Class(Class {
-                def: box ClassDef { type_params, .. },
-                ..
-            })
-            | Type::ClassDef(ClassDef { type_params, .. }) => {
+            Type::Alias(..) | Type::Class(..) | Type::ClassDef(..) => {
+                let type_params = ty.get_type_param_decl();
+
                 if let Some(type_params) = type_params {
                     let mut params = HashMap::default();
 
@@ -4069,32 +4050,11 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty.normalize() {
-                                        Type::Interface(Interface {
-                                            type_params: Some(type_params),
-                                            ..
-                                        })
-                                        | Type::Alias(Alias {
-                                            type_params: Some(type_params),
-                                            ..
-                                        })
-                                        | Type::Class(Class {
-                                            def:
-                                                box ClassDef {
-                                                    type_params: Some(type_params),
-                                                    ..
-                                                },
-                                            ..
-                                        })
-                                        | Type::ClassDef(ClassDef {
-                                            type_params: Some(type_params),
-                                            ..
-                                        }) => {
-                                            params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
-                                        }
-                                        _ => self
-                                            .storage
-                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into()),
+                                    if let Some(type_params) = ty.get_type_param_decl() {
+                                        params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
+                                    } else {
+                                        self.storage
+                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into())
                                     }
                                 }
                                 if let Some(params) = params {

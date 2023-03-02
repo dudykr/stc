@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                     //
                     // Class instance cannot be operand, but it can be passed as argument while
                     // normalizing.
-                    return self.keyof(span, &Type::ClassDef(*def.clone()));
+                    return self.keyof(span, &Type::ClassDef(def.clone()));
                 }
 
                 Type::ClassDef(cls) => {
@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(..) | Type::Enum(..) => {
                     let ty = self
-                        .convert_type_to_type_lit(span, ty)?
+                        .convert_type_to_type_lit(span, ty.freezed())?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                         .unwrap();
