@@ -1053,61 +1053,56 @@ impl Analyzer<'_, '_> {
                         }
                     } else {
                         // enumVariant is Enum
-                        if let Some(types) = self.find_type(&ev.enum_name)? {
-                            for ty in types {
-                                if let Type::Enum(e) = ty.normalize() {
-                                    let mut str_lits = vec![];
-                                    let mut num_lits = vec![];
-                                    for v in e.members.iter() {
-                                        let key = match &v.id {
-                                            RTsEnumMemberId::Ident(i) => i.clone(),
-                                            RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
-                                        };
-                                        match *v.val {
-                                            RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
-                                                span: v.span,
-                                                enum_name: e.id.clone().into(),
-                                                name: Some(key.sym),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })),
-                                            RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
-                                                span: v.span,
-                                                enum_name: e.id.clone().into(),
-                                                name: Some(key.sym),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })),
-                                            _ => {}
-                                        }
-                                    }
 
-                                    if str_lits.is_empty() && is_str {
-                                        return never!();
-                                    }
-                                    if num_lits.is_empty() && is_num {
-                                        return never!();
-                                    }
-                                    if str_lits.is_empty() && is_num || num_lits.is_empty() && is_str {
-                                        return Ok(Some(elem.clone().freezed()));
-                                    }
-
-                                    let mut ty = Type::new_union(
-                                        span,
-                                        if is_str {
-                                            str_lits
-                                        } else if is_num {
-                                            num_lits
-                                        } else {
-                                            return never!();
-                                        },
-                                    );
-
-                                    ty.reposition(e.span);
-                                    return Ok(Some(ty).freezed());
-                                }
+                        let mut str_lits = vec![];
+                        let mut num_lits = vec![];
+                        for v in ev.def.members.iter() {
+                            let key = match &v.id {
+                                RTsEnumMemberId::Ident(i) => i.clone(),
+                                RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
+                            };
+                            match *v.val {
+                                RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
+                                    span: v.span,
+                                    def: ev.def.cheap_clone(),
+                                    name: Some(key.sym),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })),
+                                RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
+                                    span: v.span,
+                                    def: ev.def.cheap_clone(),
+                                    name: Some(key.sym),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })),
+                                _ => {}
                             }
                         }
+
+                        if str_lits.is_empty() && is_str {
+                            return never!();
+                        }
+                        if num_lits.is_empty() && is_num {
+                            return never!();
+                        }
+                        if str_lits.is_empty() && is_num || num_lits.is_empty() && is_str {
+                            return Ok(Some(elem.clone().freezed()));
+                        }
+
+                        let mut ty = Type::new_union(
+                            span,
+                            if is_str {
+                                str_lits
+                            } else if is_num {
+                                num_lits
+                            } else {
+                                return never!();
+                            },
+                        );
+
+                        ty.reposition(ev.def.span);
+                        return Ok(Some(ty).freezed());
                     }
                 }
             }

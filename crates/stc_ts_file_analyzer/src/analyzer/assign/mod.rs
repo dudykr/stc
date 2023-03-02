@@ -2019,7 +2019,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 match kind {
-                    TsKeywordTypeKind::TsStringKeyword => match *rhs {
+                    TsKeywordTypeKind::TsStringKeyword => match rhs.normalize() {
                         Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
                         Type::EnumVariant(EnumVariant { name: None, def, .. }) => {
                             if def.has_str && !def.has_num {
