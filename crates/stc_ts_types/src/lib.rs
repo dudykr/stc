@@ -2291,6 +2291,15 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
+    pub fn get_type_params(&self) -> Option<&TypeParamDecl> {
+        match self.normalize() {
+            Type::Class(ty) => ty.def.type_params.as_deref(),
+            Type::ClassDef(ty) => ty.type_params.as_deref(),
+            Type::Interface(Interface { ref type_params, .. }) | Type::Alias(Alias { ref type_params, .. }) => type_params.as_deref(),
+            _ => None,
+        }
+    }
+
     /// Panics if type is invalid. This is debug-build only and it's noop on a
     /// release build.
     ///
