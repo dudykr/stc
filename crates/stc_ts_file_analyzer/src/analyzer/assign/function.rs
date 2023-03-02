@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{ClassDef, Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};

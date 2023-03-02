@@ -4066,32 +4066,11 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty.normalize() {
-                                        Type::Interface(Interface {
-                                            type_params: Some(type_params),
-                                            ..
-                                        })
-                                        | Type::Alias(Alias {
-                                            type_params: Some(type_params),
-                                            ..
-                                        })
-                                        | Type::Class(Class {
-                                            def:
-                                                box ClassDef {
-                                                    type_params: Some(type_params),
-                                                    ..
-                                                },
-                                            ..
-                                        })
-                                        | Type::ClassDef(ClassDef {
-                                            type_params: Some(type_params),
-                                            ..
-                                        }) => {
-                                            params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
-                                        }
-                                        _ => self
-                                            .storage
-                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into()),
+                                    if let Some(type_params) = ty.get_type_params() {
+                                        params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
+                                    } else {
+                                        self.storage
+                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into())
                                     }
                                 }
                                 if let Some(params) = params {

@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType,
-    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
+    Array, Class, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType, Tuple,
+    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_atoms::js_word;
