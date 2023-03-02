@@ -1,5 +1,6 @@
 use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
+use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
@@ -40,7 +41,7 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Enum> {
+    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<ArcCow<Enum>> {
         for m in &e.members {
             self.validate_with(|a| a.validate_enum_member_name(&m.id));
         }
