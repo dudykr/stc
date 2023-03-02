@@ -194,7 +194,7 @@ pub enum Type {
     Class(Class),
 
     /// Class definition itself.
-    ClassDef(ClassDef),
+    ClassDef(ArcCow<ClassDef>),
 
     Arc(Freezed),
 
@@ -886,7 +886,7 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
-    pub def: Box<ClassDef>,
+    pub def: ArcCow<ClassDef>,
     pub metadata: ClassMetadata,
 
     pub tracker: Tracker<"Class">,
