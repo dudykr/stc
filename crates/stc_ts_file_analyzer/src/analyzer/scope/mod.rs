@@ -2286,6 +2286,7 @@ impl Expander<'_, '_, '_> {
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
+            ty.freeze();
 
             if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
