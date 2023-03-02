@@ -673,7 +673,8 @@ impl Fold<Type> for Simplifier<'_> {
                         ClassMember::Property(p) => p.key == s.value,
                         ClassMember::IndexSignature(_) => false,
                     })
-                    .unwrap();
+                    .unwrap()
+                    .clone();
 
                 match member {
                     ClassMember::Method(_) => unimplemented!(),
@@ -691,7 +692,7 @@ impl Fold<Type> for Simplifier<'_> {
 
             Type::IndexedAccessType(IndexedAccessType {
                 span,
-                obj_type: box Type::Class(Class { def, .. }),
+                obj_type: box Type::Class(Class { ref def, .. }),
                 index_type: box Type::Union(ref keys),
                 ..
             }) if keys.types.iter().all(is_str_lit_or_union) => {

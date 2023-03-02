@@ -819,7 +819,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            match *rhs.normalize() {
+            match rhs.normalize() {
                 // Check class members
                 Type::Class(Class { def, .. }) => {
                     match m {

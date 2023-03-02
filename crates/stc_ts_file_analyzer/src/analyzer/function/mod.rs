@@ -4,9 +4,7 @@ use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Id, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
-};
+use stc_ts_types::{CallSignature, Class, ClassMetadata, Function, Id, KeywordType, KeywordTypeMetadata, Ref, TypeElement};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext};
