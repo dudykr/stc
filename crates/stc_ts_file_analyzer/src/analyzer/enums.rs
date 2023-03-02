@@ -151,6 +151,7 @@ impl Analyzer<'_, '_> {
             .map(Type::freezed)
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span, Default::default()));
+        stored_ty.assert_clone_cheap();
 
         self.register_type(name.clone(), stored_ty.clone());
 
