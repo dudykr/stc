@@ -210,6 +210,11 @@ impl<T> ArcCow<T>
 where
     T: Clone + Take,
 {
+    #[inline(always)]
+    pub fn normalize(&self) -> &T {
+        self
+    }
+
     /// Makes `self` [ArcCow::Raw]
     #[inline]
     pub fn normalize_mut(&mut self) -> &mut T {
