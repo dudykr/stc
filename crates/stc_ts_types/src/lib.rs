@@ -2089,7 +2089,7 @@ impl Type {
             Type::Namespace(ty) => &mut ty.metadata.common,
             Type::Module(ty) => &mut ty.metadata.common,
             Type::Class(ty) => &mut ty.metadata.common,
-            Type::ClassDef(ty) => &mut ty.metadata.common,
+            Type::ClassDef(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Rest(ty) => &mut ty.metadata.common,
             Type::Optional(ty) => &mut ty.metadata.common,
             Type::Symbol(ty) => &mut ty.metadata.common,
@@ -2151,7 +2151,7 @@ impl Type {
 
             Type::Class(c) => c.span = span,
 
-            Type::ClassDef(c) => c.span = span,
+            Type::ClassDef(c) => c.normalize_mut().span = span,
 
             Type::Param(p) => p.span = span,
 
