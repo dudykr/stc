@@ -129,17 +129,17 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Enum {
+            ArcCow::new_freezed(Enum {
                 span: e.span,
                 has_num: members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Num(..)))),
                 has_str,
                 declare: e.declare,
                 is_const: e.is_const,
-                id: e.id.clone(),
+                id: e.id.clone().into(),
                 members,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }
+            })
         };
 
         let span = e.span;

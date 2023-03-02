@@ -888,15 +888,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                if let Ok(Some(types)) = self.find_type(enum_name) {
-                    for ty in types {
-                        if let Type::Enum(e) = ty.normalize() {
-                            let e = e.clone();
-                            return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
-                        }
-                    }
-                }
+            Type::EnumVariant(EnumVariant { def, name: None, .. }) => {
+                return self.check_if_type_matches_key(span, declared, &Type::Enum(def.cheap_clone()), allow_union);
             }
 
             Type::Enum(e) if allow_union => {
