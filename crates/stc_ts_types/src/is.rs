@@ -175,7 +175,7 @@ impl_is!(
 );
 impl_is!(
     Enum,
-    Enum,
+    ArcCow<Enum>,
     is_enum_type,
     as_enum_type,
     as_enum_type_mut,

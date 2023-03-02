@@ -49,7 +49,7 @@ impl From<Type> for RTsType {
             Type::Param(t) => t.into(),
             Type::EnumVariant(t) => t.into(),
             Type::Interface(t) => t.into(),
-            Type::Enum(t) => t.into(),
+            Type::Enum(t) => t.into_inner().into(),
             Type::Mapped(t) => t.into(),
             Type::Alias(t) => t.into(),
             Type::Namespace(..) => {
