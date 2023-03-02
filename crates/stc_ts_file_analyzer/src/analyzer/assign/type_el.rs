@@ -821,10 +821,7 @@ impl Analyzer<'_, '_> {
 
             match *rhs.normalize() {
                 // Check class members
-                Type::Class(Class {
-                    def: box ClassDef { ref body, .. },
-                    ..
-                }) => {
+                Type::Class(Class { def, .. }) => {
                     match m {
                         TypeElement::Call(_) => {
                             unimplemented!("assign: interface {{ () => ret; }} = new Foo()")
@@ -833,7 +830,7 @@ impl Analyzer<'_, '_> {
                             unimplemented!("assign: interface {{ new () => ret; }} = new Foo()")
                         }
                         TypeElement::Property(ref lp) => {
-                            for rm in body {
+                            for rm in def.body.iter() {
                                 if let ClassMember::Property(ref rp) = rm {
                                     match rp.accessibility {
                                         Some(Accessibility::Private) | Some(Accessibility::Protected) => {
