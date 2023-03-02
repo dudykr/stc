@@ -4,6 +4,7 @@
 
 use std::{fmt::Debug, hash::Hash, ops::Deref};
 
+use debug_unreachable::debug_unreachable;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use stc_utils::cache::{AssertCloneCheap, Freeze};
 use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
@@ -248,6 +249,15 @@ where
     pub fn new_freezed(mut data: T) -> Self {
         data.visit_mut_with(&mut Freezer);
         Self::Arc(Freezed(Arc::new(data)))
+    }
+
+    /// This panics if `self` is not cheap to clone.
+    #[inline(always)]
+    pub fn cheap_clone(&self) -> Self {
+        match self {
+            ArcCow::Arc(_) => todo!(),
+            ArcCow::Owned(_) => unsafe { debug_unreachable!("this is not cheap to clone") },
+        }
     }
 }
 
