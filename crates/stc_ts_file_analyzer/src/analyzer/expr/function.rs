@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
                                 common: def.metadata.common,
                                 ..Default::default()
                             },
-                            def: box def,
+                            def,
                             tracker: Default::default(),
                         }),
                         _ => ty,

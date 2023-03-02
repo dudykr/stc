@@ -1364,7 +1364,7 @@ impl Analyzer<'_, '_> {
                     span,
                     Cow::Owned(Type::Class(Class {
                         span,
-                        def: box ty.clone(),
+                        def: ty.clone(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })),
@@ -1404,7 +1404,7 @@ impl Analyzer<'_, '_> {
                 if let Type::ClassDef(def) = orig_ty.normalize() {
                     return Ok(Type::Class(Class {
                         span,
-                        def: box def.clone(),
+                        def: def.clone(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -1441,7 +1441,7 @@ impl Analyzer<'_, '_> {
         if let Type::ClassDef(def) = ty.normalize() {
             return Ok(Type::Class(Class {
                 span,
-                def: box def.clone(),
+                def: def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }));

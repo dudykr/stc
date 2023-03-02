@@ -2209,7 +2209,7 @@ impl Expander<'_, '_, '_> {
                                 if let Type::ClassDef(def) = ty {
                                     ty = Type::Class(Class {
                                         span: self.span,
-                                        def: box def,
+                                        def,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     });
