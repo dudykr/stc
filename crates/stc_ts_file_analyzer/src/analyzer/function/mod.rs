@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
                 declared_ret_ty = Some(match ret_ty {
                     Type::ClassDef(def) => Type::Class(Class {
                         span,
-                        def: box def,
+                        def,
                         metadata: ClassMetadata {
                             common: metadata,
                             ..Default::default()
