@@ -4,6 +4,23 @@ use scoped_tls::scoped_thread_local;
 
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
+pub trait AssertCloneCheap {
+    /// Assert that `self` is cheap to clone. This noop on production build.
+    fn assert_clone_cheap(&self);
+}
+
+impl<T> AssertCloneCheap for T
+where
+    T: Freeze,
+{
+    fn assert_clone_cheap(&self) {
+        #[cfg(debug_assertions)]
+        if !self.is_clone_cheap() {
+            unreachable!("`{}` is not cheap to clone", std::any::type_name::<T>())
+        }
+    }
+}
+
 pub trait Freeze: Sized + Clone {
     /// Returns `true` if `[Clone::clone] is cheap.
     fn is_clone_cheap(&self) -> bool;

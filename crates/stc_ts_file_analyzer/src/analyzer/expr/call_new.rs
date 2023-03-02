@@ -1403,7 +1403,7 @@ impl Analyzer<'_, '_> {
                 Type::ClassDef(ref cls) => {
                     self.scope.this = Some(Type::Class(Class {
                         span,
-                        def: box cls.clone(),
+                        def: cls.clone(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -1424,7 +1424,7 @@ impl Analyzer<'_, '_> {
                         //
                         return Ok(Type::Class(Class {
                             span,
-                            def: box cls.clone(),
+                            def: cls.clone(),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }));
@@ -1511,7 +1511,7 @@ impl Analyzer<'_, '_> {
                                 &constructor.params,
                                 Type::Class(Class {
                                     span,
-                                    def: box cls.clone(),
+                                    def: cls.clone(),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 }),
@@ -1569,7 +1569,7 @@ impl Analyzer<'_, '_> {
                             &[],
                             Type::Class(Class {
                                 span,
-                                def: box cls.clone(),
+                                def: cls.clone(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }),
@@ -1831,7 +1831,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Remove clone
                 Ok(Class {
                     span,
-                    def: box def.clone(),
+                    def: def.clone(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }
@@ -2112,7 +2112,7 @@ impl Analyzer<'_, '_> {
                             ret_ty: c.ret_ty.clone().unwrap_or_else(|| {
                                 box Type::Class(Class {
                                     span,
-                                    def: box cls.clone(),
+                                    def: cls.clone(),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })
@@ -2133,7 +2133,7 @@ impl Analyzer<'_, '_> {
                         params: Default::default(),
                         ret_ty: box Type::Class(Class {
                             span,
-                            def: box cls.clone(),
+                            def: cls.clone(),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }),
@@ -3373,7 +3373,7 @@ impl Analyzer<'_, '_> {
                                 if let Type::ClassDef(def) = orig_ty.normalize() {
                                     return Ok(Type::Class(Class {
                                         span,
-                                        def: box def.clone(),
+                                        def: def.clone(),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     }));
@@ -3415,7 +3415,7 @@ impl Analyzer<'_, '_> {
         if let Type::ClassDef(def) = new_ty.normalize() {
             return Ok(Type::Class(Class {
                 span,
-                def: box def.clone(),
+                def: def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }));

@@ -1842,11 +1842,13 @@ impl Analyzer<'_, '_> {
                         let res: VResult<_> = try {
                             let r = self
                                 .get_iterator(span, Cow::Borrowed(rhs), Default::default())
-                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                                .context("tried to convert a type to an iterator to assign to a tuple")?
+                                .freezed();
                             //
                             let rhs_el = self
                                 .get_iterator_element_type(span, r, false, Default::default())
-                                .context("tried to get the element type of an iterator assignment")?;
+                                .context("tried to get the element type of an iterator assignment")?
+                                .freezed();
 
                             self.assign_with_opts(
                                 data,

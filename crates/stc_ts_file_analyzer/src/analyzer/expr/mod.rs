@@ -21,10 +21,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
-    Function, Id, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator,
-    OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
-    TypeParamInstantiation,
+    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Instance, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
+    QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -3415,12 +3414,9 @@ impl Analyzer<'_, '_> {
                     return self.expand_type_params(&params, ty.clone(), Default::default());
                 }
             }
-            Type::Alias(Alias { type_params, .. })
-            | Type::Class(Class {
-                def: box ClassDef { type_params, .. },
-                ..
-            })
-            | Type::ClassDef(ClassDef { type_params, .. }) => {
+            Type::Alias(..) | Type::Class(..) | Type::ClassDef(..) => {
+                let type_params = ty.get_type_param_decl();
+
                 if let Some(type_params) = type_params {
                     let mut params = HashMap::default();
 
@@ -4069,32 +4065,11 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty.normalize() {
-                                        Type::Interface(Interface {
-                                            type_params: Some(type_params),
-                                            ..
-                                        })
-                                        | Type::Alias(Alias {
-                                            type_params: Some(type_params),
-                                            ..
-                                        })
-                                        | Type::Class(Class {
-                                            def:
-                                                box ClassDef {
-                                                    type_params: Some(type_params),
-                                                    ..
-                                                },
-                                            ..
-                                        })
-                                        | Type::ClassDef(ClassDef {
-                                            type_params: Some(type_params),
-                                            ..
-                                        }) => {
-                                            params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
-                                        }
-                                        _ => self
-                                            .storage
-                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into()),
+                                    if let Some(type_params) = ty.get_type_param_decl() {
+                                        params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
+                                    } else {
+                                        self.storage
+                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into())
                                     }
                                 }
                                 if let Some(params) = params {

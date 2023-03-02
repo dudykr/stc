@@ -27,7 +27,7 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
-use stc_arc_cow::freeze::Freezer;
+use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
     RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
@@ -194,7 +194,7 @@ pub enum Type {
     Class(Class),
 
     /// Class definition itself.
-    ClassDef(ClassDef),
+    ClassDef(ArcCow<ClassDef>),
 
     Arc(Freezed),
 
@@ -886,14 +886,14 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
-    pub def: Box<ClassDef>,
+    pub def: ArcCow<ClassDef>,
     pub metadata: ClassMetadata,
 
     pub tracker: Tracker<"Class">,
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Class, [u8; 32]);
+assert_eq_size!(Class, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassDef {
@@ -911,6 +911,22 @@ pub struct ClassDef {
 
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(ClassDef, [u8; 96]);
+
+impl Take for ClassDef {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            is_abstract: false,
+            name: None,
+            super_class: None,
+            body: vec![],
+            type_params: None,
+            implements: Box::new(vec![]),
+            metadata: ClassDefMetadata::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum ClassMember {
@@ -2073,7 +2089,7 @@ impl Type {
             Type::Namespace(ty) => &mut ty.metadata.common,
             Type::Module(ty) => &mut ty.metadata.common,
             Type::Class(ty) => &mut ty.metadata.common,
-            Type::ClassDef(ty) => &mut ty.metadata.common,
+            Type::ClassDef(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Rest(ty) => &mut ty.metadata.common,
             Type::Optional(ty) => &mut ty.metadata.common,
             Type::Symbol(ty) => &mut ty.metadata.common,
@@ -2135,7 +2151,7 @@ impl Type {
 
             Type::Class(c) => c.span = span,
 
-            Type::ClassDef(c) => c.span = span,
+            Type::ClassDef(c) => c.normalize_mut().span = span,
 
             Type::Param(p) => p.span = span,
 
@@ -2275,6 +2291,15 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
+    pub fn get_type_param_decl(&self) -> Option<&TypeParamDecl> {
+        match self.normalize() {
+            Type::Class(ty) => ty.def.type_params.as_deref(),
+            Type::ClassDef(ty) => ty.type_params.as_deref(),
+            Type::Interface(Interface { ref type_params, .. }) | Type::Alias(Alias { ref type_params, .. }) => type_params.as_deref(),
+            _ => None,
+        }
+    }
+
     /// Panics if type is invalid. This is debug-build only and it's noop on a
     /// release build.
     ///

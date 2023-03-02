@@ -57,7 +57,7 @@ impl From<Type> for RTsType {
             }
             Type::Module(t) => t.into(),
             Type::Class(t) => t.into(),
-            Type::ClassDef(t) => t.into(),
+            Type::ClassDef(t) => t.into_inner().into(),
             Type::Arc(t) => (*t.ty).clone().into(),
             Type::Optional(t) => t.into(),
             Type::Rest(t) => t.into(),
@@ -545,7 +545,7 @@ impl From<super::Class> for RTsType {
         RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_name: RTsEntityName::Ident(t.def.name.unwrap_or_else(|| Id::word("anonymous class".into())).into()),
+            type_name: RTsEntityName::Ident(t.def.name.clone().unwrap_or_else(|| Id::word("anonymous class".into())).into()),
             type_params: None,
         }
         .into()
