@@ -265,11 +265,8 @@ impl Analyzer<'_, '_> {
                                     )?
                                     .into_owned();
 
-                                if let Type::EnumVariant(EnumVariant {
-                                    name: Some(..), enum_name, ..
-                                }) = elem.normalize()
-                                {
-                                    *enum_counts.entry(enum_name.clone()).or_insert(0) += 1;
+                                if let Type::EnumVariant(EnumVariant { name: Some(..), def, .. }) = elem.normalize() {
+                                    *enum_counts.entry(def.id.clone()).or_insert(0) += 1;
                                 }
                             }
 
@@ -282,7 +279,7 @@ impl Analyzer<'_, '_> {
                                             if *cnt == 0 {
                                                 new_types.push(Type::EnumVariant(EnumVariant {
                                                     span: e.span,
-                                                    enum_name: e.id.clone().into(),
+                                                    def: e.cheap_clone(),
                                                     name: None,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
@@ -312,13 +309,10 @@ impl Analyzer<'_, '_> {
                                         .into_owned();
 
                                     if let Type::EnumVariant(EnumVariant {
-                                        span,
-                                        name: Some(..),
-                                        enum_name,
-                                        ..
+                                        span, name: Some(..), def, ..
                                     }) = elem.normalize()
                                     {
-                                        if let Some(0) = enum_counts.get(enum_name) {
+                                        if let Some(0) = enum_counts.get(&def.id) {
                                             // This enum is going to be added to union directly, so we skip the variants.
                                             continue;
                                         }
