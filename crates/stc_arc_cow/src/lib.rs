@@ -4,6 +4,7 @@
 
 use std::{fmt::Debug, hash::Hash, ops::Deref};
 
+use freeze::AssertCloneCheap;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
 use swc_common::{util::take::Take, EqIgnoreSpan, Spanned, TypeEq};
@@ -248,10 +249,31 @@ where
         data.visit_mut_with(&mut Freezer);
         Self::Arc(PrivateArc(Arc::new(data)))
     }
+}
 
-    /// Assert that `self` is cheap to clone. This noop on production build.
-    pub fn assert_clone_cheap(&self) {
-        debug_assert!(matches!(self, ArcCow::Arc(_)));
+impl<T> AssertCloneCheap for ArcCow<T>
+where
+    T: Take,
+{
+    fn assert_clone_cheap(&self) {
+        #[cfg(debug_assertions)]
+        match self {
+            ArcCow::Arc(..) => {}
+            ArcCow::Owned(..) => {
+                unreachable!("ArcCow::Owned is not cheap to clone")
+            }
+        }
+    }
+}
+
+impl<T> From<Arc<T>> for ArcCow<T>
+where
+    T: Take + AssertCloneCheap,
+{
+    fn from(arc: Arc<T>) -> Self {
+        (*arc).assert_clone_cheap();
+
+        ArcCow::Arc(PrivateArc(arc))
     }
 }
 
