@@ -237,14 +237,11 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
             tracker: Default::default(),
         }),
 
-        Type::Enum(Enum { id, metadata, .. }) => Type::EnumVariant(EnumVariant {
+        Type::Enum(e) => Type::EnumVariant(EnumVariant {
             span,
-            enum_name: id.into(),
+            def: e.cheap_clone(),
             name: None,
-            metadata: EnumVariantMetadata {
-                common: metadata.common,
-                ..Default::default()
-            },
+            metadata: EnumVariantMetadata { ..Default::default() },
             tracker: Default::default(),
         }),
 
