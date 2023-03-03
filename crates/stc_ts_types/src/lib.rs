@@ -1872,9 +1872,7 @@ impl Type {
 
     pub fn is_unique_symbol(&self) -> bool {
         match self.normalize_instance() {
-            Type::Unique(u) => {
-                return u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword);
-            }
+            Type::Unique(u) => u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
             _ => false,
         }
     }
