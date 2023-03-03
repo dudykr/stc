@@ -15,7 +15,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Accessibility, TsKeywordTypeKind};
 
 use crate::{
     analyzer::{

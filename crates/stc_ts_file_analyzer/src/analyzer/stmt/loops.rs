@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Operator, Ref, RefMetadata, TypeParamInstantiation};
+use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Ref, RefMetadata, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, DUMMY_SP};
