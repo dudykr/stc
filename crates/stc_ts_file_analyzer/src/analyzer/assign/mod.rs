@@ -3133,12 +3133,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
-        if let Type::Operator(Operator {
-            op: TsTypeOperatorOp::KeyOf,
-            ty,
-            ..
-        }) = output_type.normalize()
-        {
+        if let Type::Index(Index { ty, .. }) = output_type.normalize() {
             if output_type.type_eq(&**ty) {
                 return Ok(true);
             }
