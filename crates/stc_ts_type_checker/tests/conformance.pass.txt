@@ -2280,6 +2280,7 @@ types/literal/stringEnumLiteralTypes2.ts
 types/literal/stringEnumLiteralTypes3.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons02.ts
+types/literal/stringLiteralsAssignedToStringMappings.ts
 types/literal/stringLiteralsWithEqualityChecks01.ts
 types/literal/stringLiteralsWithEqualityChecks02.ts
 types/literal/stringLiteralsWithEqualityChecks03.ts
