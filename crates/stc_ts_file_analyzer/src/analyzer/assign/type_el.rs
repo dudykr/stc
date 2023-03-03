@@ -9,13 +9,13 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType, Tuple,
-    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
+    Array, Class, ClassMember, Function, Index, Key, KeywordType, LitType, MethodSignature, PropertySignature, Ref, TplType, Tuple, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Accessibility, TsKeywordTypeKind};
 
 use crate::{
     analyzer::{
@@ -684,11 +684,8 @@ impl Analyzer<'_, '_> {
                             TypeElement::Property(_) => {}
                             TypeElement::Method(_) => {}
                             TypeElement::Index(l_index) => {
-                                if let Some(Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty: r_constraint,
-                                    ..
-                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                                if let Some(Type::Index(Index { ty: r_constraint, .. })) =
+                                    r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
                                     if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, r_constraint, opts) {
                                         if let Some(l_type_ann) = &l_index.type_ann {

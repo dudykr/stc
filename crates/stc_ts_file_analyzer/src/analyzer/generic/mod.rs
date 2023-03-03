@@ -14,8 +14,8 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, Index, IndexSignature, IndexedAccessType, Intersection, Key,
+    KeywordType, KeywordTypeMetadata, Mapped, OptionalType, PropertySignature, Readonly, Ref, Tuple, TupleElement, TupleMetadata, Type,
     TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
@@ -659,18 +659,9 @@ impl Analyzer<'_, '_> {
                 return self.infer_type_inner(span, inferred, param, &arg, opts);
             }
 
-            (
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty: param,
-                    ..
-                }),
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty: arg,
-                    ..
-                }),
-            ) => return self.infer_from_contravariant_types(span, inferred, arg, param, opts),
+            (Type::Index(Index { ty: param, .. }), Type::Index(Index { ty: arg, .. })) => {
+                return self.infer_from_contravariant_types(span, inferred, arg, param, opts)
+            }
 
             (Type::Conditional(target), Type::Conditional(source)) => {
                 self.infer_from_types(span, inferred, &source.check_type, &target.check_type, opts)?;
@@ -927,8 +918,7 @@ impl Analyzer<'_, '_> {
                     if let Some(arg_obj_ty) = arg_obj_ty.mapped() {
                         if let TypeParam {
                             constraint:
-                                Some(box Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
+                                Some(box Type::Index(Index {
                                     ty: box Type::Param(param_ty),
                                     ..
                                 })),
@@ -1178,12 +1168,7 @@ impl Analyzer<'_, '_> {
                         //
                         // T = true
 
-                        if let Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty: keyof_ty,
-                            ..
-                        }) = index_param_constraint.normalize()
-                        {
+                        if let Type::Index(Index { ty: keyof_ty, .. }) = index_param_constraint.normalize() {
                             return self.infer_type(
                                 span,
                                 inferred,
@@ -1232,8 +1217,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Operator(param) => {
-                self.infer_type_using_operator(span, inferred, param, arg, opts)?;
+            Type::Readonly(param) => {
+                self.infer_type_using_readonly(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
                 if let Type::Interface(..) = arg.normalize() {
@@ -1268,11 +1253,7 @@ impl Analyzer<'_, '_> {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty: arg,
-                ..
-            }) => return self.infer_type(span, inferred, param, arg, opts),
+            Type::Readonly(Readonly { ty: arg, .. }) => return self.infer_type(span, inferred, param, arg, opts),
 
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
@@ -1335,7 +1316,7 @@ impl Analyzer<'_, '_> {
 
                 // Check to print unimplemented error message
                 match param_normalized {
-                    Type::Operator(..) | Type::Interface(..) => return Ok(()),
+                    Type::Index(..) | Type::Interface(..) => return Ok(()),
                     _ => {}
                 }
             }
@@ -1510,11 +1491,7 @@ impl Analyzer<'_, '_> {
                         optional,
                         ..
                     } => match constraint.normalize() {
-                        Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty: operator_arg,
-                            ..
-                        }) => match operator_arg.normalize() {
+                        Type::Index(Index { ty: operator_arg, .. }) => match operator_arg.normalize() {
                             Type::Param(TypeParam { name, .. }) => Some(Res {
                                 name: name.clone(),
                                 key_name: key_name.clone(),
@@ -1533,11 +1510,7 @@ impl Analyzer<'_, '_> {
                                 constraint: Some(constraint),
                                 ..
                             }) => match constraint.normalize() {
-                                Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty,
-                                    ..
-                                }) => match ty.normalize() {
+                                Type::Index(Index { ty, .. }) => match ty.normalize() {
                                     Type::Param(TypeParam { name, .. }) => Some(Res {
                                         name: name.clone(),
                                         key_name: key_name.clone(),
@@ -1927,10 +1900,8 @@ impl Analyzer<'_, '_> {
                                 Some(Type::Param(p)) => {
                                     tp = p;
                                 }
-                                Some(Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty: box Type::Param(p),
-                                    ..
+                                Some(Type::Index(Index {
+                                    ty: box Type::Param(p), ..
                                 })) => {
                                     tp = p;
                                 }
@@ -1945,7 +1916,7 @@ impl Analyzer<'_, '_> {
                                 if ty.types.iter().all(|ty| {
                                     matches!(
                                         ty.normalize(),
-                                        Type::Operator(Operator {
+                                        Type::Index(Index {
                                             ty: box Type::Param(..),
                                             ..
                                         })
@@ -1955,7 +1926,7 @@ impl Analyzer<'_, '_> {
                                 ty.types
                                     .iter()
                                     .map(|ty| match ty.normalize() {
-                                        Type::Operator(Operator {
+                                        Type::Index(Index {
                                             ty: box Type::Param(p), ..
                                         }) => p.name.clone(),
                                         _ => unreachable!(),
@@ -2046,13 +2017,7 @@ impl Analyzer<'_, '_> {
 
         match &param.type_param.constraint {
             Some(constraint) => {
-                if let Type::Operator(
-                    operator @ Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ..
-                    },
-                ) = constraint.normalize()
-                {
+                if let Type::Index(operator) = constraint.normalize() {
                     if let Type::IndexedAccessType(
                         iat @ IndexedAccessType {
                             obj_type: box Type::Param(..),
@@ -2066,7 +2031,7 @@ impl Analyzer<'_, '_> {
                                 let param_ty = param.ty.clone().unwrap();
                                 let name = param.type_param.name.clone();
                                 let (obj_ty, index_ty) = match &**param.type_param.constraint.as_ref().unwrap() {
-                                    Type::Operator(Operator {
+                                    Type::Index(Index {
                                         ty:
                                             box Type::IndexedAccessType(IndexedAccessType {
                                                 obj_type: box Type::Param(obj_ty),
@@ -2129,9 +2094,8 @@ impl Analyzer<'_, '_> {
         {
             match &param.type_param.constraint {
                 Some(constraint) => {
-                    if let Type::Operator(
-                        operator @ Operator {
-                            op: TsTypeOperatorOp::KeyOf,
+                    if let Type::Index(
+                        operator @ Index {
                             ty: box Type::Mapped(Mapped { ty: Some(..), .. }),
                             ..
                         },
@@ -2160,12 +2124,7 @@ impl Analyzer<'_, '_> {
             //     [BoxedP in keyof Pick<P, K>[BoxedT]]: Box<Pick<P, K>[BoxedP]>;
             // };
             if let Some(constraint) = &param.type_param.constraint {
-                if let Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                }) = constraint.normalize()
-                {
+                if let Type::Index(Index { ty, .. }) = constraint.normalize() {
                     if let Some(param_ty) = &param.ty {
                         if let Type::TypeLit(arg_lit) = arg.normalize() {
                             let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
@@ -2623,12 +2582,7 @@ impl Fold<Type> for MappedIndexedSimplifier {
                 index_type:
                     box Type::Param(TypeParam {
                         name: index_name,
-                        constraint:
-                            Some(box Type::Operator(Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ty: indexed_ty,
-                                ..
-                            })),
+                        constraint: Some(box Type::Index(Index { ty: indexed_ty, .. })),
                         ..
                     }),
                 ..

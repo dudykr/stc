@@ -9,15 +9,15 @@ use stc_ts_errors::{
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
-    PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    replace::replace_type, Array, Conditional, FnParam, Id, Index, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped,
+    PropertySignature, Readonly, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     dev_span,
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
 use tracing::{debug, error};
 
 use crate::{
@@ -55,11 +55,9 @@ impl Analyzer<'_, '_> {
 
     fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
-            Some(Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty: keyof_operand,
-                ..
-            })) => return self.expand_mapped_type_with_keyof(span, keyof_operand, keyof_operand, m),
+            Some(Type::Index(Index { ty: keyof_operand, .. })) => {
+                return self.expand_mapped_type_with_keyof(span, keyof_operand, keyof_operand, m)
+            }
             _ => {
                 if let Some(constraint) = m.type_param.constraint.as_deref() {
                     if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) || constraint.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
@@ -253,9 +251,8 @@ impl Analyzer<'_, '_> {
                                     span,
                                     ty: box Type::Mapped(Mapped {
                                         type_param: TypeParam {
-                                            constraint: Some(box Type::Operator(Operator {
+                                            constraint: Some(box Type::Index(Index {
                                                 span: elem.span,
-                                                op: TsTypeOperatorOp::KeyOf,
                                                 ty: elem_rest_ty.ty.clone(),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
@@ -316,11 +313,7 @@ impl Analyzer<'_, '_> {
 
         // Delegate by recursively calling this function.
         match keyof_operand.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => {
+            Type::Readonly(Readonly { ty, .. }) => {
                 if let Some(v) = self
                     .expand_mapped_type_with_keyof(span, ty, original_keyof_operand, m)
                     .context("tried to expand mapped type using a readonly operator")?
@@ -870,12 +863,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(m) => {
-                if let Some(Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                {
+                if let Some(Type::Index(Index { ty, .. })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                     return self
                         .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
                         .context("tried to get property names by using `keyof` constraint");

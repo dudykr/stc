@@ -8,8 +8,8 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata, QueryExpr, QueryType,
-    Symbol, SymbolMetadata,
+    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, OperatorMetadata, QueryExpr, QueryType, Symbol,
+    SymbolMetadata, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
@@ -428,9 +428,8 @@ impl Analyzer<'_, '_> {
                                         metadata: KeywordTypeMetadata { common, .. },
                                         ..
                                     })
-                                    | Type::Operator(Operator {
+                                    | Type::Unique(Unique {
                                         span,
-                                        op: TsTypeOperatorOp::Unique,
                                         ty:
                                             box Type::Keyword(KeywordType {
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -446,9 +445,8 @@ impl Analyzer<'_, '_> {
                                     }) => {
                                         match self.ctx.var_kind {
                                             // It's `unique symbol` only if it's `Symbol()`
-                                            VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
+                                            VarDeclKind::Const if is_symbol_call => Type::Unique(Unique {
                                                 span: *span,
-                                                op: TsTypeOperatorOp::Unique,
                                                 ty: box Type::Keyword(KeywordType {
                                                     span: *span,
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,

@@ -6,8 +6,8 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
+    Array, Conditional, EnumVariant, IdCtx, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, stack};
@@ -540,10 +540,7 @@ impl Analyzer<'_, '_> {
             | Type::Enum(..)
             | Type::Tuple(..)
             | Type::Union(..)
-            | Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
+            | Type::Index(..)
             | Type::Tpl(..)
             | Type::Query(..) => {
                 let ty = self
@@ -1422,11 +1419,7 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => {
+            Type::Readonly(Readonly { ty, .. }) => {
                 return self
                     .assign_with_opts(data, ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
@@ -1729,16 +1722,11 @@ impl Analyzer<'_, '_> {
                             //     x = y; // error TS2322
                             // }
                             // ```
-                            let add_opt = matches!(m.optional, Some(True) | Some(Plus));
-                            if let Some(
-                                constraint @ Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty,
-                                    ..
-                                }),
-                            ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                            let add_optional = matches!(m.optional, Some(True) | Some(Plus));
+                            if let Some(constraint @ Type::Index(Index { ty, .. })) =
+                                m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                             {
-                                if to.type_eq(ty) && !add_opt {
+                                if to.type_eq(ty) && !add_optional {
                                     return Ok(());
                                 } else {
                                     fail!()
@@ -2562,10 +2550,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Type::Operator(Operator {
-                        op: TsTypeOperatorOp::ReadOnly,
-                        ..
-                    })
+                    Type::Index(..)
                     | Type::Lit(..)
                     | Type::Interface(..)
                     | Type::TypeLit(..)
@@ -2654,11 +2639,7 @@ impl Analyzer<'_, '_> {
 
         match to {
             // Handle symbol assignments
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ty,
-                ..
-            }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
+            Type::Unique(u) if u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
                 if rhs.is_symbol() {
                     return Ok(());
                 }
@@ -2670,11 +2651,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty,
-                ..
-            }) if ty.is_type_param() => {
+            Type::Index(Index { ty, .. }) if ty.is_type_param() => {
                 return self
                     .assign_with_opts(
                         data,
@@ -3071,14 +3048,7 @@ impl Analyzer<'_, '_> {
                     // }
                     // ```
                     let remove_opt = matches!(l.optional, Some(Minus));
-                    if let Some(
-                        constraint @ Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty,
-                            ..
-                        }),
-                    ) = l.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                    {
+                    if let Some(constraint @ Type::Index(Index { ty, .. })) = l.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                         if r.type_eq(ty) && !remove_opt {
                             return Ok(());
                         }
@@ -3168,12 +3138,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
-        if let Type::Operator(Operator {
-            op: TsTypeOperatorOp::KeyOf,
-            ty,
-            ..
-        }) = output_type.normalize()
-        {
+        if let Type::Index(Index { ty, .. }) = output_type.normalize() {
             if output_type.type_eq(&**ty) {
                 return Ok(true);
             }

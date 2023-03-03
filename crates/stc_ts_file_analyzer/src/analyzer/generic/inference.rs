@@ -14,13 +14,13 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Readonly, Ref,
     TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error, info};
 
 use crate::{
@@ -1344,25 +1344,15 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn infer_type_using_operator(
+    pub(super) fn infer_type_using_readonly(
         &mut self,
         span: Span,
         inferred: &mut InferData,
-        param: &Operator,
+        param: &Readonly,
         arg: &Type,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        match param.op {
-            TsTypeOperatorOp::KeyOf => {}
-            TsTypeOperatorOp::Unique => {}
-            TsTypeOperatorOp::ReadOnly => return self.infer_type(span, inferred, &param.ty, arg, opts),
-        }
-
-        error!(
-            "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}",
-            param, arg,
-        );
-        Ok(())
+        self.infer_type(span, inferred, &param.ty, arg, opts)
     }
 
     pub(super) fn infer_types_using_class(
@@ -1545,10 +1535,7 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword | TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword,
             ..
         }) => true,
-        Type::Operator(Operator {
-            op: TsTypeOperatorOp::KeyOf,
-            ..
-        }) => true,
+        Type::Index(..) => true,
 
         Type::Union(Union { ref types, .. }) => types.iter().all(should_prevent_generalization),
         _ => false,

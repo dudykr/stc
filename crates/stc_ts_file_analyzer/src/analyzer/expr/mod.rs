@@ -21,14 +21,14 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Instance, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
-    QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
+    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Index, Instance,
+    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, OptionalType, PropertySignature,
+    QueryExpr, QueryType, QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, VarDeclKind};
 use tracing::{debug, info, warn};
 
 use self::bin::extract_name_for_assignment;
@@ -1292,12 +1292,7 @@ impl Analyzer<'_, '_> {
                     constraint: Some(constraint),
                     ..
                 }) if opts.for_validation_of_indexed_access_type => {
-                    if let Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: constraint_ty,
-                        ..
-                    }) = constraint.normalize()
-                    {
+                    if let Type::Index(Index { ty: constraint_ty, .. }) = constraint.normalize() {
                         //
                         if constraint_ty.as_ref().type_eq(obj) {
                             return Ok(Type::any(DUMMY_SP, Default::default()));
@@ -3086,10 +3081,8 @@ impl Analyzer<'_, '_> {
                 // index access.
 
                 match constraint.as_ref().map(Type::normalize) {
-                    Some(Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Array(..),
-                        ..
+                    Some(Type::Index(Index {
+                        ty: box Type::Array(..), ..
                     })) => {
                         if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
                             return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
@@ -3135,12 +3128,7 @@ impl Analyzer<'_, '_> {
                     return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
                 }
 
-                if let Some(Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                })) = constraint.as_ref().map(Type::normalize)
-                {
+                if let Some(Type::Index(Index { ty, .. })) = constraint.as_ref().map(Type::normalize) {
                     // Check if we can index the object with given key.
                     if let Ok(index_type) = self.keyof(span, ty) {
                         if let Ok(()) = self.assign_with_opts(
@@ -3308,11 +3296,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => {
+            Type::Readonly(Readonly { ty, .. }) => {
                 if let TypeOfMode::RValue = type_mode {
                     return self.access_property(span, ty, prop, type_mode, id_ctx, opts);
                 }
@@ -4078,7 +4062,9 @@ impl Analyzer<'_, '_> {
                             Type::Array(_) => {}
                             Type::Union(ty) => {}
                             Type::Intersection(ty) => {}
-                            Type::Operator(_) => {}
+                            Type::Index(_) => {}
+                            Type::Readonly(_) => {}
+                            Type::Unique(_) => {}
                             Type::Mapped(_) => {}
                             Type::Arc(_) => {}
                         }

@@ -4,7 +4,7 @@ use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RComputedPropName, RExpr, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName};
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
+use stc_ts_types::{Accessor, ComputedKey, Index, Key, KeywordType, PrivateName, TypeParam, Unique};
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -18,7 +18,7 @@ use crate::{
         util::ResultExt,
         Analyzer, Ctx,
     },
-    ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
+    ty::{MethodSignature, PropertySignature, Type, TypeElement, TypeExt},
     type_facts::TypeFacts,
     validator,
     validator::ValidateWith,
@@ -273,8 +273,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                 ..
             })
-            | Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
+            | Type::Unique(Unique {
                 ty:
                     box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -291,11 +290,7 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
 
-                if let Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ..
-                }) = ty.normalize()
-                {
+                if let Type::Index(Index { .. }) = ty.normalize() {
                     return true;
                 }
 
