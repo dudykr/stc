@@ -55,11 +55,9 @@ impl Analyzer<'_, '_> {
 
     fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
-            Some(Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty: keyof_operand,
-                ..
-            })) => return self.expand_mapped_type_with_keyof(span, keyof_operand, keyof_operand, m),
+            Some(Type::Index(Index { ty: keyof_operand, .. })) => {
+                return self.expand_mapped_type_with_keyof(span, keyof_operand, keyof_operand, m)
+            }
             _ => {
                 if let Some(constraint) = m.type_param.constraint.as_deref() {
                     if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) || constraint.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
@@ -253,9 +251,8 @@ impl Analyzer<'_, '_> {
                                     span,
                                     ty: box Type::Mapped(Mapped {
                                         type_param: TypeParam {
-                                            constraint: Some(box Type::Operator(Operator {
+                                            constraint: Some(box Type::Index(Index {
                                                 span: elem.span,
-                                                op: TsTypeOperatorOp::KeyOf,
                                                 ty: elem_rest_ty.ty.clone(),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
