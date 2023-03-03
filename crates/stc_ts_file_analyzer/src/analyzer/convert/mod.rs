@@ -16,10 +16,9 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
     ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
-    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
-    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem, TplType,
-    TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, OptionalType, Predicate,
+    PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem, TplType, TsExpr, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, dev_span, AHashSet};
