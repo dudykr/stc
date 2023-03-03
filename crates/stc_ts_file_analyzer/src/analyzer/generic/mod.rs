@@ -1233,7 +1233,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Operator(param) => {
-                self.infer_type_using_operator(span, inferred, param, arg, opts)?;
+                self.infer_type_using_index(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
                 if let Type::Interface(..) = arg.normalize() {

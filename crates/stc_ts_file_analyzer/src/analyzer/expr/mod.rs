@@ -28,7 +28,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, VarDeclKind};
 use tracing::{debug, info, warn};
 
 use self::bin::extract_name_for_assignment;
@@ -4062,7 +4062,9 @@ impl Analyzer<'_, '_> {
                             Type::Array(_) => {}
                             Type::Union(ty) => {}
                             Type::Intersection(ty) => {}
-                            Type::Operator(_) => {}
+                            Type::Index(_) => {}
+                            Type::Readonly(_) => {}
+                            Type::Union(_) => {}
                             Type::Mapped(_) => {}
                             Type::Arc(_) => {}
                         }
