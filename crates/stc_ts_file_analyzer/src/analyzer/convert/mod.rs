@@ -793,9 +793,8 @@ impl Analyzer<'_, '_> {
             }
             RTsEntityName::Ident(ref i) if i.sym == js_word!("ReadonlyArray") && type_args.is_some() => {
                 if type_args.as_ref().unwrap().params.len() == 1 {
-                    return Ok(Type::Operator(Operator {
+                    return Ok(Type::Readonly(Readonly {
                         span,
-                        op: TsTypeOperatorOp::ReadOnly,
                         ty: box Type::Array(Array {
                             span: t.span,
                             elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
