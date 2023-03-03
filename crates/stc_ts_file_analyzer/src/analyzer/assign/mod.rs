@@ -1717,11 +1717,11 @@ impl Analyzer<'_, '_> {
                             //     x = y; // error TS2322
                             // }
                             // ```
-                            let add_opt = matches!(m.optional, Some(True) | Some(Plus));
+                            let add_optional = matches!(m.optional, Some(True) | Some(Plus));
                             if let Some(constraint @ Type::Index(Index { ty, .. })) =
                                 m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                             {
-                                if to.type_eq(ty) && !add_opt {
+                                if to.type_eq(ty) && !add_optional {
                                     return Ok(());
                                 } else {
                                     fail!()
