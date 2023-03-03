@@ -17,7 +17,7 @@ use stc_utils::{
     dev_span,
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
 use tracing::{debug, error};
 
 use crate::{

@@ -7,8 +7,8 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator,
-    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, PropertySignature,
+    Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,

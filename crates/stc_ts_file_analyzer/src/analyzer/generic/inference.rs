@@ -20,7 +20,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error, info};
 
 use crate::{

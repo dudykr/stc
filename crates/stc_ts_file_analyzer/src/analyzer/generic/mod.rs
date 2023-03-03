@@ -2031,7 +2031,7 @@ impl Analyzer<'_, '_> {
                                 let param_ty = param.ty.clone().unwrap();
                                 let name = param.type_param.name.clone();
                                 let (obj_ty, index_ty) = match &**param.type_param.constraint.as_ref().unwrap() {
-                                    Type::Operator(Operator {
+                                    Type::Index(Index {
                                         ty:
                                             box Type::IndexedAccessType(IndexedAccessType {
                                                 obj_type: box Type::Param(obj_ty),
@@ -2094,9 +2094,8 @@ impl Analyzer<'_, '_> {
         {
             match &param.type_param.constraint {
                 Some(constraint) => {
-                    if let Type::Operator(
-                        operator @ Operator {
-                            op: TsTypeOperatorOp::KeyOf,
+                    if let Type::Index(
+                        operator @ Index {
                             ty: box Type::Mapped(Mapped { ty: Some(..), .. }),
                             ..
                         },
@@ -2583,12 +2582,7 @@ impl Fold<Type> for MappedIndexedSimplifier {
                 index_type:
                     box Type::Param(TypeParam {
                         name: index_name,
-                        constraint:
-                            Some(box Type::Operator(Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ty: indexed_ty,
-                                ..
-                            })),
+                        constraint: Some(box Type::Index(Index { ty: indexed_ty, .. })),
                         ..
                     }),
                 ..

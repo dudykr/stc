@@ -228,13 +228,7 @@ impl Analyzer<'_, '_> {
             // { [P in keyof K]: T[P]; }
             // =>
             // Extract<keyof K, string>
-            if let Some(
-                constraint @ Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ..
-                }),
-            ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
-            {
+            if let Some(constraint) = m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                 // Extract<keyof T
                 return Ok(Type::Ref(Ref {
                     span: m.span,
