@@ -1708,6 +1708,14 @@ impl Type {
             tys.retain(|ty| !ty.is_unknown());
         }
 
+        if tys.len() > 1
+            && !(tys.len() == 2 && tys.iter().any(|ty| ty.is_type_param() || ty.is_conditional()))
+            && tys.iter().any(|ty| ty.is_type_lit())
+        {
+            // reduce empty type lit
+            tys.retain(|ty| if let Type::TypeLit(ty) = ty { !ty.is_empty() } else { true });
+        }
+
         match tys.len() {
             0 => Type::never(span, Default::default()),
             1 => tys.into_iter().next().unwrap(),
