@@ -380,43 +380,6 @@ fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
 
     assert::<Type>();
-    assert::<StaticThis>();
-    assert::<RTsThisType>();
-    assert::<QueryType>();
-    assert::<InferType>();
-    assert::<ImportType>();
-    assert::<Predicate>();
-    assert::<IndexedAccessType>();
-
-    assert::<Ref>();
-    assert::<TypeLit>();
-    assert::<RTsKeywordType>();
-    assert::<Conditional>();
-    assert::<Tuple>();
-    assert::<Array>();
-    assert::<Union>();
-    assert::<Intersection>();
-    assert::<Function>();
-    assert::<Constructor>();
-
-    assert::<Operator>();
-
-    assert::<TypeParam>();
-    assert::<EnumVariant>();
-    assert::<Interface>();
-    assert::<Enum>();
-
-    assert::<Mapped>();
-    assert::<Alias>();
-    assert::<RTsNamespaceDecl>();
-    assert::<Module>();
-
-    assert::<Class>();
-    assert::<ClassDef>();
-
-    assert::<RestType>();
-    assert::<OptionalType>();
-    assert::<Symbol>();
 }
 
 #[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
@@ -1058,7 +1021,7 @@ pub struct Index {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Index, [u8; 40]);
+assert_eq_size!(Index, [u8; 32]);
 
 /// `readonly T`
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1071,7 +1034,7 @@ pub struct Readonly {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Readonly, [u8; 40]);
+assert_eq_size!(Readonly, [u8; 32]);
 
 /// Currently only used for `unique symbol`.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
@@ -1084,7 +1047,7 @@ pub struct Unique {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Unique, [u8; 40]);
+assert_eq_size!(Unique, [u8; 32]);
 
 impl TypeEq for Unique {
     #[inline]
