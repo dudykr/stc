@@ -7,8 +7,8 @@ use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
     Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
-    InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
-    TypeElement, TypeLit, TypeParam,
+    InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, PropertySignature, Ref, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use stc_visit::visit_cache;
@@ -149,13 +149,7 @@ impl GenericExpander<'_> {
                 m.freeze();
 
                 if let Some(constraint) = &m.type_param.constraint {
-                    if let Type::Operator(
-                        operator @ Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ..
-                        },
-                    ) = constraint.normalize()
-                    {
+                    if let Type::Index(operator) = constraint.normalize() {
                         match operator.ty.normalize() {
                             Type::Param(param) if self.params.contains_key(&param.name) => {
                                 let ty = self.params.get(&param.name).unwrap();
@@ -270,13 +264,6 @@ impl GenericExpander<'_> {
                         });
                     }
 
-                    Some(box Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Union(ref u),
-                        ..
-                    })) => {
-                        error!("Union!");
-                    }
                     _ => {}
                 }
 
