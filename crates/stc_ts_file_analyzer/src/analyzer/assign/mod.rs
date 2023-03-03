@@ -2545,10 +2545,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Type::Operator(Operator {
-                        op: TsTypeOperatorOp::ReadOnly,
-                        ..
-                    })
+                    Type::Index(..)
                     | Type::Lit(..)
                     | Type::Interface(..)
                     | Type::TypeLit(..)
@@ -2637,11 +2634,7 @@ impl Analyzer<'_, '_> {
 
         match to {
             // Handle symbol assignments
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ty,
-                ..
-            }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
+            Type::Unique(u) if u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
                 if rhs.is_symbol() {
                     return Ok(());
                 }
@@ -2653,11 +2646,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty,
-                ..
-            }) if ty.is_type_param() => {
+            Type::Index(Index { ty, .. }) if ty.is_type_param() => {
                 return self
                     .assign_with_opts(
                         data,
@@ -3054,14 +3043,7 @@ impl Analyzer<'_, '_> {
                     // }
                     // ```
                     let remove_opt = matches!(l.optional, Some(Minus));
-                    if let Some(
-                        constraint @ Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty,
-                            ..
-                        }),
-                    ) = l.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                    {
+                    if let Some(constraint @ Type::Index(Index { ty, .. })) = l.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                         if r.type_eq(ty) && !remove_opt {
                             return Ok(());
                         }

@@ -10,7 +10,7 @@ use stc_ts_errors::{
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
     replace::replace_type, Array, Conditional, FnParam, Id, Index, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped,
-    Operator, PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    Operator, PropertySignature, Readonly, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -316,11 +316,7 @@ impl Analyzer<'_, '_> {
 
         // Delegate by recursively calling this function.
         match keyof_operand.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => {
+            Type::Readonly(Readonly { ty, .. }) => {
                 if let Some(v) = self
                     .expand_mapped_type_with_keyof(span, ty, original_keyof_operand, m)
                     .context("tried to expand mapped type using a readonly operator")?
