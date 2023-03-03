@@ -3081,10 +3081,8 @@ impl Analyzer<'_, '_> {
                 // index access.
 
                 match constraint.as_ref().map(Type::normalize) {
-                    Some(Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Array(..),
-                        ..
+                    Some(Type::Index(Index {
+                        ty: box Type::Array(..), ..
                     })) => {
                         if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
                             return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
@@ -3130,12 +3128,7 @@ impl Analyzer<'_, '_> {
                     return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
                 }
 
-                if let Some(Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                })) = constraint.as_ref().map(Type::normalize)
-                {
+                if let Some(Type::Index(Index { ty, .. })) = constraint.as_ref().map(Type::normalize) {
                     // Check if we can index the object with given key.
                     if let Ok(index_type) = self.keyof(span, ty) {
                         if let Ok(()) = self.assign_with_opts(
