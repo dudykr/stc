@@ -6,8 +6,8 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
+    Array, Conditional, EnumVariant, IdCtx, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, stack};
@@ -1417,11 +1417,7 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => {
+            Type::Readonly(Readonly { ty, .. }) => {
                 return self
                     .assign_with_opts(data, ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
@@ -1722,13 +1718,8 @@ impl Analyzer<'_, '_> {
                             // }
                             // ```
                             let add_opt = matches!(m.optional, Some(True) | Some(Plus));
-                            if let Some(
-                                constraint @ Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty,
-                                    ..
-                                }),
-                            ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                            if let Some(constraint @ Type::Index(Index { ty, .. })) =
+                                m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                             {
                                 if to.type_eq(ty) && !add_opt {
                                     return Ok(());
