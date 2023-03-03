@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{ClassDef, Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -547,9 +547,8 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
-            }
+            Type::Lit(..) | Type::Function(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
+            Type::ClassDef(c) if c.is_abstract => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
             Type::TypeLit(rt) => {
                 let r_el_cnt = rt.members.iter().filter(|m| matches!(m, TypeElement::Constructor(..))).count();

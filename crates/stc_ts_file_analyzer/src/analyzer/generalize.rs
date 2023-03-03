@@ -651,29 +651,27 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
-                obj_type:
-                    box Type::Class(Class {
-                        def: box ClassDef { body, .. },
-                        ..
-                    }),
+                obj_type: box Type::Class(Class { def, .. }),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
-            }) if body.iter().any(|member| match member {
+            }) if def.body.iter().any(|member| match member {
                 ClassMember::Constructor(_) => false,
                 ClassMember::Method(_) => false,
                 ClassMember::Property(p) => p.key == s.value,
                 ClassMember::IndexSignature(_) => false,
             }) =>
             {
-                let member = body
-                    .into_iter()
+                let member = def
+                    .body
+                    .iter()
                     .find(|member| match member {
                         ClassMember::Constructor(_) => false,
                         ClassMember::Method(_) => false,
                         ClassMember::Property(p) => p.key == s.value,
                         ClassMember::IndexSignature(_) => false,
                     })
-                    .unwrap();
+                    .unwrap()
+                    .clone();
 
                 match member {
                     ClassMember::Method(_) => unimplemented!(),
@@ -691,11 +689,7 @@ impl Fold<Type> for Simplifier<'_> {
 
             Type::IndexedAccessType(IndexedAccessType {
                 span,
-                obj_type:
-                    box Type::Class(Class {
-                        def: box ClassDef { ref body, .. },
-                        ..
-                    }),
+                obj_type: box Type::Class(Class { ref def, .. }),
                 index_type: box Type::Union(ref keys),
                 ..
             }) if keys.types.iter().all(is_str_lit_or_union) => {
@@ -707,7 +701,7 @@ impl Fold<Type> for Simplifier<'_> {
                         _ => unreachable!(),
                     })
                     .map(|key| {
-                        let member = body.iter().find(|member| match member {
+                        let member = def.body.iter().find(|member| match member {
                             ClassMember::Constructor(_) => false,
                             ClassMember::Method(_) => false,
                             ClassMember::Property(p) => p.key == key.value,

@@ -49,7 +49,7 @@ impl From<Type> for RTsType {
             Type::Param(t) => t.into(),
             Type::EnumVariant(t) => t.into(),
             Type::Interface(t) => t.into(),
-            Type::Enum(t) => t.into(),
+            Type::Enum(t) => t.into_inner().into(),
             Type::Mapped(t) => t.into(),
             Type::Alias(t) => t.into(),
             Type::Namespace(..) => {
@@ -57,7 +57,7 @@ impl From<Type> for RTsType {
             }
             Type::Module(t) => t.into(),
             Type::Class(t) => t.into(),
-            Type::ClassDef(t) => t.into(),
+            Type::ClassDef(t) => t.into_inner().into(),
             Type::Arc(t) => (*t.ty).clone().into(),
             Type::Optional(t) => t.into(),
             Type::Rest(t) => t.into(),
@@ -437,7 +437,7 @@ impl From<EnumVariant> for RTsType {
                 span: t.span,
                 type_name: RTsEntityName::TsQualifiedName(box RTsQualifiedName {
                     node_id: NodeId::invalid(),
-                    left: t.enum_name.into(),
+                    left: t.def.id.clone().into(),
                     right: RIdent::new(name, DUMMY_SP),
                 }),
                 type_params: None,
@@ -445,7 +445,7 @@ impl From<EnumVariant> for RTsType {
             None => RTsType::TsTypeRef(RTsTypeRef {
                 node_id: NodeId::invalid(),
                 span: t.span,
-                type_name: RTsEntityName::Ident(t.enum_name.into()),
+                type_name: RTsEntityName::Ident(t.def.id.clone().into()),
                 type_params: None,
             }),
         }
@@ -545,7 +545,7 @@ impl From<super::Class> for RTsType {
         RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_name: RTsEntityName::Ident(t.def.name.unwrap_or_else(|| Id::word("anonymous class".into())).into()),
+            type_name: RTsEntityName::Ident(t.def.name.clone().unwrap_or_else(|| Id::word("anonymous class".into())).into()),
             type_params: None,
         }
         .into()

@@ -2,6 +2,7 @@ use std::{borrow::Cow, cell::RefCell, mem::take};
 
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
+use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
     RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
     RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock, RStmt,
@@ -1334,7 +1335,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Implement this.
     fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
-    fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ArcCow<ClassDef>) {
         if self.config.is_builtin {
             return;
         }
@@ -1345,7 +1346,7 @@ impl Analyzer<'_, '_> {
 
         let class_ty = Type::Class(Class {
             span: class.span,
-            def: box class.clone(),
+            def: class.clone(),
             metadata: ClassMetadata {
                 common: class.metadata.common,
                 ..Default::default()
@@ -1549,7 +1550,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ClassDef> {
+    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ArcCow<ClassDef>> {
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -2010,7 +2011,7 @@ impl Analyzer<'_, '_> {
 
             let body = body.into_iter().map(|v| v.1).collect_vec();
 
-            let class = ClassDef {
+            let class = ArcCow::new_freezed(ClassDef {
                 span: c.span,
                 name,
                 is_abstract: c.is_abstract,
@@ -2020,7 +2021,7 @@ impl Analyzer<'_, '_> {
                 implements,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            };
+            });
 
             child
                 .report_errors_for_class_member_incompatible_with_index_signature(&class)
@@ -2301,7 +2302,7 @@ impl Analyzer<'_, '_> {
         Ok(match ty.normalize() {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
-                def: box def.clone(),
+                def: def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }),

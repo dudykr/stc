@@ -266,11 +266,8 @@ impl Analyzer<'_, '_> {
                                     )?
                                     .into_owned();
 
-                                if let Type::EnumVariant(EnumVariant {
-                                    name: Some(..), enum_name, ..
-                                }) = elem.normalize()
-                                {
-                                    *enum_counts.entry(enum_name.clone()).or_insert(0) += 1;
+                                if let Type::EnumVariant(EnumVariant { name: Some(..), def, .. }) = elem.normalize() {
+                                    *enum_counts.entry(def.id.clone()).or_insert(0) += 1;
                                 }
                             }
 
@@ -283,7 +280,7 @@ impl Analyzer<'_, '_> {
                                             if *cnt == 0 {
                                                 new_types.push(Type::EnumVariant(EnumVariant {
                                                     span: e.span,
-                                                    enum_name: e.id.clone().into(),
+                                                    def: e.cheap_clone(),
                                                     name: None,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
@@ -313,13 +310,10 @@ impl Analyzer<'_, '_> {
                                         .into_owned();
 
                                     if let Type::EnumVariant(EnumVariant {
-                                        span,
-                                        name: Some(..),
-                                        enum_name,
-                                        ..
+                                        span, name: Some(..), def, ..
                                     }) = elem.normalize()
                                     {
-                                        if let Some(0) = enum_counts.get(enum_name) {
+                                        if let Some(0) = enum_counts.get(&def.id) {
                                             // This enum is going to be added to union directly, so we skip the variants.
                                             continue;
                                         }
@@ -566,7 +560,7 @@ impl Analyzer<'_, '_> {
 
                             let variant = Type::EnumVariant(EnumVariant {
                                 span: e.span,
-                                enum_name: e.id.clone().into(),
+                                def: e.cheap_clone(),
                                 name: None,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
@@ -877,7 +871,7 @@ impl Analyzer<'_, '_> {
                             if let Type::EnumVariant(EnumVariant { name: None, .. }) = enum_temp {
                                 enum_temp = elem;
                                 continue;
-                            } else if en.enum_name != el.enum_name {
+                            } else if en.def.id != el.def.id {
                                 return never!();
                             } else {
                                 // eq two argument enum_name
@@ -907,61 +901,56 @@ impl Analyzer<'_, '_> {
                         }
                     } else {
                         // enumVariant is Enum
-                        if let Some(types) = self.find_type(&ev.enum_name)? {
-                            for ty in types {
-                                if let Type::Enum(e) = ty.normalize() {
-                                    let mut str_lits = vec![];
-                                    let mut num_lits = vec![];
-                                    for v in e.members.iter() {
-                                        let key = match &v.id {
-                                            RTsEnumMemberId::Ident(i) => i.clone(),
-                                            RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
-                                        };
-                                        match *v.val {
-                                            RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
-                                                span: v.span,
-                                                enum_name: e.id.clone().into(),
-                                                name: Some(key.sym),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })),
-                                            RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
-                                                span: v.span,
-                                                enum_name: e.id.clone().into(),
-                                                name: Some(key.sym),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })),
-                                            _ => {}
-                                        }
-                                    }
 
-                                    if str_lits.is_empty() && is_str {
-                                        return never!();
-                                    }
-                                    if num_lits.is_empty() && is_num {
-                                        return never!();
-                                    }
-                                    if str_lits.is_empty() && is_num || num_lits.is_empty() && is_str {
-                                        return Ok(Some(elem.clone().freezed()));
-                                    }
-
-                                    let mut ty = Type::new_union(
-                                        span,
-                                        if is_str {
-                                            str_lits
-                                        } else if is_num {
-                                            num_lits
-                                        } else {
-                                            return never!();
-                                        },
-                                    );
-
-                                    ty.reposition(e.span);
-                                    return Ok(Some(ty).freezed());
-                                }
+                        let mut str_lits = vec![];
+                        let mut num_lits = vec![];
+                        for v in ev.def.members.iter() {
+                            let key = match &v.id {
+                                RTsEnumMemberId::Ident(i) => i.clone(),
+                                RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
+                            };
+                            match *v.val {
+                                RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
+                                    span: v.span,
+                                    def: ev.def.cheap_clone(),
+                                    name: Some(key.sym),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })),
+                                RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
+                                    span: v.span,
+                                    def: ev.def.cheap_clone(),
+                                    name: Some(key.sym),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })),
+                                _ => {}
                             }
                         }
+
+                        if str_lits.is_empty() && is_str {
+                            return never!();
+                        }
+                        if num_lits.is_empty() && is_num {
+                            return never!();
+                        }
+                        if str_lits.is_empty() && is_num || num_lits.is_empty() && is_str {
+                            return Ok(Some(elem.clone().freezed()));
+                        }
+
+                        let mut ty = Type::new_union(
+                            span,
+                            if is_str {
+                                str_lits
+                            } else if is_num {
+                                num_lits
+                            } else {
+                                return never!();
+                            },
+                        );
+
+                        ty.reposition(ev.def.span);
+                        return Ok(Some(ty).freezed());
                     }
                 }
             }
@@ -1230,7 +1219,7 @@ impl Analyzer<'_, '_> {
 
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,
-                def: box def,
+                def,
                 metadata: ClassMetadata {
                     common: metadata,
                     ..Default::default()
@@ -1531,7 +1520,7 @@ impl Analyzer<'_, '_> {
                     None => Ok(Some(members)),
                 }
             }
-            Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
+            Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(c.def.clone())),
             _ => {
                 error!("unimplemented: collect_class_members: {:?}", ty);
                 Ok(None)
@@ -1665,7 +1654,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Override
 
                 for member in &c.def.body {
-                    members.extend(self.make_type_el_from_class_member(member, false)?);
+                    members.extend(self.make_type_el_from_class_member(member, false));
                 }
 
                 Cow::Owned(TypeLit {
@@ -1686,7 +1675,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Override
 
                 for member in &c.body {
-                    members.extend(self.make_type_el_from_class_member(member, true)?);
+                    members.extend(self.make_type_el_from_class_member(member, true));
                 }
 
                 Cow::Owned(TypeLit {
@@ -2174,12 +2163,12 @@ impl Analyzer<'_, '_> {
     /// This method is used while inferring types and while assigning
     /// type element to class member or vice versa.
     #[inline]
-    pub(super) fn make_type_el_from_class_member(&self, member: &ClassMember, static_mode: bool) -> VResult<Option<TypeElement>> {
-        Ok(Some(match member {
+    pub(super) fn make_type_el_from_class_member(&self, member: &ClassMember, static_mode: bool) -> Option<TypeElement> {
+        Some(match member {
             ClassMember::Constructor(c) => TypeElement::Constructor(c.clone()),
             ClassMember::Method(m) => {
                 if m.is_static != static_mode {
-                    return Ok(None);
+                    return None;
                 }
 
                 TypeElement::Method(MethodSignature {
@@ -2196,7 +2185,7 @@ impl Analyzer<'_, '_> {
             }
             ClassMember::Property(p) => {
                 if p.is_static != static_mode {
-                    return Ok(None);
+                    return None;
                 }
 
                 TypeElement::Property(PropertySignature {
@@ -2213,7 +2202,7 @@ impl Analyzer<'_, '_> {
                 })
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),
-        }))
+        })
     }
 
     /// Exclude `excluded` from `ty`

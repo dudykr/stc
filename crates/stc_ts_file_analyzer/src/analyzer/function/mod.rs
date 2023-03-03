@@ -4,9 +4,7 @@ use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Id, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
-};
+use stc_ts_types::{CallSignature, Class, ClassMetadata, Function, Id, KeywordType, KeywordTypeMetadata, Ref, TypeElement};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -138,7 +136,7 @@ impl Analyzer<'_, '_> {
                 declared_ret_ty = Some(match ret_ty {
                     Type::ClassDef(def) => Type::Class(Class {
                         span,
-                        def: box def,
+                        def,
                         metadata: ClassMetadata {
                             common: metadata,
                             ..Default::default()
@@ -285,22 +283,8 @@ impl Analyzer<'_, '_> {
         let actual_ty = self.type_of_ts_entity_name(span, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
 
         // TODO(kdy1): PERF
-        let type_params = match actual_ty.foldable() {
-            Type::Alias(Alias {
-                type_params: Some(type_params),
-                ..
-            })
-            | Type::Interface(Interface {
-                type_params: Some(type_params),
-                ..
-            })
-            | Type::Class(stc_ts_types::Class {
-                def: box ClassDef {
-                    type_params: Some(type_params),
-                    ..
-                },
-                ..
-            }) => type_params,
+        let type_params = match actual_ty.get_type_param_decl() {
+            Some(type_params) => type_params.clone(),
 
             _ => return Ok(ty),
         };

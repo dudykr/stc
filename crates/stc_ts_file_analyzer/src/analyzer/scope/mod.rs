@@ -20,12 +20,12 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType,
-    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement,
-    TypeParam, TypeParamInstantiation,
+    name::Name, type_id::DestructureId, Class, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key,
+    KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
+    TypeParamInstantiation,
 };
 use stc_utils::{
-    cache::{Freeze, ALLOW_DEEP_CLONE},
+    cache::{AssertCloneCheap, Freeze, ALLOW_DEEP_CLONE},
     dev_span, stack,
 };
 use swc_atoms::js_word;
@@ -47,7 +47,7 @@ use crate::{
         Analyzer, Ctx, ResultExt,
     },
     loader::ModuleInfo,
-    ty::{self, Alias, Interface, Ref, Tuple, Type, TypeLit, Union},
+    ty::{self, Ref, Tuple, Type, TypeLit, Union},
     type_facts::TypeFacts,
     util::contains_infer_type,
     VResult,
@@ -2103,7 +2103,7 @@ impl Expander<'_, '_, '_> {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
                                 verify!(ty);
-                                return Ok(Some(ty.clone()));
+                                return Ok(Some(t.into_owned()));
                             }
 
                             ty @ Type::Param(..) => {
@@ -2116,15 +2116,11 @@ impl Expander<'_, '_, '_> {
                                 return Ok(Some(ty.clone()));
                             }
 
-                            Type::Interface(Interface { type_params, .. })
-                            | Type::Alias(Alias { type_params, .. })
-                            | Type::Class(Class {
-                                def: box ClassDef { type_params, .. },
-                                ..
-                            })
-                            | Type::ClassDef(ClassDef { type_params, .. }) => {
+                            Type::Interface(..) | Type::Alias(..) | Type::Class(..) | Type::ClassDef(..) => {
+                                let type_params = t.get_type_param_decl();
+
                                 let ty = t.clone().into_owned();
-                                let mut type_params = type_params.clone();
+                                let mut type_params = type_params.cloned();
                                 type_params.freeze();
 
                                 if let Some(type_params) = type_params {
@@ -2171,7 +2167,7 @@ impl Expander<'_, '_, '_> {
                                     if let Type::ClassDef(def) = ty {
                                         ty = Type::Class(Class {
                                             span: self.span,
-                                            def: box def,
+                                            def,
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         });
@@ -2209,7 +2205,7 @@ impl Expander<'_, '_, '_> {
                                 if let Type::ClassDef(def) = ty {
                                     ty = Type::Class(Class {
                                         span: self.span,
-                                        def: box def,
+                                        def,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     });
@@ -2290,11 +2286,12 @@ impl Expander<'_, '_, '_> {
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
+            ty.freeze();
 
             if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
-                    enum_name: e.id.clone().into(),
+                    def: e.cheap_clone(),
                     name: None,
                     metadata: Default::default(),
                     tracker: Default::default(),

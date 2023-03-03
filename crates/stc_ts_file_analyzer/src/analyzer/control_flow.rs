@@ -1026,7 +1026,8 @@ impl Analyzer<'_, '_> {
                         let elem_ty = self
                             .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
                             .context("tried to get an element of type to assign with an array pattern")
-                            .report(&mut self.storage);
+                            .report(&mut self.storage)
+                            .freezed();
                         if let Some(elem_ty) = elem_ty {
                             self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
                                 .context("tried to assign an element of an array pattern")

@@ -27,10 +27,10 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
-use stc_arc_cow::freeze::Freezer;
+use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
-    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
+    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -181,7 +181,7 @@ pub enum Type {
 
     Interface(Interface),
 
-    Enum(Enum),
+    Enum(ArcCow<Enum>),
 
     Mapped(Mapped),
 
@@ -194,7 +194,7 @@ pub enum Type {
     Class(Class),
 
     /// Class definition itself.
-    ClassDef(ClassDef),
+    ClassDef(ArcCow<ClassDef>),
 
     Arc(Freezed),
 
@@ -860,8 +860,7 @@ pub struct Enum {
     pub span: Span,
     pub declare: bool,
     pub is_const: bool,
-    #[use_eq_ignore_span]
-    pub id: RIdent,
+    pub id: Id,
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
@@ -872,7 +871,23 @@ pub struct Enum {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Enum, [u8; 88]);
+assert_eq_size!(Enum, [u8; 72]);
+
+impl Take for Enum {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            declare: false,
+            is_const: false,
+            id: Id::new(js_word!(""), Default::default()),
+            members: vec![],
+            has_num: false,
+            has_str: false,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumMember {
@@ -886,14 +901,14 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
-    pub def: Box<ClassDef>,
+    pub def: ArcCow<ClassDef>,
     pub metadata: ClassMetadata,
 
     pub tracker: Tracker<"Class">,
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Class, [u8; 32]);
+assert_eq_size!(Class, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassDef {
@@ -911,6 +926,22 @@ pub struct ClassDef {
 
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(ClassDef, [u8; 96]);
+
+impl Take for ClassDef {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            is_abstract: false,
+            name: None,
+            super_class: None,
+            body: vec![],
+            type_params: None,
+            implements: Box::new(vec![]),
+            metadata: ClassDefMetadata::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum ClassMember {
@@ -1539,10 +1570,10 @@ impl Debug for TypeParam {
 }
 
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
-    pub enum_name: Id,
+    pub def: ArcCow<Enum>,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
@@ -2116,13 +2147,13 @@ impl Type {
             Type::Param(ty) => &mut ty.metadata.common,
             Type::EnumVariant(ty) => &mut ty.metadata.common,
             Type::Interface(ty) => &mut ty.metadata.common,
-            Type::Enum(ty) => &mut ty.metadata.common,
+            Type::Enum(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Mapped(ty) => &mut ty.metadata.common,
             Type::Alias(ty) => &mut ty.metadata.common,
             Type::Namespace(ty) => &mut ty.metadata.common,
             Type::Module(ty) => &mut ty.metadata.common,
             Type::Class(ty) => &mut ty.metadata.common,
-            Type::ClassDef(ty) => &mut ty.metadata.common,
+            Type::ClassDef(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Rest(ty) => &mut ty.metadata.common,
             Type::Optional(ty) => &mut ty.metadata.common,
             Type::Symbol(ty) => &mut ty.metadata.common,
@@ -2170,7 +2201,7 @@ impl Type {
 
             Type::Constructor(c) => c.span = span,
 
-            Type::Enum(e) => e.span = span,
+            Type::Enum(e) => e.normalize_mut().span = span,
 
             Type::EnumVariant(e) => e.span = span,
 
@@ -2184,7 +2215,7 @@ impl Type {
 
             Type::Class(c) => c.span = span,
 
-            Type::ClassDef(c) => c.span = span,
+            Type::ClassDef(c) => c.normalize_mut().span = span,
 
             Type::Param(p) => p.span = span,
 
@@ -2324,6 +2355,15 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
+    pub fn get_type_param_decl(&self) -> Option<&TypeParamDecl> {
+        match self.normalize() {
+            Type::Class(ty) => ty.def.type_params.as_deref(),
+            Type::ClassDef(ty) => ty.type_params.as_deref(),
+            Type::Interface(Interface { ref type_params, .. }) | Type::Alias(Alias { ref type_params, .. }) => type_params.as_deref(),
+            _ => None,
+        }
+    }
+
     /// Panics if type is invalid. This is debug-build only and it's noop on a
     /// release build.
     ///
@@ -3199,4 +3239,6 @@ impl_freeze!(TypeParamDecl);
 impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(Key);
+impl_freeze!(Enum);
+impl_freeze!(ClassDef);
 impl_freeze!(Mapped);
