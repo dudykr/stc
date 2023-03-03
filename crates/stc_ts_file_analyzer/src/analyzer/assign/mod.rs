@@ -540,10 +540,7 @@ impl Analyzer<'_, '_> {
             | Type::Enum(..)
             | Type::Tuple(..)
             | Type::Union(..)
-            | Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
+            | Type::Index(..)
             | Type::Tpl(..)
             | Type::Query(..) => {
                 let ty = self

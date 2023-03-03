@@ -17,9 +17,9 @@ use stc_ts_type_ops::{tuple_normalization::normalize_tuples, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, Index, IndexSignature, IndexedAccessType, Instance, InstanceMetadata,
-    Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator,
-    PropertySignature, QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, PropertySignature,
+    QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
+    TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -30,7 +30,7 @@ use stc_utils::{
 };
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error, info};
 
 use super::{expr::AccessPropertyOpts, generic::InferTypeOpts};
@@ -759,10 +759,6 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             })));
                         }
-                    }
-
-                    Type::Operator(_) => {
-                        // TODO(kdy1):
                     }
 
                     Type::Tuple(tuple) => {}
