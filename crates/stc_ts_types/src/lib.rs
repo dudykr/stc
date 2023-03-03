@@ -1039,12 +1039,36 @@ impl Debug for Conditional {
     }
 }
 
-/// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
-pub struct Operator {
+/// `keyof T`
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct Index {
     pub span: Span,
-    #[use_eq]
-    pub op: TsTypeOperatorOp,
+    pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Index">,
+}
+
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Index, [u8; 40]);
+
+/// `readonly T`
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct Readonly {
+    pub span: Span,
+    pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Index">,
+}
+
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Readonly, [u8; 40]);
+
+/// Currently only used for `unique symbol`.
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
+pub struct Unique {
+    pub span: Span,
     pub ty: Box<Type>,
     pub metadata: OperatorMetadata,
 
@@ -1052,15 +1076,12 @@ pub struct Operator {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Operator, [u8; 40]);
+assert_eq_size!(Unique, [u8; 40]);
 
-impl TypeEq for Operator {
+impl TypeEq for Unique {
+    #[inline]
     fn type_eq(&self, other: &Self) -> bool {
-        if let TsTypeOperatorOp::Unique = self.op {
-            return false;
-        }
-
-        self.op == other.op && self.ty.type_eq(&other.ty)
+        false
     }
 }
 
