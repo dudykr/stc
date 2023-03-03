@@ -7,8 +7,8 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, PropertySignature,
-    Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, Index, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature,
+    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
@@ -634,9 +634,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
             readonly,
             ref obj_type,
             index_type:
-                box Type::Operator(Operator {
+                box Type::Index(Index {
                     span: op_span,
-                    op: TsTypeOperatorOp::KeyOf,
                     ty: ref index_type,
                     metadata: op_metadata,
                     ..

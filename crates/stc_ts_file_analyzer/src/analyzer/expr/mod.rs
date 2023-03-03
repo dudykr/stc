@@ -4064,7 +4064,7 @@ impl Analyzer<'_, '_> {
                             Type::Intersection(ty) => {}
                             Type::Index(_) => {}
                             Type::Readonly(_) => {}
-                            Type::Union(_) => {}
+                            Type::Unique(_) => {}
                             Type::Mapped(_) => {}
                             Type::Arc(_) => {}
                         }

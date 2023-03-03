@@ -10,7 +10,7 @@ use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Ref, RefMetadata, TypeP
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, VarDeclKind};
 
 use super::return_type::LoopBreakerFinder;
 use crate::{
