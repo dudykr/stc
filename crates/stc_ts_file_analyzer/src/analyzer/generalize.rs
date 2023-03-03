@@ -10,7 +10,7 @@ use stc_ts_types::{
 use stc_utils::{dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{info, trace};
 
 use crate::{analyzer::Analyzer, ty::Type};

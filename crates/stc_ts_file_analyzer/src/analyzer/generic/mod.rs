@@ -15,8 +15,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, Index, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type, TypeElement,
-    TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    KeywordType, KeywordTypeMetadata, Mapped, OptionalType, PropertySignature, Readonly, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -1168,7 +1168,7 @@ impl Analyzer<'_, '_> {
                         //
                         // T = true
 
-                        if let Type::Operator(Operator {
+                        if let Type::Index(Index {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: keyof_ty,
                             ..
@@ -1258,11 +1258,7 @@ impl Analyzer<'_, '_> {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
 
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty: arg,
-                ..
-            }) => return self.infer_type(span, inferred, param, arg, opts),
+            Type::Readonly(Readonly { ty: arg, .. }) => return self.infer_type(span, inferred, param, arg, opts),
 
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
@@ -1500,11 +1496,7 @@ impl Analyzer<'_, '_> {
                         optional,
                         ..
                     } => match constraint.normalize() {
-                        Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty: operator_arg,
-                            ..
-                        }) => match operator_arg.normalize() {
+                        Type::Index(Index { ty: operator_arg, .. }) => match operator_arg.normalize() {
                             Type::Param(TypeParam { name, .. }) => Some(Res {
                                 name: name.clone(),
                                 key_name: key_name.clone(),
