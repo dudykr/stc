@@ -14,9 +14,9 @@ use stc_ts_generics::{
 };
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, IndexSignature, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
+    replace::replace_type, Array, ClassMember, FnParam, Function, Id, IdCtx, Index, IndexSignature, IndexedAccessType, Intersection, Key,
+    KeywordType, KeywordTypeMetadata, Mapped, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type, TypeElement,
+    TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -659,18 +659,9 @@ impl Analyzer<'_, '_> {
                 return self.infer_type_inner(span, inferred, param, &arg, opts);
             }
 
-            (
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty: param,
-                    ..
-                }),
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty: arg,
-                    ..
-                }),
-            ) => return self.infer_from_contravariant_types(span, inferred, arg, param, opts),
+            (Type::Index(Index { ty: param, .. }), Type::Index(Index { ty: arg, .. })) => {
+                return self.infer_from_contravariant_types(span, inferred, arg, param, opts)
+            }
 
             (Type::Conditional(target), Type::Conditional(source)) => {
                 self.infer_from_types(span, inferred, &source.check_type, &target.check_type, opts)?;
@@ -927,8 +918,7 @@ impl Analyzer<'_, '_> {
                     if let Some(arg_obj_ty) = arg_obj_ty.mapped() {
                         if let TypeParam {
                             constraint:
-                                Some(box Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
+                                Some(box Type::Index(Index {
                                     ty: box Type::Param(param_ty),
                                     ..
                                 })),
@@ -1232,8 +1222,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Operator(param) => {
-                self.infer_type_using_index(span, inferred, param, arg, opts)?;
+            Type::Readonly(param) => {
+                self.infer_type_using_readonly(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
                 if let Type::Interface(..) = arg.normalize() {
