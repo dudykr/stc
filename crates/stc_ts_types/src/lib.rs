@@ -1465,6 +1465,57 @@ impl Intersection {
 
         self.visit_with(&mut AssertValid);
     }
+
+    pub fn is_trival_never(iter: &[Type]) -> bool {
+        let mut tys = vec![];
+
+        for ty in iter {
+            if let Type::Intersection(Intersection { types, .. }) = ty {
+                tys.extend(types);
+            } else {
+                tys.push(ty);
+            }
+        }
+        tys.dedup_type();
+
+        if tys.iter().any(|ty| ty.is_never()) {
+            return true;
+        }
+
+        let is_symbol = tys.iter().any(|ty| ty.is_symbol());
+        let is_str = tys.iter().any(|ty| ty.is_str());
+        let is_num = tys.iter().any(|ty| ty.is_num());
+        let is_bool = tys.iter().any(|ty| ty.is_bool());
+        let is_null = tys.iter().any(|ty| ty.is_null());
+        let is_undefined = tys.iter().any(|ty| ty.is_undefined());
+        let is_void = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let is_object = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+        let is_function = tys.iter().any(|ty| ty.is_fn_type());
+        let is_type_lit = tys.iter().any(|ty| ty.is_type_lit());
+
+        if (is_null || is_undefined) && is_type_lit {
+            return true;
+        }
+
+        let sum = u32::from(is_symbol)
+            + u32::from(is_str)
+            + u32::from(is_num)
+            + u32::from(is_bool)
+            + u32::from(is_null)
+            + u32::from(is_undefined)
+            + u32::from(is_void)
+            + u32::from(is_object)
+            + u32::from(is_function);
+
+        if sum > 1 {
+            if sum == 2 && is_undefined && is_void {
+                return false;
+            }
+            return true;
+        }
+
+        false
+    }
 }
 
 /// A type parameter
@@ -1617,55 +1668,13 @@ impl Type {
         }
         tys.dedup_type();
 
-        if tys.iter().any(|ty| ty.is_never()) {
-            return Type::never(span, Default::default());
-        }
-
-        let is_symbol = tys.iter().any(|ty| ty.is_symbol());
-        let is_str = tys.iter().any(|ty| ty.is_str());
-        let is_num = tys.iter().any(|ty| ty.is_num());
-        let is_bool = tys.iter().any(|ty| ty.is_bool());
-        let is_null = tys.iter().any(|ty| ty.is_null());
-        let is_undefined = tys.iter().any(|ty| ty.is_undefined());
-        let is_void = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
-        let is_object = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
-        let is_function = tys.iter().any(|ty| ty.is_fn_type());
-        let is_type_lit = tys.iter().any(|ty| ty.is_type_lit());
-
-        if (is_null || is_undefined) && is_type_lit {
-            return Type::never(span, Default::default());
-        }
-
-        let sum = u32::from(is_symbol)
-            + u32::from(is_str)
-            + u32::from(is_num)
-            + u32::from(is_bool)
-            + u32::from(is_null)
-            + u32::from(is_undefined)
-            + u32::from(is_void)
-            + u32::from(is_object)
-            + u32::from(is_function);
-
-        if sum > 1 {
-            if sum == 2 && is_undefined && is_void {
-                return Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    metadata: KeywordTypeMetadata { ..Default::default() },
-                    tracker: Default::default(),
-                });
-            }
+        if Intersection::is_trival_never(&tys) {
             return Type::never(span, Default::default());
         }
 
         if tys.len() > 1 {
             // In an intersection everything absorbs unknown
             tys.retain(|ty| !ty.is_unknown());
-        }
-
-        if tys.len() > 1 && is_type_lit && !(tys.len() == 2 && tys.iter().any(|ty| ty.is_type_param() || ty.is_conditional())) {
-            // reduce empty type lit
-            tys.retain(|ty| if let Type::TypeLit(ty) = ty { !ty.is_empty() } else { true });
         }
 
         match tys.len() {
