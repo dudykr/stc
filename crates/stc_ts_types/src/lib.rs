@@ -233,7 +233,9 @@ impl Debug for Type {
             Self::Intersection(arg0) => write!(f, "{:?}", arg0),
             Self::Function(arg0) => write!(f, "{:?}", arg0),
             Self::Constructor(arg0) => write!(f, "{:?}", arg0),
-            Self::Operator(arg0) => write!(f, "{:?}", arg0),
+            Self::Index(arg0) => write!(f, "{:?}", arg0),
+            Self::Readonly(arg0) => write!(f, "{:?}", arg0),
+            Self::Unique(arg0) => write!(f, "{:?}", arg0),
             Self::Param(arg0) => write!(f, "{:?}", arg0),
             Self::EnumVariant(arg0) => write!(f, "{:?}", arg0),
             Self::Interface(arg0) => write!(f, "{:?}", arg0),
@@ -287,7 +289,9 @@ impl Clone for Type {
                             Type::Intersection(ty) => ty.clone().into(),
                             Type::Function(ty) => ty.clone().into(),
                             Type::Constructor(ty) => ty.clone().into(),
-                            Type::Operator(ty) => ty.clone().into(),
+                            Type::Index(ty) => ty.clone().into(),
+                            Type::Readonly(ty) => ty.clone().into(),
+                            Type::Unique(ty) => ty.clone().into(),
                             Type::Param(ty) => ty.clone().into(),
                             Type::EnumVariant(ty) => ty.clone().into(),
                             Type::Interface(ty) => ty.clone().into(),
@@ -2029,17 +2033,6 @@ impl Type {
 
     pub fn is_instantiable_non_primitive(&self) -> bool {
         self.is_type_param() || self.is_conditional() || self.is_substitution()
-    }
-
-    /// Is `self` `keyof` type?
-    pub fn is_index(&self) -> bool {
-        matches!(
-            self.normalize_instance(),
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
-        )
     }
 
     pub fn is_instantiable_primitive(&self) -> bool {

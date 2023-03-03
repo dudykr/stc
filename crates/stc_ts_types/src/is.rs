@@ -137,15 +137,17 @@ impl_is!(
     constructor,
     expect_constructor
 );
+impl_is!(Index, Index, is_index, as_index, as_index_mut, index, expect_index);
 impl_is!(
-    Operator,
-    Operator,
-    is_operator,
-    as_operator,
-    as_operator_mut,
-    operator,
-    expect_operator
+    Readonly,
+    Readonly,
+    is_readonly,
+    as_readonly,
+    as_readonly_mut,
+    readonly,
+    expect_readonly
 );
+impl_is!(Unique, Unique, is_unique, as_unique, as_unique_mut, unique, expect_unique);
 impl_is!(
     Param,
     TypeParam,
