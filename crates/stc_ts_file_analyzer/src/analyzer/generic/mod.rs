@@ -1168,12 +1168,7 @@ impl Analyzer<'_, '_> {
                         //
                         // T = true
 
-                        if let Type::Index(Index {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty: keyof_ty,
-                            ..
-                        }) = index_param_constraint.normalize()
-                        {
+                        if let Type::Index(Index { ty: keyof_ty, .. }) = index_param_constraint.normalize() {
                             return self.infer_type(
                                 span,
                                 inferred,
@@ -1515,11 +1510,7 @@ impl Analyzer<'_, '_> {
                                 constraint: Some(constraint),
                                 ..
                             }) => match constraint.normalize() {
-                                Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty,
-                                    ..
-                                }) => match ty.normalize() {
+                                Type::Index(Index { ty, .. }) => match ty.normalize() {
                                     Type::Param(TypeParam { name, .. }) => Some(Res {
                                         name: name.clone(),
                                         key_name: key_name.clone(),
@@ -1909,10 +1900,8 @@ impl Analyzer<'_, '_> {
                                 Some(Type::Param(p)) => {
                                     tp = p;
                                 }
-                                Some(Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty: box Type::Param(p),
-                                    ..
+                                Some(Type::Index(Index {
+                                    ty: box Type::Param(p), ..
                                 })) => {
                                     tp = p;
                                 }
@@ -1927,7 +1916,7 @@ impl Analyzer<'_, '_> {
                                 if ty.types.iter().all(|ty| {
                                     matches!(
                                         ty.normalize(),
-                                        Type::Operator(Operator {
+                                        Type::Index(Index {
                                             ty: box Type::Param(..),
                                             ..
                                         })
@@ -1937,7 +1926,7 @@ impl Analyzer<'_, '_> {
                                 ty.types
                                     .iter()
                                     .map(|ty| match ty.normalize() {
-                                        Type::Operator(Operator {
+                                        Type::Index(Index {
                                             ty: box Type::Param(p), ..
                                         }) => p.name.clone(),
                                         _ => unreachable!(),
@@ -2028,13 +2017,7 @@ impl Analyzer<'_, '_> {
 
         match &param.type_param.constraint {
             Some(constraint) => {
-                if let Type::Operator(
-                    operator @ Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ..
-                    },
-                ) = constraint.normalize()
-                {
+                if let Type::Index(operator) = constraint.normalize() {
                     if let Type::IndexedAccessType(
                         iat @ IndexedAccessType {
                             obj_type: box Type::Param(..),
@@ -2142,12 +2125,7 @@ impl Analyzer<'_, '_> {
             //     [BoxedP in keyof Pick<P, K>[BoxedT]]: Box<Pick<P, K>[BoxedP]>;
             // };
             if let Some(constraint) = &param.type_param.constraint {
-                if let Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                }) = constraint.normalize()
-                {
+                if let Type::Index(Index { ty, .. }) = constraint.normalize() {
                     if let Some(param_ty) = &param.ty {
                         if let Type::TypeLit(arg_lit) = arg.normalize() {
                             let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
