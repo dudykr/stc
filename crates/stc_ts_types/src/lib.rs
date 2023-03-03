@@ -174,7 +174,9 @@ pub enum Type {
     Function(Function),
     Constructor(Constructor),
 
-    Operator(Operator),
+    Index(Index),
+    Readonly(Readonly),
+    Unique(Unique),
 
     Param(TypeParam),
     EnumVariant(EnumVariant),
@@ -347,7 +349,9 @@ impl TypeEq for Type {
             (Type::Intersection(l), Type::Intersection(r)) => l.type_eq(r),
             (Type::Function(l), Type::Function(r)) => l.type_eq(r),
             (Type::Constructor(l), Type::Constructor(r)) => l.type_eq(r),
-            (Type::Operator(l), Type::Operator(r)) => l.type_eq(r),
+            (Type::Index(l), Type::Index(r)) => l.type_eq(r),
+            (Type::Readonly(l), Type::Readonly(r)) => l.type_eq(r),
+            (Type::Unique(l), Type::Unique(r)) => l.type_eq(r),
             (Type::Param(l), Type::Param(r)) => l.type_eq(r),
             (Type::EnumVariant(l), Type::EnumVariant(r)) => l.type_eq(r),
             (Type::Interface(l), Type::Interface(r)) => l.type_eq(r),
