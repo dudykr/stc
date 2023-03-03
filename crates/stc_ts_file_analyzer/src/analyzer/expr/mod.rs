@@ -21,8 +21,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Instance, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, Operator, OptionalType, PropertySignature,
+    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Index, Instance,
+    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, OptionalType, PropertySignature,
     QueryExpr, QueryType, QueryTypeMetadata, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
@@ -1292,12 +1292,7 @@ impl Analyzer<'_, '_> {
                     constraint: Some(constraint),
                     ..
                 }) if opts.for_validation_of_indexed_access_type => {
-                    if let Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: constraint_ty,
-                        ..
-                    }) = constraint.normalize()
-                    {
+                    if let Type::Index(Index { ty: constraint_ty, .. }) = constraint.normalize() {
                         //
                         if constraint_ty.as_ref().type_eq(obj) {
                             return Ok(Type::any(DUMMY_SP, Default::default()));

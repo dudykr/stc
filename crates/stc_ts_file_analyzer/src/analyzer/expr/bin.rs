@@ -33,7 +33,7 @@ use crate::{
         util::{Comparator, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
-    ty::{Operator, Type, TypeExt},
+    ty::{Type, TypeExt},
     type_facts::TypeFacts,
     util::RemoveTypes,
     validator,
@@ -2210,10 +2210,7 @@ impl Analyzer<'_, '_> {
             | Type::Enum(..)
             | Type::EnumVariant(..)
             | Type::Param(..)
-            | Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
+            | Type::Index(..)
             | Type::Symbol(..)
             | Type::Tpl(..) => true,
 

@@ -647,6 +647,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
+#[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsTypeOperator) -> VResult<Type> {
         match ty.op {
@@ -1103,7 +1104,7 @@ impl Analyzer<'_, '_> {
                 RTsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(a)?),
                 RTsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(a)?),
                 RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(a)?),
-                RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(a)?),
+                RTsType::TsTypeOperator(ty) => return ty.validate_with(a),
                 RTsType::TsParenthesizedType(ty) => return ty.validate_with(a),
                 RTsType::TsTypeRef(ty) => ty.validate_with(a)?,
                 RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(a)?),
