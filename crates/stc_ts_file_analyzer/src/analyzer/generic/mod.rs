@@ -1335,7 +1335,7 @@ impl Analyzer<'_, '_> {
 
                 // Check to print unimplemented error message
                 match param_normalized {
-                    Type::Operator(..) | Type::Interface(..) => return Ok(()),
+                    Type::Index(..) | Type::Interface(..) => return Ok(()),
                     _ => {}
                 }
             }

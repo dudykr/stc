@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    replace::replace_type, Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
-    PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
+    replace::replace_type, Array, Conditional, FnParam, Id, Index, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped,
+    Operator, PropertySignature, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -870,12 +870,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(m) => {
-                if let Some(Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                {
+                if let Some(Type::Index(Index { ty, .. })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                     return self
                         .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
                         .context("tried to get property names by using `keyof` constraint");
