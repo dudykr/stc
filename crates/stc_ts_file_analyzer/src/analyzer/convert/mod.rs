@@ -15,11 +15,11 @@ use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
-    ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
-    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
-    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem, TplType,
-    TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation,
+    ConstructorSignature, FnParam, Id, IdCtx, ImportType, Index, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata,
+    Interface, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, OptionalType,
+    Predicate, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem,
+    TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, dev_span, AHashSet};
@@ -649,14 +649,27 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsTypeOperator) -> VResult<Operator> {
-        Ok(Operator {
-            span: ty.span,
-            op: ty.op,
-            ty: box ty.type_ann.validate_with(self)?,
-            metadata: Default::default(),
-            tracker: Default::default(),
-        })
+    fn validate(&mut self, ty: &RTsTypeOperator) -> VResult<Type> {
+        match ty.op {
+            TsTypeOperatorOp::KeyOf => Ok(Type::Index(Index {
+                span: ty.span,
+                ty: box ty.type_ann.validate_with(self)?,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            TsTypeOperatorOp::Unique => Ok(Type::Unique(Unique {
+                span: ty.span,
+                ty: box ty.type_ann.validate_with(self)?,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            TsTypeOperatorOp::ReadOnly => Ok(Type::Readonly(Readonly {
+                span: ty.span,
+                ty: box ty.type_ann.validate_with(self)?,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+        }
     }
 }
 
@@ -781,9 +794,8 @@ impl Analyzer<'_, '_> {
             }
             RTsEntityName::Ident(ref i) if i.sym == js_word!("ReadonlyArray") && type_args.is_some() => {
                 if type_args.as_ref().unwrap().params.len() == 1 {
-                    return Ok(Type::Operator(Operator {
+                    return Ok(Type::Readonly(Readonly {
                         span,
-                        op: TsTypeOperatorOp::ReadOnly,
                         ty: box Type::Array(Array {
                             span: t.span,
                             elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
@@ -1092,7 +1104,7 @@ impl Analyzer<'_, '_> {
                 RTsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(a)?),
                 RTsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(a)?),
                 RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(a)?),
-                RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(a)?),
+                RTsType::TsTypeOperator(ty) => return ty.validate_with(a),
                 RTsType::TsParenthesizedType(ty) => return ty.validate_with(a),
                 RTsType::TsTypeRef(ty) => ty.validate_with(a)?,
                 RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(a)?),

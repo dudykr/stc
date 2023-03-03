@@ -29,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
-    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit, RTsModuleName,
+    RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -40,7 +40,7 @@ use stc_utils::{
 use stc_visit::{Visit, Visitable};
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind};
 use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
@@ -174,7 +174,9 @@ pub enum Type {
     Function(Function),
     Constructor(Constructor),
 
-    Operator(Operator),
+    Index(Index),
+    Readonly(Readonly),
+    Unique(Unique),
 
     Param(TypeParam),
     EnumVariant(EnumVariant),
@@ -231,7 +233,9 @@ impl Debug for Type {
             Self::Intersection(arg0) => write!(f, "{:?}", arg0),
             Self::Function(arg0) => write!(f, "{:?}", arg0),
             Self::Constructor(arg0) => write!(f, "{:?}", arg0),
-            Self::Operator(arg0) => write!(f, "{:?}", arg0),
+            Self::Index(arg0) => write!(f, "{:?}", arg0),
+            Self::Readonly(arg0) => write!(f, "{:?}", arg0),
+            Self::Unique(arg0) => write!(f, "{:?}", arg0),
             Self::Param(arg0) => write!(f, "{:?}", arg0),
             Self::EnumVariant(arg0) => write!(f, "{:?}", arg0),
             Self::Interface(arg0) => write!(f, "{:?}", arg0),
@@ -285,7 +289,9 @@ impl Clone for Type {
                             Type::Intersection(ty) => ty.clone().into(),
                             Type::Function(ty) => ty.clone().into(),
                             Type::Constructor(ty) => ty.clone().into(),
-                            Type::Operator(ty) => ty.clone().into(),
+                            Type::Index(ty) => ty.clone().into(),
+                            Type::Readonly(ty) => ty.clone().into(),
+                            Type::Unique(ty) => ty.clone().into(),
                             Type::Param(ty) => ty.clone().into(),
                             Type::EnumVariant(ty) => ty.clone().into(),
                             Type::Interface(ty) => ty.clone().into(),
@@ -347,7 +353,9 @@ impl TypeEq for Type {
             (Type::Intersection(l), Type::Intersection(r)) => l.type_eq(r),
             (Type::Function(l), Type::Function(r)) => l.type_eq(r),
             (Type::Constructor(l), Type::Constructor(r)) => l.type_eq(r),
-            (Type::Operator(l), Type::Operator(r)) => l.type_eq(r),
+            (Type::Index(l), Type::Index(r)) => l.type_eq(r),
+            (Type::Readonly(l), Type::Readonly(r)) => l.type_eq(r),
+            (Type::Unique(l), Type::Unique(r)) => l.type_eq(r),
             (Type::Param(l), Type::Param(r)) => l.type_eq(r),
             (Type::EnumVariant(l), Type::EnumVariant(r)) => l.type_eq(r),
             (Type::Interface(l), Type::Interface(r)) => l.type_eq(r),
@@ -372,43 +380,6 @@ fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
 
     assert::<Type>();
-    assert::<StaticThis>();
-    assert::<RTsThisType>();
-    assert::<QueryType>();
-    assert::<InferType>();
-    assert::<ImportType>();
-    assert::<Predicate>();
-    assert::<IndexedAccessType>();
-
-    assert::<Ref>();
-    assert::<TypeLit>();
-    assert::<RTsKeywordType>();
-    assert::<Conditional>();
-    assert::<Tuple>();
-    assert::<Array>();
-    assert::<Union>();
-    assert::<Intersection>();
-    assert::<Function>();
-    assert::<Constructor>();
-
-    assert::<Operator>();
-
-    assert::<TypeParam>();
-    assert::<EnumVariant>();
-    assert::<Interface>();
-    assert::<Enum>();
-
-    assert::<Mapped>();
-    assert::<Alias>();
-    assert::<RTsNamespaceDecl>();
-    assert::<Module>();
-
-    assert::<Class>();
-    assert::<ClassDef>();
-
-    assert::<RestType>();
-    assert::<OptionalType>();
-    assert::<Symbol>();
 }
 
 #[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
@@ -1039,12 +1010,36 @@ impl Debug for Conditional {
     }
 }
 
-/// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
-pub struct Operator {
+/// `keyof T`
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct Index {
     pub span: Span,
-    #[use_eq]
-    pub op: TsTypeOperatorOp,
+    pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Index">,
+}
+
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Index, [u8; 32]);
+
+/// `readonly T`
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct Readonly {
+    pub span: Span,
+    pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Index">,
+}
+
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Readonly, [u8; 32]);
+
+/// Currently only used for `unique symbol`.
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
+pub struct Unique {
+    pub span: Span,
     pub ty: Box<Type>,
     pub metadata: OperatorMetadata,
 
@@ -1052,15 +1047,12 @@ pub struct Operator {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Operator, [u8; 40]);
+assert_eq_size!(Unique, [u8; 32]);
 
-impl TypeEq for Operator {
-    fn type_eq(&self, other: &Self) -> bool {
-        if let TsTypeOperatorOp::Unique = self.op {
-            return false;
-        }
-
-        self.op == other.op && self.ty.type_eq(&other.ty)
+impl TypeEq for Unique {
+    #[inline]
+    fn type_eq(&self, _: &Self) -> bool {
+        false
     }
 }
 
@@ -1836,11 +1828,7 @@ impl Type {
     pub fn as_array_without_readonly(&self) -> Option<&Array> {
         match self.normalize_instance() {
             Type::Array(t) => Some(t),
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => ty.as_array_without_readonly(),
+            Type::Readonly(ty) => ty.ty.as_array_without_readonly(),
             _ => None,
         }
     }
@@ -1883,12 +1871,8 @@ impl Type {
     }
 
     pub fn is_unique_symbol(&self) -> bool {
-        match self.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ref ty,
-                ..
-            }) => ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
+        match self.normalize_instance() {
+            Type::Unique(u) => u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
             _ => false,
         }
     }
@@ -2006,17 +1990,6 @@ impl Type {
         self.is_type_param() || self.is_conditional() || self.is_substitution()
     }
 
-    /// Is `self` `keyof` type?
-    pub fn is_index(&self) -> bool {
-        matches!(
-            self.normalize_instance(),
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
-        )
-    }
-
     pub fn is_instantiable_primitive(&self) -> bool {
         self.is_index() || self.is_tpl() || self.is_string_mapping()
     }
@@ -2052,7 +2025,9 @@ impl Type {
             Type::Intersection(ty) => ty.metadata.common,
             Type::Function(ty) => ty.metadata.common,
             Type::Constructor(ty) => ty.metadata.common,
-            Type::Operator(ty) => ty.metadata.common,
+            Type::Index(ty) => ty.metadata.common,
+            Type::Readonly(ty) => ty.metadata.common,
+            Type::Unique(ty) => ty.metadata.common,
             Type::Param(ty) => ty.metadata.common,
             Type::EnumVariant(ty) => ty.metadata.common,
             Type::Interface(ty) => ty.metadata.common,
@@ -2094,7 +2069,9 @@ impl Type {
             Type::Intersection(ty) => &mut ty.metadata.common,
             Type::Function(ty) => &mut ty.metadata.common,
             Type::Constructor(ty) => &mut ty.metadata.common,
-            Type::Operator(ty) => &mut ty.metadata.common,
+            Type::Index(ty) => &mut ty.metadata.common,
+            Type::Readonly(ty) => &mut ty.metadata.common,
+            Type::Unique(ty) => &mut ty.metadata.common,
             Type::Param(ty) => &mut ty.metadata.common,
             Type::EnumVariant(ty) => &mut ty.metadata.common,
             Type::Interface(ty) => &mut ty.metadata.common,
@@ -2128,7 +2105,11 @@ impl Type {
         }
 
         match self.normalize_mut() {
-            Type::Operator(ty) => ty.span = span,
+            Type::Index(ty) => ty.span = span,
+
+            Type::Readonly(ty) => ty.span = span,
+
+            Type::Unique(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
 

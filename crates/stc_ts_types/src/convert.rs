@@ -12,10 +12,10 @@ use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
 use crate::{
-    Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType, InferType, Interface,
-    Intersection, Key, KeywordType, LitType, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType, StaticThis,
+    Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, Index, IndexedAccessType, InferType,
+    Interface, Intersection, Key, KeywordType, LitType, OptionalType, Predicate, QueryExpr, QueryType, Readonly, Ref, RestType, StaticThis,
     StringMapping, Symbol, ThisType, TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    TypeParamInstantiation, Union, Unique,
 };
 
 impl From<Box<Type>> for RTsType {
@@ -45,7 +45,9 @@ impl From<Type> for RTsType {
             Type::Intersection(t) => t.into(),
             Type::Function(t) => t.into(),
             Type::Constructor(t) => t.into(),
-            Type::Operator(t) => t.into(),
+            Type::Index(t) => t.into(),
+            Type::Readonly(t) => t.into(),
+            Type::Unique(t) => t.into(),
             Type::Param(t) => t.into(),
             Type::EnumVariant(t) => t.into(),
             Type::Interface(t) => t.into(),
@@ -405,12 +407,36 @@ impl From<TypeParam> for RTsTypeParam {
     }
 }
 
-impl From<Operator> for RTsType {
-    fn from(t: Operator) -> Self {
+impl From<Index> for RTsType {
+    fn from(t: Index) -> Self {
         RTsTypeOperator {
             node_id: NodeId::invalid(),
             span: t.span,
-            op: t.op,
+            op: TsTypeOperatorOp::KeyOf,
+            type_ann: t.ty.into(),
+        }
+        .into()
+    }
+}
+
+impl From<Readonly> for RTsType {
+    fn from(t: Readonly) -> Self {
+        RTsTypeOperator {
+            node_id: NodeId::invalid(),
+            span: t.span,
+            op: TsTypeOperatorOp::ReadOnly,
+            type_ann: t.ty.into(),
+        }
+        .into()
+    }
+}
+
+impl From<Unique> for RTsType {
+    fn from(t: Unique) -> Self {
+        RTsTypeOperator {
+            node_id: NodeId::invalid(),
+            span: t.span,
+            op: TsTypeOperatorOp::Unique,
             type_ann: t.ty.into(),
         }
         .into()
@@ -525,17 +551,6 @@ impl From<TypeParamInstantiation> for RTsTypeParamInstantiation {
             node_id: NodeId::invalid(),
             span: t.span,
             params: t.params.into_iter().map(|v| box v.into()).collect(),
-        }
-    }
-}
-
-impl From<Operator> for RTsTypeOperator {
-    fn from(t: Operator) -> Self {
-        RTsTypeOperator {
-            node_id: NodeId::invalid(),
-            span: t.span,
-            op: t.op,
-            type_ann: t.ty.into(),
         }
     }
 }

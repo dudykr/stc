@@ -20,8 +20,8 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key,
-    KeywordType, KeywordTypeMetadata, Mapped, Operator, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
+    name::Name, type_id::DestructureId, Class, ClassProperty, Conditional, EnumVariant, FnParam, Id, Index, IndexedAccessType,
+    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
     TypeParamInstantiation,
 };
 use stc_utils::{
@@ -2424,8 +2424,7 @@ impl Expander<'_, '_, '_> {
                 index_type:
                     box Type::Param(TypeParam {
                         constraint:
-                            Some(box Type::Operator(Operator {
-                                op: TsTypeOperatorOp::KeyOf,
+                            Some(box Type::Index(Index {
                                 ty: box Type::TypeLit(key_lits),
                                 ..
                             })),
@@ -2485,12 +2484,7 @@ impl Expander<'_, '_, '_> {
                         TypeParam {
                             span: type_param_span,
                             ref name,
-                            constraint:
-                                Some(box Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty: ref constraint,
-                                    ..
-                                })),
+                            constraint: Some(box Type::Index(Index { ty: ref constraint, .. })),
                             default: None,
                             ..
                         },

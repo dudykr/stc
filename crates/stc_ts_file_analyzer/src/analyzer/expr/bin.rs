@@ -19,7 +19,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind};
 use swc_ecma_utils::Value::Known;
 use tracing::info;
 
@@ -33,7 +33,7 @@ use crate::{
         util::{Comparator, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
-    ty::{Operator, Type, TypeExt},
+    ty::{Type, TypeExt},
     type_facts::TypeFacts,
     util::RemoveTypes,
     validator,
@@ -2210,10 +2210,7 @@ impl Analyzer<'_, '_> {
             | Type::Enum(..)
             | Type::EnumVariant(..)
             | Type::Param(..)
-            | Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
+            | Type::Index(..)
             | Type::Symbol(..)
             | Type::Tpl(..) => true,
 

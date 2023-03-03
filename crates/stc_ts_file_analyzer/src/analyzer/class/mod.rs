@@ -14,7 +14,7 @@ use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
-    Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    Intersection, Key, KeywordType, Method, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type, Unique,
 };
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, AHashSet};
@@ -122,9 +122,8 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(ty.or(value_ty).map(|ty| match ty {
-            Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
+            Type::Symbol(..) if readonly && is_static => Type::Unique(Unique {
                 span: ty.span(),
-                op: TsTypeOperatorOp::Unique,
                 ty: box Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
