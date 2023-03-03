@@ -30,8 +30,8 @@ use stc_utils::{
 };
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, info};
+use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::{debug, error};
 
 use super::expr::AccessPropertyOpts;
 use crate::{

@@ -4,9 +4,8 @@ use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, Index, IndexedAccessType, IndexedAccessTypeMetadata, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
-    Union,
+    Array, Class, ClassMember, CommonTypeMetadata, Index, IndexedAccessType, IndexedAccessTypeMetadata, Intersection, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use stc_utils::{dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
