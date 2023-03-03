@@ -29,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName,
-    RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit, RTsModuleName,
+    RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -40,7 +40,7 @@ use stc_utils::{
 use stc_visit::{Visit, Visitable};
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind};
 use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
@@ -1051,7 +1051,7 @@ assert_eq_size!(Unique, [u8; 32]);
 
 impl TypeEq for Unique {
     #[inline]
-    fn type_eq(&self, other: &Self) -> bool {
+    fn type_eq(&self, _: &Self) -> bool {
         false
     }
 }
@@ -1828,11 +1828,7 @@ impl Type {
     pub fn as_array_without_readonly(&self) -> Option<&Array> {
         match self.normalize_instance() {
             Type::Array(t) => Some(t),
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => ty.as_array_without_readonly(),
+            Type::Readonly(ty) => ty.ty.as_array_without_readonly(),
             _ => None,
         }
     }
@@ -1875,12 +1871,10 @@ impl Type {
     }
 
     pub fn is_unique_symbol(&self) -> bool {
-        match self.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ref ty,
-                ..
-            }) => ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
+        match self.normalize_instance() {
+            Type::Unique(u) => {
+                return u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword);
+            }
             _ => false,
         }
     }
@@ -2033,7 +2027,9 @@ impl Type {
             Type::Intersection(ty) => ty.metadata.common,
             Type::Function(ty) => ty.metadata.common,
             Type::Constructor(ty) => ty.metadata.common,
-            Type::Operator(ty) => ty.metadata.common,
+            Type::Index(ty) => ty.metadata.common,
+            Type::Readonly(ty) => ty.metadata.common,
+            Type::Unique(ty) => ty.metadata.common,
             Type::Param(ty) => ty.metadata.common,
             Type::EnumVariant(ty) => ty.metadata.common,
             Type::Interface(ty) => ty.metadata.common,
@@ -2075,7 +2071,9 @@ impl Type {
             Type::Intersection(ty) => &mut ty.metadata.common,
             Type::Function(ty) => &mut ty.metadata.common,
             Type::Constructor(ty) => &mut ty.metadata.common,
-            Type::Operator(ty) => &mut ty.metadata.common,
+            Type::Index(ty) => &mut ty.metadata.common,
+            Type::Readonly(ty) => &mut ty.metadata.common,
+            Type::Unique(ty) => &mut ty.metadata.common,
             Type::Param(ty) => &mut ty.metadata.common,
             Type::EnumVariant(ty) => &mut ty.metadata.common,
             Type::Interface(ty) => &mut ty.metadata.common,
@@ -2109,7 +2107,11 @@ impl Type {
         }
 
         match self.normalize_mut() {
-            Type::Operator(ty) => ty.span = span,
+            Type::Index(ty) => ty.span = span,
+
+            Type::Readonly(ty) => ty.span = span,
+
+            Type::Unique(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
 
