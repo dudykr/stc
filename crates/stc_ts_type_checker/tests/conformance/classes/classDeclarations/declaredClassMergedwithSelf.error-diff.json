@@ -5,12 +5,12 @@
   "required_error_lines": {
     "TS2300": [
       4,
-      4,
-      4,
       6,
       8,
       10,
-      12
+      12,
+      4,
+      4
     ]
   },
   "extra_errors": {},
