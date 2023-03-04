@@ -21,6 +21,7 @@ use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
 
 pub struct TestSpec {
+    /// Typescript conformance test remove lines starting with @-directives.
     pub err_shift_n: usize,
     pub libs: Vec<Lib>,
     pub rule: Rule,
