@@ -249,7 +249,7 @@ impl Analyzer<'_, '_> {
 
         let ty = e.validate_with_default(self)?.freezed();
 
-        self.storage.export_type(span, self.ctx.module_id, name.clone(), ty.clone());
+        self.storage.export_var(span, self.ctx.module_id, name.clone(), ty.clone());
 
         if name == js_word!("default") {
             let var = RVarDeclarator {
