@@ -12,7 +12,7 @@ mod common;
 
 use std::{
     env, fs,
-    fs::{read_to_string, File},
+    fs::read_to_string,
     mem,
     panic::{catch_unwind, resume_unwind},
     path::{Path, PathBuf},
@@ -248,7 +248,7 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         println!("errors file does not exists: {}", errors_file.display());
         vec![]
     } else {
-        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(&errors_file).expect("failed to open errors file"))
+        let mut errors: Vec<RefError> = serde_json::from_str(&read_to_string(&errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")
             .unwrap();
 
