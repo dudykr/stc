@@ -8,11 +8,10 @@
     ]
   },
   "extra_errors": {
-    "TS2339": 6
+    "TS2339": 5
   },
   "extra_error_lines": {
     "TS2339": [
-      10,
       25,
       26,
       27,

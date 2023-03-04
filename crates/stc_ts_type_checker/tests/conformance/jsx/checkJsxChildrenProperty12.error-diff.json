@@ -2,14 +2,9 @@
   "required_errors": {},
   "required_error_lines": {},
   "extra_errors": {
-    "TS2339": 2,
     "TS2304": 2
   },
   "extra_error_lines": {
-    "TS2339": [
-      10,
-      28
-    ],
     "TS2304": [
       14,
       17
