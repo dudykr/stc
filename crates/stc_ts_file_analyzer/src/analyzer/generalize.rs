@@ -272,7 +272,7 @@ impl Fold<Type> for Simplifier<'_> {
 
             Type::Intersection(ref i) => {
                 // LHS is never.
-                if Intersection::is_trival_never(&i.types) {
+                if Intersection::is_trivial_never(&i.types) {
                     return Type::never(i.span, KeywordTypeMetadata { common: i.metadata.common });
                 }
             }
