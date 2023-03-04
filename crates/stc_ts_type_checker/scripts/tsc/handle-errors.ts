@@ -25,7 +25,7 @@ function extract(content: string): ErrorRef[] {
         if (str.startsWith('====')) {
             break
         }
-        if (str.startsWith(' ') || str.startsWith('lib.')) {
+        if (str.startsWith(' ') || str.startsWith('lib.') || str.includes('error TS-')) {
             continue
         }
         const [filename, data] = str.split('(', 2);
