@@ -364,7 +364,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     mem::forget(stat_guard);
 
-    let mut extra_errors = diagnostics
+    let mut full_actual_errors = diagnostics
         .iter()
         .map(|d| {
             let span = d.span.primary_span().unwrap();
@@ -383,9 +383,9 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             (cp.line, code)
         })
         .collect::<Vec<_>>();
-    extra_errors.sort();
+    full_actual_errors.sort();
 
-    let full_actual_errors = extra_errors.clone();
+    let mut extra_errors = full_actual_errors.clone();
 
     for (line, error_code) in full_actual_errors.clone() {
         if let Some(idx) = expected_errors
