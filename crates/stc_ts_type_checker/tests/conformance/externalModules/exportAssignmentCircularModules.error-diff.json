@@ -3,7 +3,6 @@
   "required_error_lines": {},
   "extra_errors": {
     "TS2307": 3,
-    "TS2339": 1,
     "TS2528": 3
   },
   "extra_error_lines": {
@@ -11,9 +10,6 @@
       1,
       1,
       1
-    ],
-    "TS2339": [
-      3
     ],
     "TS2528": [
       5,
