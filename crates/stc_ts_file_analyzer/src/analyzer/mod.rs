@@ -915,7 +915,7 @@ impl Analyzer<'_, '_> {
                 if node.is_export {
                     analyzer
                         .storage
-                        .reexport_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
+                        .export_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
                 }
             }
 
@@ -935,7 +935,7 @@ impl Analyzer<'_, '_> {
                 if node.is_export {
                     analyzer
                         .storage
-                        .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
+                        .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
                 }
             }
 
