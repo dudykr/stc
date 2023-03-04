@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TscError {
     #[serde(default)]
-    pub file: String,
+    pub file: Option<String>,
     pub line: usize,
     pub col: usize,
     pub code: usize,
@@ -34,7 +34,7 @@ impl TscError {
                         };
                         let item = item.strip_suffix("\u{001b}[0m").expect("expected colored output");
 
-                        error.file = item.to_string();
+                        error.file = Some(item.to_string());
                     }
                     1 => {
                         let item = item
