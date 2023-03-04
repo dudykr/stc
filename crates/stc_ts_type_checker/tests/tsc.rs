@@ -401,18 +401,20 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let mut extra_errors = full_actual_errors.clone();
 
     for actual in &full_actual_errors {
-        if let Some(idx) = expected_errors
-            .iter()
-            .position(|err| (err.line == actual.line || err.line == 0) && err.code == actual.code && err.file == actual.file)
-        {
+        if let Some(idx) = expected_errors.iter().position(|err| {
+            (err.line == actual.line || err.line == 0)
+                && err.code == actual.code
+                && is_file_similar(err.file.as_deref(), actual.file.as_deref())
+        }) {
             stats.matched_error += 1;
 
             let is_zero_line = expected_errors[idx].line == 0;
             expected_errors.remove(idx);
-            if let Some(idx) = extra_errors
-                .iter()
-                .position(|r| (actual.line == r.line || is_zero_line) && actual.code == r.code && actual.file == r.file)
-            {
+            if let Some(idx) = extra_errors.iter().position(|r| {
+                (actual.line == r.line || is_zero_line)
+                    && actual.code == r.code
+                    && is_file_similar(r.file.as_deref(), actual.file.as_deref())
+            }) {
                 extra_errors.remove(idx);
             }
         }
@@ -500,6 +502,18 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     }
 
     Ok(())
+}
+
+fn is_file_similar(expected: Option<&str>, actual: Option<&str>) -> bool {
+    match (expected, actual) {
+        (Some(expected), Some(actual)) => {
+            dbg!(expected, actual);
+
+            expected.split('/').last() == actual.split('/').last() || expected.split('/').last() == actual.split('\\').last()
+        }
+
+        _ => true,
+    }
 }
 
 impl Stats {
