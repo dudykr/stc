@@ -925,6 +925,9 @@ es6/modules/exportsAndImports2.ts
 es6/modules/exportsAndImports3-amd.ts
 es6/modules/exportsAndImports3-es6.ts
 es6/modules/exportsAndImports3.ts
+es6/modules/exportsAndImports4-amd.ts
+es6/modules/exportsAndImports4-es6.ts
+es6/modules/exportsAndImports4.ts
 es6/modules/exportsAndImportsWithContextualKeywordNames02.ts
 es6/modules/importEmptyFromModuleNotExisted.ts
 es6/modules/multipleDefaultExports03.ts
