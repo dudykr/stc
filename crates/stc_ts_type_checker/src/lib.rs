@@ -35,7 +35,7 @@ where
     /// Cache
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Type>>>>,
 
-    declared_modules: RwLock<Vec<(ModuleId, Type)>>,
+    declared_modules: DashMap<String, ModuleId, FxBuildHasher>,
 
     /// Information required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
@@ -352,6 +352,10 @@ where
     L: LoadModule,
 {
     fn module_id(&self, base: &Arc<FileName>, module_specifier: &str) -> Option<ModuleId> {
+        if let Some(id) = self.declared_modules.get(module_specifier) {
+            return Some(*id);
+        }
+
         let records = self.module_loader.load_dep(base, module_specifier).ok()?;
         Some(records.entry.id)
     }
@@ -366,6 +370,14 @@ where
     }
 
     fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, _partial: &ModuleTypeData) -> VResult<Type> {
+        if let Some(id) = self.declared_modules.get(dep).as_deref().copied() {
+            if let Some(cache) = self.module_types.read().get(&id) {
+                if let Some(ty) = cache.get() {
+                    return Ok(ty.clone());
+                }
+            }
+        }
+
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
         let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
@@ -374,6 +386,14 @@ where
     }
 
     fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
+        if let Some(id) = self.declared_modules.get(dep).as_deref().copied() {
+            if let Some(cache) = self.module_types.read().get(&id) {
+                if let Some(ty) = cache.get() {
+                    return Ok(ty.clone());
+                }
+            }
+        }
+
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
         let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
@@ -391,7 +411,9 @@ where
             .entry
             .id;
 
+        self.module_types.write().insert(module_id, Arc::new(OnceCell::from(module)));
+
         info!("Declaring module with type `{}`", name);
-        self.declared_modules.write().push((module_id, module));
+        self.declared_modules.insert(name.to_string(), module_id);
     }
 }
