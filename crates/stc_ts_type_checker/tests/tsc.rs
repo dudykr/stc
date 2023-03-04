@@ -561,8 +561,14 @@ impl Resolve for TestFileSystem {
             return NodeResolver.resolve(base, module_specifier);
         }
 
-        if let Some(name) = module_specifier.strip_prefix("./") {
-            return Ok(FileName::Real(name.into()));
+        if let Some(filename) = module_specifier.strip_prefix("./") {
+            for (name, _) in self.files.iter() {
+                if format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
+                    return Ok(FileName::Real(name.into()));
+                }
+            }
+
+            return Ok(FileName::Real(filename.into()));
         }
 
         todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);
