@@ -65,14 +65,15 @@ impl Analyzer<'_, '_> {
                     a.register_type(e.id.clone().into(), ty);
 
                     a.storage
-                        .export_type(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
+                        .export_stored_type(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                     a.storage
-                        .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
+                        .export_stored_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
                 RDecl::TsModule(module) => match &module.id {
                     RTsModuleName::Ident(id) => {
                         module.visit_with(a);
-                        a.storage.export_type(span, a.ctx.module_id, id.clone().into(), id.clone().into());
+                        a.storage
+                            .export_stored_type(span, a.ctx.module_id, id.clone().into(), id.clone().into());
                     }
                     RTsModuleName::Str(..) => {
                         let module: Option<Type> = module.validate_with(a)?;
@@ -205,7 +206,7 @@ impl Analyzer<'_, '_> {
         }
 
         self.storage
-            .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
+            .export_stored_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
     }
 
     /// Exports a type.
@@ -239,7 +240,7 @@ impl Analyzer<'_, '_> {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
 
-        self.storage.export_type(span, self.ctx.module_id, name, orig_name);
+        self.storage.export_stored_type(span, self.ctx.module_id, name, orig_name);
     }
 
     /// Exports a variable.
@@ -450,11 +451,11 @@ impl Analyzer<'_, '_> {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
             self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
 
-            self.storage.export_var(span, ctxt, id.clone(), orig.clone());
+            self.storage.export_stored_var(span, ctxt, id.clone(), orig.clone());
         }
 
         if self.storage.get_local_type(ctxt, orig.clone()).is_some() {
-            self.storage.export_type(span, ctxt, id, orig);
+            self.storage.export_stored_type(span, ctxt, id, orig);
         }
     }
 

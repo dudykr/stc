@@ -33,8 +33,8 @@ pub trait TypeStore: Send + Sync {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool);
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type);
 
-    fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
+    fn export_stored_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
+    fn export_stored_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
 
     fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
     fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
@@ -127,7 +127,7 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
+    fn export_stored_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&orig_name).cloned() {
@@ -136,7 +136,7 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
+    fn export_stored_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_types.get(&orig_name).cloned() {
@@ -277,7 +277,7 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
+    fn export_stored_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
         let e = self.info.entry(ctxt).or_default();
         match e.private_vars.get(&orig_name) {
             Some(v) => {
@@ -290,7 +290,7 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
+    fn export_stored_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
         let e = self.info.entry(ctxt).or_default();
         match e.private_types.get(&orig_name) {
             Some(v) => {
@@ -431,9 +431,9 @@ impl TypeStore for Builtin {
         }
     }
 
-    fn export_var(&mut self, _: Span, _: ModuleId, _: Id, _: Id) {}
+    fn export_stored_var(&mut self, _: Span, _: ModuleId, _: Id, _: Id) {}
 
-    fn export_type(&mut self, _: Span, _: ModuleId, _: Id, _: Id) {}
+    fn export_stored_type(&mut self, _: Span, _: ModuleId, _: Id, _: Id) {}
 
     fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {
         let types = self.types.get(id.sym()).cloned()?;
