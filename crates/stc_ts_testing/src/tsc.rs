@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Error from `tsc`.
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct TscError {
     #[serde(default)]
     pub file: Option<String>,
