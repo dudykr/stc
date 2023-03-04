@@ -243,15 +243,14 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> VResult<()> {
-        self.report_errors_for_duplicated_exports_of_var(e.span(), name.sym().clone());
+    fn export_expr(&mut self, span: Span, name: JsWord, item_node_id: NodeId, e: &RExpr) -> VResult<()> {
+        self.report_errors_for_duplicated_exports_of_var(e.span(), name.clone());
 
         let ty = e.validate_with_default(self)?.freezed();
 
-        if *name.sym() == js_word!("default") {
-            if let RExpr::Ident(..) = e {
-                return Ok(());
-            }
+        self.storage.reexport_type(span, self.ctx.module_id, name.clone(), ty.clone());
+
+        if name == js_word!("default") {
             let var = RVarDeclarator {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
@@ -301,7 +300,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
+            .export_expr(node.span, js_word!("default"), node.node_id, &node.expr)?;
 
         Ok(())
     }
@@ -316,7 +315,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
+            .export_expr(node.span, js_word!("default"), node.node_id, &node.expr)?;
 
         Ok(())
     }
@@ -413,7 +412,7 @@ impl Analyzer<'_, '_> {
                         None => {}
                     }
                 }
-                RExportSpecifier::Default(_) => {}
+                RExportSpecifier::Default(named) => {}
                 RExportSpecifier::Named(named) => {
                     //
 
