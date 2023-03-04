@@ -872,6 +872,7 @@ impl Analyzer<'_, '_> {
                     .freezed(),
                 RTsModuleRef::TsExternalModuleRef(ref e) => {
                     let (dep, data) = analyzer.get_imported_items(e.span, &e.expr.value);
+                    data.assert_clone_cheap();
 
                     // Import successful
                     if ctxt != dep {
