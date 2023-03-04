@@ -1792,6 +1792,10 @@ impl Type {
         }
     }
 
+    pub fn is_void(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+    }
+
     pub fn contains_void(&self) -> bool {
         match self.normalize() {
             Type::Instance(ty) => ty.ty.contains_void(),
