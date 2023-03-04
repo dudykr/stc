@@ -13,6 +13,7 @@ async function* walk(dir: string): AsyncGenerator<string> {
 }
 
 interface ErrorRef {
+    filename: string | undefined
     line: number,
     column: number,
     code: string,
@@ -27,11 +28,12 @@ function extract(content: string): ErrorRef[] {
         if (str.startsWith(' ')) {
             continue
         }
-        const [, data] = str.split('(', 2);
+        const [filename, data] = str.split('(', 2);
         if (!data) {
             if (str.startsWith('error ')) {
                 const code = str.substring(6).split(':')[0];
                 errors.push({
+                    filename: undefined,
                     line: 0,
                     column: 0,
                     code
@@ -53,6 +55,7 @@ function extract(content: string): ErrorRef[] {
             throw new Error(`invalid line found: ${str}; ${line}:${column}; code = ${code}`)
         }
         errors.push({
+            filename,
             line,
             column,
             code
