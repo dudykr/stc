@@ -894,11 +894,7 @@ impl Analyzer<'_, '_> {
                                 IdCtx::Type,
                                 Default::default(),
                             )
-                            .unwrap_or_else(|err| {
-                                analyzer.storage.report(err.context("failed to access `default`"));
-
-                                Type::any(node.span, Default::default())
-                            })
+                            .unwrap_or(module_ty)
                     } else {
                         Type::any(e.span, Default::default())
                     }
