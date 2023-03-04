@@ -1,1 +1,1 @@
-[{"line":2,"column":5,"code":"TS2303"}]
+[{"filename":"tests/cases/compiler/recursiveExportAssignmentAndFindAliasedType3_moduleDef.d.ts","line":2,"column":5,"code":"TS2303"}]

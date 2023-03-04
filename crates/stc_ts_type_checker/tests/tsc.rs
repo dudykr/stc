@@ -63,6 +63,8 @@ impl Drop for RecordOnPanic {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, PartialOrd, Ord)]
 struct RefError {
+    #[serde(default)]
+    pub filename: Option<String>,
     pub line: usize,
     pub column: usize,
     pub code: String,

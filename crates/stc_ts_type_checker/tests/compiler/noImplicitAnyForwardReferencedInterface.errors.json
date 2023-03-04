@@ -1,1 +1,1 @@
-[{"line":5,"column":5,"code":"TS7013"}]
+[{"filename":"tests/cases/compiler/noImplicitAnyForwardReferencedInterface.ts","line":5,"column":5,"code":"TS7013"}]

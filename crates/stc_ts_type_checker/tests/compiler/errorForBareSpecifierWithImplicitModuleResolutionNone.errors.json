@@ -1,1 +1,1 @@
-[{"line":3,"column":23,"code":"TS2792"}]
+[{"filename":"tests/cases/compiler/errorForBareSpecifierWithImplicitModuleResolutionNone.ts","line":3,"column":23,"code":"TS2792"}]

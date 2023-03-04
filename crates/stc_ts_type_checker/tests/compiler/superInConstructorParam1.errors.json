@@ -1,1 +1,1 @@
-[{"line":8,"column":3,"code":"TS2377"},{"line":8,"column":19,"code":"TS2336"},{"line":8,"column":19,"code":"TS17011"}]
+[{"filename":"tests/cases/compiler/superInConstructorParam1.ts","line":8,"column":3,"code":"TS2377"},{"filename":"tests/cases/compiler/superInConstructorParam1.ts","line":8,"column":19,"code":"TS2336"},{"filename":"tests/cases/compiler/superInConstructorParam1.ts","line":8,"column":19,"code":"TS17011"}]

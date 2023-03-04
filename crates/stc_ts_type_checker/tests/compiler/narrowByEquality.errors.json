@@ -1,1 +1,1 @@
-[{"line":41,"column":5,"code":"TS2839"},{"line":54,"column":15,"code":"TS2322"},{"line":55,"column":9,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/narrowByEquality.ts","line":41,"column":5,"code":"TS2839"},{"filename":"tests/cases/compiler/narrowByEquality.ts","line":54,"column":15,"code":"TS2322"},{"filename":"tests/cases/compiler/narrowByEquality.ts","line":55,"column":9,"code":"TS2322"}]

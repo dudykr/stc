@@ -1,1 +1,1 @@
-[{"line":45,"column":5,"code":"TS2564"},{"line":54,"column":5,"code":"TS2564"}]
+[{"filename":"tests/cases/compiler/narrowingOfDottedNames.ts","line":45,"column":5,"code":"TS2564"},{"filename":"tests/cases/compiler/narrowingOfDottedNames.ts","line":54,"column":5,"code":"TS2564"}]

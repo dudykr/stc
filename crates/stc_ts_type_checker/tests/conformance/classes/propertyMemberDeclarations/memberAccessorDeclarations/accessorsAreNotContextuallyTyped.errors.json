@@ -1,1 +1,1 @@
-[{"line":4,"column":9,"code":"TS1056"},{"line":7,"column":9,"code":"TS1056"}]
+[{"filename":"tests/cases/conformance/classes/propertyMemberDeclarations/memberAccessorDeclarations/accessorsAreNotContextuallyTyped.ts","line":4,"column":9,"code":"TS1056"},{"filename":"tests/cases/conformance/classes/propertyMemberDeclarations/memberAccessorDeclarations/accessorsAreNotContextuallyTyped.ts","line":7,"column":9,"code":"TS1056"}]

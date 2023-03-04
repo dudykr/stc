@@ -1,1 +1,1 @@
-[{"line":2,"column":3,"code":"TS1169"},{"line":2,"column":4,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/IndexSignatures/parserIndexSignature4.ts","line":2,"column":3,"code":"TS1169"},{"filename":"tests/cases/conformance/parser/ecmascript5/IndexSignatures/parserIndexSignature4.ts","line":2,"column":4,"code":"TS2304"}]

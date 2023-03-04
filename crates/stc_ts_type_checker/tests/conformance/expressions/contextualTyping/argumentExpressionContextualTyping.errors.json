@@ -1,1 +1,1 @@
-[{"line":16,"column":5,"code":"TS2345"},{"line":17,"column":5,"code":"TS2345"},{"line":18,"column":5,"code":"TS2345"}]
+[{"filename":"tests/cases/conformance/expressions/contextualTyping/argumentExpressionContextualTyping.ts","line":16,"column":5,"code":"TS2345"},{"filename":"tests/cases/conformance/expressions/contextualTyping/argumentExpressionContextualTyping.ts","line":17,"column":5,"code":"TS2345"},{"filename":"tests/cases/conformance/expressions/contextualTyping/argumentExpressionContextualTyping.ts","line":18,"column":5,"code":"TS2345"}]

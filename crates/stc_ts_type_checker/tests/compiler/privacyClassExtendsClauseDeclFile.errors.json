@@ -1,1 +1,1 @@
-[{"line":19,"column":77,"code":"TS2449"},{"line":21,"column":83,"code":"TS2449"}]
+[{"filename":"tests/cases/compiler/privacyClassExtendsClauseDeclFile_externalModule.ts","line":19,"column":77,"code":"TS2449"},{"filename":"tests/cases/compiler/privacyClassExtendsClauseDeclFile_externalModule.ts","line":21,"column":83,"code":"TS2449"}]

@@ -1,1 +1,1 @@
-[{"line":3,"column":9,"code":"TS2304"},{"line":5,"column":3,"code":"TS1128"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/IfStatements/parserErrorRecoveryIfStatement6.ts","line":3,"column":9,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/IfStatements/parserErrorRecoveryIfStatement6.ts","line":5,"column":3,"code":"TS1128"}]

@@ -1,1 +1,1 @@
-[{"line":7,"column":3,"code":"TS2322"},{"line":24,"column":7,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/classPropertyErrorOnNameOnly.ts","line":7,"column":3,"code":"TS2322"},{"filename":"tests/cases/compiler/classPropertyErrorOnNameOnly.ts","line":24,"column":7,"code":"TS2322"}]

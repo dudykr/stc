@@ -1,1 +1,1 @@
-[{"line":1,"column":12,"code":"TS2304"},{"line":1,"column":20,"code":"TS2304"},{"line":1,"column":24,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName6.ts","line":1,"column":12,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName6.ts","line":1,"column":20,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName6.ts","line":1,"column":24,"code":"TS2304"}]

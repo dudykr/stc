@@ -1,1 +1,1 @@
-[{"line":7,"column":55,"code":"TS2322"},{"line":7,"column":84,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/promiseChaining1.ts","line":7,"column":55,"code":"TS2322"},{"filename":"tests/cases/compiler/promiseChaining1.ts","line":7,"column":84,"code":"TS2322"}]

@@ -1,1 +1,1 @@
-[{"line":5,"column":13,"code":"TS2339"},{"line":14,"column":20,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/enumBasics3.ts","line":5,"column":13,"code":"TS2339"},{"filename":"tests/cases/compiler/enumBasics3.ts","line":14,"column":20,"code":"TS2339"}]

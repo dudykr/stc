@@ -1,1 +1,1 @@
-[{"line":5,"column":12,"code":"TS1331"},{"line":14,"column":12,"code":"TS1331"}]
+[{"line":0,"column":0,"code":"TS5101"},{"filename":"tests/cases/conformance/types/uniqueSymbol/uniqueSymbolsDeclarationsInJsErrors.js","line":5,"column":12,"code":"TS1331"},{"filename":"tests/cases/conformance/types/uniqueSymbol/uniqueSymbolsDeclarationsInJsErrors.js","line":14,"column":12,"code":"TS1331"}]

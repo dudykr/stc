@@ -1,1 +1,1 @@
-[{"line":3,"column":8,"code":"TS1102"},{"line":3,"column":8,"code":"TS2703"}]
+[{"filename":"tests/cases/compiler/deleteOperatorInStrictMode.ts","line":3,"column":8,"code":"TS1102"},{"filename":"tests/cases/compiler/deleteOperatorInStrictMode.ts","line":3,"column":8,"code":"TS2703"}]

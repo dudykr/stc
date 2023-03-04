@@ -1,1 +1,1 @@
-[{"line":2,"column":6,"code":"TS1017"},{"line":6,"column":6,"code":"TS1017"}]
+[{"filename":"tests/cases/compiler/indexerSignatureWithRestParam.ts","line":2,"column":6,"code":"TS1017"},{"filename":"tests/cases/compiler/indexerSignatureWithRestParam.ts","line":6,"column":6,"code":"TS1017"}]

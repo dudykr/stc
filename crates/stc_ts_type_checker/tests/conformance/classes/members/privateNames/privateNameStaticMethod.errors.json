@@ -1,1 +1,1 @@
-[{"line":7,"column":20,"code":"TS2345"},{"line":8,"column":12,"code":"TS2554"}]
+[{"filename":"tests/cases/conformance/classes/members/privateNames/privateNameStaticMethod.ts","line":7,"column":20,"code":"TS2345"},{"filename":"tests/cases/conformance/classes/members/privateNames/privateNameStaticMethod.ts","line":8,"column":12,"code":"TS2554"}]

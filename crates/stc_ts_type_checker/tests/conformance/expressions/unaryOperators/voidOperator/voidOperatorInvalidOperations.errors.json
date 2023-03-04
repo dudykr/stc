@@ -1,1 +1,1 @@
-[{"line":4,"column":15,"code":"TS1005"},{"line":4,"column":20,"code":"TS1109"},{"line":7,"column":17,"code":"TS1109"}]
+[{"filename":"tests/cases/conformance/expressions/unaryOperators/voidOperator/voidOperatorInvalidOperations.ts","line":4,"column":15,"code":"TS1005"},{"filename":"tests/cases/conformance/expressions/unaryOperators/voidOperator/voidOperatorInvalidOperations.ts","line":4,"column":20,"code":"TS1109"},{"filename":"tests/cases/conformance/expressions/unaryOperators/voidOperator/voidOperatorInvalidOperations.ts","line":7,"column":17,"code":"TS1109"}]

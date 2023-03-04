@@ -1,1 +1,1 @@
-[{"line":3,"column":9,"code":"TS2322"},{"line":3,"column":9,"code":"TS2409"}]
+[{"filename":"tests/cases/compiler/constructorReturnsInvalidType.ts","line":3,"column":9,"code":"TS2322"},{"filename":"tests/cases/compiler/constructorReturnsInvalidType.ts","line":3,"column":9,"code":"TS2409"}]

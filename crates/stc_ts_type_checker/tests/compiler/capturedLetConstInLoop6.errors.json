@@ -1,1 +1,1 @@
-[{"line":147,"column":9,"code":"TS2367"},{"line":150,"column":9,"code":"TS2367"},{"line":194,"column":9,"code":"TS2367"},{"line":197,"column":9,"code":"TS2367"}]
+[{"filename":"tests/cases/compiler/capturedLetConstInLoop6.ts","line":147,"column":9,"code":"TS2367"},{"filename":"tests/cases/compiler/capturedLetConstInLoop6.ts","line":150,"column":9,"code":"TS2367"},{"filename":"tests/cases/compiler/capturedLetConstInLoop6.ts","line":194,"column":9,"code":"TS2367"},{"filename":"tests/cases/compiler/capturedLetConstInLoop6.ts","line":197,"column":9,"code":"TS2367"}]

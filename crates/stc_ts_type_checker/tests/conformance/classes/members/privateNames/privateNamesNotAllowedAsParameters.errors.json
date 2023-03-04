@@ -1,1 +1,1 @@
-[{"line":2,"column":12,"code":"TS18009"}]
+[{"filename":"tests/cases/conformance/classes/members/privateNames/privateNamesNotAllowedAsParameters.ts","line":2,"column":12,"code":"TS18009"}]

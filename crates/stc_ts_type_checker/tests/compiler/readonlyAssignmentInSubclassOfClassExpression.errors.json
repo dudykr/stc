@@ -1,1 +1,1 @@
-[{"line":4,"column":14,"code":"TS2540"}]
+[{"filename":"tests/cases/compiler/readonlyAssignmentInSubclassOfClassExpression.ts","line":4,"column":14,"code":"TS2540"}]

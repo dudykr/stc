@@ -1,1 +1,1 @@
-[{"line":21,"column":1,"code":"TS2322"},{"line":28,"column":15,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/jsdoc/templateTagWithNestedTypeLiteral.js","line":21,"column":1,"code":"TS2322"},{"filename":"tests/cases/conformance/jsdoc/templateTagWithNestedTypeLiteral.js","line":28,"column":15,"code":"TS2304"}]

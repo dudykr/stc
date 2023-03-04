@@ -1,1 +1,1 @@
-[{"line":1,"column":8,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/types/primitives/boolean/boolInsteadOfBoolean.ts","line":1,"column":8,"code":"TS2304"}]

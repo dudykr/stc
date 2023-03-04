@@ -1,1 +1,1 @@
-[{"line":5,"column":11,"code":"TS2430"},{"line":15,"column":12,"code":"TS2445"}]
+[{"filename":"tests/cases/conformance/interfaces/interfacesExtendingClasses/interfaceExtendingClassWithProtecteds.ts","line":5,"column":11,"code":"TS2430"},{"filename":"tests/cases/conformance/interfaces/interfacesExtendingClasses/interfaceExtendingClassWithProtecteds.ts","line":15,"column":12,"code":"TS2445"}]

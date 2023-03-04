@@ -1,1 +1,1 @@
-[{"line":5,"column":13,"code":"TS1056"},{"line":8,"column":13,"code":"TS1056"}]
+[{"filename":"tests/cases/compiler/objectLitPropertyScoping.ts","line":5,"column":13,"code":"TS1056"},{"filename":"tests/cases/compiler/objectLitPropertyScoping.ts","line":8,"column":13,"code":"TS1056"}]

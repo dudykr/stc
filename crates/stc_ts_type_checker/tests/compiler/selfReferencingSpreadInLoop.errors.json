@@ -1,1 +1,1 @@
-[{"line":1,"column":5,"code":"TS7034"},{"line":3,"column":22,"code":"TS7005"}]
+[{"filename":"tests/cases/compiler/selfReferencingSpreadInLoop.ts","line":1,"column":5,"code":"TS7034"},{"filename":"tests/cases/compiler/selfReferencingSpreadInLoop.ts","line":3,"column":22,"code":"TS7005"}]

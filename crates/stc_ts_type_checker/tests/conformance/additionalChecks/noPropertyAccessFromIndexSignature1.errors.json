@@ -1,1 +1,1 @@
-[{"line":24,"column":3,"code":"TS4111"},{"line":32,"column":3,"code":"TS4111"},{"line":40,"column":4,"code":"TS4111"}]
+[{"filename":"tests/cases/conformance/additionalChecks/noPropertyAccessFromIndexSignature1.ts","line":24,"column":3,"code":"TS4111"},{"filename":"tests/cases/conformance/additionalChecks/noPropertyAccessFromIndexSignature1.ts","line":32,"column":3,"code":"TS4111"},{"filename":"tests/cases/conformance/additionalChecks/noPropertyAccessFromIndexSignature1.ts","line":40,"column":4,"code":"TS4111"}]

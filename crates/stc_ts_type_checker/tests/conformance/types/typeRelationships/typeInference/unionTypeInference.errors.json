@@ -1,1 +1,1 @@
-[{"line":13,"column":24,"code":"TS2345"},{"line":31,"column":15,"code":"TS2345"}]
+[{"filename":"tests/cases/conformance/types/typeRelationships/typeInference/unionTypeInference.ts","line":13,"column":24,"code":"TS2345"},{"filename":"tests/cases/conformance/types/typeRelationships/typeInference/unionTypeInference.ts","line":31,"column":15,"code":"TS2345"}]

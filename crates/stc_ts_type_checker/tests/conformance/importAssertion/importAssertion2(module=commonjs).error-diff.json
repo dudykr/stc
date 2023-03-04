@@ -5,11 +5,11 @@
   "required_error_lines": {
     "TS2821": [
       6,
-      6,
-      7,
       7,
       8,
-      9
+      9,
+      6,
+      7
     ]
   },
   "extra_errors": {

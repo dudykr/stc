@@ -1,1 +1,1 @@
-[{"line":2,"column":16,"code":"TS2300"},{"line":6,"column":16,"code":"TS2300"},{"line":7,"column":16,"code":"TS2300"}]
+[{"filename":"tests/cases/compiler/exportEqualsClassRedeclarationError.ts","line":2,"column":16,"code":"TS2300"},{"filename":"tests/cases/compiler/exportEqualsClassRedeclarationError.ts","line":6,"column":16,"code":"TS2300"},{"filename":"tests/cases/compiler/exportEqualsClassRedeclarationError.ts","line":7,"column":16,"code":"TS2300"}]

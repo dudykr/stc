@@ -1,1 +1,1 @@
-[{"line":1,"column":12,"code":"TS2323"},{"line":2,"column":12,"code":"TS2323"},{"line":20,"column":14,"code":"TS2300"},{"line":24,"column":14,"code":"TS2300"}]
+[{"filename":"tests/cases/compiler/moduleDuplicateIdentifiers.ts","line":1,"column":12,"code":"TS2323"},{"filename":"tests/cases/compiler/moduleDuplicateIdentifiers.ts","line":2,"column":12,"code":"TS2323"},{"filename":"tests/cases/compiler/moduleDuplicateIdentifiers.ts","line":20,"column":14,"code":"TS2300"},{"filename":"tests/cases/compiler/moduleDuplicateIdentifiers.ts","line":24,"column":14,"code":"TS2300"}]

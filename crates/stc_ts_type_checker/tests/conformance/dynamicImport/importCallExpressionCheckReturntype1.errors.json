@@ -1,1 +1,1 @@
-[{"line":4,"column":5,"code":"TS2322"},{"line":5,"column":10,"code":"TS2352"}]
+[{"filename":"tests/cases/conformance/dynamicImport/1.ts","line":4,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/dynamicImport/1.ts","line":5,"column":10,"code":"TS2352"}]

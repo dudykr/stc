@@ -1,1 +1,1 @@
-[{"line":2,"column":6,"code":"TS2582"},{"line":3,"column":15,"code":"TS2307"}]
+[{"filename":"tests/cases/compiler/metadataImportType.ts","line":2,"column":6,"code":"TS2582"},{"filename":"tests/cases/compiler/metadataImportType.ts","line":3,"column":15,"code":"TS2307"}]

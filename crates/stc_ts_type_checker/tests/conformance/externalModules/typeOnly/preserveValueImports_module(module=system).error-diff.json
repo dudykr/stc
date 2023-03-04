@@ -1,9 +1,13 @@
 {
   "required_errors": {
-    "TS5095": 1
+    "TS5095": 1,
+    "TS5101": 1
   },
   "required_error_lines": {
     "TS5095": [
+      0
+    ],
+    "TS5101": [
       0
     ]
   },

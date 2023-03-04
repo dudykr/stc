@@ -1,1 +1,1 @@
-[{"line":14,"column":14,"code":"TS2322"},{"line":15,"column":14,"code":"TS2322"},{"line":31,"column":18,"code":"TS2322"},{"line":32,"column":18,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/arrayLiteralTypeInference.ts","line":14,"column":14,"code":"TS2322"},{"filename":"tests/cases/compiler/arrayLiteralTypeInference.ts","line":15,"column":14,"code":"TS2322"},{"filename":"tests/cases/compiler/arrayLiteralTypeInference.ts","line":31,"column":18,"code":"TS2322"},{"filename":"tests/cases/compiler/arrayLiteralTypeInference.ts","line":32,"column":18,"code":"TS2322"}]

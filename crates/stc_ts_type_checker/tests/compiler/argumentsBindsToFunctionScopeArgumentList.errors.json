@@ -1,1 +1,1 @@
-[{"line":3,"column":5,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/argumentsBindsToFunctionScopeArgumentList.ts","line":3,"column":5,"code":"TS2322"}]

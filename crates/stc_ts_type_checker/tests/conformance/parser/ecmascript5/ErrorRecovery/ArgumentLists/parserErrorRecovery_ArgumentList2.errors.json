@@ -1,1 +1,1 @@
-[{"line":2,"column":4,"code":"TS2304"},{"line":2,"column":8,"code":"TS1005"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/ArgumentLists/parserErrorRecovery_ArgumentList2.ts","line":2,"column":4,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/ArgumentLists/parserErrorRecovery_ArgumentList2.ts","line":2,"column":8,"code":"TS1005"}]

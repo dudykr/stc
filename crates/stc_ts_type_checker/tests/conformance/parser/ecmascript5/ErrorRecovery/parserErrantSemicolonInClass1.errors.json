@@ -1,1 +1,1 @@
-[{"line":12,"column":16,"code":"TS1056"},{"line":15,"column":16,"code":"TS1056"},{"line":18,"column":23,"code":"TS1056"},{"line":24,"column":24,"code":"TS1056"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserErrantSemicolonInClass1.ts","line":15,"column":16,"code":"TS1049"}]

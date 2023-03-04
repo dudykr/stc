@@ -1,1 +1,1 @@
-[{"line":5,"column":7,"code":"TS2651"}]
+[{"filename":"tests/cases/compiler/enumWithExport.ts","line":5,"column":7,"code":"TS2304"}]

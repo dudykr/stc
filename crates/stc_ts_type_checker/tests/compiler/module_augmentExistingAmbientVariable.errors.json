@@ -1,1 +1,1 @@
-[{"line":1,"column":13,"code":"TS2300"},{"line":3,"column":8,"code":"TS2300"}]
+[{"filename":"tests/cases/compiler/module_augmentExistingAmbientVariable.ts","line":1,"column":13,"code":"TS2300"},{"filename":"tests/cases/compiler/module_augmentExistingAmbientVariable.ts","line":3,"column":8,"code":"TS2300"}]

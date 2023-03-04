@@ -1,1 +1,1 @@
-[{"line":14,"column":13,"code":"TS7008"},{"line":20,"column":9,"code":"TS2322"},{"line":39,"column":9,"code":"TS2322"}]
+[{"line":0,"column":0,"code":"TS5101"},{"filename":"tests/cases/conformance/salsa/a.js","line":14,"column":13,"code":"TS7008"},{"filename":"tests/cases/conformance/salsa/a.js","line":20,"column":9,"code":"TS2322"},{"filename":"tests/cases/conformance/salsa/a.js","line":39,"column":9,"code":"TS2322"}]

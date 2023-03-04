@@ -1,1 +1,1 @@
-[{"line":3,"column":19,"code":"TS2384"},{"line":1,"column":17,"code":"TS2391"}]
+[{"filename":"tests/cases/compiler/missingFunctionImplementation2_a.ts","line":3,"column":19,"code":"TS2384"},{"filename":"tests/cases/compiler/missingFunctionImplementation2_b.ts","line":1,"column":17,"code":"TS2391"}]

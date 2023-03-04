@@ -1,1 +1,1 @@
-[{"line":4,"column":5,"code":"TS1070"},{"line":8,"column":5,"code":"TS1070"},{"line":12,"column":5,"code":"TS1070"}]
+[{"filename":"tests/cases/conformance/types/namedTypes/interfaceWithPrivateMember.ts","line":4,"column":5,"code":"TS1070"},{"filename":"tests/cases/conformance/types/namedTypes/interfaceWithPrivateMember.ts","line":8,"column":5,"code":"TS1070"},{"filename":"tests/cases/conformance/types/namedTypes/interfaceWithPrivateMember.ts","line":12,"column":5,"code":"TS1070"}]

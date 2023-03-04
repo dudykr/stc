@@ -1,1 +1,1 @@
-[{"line":8,"column":11,"code":"TS2320"},{"line":13,"column":16,"code":"TS2345"}]
+[{"filename":"tests/cases/conformance/types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType2.ts","line":8,"column":11,"code":"TS2320"},{"filename":"tests/cases/conformance/types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType2.ts","line":13,"column":16,"code":"TS2345"}]

@@ -1,1 +1,1 @@
-[{"line":8,"column":15,"code":"TS2558"},{"line":16,"column":15,"code":"TS2558"}]
+[{"filename":"tests/cases/conformance/types/typeParameters/typeArgumentLists/instantiateGenericClassWithWrongNumberOfTypeArguments.ts","line":8,"column":15,"code":"TS2558"},{"filename":"tests/cases/conformance/types/typeParameters/typeArgumentLists/instantiateGenericClassWithWrongNumberOfTypeArguments.ts","line":16,"column":15,"code":"TS2558"}]

@@ -1,1 +1,1 @@
-[{"line":174,"column":13,"code":"TS2367"},{"line":229,"column":13,"code":"TS2367"}]
+[{"filename":"tests/cases/compiler/capturedLetConstInLoop5_ES6.ts","line":174,"column":13,"code":"TS2367"},{"filename":"tests/cases/compiler/capturedLetConstInLoop5_ES6.ts","line":229,"column":13,"code":"TS2367"}]

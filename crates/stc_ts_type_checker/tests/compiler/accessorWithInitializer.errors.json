@@ -1,1 +1,1 @@
-[{"line":2,"column":9,"code":"TS1052"},{"line":3,"column":16,"code":"TS1052"}]
+[{"filename":"tests/cases/compiler/accessorWithInitializer.ts","line":2,"column":9,"code":"TS1052"},{"filename":"tests/cases/compiler/accessorWithInitializer.ts","line":3,"column":16,"code":"TS1052"}]

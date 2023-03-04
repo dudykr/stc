@@ -1,1 +1,1 @@
-[{"line":12,"column":7,"code":"TS2415"}]
+[{"filename":"tests/cases/conformance/classes/members/inheritanceAndOverriding/derivedClassWithPrivateInstanceShadowingProtectedInstance.ts","line":12,"column":7,"code":"TS2415"}]

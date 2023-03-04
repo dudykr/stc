@@ -1,1 +1,1 @@
-[{"line":4,"column":12,"code":"TS2345"},{"line":11,"column":12,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/typeArgumentConstraintResolution1.ts","line":4,"column":12,"code":"TS2345"},{"filename":"tests/cases/compiler/typeArgumentConstraintResolution1.ts","line":11,"column":12,"code":"TS2345"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":11,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/constEnumBadPropertyNames.ts","line":2,"column":11,"code":"TS2339"}]

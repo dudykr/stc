@@ -1,1 +1,1 @@
-[{"line":2,"column":18,"code":"TS2304"},{"line":2,"column":18,"code":"TS4106"}]
+[{"filename":"tests/cases/compiler/accessorDeclarationEmitVisibilityErrors.ts","line":2,"column":18,"code":"TS2304"},{"filename":"tests/cases/compiler/accessorDeclarationEmitVisibilityErrors.ts","line":2,"column":18,"code":"TS4106"}]

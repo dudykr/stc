@@ -1,1 +1,1 @@
-[{"line":2,"column":36,"code":"TS2332"},{"line":7,"column":30,"code":"TS2332"}]
+[{"filename":"tests/cases/compiler/this_inside-enum-should-not-be-allowed.ts","line":2,"column":36,"code":"TS2332"},{"filename":"tests/cases/compiler/this_inside-enum-should-not-be-allowed.ts","line":7,"column":30,"code":"TS2332"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":12,"code":"TS2698"},{"line":10,"column":12,"code":"TS2698"},{"line":14,"column":12,"code":"TS2698"}]
+[{"filename":"tests/cases/conformance/types/spread/spreadTypeVariable.ts","line":2,"column":12,"code":"TS2698"},{"filename":"tests/cases/conformance/types/spread/spreadTypeVariable.ts","line":10,"column":12,"code":"TS2698"},{"filename":"tests/cases/conformance/types/spread/spreadTypeVariable.ts","line":14,"column":12,"code":"TS2698"}]
