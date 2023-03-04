@@ -61,6 +61,7 @@ impl Drop for RecordOnPanic {
     }
 }
 
+/// The reference error data.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, PartialOrd, Ord)]
 struct RefError {
     #[serde(default)]
