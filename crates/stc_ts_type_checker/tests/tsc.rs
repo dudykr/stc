@@ -62,7 +62,7 @@ impl Drop for RecordOnPanic {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, PartialOrd, Ord)]
-struct TypeError {
+struct RefError {
     #[serde(default)]
     pub filename: Option<String>,
     pub line: usize,
@@ -158,7 +158,7 @@ fn conformance() {
     test_main(&args, tests, Default::default());
 }
 
-fn is_parser_test(errors: &[TypeError]) -> bool {
+fn is_parser_test(errors: &[RefError]) -> bool {
     for err in errors {
         if err.code.starts_with("TS1") && err.code.len() == 6 {
             return true;
@@ -234,7 +234,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 /// If `spec` is [Some], it's use to construct filename.
 ///
 /// Returns `(file_suffix, errors)`
-fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<TypeError>) {
+fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<RefError>) {
     let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
             "{}{}.errors.json",
@@ -248,7 +248,7 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         println!("errors file does not exists: {}", errors_file.display());
         vec![]
     } else {
-        let mut errors: Vec<TypeError> = serde_json::from_str(&read_to_string(&errors_file).expect("failed to open errors file"))
+        let mut errors: Vec<RefError> = serde_json::from_str(&read_to_string(&errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")
             .unwrap();
 
