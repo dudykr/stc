@@ -370,6 +370,14 @@ where
     }
 
     fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, _partial: &ModuleTypeData) -> VResult<Type> {
+        if let Some(id) = self.declared_modules.get(dep).as_deref().copied() {
+            if let Some(cache) = self.module_types.read().get(&id) {
+                if let Some(ty) = cache.get() {
+                    return Ok(ty.clone());
+                }
+            }
+        }
+
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
         let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
@@ -378,6 +386,14 @@ where
     }
 
     fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
+        if let Some(id) = self.declared_modules.get(dep).as_deref().copied() {
+            if let Some(cache) = self.module_types.read().get(&id) {
+                if let Some(ty) = cache.get() {
+                    return Ok(ty.clone());
+                }
+            }
+        }
+
         let records = self.module_loader.load_dep(base, dep).unwrap();
 
         let data = self.analyze_module(Some(base.clone()), records.entry.filename.clone());
