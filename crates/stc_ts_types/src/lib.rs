@@ -1489,7 +1489,7 @@ impl Intersection {
         self.visit_with(&mut AssertValid);
     }
 
-    pub fn is_trival_never(iter: &[Type]) -> bool {
+    pub fn is_trivial_never(iter: &[Type]) -> bool {
         let mut tys = vec![];
 
         for ty in iter {
