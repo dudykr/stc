@@ -249,7 +249,7 @@ impl Analyzer<'_, '_> {
 
         let ty = e.validate_with_default(self)?.freezed();
 
-        self.storage.reexport_type(span, self.ctx.module_id, name.clone(), ty.clone());
+        self.storage.export_type(span, self.ctx.module_id, name.clone(), ty.clone());
 
         if name == js_word!("default") {
             let var = RVarDeclarator {
@@ -366,11 +366,11 @@ impl Analyzer<'_, '_> {
             match data.normalize() {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
-                        self.storage.reexport_var(span, dep, id.clone(), ty.clone());
+                        self.storage.export_var(span, dep, id.clone(), ty.clone());
                     }
                     for (id, types) in data.exports.types.iter() {
                         for ty in types {
-                            self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+                            self.storage.export_type(span, dep, id.clone(), ty.clone());
                         }
                     }
                 }
@@ -407,8 +407,8 @@ impl Analyzer<'_, '_> {
                                 RModuleExportName::Str(v) => v.value.clone(),
                             };
 
-                            self.storage.reexport_type(s.span, self.ctx.module_id, name.clone(), data.clone());
-                            self.storage.reexport_var(s.span, self.ctx.module_id, name, data);
+                            self.storage.export_type(s.span, self.ctx.module_id, name.clone(), data.clone());
+                            self.storage.export_var(s.span, self.ctx.module_id, name, data);
                         }
                         None => {}
                     }
@@ -474,13 +474,13 @@ impl Analyzer<'_, '_> {
                 Type::Module(data) => {
                     if let Some(ty) = data.exports.vars.get(orig.sym()) {
                         did_work = true;
-                        self.storage.reexport_var(span, ctxt, id.sym().clone(), ty.clone());
+                        self.storage.export_var(span, ctxt, id.sym().clone(), ty.clone());
                     }
 
                     if let Some(ty) = data.exports.types.get(orig.sym()) {
                         did_work = true;
                         let ty = Type::new_union(span, ty.clone());
-                        self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
+                        self.storage.export_type(span, ctxt, id.sym().clone(), ty);
                     }
                 }
                 _ => {

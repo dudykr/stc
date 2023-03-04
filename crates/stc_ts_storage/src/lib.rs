@@ -36,8 +36,8 @@ pub trait TypeStore: Send + Sync {
     fn export_stored_type(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
     fn export_stored_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
+    fn export_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
+    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
 
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData;
 }
@@ -176,13 +176,13 @@ impl TypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn export_type(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: Type) {
         ty.assert_clone_cheap();
 
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn export_var(&mut self, _span: Span, _ctxt: ModuleId, id: JsWord, ty: Type) {
         ty.assert_clone_cheap();
 
         // TODO(kdy1): error reporting for duplicate
@@ -324,11 +324,11 @@ impl TypeStore for Group<'_> {
         self.info.remove(&ctxt).unwrap_or_default()
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn export_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn export_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         // TODO(kdy1): Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
@@ -448,9 +448,9 @@ impl TypeStore for Builtin {
         unimplemented!("builtin.take_info")
     }
 
-    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
+    fn export_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
 
-    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
+    fn export_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
 }
 
 impl Mode for Builtin {
