@@ -403,7 +403,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     for actual in &full_actual_errors {
         if let Some(idx) = expected_errors
             .iter()
-            .position(|err| (err.line == actual.line || err.line == 0) && err.code == actual.code)
+            .position(|err| (err.line == actual.line || err.line == 0) && err.code == actual.code && err.file == actual.file)
         {
             stats.matched_error += 1;
 
@@ -411,7 +411,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             expected_errors.remove(idx);
             if let Some(idx) = extra_errors
                 .iter()
-                .position(|r| (actual.line == r.line || is_zero_line) && actual.code == r.code)
+                .position(|r| (actual.line == r.line || is_zero_line) && actual.code == r.code && actual.file == r.file)
             {
                 extra_errors.remove(idx);
             }
