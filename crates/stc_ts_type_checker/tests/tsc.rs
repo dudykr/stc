@@ -251,7 +251,7 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         println!("errors file does not exists: {}", errors_file.display());
         vec![]
     } else {
-        let mut errors: Vec<RefError> = serde_json::from_str(&read_to_string(&errors_file).expect("failed to open errors file"))
+        let errors: Vec<RefError> = serde_json::from_str(&read_to_string(&errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")
             .unwrap();
 
@@ -399,10 +399,10 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     let mut extra_errors = full_actual_errors.clone();
 
-    for (line, error_code) in full_actual_errors.clone() {
+    for actual in &full_actual_errors {
         if let Some(idx) = expected_errors
             .iter()
-            .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
+            .position(|err| (err.line == actual.line || err.line == 0) && err.code == actual.code && err.file == actual.file)
         {
             stats.matched_error += 1;
 
@@ -410,7 +410,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             expected_errors.remove(idx);
             if let Some(idx) = extra_errors
                 .iter()
-                .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
+                .position(|r| (actual.line == r.line || is_zero_line) && actual.code == r.code && actual.file == r.file)
             {
                 extra_errors.remove(idx);
             }
@@ -451,16 +451,13 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         let mut diff = ErrorDiff::default();
 
         for err in extra_errors.iter() {
-            *diff.extra_errors.entry(err.1.clone()).or_default() += 1;
-            diff.extra_error_lines.entry(err.1.clone()).or_default().push(err.0);
+            *diff.extra_errors.entry(err.ts_error_code()).or_default() += 1;
+            diff.extra_error_lines.entry(err.ts_error_code()).or_default().push(err.line);
         }
 
         for err in expected_errors.iter() {
-            *diff.required_errors.entry(format!("TS{}", err.code)).or_default() += 1;
-            diff.required_error_lines
-                .entry(format!("TS{}", err.code))
-                .or_default()
-                .push(err.line);
+            *diff.required_errors.entry(err.ts_error_code()).or_default() += 1;
+            diff.required_error_lines.entry(err.ts_error_code()).or_default().push(err.line);
         }
 
         if diff.extra_errors.is_empty() && diff.required_errors.is_empty() {

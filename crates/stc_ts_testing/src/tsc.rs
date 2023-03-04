@@ -14,6 +14,10 @@ pub struct TscError {
 }
 
 impl TscError {
+    pub fn ts_error_code(&self) -> String {
+        format!("TS{}", self.code)
+    }
+
     pub fn parse_all(output: &str) -> Vec<Self> {
         let mut errors = vec![];
 
