@@ -27,7 +27,10 @@ use serde::{Deserialize, Serialize};
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
+use stc_ts_testing::{
+    conformance::{parse_conformance_test, TestSpec},
+    tsc::TscError,
+};
 use stc_ts_type_checker::{
     loader::{DefaultFileLoader, LoadFile, ModuleLoader},
     Checker,
@@ -159,14 +162,13 @@ fn conformance() {
     test_main(&args, tests, Default::default());
 }
 
-fn is_parser_test(errors: &[RefError]) -> bool {
+fn is_parser_test(errors: &[TscError]) -> bool {
     for err in errors {
-        if err.code.starts_with("TS1") && err.code.len() == 6 {
+        if 1000 <= err.code && err.code < 2000 {
             return true;
         }
-
         // These are actually parser test.
-        if let "TS2369" = &*err.code {
+        if err.code == 2369 {
             return true;
         }
     }
@@ -235,7 +237,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 /// If `spec` is [Some], it's use to construct filename.
 ///
 /// Returns `(file_suffix, errors)`
-fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<RefError>) {
+fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<TscError>) {
     let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
             "{}{}.errors.json",
@@ -253,18 +255,20 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
             .context("failed to parse errors.txt.json")
             .unwrap();
 
-        for err in &mut errors {
-            let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
-            let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
-
-            if orig_code != code {
-                err.code = format!("TS{}", code);
-            }
-        }
-
-        // TODO(kdy1): Match column and message
-
         errors
+            .into_iter()
+            .map(|err| {
+                let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
+                let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
+
+                TscError {
+                    file: err.filename,
+                    line: err.line,
+                    col: err.column,
+                    code,
+                }
+            })
+            .collect()
     };
 
     (
@@ -445,8 +449,11 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         }
 
         for err in expected_errors.iter() {
-            *diff.required_errors.entry(err.code.clone()).or_default() += 1;
-            diff.required_error_lines.entry(err.code.clone()).or_default().push(err.line);
+            *diff.required_errors.entry(format!("TS{}", err.code)).or_default() += 1;
+            diff.required_error_lines
+                .entry(format!("TS{}", err.code))
+                .or_default()
+                .push(err.line);
         }
 
         if diff.extra_errors.is_empty() && diff.required_errors.is_empty() {
