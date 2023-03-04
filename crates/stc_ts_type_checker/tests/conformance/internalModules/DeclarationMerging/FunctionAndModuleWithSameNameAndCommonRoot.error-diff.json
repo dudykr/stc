@@ -5,11 +5,11 @@
   },
   "required_error_lines": {
     "TS2433": [
-      3
+      2
     ],
     "TS2403": [
       14,
-      3
+      2
     ]
   },
   "extra_errors": {

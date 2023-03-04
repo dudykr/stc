@@ -441,6 +441,8 @@ es2020/bigintMissingES2019.ts
 es2020/bigintMissingES2020.ts
 es2020/bigintMissingESNext.ts
 es2020/localesObjectArgument.ts
+es2020/modules/exportAsNamespace1.ts
+es2020/modules/exportAsNamespace2.ts
 es2020/modules/exportAsNamespace4.ts
 es2020/modules/exportAsNamespace_nonExistent.ts
 es2020/numberFormatCurrencySign.ts

@@ -315,8 +315,19 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         if err.line == 0 {
             continue;
         }
-        // Typescript conformance test remove lines starting with @-directives.
-        err.line += err_shift_n;
+
+        if let Some((last, _)) = spec.sub_files.last() {
+            if is_file_similar(err.file.as_deref(), Some(last)) {
+                // If this is the last file, we have to shift the errors.
+                err.line += err_shift_n;
+            } else {
+            }
+        } else {
+            // If sub files is empty, it means that it's a single-file test, and
+            // we have to shift the errors.
+
+            err.line += err_shift_n;
+        }
     }
 
     let full_ref_errors = expected_errors.clone();
@@ -401,18 +412,20 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     let mut extra_errors = full_actual_errors.clone();
 
     for actual in &full_actual_errors {
-        if let Some(idx) = expected_errors
-            .iter()
-            .position(|err| (err.line == actual.line || err.line == 0) && err.code == actual.code)
-        {
+        if let Some(idx) = expected_errors.iter().position(|err| {
+            (err.line == actual.line || err.line == 0)
+                && err.code == actual.code
+                && is_file_similar(err.file.as_deref(), actual.file.as_deref())
+        }) {
             stats.matched_error += 1;
 
             let is_zero_line = expected_errors[idx].line == 0;
             expected_errors.remove(idx);
-            if let Some(idx) = extra_errors
-                .iter()
-                .position(|r| (actual.line == r.line || is_zero_line) && actual.code == r.code)
-            {
+            if let Some(idx) = extra_errors.iter().position(|r| {
+                (actual.line == r.line || is_zero_line)
+                    && actual.code == r.code
+                    && is_file_similar(r.file.as_deref(), actual.file.as_deref())
+            }) {
                 extra_errors.remove(idx);
             }
         }
@@ -502,6 +515,18 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     Ok(())
 }
 
+fn is_file_similar(expected: Option<&str>, actual: Option<&str>) -> bool {
+    match (expected, actual) {
+        (Some(expected), Some(actual)) => {
+            dbg!(expected, actual);
+
+            expected.split('/').last() == actual.split('/').last() || expected.split('/').last() == actual.split('\\').last()
+        }
+
+        _ => true,
+    }
+}
+
 impl Stats {
     fn print_to(&self, file_name: &Path) {
         if env::var("CI").unwrap_or_default() == "1" {
@@ -547,8 +572,14 @@ impl Resolve for TestFileSystem {
             return NodeResolver.resolve(base, module_specifier);
         }
 
-        if let Some(name) = module_specifier.strip_prefix("./") {
-            return Ok(FileName::Real(name.into()));
+        if let Some(filename) = module_specifier.strip_prefix("./") {
+            for (name, _) in self.files.iter() {
+                if format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
+                    return Ok(FileName::Real(name.into()));
+                }
+            }
+
+            return Ok(FileName::Real(filename.into()));
         }
 
         todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);
