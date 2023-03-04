@@ -1713,7 +1713,7 @@ impl Type {
         }
         tys.dedup_type();
 
-        if Intersection::is_trival_never(&tys) {
+        if Intersection::is_trivial_never(&tys) {
             return Type::never(span, Default::default());
         }
 
