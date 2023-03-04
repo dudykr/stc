@@ -181,7 +181,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
-    let specs = catch_unwind(|| parse_conformance_test(&path)).ok()?;
+    let specs = parse_conformance_test(&path).ok()?;
     let use_target = specs.len() > 1;
 
     if use_target {
