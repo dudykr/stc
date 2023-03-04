@@ -1,1 +1,1 @@
-[{"line":6,"column":13,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/staticsNotInScopeInClodule.ts","line":6,"column":13,"code":"TS2304"}]

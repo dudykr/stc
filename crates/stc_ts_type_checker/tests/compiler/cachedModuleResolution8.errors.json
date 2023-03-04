@@ -1,1 +1,1 @@
-[{"line":1,"column":17,"code":"TS2792"},{"line":1,"column":17,"code":"TS2792"}]
+[{"filename":"/a/b/c/d/e/app.ts","line":1,"column":17,"code":"TS2792"},{"filename":"/a/b/c/lib.ts","line":1,"column":17,"code":"TS2792"}]

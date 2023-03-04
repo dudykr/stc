@@ -1,1 +1,1 @@
-[{"line":2,"column":8,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/fixTypeParameterInSignatureWithRestParameters.ts","line":2,"column":8,"code":"TS2345"}]

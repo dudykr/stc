@@ -1,1 +1,1 @@
-[{"line":5,"column":9,"code":"TS18013"}]
+[{"filename":"tests/cases/conformance/classes/members/privateNames/privateNameNotAccessibleOutsideDefiningClass.ts","line":5,"column":9,"code":"TS18013"}]

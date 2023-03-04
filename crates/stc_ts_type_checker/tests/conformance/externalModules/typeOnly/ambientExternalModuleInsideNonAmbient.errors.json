@@ -1,1 +1,1 @@
-[{"line":2,"column":5,"code":"TS2668"},{"line":2,"column":27,"code":"TS2435"}]
+[{"filename":"tests/cases/conformance/ambient/ambientExternalModuleInsideNonAmbient.ts","line":2,"column":5,"code":"TS2668"},{"filename":"tests/cases/conformance/ambient/ambientExternalModuleInsideNonAmbient.ts","line":2,"column":27,"code":"TS2435"}]

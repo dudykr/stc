@@ -1,1 +1,1 @@
-[{"line":28,"column":20,"code":"TS2345"}]
+[{"filename":"tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithOverloadedFunctionTypedArguments2.ts","line":28,"column":20,"code":"TS2345"}]

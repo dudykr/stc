@@ -1,1 +1,1 @@
-[{"line":3,"column":5,"code":"TS18004"}]
+[{"filename":"tests/cases/conformance/es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesErrorFromNoneExistingIdentifier.ts","line":3,"column":5,"code":"TS18004"}]

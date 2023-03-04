@@ -1,1 +1,1 @@
-[{"line":15,"column":15,"code":"TS2322"},{"line":16,"column":15,"code":"TS2322"}]
+[{"filename":"tests/cases/conformance/types/contextualTypes/jsxAttributes/contextuallyTypedStringLiteralsInJsxAttributes01.tsx","line":15,"column":15,"code":"TS2322"},{"filename":"tests/cases/conformance/types/contextualTypes/jsxAttributes/contextuallyTypedStringLiteralsInJsxAttributes01.tsx","line":16,"column":15,"code":"TS2322"}]

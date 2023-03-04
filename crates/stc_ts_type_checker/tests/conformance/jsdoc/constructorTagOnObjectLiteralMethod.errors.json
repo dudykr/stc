@@ -1,1 +1,1 @@
-[{"line":3,"column":16,"code":"TS2339"},{"line":5,"column":2,"code":"TS7009"}]
+[{"filename":"tests/cases/conformance/jsdoc/example.js","line":3,"column":16,"code":"TS2339"},{"filename":"tests/cases/conformance/jsdoc/example.js","line":5,"column":2,"code":"TS7009"}]

@@ -1,1 +1,1 @@
-[{"line":37,"column":7,"code":"TS2339"},{"line":39,"column":7,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/mergedDeclarations3.ts","line":37,"column":7,"code":"TS2339"},{"filename":"tests/cases/compiler/mergedDeclarations3.ts","line":39,"column":7,"code":"TS2339"}]

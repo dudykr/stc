@@ -1,1 +1,1 @@
-[{"line":5,"column":9,"code":"TS8020"},{"line":7,"column":9,"code":"TS8020"},{"line":9,"column":9,"code":"TS8020"}]
+[{"filename":"tests/cases/conformance/decorators/decoratorMetadata-jsdoc.ts","line":5,"column":9,"code":"TS17019"},{"filename":"tests/cases/conformance/decorators/decoratorMetadata-jsdoc.ts","line":7,"column":9,"code":"TS17019"},{"filename":"tests/cases/conformance/decorators/decoratorMetadata-jsdoc.ts","line":9,"column":9,"code":"TS8020"}]

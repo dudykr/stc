@@ -1,1 +1,1 @@
-[{"line":4,"column":37,"code":"TS2536"},{"line":31,"column":43,"code":"TS2322"},{"line":31,"column":63,"code":"TS2322"},{"line":36,"column":71,"code":"TS2536"}]
+[{"filename":"tests/cases/compiler/infiniteConstraints.ts","line":4,"column":37,"code":"TS2536"},{"filename":"tests/cases/compiler/infiniteConstraints.ts","line":31,"column":43,"code":"TS2322"},{"filename":"tests/cases/compiler/infiniteConstraints.ts","line":31,"column":63,"code":"TS2322"},{"filename":"tests/cases/compiler/infiniteConstraints.ts","line":36,"column":71,"code":"TS2536"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":17,"code":"TS6133"},{"line":2,"column":49,"code":"TS6133"}]
+[{"filename":"tests/cases/compiler/unusedParametersinConstructor3.ts","line":2,"column":17,"code":"TS6133"},{"filename":"tests/cases/compiler/unusedParametersinConstructor3.ts","line":2,"column":49,"code":"TS6133"}]

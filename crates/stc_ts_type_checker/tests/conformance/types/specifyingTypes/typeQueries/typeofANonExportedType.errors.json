@@ -1,1 +1,1 @@
-[{"line":20,"column":12,"code":"TS2323"},{"line":21,"column":12,"code":"TS2323"},{"line":42,"column":12,"code":"TS2502"}]
+[{"filename":"tests/cases/conformance/types/specifyingTypes/typeQueries/typeofANonExportedType.ts","line":20,"column":12,"code":"TS2323"},{"filename":"tests/cases/conformance/types/specifyingTypes/typeQueries/typeofANonExportedType.ts","line":21,"column":12,"code":"TS2323"},{"filename":"tests/cases/conformance/types/specifyingTypes/typeQueries/typeofANonExportedType.ts","line":42,"column":12,"code":"TS2502"}]

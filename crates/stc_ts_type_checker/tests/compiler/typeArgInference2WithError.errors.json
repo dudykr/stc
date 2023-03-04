@@ -1,1 +1,1 @@
-[{"line":7,"column":14,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/typeArgInference2WithError.ts","line":7,"column":14,"code":"TS2345"}]

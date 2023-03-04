@@ -1,1 +1,1 @@
-[{"line":4,"column":2,"code":"TS1477"},{"line":4,"column":18,"code":"TS1003"}]
+[{"filename":"tests/cases/compiler/genericCallWithoutArgs.ts","line":4,"column":2,"code":"TS1477"},{"filename":"tests/cases/compiler/genericCallWithoutArgs.ts","line":4,"column":18,"code":"TS1003"}]

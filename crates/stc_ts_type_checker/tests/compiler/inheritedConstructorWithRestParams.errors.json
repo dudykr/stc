@@ -1,1 +1,1 @@
-[{"line":13,"column":17,"code":"TS2345"},{"line":14,"column":13,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/inheritedConstructorWithRestParams.ts","line":13,"column":17,"code":"TS2345"},{"filename":"tests/cases/compiler/inheritedConstructorWithRestParams.ts","line":14,"column":13,"code":"TS2345"}]

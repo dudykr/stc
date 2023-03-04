@@ -1,1 +1,1 @@
-[{"line":1,"column":22,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/undefinedTypeArgument1.ts","line":1,"column":22,"code":"TS2304"}]

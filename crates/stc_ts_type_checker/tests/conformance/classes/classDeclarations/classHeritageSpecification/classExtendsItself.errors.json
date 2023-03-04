@@ -1,1 +1,1 @@
-[{"line":1,"column":7,"code":"TS2506"},{"line":3,"column":7,"code":"TS2506"},{"line":5,"column":7,"code":"TS2506"}]
+[{"filename":"tests/cases/conformance/classes/classDeclarations/classHeritageSpecification/classExtendsItself.ts","line":1,"column":7,"code":"TS2506"},{"filename":"tests/cases/conformance/classes/classDeclarations/classHeritageSpecification/classExtendsItself.ts","line":3,"column":7,"code":"TS2506"},{"filename":"tests/cases/conformance/classes/classDeclarations/classHeritageSpecification/classExtendsItself.ts","line":5,"column":7,"code":"TS2506"}]

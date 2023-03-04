@@ -1,1 +1,1 @@
-[{"line":2,"column":32,"code":"TS2558"}]
+[{"filename":"tests/cases/compiler/thisExpressionInCallExpressionWithTypeArguments.ts","line":2,"column":32,"code":"TS2558"}]

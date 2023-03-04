@@ -1,1 +1,1 @@
-[{"line":5,"column":15,"code":"TS17009"}]
+[{"filename":"tests/cases/compiler/checkSuperCallBeforeThisAccessing5.ts","line":5,"column":15,"code":"TS17009"}]

@@ -1,1 +1,1 @@
-[{"line":1,"column":10,"code":"TS2617"},{"line":1,"column":21,"code":"TS2497"}]
+[{"filename":"tests/cases/compiler/b.ts","line":1,"column":10,"code":"TS2617"},{"filename":"tests/cases/compiler/b.ts","line":1,"column":21,"code":"TS2497"}]

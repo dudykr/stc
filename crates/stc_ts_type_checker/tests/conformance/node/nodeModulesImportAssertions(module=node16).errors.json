@@ -1,1 +1,1 @@
-[{"line":1,"column":35,"code":"TS2821"},{"line":1,"column":35,"code":"TS2821"}]
+[{"line":0,"column":0,"code":"TS2468"},{"filename":"tests/cases/conformance/node/index.ts","line":1,"column":35,"code":"TS2821"},{"filename":"tests/cases/conformance/node/otherc.cts","line":1,"column":35,"code":"TS2821"},{"filename":"tests/cases/conformance/node/otherc.cts","line":2,"column":15,"code":"TS2712"}]

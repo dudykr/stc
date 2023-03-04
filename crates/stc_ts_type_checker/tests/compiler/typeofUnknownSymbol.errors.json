@@ -1,1 +1,1 @@
-[{"line":2,"column":16,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/typeofUnknownSymbol.ts","line":2,"column":16,"code":"TS2304"}]

@@ -1,1 +1,1 @@
-[{"line":1,"column":5,"code":"TS2304"},{"line":1,"column":9,"code":"TS1011"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/parserObjectCreationArrayLiteral1.ts","line":1,"column":5,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript5/parserObjectCreationArrayLiteral1.ts","line":1,"column":9,"code":"TS1011"}]

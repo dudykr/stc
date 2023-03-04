@@ -1,1 +1,1 @@
-[{"line":1,"column":10,"code":"TS2394"}]
+[{"filename":"tests/cases/conformance/types/objectTypeLiteral/callSignatures/specializedSignatureIsNotSubtypeOfNonSpecializedSignature.ts","line":1,"column":10,"code":"TS2394"}]

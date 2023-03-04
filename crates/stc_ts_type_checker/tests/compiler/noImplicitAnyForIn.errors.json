@@ -1,1 +1,1 @@
-[{"line":7,"column":18,"code":"TS7053"},{"line":14,"column":18,"code":"TS7053"},{"line":28,"column":5,"code":"TS7005"},{"line":30,"column":6,"code":"TS2405"}]
+[{"filename":"tests/cases/compiler/noImplicitAnyForIn.ts","line":7,"column":18,"code":"TS7053"},{"filename":"tests/cases/compiler/noImplicitAnyForIn.ts","line":14,"column":18,"code":"TS7053"},{"filename":"tests/cases/compiler/noImplicitAnyForIn.ts","line":28,"column":5,"code":"TS7005"},{"filename":"tests/cases/compiler/noImplicitAnyForIn.ts","line":30,"column":6,"code":"TS2405"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":5,"code":"TS1038"},{"line":3,"column":5,"code":"TS1038"},{"line":5,"column":5,"code":"TS1038"},{"line":7,"column":5,"code":"TS1038"}]
+[{"line":0,"column":0,"code":"TS5101"},{"filename":"tests/cases/compiler/declFile.d.ts","line":2,"column":5,"code":"TS1038"},{"filename":"tests/cases/compiler/declFile.d.ts","line":3,"column":5,"code":"TS1038"},{"filename":"tests/cases/compiler/declFile.d.ts","line":5,"column":5,"code":"TS1038"},{"filename":"tests/cases/compiler/declFile.d.ts","line":7,"column":5,"code":"TS1038"}]

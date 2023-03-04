@@ -1,1 +1,1 @@
-[{"line":7,"column":17,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/unknownTypeArgOnCall.ts","line":7,"column":17,"code":"TS2304"}]

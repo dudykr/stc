@@ -1,1 +1,1 @@
-[{"line":2,"column":9,"code":"TS2343"},{"line":4,"column":1,"code":"TS2343"}]
+[{"filename":"tests/cases/conformance/node/subfolder/index.ts","line":2,"column":9,"code":"TS2343"},{"filename":"tests/cases/conformance/node/subfolder/index.ts","line":4,"column":1,"code":"TS2343"}]

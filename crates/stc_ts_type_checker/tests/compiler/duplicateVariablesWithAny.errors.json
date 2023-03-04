@@ -1,1 +1,1 @@
-[{"line":3,"column":5,"code":"TS2403"},{"line":6,"column":5,"code":"TS2403"},{"line":10,"column":9,"code":"TS2403"},{"line":13,"column":9,"code":"TS2403"}]
+[{"filename":"tests/cases/compiler/duplicateVariablesWithAny.ts","line":3,"column":5,"code":"TS2403"},{"filename":"tests/cases/compiler/duplicateVariablesWithAny.ts","line":6,"column":5,"code":"TS2403"},{"filename":"tests/cases/compiler/duplicateVariablesWithAny.ts","line":10,"column":9,"code":"TS2403"},{"filename":"tests/cases/compiler/duplicateVariablesWithAny.ts","line":13,"column":9,"code":"TS2403"}]

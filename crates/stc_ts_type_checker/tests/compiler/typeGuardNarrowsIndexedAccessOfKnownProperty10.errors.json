@@ -1,1 +1,1 @@
-[{"line":5,"column":6,"code":"TS2448"}]
+[{"filename":"tests/cases/compiler/typeGuardNarrowsIndexedAccessOfKnownProperty10.ts","line":5,"column":6,"code":"TS2448"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":61,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/unknownSymbolInGenericReturnType.ts","line":2,"column":61,"code":"TS2304"}]

@@ -1,1 +1,1 @@
-[{"line":20,"column":5,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/flatArrayNoExcessiveStackDepth.ts","line":20,"column":5,"code":"TS2322"}]

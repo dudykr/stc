@@ -1,1 +1,1 @@
-[{"line":35,"column":43,"code":"TS2345"}]
+[{"filename":"tests/cases/conformance/expressions/functionCalls/typeArgumentInferenceWithObjectLiteral.ts","line":35,"column":43,"code":"TS2345"}]

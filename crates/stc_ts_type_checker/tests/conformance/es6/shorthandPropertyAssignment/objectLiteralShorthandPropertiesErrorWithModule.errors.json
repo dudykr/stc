@@ -1,1 +1,1 @@
-[{"line":10,"column":10,"code":"TS1005"},{"line":14,"column":3,"code":"TS2339"}]
+[{"filename":"tests/cases/conformance/es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesErrorWithModule.ts","line":10,"column":10,"code":"TS1005"},{"filename":"tests/cases/conformance/es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesErrorWithModule.ts","line":14,"column":3,"code":"TS2339"}]

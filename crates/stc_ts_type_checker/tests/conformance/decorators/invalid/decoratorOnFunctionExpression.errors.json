@@ -1,1 +1,1 @@
-[{"line":3,"column":9,"code":"TS1109"},{"line":3,"column":23,"code":"TS1003"}]
+[{"filename":"tests/cases/conformance/decorators/invalid/decoratorOnFunctionExpression.ts","line":3,"column":13,"code":"TS1109"},{"filename":"tests/cases/conformance/decorators/invalid/decoratorOnFunctionExpression.ts","line":3,"column":14,"code":"TS1005"},{"filename":"tests/cases/conformance/decorators/invalid/decoratorOnFunctionExpression.ts","line":3,"column":23,"code":"TS1003"}]

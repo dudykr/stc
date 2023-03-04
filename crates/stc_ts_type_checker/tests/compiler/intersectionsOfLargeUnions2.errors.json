@@ -1,1 +1,1 @@
-[{"line":4,"column":15,"code":"TS2300"},{"line":31,"column":15,"code":"TS2536"},{"line":31,"column":15,"code":"TS2536"}]
+[{"filename":"tests/cases/compiler/intersectionsOfLargeUnions2.ts","line":4,"column":15,"code":"TS2300"},{"filename":"tests/cases/compiler/intersectionsOfLargeUnions2.ts","line":31,"column":15,"code":"TS2536"},{"filename":"tests/cases/compiler/intersectionsOfLargeUnions2.ts","line":31,"column":15,"code":"TS2536"}]

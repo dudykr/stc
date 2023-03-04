@@ -1,1 +1,1 @@
-[{"line":3,"column":12,"code":"TS2393"},{"line":5,"column":12,"code":"TS2393"}]
+[{"filename":"tests/cases/compiler/overloadsWithinClasses.ts","line":3,"column":12,"code":"TS2393"},{"filename":"tests/cases/compiler/overloadsWithinClasses.ts","line":5,"column":12,"code":"TS2393"}]

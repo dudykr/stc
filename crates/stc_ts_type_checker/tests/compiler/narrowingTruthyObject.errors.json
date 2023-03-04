@@ -1,1 +1,1 @@
-[{"line":3,"column":9,"code":"TS18047"}]
+[{"filename":"tests/cases/compiler/narrowingTruthyObject.ts","line":3,"column":9,"code":"TS18047"}]

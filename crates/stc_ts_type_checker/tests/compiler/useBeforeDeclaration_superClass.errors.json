@@ -1,1 +1,1 @@
-[{"line":25,"column":18,"code":"TS2729"}]
+[{"filename":"tests/cases/compiler/useBeforeDeclaration_superClass.ts","line":25,"column":18,"code":"TS2729"}]

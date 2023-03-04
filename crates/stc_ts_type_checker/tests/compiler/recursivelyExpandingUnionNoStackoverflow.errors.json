@@ -1,1 +1,1 @@
-[{"line":3,"column":10,"code":"TS2589"},{"line":3,"column":10,"code":"TS2615"}]
+[{"filename":"tests/cases/compiler/recursivelyExpandingUnionNoStackoverflow.ts","line":3,"column":10,"code":"TS2589"},{"filename":"tests/cases/compiler/recursivelyExpandingUnionNoStackoverflow.ts","line":3,"column":10,"code":"TS2615"}]

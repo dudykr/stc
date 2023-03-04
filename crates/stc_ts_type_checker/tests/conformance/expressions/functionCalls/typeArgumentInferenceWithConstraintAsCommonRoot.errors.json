@@ -1,1 +1,1 @@
-[{"line":7,"column":6,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/typeArgumentInferenceWithConstraintAsCommonRoot.ts","line":7,"column":6,"code":"TS2345"}]

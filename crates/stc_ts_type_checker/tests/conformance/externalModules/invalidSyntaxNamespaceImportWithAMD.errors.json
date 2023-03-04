@@ -1,1 +1,1 @@
-[{"line":1,"column":10,"code":"TS1005"},{"line":1,"column":15,"code":"TS1005"},{"line":1,"column":15,"code":"TS1141"},{"line":1,"column":20,"code":"TS1005"}]
+[{"filename":"tests/cases/conformance/externalModules/1.ts","line":1,"column":10,"code":"TS1005"},{"filename":"tests/cases/conformance/externalModules/1.ts","line":1,"column":15,"code":"TS1005"},{"filename":"tests/cases/conformance/externalModules/1.ts","line":1,"column":15,"code":"TS1141"},{"filename":"tests/cases/conformance/externalModules/1.ts","line":1,"column":20,"code":"TS1005"}]

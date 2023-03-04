@@ -1,1 +1,1 @@
-[{"line":70,"column":15,"code":"TS2430"},{"line":76,"column":15,"code":"TS2430"}]
+[{"filename":"tests/cases/conformance/types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignaturesWithSpecializedSignatures.ts","line":70,"column":15,"code":"TS2430"},{"filename":"tests/cases/conformance/types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignaturesWithSpecializedSignatures.ts","line":76,"column":15,"code":"TS2430"}]

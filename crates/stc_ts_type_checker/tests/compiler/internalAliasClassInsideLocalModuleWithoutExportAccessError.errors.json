@@ -1,1 +1,1 @@
-[{"line":17,"column":26,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/internalAliasClassInsideLocalModuleWithoutExportAccessError.ts","line":17,"column":26,"code":"TS2339"}]

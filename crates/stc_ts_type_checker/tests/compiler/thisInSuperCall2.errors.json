@@ -1,1 +1,1 @@
-[{"line":8,"column":15,"code":"TS17009"},{"line":16,"column":15,"code":"TS17009"}]
+[{"filename":"tests/cases/compiler/thisInSuperCall2.ts","line":8,"column":15,"code":"TS17009"},{"filename":"tests/cases/compiler/thisInSuperCall2.ts","line":16,"column":15,"code":"TS17009"}]

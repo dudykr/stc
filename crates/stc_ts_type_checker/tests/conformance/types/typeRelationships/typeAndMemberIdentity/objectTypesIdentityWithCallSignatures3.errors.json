@@ -1,1 +1,1 @@
-[{"line":21,"column":25,"code":"TS2304"},{"line":22,"column":25,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithCallSignatures3.ts","line":21,"column":25,"code":"TS2304"},{"filename":"tests/cases/conformance/types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithCallSignatures3.ts","line":22,"column":25,"code":"TS2304"}]

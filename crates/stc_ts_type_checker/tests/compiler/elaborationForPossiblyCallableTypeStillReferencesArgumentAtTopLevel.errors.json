@@ -1,1 +1,1 @@
-[{"line":3,"column":4,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/elaborationForPossiblyCallableTypeStillReferencesArgumentAtTopLevel.ts","line":3,"column":4,"code":"TS2345"}]

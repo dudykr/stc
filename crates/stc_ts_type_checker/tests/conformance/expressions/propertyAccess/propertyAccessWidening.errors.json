@@ -1,1 +1,1 @@
-[{"line":18,"column":21,"code":"TS2339"},{"line":19,"column":5,"code":"TS7053"}]
+[{"filename":"tests/cases/conformance/expressions/propertyAccess/propertyAccessWidening.ts","line":18,"column":21,"code":"TS2339"},{"filename":"tests/cases/conformance/expressions/propertyAccess/propertyAccessWidening.ts","line":19,"column":5,"code":"TS7053"}]

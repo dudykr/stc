@@ -1,1 +1,1 @@
-[{"line":6,"column":5,"code":"TS2440"}]
+[{"filename":"tests/cases/compiler/varNameConflictsWithImportInDifferentPartOfModule.ts","line":6,"column":5,"code":"TS2440"}]
