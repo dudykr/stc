@@ -330,7 +330,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         }
     }
 
-    let full_ref_errors = expected_errors.clone();
+    let mut full_ref_errors = expected_errors.clone();
     let full_ref_err_cnt = full_ref_errors.len();
 
     let tester = Tester::new();
@@ -480,6 +480,22 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             fs::write(&error_diff_file_name, serde_json::to_string_pretty(&diff).unwrap()).expect("failed to write error diff file");
         }
     }
+
+    expected_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
+
+    extra_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
+
+    full_ref_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
+
+    full_actual_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
 
     if print_matched_errors() {
         eprintln!(
