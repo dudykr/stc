@@ -19,7 +19,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{type_id::DestructureId, Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
@@ -875,12 +875,30 @@ impl Analyzer<'_, '_> {
 
                     // Import successful
                     if ctxt != dep {
-                        analyzer
+                        let module_ty = analyzer
                             .data
                             .imports
                             .get(&(ctxt, dep))
                             .cloned()
-                            .unwrap_or_else(|| Type::any(e.span, Default::default()))
+                            .unwrap_or_else(|| Type::any(e.span, Default::default()));
+
+                        analyzer
+                            .access_property(
+                                node.span,
+                                &module_ty,
+                                &Key::Normal {
+                                    span: node.span,
+                                    sym: js_word!("default"),
+                                },
+                                expr::TypeOfMode::RValue,
+                                IdCtx::Type,
+                                Default::default(),
+                            )
+                            .unwrap_or_else(|err| {
+                                analyzer.storage.report(err.context("failed to access `default`"));
+
+                                Type::any(node.span, Default::default())
+                            })
                     } else {
                         Type::any(e.span, Default::default())
                     }
