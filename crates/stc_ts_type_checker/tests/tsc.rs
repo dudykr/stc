@@ -315,8 +315,19 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         if err.line == 0 {
             continue;
         }
-        // Typescript conformance test remove lines starting with @-directives.
-        err.line += err_shift_n;
+
+        if let Some((last, _)) = spec.sub_files.last() {
+            if is_file_similar(err.file.as_deref(), Some(last)) {
+                // If this is the last file, we have to shift the errors.
+                err.line += err_shift_n;
+            } else {
+            }
+        } else {
+            // If sub files is empty, it means that it's a single-file test, and
+            // we have to shift the errors.
+
+            err.line += err_shift_n;
+        }
     }
 
     let full_ref_errors = expected_errors.clone();
