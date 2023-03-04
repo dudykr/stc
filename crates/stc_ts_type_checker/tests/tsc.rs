@@ -383,9 +383,16 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 DiagnosticId::Lint(lint) => {
                     unreachable!("Unexpected lint '{}' found", lint)
                 }
-            };
+            }
+            .parse()
+            .unwrap();
 
-            (cp.line, code)
+            TscError {
+                file: Some(cp.file.name.to_string()),
+                line: cp.line,
+                col: cp.col.0,
+                code,
+            }
         })
         .collect::<Vec<_>>();
     full_actual_errors.sort();
