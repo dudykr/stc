@@ -1,1 +1,1 @@
-[{"line":10,"column":16,"code":"TS2322"},{"line":11,"column":16,"code":"TS2322"}]
+[{"filename":"tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments5.ts","line":10,"column":16,"code":"TS2322"},{"filename":"tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments5.ts","line":11,"column":16,"code":"TS2322"}]

@@ -1,1 +1,1 @@
-[{"line":1,"column":9,"code":"TS2669"},{"line":1,"column":24,"code":"TS2306"},{"line":1,"column":24,"code":"TS2306"}]
+[{"filename":"/node_modules/@types/react/index.d.ts","line":1,"column":9,"code":"TS2669"},{"filename":"/src/index.ts","line":1,"column":24,"code":"TS2306"},{"filename":"/tests/index.ts","line":1,"column":24,"code":"TS2306"}]

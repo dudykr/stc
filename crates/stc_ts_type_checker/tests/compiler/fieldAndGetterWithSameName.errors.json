@@ -1,1 +1,1 @@
-[{"line":2,"column":5,"code":"TS2300"},{"line":3,"column":7,"code":"TS1056"},{"line":3,"column":7,"code":"TS2300"}]
+[{"filename":"tests/cases/compiler/fieldAndGetterWithSameName.ts","line":2,"column":5,"code":"TS2300"},{"filename":"tests/cases/compiler/fieldAndGetterWithSameName.ts","line":3,"column":7,"code":"TS2300"}]

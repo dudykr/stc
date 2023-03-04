@@ -276,7 +276,7 @@ fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
     let filename = file_name.display().to_string();
     println!("{}", filename);
 
-    for case in parse_conformance_test(&file_name) {
+    for case in parse_conformance_test(&file_name).unwrap() {
         let result = testing::Tester::new()
             .print_errors(|cm, handler| -> Result<(), _> {
                 let handler = Arc::new(handler);
@@ -404,7 +404,7 @@ fn pass(file_name: PathBuf) {
 
 #[fixture("tests/pass-only/**/*.ts")]
 fn pass_only(input: PathBuf) {
-    for case in parse_conformance_test(&input) {
+    for case in parse_conformance_test(&input).unwrap() {
         testing::run_test2(false, |cm, handler| {
             let fm = cm.load_file(&input).unwrap();
 

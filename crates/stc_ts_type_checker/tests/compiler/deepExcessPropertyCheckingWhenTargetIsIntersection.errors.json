@@ -1,1 +1,1 @@
-[{"line":21,"column":33,"code":"TS2322"},{"line":27,"column":34,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/deepExcessPropertyCheckingWhenTargetIsIntersection.ts","line":21,"column":33,"code":"TS2322"},{"filename":"tests/cases/compiler/deepExcessPropertyCheckingWhenTargetIsIntersection.ts","line":27,"column":34,"code":"TS2322"}]

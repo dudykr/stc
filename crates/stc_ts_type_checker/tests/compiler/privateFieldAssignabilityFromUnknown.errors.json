@@ -1,1 +1,1 @@
-[{"line":2,"column":3,"code":"TS18028"},{"line":5,"column":7,"code":"TS2741"}]
+[{"filename":"tests/cases/compiler/privateFieldAssignabilityFromUnknown.ts","line":2,"column":3,"code":"TS18028"},{"filename":"tests/cases/compiler/privateFieldAssignabilityFromUnknown.ts","line":5,"column":7,"code":"TS2741"}]

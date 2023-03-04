@@ -1,1 +1,1 @@
-[{"line":5,"column":5,"code":"TS2403"},{"line":13,"column":5,"code":"TS2403"}]
+[{"filename":"tests/cases/compiler/propertyIdentityWithPrivacyMismatch_1.ts","line":5,"column":5,"code":"TS2403"},{"filename":"tests/cases/compiler/propertyIdentityWithPrivacyMismatch_1.ts","line":13,"column":5,"code":"TS2403"}]

@@ -1,1 +1,1 @@
-[{"line":29,"column":13,"code":"TS2322"}]
+[{"filename":"tests/cases/conformance/classes/members/instanceAndStaticMembers/typeOfThisInstanceMemberNarrowedWithLoopAntecedent.ts","line":29,"column":13,"code":"TS2322"}]

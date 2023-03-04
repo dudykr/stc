@@ -29,7 +29,7 @@ fn profile_file(file_name: &Path) {
     println!("{}", filename);
     let want_error = true;
 
-    for case in parse_conformance_test(file_name) {
+    for case in parse_conformance_test(file_name).unwrap() {
         testing::Tester::new()
             .print_errors(|cm, handler| -> Result<(), _> {
                 let handler = Arc::new(handler);

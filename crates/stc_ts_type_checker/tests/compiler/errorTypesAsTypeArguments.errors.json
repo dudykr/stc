@@ -1,1 +1,1 @@
-[{"line":2,"column":16,"code":"TS2304"},{"line":2,"column":25,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/errorTypesAsTypeArguments.ts","line":2,"column":16,"code":"TS2304"},{"filename":"tests/cases/compiler/errorTypesAsTypeArguments.ts","line":2,"column":25,"code":"TS2304"}]

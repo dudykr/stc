@@ -1,1 +1,1 @@
-[{"line":5,"column":7,"code":"TS2820"},{"line":6,"column":7,"code":"TS2322"},{"line":7,"column":7,"code":"TS2820"}]
+[{"filename":"tests/cases/compiler/didYouMeanStringLiteral.ts","line":5,"column":7,"code":"TS2820"},{"filename":"tests/cases/compiler/didYouMeanStringLiteral.ts","line":6,"column":7,"code":"TS2322"},{"filename":"tests/cases/compiler/didYouMeanStringLiteral.ts","line":7,"column":7,"code":"TS2820"}]

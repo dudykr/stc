@@ -1,1 +1,1 @@
-[{"line":4,"column":7,"code":"TS2663"},{"line":6,"column":7,"code":"TS2662"}]
+[{"filename":"tests/cases/compiler/scopeCheckExtendedClassInsidePublicMethod2.ts","line":4,"column":7,"code":"TS2663"},{"filename":"tests/cases/compiler/scopeCheckExtendedClassInsidePublicMethod2.ts","line":6,"column":7,"code":"TS2662"}]

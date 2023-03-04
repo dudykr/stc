@@ -1,1 +1,1 @@
-[{"line":57,"column":15,"code":"TS2430"},{"line":63,"column":15,"code":"TS2430"}]
+[{"filename":"tests/cases/conformance/types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance.ts","line":57,"column":15,"code":"TS2430"},{"filename":"tests/cases/conformance/types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance.ts","line":63,"column":15,"code":"TS2430"}]

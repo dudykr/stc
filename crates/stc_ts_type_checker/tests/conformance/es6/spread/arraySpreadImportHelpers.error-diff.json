@@ -4,7 +4,7 @@
   },
   "required_error_lines": {
     "TS2807": [
-      10
+      3
     ]
   },
   "extra_errors": {},

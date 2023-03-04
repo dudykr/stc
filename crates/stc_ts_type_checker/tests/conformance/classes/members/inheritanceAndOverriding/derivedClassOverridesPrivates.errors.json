@@ -1,1 +1,1 @@
-[{"line":5,"column":7,"code":"TS2415"},{"line":13,"column":7,"code":"TS2417"}]
+[{"filename":"tests/cases/conformance/classes/members/inheritanceAndOverriding/derivedClassOverridesPrivates.ts","line":5,"column":7,"code":"TS2415"},{"filename":"tests/cases/conformance/classes/members/inheritanceAndOverriding/derivedClassOverridesPrivates.ts","line":13,"column":7,"code":"TS2417"}]

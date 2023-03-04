@@ -1,1 +1,1 @@
-[{"line":2,"column":5,"code":"TS2345"},{"line":2,"column":12,"code":"TS2449"}]
+[{"filename":"tests/cases/conformance/es6/destructuring/iterableArrayPattern16.ts","line":2,"column":5,"code":"TS2345"},{"filename":"tests/cases/conformance/es6/destructuring/iterableArrayPattern16.ts","line":2,"column":12,"code":"TS2449"}]

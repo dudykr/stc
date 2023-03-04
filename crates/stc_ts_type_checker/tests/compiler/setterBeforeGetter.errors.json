@@ -1,1 +1,1 @@
-[{"line":5,"column":9,"code":"TS1056"},{"line":8,"column":9,"code":"TS1056"}]
+[{"filename":"tests/cases/compiler/setterBeforeGetter.ts","line":5,"column":9,"code":"TS1056"},{"filename":"tests/cases/compiler/setterBeforeGetter.ts","line":8,"column":9,"code":"TS1056"}]

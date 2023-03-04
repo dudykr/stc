@@ -4,12 +4,12 @@
   },
   "required_error_lines": {
     "TS2821": [
+      1,
+      2,
+      3,
+      4,
       6,
-      6,
-      7,
-      7,
-      8,
-      9
+      7
     ]
   },
   "extra_errors": {

@@ -1,1 +1,1 @@
-[{"line":2,"column":16,"code":"TS1056"},{"line":5,"column":16,"code":"TS1056"},{"line":10,"column":7,"code":"TS2417"}]
+[{"filename":"tests/cases/compiler/inheritanceStaticFuncOverridingAccessor.ts","line":10,"column":7,"code":"TS2417"}]

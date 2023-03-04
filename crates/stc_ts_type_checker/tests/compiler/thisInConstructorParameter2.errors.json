@@ -1,1 +1,1 @@
-[{"line":5,"column":28,"code":"TS2333"},{"line":5,"column":39,"code":"TS2333"}]
+[{"filename":"tests/cases/compiler/thisInConstructorParameter2.ts","line":5,"column":28,"code":"TS2333"},{"filename":"tests/cases/compiler/thisInConstructorParameter2.ts","line":5,"column":39,"code":"TS2333"}]

@@ -1,1 +1,1 @@
-[{"line":5,"column":15,"code":"TS6133"}]
+[{"filename":"tests/cases/compiler/unusedTypeParameterInLambda3.ts","line":5,"column":15,"code":"TS6133"}]

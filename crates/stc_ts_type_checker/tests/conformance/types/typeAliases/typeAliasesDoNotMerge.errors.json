@@ -1,1 +1,1 @@
-[{"line":1,"column":13,"code":"TS2395"},{"line":2,"column":6,"code":"TS2395"}]
+[{"filename":"tests/cases/conformance/types/typeAliases/typeAliasesDoNotMerge.ts","line":1,"column":13,"code":"TS2395"},{"filename":"tests/cases/conformance/types/typeAliases/typeAliasesDoNotMerge.ts","line":2,"column":6,"code":"TS2395"}]

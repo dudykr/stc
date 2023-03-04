@@ -1,1 +1,1 @@
-[{"line":40,"column":1,"code":"TS2684"},{"line":43,"column":5,"code":"TS1320"}]
+[{"filename":"tests/cases/conformance/async/es2017/await_incorrectThisType.ts","line":40,"column":1,"code":"TS2684"},{"filename":"tests/cases/conformance/async/es2017/await_incorrectThisType.ts","line":43,"column":5,"code":"TS1320"}]

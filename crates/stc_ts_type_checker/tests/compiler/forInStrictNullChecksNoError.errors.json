@@ -1,1 +1,1 @@
-[{"line":5,"column":5,"code":"TS18049"}]
+[{"filename":"tests/cases/compiler/forInStrictNullChecksNoError.ts","line":5,"column":5,"code":"TS18049"}]

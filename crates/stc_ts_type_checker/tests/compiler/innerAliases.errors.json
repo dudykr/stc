@@ -1,1 +1,1 @@
-[{"line":19,"column":10,"code":"TS2694"},{"line":21,"column":11,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/innerAliases.ts","line":19,"column":10,"code":"TS2694"},{"filename":"tests/cases/compiler/innerAliases.ts","line":21,"column":11,"code":"TS2339"}]

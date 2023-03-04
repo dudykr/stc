@@ -1,1 +1,1 @@
-[{"line":11,"column":7,"code":"TS2339"},{"line":18,"column":7,"code":"TS2339"},{"line":25,"column":7,"code":"TS2339"}]
+[{"filename":"tests/cases/conformance/expressions/typeGuards/typeGuardsWithAny.ts","line":11,"column":7,"code":"TS2339"},{"filename":"tests/cases/conformance/expressions/typeGuards/typeGuardsWithAny.ts","line":18,"column":7,"code":"TS2339"},{"filename":"tests/cases/conformance/expressions/typeGuards/typeGuardsWithAny.ts","line":25,"column":7,"code":"TS2339"}]

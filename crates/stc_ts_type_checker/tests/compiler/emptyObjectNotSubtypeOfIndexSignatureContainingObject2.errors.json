@@ -1,1 +1,1 @@
-[{"line":42,"column":3,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/emptyObjectNotSubtypeOfIndexSignatureContainingObject2.ts","line":42,"column":3,"code":"TS2322"}]

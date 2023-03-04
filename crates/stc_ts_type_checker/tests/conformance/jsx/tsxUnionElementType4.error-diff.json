@@ -9,12 +9,6 @@
       40
     ]
   },
-  "extra_errors": {
-    "TS2307": 1
-  },
-  "extra_error_lines": {
-    "TS2307": [
-      2
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

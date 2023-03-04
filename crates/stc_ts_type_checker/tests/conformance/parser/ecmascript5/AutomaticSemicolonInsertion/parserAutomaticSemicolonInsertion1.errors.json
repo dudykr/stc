@@ -1,1 +1,1 @@
-[{"line":8,"column":1,"code":"TS2322"},{"line":14,"column":1,"code":"TS2322"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/AutomaticSemicolonInsertion/parserAutomaticSemicolonInsertion1.ts","line":8,"column":1,"code":"TS2322"},{"filename":"tests/cases/conformance/parser/ecmascript5/AutomaticSemicolonInsertion/parserAutomaticSemicolonInsertion1.ts","line":14,"column":1,"code":"TS2322"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":23,"code":"TS2552"},{"line":2,"column":45,"code":"TS2552"},{"line":2,"column":54,"code":"TS1005"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserUnterminatedGeneric1.ts","line":2,"column":23,"code":"TS2552"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserUnterminatedGeneric1.ts","line":2,"column":45,"code":"TS2552"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserUnterminatedGeneric1.ts","line":2,"column":54,"code":"TS1005"}]

@@ -1,1 +1,1 @@
-[{"line":32,"column":18,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/instanceofWithStructurallyIdenticalTypes.ts","line":32,"column":18,"code":"TS2339"}]

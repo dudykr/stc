@@ -1,1 +1,1 @@
-[{"line":9,"column":15,"code":"TS2558"}]
+[{"filename":"tests/cases/compiler/constructorInvocationWithTooFewTypeArgs.ts","line":9,"column":15,"code":"TS2558"}]

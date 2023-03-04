@@ -1,1 +1,1 @@
-[{"line":1,"column":1,"code":"TS1383"},{"line":1,"column":1,"code":"TS1383"}]
+[{"filename":"tests/cases/conformance/externalModules/typeOnly/d.ts","line":2,"column":1,"code":"TS1362"},{"filename":"tests/cases/conformance/externalModules/typeOnly/e.ts","line":2,"column":1,"code":"TS1362"}]

@@ -1,1 +1,1 @@
-[{"line":1,"column":10,"code":"TS2394"},{"line":6,"column":5,"code":"TS2411"}]
+[{"filename":"tests/cases/compiler/functionAndInterfaceWithSeparateErrors.ts","line":1,"column":10,"code":"TS2394"},{"filename":"tests/cases/compiler/functionAndInterfaceWithSeparateErrors.ts","line":6,"column":5,"code":"TS2411"}]

@@ -1,1 +1,1 @@
-[{"line":25,"column":13,"code":"TS2339"},{"line":26,"column":3,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/gettersAndSetters.ts","line":25,"column":13,"code":"TS2339"},{"filename":"tests/cases/compiler/gettersAndSetters.ts","line":26,"column":3,"code":"TS2339"}]

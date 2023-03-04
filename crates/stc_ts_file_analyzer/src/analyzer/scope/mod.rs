@@ -856,7 +856,8 @@ impl Analyzer<'_, '_> {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty.clone(), false);
 
             if !self.config.is_builtin {
-                self.storage.export_type(ty.span(), self.ctx.module_id, name.clone(), name.clone());
+                self.storage
+                    .export_stored_type(ty.span(), self.ctx.module_id, name.clone(), name.clone());
             }
 
             self.scope.register_type(name, ty.clone(), false);

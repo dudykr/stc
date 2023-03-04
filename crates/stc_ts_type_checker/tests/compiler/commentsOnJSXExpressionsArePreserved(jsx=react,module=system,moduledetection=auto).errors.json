@@ -1,1 +1,1 @@
-[{"line":5,"column":17,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/commentsOnJSXExpressionsArePreserved.tsx","line":5,"column":17,"code":"TS2304"}]

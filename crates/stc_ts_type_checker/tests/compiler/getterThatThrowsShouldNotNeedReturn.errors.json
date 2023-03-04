@@ -1,1 +1,1 @@
-[{"line":2,"column":13,"code":"TS1056"}]
+[{"filename":"tests/cases/compiler/getterThatThrowsShouldNotNeedReturn.ts","line":2,"column":13,"code":"TS1056"}]

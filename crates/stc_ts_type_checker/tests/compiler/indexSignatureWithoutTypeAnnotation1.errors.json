@@ -1,1 +1,1 @@
-[{"line":2,"column":3,"code":"TS1021"}]
+[{"filename":"tests/cases/compiler/indexSignatureWithoutTypeAnnotation1.ts","line":2,"column":3,"code":"TS1021"}]

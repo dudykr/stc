@@ -1,1 +1,1 @@
-[{"line":1,"column":15,"code":"TS2441"},{"line":10,"column":15,"code":"TS2441"}]
+[{"filename":"tests/cases/compiler/collisionExportsRequireAndModule_externalmodule.ts","line":1,"column":15,"code":"TS2441"},{"filename":"tests/cases/compiler/collisionExportsRequireAndModule_externalmodule.ts","line":10,"column":15,"code":"TS2441"}]

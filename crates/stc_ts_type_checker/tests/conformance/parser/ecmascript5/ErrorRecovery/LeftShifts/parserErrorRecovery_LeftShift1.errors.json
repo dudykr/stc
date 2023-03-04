@@ -1,1 +1,1 @@
-[{"line":1,"column":1,"code":"TS2304"},{"line":1,"column":12,"code":"TS2304"},{"line":1,"column":29,"code":"TS1109"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/LeftShifts/parserErrorRecovery_LeftShift1.ts","line":1,"column":1,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/LeftShifts/parserErrorRecovery_LeftShift1.ts","line":1,"column":12,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/LeftShifts/parserErrorRecovery_LeftShift1.ts","line":1,"column":29,"code":"TS1109"}]

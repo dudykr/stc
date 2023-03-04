@@ -1,1 +1,1 @@
-[{"line":2,"column":10,"code":"TS2389"},{"line":3,"column":10,"code":"TS2391"}]
+[{"filename":"tests/cases/compiler/functionOverloadImplementationOfWrongName2.ts","line":2,"column":10,"code":"TS2389"},{"filename":"tests/cases/compiler/functionOverloadImplementationOfWrongName2.ts","line":3,"column":10,"code":"TS2391"}]

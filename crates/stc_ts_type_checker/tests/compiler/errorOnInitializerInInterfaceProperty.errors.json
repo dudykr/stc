@@ -1,1 +1,1 @@
-[{"line":2,"column":19,"code":"TS1246"}]
+[{"filename":"tests/cases/compiler/errorOnInitializerInInterfaceProperty.ts","line":2,"column":19,"code":"TS1246"}]

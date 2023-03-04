@@ -1,1 +1,1 @@
-[{"line":2,"column":5,"code":"TS2796"}]
+[{"filename":"tests/cases/compiler/missingCommaInTemplateStringsArray.ts","line":2,"column":5,"code":"TS2796"}]

@@ -1,1 +1,1 @@
-[{"line":2,"column":14,"code":"TS7009"}]
+[{"filename":"tests/cases/compiler/implicitAnyNewExprLackConstructorSignature.ts","line":2,"column":14,"code":"TS7009"}]

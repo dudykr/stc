@@ -983,6 +983,10 @@ impl Analyzer<'_, '_> {
         let obj_type = box t.obj_type.validate_with(self)?;
         let index_type = box t.index_type.validate_with(self)?.freezed();
 
+        if index_type.is_undefined() || index_type.is_bool() || index_type.is_void() {
+            return Err(ErrorKind::CannotUseTypeAsIndexIndex { span: index_type.span() }.into());
+        }
+
         if !self.config.is_builtin {
             let ctx = Ctx {
                 disallow_unknown_object_property: true,

@@ -1,1 +1,1 @@
-[{"line":0,"column":0,"code":"TS2318"},{"line":0,"column":0,"code":"TS2318"},{"line":0,"column":0,"code":"TS2318"},{"line":0,"column":0,"code":"TS2318"},{"line":3,"column":12,"code":"TS2693"}]
+[{"line":0,"column":0,"code":"TS2318"},{"line":0,"column":0,"code":"TS2318"},{"line":0,"column":0,"code":"TS2318"},{"line":0,"column":0,"code":"TS2318"},{"filename":"tests/cases/compiler/modularizeLibrary_ErrorFromUsingES6ArrayWithOnlyES6ArrayLib.ts","line":3,"column":12,"code":"TS2693"}]

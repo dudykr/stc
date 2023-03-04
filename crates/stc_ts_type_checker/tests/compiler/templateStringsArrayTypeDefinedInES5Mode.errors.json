@@ -1,1 +1,1 @@
-[{"line":7,"column":3,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/templateStringsArrayTypeDefinedInES5Mode.ts","line":7,"column":3,"code":"TS2345"}]

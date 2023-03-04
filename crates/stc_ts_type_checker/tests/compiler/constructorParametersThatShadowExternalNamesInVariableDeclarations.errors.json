@@ -1,1 +1,1 @@
-[{"line":3,"column":17,"code":"TS2301"},{"line":9,"column":17,"code":"TS2301"}]
+[{"filename":"tests/cases/compiler/constructorParametersThatShadowExternalNamesInVariableDeclarations.ts","line":3,"column":17,"code":"TS2301"},{"filename":"tests/cases/compiler/constructorParametersThatShadowExternalNamesInVariableDeclarations.ts","line":9,"column":17,"code":"TS2301"}]

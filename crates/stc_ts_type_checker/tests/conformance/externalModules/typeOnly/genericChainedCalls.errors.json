@@ -1,1 +1,1 @@
-[{"line":8,"column":29,"code":"TS2339"},{"line":12,"column":29,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/genericChainedCalls.ts","line":8,"column":29,"code":"TS2339"},{"filename":"tests/cases/compiler/genericChainedCalls.ts","line":12,"column":29,"code":"TS2339"}]

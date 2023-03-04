@@ -1,1 +1,1 @@
-[{"line":2,"column":16,"code":"TS1248"}]
+[{"filename":"tests/cases/compiler/ClassDeclarationWithInvalidConstOnPropertyDeclaration.ts","line":2,"column":16,"code":"TS1248"}]

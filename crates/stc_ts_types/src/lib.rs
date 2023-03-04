@@ -811,7 +811,7 @@ pub struct Namespace {
     pub tracker: Tracker<"Namespace">,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Module {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -820,6 +820,28 @@ pub struct Module {
     pub metadata: ModuleTypeMetadata,
 
     pub tracker: Tracker<"Module">,
+}
+
+impl Debug for Module {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        writeln!(f, "module {{")?;
+
+        writeln!(f, "  types:")?;
+
+        for k in self.exports.types.keys() {
+            writeln!(f, "    {}", k)?;
+        }
+
+        writeln!(f, "  vars:")?;
+
+        for k in self.exports.vars.keys() {
+            writeln!(f, "    {}", k)?;
+        }
+
+        write!(f, "}}")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1825,6 +1847,10 @@ impl Type {
             }),
             _ => self,
         }
+    }
+
+    pub fn is_void(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
     }
 
     pub fn contains_void(&self) -> bool {

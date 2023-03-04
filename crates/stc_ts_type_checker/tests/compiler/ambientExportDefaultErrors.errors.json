@@ -1,1 +1,1 @@
-[{"line":1,"column":16,"code":"TS2714"},{"line":1,"column":10,"code":"TS2714"},{"line":3,"column":20,"code":"TS2714"},{"line":3,"column":14,"code":"TS2714"}]
+[{"filename":"tests/cases/compiler/foo.d.ts","line":1,"column":16,"code":"TS2714"},{"filename":"tests/cases/compiler/foo2.d.ts","line":1,"column":10,"code":"TS2714"},{"filename":"tests/cases/compiler/indirection.d.ts","line":3,"column":20,"code":"TS2714"},{"filename":"tests/cases/compiler/indirection2.d.ts","line":3,"column":14,"code":"TS2714"}]

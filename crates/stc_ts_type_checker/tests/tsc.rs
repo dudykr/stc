@@ -12,7 +12,7 @@ mod common;
 
 use std::{
     env, fs,
-    fs::{read_to_string, File},
+    fs::read_to_string,
     mem,
     panic::{catch_unwind, resume_unwind},
     path::{Path, PathBuf},
@@ -27,7 +27,10 @@ use serde::{Deserialize, Serialize};
 use stc_ts_env::Env;
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_testing::conformance::{parse_conformance_test, TestSpec};
+use stc_ts_testing::{
+    conformance::{parse_conformance_test, TestSpec},
+    tsc::TscError,
+};
 use stc_ts_type_checker::{
     loader::{DefaultFileLoader, LoadFile, ModuleLoader},
     Checker,
@@ -61,8 +64,11 @@ impl Drop for RecordOnPanic {
     }
 }
 
+/// The reference error data.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, PartialOrd, Ord)]
 struct RefError {
+    #[serde(default)]
+    pub filename: Option<String>,
     pub line: usize,
     pub column: usize,
     pub code: String,
@@ -156,14 +162,13 @@ fn conformance() {
     test_main(&args, tests, Default::default());
 }
 
-fn is_parser_test(errors: &[RefError]) -> bool {
+fn is_parser_test(errors: &[TscError]) -> bool {
     for err in errors {
-        if err.code.starts_with("TS1") && err.code.len() == 6 {
+        if 1000 <= err.code && err.code < 2000 {
             return true;
         }
-
         // These are actually parser test.
-        if let "TS2369" = &*err.code {
+        if err.code == 2369 {
             return true;
         }
     }
@@ -176,7 +181,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
-    let specs = catch_unwind(|| parse_conformance_test(&path)).ok()?;
+    let specs = catch_unwind(|| parse_conformance_test(&path)).ok()?.ok()?;
     let use_target = specs.len() > 1;
 
     if use_target {
@@ -232,7 +237,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 /// If `spec` is [Some], it's use to construct filename.
 ///
 /// Returns `(file_suffix, errors)`
-fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<RefError>) {
+fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec<TscError>) {
     let errors_file = match spec {
         Some(v) => ts_file.with_file_name(format!(
             "{}{}.errors.json",
@@ -246,22 +251,24 @@ fn load_expected_errors(ts_file: &Path, spec: Option<&TestSpec>) -> (String, Vec
         println!("errors file does not exists: {}", errors_file.display());
         vec![]
     } else {
-        let mut errors: Vec<RefError> = serde_json::from_reader(File::open(&errors_file).expect("failed to open errors file"))
+        let errors: Vec<RefError> = serde_json::from_str(&read_to_string(&errors_file).expect("failed to open errors file"))
             .context("failed to parse errors.txt.json")
             .unwrap();
 
-        for err in &mut errors {
-            let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
-            let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
-
-            if orig_code != code {
-                err.code = format!("TS{}", code);
-            }
-        }
-
-        // TODO(kdy1): Match column and message
-
         errors
+            .into_iter()
+            .map(|err| {
+                let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
+                let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
+
+                TscError {
+                    file: err.filename,
+                    line: err.line,
+                    col: err.column,
+                    code,
+                }
+            })
+            .collect()
     };
 
     (
@@ -308,11 +315,22 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         if err.line == 0 {
             continue;
         }
-        // Typescript conformance test remove lines starting with @-directives.
-        err.line += err_shift_n;
+
+        if let Some((last, _)) = spec.sub_files.last() {
+            if is_file_similar(err.file.as_deref(), Some(last)) {
+                // If this is the last file, we have to shift the errors.
+                err.line += err_shift_n;
+            } else {
+            }
+        } else {
+            // If sub files is empty, it means that it's a single-file test, and
+            // we have to shift the errors.
+
+            err.line += err_shift_n;
+        }
     }
 
-    let full_ref_errors = expected_errors.clone();
+    let mut full_ref_errors = expected_errors.clone();
     let full_ref_err_cnt = full_ref_errors.len();
 
     let tester = Tester::new();
@@ -362,7 +380,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
 
     mem::forget(stat_guard);
 
-    let mut extra_errors = diagnostics
+    let mut full_actual_errors = diagnostics
         .iter()
         .map(|d| {
             let span = d.span.primary_span().unwrap();
@@ -376,28 +394,38 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 DiagnosticId::Lint(lint) => {
                     unreachable!("Unexpected lint '{}' found", lint)
                 }
-            };
+            }
+            .replace("TS", "")
+            .parse()
+            .unwrap();
 
-            (cp.line, code)
+            TscError {
+                file: Some(cp.file.name.to_string()),
+                line: cp.line,
+                col: cp.col.0,
+                code,
+            }
         })
         .collect::<Vec<_>>();
-    extra_errors.sort();
+    full_actual_errors.sort();
 
-    let full_actual_errors = extra_errors.clone();
+    let mut extra_errors = full_actual_errors.clone();
 
-    for (line, error_code) in full_actual_errors.clone() {
-        if let Some(idx) = expected_errors
-            .iter()
-            .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
-        {
+    for actual in &full_actual_errors {
+        if let Some(idx) = expected_errors.iter().position(|err| {
+            (err.line == actual.line || err.line == 0)
+                && err.code == actual.code
+                && is_file_similar(err.file.as_deref(), actual.file.as_deref())
+        }) {
             stats.matched_error += 1;
 
             let is_zero_line = expected_errors[idx].line == 0;
             expected_errors.remove(idx);
-            if let Some(idx) = extra_errors
-                .iter()
-                .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
-            {
+            if let Some(idx) = extra_errors.iter().position(|r| {
+                (actual.line == r.line || is_zero_line)
+                    && actual.code == r.code
+                    && is_file_similar(r.file.as_deref(), actual.file.as_deref())
+            }) {
                 extra_errors.remove(idx);
             }
         }
@@ -437,13 +465,13 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         let mut diff = ErrorDiff::default();
 
         for err in extra_errors.iter() {
-            *diff.extra_errors.entry(err.1.clone()).or_default() += 1;
-            diff.extra_error_lines.entry(err.1.clone()).or_default().push(err.0);
+            *diff.extra_errors.entry(err.ts_error_code()).or_default() += 1;
+            diff.extra_error_lines.entry(err.ts_error_code()).or_default().push(err.line);
         }
 
         for err in expected_errors.iter() {
-            *diff.required_errors.entry(err.code.clone()).or_default() += 1;
-            diff.required_error_lines.entry(err.code.clone()).or_default().push(err.line);
+            *diff.required_errors.entry(err.ts_error_code()).or_default() += 1;
+            diff.required_error_lines.entry(err.ts_error_code()).or_default().push(err.line);
         }
 
         if diff.extra_errors.is_empty() && diff.required_errors.is_empty() {
@@ -452,6 +480,22 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             fs::write(&error_diff_file_name, serde_json::to_string_pretty(&diff).unwrap()).expect("failed to write error diff file");
         }
     }
+
+    expected_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
+
+    extra_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
+
+    full_ref_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
+
+    full_actual_errors.iter_mut().for_each(|err| {
+        err.file = None;
+    });
 
     if print_matched_errors() {
         eprintln!(
@@ -485,6 +529,18 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
     }
 
     Ok(())
+}
+
+fn is_file_similar(expected: Option<&str>, actual: Option<&str>) -> bool {
+    match (expected, actual) {
+        (Some(expected), Some(actual)) => {
+            dbg!(expected, actual);
+
+            expected.split('/').last() == actual.split('/').last() || expected.split('/').last() == actual.split('\\').last()
+        }
+
+        _ => true,
+    }
 }
 
 impl Stats {
@@ -532,8 +588,14 @@ impl Resolve for TestFileSystem {
             return NodeResolver.resolve(base, module_specifier);
         }
 
-        if let Some(name) = module_specifier.strip_prefix("./") {
-            return Ok(FileName::Real(name.into()));
+        if let Some(filename) = module_specifier.strip_prefix("./") {
+            for (name, _) in self.files.iter() {
+                if format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
+                    return Ok(FileName::Real(name.into()));
+                }
+            }
+
+            return Ok(FileName::Real(filename.into()));
         }
 
         todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);

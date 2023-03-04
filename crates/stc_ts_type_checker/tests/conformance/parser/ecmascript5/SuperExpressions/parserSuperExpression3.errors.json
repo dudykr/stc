@@ -1,1 +1,1 @@
-[{"line":3,"column":10,"code":"TS2339"},{"line":3,"column":16,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts","line":3,"column":10,"code":"TS2339"},{"filename":"tests/cases/conformance/parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts","line":3,"column":16,"code":"TS2304"}]

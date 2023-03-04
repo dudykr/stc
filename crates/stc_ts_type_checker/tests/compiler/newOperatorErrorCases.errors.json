@@ -1,1 +1,1 @@
-[{"line":26,"column":16,"code":"TS1005"},{"line":26,"column":16,"code":"TS2695"},{"line":36,"column":9,"code":"TS2350"}]
+[{"filename":"tests/cases/conformance/expressions/newOperator/newOperatorErrorCases.ts","line":26,"column":16,"code":"TS1005"},{"filename":"tests/cases/conformance/expressions/newOperator/newOperatorErrorCases.ts","line":26,"column":16,"code":"TS2695"},{"filename":"tests/cases/conformance/expressions/newOperator/newOperatorErrorCases.ts","line":36,"column":9,"code":"TS2350"}]

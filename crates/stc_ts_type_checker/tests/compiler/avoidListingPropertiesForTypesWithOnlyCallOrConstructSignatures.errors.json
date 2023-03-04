@@ -1,1 +1,1 @@
-[{"line":7,"column":20,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/avoidListingPropertiesForTypesWithOnlyCallOrConstructSignatures.ts","line":7,"column":20,"code":"TS2322"}]

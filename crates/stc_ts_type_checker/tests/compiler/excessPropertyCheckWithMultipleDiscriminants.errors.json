@@ -1,1 +1,1 @@
-[{"line":30,"column":5,"code":"TS2322"},{"line":41,"column":5,"code":"TS2322"},{"line":57,"column":5,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/excessPropertyCheckWithMultipleDiscriminants.ts","line":30,"column":5,"code":"TS2322"},{"filename":"tests/cases/compiler/excessPropertyCheckWithMultipleDiscriminants.ts","line":41,"column":5,"code":"TS2322"},{"filename":"tests/cases/compiler/excessPropertyCheckWithMultipleDiscriminants.ts","line":57,"column":5,"code":"TS2322"}]

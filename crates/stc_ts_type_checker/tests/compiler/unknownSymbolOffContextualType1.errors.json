@@ -1,1 +1,1 @@
-[{"line":16,"column":18,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/unknownSymbolOffContextualType1.ts","line":16,"column":18,"code":"TS2339"}]

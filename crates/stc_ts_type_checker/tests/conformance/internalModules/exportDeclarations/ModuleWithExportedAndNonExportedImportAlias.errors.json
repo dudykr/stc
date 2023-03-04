@@ -1,1 +1,1 @@
-[{"line":37,"column":21,"code":"TS2339"}]
+[{"filename":"tests/cases/conformance/internalModules/exportDeclarations/ModuleWithExportedAndNonExportedImportAlias.ts","line":37,"column":21,"code":"TS2339"}]

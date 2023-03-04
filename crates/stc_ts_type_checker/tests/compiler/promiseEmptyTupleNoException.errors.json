@@ -1,1 +1,1 @@
-[{"line":3,"column":3,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/promiseEmptyTupleNoException.ts","line":3,"column":3,"code":"TS2322"}]

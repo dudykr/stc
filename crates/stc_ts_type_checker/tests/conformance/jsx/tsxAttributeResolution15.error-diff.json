@@ -12,13 +12,9 @@
     ]
   },
   "extra_errors": {
-    "TS2307": 1,
     "TS7005": 1
   },
   "extra_error_lines": {
-    "TS2307": [
-      2
-    ],
     "TS7005": [
       15
     ]
