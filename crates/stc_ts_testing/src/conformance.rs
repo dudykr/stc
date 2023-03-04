@@ -10,6 +10,7 @@ use std::{
     sync::Arc,
 };
 
+use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -21,6 +22,8 @@ use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
 
 pub struct TestSpec {
+    /// Typescript conformance test remove lines starting with @-directives, and
+    /// it changes the line of errors.
     pub err_shift_n: usize,
     pub libs: Vec<Lib>,
     pub rule: Rule,
@@ -72,7 +75,7 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
 }
 
 #[allow(clippy::explicit_write)]
-pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
+pub fn parse_conformance_test(file_name: &Path) -> Result<Vec<TestSpec>> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
 
@@ -247,7 +250,8 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
                     rule.strict_function_types = strict;
                 } else if s.to_ascii_lowercase().starts_with("filename") {
                 } else if s.to_ascii_lowercase().starts_with("allowjs") || s.to_ascii_lowercase().starts_with("checkjs") {
-                    panic!("allowJs and checkJs are not supported yet. See https://github.com/dudykr/stc/issues/702")
+                    // panic!("allowJs and checkJs are not supported yet. See https://github.com/dudykr/stc/issues/702")
+                    return Err(());
                 } else {
                     writeln!(stderr(), "Comment is not handled: {}", s).unwrap();
                 }
@@ -332,7 +336,7 @@ pub fn parse_conformance_test(file_name: &Path) -> Vec<TestSpec> {
             lib_files,
         }])
     })
-    .unwrap()
+    .map_err(|err| anyhow!("Failed to parse test case: {}", err))
 }
 
 fn parse_directive_values<T>(s: &str, parser: &dyn Fn(&str) -> T) -> Vec<(String, T)> {
