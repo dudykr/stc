@@ -7,14 +7,6 @@
       13
     ]
   },
-  "extra_errors": {
-    "TS2339": 3
-  },
-  "extra_error_lines": {
-    "TS2339": [
-      4,
-      6,
-      6
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

@@ -1630,10 +1630,15 @@ externalModules/esnext/esnextmodulekindWithES5Target9.ts
 externalModules/esnext/exnextmodulekindExportClassNameWithObject.ts
 externalModules/exportAmbientClassNameWithObject.ts
 externalModules/exportAssignDottedName.ts
+externalModules/exportAssignImportedIdentifier.ts
+externalModules/exportAssignTypes.ts
+externalModules/exportAssignmentGenericType.ts
+externalModules/exportAssignmentTopLevelIdentifier.ts
 externalModules/exportClassNameWithObjectAMD.ts
 externalModules/exportClassNameWithObjectCommonJS.ts
 externalModules/exportClassNameWithObjectSystem.ts
 externalModules/exportClassNameWithObjectUMD.ts
+externalModules/exportDeclaredModule.ts
 externalModules/exportDefaultClassNameWithObject.ts
 externalModules/exportNonLocalDeclarations.ts
 externalModules/exportNonVisibleType.ts
@@ -1645,6 +1650,7 @@ externalModules/multipleExportDefault3.ts
 externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
+externalModules/reexportClassDefinition.ts
 externalModules/topLevelAwait.3.ts
 externalModules/typeOnly/nestedNamespace.ts
 externalModules/typeOnly/preserveValueImports.ts
