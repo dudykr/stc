@@ -384,6 +384,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                     unreachable!("Unexpected lint '{}' found", lint)
                 }
             }
+            .replace("TS", "")
             .parse()
             .unwrap();
 
