@@ -828,13 +828,13 @@ impl Debug for Module {
 
         writeln!(f, "  types:")?;
 
-        for (i, (k, v)) in self.exports.types.iter().enumerate() {
+        for k in self.exports.types.keys() {
             writeln!(f, "    {}", k)?;
         }
 
         writeln!(f, "  vars:")?;
 
-        for (i, (k, v)) in self.exports.vars.iter().enumerate() {
+        for k in self.exports.vars.keys() {
             writeln!(f, "    {}", k)?;
         }
 
