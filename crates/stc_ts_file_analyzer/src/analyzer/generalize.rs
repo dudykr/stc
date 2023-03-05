@@ -4,7 +4,7 @@ use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
-    Array, Class, ClassMember, CommonTypeMetadata, Index, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
+    Array, Class, ClassMember, CommonTypeMetadata, Index, IndexedAccessType, IndexedAccessTypeMetadata, Intersection, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use stc_utils::{dev_span, ext::TypeVecExt};
@@ -271,12 +271,8 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::Intersection(ref i) => {
-                let is_str = i.types.iter().any(|ty| ty.is_str());
-                let is_num = i.types.iter().any(|ty| ty.is_num());
-                let is_bool = i.types.iter().any(|ty| ty.is_bool());
-
                 // LHS is never.
-                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+                if Intersection::is_trivial_never(&i.types) {
                     return Type::never(i.span, KeywordTypeMetadata { common: i.metadata.common });
                 }
             }

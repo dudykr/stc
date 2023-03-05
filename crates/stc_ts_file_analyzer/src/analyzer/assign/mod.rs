@@ -1086,7 +1086,9 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                self.assign_with_opts(data, to, &rc.true_type, opts)
+                let new_true_ty = self.overwrite_conditional(span, rc);
+
+                self.assign_with_opts(data, to, &new_true_ty, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
                 self.assign_with_opts(data, to, &rc.false_type, opts)
                     .context("tried to assign the false type of a conditional type to lhs")?;
@@ -1692,6 +1694,9 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
+                if let Some(true) = c.as_union_type().map(|ty| ty.types.iter().any(|ty| ty.type_eq(rhs))) {
+                    return Ok(());
+                }
                 fail!()
             }
 

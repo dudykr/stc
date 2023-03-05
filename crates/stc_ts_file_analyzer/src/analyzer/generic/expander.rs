@@ -157,7 +157,7 @@ impl Analyzer<'_, '_> {
         }
 
         match child {
-            Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) => return None,
+            Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) | Type::Conditional(..) => return None,
             Type::Ref(..) => {
                 let child = self
                     .expand(
@@ -379,6 +379,15 @@ impl Analyzer<'_, '_> {
             Type::Array(child_array) => {
                 if let Type::Tuple(parent_tuple) = parent {
                     return Some(false);
+                }
+            }
+            Type::Intersection(child_intersection) => {
+                for child_ty in child_intersection.types.iter() {
+                    match self.extends(span, child_ty, parent, opts) {
+                        Some(true) => return Some(true),
+                        None => return None,
+                        _ => {}
+                    }
                 }
             }
             _ => {}
