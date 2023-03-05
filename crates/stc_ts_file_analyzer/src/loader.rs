@@ -42,5 +42,5 @@ pub trait Load: 'static + Send + Sync {
     fn load_non_circular_dep(&self, base: &Arc<FileName>, src: &str) -> VResult<Type>;
 
     /// `module` should be [Type::Arc] of [Type::Module].
-    fn declare_module(&self, name: &JsWord, module: Type);
+    fn declare_module(&self, name: &JsWord, module: Type) -> ModuleId;
 }

@@ -726,7 +726,7 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn declare_module(&self, name: &JsWord, module: Type) {
+    fn declare_module(&self, name: &JsWord, module: Type) -> ModuleId {
         unreachable!()
     }
 }
