@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement,
-    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, OptionalType, PropertySignature, Ref, RestType, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, dev_span, TryOpt};
@@ -172,8 +172,14 @@ impl Analyzer<'_, '_> {
                     // only when the parameter list occurs in conjunction with a
                     // function body), the parameter type is the widened form (section
                     // 3.11) of the type of the initializer expression.
-
-                    right = right.fold_with(&mut Widen { tuple_to_array: true });
+                    match &*p.left {
+                        RPat::Array(p_left) => {
+                            right = right.fold_with(&mut Widen { tuple_to_array: false });
+                        }
+                        _ => {
+                            right = right.fold_with(&mut Widen { tuple_to_array: true });
+                        }
+                    }
                 }
 
                 right.freeze();
@@ -357,9 +363,134 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             // TODO(kdy1): actual_ty
+                            println!("default ty prev add vars {:#?} {:#?} {:#?} ", elem, elem_ty, default_elem_ty);
+
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
                         }
                     }
+                    // Type inference for functions
+                    let default_ty = match default_ty {
+                        Some(d_ty) => {
+                            let d_ty = d_ty.fold_with(&mut Widen { tuple_to_array: false });
+
+                            match d_ty {
+                                Type::Tuple(mut ty) => {
+                                    let right_type_len = ty.elems.len();
+
+                                    for (i, left_element) in arr.elems.iter().enumerate() {
+                                        let is_not_assigned_type = i > right_type_len - 1;
+                                        if let Some(r_pat) = left_element {
+                                            match r_pat {
+                                                RPat::Assign(p) => {
+                                                    if is_not_assigned_type {
+                                                        let elem_ty = p
+                                                            .right
+                                                            .as_ref()
+                                                            .validate_with_default(self)?
+                                                            .clone()
+                                                            .fold_with(&mut Widen { tuple_to_array: false });
+
+                                                        let convert_ty = match elem_ty {
+                                                            Type::Union(mut union) => {
+                                                                let mut has_undefined = false;
+
+                                                                for union_ty in union.types.iter() {
+                                                                    if let Type::Keyword(a) = union_ty {
+                                                                        if TsKeywordTypeKind::TsUndefinedKeyword == a.kind {
+                                                                            has_undefined = true
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if !has_undefined {
+                                                                    union.types.push(Type::undefined(span, Default::default()));
+                                                                }
+
+                                                                box Type::Union(union)
+                                                            }
+                                                            _ => match elem_ty.clone().keyword().as_ref().unwrap().kind {
+                                                                TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsUnknownKeyword => {
+                                                                    box elem_ty
+                                                                }
+                                                                TsKeywordTypeKind::TsNeverKeyword => {
+                                                                    box Type::undefined(span, Default::default())
+                                                                }
+                                                                _ => box Type::Union(Union {
+                                                                    span,
+                                                                    types: vec![elem_ty, Type::undefined(span, Default::default())],
+                                                                    metadata: Default::default(),
+                                                                    tracker: Default::default(),
+                                                                }),
+                                                            },
+                                                        };
+
+                                                        ty.elems.push(TupleElement {
+                                                            span,
+                                                            label: None,
+                                                            ty: box Type::Optional(OptionalType {
+                                                                span,
+                                                                ty: convert_ty,
+                                                                metadata: Default::default(),
+                                                                tracker: Default::default(),
+                                                            }),
+
+                                                            tracker: Default::default(),
+                                                        });
+                                                    }
+                                                }
+                                                _ => {
+                                                    if is_not_assigned_type {
+                                                        ty.elems.push(TupleElement {
+                                                            span,
+                                                            label: None,
+                                                            ty: box Type::Optional(OptionalType {
+                                                                span,
+                                                                ty: box Type::any(span, Default::default()),
+                                                                metadata: Default::default(),
+                                                                tracker: Default::default(),
+                                                            }),
+                                                            tracker: Default::default(),
+                                                        });
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Some(Type::Tuple(ty))
+                                }
+
+                                Type::Array(..) => {
+                                    let any_len = arr.elems.len();
+
+                                    let mut elems: Vec<TupleElement> = vec![];
+
+                                    for i in 0..any_len {
+                                        elems.push(TupleElement {
+                                            span,
+                                            label: None,
+                                            ty: box Type::Optional(OptionalType {
+                                                span,
+                                                ty: box Type::any(span, Default::default()),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            }),
+                                            tracker: Default::default(),
+                                        });
+                                    }
+
+                                    Some(Type::Tuple(Tuple {
+                                        span,
+                                        elems,
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }))
+                                }
+                                _ => Some(d_ty),
+                            }
+                        }
+                        None => None,
+                    };
 
                     Ok(ty.or(default_ty))
                 } else {
@@ -523,7 +654,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     real_ty.freeze();
-
+                    println!("real_ty {:#?}", real_ty);
                     self.regist_destructure(span, save_ty, Some(destructure_key));
                     Ok(Some(real_ty))
                 }

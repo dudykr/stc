@@ -79,7 +79,7 @@ Error:
    `----
 
 Error: 
-  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+  > ([[a], b, [[c, d]]]?: [[any], any, [[any, any]]]) => void
 
   x Type
    ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
