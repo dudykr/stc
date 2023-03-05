@@ -13,6 +13,7 @@ use stc_ts_ast_rnode::{
     RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
+use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind, Errors,
@@ -1751,6 +1752,10 @@ impl Analyzer<'_, '_> {
             };
             if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
                 if this.normalize_instance().is_this() {
+                    if let ModuleConfig::Amd | ModuleConfig::Umd = self.env.module() {
+                        return Ok(Type::any(span, Default::default()));
+                    }
+
                     return Err(ErrorKind::NoSuchProperty {
                         span,
                         obj: Some(box obj.clone()),

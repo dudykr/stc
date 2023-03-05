@@ -15,17 +15,6 @@
       43
     ]
   },
-  "extra_errors": {
-    "TS2355": 1,
-    "TS2339": 2
-  },
-  "extra_error_lines": {
-    "TS2355": [
-      19
-    ],
-    "TS2339": [
-      22,
-      25
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
