@@ -87,7 +87,7 @@ Error:
    `----
 
 Error: 
-  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+  > ([[a], b, [[c, d]]]?: [[any], any, [[any, any]]]) => void
 
   x Type
    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
