@@ -9,4 +9,4 @@ type Result1 = UndefinedKeys<MyType>;
 const a1: Result1['a'] = 'a';  // Error
 const b1: Result1['b'] = 'b';
 
-export { a1, b2 }
+export { a1, b1 }
