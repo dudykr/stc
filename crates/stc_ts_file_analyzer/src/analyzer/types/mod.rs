@@ -440,9 +440,10 @@ impl Analyzer<'_, '_> {
 
                             if let Some(dep_id) = dep_id {
                                 if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
-                                    return Ok(dep.clone());
+                                    dep.assert_clone_cheap();
+                                    return Ok(Cow::Owned(dep.clone()));
                                 } else {
-                                    return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
+                                    return Err(ErrorKind::ModuleNotFound { span: import.span }.into());
                                 }
                             }
                         }
