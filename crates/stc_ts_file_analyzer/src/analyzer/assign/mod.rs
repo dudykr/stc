@@ -1630,10 +1630,22 @@ impl Analyzer<'_, '_> {
                             },
                         );
                     }
-                    None => match to.normalize() {
-                        Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => return Ok(()),
-                        _ => {}
-                    },
+                    None => {
+                        // unknownType1.ts says
+
+                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
+
+                        match to.normalize() {
+                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
+                                if self.rule().strict_null_checks {
+                                    fail!()
+                                } else {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
                 }
 
                 match to.normalize() {
