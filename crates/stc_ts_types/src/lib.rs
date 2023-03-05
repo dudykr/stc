@@ -1727,7 +1727,13 @@ impl Type {
             && tys.iter().any(|ty| ty.is_type_lit())
         {
             // reduce empty type lit
-            tys.retain(|ty| if let Type::TypeLit(ty) = ty.normalize() { !ty.is_empty() } else { true });
+            tys.retain(|ty| {
+                if let Type::TypeLit(ty) = ty.normalize() {
+                    !ty.is_empty()
+                } else {
+                    true
+                }
+            });
         }
 
         match tys.len() {
