@@ -481,7 +481,20 @@ impl Analyzer<'_, '_> {
                         return Ok(Cow::Owned(ty));
                     }
 
-                    Type::Import(_) => {}
+                    Type::Import(import) => {
+                        let base = self.storage.path(self.ctx.module_id);
+
+                        let dep_id = self.loader.module_id(&base, &import.arg.value);
+
+                        if let Some(dep_id) = dep_id {
+                            if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
+                                dep.assert_clone_cheap();
+                                return Ok(Cow::Owned(dep.clone()));
+                            } else {
+                                return Err(ErrorKind::ModuleNotFound { span: import.span }.into());
+                            }
+                        }
+                    }
 
                     Type::Predicate(_) => {
                         // TODO(kdy1): Add option for this.
