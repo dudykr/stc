@@ -374,13 +374,11 @@ impl Analyzer<'_, '_> {
 
                             match d_ty {
                                 Type::Tuple(mut ty) => {
-                                    let right_type_len = match ty.elems.len() {
-                                        0 => 1,
-                                        _ => ty.elems.len(),
-                                    };
+                                    let right_type_len = ty.elems.len();
 
                                     for (i, left_element) in arr.elems.iter().enumerate() {
-                                        let is_not_assigned_type = i > right_type_len - 1;
+                                        let is_not_assigned_type = i + 1 > right_type_len;
+
                                         if let Some(r_pat) = left_element {
                                             match r_pat {
                                                 RPat::Assign(p) => {
@@ -389,7 +387,6 @@ impl Analyzer<'_, '_> {
                                                             .right
                                                             .as_ref()
                                                             .validate_with_default(self)?
-                                                            .clone()
                                                             .fold_with(&mut Widen { tuple_to_array: false });
 
                                                         let convert_ty = match elem_ty.as_union_type_mut() {
