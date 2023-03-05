@@ -9,9 +9,7 @@
 
 Error: 
   > {
-  |     type: ListWidget["type"];
-  |     minimum_count: ListWidget["minimum_count"];
-  |     maximum_count: ListWidget["maximum_count"];
+  |     [P in NonOptionalKeys<ListWidget>]: ListWidget[P];
   | }
 
   x Type
@@ -23,9 +21,7 @@ Error:
 
 Error: 
   > {
-  |     type: ListWidget["type"];
-  |     minimum_count: ListWidget["minimum_count"];
-  |     maximum_count: ListWidget["maximum_count"];
+  |     [P in NonOptionalKeys<ListWidget>]: ListWidget[P];
   | }
 
   x Type
@@ -36,4 +32,6 @@ Error:
     `----
 
 Error: 
-  > "list"
+  > {
+  |     [P in NonOptionalKeys<ListWidget>]: ListWidget[P];
+  | }["type"]
