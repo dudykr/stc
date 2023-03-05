@@ -1752,7 +1752,7 @@ impl Analyzer<'_, '_> {
             };
             if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
                 if this.normalize_instance().is_this() {
-                    if let ModuleConfig::Amd = self.env.module() {
+                    if let ModuleConfig::Amd | ModuleConfig::Umd = self.env.module() {
                         return Ok(Type::any(span, Default::default()));
                     }
 
