@@ -307,6 +307,7 @@ impl Analyzer<'_, '_> {
                                     lhs_metadata,
                                     AssignOpts {
                                         allow_unknown_rhs: Some(true),
+                                        disallow_assignment_to_unknown: true,
                                         ..opts
                                     },
                                 )
@@ -350,6 +351,7 @@ impl Analyzer<'_, '_> {
                                     lhs_metadata,
                                     AssignOpts {
                                         allow_unknown_rhs: Some(true),
+                                        disallow_assignment_to_unknown: true,
                                         ..opts
                                     },
                                 ) {
@@ -371,6 +373,7 @@ impl Analyzer<'_, '_> {
                                         lhs_metadata,
                                         AssignOpts {
                                             allow_unknown_rhs: Some(true),
+                                            disallow_assignment_to_unknown: true,
                                             ..opts
                                         },
                                     )
@@ -653,7 +656,10 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             }),
                             lhs_metadata,
-                            opts,
+                            AssignOpts {
+                                disallow_assignment_to_unknown: true,
+                                ..opts
+                            },
                         )
                         .context("tried to assign a literal as keyword to type elements");
                 }
