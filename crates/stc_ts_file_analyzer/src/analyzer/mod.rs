@@ -726,7 +726,7 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn declare_module(&self, name: &JsWord, module: Type) {
+    fn declare_module(&self, name: &JsWord, module: Type) -> ModuleId {
         unreachable!()
     }
 }
@@ -1067,7 +1067,9 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.loader.declare_module(&s.value, ty.clone());
+                    let module_id = self.loader.declare_module(&s.value, ty.clone());
+
+                    self.insert_import_info(ctxt, module_id, ty.clone()).report(&mut self.storage);
                 }
             }
         }

@@ -388,51 +388,63 @@ impl Analyzer<'_, '_> {
 
                     Type::Query(q) => {
                         if !opts.preserve_typeof {
-                            match &*q.expr {
-                                QueryExpr::TsEntityName(e) => {
-                                    if let RTsEntityName::Ident(i) = e {
-                                        //
-                                        if &*i.sym == "globalThis" {
-                                            if opts.preserve_global_this {
-                                                return Ok(Cow::Owned(Type::Query(QueryType {
-                                                    span: actual_span,
-                                                    expr: box QueryExpr::TsEntityName(e.clone()),
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                })));
-                                            } else {
-                                                print_backtrace()
-                                            }
+                            if let QueryExpr::TsEntityName(e) = &*q.expr {
+                                if let RTsEntityName::Ident(i) = e {
+                                    //
+                                    if &*i.sym == "globalThis" {
+                                        if opts.preserve_global_this {
+                                            return Ok(Cow::Owned(Type::Query(QueryType {
+                                                span: actual_span,
+                                                expr: box QueryExpr::TsEntityName(e.clone()),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })));
+                                        } else {
+                                            print_backtrace()
                                         }
                                     }
-
-                                    let expanded_ty = self
-                                        .resolve_typeof(actual_span, e)
-                                        .with_context(|| "tried to resolve typeof as a part of normalization".into())?;
-
-                                    if expanded_ty.is_global_this() {
-                                        return Ok(Cow::Owned(expanded_ty));
-                                    }
-
-                                    if ty.type_eq(&expanded_ty) {
-                                        return Ok(Cow::Owned(Type::any(
-                                            actual_span.with_ctxt(SyntaxContext::empty()),
-                                            Default::default(),
-                                        )));
-                                    }
-
-                                    if expanded_ty.is_query() {
-                                        unreachable!(
-                                            "normalize: resolve_typeof returned a query type: {}",
-                                            dump_type_as_string(&expanded_ty)
-                                        )
-                                    }
-
-                                    return self
-                                        .normalize(span, Cow::Owned(expanded_ty), opts)
-                                        .context("tried to normalize the type returned from typeof");
                                 }
-                                QueryExpr::Import(_) => {}
+
+                                let expanded_ty = self
+                                    .resolve_typeof(actual_span, e)
+                                    .with_context(|| "tried to resolve typeof as a part of normalization".into())?;
+
+                                if expanded_ty.is_global_this() {
+                                    return Ok(Cow::Owned(expanded_ty));
+                                }
+
+                                if ty.type_eq(&expanded_ty) {
+                                    return Ok(Cow::Owned(Type::any(
+                                        actual_span.with_ctxt(SyntaxContext::empty()),
+                                        Default::default(),
+                                    )));
+                                }
+
+                                if expanded_ty.is_query() {
+                                    unreachable!(
+                                        "normalize: resolve_typeof returned a query type: {}",
+                                        dump_type_as_string(&expanded_ty)
+                                    )
+                                }
+
+                                return self
+                                    .normalize(span, Cow::Owned(expanded_ty), opts)
+                                    .context("tried to normalize the type returned from typeof");
+                            }
+                        }
+
+                        if let QueryExpr::Import(import) = &*q.expr {
+                            let base = self.storage.path(self.ctx.module_id);
+
+                            let dep_id = self.loader.module_id(&base, &import.arg.value);
+
+                            if let Some(dep_id) = dep_id {
+                                if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
+                                    dep.assert_clone_cheap();
+                                    return Ok(Cow::Owned(dep.clone()));
+                                } else {
+                                    return Err(ErrorKind::ModuleNotFound { span: import.span }.into());
+                                }
                             }
                         }
                         // TODO
@@ -469,7 +481,20 @@ impl Analyzer<'_, '_> {
                         return Ok(Cow::Owned(ty));
                     }
 
-                    Type::Import(_) => {}
+                    Type::Import(import) => {
+                        let base = self.storage.path(self.ctx.module_id);
+
+                        let dep_id = self.loader.module_id(&base, &import.arg.value);
+
+                        if let Some(dep_id) = dep_id {
+                            if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
+                                dep.assert_clone_cheap();
+                                return Ok(Cow::Owned(dep.clone()));
+                            } else {
+                                return Err(ErrorKind::ModuleNotFound { span: import.span }.into());
+                            }
+                        }
+                    }
 
                     Type::Predicate(_) => {
                         // TODO(kdy1): Add option for this.

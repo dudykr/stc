@@ -538,6 +538,7 @@ impl Analyzer<'_, '_> {
             | Type::Instance(..)
             | Type::StringMapping(..)
             | Type::Enum(..)
+            | Type::Import(..)
             | Type::Tuple(..)
             | Type::Union(..)
             | Type::Index(..)
