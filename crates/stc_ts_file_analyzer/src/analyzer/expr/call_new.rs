@@ -126,6 +126,9 @@ impl Analyzer<'_, '_> {
                 };
                 let src = match src.normalize() {
                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
+                    ty if !self.rule().strict_null_checks && ty.is_null_or_undefined() => {
+                        return Ok(Type::any(callee.span, Default::default()))
+                    }
                     ty if ty.is_any() || ty.is_str_like() => return Ok(Type::any(callee.span, Default::default())),
                     ty if ty.is_union_type() => {
                         let span = ty.span();
