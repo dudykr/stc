@@ -545,15 +545,67 @@ impl From<super::Module> for RTsType {
     }
 }
 
+// impl FromIterator<RTsType> for Vec<Type> {
+//     fn from_iter<T: IntoIterator<Item = RTsType>>(iter: T) -> Self {
+//         todo!()
+//     }
+// }
+
+// impl From<Box<RTsType>> for Type {
+//     fn from(t: Box<RTsType>) -> Self {
+//         match *t {
+//             RTsType::TsKeywordType(RTsKeywordType { kind, span }) =>
+// Type::Keyword(KeywordType {                 kind,
+//                 span,
+//                 tracker: Default::default(),
+//                 metadata: Default::default(),
+//             }),
+//             RTsType::TsLitType(lit_ty) => match &lit_ty.lit {
+//                 RTsLit::Number(num) => Type::Lit(LitType {
+//                     span: lit_ty.clone().span,
+//                     lit: lit_ty.clone().lit,
+//                     metadata: Default::default(),
+//                     tracker: Default::default(),
+//                 }),
+//                 a => Type::any(
+//                     Span {
+//                         lo: BytePos(0),
+//                         hi: BytePos(1),
+//                         ctxt: SyntaxContext::empty(),
+//                     },
+//                     Default::default(),
+//                 ),
+//             },
+//             _ => Type::any(
+//                 Span {
+//                     lo: BytePos(0),
+//                     hi: BytePos(1),
+//                     ctxt: SyntaxContext::empty(),
+//                 },
+//                 Default::default(),
+//             ),
+//         }
+//     }
+// }
+
 impl From<TypeParamInstantiation> for RTsTypeParamInstantiation {
     fn from(t: TypeParamInstantiation) -> Self {
         RTsTypeParamInstantiation {
-            node_id: NodeId::invalid(),
             span: t.span,
-            params: t.params.into_iter().map(|v| box v.into()).collect(),
+            params: t.params.into_iter().map(|v| box v.into()).collect::<Vec<Box<RTsType>>>(),
+            node_id: NodeId::invalid(),
         }
     }
 }
+
+// impl From<RTsTypeParamInstantiation> for TypeParamInstantiation {
+//     fn from(t: RTsTypeParamInstantiation) -> Self {
+//         TypeParamInstantiation {
+//             span: t.span,
+//             params: t.params.into_iter().map(|v|
+// v.into()).collect::<Vec<Type>>(),         }
+//     }
+// }
 
 impl From<super::Class> for RTsType {
     fn from(t: super::Class) -> Self {

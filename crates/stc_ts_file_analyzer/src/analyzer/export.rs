@@ -94,7 +94,6 @@ impl Analyzer<'_, '_> {
                     // export type Foo = {};
 
                     // TODO(kdy1): Handle type parameters.
-
                     a.export_type(span, decl.id.clone().into(), None)
                 }
             }

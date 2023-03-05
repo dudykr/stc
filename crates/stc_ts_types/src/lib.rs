@@ -1952,11 +1952,25 @@ impl Type {
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
-        match self.normalize() {
+        let is_keyword = match self.normalize() {
             Type::Instance(ty) => ty.ty.is_kwd(k),
             Type::Keyword(KeywordType { kind, .. }) if *kind == k => true,
             _ => false,
-        }
+        };
+
+        // if !is_keyword {
+        //     if let TsKeywordTypeKind::TsIntrinsicKeyword = k {
+        //         if self.normalize().is_builtin_interface("Uppercase")
+        //             | self.normalize().is_builtin_interface("Lowercase")
+        //             | self.normalize().is_builtin_interface("Capitalize")
+        //             | self.normalize().is_builtin_interface("Uncapitalize")
+        //         {
+        //             return true;
+        //         }
+        //     }
+        // }
+
+        is_keyword
     }
 
     pub fn is_unique_symbol(&self) -> bool {

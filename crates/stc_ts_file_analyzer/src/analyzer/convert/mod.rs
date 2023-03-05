@@ -182,7 +182,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<Type> {
         let span = d.span;
-
         let alias = {
             self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
                 let type_params = try_opt!(d.type_params.validate_with(child)).map(Box::new);
@@ -225,7 +224,34 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }),
 
-                    _ => d.type_ann.validate_with(child)?,
+                    t => {
+                        if let RTsType::TsTypeRef(type_ref) = t {
+                            if let RTsEntityName::Ident(t) = &type_ref.type_name {
+                                match &*t.sym {
+                                    "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => {
+                                        return Ok(Type::StringMapping(StringMapping {
+                                            span: d.span,
+                                            kind: IntrinsicKind::from(&*t.sym),
+                                            type_args: TypeParamInstantiation {
+                                                span: d.span(),
+                                                params: type_ref
+                                                    .clone()
+                                                    .type_params
+                                                    .unwrap()
+                                                    .params
+                                                    .into_iter()
+                                                    .map(|v| v.validate_with(child).unwrap())
+                                                    .collect(),
+                                            },
+                                            metadata: Default::default(),
+                                        }));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                        d.type_ann.validate_with(child)?
+                    }
                 };
 
                 let contains_infer_type = contains_infer_type(&ty);
@@ -254,6 +280,13 @@ impl Analyzer<'_, '_> {
                 Ok(alias)
             })?
         };
+
+        // if let Type::Alias(alias) = alias.normalize() {
+        if let Type::StringMapping(str_map) = &alias.normalize() {
+            self.assign_to_intrinsic(&mut Default::default(), str_map, &str_map.type_args.params[0], Default::default())?;
+        }
+        // }
+
         self.register_type(d.id.clone().into(), alias.clone());
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
