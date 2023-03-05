@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, OptionalType, PropertySignature, Ref, RestType, Tuple,
-    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, KeywordType, LitType, OptionalType, PropertySignature, Ref, RestType,
+    Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, dev_span, TryOpt};
@@ -363,7 +363,6 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             // TODO(kdy1): actual_ty
-                            println!("default ty prev add vars {:#?} {:#?} {:#?} ", elem, elem_ty, default_elem_ty);
 
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
                         }
@@ -375,7 +374,10 @@ impl Analyzer<'_, '_> {
 
                             match d_ty {
                                 Type::Tuple(mut ty) => {
-                                    let right_type_len = ty.elems.len();
+                                    let right_type_len = match ty.elems.len() {
+                                        0 => 1,
+                                        _ => ty.elems.len(),
+                                    };
 
                                     for (i, left_element) in arr.elems.iter().enumerate() {
                                         let is_not_assigned_type = i > right_type_len - 1;
@@ -383,18 +385,18 @@ impl Analyzer<'_, '_> {
                                             match r_pat {
                                                 RPat::Assign(p) => {
                                                     if is_not_assigned_type {
-                                                        let elem_ty = p
+                                                        let mut elem_ty = p
                                                             .right
                                                             .as_ref()
                                                             .validate_with_default(self)?
                                                             .clone()
                                                             .fold_with(&mut Widen { tuple_to_array: false });
 
-                                                        let convert_ty = match elem_ty {
-                                                            Type::Union(mut union) => {
+                                                        let convert_ty = match elem_ty.as_union_type_mut() {
+                                                            Some(union_obj) => {
                                                                 let mut has_undefined = false;
 
-                                                                for union_ty in union.types.iter() {
+                                                                for union_ty in union_obj.types.iter() {
                                                                     if let Type::Keyword(a) = union_ty {
                                                                         if TsKeywordTypeKind::TsUndefinedKeyword == a.kind {
                                                                             has_undefined = true
@@ -403,18 +405,26 @@ impl Analyzer<'_, '_> {
                                                                 }
 
                                                                 if !has_undefined {
-                                                                    union.types.push(Type::undefined(span, Default::default()));
+                                                                    union_obj.types.push(Type::undefined(span, Default::default()));
                                                                 }
 
-                                                                box Type::Union(union)
+                                                                box Type::Union(union_obj.clone())
                                                             }
-                                                            _ => match elem_ty.clone().keyword().as_ref().unwrap().kind {
-                                                                TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsUnknownKeyword => {
-                                                                    box elem_ty
-                                                                }
-                                                                TsKeywordTypeKind::TsNeverKeyword => {
-                                                                    box Type::undefined(span, Default::default())
-                                                                }
+                                                            None => match elem_ty.normalize() {
+                                                                Type::Keyword(KeywordType {
+                                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                                    ..
+                                                                })
+                                                                | Type::Keyword(KeywordType {
+                                                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                                                    ..
+                                                                }) => box elem_ty,
+
+                                                                Type::Keyword(KeywordType {
+                                                                    kind: TsKeywordTypeKind::TsNeverKeyword,
+                                                                    ..
+                                                                }) => box Type::undefined(span, Default::default()),
+
                                                                 _ => box Type::Union(Union {
                                                                     span,
                                                                     types: vec![elem_ty, Type::undefined(span, Default::default())],
@@ -654,7 +664,6 @@ impl Analyzer<'_, '_> {
                     }
 
                     real_ty.freeze();
-                    println!("real_ty {:#?}", real_ty);
                     self.regist_destructure(span, save_ty, Some(destructure_key));
                     Ok(Some(real_ty))
                 }
