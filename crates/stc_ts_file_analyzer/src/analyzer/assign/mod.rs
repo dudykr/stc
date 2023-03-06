@@ -2772,7 +2772,7 @@ impl Analyzer<'_, '_> {
                 lit: RTsLit::Number(..), ..
             }) => {
                 return Err(ErrorKind::NotSatisfyConstraint {
-                    span: r.span(),
+                    span: to.type_args.params[0].span(),
                     left: box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         span: DUMMY_SP,
@@ -2914,6 +2914,7 @@ impl Analyzer<'_, '_> {
                     if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
                         let s = v.clone().collect::<Vec<Type>>();
                         self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default())?;
+                        // self.assign(to.span(), )
                     }
 
                     // self.find_type(name)
