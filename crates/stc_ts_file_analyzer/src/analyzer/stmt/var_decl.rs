@@ -9,7 +9,7 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, OperatorMetadata, QueryExpr, QueryType, Symbol,
-    SymbolMetadata, Unique,
+    SymbolMetadata, ThisType, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
@@ -262,7 +262,19 @@ impl Analyzer<'_, '_> {
                         ty.freeze();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
-                        self.scope.this = Some(ty.clone().remove_falsy());
+                        self.scope.this = Some(if self.ctx.in_class_member {
+                            if self.scope.this.is_some() {
+                                self.scope.this().unwrap().into_owned()
+                            } else {
+                                Type::This(ThisType {
+                                    span,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                            }
+                        } else {
+                            ty.clone().remove_falsy()
+                        });
                         let mut value_ty = get_value_ty!(Some(&ty));
                         value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty, Default::default())?;
