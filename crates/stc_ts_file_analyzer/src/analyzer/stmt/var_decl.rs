@@ -14,7 +14,7 @@ use stc_ts_types::{
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
-use swc_common::Spanned;
+use swc_common::{Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::debug;
 use ty::TypeExt;
@@ -27,7 +27,7 @@ use crate::{
         scope::{vars::DeclareVarsOpts, ExpandOpts, VarKind},
         types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
-        Analyzer, Ctx,
+        Analyzer, Ctx, ScopeKind,
     },
     ty::{self, Tuple, Type, TypeParam},
     util::{should_instantiate_type_ann, RemoveTypes},
@@ -263,11 +263,25 @@ impl Analyzer<'_, '_> {
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(if self.ctx.in_class_member {
-                            if self.scope.this.is_some() {
+                            if self.scope.this().is_some() {
                                 self.scope.this().unwrap().into_owned()
                             } else {
                                 Type::This(ThisType {
                                     span,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                            }
+                        } else if matches!(self.scope.kind(), ScopeKind::ArrowFn) {
+                            if self.scope.this().is_some() {
+                                self.scope.this().unwrap().into_owned()
+                            } else {
+                                Type::Query(QueryType {
+                                    span,
+                                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                                        "globalThis".into(),
+                                        span.with_ctxt(SyntaxContext::empty()),
+                                    ))),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })
