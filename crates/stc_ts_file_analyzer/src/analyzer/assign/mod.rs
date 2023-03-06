@@ -2740,8 +2740,6 @@ impl Analyzer<'_, '_> {
 
     /// Should be called only if `to` is not expandable.
     pub(super) fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
-        dbg!(&self.ctx.in_assign_rhs);
-
         match r.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -2751,16 +2749,12 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..
             }) => {
-                // TODO: More handling
-                // if to.type_args.params[0].eq(r) {
                 return Ok(());
-                // }
             }
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             }) => {
-                // dbg!(&to.type_args.params[0], &self.scope);
                 if to.type_args.params[0].is_str() {
                     return Ok(());
                 }
@@ -2902,13 +2896,13 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Alias(alias_ty) => {
-                self.assign_to_intrinsic(&mut Default::default(), &to, &alias_ty.ty, Default::default())?;
+                self.assign_to_intrinsic(&mut Default::default(), to, &alias_ty.ty, Default::default())?;
             }
             Type::Ref(ref_ty) => {
                 if let RTsEntityName::Ident(id) = &ref_ty.type_name {
                     if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
                         let s = v.clone().collect::<Vec<Type>>();
-                        self.assign_to_intrinsic(&mut Default::default(), &to, &s[0], Default::default())?;
+                        self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default())?;
                     }
 
                     // self.find_type(name)
