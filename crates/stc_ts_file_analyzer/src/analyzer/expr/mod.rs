@@ -372,7 +372,7 @@ impl Analyzer<'_, '_> {
 
             let mut left_i = None;
             let ty_of_left;
-            let mut with_child_scope: Option<CondFacts> = None;
+            let mut facts_for_rhs: Option<CondFacts> = None;
             let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(RBindingIdent { id: ref i, .. })) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
@@ -385,12 +385,12 @@ impl Analyzer<'_, '_> {
                     left_i = Some(i.clone());
 
                     if e.op == op!("&&=") {
-                        let mut facts: CondFacts = Default::default();
-                        facts.facts.insert(
+                        let mut cond_facts: CondFacts = Default::default();
+                        cond_facts.facts.insert(
                             i.into(),
                             TypeFacts::NEUndefined | TypeFacts::NENull | TypeFacts::NEUndefinedOrNull | TypeFacts::Truthy,
                         );
-                        with_child_scope = Some(facts);
+                        facts_for_rhs = Some(cond_facts);
                     }
 
                     ty_of_left = analyzer
@@ -536,7 +536,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            if let Some(facts) = with_child_scope {
+                            if let Some(facts) = facts_for_rhs {
                                 analyzer.with_child(ScopeKind::Block, facts, |analyzer| {
                                     e.right
                                         .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
