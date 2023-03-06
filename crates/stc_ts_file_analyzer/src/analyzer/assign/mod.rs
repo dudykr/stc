@@ -2869,6 +2869,13 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::Union(union) => {
+                // TODO: Maybe change when https://github.com/dudykr/stc/issues/795 is resolved
+                // This handle cases where one of the union elemens is any
+                // ex: type A = Uppercase<any | 30> // no error
+                if union.types.iter().any(|v| v.is_any()) {
+                    return Ok(());
+                }
+
                 if union.types.iter().all(|v| v.is_str_like()) {
                     return Ok(());
                 }
