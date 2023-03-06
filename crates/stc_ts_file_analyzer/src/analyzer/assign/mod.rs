@@ -2740,7 +2740,7 @@ impl Analyzer<'_, '_> {
 
     /// Should be called only if `to` is not expandable.
     pub(super) fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
-        // dbg!(&r);
+        dbg!(&self.ctx.in_assign_rhs);
 
         match r.normalize() {
             Type::Keyword(KeywordType {
@@ -2750,15 +2750,29 @@ impl Analyzer<'_, '_> {
             | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..
-            })
-            | Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsStringKeyword,
-                ..
             }) => {
                 // TODO: More handling
                 // if to.type_args.params[0].eq(r) {
                 return Ok(());
                 // }
+            }
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            }) => {
+                // dbg!(&to.type_args.params[0], &self.scope);
+                if to.type_args.params[0].is_str() {
+                    return Ok(());
+                }
+
+                return Err(ErrorKind::AssignFailed {
+                    span: r.span(),
+                    left: box Type::StringMapping(to.clone()),
+                    right_ident: None,
+                    right: box r.clone(),
+                    cause: vec![],
+                }
+                .into());
             }
             Type::Lit(LitType {
                 lit: RTsLit::Number(..), ..
@@ -2782,25 +2796,80 @@ impl Analyzer<'_, '_> {
             }
             Type::Lit(LitType {
                 lit: RTsLit::Str(value), ..
-            }) => match to.kind {
-                IntrinsicKind::Uppercase | IntrinsicKind::Lowercase | IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize => {
-                    let type_param = &to.type_args.params[0];
-                    dbg!(&type_param);
-                    if type_param.is_str() || type_param.is_alias() {
-                        return Ok(());
-                    }
+            }) => {
+                let type_param = &to.type_args.params[0];
 
-                    if let Type::StringMapping(str_map) = type_param {
-                        self.assign_to_intrinsic(&mut Default::default(), str_map, r, Default::default())?;
-                    } else {
-                        self.assign(to.span(), &mut Default::default(), type_param, r)?;
-                    }
-
-                    // dbg!(&to.type_args.params[0]);
-
+                if type_param.is_str() || type_param.is_alias() || type_param.is_ref_type() {
                     return Ok(());
                 }
-            },
+
+                match to.kind {
+                    IntrinsicKind::Uppercase => {
+                        if let Some(value) = &value.raw {
+                            if value.to_uppercase() != **value {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: r.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                    IntrinsicKind::Lowercase => {
+                        if let Some(value) = &value.raw {
+                            if value.to_lowercase() != **value {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: r.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                    IntrinsicKind::Capitalize => {
+                        if let Some(value) = &value.raw {
+                            let ch = value.chars().next();
+
+                            if let Some(ch) = ch {
+                                if !ch.is_uppercase() {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: r.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                    }
+                    IntrinsicKind::Uncapitalize => {
+                        if let Some(value) = &value.raw {
+                            let ch = value.chars().next();
+
+                            if let Some(ch) = ch {
+                                if !ch.is_lowercase() {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: r.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Type::Union(union) => {
                 if union.types.iter().all(|v| v.is_str_like()) {
                     return Ok(());
@@ -2837,8 +2906,6 @@ impl Analyzer<'_, '_> {
             }
             Type::Ref(ref_ty) => {
                 if let RTsEntityName::Ident(id) = &ref_ty.type_name {
-                    // dbg!(&self.find_type(&id.into()));
-
                     if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
                         let s = v.clone().collect::<Vec<Type>>();
                         self.assign_to_intrinsic(&mut Default::default(), &to, &s[0], Default::default())?;
@@ -2851,7 +2918,6 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {
-                dbg!("zzz");
                 return Err(ErrorKind::AssignFailed {
                     span: r.span(),
                     left: box Type::StringMapping(to.clone()),

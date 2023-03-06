@@ -281,11 +281,9 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        // if let Type::Alias(alias) = alias.normalize() {
         if let Type::StringMapping(str_map) = &alias.normalize() {
             self.assign_to_intrinsic(&mut Default::default(), str_map, &str_map.type_args.params[0], Default::default())?;
         }
-        // }
 
         self.register_type(d.id.clone().into(), alias.clone());
 
