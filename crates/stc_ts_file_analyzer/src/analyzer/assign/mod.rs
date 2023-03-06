@@ -2884,7 +2884,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Union(union) => {
                 // TODO: Maybe change when https://github.com/dudykr/stc/issues/795 is resolved
-                // This handle cases where one of the union elements is any
+                // This handles cases where one of the union elements is any
                 // ex: type A = Uppercase<any | 30> // no error
                 if union.types.iter().any(|v| v.is_any()) {
                     return Ok(());
@@ -2918,7 +2918,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Tpl(tpl) => {
-                // Make sure all tuple types are valid
+                // Make sure all template-literal types are valid
                 // type X = { x: string }
                 // type A = Uppercase<`hello${X}`> // should error
                 for v in tpl.types.iter() {
