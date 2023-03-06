@@ -3028,7 +3028,23 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-
+            Type::Param(param) => {
+                if let Some(constraint) = &param.constraint {
+                    if !constraint.is_str_like() && !constraint.is_never() {
+                        return Err(ErrorKind::NotSatisfyConstraint {
+                            span: param.span,
+                            left: box Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                span: DUMMY_SP,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
+                            right: constraint.clone(),
+                        }
+                        .into());
+                    }
+                }
+            }
             _ => {
                 return Err(ErrorKind::AssignFailed {
                     span: r.span(),
