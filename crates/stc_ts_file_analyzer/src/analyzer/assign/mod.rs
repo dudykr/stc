@@ -2884,7 +2884,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Union(union) => {
                 // TODO: Maybe change when https://github.com/dudykr/stc/issues/795 is resolved
-                // This handle cases where one of the union elemens is any
+                // This handle cases where one of the union elements is any
                 // ex: type A = Uppercase<any | 30> // no error
                 if union.types.iter().any(|v| v.is_any()) {
                     return Ok(());
@@ -2926,7 +2926,7 @@ impl Analyzer<'_, '_> {
                         Type::Ref(ref_ty) => {
                             if let RTsEntityName::Ident(name) = &ref_ty.type_name {
                                 if let Ok(Some(ty)) = self.find_type(&name.into()) {
-                                    for ty in ty.into_iter() {
+                                    for ty in ty {
                                         if let Type::Alias(alias) = ty.normalize() {
                                             let ty = &*alias.ty;
 
@@ -2954,7 +2954,7 @@ impl Analyzer<'_, '_> {
                         }
                         Type::Param(param) => {
                             if let Some(constraint) = &param.constraint {
-                                let v = &*constraint;
+                                let v = &**constraint;
 
                                 if !(v.is_any()
                                     || v.is_num_like()
