@@ -513,6 +513,7 @@ es6/Symbols/symbolProperty57.ts
 es6/Symbols/symbolProperty58.ts
 es6/Symbols/symbolProperty6.ts
 es6/Symbols/symbolProperty60.ts
+es6/Symbols/symbolProperty61.ts
 es6/Symbols/symbolProperty8.ts
 es6/Symbols/symbolProperty9.ts
 es6/Symbols/symbolType1.ts
