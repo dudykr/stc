@@ -549,7 +549,7 @@ impl Analyzer<'_, '_> {
 
             callee_ty.freeze();
 
-            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty, type_ann)?;
+            analyzer.apply_type_ann_from_callee(span, kind, args, &callee_ty, type_args.as_ref(), type_ann)?;
             let mut arg_types = analyzer.validate_args(args)?;
             arg_types.freeze();
 
@@ -3585,6 +3585,7 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         args: &[RExprOrSpread],
         callee: &Type,
+        type_args: Option<&TypeParamInstantiation>,
         type_ann_for_return_type: Option<&Type>,
     ) -> VResult<()> {
         let c = self.extract_callee_candidates(span, kind, callee)?;
@@ -3595,12 +3596,17 @@ impl Analyzer<'_, '_> {
 
         let c = c.into_iter().next().unwrap();
 
-        let params = match (&c.type_params, type_ann_for_return_type) {
-            (Some(type_params), Some(type_ann)) => {
-                let type_params = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann, Default::default())?;
+        let params = match (&c.type_params, type_args, type_ann_for_return_type) {
+            (Some(type_params), Some(type_args), _) => {
+                let mut map = FxHashMap::default();
+
+                for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+                    map.insert(param.name.clone(), arg.clone());
+                }
+
                 let params = c.params.clone().freezed();
 
-                let mut params = self.expand_type_params(&type_params, params, Default::default())?;
+                let mut params = self.expand_type_params(&map, params, Default::default())?;
 
                 for param in &mut params {
                     self.add_required_type_params(&mut param.ty);
@@ -3611,7 +3617,22 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(params)
             }
 
-            (Some(..), None) => {
+            (Some(type_params), None, Some(type_ann)) => {
+                let map = self.infer_type_with_types(span, &type_params.params, &c.ret_ty, type_ann, Default::default())?;
+                let params = c.params.clone().freezed();
+
+                let mut params = self.expand_type_params(&map, params, Default::default())?;
+
+                for param in &mut params {
+                    self.add_required_type_params(&mut param.ty);
+                }
+
+                params.freeze();
+
+                Cow::Owned(params)
+            }
+
+            (Some(..), _, None) => {
                 return Ok(());
             }
 
