@@ -2727,7 +2727,7 @@ impl Analyzer<'_, '_> {
 
     /// Should be called only if `to` is not expandable.
     pub(super) fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
-        dbg!(&r.is_lit());
+        // dbg!(&r);
 
         match r.normalize() {
             Type::Keyword(KeywordType {
@@ -2743,9 +2743,9 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 // TODO: More handling
-                if to.type_args.params[0].eq(r) {
-                    return Ok(());
-                }
+                // if to.type_args.params[0].eq(r) {
+                return Ok(());
+                // }
             }
             Type::Lit(LitType {
                 lit: RTsLit::Number(..), ..
@@ -2816,72 +2816,9 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Tpl(tpl) => match to.kind {
-                IntrinsicKind::Uppercase => {
-                    let is_uppercase = tpl.quasis.iter().all(|s| s.value.chars().all(|c| c.is_uppercase()));
-
-                    if !is_uppercase {
-                        return Err(ErrorKind::AssignFailed {
-                            span: r.span(),
-                            left: box Type::StringMapping(to.clone()),
-                            right_ident: None,
-                            right: box r.clone(),
-                            cause: vec![],
-                        }
-                        .into());
-                    }
-
-                    return Ok(());
-                }
-                IntrinsicKind::Lowercase => {
-                    let is_lowercase = tpl.quasis.iter().all(|s| s.value.chars().all(|c| c.is_lowercase()));
-
-                    if !is_lowercase {
-                        return Err(ErrorKind::AssignFailed {
-                            span: r.span(),
-                            left: box Type::StringMapping(to.clone()),
-                            right_ident: None,
-                            right: box r.clone(),
-                            cause: vec![],
-                        }
-                        .into());
-                    }
-
-                    return Ok(());
-                }
-                IntrinsicKind::Capitalize => {
-                    if let Some(c) = tpl.quasis[0].value.chars().into_iter().next() {
-                        if c.is_uppercase() {
-                            return Ok(());
-                        }
-                    }
-
-                    return Err(ErrorKind::AssignFailed {
-                        span: r.span(),
-                        left: box Type::StringMapping(to.clone()),
-                        right_ident: None,
-                        right: box r.clone(),
-                        cause: vec![],
-                    }
-                    .into());
-                }
-                IntrinsicKind::Uncapitalize => {
-                    if let Some(c) = tpl.quasis[0].value.chars().into_iter().next() {
-                        if !c.is_uppercase() {
-                            return Ok(());
-                        }
-                    }
-
-                    return Err(ErrorKind::AssignFailed {
-                        span: r.span(),
-                        left: box Type::StringMapping(to.clone()),
-                        right_ident: None,
-                        right: box r.clone(),
-                        cause: vec![],
-                    }
-                    .into());
-                }
-            },
+            Type::Tpl(tpl) => {
+                return Ok(());
+            }
             Type::Alias(alias_ty) => {
                 self.assign_to_intrinsic(&mut Default::default(), &to, &alias_ty.ty, Default::default())?;
             }
