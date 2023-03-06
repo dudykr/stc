@@ -2924,31 +2924,23 @@ impl Analyzer<'_, '_> {
                 for v in tpl.types.iter() {
                     match v.normalize() {
                         Type::Ref(ref_ty) => {
-                            if let RTsEntityName::Ident(name) = &ref_ty.type_name {
-                                if let Ok(Some(ty)) = self.find_type(&name.into()) {
-                                    for ty in ty {
-                                        if let Type::Alias(alias) = ty.normalize() {
-                                            let ty = &*alias.ty;
-
-                                            if !(ty.is_any()
-                                                || ty.is_num_like()
-                                                || ty.is_bool_like()
-                                                || ty.is_str_like()
-                                                || ty.is_bigint_like()
-                                                || ty.is_null()
-                                                || ty.is_undefined())
-                                            {
-                                                return Err(ErrorKind::AssignFailed {
-                                                    span: ref_ty.span(),
-                                                    left: box Type::StringMapping(to.clone()),
-                                                    right_ident: None,
-                                                    right: box r.clone(),
-                                                    cause: vec![],
-                                                }
-                                                .into());
-                                            }
-                                        }
+                            if let Ok(ty) = &self.expand_top_ref(ref_ty.span, Cow::Borrowed(v), Default::default()) {
+                                if !(ty.is_any()
+                                    || ty.is_num_like()
+                                    || ty.is_bool_like()
+                                    || ty.is_str_like()
+                                    || ty.is_bigint_like()
+                                    || ty.is_null()
+                                    || ty.is_undefined())
+                                {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: ref_ty.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
                                     }
+                                    .into());
                                 }
                             }
                         }
