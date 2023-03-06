@@ -281,8 +281,14 @@ impl Analyzer<'_, '_> {
             })?
         };
 
+        let ctx = Ctx {
+            in_actual_type: true,
+            ..self.ctx
+        };
+
         if let Type::StringMapping(str_map) = &alias.normalize() {
-            self.assign_to_intrinsic(&mut Default::default(), str_map, &str_map.type_args.params[0], Default::default())?;
+            self.with_ctx(ctx)
+                .assign_to_intrinsic(&mut Default::default(), str_map, &str_map.type_args.params[0], Default::default())?;
         }
 
         self.register_type(d.id.clone().into(), alias.clone());

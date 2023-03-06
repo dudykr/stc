@@ -2755,7 +2755,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             }) => {
-                if to.type_args.params[0].is_str() {
+                if self.ctx.in_actual_type {
                     return Ok(());
                 }
 
@@ -2793,7 +2793,11 @@ impl Analyzer<'_, '_> {
             }) => {
                 let type_param = &to.type_args.params[0];
 
-                if type_param.is_str() || type_param.is_alias() || type_param.is_ref_type() {
+                if self.ctx.in_actual_type {
+                    return Ok(());
+                }
+
+                if type_param.is_alias() || type_param.is_ref_type() {
                     return Ok(());
                 }
 
