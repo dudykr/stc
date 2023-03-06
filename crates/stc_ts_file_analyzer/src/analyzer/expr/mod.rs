@@ -537,7 +537,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(facts) = facts_for_rhs {
-                                analyzer.with_child(ScopeKind::Block, facts, |analyzer| {
+                                analyzer.with_child(ScopeKind::Flow, facts, |analyzer| {
                                     e.right
                                         .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
                                         .context("tried to validate rhs an assign expr")

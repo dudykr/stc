@@ -2211,6 +2211,7 @@ statements/breakStatements/forInBreakStatements.ts
 statements/breakStatements/invalidSwitchBreakStatement.ts
 statements/breakStatements/switchBreakStatements.ts
 statements/breakStatements/whileBreakStatements.ts
+statements/continueStatements/doWhileConSymbols/ES5SymbolType1.ts
 statements/continueStatements/doWhileContinueStatements.ts
 statements/continueStatements/forContinueStatements.ts
 statements/continueStatements/forInContinueStatements.ts
