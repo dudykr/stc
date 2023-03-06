@@ -2,6 +2,7 @@ use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr, RTsExternalModuleRef,
+    RTsImportType,
 };
 use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -65,7 +66,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
+    pub(crate) fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
         self.data.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
@@ -423,6 +424,23 @@ where
             DepInfo {
                 span: r.span,
                 src: r.expr.value.clone(),
+            },
+        ));
+    }
+}
+
+impl<C> Visit<RTsImportType> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
+    fn visit(&mut self, import: &RTsImportType) {
+        let span = import.span();
+
+        self.to.push((
+            self.cur_ctxt,
+            DepInfo {
+                span,
+                src: import.arg.value.clone(),
             },
         ));
     }

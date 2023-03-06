@@ -14,7 +14,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    dev_span,
+    dev_span, stack,
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
@@ -36,6 +36,7 @@ impl Analyzer<'_, '_> {
     ///
     /// TODO(kdy1): Handle index signatures.
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+        let _guard = stack::track(span)?;
         let _tracing = dev_span!("expand_mapped");
 
         let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));

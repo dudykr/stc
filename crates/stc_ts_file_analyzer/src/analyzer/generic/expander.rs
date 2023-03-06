@@ -303,7 +303,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => {
-                if self.rule().strict_null_checks {
+                if !self.rule().strict_null_checks {
                     return Some(true);
                 }
                 return Some(false);

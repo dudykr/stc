@@ -401,7 +401,7 @@ where
         Ok(data)
     }
 
-    fn declare_module(&self, name: &JsWord, module: Type) {
+    fn declare_module(&self, name: &JsWord, module: Type) -> ModuleId {
         module.assert_clone_cheap();
 
         let module_id = self
@@ -415,5 +415,7 @@ where
 
         info!("Declaring module with type `{}`", name);
         self.declared_modules.insert(name.to_string(), module_id);
+
+        module_id
     }
 }
