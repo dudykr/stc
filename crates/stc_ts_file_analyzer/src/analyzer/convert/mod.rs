@@ -230,10 +230,10 @@ impl Analyzer<'_, '_> {
                                 match &*t.sym {
                                     "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => {
                                         return Ok(Type::StringMapping(StringMapping {
-                                            span: d.span,
+                                            span: t.span,
                                             kind: IntrinsicKind::from(&*t.sym),
                                             type_args: TypeParamInstantiation {
-                                                span: d.span(),
+                                                span: type_ref.type_params.span(),
                                                 params: type_ref
                                                     .clone()
                                                     .type_params

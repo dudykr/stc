@@ -3032,7 +3032,9 @@ impl Analyzer<'_, '_> {
                 if let Some(constraint) = &param.constraint {
                     if !constraint.is_str_like() && !constraint.is_never() {
                         return Err(ErrorKind::NotSatisfyConstraint {
-                            span: param.span,
+                            // This ideally should be to.type_args.params[0].span()
+                            // but that gives wrong span pos
+                            span: to.type_args.span(),
                             left: box Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                                 span: DUMMY_SP,
