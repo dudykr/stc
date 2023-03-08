@@ -281,19 +281,27 @@ impl Analyzer<'_, '_> {
             })?
         };
 
+        self.register_type(d.id.clone().into(), alias.clone());
+
+        self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
+
+        if let Err(e) = self.normalize(Some(d.span), Cow::Borrowed(&alias), Default::default()) {
+            return Err(e);
+        }
+
         let ctx = Ctx {
             in_actual_type: true,
             ..self.ctx
         };
 
-        if let Type::StringMapping(str_map) = &alias.normalize() {
-            self.with_ctx(ctx)
-                .assign_to_intrinsic(&mut Default::default(), str_map, &str_map.type_args.params[0], Default::default())?;
+        if let Type::StringMapping(ty) = alias.normalize() {
+            if let Err(e) = self
+                .with_ctx(ctx)
+                .assign_to_intrinsic(&mut Default::default(), ty, &ty.type_args.params[0], Default::default())
+            {
+                return Err(e);
+            }
         }
-
-        self.register_type(d.id.clone().into(), alias.clone());
-
-        self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 
         Ok(alias)
     }

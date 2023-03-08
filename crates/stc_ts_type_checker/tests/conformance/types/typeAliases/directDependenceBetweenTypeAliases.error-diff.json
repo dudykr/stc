@@ -16,6 +16,14 @@
       25
     ]
   },
-  "extra_errors": {},
-  "extra_error_lines": {}
+  "extra_errors": {
+    "TS2304": 3
+  },
+  "extra_error_lines": {
+    "TS2304": [
+      26,
+      30,
+      39
+    ]
+  }
 }
