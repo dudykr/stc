@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt::Debug};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
     is_str_lit_or_union,
