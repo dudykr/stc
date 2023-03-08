@@ -281,6 +281,8 @@ impl Analyzer<'_, '_> {
             })?
         };
 
+        self.register_type(d.id.clone().into(), alias.clone());
+
         self.normalize(Some(d.span), Cow::Borrowed(&alias), Default::default())?;
 
         let ctx = Ctx {
@@ -292,8 +294,6 @@ impl Analyzer<'_, '_> {
             self.with_ctx(ctx)
                 .assign_to_intrinsic(&mut Default::default(), ty, &ty.type_args.params[0], Default::default())?
         }
-
-        self.register_type(d.id.clone().into(), alias.clone());
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 
