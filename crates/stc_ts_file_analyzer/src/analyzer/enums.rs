@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let has_str = members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Str(..))));
+            let has_str = members.iter().any(|m| m.val.is_str_lit());
 
             if has_str {
                 for m in &e.members {
@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
 
             ArcCow::new_freezed(Enum {
                 span: e.span,
-                has_num: members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Num(..)))),
+                has_num: members.iter().any(|m| m.val.is_num_lit()),
                 has_str,
                 declare: e.declare,
                 is_const: e.is_const,
