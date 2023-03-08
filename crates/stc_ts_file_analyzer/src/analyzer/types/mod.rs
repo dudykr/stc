@@ -341,7 +341,12 @@ impl Analyzer<'_, '_> {
                                     .normalize(span, Cow::Borrowed(ty), opts)
                                     .context("tried to normalize an element of a union type")?;
                                 ty.freeze();
+
                                 let mut ty = ty.into_owned();
+
+                                if ty.is_any() && !opts.process_only_key {
+                                    return Ok(Cow::Owned(ty));
+                                }
 
                                 if let Some(u) = ty.as_union_type_mut() {
                                     types.append(&mut u.types);
@@ -366,7 +371,6 @@ impl Analyzer<'_, '_> {
                             }
 
                             let ty = Type::Union(Union { types, ..*ty }).freezed();
-
                             return Ok(Cow::Owned(ty));
                         }
                     }
@@ -761,6 +765,7 @@ impl Analyzer<'_, '_> {
                 })))
             }};
         }
+
         let mut normalized_types = vec![];
         // set normalize all
         for el in types.iter() {

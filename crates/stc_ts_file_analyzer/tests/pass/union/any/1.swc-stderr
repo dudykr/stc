@@ -1,0 +1,41 @@
+
+  x Type
+   ,-[$DIR/tests/pass/union/any/1.ts:7:1]
+ 7 | const t1: Any = 1;
+ 8 | t1;
+   : ^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/union/any/1.ts:9:1]
+  9 | 
+ 10 | const t2 = a;
+    :            ^
+ 11 | t2;
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/union/any/1.ts:10:1]
+ 10 | const t2 = a;
+ 11 | t2;
+    : ^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/union/any/1.ts:13:1]
+ 13 | const t3: Any2 = 1;
+ 14 | t3;
+    : ^^
+    `----
+
+Error: 
+  > any
