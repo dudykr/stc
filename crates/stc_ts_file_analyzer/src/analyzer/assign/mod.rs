@@ -1166,6 +1166,7 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
+                    // TODO: Check for values of member
                     if def.has_num {
                         return Ok(());
                     }
@@ -1181,6 +1182,7 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
+                    // TODO: Check for values of member
                     if def.has_str {
                         return Ok(());
                     }
