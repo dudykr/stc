@@ -1156,9 +1156,28 @@ impl Analyzer<'_, '_> {
 
             Type::EnumVariant(EnumVariant { name: None, def, .. }) => match rhs.normalize() {
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(..), ..
-                })
-                | Type::Keyword(KeywordType {
+                    lit: RTsLit::Number(r_num),
+                    ..
+                }) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
+                    for m in def.members.iter() {
+                        if let Type::Lit(LitType {
+                            lit: RTsLit::Number(l_num),
+                            ..
+                        }) = &*m.val.normalize()
+                        {
+                            if l_num.value == r_num.value {
+                                return Ok(());
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }) => {
@@ -1173,8 +1192,27 @@ impl Analyzer<'_, '_> {
                     fail!()
                 }
 
-                Type::Lit(LitType { lit: RTsLit::Str(..), .. })
-                | Type::Keyword(KeywordType {
+                Type::Lit(LitType {
+                    lit: RTsLit::Str(r_str), ..
+                }) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
+                    for m in def.members.iter() {
+                        if let Type::Lit(LitType {
+                            lit: RTsLit::Str(l_str), ..
+                        }) = &*m.val.normalize()
+                        {
+                            if l_str.value == r_str.value {
+                                return Ok(());
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 }) => {
