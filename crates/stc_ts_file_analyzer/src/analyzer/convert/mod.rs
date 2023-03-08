@@ -281,13 +281,7 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        self.register_type(d.id.clone().into(), alias.clone());
-
-        self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
-
-        if let Err(e) = self.normalize(Some(d.span), Cow::Borrowed(&alias), Default::default()) {
-            return Err(e);
-        }
+        self.normalize(Some(d.span), Cow::Borrowed(&alias), Default::default())?;
 
         let ctx = Ctx {
             in_actual_type: true,
@@ -295,13 +289,13 @@ impl Analyzer<'_, '_> {
         };
 
         if let Type::StringMapping(ty) = alias.normalize() {
-            if let Err(e) = self
-                .with_ctx(ctx)
-                .assign_to_intrinsic(&mut Default::default(), ty, &ty.type_args.params[0], Default::default())
-            {
-                return Err(e);
-            }
+            self.with_ctx(ctx)
+                .assign_to_intrinsic(&mut Default::default(), ty, &ty.type_args.params[0], Default::default())?
         }
+
+        self.register_type(d.id.clone().into(), alias.clone());
+
+        self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 
         Ok(alias)
     }
