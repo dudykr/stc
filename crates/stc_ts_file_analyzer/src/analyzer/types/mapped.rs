@@ -516,8 +516,21 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for v in &e.members {
-                    if let Ok(val) = self.validate_key(&v.val, false) {
-                        keys.push(val);
+                    match &*v.val {
+                        Type::Lit(v) => match &v.lit {
+                            RTsLit::Str(key) => {
+                                keys.push(Key::Normal {
+                                    span: key.span,
+                                    sym: key.value.clone(),
+                                });
+                            }
+                            RTsLit::Number(key) => {
+                                keys.push(Key::Num(key.clone()));
+                            }
+                            _ => {}
+                        },
+
+                        _ => {}
                     }
                 }
 

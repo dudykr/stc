@@ -926,15 +926,17 @@ impl Analyzer<'_, '_> {
                                 RTsEnumMemberId::Ident(i) => i.clone(),
                                 RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
                             };
-                            match *v.val {
-                                RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
+                            match &*v.val {
+                                Type::Lit(LitType { lit: RTsLit::Str(v), .. }) => str_lits.push(Type::EnumVariant(EnumVariant {
                                     span: v.span,
                                     def: ev.def.cheap_clone(),
                                     name: Some(key.sym),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })),
-                                RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
+                                Type::Lit(LitType {
+                                    lit: RTsLit::Number(v), ..
+                                }) => num_lits.push(Type::EnumVariant(EnumVariant {
                                     span: v.span,
                                     def: ev.def.cheap_clone(),
                                     name: Some(key.sym),

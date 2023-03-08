@@ -189,9 +189,6 @@ impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
         let _: Option<()> = self.get_mapped(&node.id.clone().into(), |ty| {
             if let Type::Enum(e) = ty {
                 //
-                if e.members.iter().any(|m| !matches!(*m.val, RExpr::Tpl(..) | RExpr::Lit(..))) {
-                    is_all_lit = false;
-                }
             }
 
             None
