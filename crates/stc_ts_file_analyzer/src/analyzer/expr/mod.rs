@@ -23,8 +23,8 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Index, Instance,
-    Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Module, ModuleTypeData, OptionalType, PropertySignature,
-    QueryExpr, QueryType, QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
+    Key, KeywordType, KeywordTypeMetadata, LitType, Method, Module, ModuleTypeData, OptionalType, PropertySignature, QueryExpr, QueryType,
+    QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -896,7 +896,7 @@ impl Analyzer<'_, '_> {
             Type::Enum(e) if allow_union => {
                 //
                 for m in &e.members {
-                    if let RExpr::Lit(RLit::Str(s)) = &*m.val {
+                    if let Type::Lit(LitType { lit: RTsLit::Str(s), .. }) = m.val.normalize() {
                         if self.key_matches(
                             span,
                             declared,
@@ -1948,19 +1948,7 @@ impl Analyzer<'_, '_> {
                         let idx = value.round() as usize;
                         if e.members.len() > idx {
                             let v = &e.members[idx];
-                            if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
-                                let new_obj_ty = Type::Lit(LitType {
-                                    span,
-                                    lit: match *v.val.clone() {
-                                        RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                        RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
-                                        _ => unreachable!(),
-                                    },
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                });
-                                return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
-                            }
+                            return self.access_property(span, &v.val, prop, type_mode, id_ctx, opts);
                         }
                         return Ok(Type::Keyword(KeywordType {
                             span,
