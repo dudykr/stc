@@ -75,17 +75,24 @@ impl Analyzer<'_, '_> {
                                 val.clone(),
                             );
 
-                            match val {
-                                RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
-                                RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
-                                RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(RStr {
+                            let lit = match &val {
+                                RTsLit::Number(v) => RTsLit::Number(*v),
+                                RTsLit::Str(v) => RTsLit::Str(v.clone()),
+                                RTsLit::Bool(v) => RTsLit::Bool(v.clone()),
+                                RTsLit::Tpl(v) => RTsLit::Str(RStr {
                                     span: v.span,
                                     value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
                                     raw: None,
-                                })),
-                                RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
-                            }
+                                }),
+                                RTsLit::BigInt(v) => RTsLit::BigInt(v.clone()),
+                            };
+
+                            box Type::Lit(LitType {
+                                span: m.span,
+                                lit,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
                         })
                         .or_else(|err| match &m.init {
                             None => Err(err),
@@ -93,13 +100,13 @@ impl Analyzer<'_, '_> {
                                 if e.is_const {
                                     self.storage.report(err);
                                 }
-                                Ok(*v.clone())
+                                Ok(box Type::any(m.span, Default::default()))
                             }
                         })?;
 
                     Ok(EnumMember {
                         id: m.id.clone(),
-                        val: box val,
+                        val,
                         span: m.span,
                     })
                 })
