@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
                                 ty.normalize(),
                                 Type::Query(QueryType {
                                     expr: box QueryExpr::TsEntityName(RTsEntityName::TsQualifiedName(box RTsQualifiedName {
-                                        left: RTsEntityName::Ident(..),
+                                        left: RTsEntityName::Ident(RIdent { sym: js_word!("this"), .. }),
                                         ..
                                     })),
                                     ..
