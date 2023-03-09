@@ -600,21 +600,7 @@ impl Analyzer<'_, '_> {
                         sym == variant_name
                     }
                 }) {
-                    if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
-                        return Ok(Type::Lit(LitType {
-                            span: v.span,
-                            lit: match *v.val.clone() {
-                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                _ => unreachable!(),
-                            },
-                            metadata: LitTypeMetadata {
-                                common: ev.metadata.common,
-                                ..Default::default()
-                            },
-                            tracker: Default::default(),
-                        }));
-                    }
+                    return Ok(*v.val.clone());
                 }
             }
         }
