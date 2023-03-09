@@ -1,6 +1,6 @@
 use std::{borrow::Cow, cmp::min, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBool, RIdent, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
@@ -1156,9 +1156,28 @@ impl Analyzer<'_, '_> {
 
             Type::EnumVariant(EnumVariant { name: None, def, .. }) => match rhs.normalize() {
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(..), ..
-                })
-                | Type::Keyword(KeywordType {
+                    lit: RTsLit::Number(r_num),
+                    ..
+                }) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
+                    for m in def.members.iter() {
+                        if let Type::Lit(LitType {
+                            lit: RTsLit::Number(l_num),
+                            ..
+                        }) = m.val.normalize()
+                        {
+                            if l_num.value == r_num.value {
+                                return Ok(());
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }) => {
@@ -1166,14 +1185,34 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
+                    // TODO: Check for values of member
                     if def.has_num {
                         return Ok(());
                     }
                     fail!()
                 }
 
-                Type::Lit(LitType { lit: RTsLit::Str(..), .. })
-                | Type::Keyword(KeywordType {
+                Type::Lit(LitType {
+                    lit: RTsLit::Str(r_str), ..
+                }) => {
+                    if opts.do_not_convert_enum_to_string_nor_number {
+                        fail!()
+                    }
+
+                    for m in def.members.iter() {
+                        if let Type::Lit(LitType {
+                            lit: RTsLit::Str(l_str), ..
+                        }) = m.val.normalize()
+                        {
+                            if l_str.value == r_str.value {
+                                return Ok(());
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 }) => {
@@ -1181,6 +1220,7 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
+                    // TODO: Check for values of member
                     if def.has_str {
                         return Ok(());
                     }
@@ -1240,7 +1280,11 @@ impl Analyzer<'_, '_> {
                                 sym == name
                             }
                         }) {
-                            if let RExpr::Lit(RLit::Num(l_num)) = &*v.val {
+                            if let Type::Lit(LitType {
+                                lit: RTsLit::Number(l_num),
+                                ..
+                            }) = v.val.normalize()
+                            {
                                 if l_num.value == r_num.value {
                                     return Ok(());
                                 }
@@ -1260,7 +1304,10 @@ impl Analyzer<'_, '_> {
                                 sym == name
                             }
                         }) {
-                            if let RExpr::Lit(RLit::Str(l_str)) = &*v.val {
+                            if let Type::Lit(LitType {
+                                lit: RTsLit::Str(l_str), ..
+                            }) = &*v.val
+                            {
                                 if l_str.value == r_str.value {
                                     return Ok(());
                                 }

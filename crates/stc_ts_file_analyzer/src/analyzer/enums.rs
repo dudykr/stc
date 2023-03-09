@@ -7,7 +7,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, PropertySignature, TypeElement, TypeLit,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
@@ -75,17 +75,24 @@ impl Analyzer<'_, '_> {
                                 val.clone(),
                             );
 
-                            match val {
-                                RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
-                                RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
-                                RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(RStr {
+                            let lit = match &val {
+                                RTsLit::Number(v) => RTsLit::Number(v.clone()),
+                                RTsLit::Str(v) => RTsLit::Str(v.clone()),
+                                RTsLit::Bool(v) => RTsLit::Bool(v.clone()),
+                                RTsLit::Tpl(v) => RTsLit::Str(RStr {
                                     span: v.span,
-                                    value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
+                                    value: From::from(&*v.quasis.first().unwrap().raw.clone()),
                                     raw: None,
-                                })),
-                                RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
-                            }
+                                }),
+                                RTsLit::BigInt(v) => RTsLit::BigInt(v.clone()),
+                            };
+
+                            box Type::Lit(LitType {
+                                span: m.span,
+                                lit,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
                         })
                         .or_else(|err| match &m.init {
                             None => Err(err),
@@ -93,13 +100,13 @@ impl Analyzer<'_, '_> {
                                 if e.is_const {
                                     self.storage.report(err);
                                 }
-                                Ok(*v.clone())
+                                Ok(box Type::any(m.span, Default::default()))
                             }
                         })?;
 
                     Ok(EnumMember {
                         id: m.id.clone(),
-                        val: box val,
+                        val,
                         span: m.span,
                     })
                 })
@@ -121,7 +128,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let has_str = members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Str(..))));
+            let has_str = members.iter().any(|m| m.val.is_str_lit());
 
             if has_str {
                 for m in &e.members {
@@ -131,7 +138,7 @@ impl Analyzer<'_, '_> {
 
             ArcCow::new_freezed(Enum {
                 span: e.span,
-                has_num: members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Num(..)))),
+                has_num: members.iter().any(|m| m.val.is_num_lit()),
                 has_str,
                 declare: e.declare,
                 is_const: e.is_const,
@@ -574,23 +581,7 @@ impl Analyzer<'_, '_> {
         let mut values = vec![];
 
         for m in &e.members {
-            match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
-                    span: m.span,
-                    lit: RTsLit::Str(lit.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
-                    span: m.span,
-                    lit: RTsLit::Number(lit.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                _ => {
-                    unimplemented!("Handle enum with value other than string literal or numeric literals")
-                }
-            }
+            values.push(*m.val.clone());
         }
         let span = ty.span();
 
@@ -609,21 +600,7 @@ impl Analyzer<'_, '_> {
                         sym == variant_name
                     }
                 }) {
-                    if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
-                        return Ok(Type::Lit(LitType {
-                            span: v.span,
-                            lit: match *v.val.clone() {
-                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                _ => unreachable!(),
-                            },
-                            metadata: LitTypeMetadata {
-                                common: ev.metadata.common,
-                                ..Default::default()
-                            },
-                            tracker: Default::default(),
-                        }));
-                    }
+                    return Ok(*v.val.clone());
                 }
             }
         }

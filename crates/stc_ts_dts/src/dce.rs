@@ -4,8 +4,7 @@ use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr, RFnDecl, RFunction, RInvalid, RLit,
-    RModuleDecl, RModuleItem, RPat, RStmt, RTsEnumDecl, RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl,
-    RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RModuleDecl, RModuleItem, RPat, RStmt, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData, Type};
 use stc_ts_utils::{MapWithMut, PatExt};
@@ -173,62 +172,6 @@ impl VisitMut<RTsModuleDecl> for DceForDts<'_> {
 
         self.top_level = old_top_level;
         self.in_declare = old_in_declare;
-    }
-}
-
-impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
-    fn visit_mut(&mut self, node: &mut RTsEnumDecl) {
-        let mut is_all_lit = true;
-        let mut should_init_only_first = true;
-        let has_no_init = node.members.iter().all(|v| v.init.is_none());
-
-        if node.members.iter().any(|m| m.init.is_some()) {
-            should_init_only_first = false;
-        }
-
-        let _: Option<()> = self.get_mapped(&node.id.clone().into(), |ty| {
-            if let Type::Enum(e) = ty {
-                //
-                if e.members.iter().any(|m| !matches!(*m.val, RExpr::Tpl(..) | RExpr::Lit(..))) {
-                    is_all_lit = false;
-                }
-            }
-
-            None
-        });
-
-        let members = self.get_mapped(&node.id.clone().into(), |ty| match ty {
-            Type::Enum(e) => Some(
-                e.members
-                    .iter()
-                    .enumerate()
-                    .map(|(i, member)| RTsEnumMember {
-                        node_id: NodeId::invalid(),
-                        span: member.span,
-                        id: member.id.clone(),
-                        init: if is_all_lit {
-                            if has_no_init {
-                                Some(member.val.clone())
-                            } else if should_init_only_first {
-                                if i == 0 {
-                                    Some(member.val.clone())
-                                } else {
-                                    None
-                                }
-                            } else {
-                                Some(member.val.clone())
-                            }
-                        } else {
-                            None
-                        },
-                    })
-                    .collect(),
-            ),
-            _ => None,
-        });
-
-        node.declare = !self.in_declare;
-        node.members = members.unwrap_or_else(|| node.members.take());
     }
 }
 
