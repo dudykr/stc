@@ -1771,12 +1771,13 @@ impl Analyzer<'_, '_> {
         }
 
         let mut obj = match obj.normalize() {
-            Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
+            Type::Conditional(..) | Type::Instance(..) | Type::Query(..) | Type::EnumVariant(..) => self.normalize(
                 Some(span),
                 Cow::Borrowed(obj),
                 NormalizeTypeOpts {
                     preserve_intersection: true,
                     preserve_global_this: true,
+                    expand_enum_variant: true,
                     ..Default::default()
                 },
             )?,
@@ -1985,36 +1986,6 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }));
-                    }
-                }
-            }
-
-            // enum Foo { A }
-            //
-            // Foo.A.toString()
-            Type::EnumVariant(EnumVariant {
-                def,
-                ref name,
-                span,
-                metadata,
-                ..
-            }) => {
-                for v in def.members.iter() {
-                    if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
-                        let new_obj_ty = Type::Lit(LitType {
-                            span: *span,
-                            lit: match *v.val.clone() {
-                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
-                                _ => unreachable!(),
-                            },
-                            metadata: LitTypeMetadata {
-                                common: metadata.common,
-                                ..Default::default()
-                            },
-                            tracker: Default::default(),
-                        });
-                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                     }
                 }
             }

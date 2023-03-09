@@ -75,6 +75,10 @@ pub(crate) struct NormalizeTypeOpts {
     /// [Type::EnumVariant].
     pub expand_enum_def: bool,
 
+    /// IF true, [Type::EnumVariant] with the variant name will be expanded as a
+    /// literal.
+    pub expand_enum_variant: bool,
+
     pub preserve_keyof: bool,
 }
 
