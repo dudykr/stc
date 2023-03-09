@@ -7,7 +7,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, PropertySignature, TypeElement, TypeLit,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
