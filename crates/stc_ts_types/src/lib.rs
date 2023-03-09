@@ -887,8 +887,7 @@ pub struct EnumMember {
     pub span: Span,
     #[use_eq_ignore_span]
     pub id: RTsEnumMemberId,
-    #[use_eq_ignore_span]
-    pub val: Box<RExpr>,
+    pub val: Box<Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]

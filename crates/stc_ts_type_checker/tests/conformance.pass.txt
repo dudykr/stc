@@ -2398,6 +2398,7 @@ types/primitives/boolean/extendBooleanInterface.ts
 types/primitives/boolean/invalidBooleanAssignments.ts
 types/primitives/boolean/validBooleanAssignments.ts
 types/primitives/enum/invalidEnumAssignments.ts
+types/primitives/enum/validEnumAssignments.ts
 types/primitives/null/directReferenceToNull.ts
 types/primitives/null/validNullAssignments.ts
 types/primitives/number/assignFromNumberInterface.ts
@@ -2595,6 +2596,7 @@ types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInhe
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance4.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance5.ts
+types/typeRelationships/assignmentCompatibility/enumAssignability.ts
 types/typeRelationships/assignmentCompatibility/everyTypeAssignableToAny.ts
 types/typeRelationships/assignmentCompatibility/genericCallWithObjectTypeArgsAndInitializers.ts
 types/typeRelationships/assignmentCompatibility/nullAssignableToEveryType.ts
