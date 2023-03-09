@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
         let mut values = vec![];
 
         for m in &e.members {
-            values.push(m.val.clone());
+            values.push(*m.val.clone());
         }
         let span = ty.span();
 
