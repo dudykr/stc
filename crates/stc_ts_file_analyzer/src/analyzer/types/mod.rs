@@ -120,7 +120,6 @@ impl Analyzer<'_, '_> {
             | Type::ClassDef(..)
             | Type::Function(..)
             | Type::Constructor(..)
-            | Type::EnumVariant(..)
             | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
             _ => {}
@@ -624,6 +623,14 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })));
+                        }
+                    }
+
+                    Type::EnumVariant(e) => {
+                        if opts.expand_enum_variant {
+                            let ty = self.expand_enum_variant(Type::EnumVariant(e.clone()))?;
+
+                            return Ok(Cow::Owned(ty));
                         }
                     }
 

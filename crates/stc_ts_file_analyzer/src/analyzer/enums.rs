@@ -76,12 +76,12 @@ impl Analyzer<'_, '_> {
                             );
 
                             let lit = match &val {
-                                RTsLit::Number(v) => RTsLit::Number(*v),
+                                RTsLit::Number(v) => RTsLit::Number(v.clone()),
                                 RTsLit::Str(v) => RTsLit::Str(v.clone()),
                                 RTsLit::Bool(v) => RTsLit::Bool(v.clone()),
                                 RTsLit::Tpl(v) => RTsLit::Str(RStr {
                                     span: v.span,
-                                    value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
+                                    value: From::from(&*v.quasis.first().unwrap().raw.clone()),
                                     raw: None,
                                 }),
                                 RTsLit::BigInt(v) => RTsLit::BigInt(v.clone()),

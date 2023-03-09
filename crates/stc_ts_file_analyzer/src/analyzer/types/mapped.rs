@@ -516,8 +516,8 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for v in &e.members {
-                    match &*v.val {
-                        Type::Lit(v) => match &v.lit {
+                    if let Type::Lit(v) = v.val.normalize() {
+                        match &v.lit {
                             RTsLit::Str(key) => {
                                 keys.push(Key::Normal {
                                     span: key.span,
@@ -528,9 +528,7 @@ impl Analyzer<'_, '_> {
                                 keys.push(Key::Num(key.clone()));
                             }
                             _ => {}
-                        },
-
-                        _ => {}
+                        }
                     }
                 }
 

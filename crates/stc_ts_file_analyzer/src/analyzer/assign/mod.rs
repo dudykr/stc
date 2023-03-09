@@ -1167,7 +1167,7 @@ impl Analyzer<'_, '_> {
                         if let Type::Lit(LitType {
                             lit: RTsLit::Number(l_num),
                             ..
-                        }) = &*m.val.normalize()
+                        }) = m.val.normalize()
                         {
                             if l_num.value == r_num.value {
                                 return Ok(());
@@ -1202,7 +1202,7 @@ impl Analyzer<'_, '_> {
                     for m in def.members.iter() {
                         if let Type::Lit(LitType {
                             lit: RTsLit::Str(l_str), ..
-                        }) = &*m.val.normalize()
+                        }) = m.val.normalize()
                         {
                             if l_str.value == r_str.value {
                                 return Ok(());
@@ -1283,7 +1283,7 @@ impl Analyzer<'_, '_> {
                             if let Type::Lit(LitType {
                                 lit: RTsLit::Number(l_num),
                                 ..
-                            }) = &*v.val.normalize()
+                            }) = v.val.normalize()
                             {
                                 if l_num.value == r_num.value {
                                     return Ok(());
