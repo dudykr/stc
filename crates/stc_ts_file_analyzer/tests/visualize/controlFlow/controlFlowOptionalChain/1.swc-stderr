@@ -23,7 +23,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | string | number)
+  > (string | number | undefined)
 
   x Type
     ,-[$DIR/tests/visualize/controlFlow/controlFlowOptionalChain/1.ts:12:1]

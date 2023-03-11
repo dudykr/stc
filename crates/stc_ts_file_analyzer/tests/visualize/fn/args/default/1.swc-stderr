@@ -20,7 +20,7 @@ Error:
 
 Error: 
   > ({ z  }: {
-  |     z?: (undefined | number);
+  |     z?: (number | undefined);
   | }) => void
 
   x Type

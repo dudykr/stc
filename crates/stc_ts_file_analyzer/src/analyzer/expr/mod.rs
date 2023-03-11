@@ -943,9 +943,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ref type_ann) = p.type_ann {
                                 if p.optional {
-                                    let mut types = vec![Type::undefined(span, Default::default()), *type_ann.clone()];
-                                    types.dedup_type();
-                                    matching_elements.push(Type::new_union(span, types));
+                                    matching_elements.push(type_ann.clone().union_with_undefined(span));
                                 } else {
                                     matching_elements.push(*type_ann.clone());
                                 }
@@ -969,9 +967,7 @@ impl Analyzer<'_, '_> {
                             });
 
                             if m.optional {
-                                let mut types = vec![Type::undefined(span, Default::default()), prop_ty.clone()];
-                                types.dedup_type();
-                                matching_elements.push(Type::new_union(span, types));
+                                matching_elements.push(prop_ty.clone().union_with_undefined(span));
                             } else {
                                 matching_elements.push(prop_ty.clone());
                             }
@@ -3062,18 +3058,7 @@ impl Analyzer<'_, '_> {
                             let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
 
                             let ty = match m.optional {
-                                Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => {
-                                    let undefined = Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    });
-                                    let mut types = vec![undefined, ty];
-                                    types.dedup_type();
-
-                                    Type::new_union(span, types)
-                                }
+                                Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => ty.union_with_undefined(span),
                                 Some(TruePlusMinus::Minus) => self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty),
                                 _ => ty,
                             };
@@ -4094,19 +4079,7 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to resolve type from an optional ts entity name")?;
 
-                Ok(Type::new_union(
-                    span,
-                    vec![
-                        ty,
-                        Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }),
-                    ],
-                )
-                .freezed())
+                Ok(ty.union_with_undefined(span).freezed())
             }
 
             _ => {
@@ -4275,7 +4248,7 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional && include_optional_chaining_undefined {
-            Ok(Type::new_union(span, vec![Type::undefined(span, Default::default()), ty]))
+            Ok(ty.union_with_undefined(span))
         } else {
             if !self.config.is_builtin {
                 debug_assert_ne!(ty.span(), DUMMY_SP);

@@ -1830,6 +1830,32 @@ impl Type {
         Self::new_union_without_dedup(span, elements)
     }
 
+    pub fn union_with_undefined(self, span: Span) -> Type {
+        match self.normalize() {
+            Type::Union(u) => {
+                if u.types.iter().any(|ty| ty.is_undefined()) {
+                    return self;
+                }
+
+                let mut u = self.expect_union_type();
+                u.types.push(Type::undefined(span, Default::default()));
+                Type::Union(u)
+            }
+
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsUnknownKeyword,
+                ..
+            }) => self,
+
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            }) => Type::undefined(span, Default::default()),
+
+            _ => Self::new_union_without_dedup(span, vec![self, Type::undefined(span, Default::default())]),
+        }
+    }
+
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].
     pub fn force_generalize_top_level_literals(self) -> Self {
         match self {
