@@ -449,7 +449,7 @@ impl TypeEq for Key {
 
             (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
             | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
-                Ok(v) => v == *n,
+                Ok(v) => v == *n && *n.to_string() == **s,
                 _ => false,
             },
 
