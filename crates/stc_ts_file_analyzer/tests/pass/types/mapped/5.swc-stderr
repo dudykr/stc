@@ -45,7 +45,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
@@ -78,4 +78,4 @@ Error:
     `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)

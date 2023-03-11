@@ -19,4 +19,4 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
