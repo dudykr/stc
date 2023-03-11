@@ -1843,16 +1843,12 @@ impl Type {
             }
 
             Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsAnyKeyword,
-                ..
-            })
-            | Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                kind: TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => self,
 
             Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsNeverKeyword,
+                kind: TsKeywordTypeKind::TsNeverKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => Type::undefined(span, Default::default()),
 
