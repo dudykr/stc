@@ -203,7 +203,8 @@ impl Analyzer<'_, '_> {
                     Type::Mapped(m) => {
                         if !opts.preserve_mapped {
                             let ty = self.expand_mapped(actual_span, m)?;
-                            if let Some(ty) = ty {
+                            if let Some(mut ty) = ty {
+                                ty.fix();
                                 return Ok(Cow::Owned(
                                     self.normalize(span, Cow::Owned(ty), opts)
                                         .context("tried to expand a mapped type as a part of normalization")?
