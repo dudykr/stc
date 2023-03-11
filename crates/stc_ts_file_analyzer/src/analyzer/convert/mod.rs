@@ -225,40 +225,34 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }),
 
-                    t => {
-                        match t {
-                            RTsType::TsTypeRef(type_ref) => {
-                                if let RTsEntityName::Ident(t) = &type_ref.type_name {
-                                    match &*t.sym {
-                                        "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => {
-                                            // let b = t.validate_with(child)?;
-                                            // dbg!(&b);
-                                            Type::StringMapping(StringMapping {
-                                                span: t.span,
-                                                kind: IntrinsicKind::from(&*t.sym),
-                                                type_args: TypeParamInstantiation {
-                                                    span: type_ref.type_params.span(),
-                                                    params: type_ref
-                                                        .clone()
-                                                        .type_params
-                                                        .unwrap()
-                                                        .params
-                                                        .into_iter()
-                                                        .map(|v| v.validate_with(child).unwrap())
-                                                        .collect(),
-                                                },
-                                                metadata: Default::default(),
-                                            })
-                                        }
-                                        _ => d.type_ann.validate_with(child)?,
-                                    }
-                                } else {
-                                    d.type_ann.validate_with(child)?
+                    t => match t {
+                        RTsType::TsTypeRef(type_ref) => {
+                            if let RTsEntityName::Ident(t) = &type_ref.type_name {
+                                match &*t.sym {
+                                    "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => Type::StringMapping(StringMapping {
+                                        span: t.span,
+                                        kind: IntrinsicKind::from(&*t.sym),
+                                        type_args: TypeParamInstantiation {
+                                            span: type_ref.type_params.span(),
+                                            params: type_ref
+                                                .clone()
+                                                .type_params
+                                                .unwrap()
+                                                .params
+                                                .into_iter()
+                                                .map(|v| v.validate_with(child).unwrap())
+                                                .collect(),
+                                        },
+                                        metadata: Default::default(),
+                                    }),
+                                    _ => d.type_ann.validate_with(child)?,
                                 }
+                            } else {
+                                d.type_ann.validate_with(child)?
                             }
-                            _ => d.type_ann.validate_with(child)?,
                         }
-                    }
+                        _ => d.type_ann.validate_with(child)?,
+                    },
                 };
 
                 let contains_infer_type = contains_infer_type(&ty);
