@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RArrowExpr, RBindingIdent, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsFnOrConstructorType,
-    RTsFnParam, RTsFnType, RTsType, RTsTypeAssertion, RVarDecl, RVarDeclarator,
+    RTsFnParam, RTsFnType, RTsQualifiedName, RTsType, RTsTypeAssertion, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -262,33 +262,68 @@ impl Analyzer<'_, '_> {
                         ty.freeze();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
-                        self.scope.this = Some(if self.ctx.in_class_member {
-                            if self.scope.this().is_some() {
-                                self.scope.this().unwrap().into_owned()
-                            } else {
-                                Type::This(ThisType {
-                                    span,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                })
-                            }
-                        } else if matches!(self.scope.kind(), ScopeKind::ArrowFn) {
-                            if self.scope.this().is_some() {
-                                self.scope.this().unwrap().into_owned()
-                            } else {
+                        self.scope.this = Some(
+                            if matches!(
+                                ty.normalize(),
                                 Type::Query(QueryType {
-                                    span,
-                                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
-                                        "globalThis".into(),
-                                        span.with_ctxt(SyntaxContext::empty()),
-                                    ))),
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
+                                    expr: box QueryExpr::TsEntityName(RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                                        left: RTsEntityName::Ident(RIdent { sym: js_word!("this"), .. }),
+                                        ..
+                                    })),
+                                    ..
                                 })
-                            }
-                        } else {
-                            ty.clone().remove_falsy()
-                        });
+                            ) || self.ctx.in_class_member
+                            {
+                                if self.scope.this().is_some() {
+                                    self.scope.this().unwrap().into_owned()
+                                } else {
+                                    if matches!(self.scope.kind(), ScopeKind::ArrowFn) {
+                                        // ```ts
+                                        // const Test8 = () => {
+                                        //     let x: typeof this.no = 1;
+                                        //   };
+                                        // ```
+                                        Type::Query(QueryType {
+                                            span,
+                                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                                                "globalThis".into(),
+                                                span.with_ctxt(SyntaxContext::empty()),
+                                            ))),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                    } else {
+                                        // ```ts
+                                        // class Test {
+                                        //     data = {};
+                                        //     constructor() {
+                                        //       var copy: typeof this.data = {};
+                                        //     }
+                                        //   }
+                                        // ```
+                                        Type::This(ThisType {
+                                            span,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                    }
+                                }
+                            } else {
+                                // export let p1: Point = {
+                                //     x: 10,
+                                //     y: 20,
+                                //     moveBy(dx, dy, dz) {
+                                //         this.x += dx;
+                                //         this.y += dy;
+                                //         if (this.z && dz) {
+                                //             this.z += dz;
+                                //         }
+                                //     }
+                                // };
+                                ty.clone().remove_falsy()
+                            },
+                        );
+
                         let mut value_ty = get_value_ty!(Some(&ty));
                         value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty, Default::default())?;

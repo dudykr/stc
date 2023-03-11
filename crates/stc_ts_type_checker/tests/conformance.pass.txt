@@ -2232,7 +2232,6 @@ types/any/assignEveryTypeToAny.ts
 types/any/narrowExceptionVariableInCatchClause.ts
 types/any/narrowFromAnyWithInstanceof.ts
 types/conditional/inferTypes2.ts
-types/conditional/inferTypesWithExtends1.ts
 types/conditional/variance.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionAwaitOperand.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionReturnType.ts
@@ -2272,7 +2271,6 @@ types/literal/booleanLiteralTypes2.ts
 types/literal/enumLiteralTypes1.ts
 types/literal/enumLiteralTypes2.ts
 types/literal/enumLiteralTypes3.ts
-types/literal/literalTypeWidening.ts
 types/literal/literalTypes1.ts
 types/literal/literalTypes2.ts
 types/literal/literalTypes3.ts
@@ -2398,6 +2396,7 @@ types/primitives/boolean/extendBooleanInterface.ts
 types/primitives/boolean/invalidBooleanAssignments.ts
 types/primitives/boolean/validBooleanAssignments.ts
 types/primitives/enum/invalidEnumAssignments.ts
+types/primitives/enum/validEnumAssignments.ts
 types/primitives/null/directReferenceToNull.ts
 types/primitives/null/validNullAssignments.ts
 types/primitives/number/assignFromNumberInterface.ts
@@ -2595,6 +2594,7 @@ types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInhe
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance4.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance5.ts
+types/typeRelationships/assignmentCompatibility/enumAssignability.ts
 types/typeRelationships/assignmentCompatibility/everyTypeAssignableToAny.ts
 types/typeRelationships/assignmentCompatibility/genericCallWithObjectTypeArgsAndInitializers.ts
 types/typeRelationships/assignmentCompatibility/nullAssignableToEveryType.ts

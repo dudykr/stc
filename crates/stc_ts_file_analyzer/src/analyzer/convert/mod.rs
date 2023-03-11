@@ -28,6 +28,7 @@ use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::warn;
 
+use super::NormalizeTypeOpts;
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
@@ -263,6 +264,18 @@ impl Analyzer<'_, '_> {
                     child.prevent_expansion(&mut ty);
                 }
                 ty.freeze();
+                if !child.config.is_builtin {
+                    child
+                        .normalize(
+                            Some(span),
+                            Cow::Borrowed(&ty),
+                            NormalizeTypeOpts {
+                                process_only_key: true,
+                                ..Default::default()
+                            },
+                        )
+                        .report(&mut child.storage);
+                }
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,

@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt::Debug};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RLit, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
     is_str_lit_or_union,
@@ -75,6 +75,10 @@ pub(crate) struct NormalizeTypeOpts {
     /// [Type::EnumVariant].
     pub expand_enum_def: bool,
 
+    /// IF true, [Type::EnumVariant] with the variant name will be expanded as a
+    /// literal.
+    pub expand_enum_variant: bool,
+
     pub preserve_keyof: bool,
 }
 
@@ -116,7 +120,6 @@ impl Analyzer<'_, '_> {
             | Type::ClassDef(..)
             | Type::Function(..)
             | Type::Constructor(..)
-            | Type::EnumVariant(..)
             | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
             _ => {}
@@ -200,7 +203,8 @@ impl Analyzer<'_, '_> {
                     Type::Mapped(m) => {
                         if !opts.preserve_mapped {
                             let ty = self.expand_mapped(actual_span, m)?;
-                            if let Some(ty) = ty {
+                            if let Some(mut ty) = ty {
+                                ty.fix();
                                 return Ok(Cow::Owned(
                                     self.normalize(span, Cow::Owned(ty), opts)
                                         .context("tried to expand a mapped type as a part of normalization")?
@@ -623,6 +627,14 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    Type::EnumVariant(e) => {
+                        if opts.expand_enum_variant {
+                            let ty = self.expand_enum_variant(Type::EnumVariant(e.clone()))?;
+
+                            return Ok(Cow::Owned(ty));
+                        }
+                    }
+
                     Type::Tuple(tuple) => {}
 
                     Type::Tpl(tpl) => {
@@ -926,15 +938,17 @@ impl Analyzer<'_, '_> {
                                 RTsEnumMemberId::Ident(i) => i.clone(),
                                 RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
                             };
-                            match *v.val {
-                                RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
+                            match &*v.val {
+                                Type::Lit(LitType { lit: RTsLit::Str(v), .. }) => str_lits.push(Type::EnumVariant(EnumVariant {
                                     span: v.span,
                                     def: ev.def.cheap_clone(),
                                     name: Some(key.sym),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 })),
-                                RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
+                                Type::Lit(LitType {
+                                    lit: RTsLit::Number(v), ..
+                                }) => num_lits.push(Type::EnumVariant(EnumVariant {
                                     span: v.span,
                                     def: ev.def.cheap_clone(),
                                     name: Some(key.sym),
