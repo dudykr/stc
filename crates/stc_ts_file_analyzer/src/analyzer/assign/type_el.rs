@@ -1351,8 +1351,29 @@ impl Analyzer<'_, '_> {
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
                                             if let Some(r_prop_ty) = &r_prop.type_ann {
-                                                self.assign_with_opts(data, l_index_ret_ty, r_prop_ty, opts)
+                                                if r_prop.optional && li.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                                                    self.assign_with_opts(
+                                                        data,
+                                                        l_index_ret_ty,
+                                                        &Type::new_union(
+                                                            span,
+                                                            vec![
+                                                                *r_prop_ty.clone(),
+                                                                Type::Keyword(KeywordType {
+                                                                    span,
+                                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                                    metadata: Default::default(),
+                                                                    tracker: Default::default(),
+                                                                }),
+                                                            ],
+                                                        ),
+                                                        opts,
+                                                    )
                                                     .context("tried to assign a type of property to thr type of an index signature")?;
+                                                } else {
+                                                    self.assign_with_opts(data, l_index_ret_ty, r_prop_ty, opts)
+                                                        .context("tried to assign a type of property to thr type of an index signature")?;
+                                                }
                                             }
                                         }
 
