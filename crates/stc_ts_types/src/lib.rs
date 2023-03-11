@@ -423,14 +423,14 @@ impl TypeEq for Key {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { value: v, .. }),
                         ..
-                    }) => Ok(*v) == sym.parse::<f64>(),
+                    }) => Ok(*v) == sym.parse::<f64>() && *v == sym.parse::<f64>().unwrap(),
                     _ => false,
                 },
                 Key::Num(b) => match &**a {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(RStr { value: v, .. }),
                         ..
-                    }) => Ok(b.value) == v.parse::<f64>(),
+                    }) => Ok(b.value) == v.parse::<f64>() && *v == b.value.to_string(),
                     Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { value: v, .. }),
                         ..
@@ -449,7 +449,7 @@ impl TypeEq for Key {
 
             (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
             | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
-                Ok(v) => v == *n,
+                Ok(v) => v == *n && *n.to_string() == **s,
                 _ => false,
             },
 
@@ -1828,6 +1828,32 @@ impl Type {
         elements.retain(|ty| !ty.is_never());
 
         Self::new_union_without_dedup(span, elements)
+    }
+
+    pub fn union_with_undefined(self, span: Span) -> Type {
+        match self.normalize() {
+            Type::Union(u) => {
+                if u.types.iter().any(|ty| ty.is_undefined()) {
+                    return self;
+                }
+
+                let mut u = self.expect_union_type();
+                u.types.push(Type::undefined(span, Default::default()));
+                Type::Union(u)
+            }
+
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsUnknownKeyword,
+                ..
+            }) => self,
+
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            }) => Type::undefined(span, Default::default()),
+
+            _ => Self::new_union_without_dedup(span, vec![self, Type::undefined(span, Default::default())]),
+        }
     }
 
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].

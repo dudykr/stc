@@ -23,7 +23,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | string | number)
+  > (string | number | undefined)
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:6:1]

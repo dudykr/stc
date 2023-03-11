@@ -31,4 +31,4 @@ Error:
    `----
 
 Error: 
-  > (undefined | number)
+  > (number | undefined)

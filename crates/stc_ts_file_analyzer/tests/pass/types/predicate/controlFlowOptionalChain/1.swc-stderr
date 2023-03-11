@@ -30,7 +30,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | x is number)
+  > (x is number | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:1]
