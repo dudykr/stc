@@ -2310,6 +2310,7 @@ types/mapped/mappedTypes1.ts
 types/mapped/mappedTypes2.ts
 types/mapped/mappedTypes3.ts
 types/mapped/mappedTypes4.ts
+types/mapped/mappedTypesArraysTuples.ts
 types/members/augmentedTypeBracketAccessIndexSignature.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
