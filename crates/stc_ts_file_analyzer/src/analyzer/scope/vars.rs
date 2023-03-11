@@ -377,64 +377,22 @@ impl Analyzer<'_, '_> {
                                 if let Some(r_pat) = left_element {
                                     match r_pat {
                                         RPat::Assign(p) => {
-                                            let mut elem_ty = p
+                                            let elem_ty = box p
                                                 .right
-                                                .as_ref()
                                                 .validate_with_default(self)?
-                                                .fold_with(&mut Widen { tuple_to_array: false });
-
-                                            let convert_ty = match elem_ty.as_union_type_mut() {
-                                                Some(union_obj) => {
-                                                    let mut has_undefined = false;
-
-                                                    for union_ty in union_obj.types.iter() {
-                                                        if let Type::Keyword(a) = union_ty {
-                                                            if TsKeywordTypeKind::TsUndefinedKeyword == a.kind {
-                                                                has_undefined = true
-                                                            }
-                                                        }
-                                                    }
-
-                                                    if !has_undefined {
-                                                        union_obj.types.push(Type::undefined(span, Default::default()));
-                                                    }
-
-                                                    box Type::Union(union_obj.clone())
-                                                }
-                                                None => match elem_ty.normalize() {
-                                                    Type::Keyword(KeywordType {
-                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                        ..
-                                                    })
-                                                    | Type::Keyword(KeywordType {
-                                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                                        ..
-                                                    }) => box elem_ty,
-
-                                                    Type::Keyword(KeywordType {
-                                                        kind: TsKeywordTypeKind::TsNeverKeyword,
-                                                        ..
-                                                    }) => box Type::undefined(span, Default::default()),
-
-                                                    _ => box Type::Union(Union {
-                                                        span,
-                                                        types: vec![elem_ty, Type::undefined(span, Default::default())],
-                                                        metadata: Default::default(),
-                                                        tracker: Default::default(),
-                                                    }),
-                                                },
-                                            };
+                                                .fold_with(&mut Widen { tuple_to_array: false })
+                                                .union_with_undefined(span)
+                                                .freezed();
 
                                             left_elems.push(TupleElement {
                                                 span,
                                                 label: None,
                                                 ty: box Type::Optional(OptionalType {
                                                     span,
-                                                    ty: convert_ty,
+                                                    ty: elem_ty,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
                                                 }),
-
                                                 tracker: Default::default(),
                                             });
                                         }
@@ -459,58 +417,13 @@ impl Analyzer<'_, '_> {
                                 Type::Tuple(mut ty) => {
                                     let right_type_len = ty.elems.len();
                                     let left_type_len = left_elems.len();
-                                    let mut left_elems_tmp = left_elems;
                                     let assign_possible = left_type_len > right_type_len;
 
                                     if assign_possible {
                                         let assign_range = left_type_len - right_type_len;
                                         let start = left_type_len - assign_range;
-
-                                        if let Some(r_pat) = left_element {
-                                            match r_pat {
-                                                RPat::Assign(p) => {
-                                                    if is_not_assigned_type {
-                                                        let elem_ty = box p
-                                                            .right
-                                                            .validate_with_default(self)?
-                                                            .fold_with(&mut Widen { tuple_to_array: false })
-                                                            .union_with_undefined(span)
-                                                            .freezed();
-
-                                                        ty.elems.push(TupleElement {
-                                                            span,
-                                                            label: None,
-                                                            ty: box Type::Optional(OptionalType {
-                                                                span,
-                                                                ty: elem_ty,
-                                                                metadata: Default::default(),
-                                                                tracker: Default::default(),
-                                                            }),
-
-                                                            tracker: Default::default(),
-                                                        });
-                                                    }
-                                                }
-                                                _ => {
-                                                    if is_not_assigned_type {
-                                                        ty.elems.push(TupleElement {
-                                                            span,
-                                                            label: None,
-                                                            ty: box Type::Optional(OptionalType {
-                                                                span,
-                                                                ty: box Type::any(span, Default::default()),
-                                                                metadata: Default::default(),
-                                                                tracker: Default::default(),
-                                                            }),
-                                                            tracker: Default::default(),
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                        for _ in (start)..start + assign_range {
-                                            ty.elems.push(left_elems_tmp.remove(start));
-                                        }
-                                    };
+                                        ty.elems.extend(left_elems.drain(start..start + assign_range));
+                                    }
 
                                     Some(Type::Tuple(ty))
                                 }
