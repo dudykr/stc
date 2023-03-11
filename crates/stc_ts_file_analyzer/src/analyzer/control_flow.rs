@@ -839,8 +839,20 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let is_in_loop = self.scope.is_in_loop_body();
+
+        let ctx = Ctx {
+            in_actual_type: true,
+            ..self.ctx
+        };
         let orig_ty = self
-            .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
+            .normalize(
+                Some(ty.span().or_else(|| span)),
+                Cow::Borrowed(ty),
+                NormalizeTypeOpts {
+                    in_type: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .freezed();

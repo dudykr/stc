@@ -226,32 +226,38 @@ impl Analyzer<'_, '_> {
                     }),
 
                     t => {
-                        if let RTsType::TsTypeRef(type_ref) = t {
-                            if let RTsEntityName::Ident(t) = &type_ref.type_name {
-                                match &*t.sym {
-                                    "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => {
-                                        return Ok(Type::StringMapping(StringMapping {
-                                            span: t.span,
-                                            kind: IntrinsicKind::from(&*t.sym),
-                                            type_args: TypeParamInstantiation {
-                                                span: type_ref.type_params.span(),
-                                                params: type_ref
-                                                    .clone()
-                                                    .type_params
-                                                    .unwrap()
-                                                    .params
-                                                    .into_iter()
-                                                    .map(|v| v.validate_with(child).unwrap())
-                                                    .collect(),
-                                            },
-                                            metadata: Default::default(),
-                                        }));
+                        match t {
+                            RTsType::TsTypeRef(type_ref) => {
+                                if let RTsEntityName::Ident(t) = &type_ref.type_name {
+                                    match &*t.sym {
+                                        "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => {
+                                            // let b = t.validate_with(child)?;
+                                            // dbg!(&b);
+                                            Type::StringMapping(StringMapping {
+                                                span: t.span,
+                                                kind: IntrinsicKind::from(&*t.sym),
+                                                type_args: TypeParamInstantiation {
+                                                    span: type_ref.type_params.span(),
+                                                    params: type_ref
+                                                        .clone()
+                                                        .type_params
+                                                        .unwrap()
+                                                        .params
+                                                        .into_iter()
+                                                        .map(|v| v.validate_with(child).unwrap())
+                                                        .collect(),
+                                                },
+                                                metadata: Default::default(),
+                                            })
+                                        }
+                                        _ => d.type_ann.validate_with(child)?,
                                     }
-                                    _ => {}
+                                } else {
+                                    d.type_ann.validate_with(child)?
                                 }
                             }
+                            _ => d.type_ann.validate_with(child)?,
                         }
-                        d.type_ann.validate_with(child)?
                     }
                 };
 
@@ -264,6 +270,7 @@ impl Analyzer<'_, '_> {
                     child.prevent_expansion(&mut ty);
                 }
                 ty.freeze();
+
                 if !child.config.is_builtin {
                     child
                         .normalize(
@@ -271,6 +278,7 @@ impl Analyzer<'_, '_> {
                             Cow::Borrowed(&ty),
                             NormalizeTypeOpts {
                                 process_only_key: true,
+                                in_type: true,
                                 ..Default::default()
                             },
                         )
@@ -295,18 +303,6 @@ impl Analyzer<'_, '_> {
         };
 
         self.register_type(d.id.clone().into(), alias.clone());
-
-        self.normalize(Some(d.span), Cow::Borrowed(&alias), Default::default())?;
-
-        let ctx = Ctx {
-            in_actual_type: true,
-            ..self.ctx
-        };
-
-        if let Type::StringMapping(ty) = alias.normalize() {
-            self.with_ctx(ctx)
-                .assign_to_intrinsic(&mut Default::default(), ty, &ty.type_args.params[0], Default::default())?
-        }
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 

@@ -17,7 +17,6 @@
     ]
   },
   "extra_errors": {
-    "TS2304": 3
     "TS2304": 4
   },
   "extra_error_lines": {

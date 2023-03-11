@@ -29,11 +29,11 @@ use stc_utils::{
     stack,
 };
 use swc_atoms::{js_word, Atom, JsWord};
-use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error};
 
-use super::expr::AccessPropertyOpts;
+use super::{assign::AssignOpts, expr::AccessPropertyOpts};
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
@@ -80,6 +80,7 @@ pub(crate) struct NormalizeTypeOpts {
     pub expand_enum_variant: bool,
 
     pub preserve_keyof: bool,
+    pub in_type: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -223,6 +224,23 @@ impl Analyzer<'_, '_> {
                         let ty = self
                             .expand_intrinsic_types(actual_span, i)
                             .context("tried to expand intrinsic type as a part of normalization")?;
+
+                        let ctx = Ctx {
+                            in_actual_type: opts.in_type,
+                            ..self.ctx
+                        };
+
+                        if let Type::StringMapping(ty) = ty.normalize() {
+                            self.with_ctx(ctx).assign_to_intrinsic(
+                                &mut Default::default(),
+                                ty,
+                                &ty.type_args.params[0],
+                                AssignOpts {
+                                    span: span.unwrap_or(DUMMY_SP),
+                                    ..Default::default()
+                                },
+                            )?;
+                        }
 
                         return Ok(Cow::Owned(ty));
                     }
@@ -461,6 +479,7 @@ impl Analyzer<'_, '_> {
                                 &ty.ty,
                                 NormalizeTypeOpts {
                                     preserve_global_this: true,
+                                    in_type: true,
                                     ..opts
                                 },
                             )
@@ -1225,6 +1244,7 @@ impl Analyzer<'_, '_> {
             Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 normalize_keywords: false,
+
                 ..opts
             },
         )?;
@@ -1978,7 +1998,17 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
+        match self
+            .normalize(
+                None,
+                Cow::Borrowed(&arg.params[0]),
+                NormalizeTypeOpts {
+                    in_type: true,
+                    ..Default::default()
+                },
+            )?
+            .normalize()
+        {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                 let new_val = apply_string_mapping(&ty.kind, &s.value);
 

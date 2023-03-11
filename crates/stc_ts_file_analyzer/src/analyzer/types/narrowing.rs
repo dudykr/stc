@@ -6,6 +6,7 @@ use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_common::{Span, Spanned};
 
+use super::NormalizeTypeOpts;
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
     VResult,
@@ -16,13 +17,18 @@ impl Analyzer<'_, '_> {
         declared.assert_valid();
         actual.assert_valid();
 
+        let opts = NormalizeTypeOpts {
+            in_type: true,
+            ..Default::default()
+        };
+
         let mut declared = self
-            .normalize(Some(span), Cow::Owned(declared), Default::default())
+            .normalize(Some(span), Cow::Owned(declared), opts)
             .context("tried to normalize declared type")?;
         declared.freeze();
 
         let mut actual = self
-            .normalize(Some(span), Cow::Borrowed(actual), Default::default())
+            .normalize(Some(span), Cow::Borrowed(actual), opts)
             .context("tried to normalize declared type")?;
         actual.freeze();
 

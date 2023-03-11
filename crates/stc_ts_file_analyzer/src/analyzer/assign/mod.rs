@@ -16,6 +16,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info};
 
+use super::pat::PatMode;
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
@@ -552,6 +553,7 @@ impl Analyzer<'_, '_> {
                         NormalizeTypeOpts {
                             merge_union_elements: true,
                             preserve_global_this: true,
+                            in_type: true,
                             ..Default::default()
                         },
                     )?
@@ -2806,8 +2808,26 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                if let PatMode::Decl = self.ctx.pat_mode {
+                    if to.type_args.params[0].is_str() {
+                        return Ok(());
+                    }
+                }
+
+                if self.ctx.in_return_arg {
+                    if to.type_args.params[0].is_str_like() {
+                        return Ok(());
+                    }
+                }
+
+                // TODO: Handle this better
+                let mut span = opts.span;
+                if span.is_dummy() {
+                    span = to.span();
+                }
+
                 return Err(ErrorKind::AssignFailed {
-                    span: r.span(),
+                    span,
                     left: box Type::StringMapping(to.clone()),
                     right_ident: None,
                     right: box r.clone(),
@@ -2817,7 +2837,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Lit(LitType {
-                lit: RTsLit::Str(value), ..
+                lit: RTsLit::Str(str_lit), ..
             }) => {
                 let type_param = &to.type_args.params[0];
 
@@ -2831,10 +2851,10 @@ impl Analyzer<'_, '_> {
 
                 match to.kind {
                     IntrinsicKind::Uppercase => {
-                        if let Some(value) = &value.raw {
+                        if let Some(value) = &str_lit.raw {
                             if value.to_uppercase() != **value {
                                 return Err(ErrorKind::AssignFailed {
-                                    span: r.span(),
+                                    span: str_lit.span(),
                                     left: box Type::StringMapping(to.clone()),
                                     right_ident: None,
                                     right: box r.clone(),
@@ -2845,10 +2865,10 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     IntrinsicKind::Lowercase => {
-                        if let Some(value) = &value.raw {
+                        if let Some(value) = &str_lit.raw {
                             if value.to_lowercase() != **value {
                                 return Err(ErrorKind::AssignFailed {
-                                    span: r.span(),
+                                    span: str_lit.span(),
                                     left: box Type::StringMapping(to.clone()),
                                     right_ident: None,
                                     right: box r.clone(),
@@ -2859,13 +2879,13 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     IntrinsicKind::Capitalize => {
-                        if let Some(value) = &value.raw {
+                        if let Some(value) = &str_lit.raw {
                             let ch = value.chars().next();
 
                             if let Some(ch) = ch {
                                 if !ch.is_uppercase() {
                                     return Err(ErrorKind::AssignFailed {
-                                        span: r.span(),
+                                        span: str_lit.span(),
                                         left: box Type::StringMapping(to.clone()),
                                         right_ident: None,
                                         right: box r.clone(),
@@ -2877,13 +2897,13 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     IntrinsicKind::Uncapitalize => {
-                        if let Some(value) = &value.raw {
+                        if let Some(value) = &str_lit.raw {
                             let ch = value.chars().next();
 
                             if let Some(ch) = ch {
                                 if !ch.is_lowercase() {
                                     return Err(ErrorKind::AssignFailed {
-                                        span: r.span(),
+                                        span: str_lit.span(),
                                         left: box Type::StringMapping(to.clone()),
                                         right_ident: None,
                                         right: box r.clone(),
@@ -2916,13 +2936,13 @@ impl Analyzer<'_, '_> {
                     span: to.type_args.params[0].span(),
                     left: box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
-                        span: DUMMY_SP,
+                        span: to.span(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }),
                     right: box Type::Keyword(KeywordType {
                         kind: ty,
-                        span: DUMMY_SP,
+                        span: r.span(),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }),
@@ -2951,9 +2971,13 @@ impl Analyzer<'_, '_> {
                 .into());
             }
             Type::StringMapping(string) => {
-                if string.kind != to.kind {
+                if self.ctx.in_actual_type {
+                    return Ok(());
+                }
+
+                if !self.ctx.in_declare && to.kind != string.kind {
                     return Err(ErrorKind::AssignFailed {
-                        span: r.span(),
+                        span: opts.span,
                         left: box Type::StringMapping(to.clone()),
                         right_ident: None,
                         right: box r.clone(),
@@ -3015,11 +3039,13 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         Type::Union(union) => {
+                            if union.types.iter().any(|v| v.is_any()) {
+                                return Ok(());
+                            }
                             // type A = Uppercase<`aB${string | number}`> - valid
                             // type A = Uppercase<`aB${string | { x: string }}`>; - invalid
                             let is_valid_union = union.types.iter().all(|v| {
-                                v.is_any()
-                                    || v.is_num_like()
+                                v.is_num_like()
                                     || v.is_bigint_like()
                                     || v.is_bool_like()
                                     || v.is_str_like()
@@ -3063,13 +3089,13 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Alias(alias_ty) => {
-                self.assign_to_intrinsic(&mut Default::default(), to, &alias_ty.ty, Default::default())?;
+                return self.assign_to_intrinsic(&mut Default::default(), to, &alias_ty.ty, Default::default());
             }
             Type::Ref(ref_ty) => {
                 if let RTsEntityName::Ident(id) = &ref_ty.type_name {
                     if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
                         let s = v.clone().collect::<Vec<Type>>();
-                        self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default())?;
+                        return self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default());
                     }
                 }
 
@@ -3077,14 +3103,23 @@ impl Analyzer<'_, '_> {
             }
             Type::Param(param) => {
                 if let Some(constraint) = &param.constraint {
+                    if constraint.is_union_type() || constraint.is_type_param() {
+                        return self.assign_to_intrinsic(&mut Default::default(), to, constraint, Default::default());
+                    }
+
                     if !constraint.is_str_like() && !constraint.is_never() {
+                        let mut span: Span = to.type_args.span();
+                        if span.is_dummy() {
+                            span = to.span();
+                        }
+
                         return Err(ErrorKind::NotSatisfyConstraint {
                             // This ideally should be to.type_args.params[0].span()
                             // but that gives wrong span pos
-                            span: to.type_args.span(),
+                            span,
                             left: box Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
-                                span: DUMMY_SP,
+                                span: to.span(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }),
@@ -3096,7 +3131,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 return Err(ErrorKind::AssignFailed {
-                    span: r.span(),
+                    span: to.span(),
                     left: box Type::StringMapping(to.clone()),
                     right_ident: None,
                     right: box r.clone(),
