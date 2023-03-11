@@ -423,14 +423,14 @@ impl TypeEq for Key {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { value: v, .. }),
                         ..
-                    }) => Ok(*v) == sym.parse::<f64>(),
+                    }) => Ok(*v) == sym.parse::<f64>() && *v == sym.parse::<f64>().unwrap(),
                     _ => false,
                 },
                 Key::Num(b) => match &**a {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(RStr { value: v, .. }),
                         ..
-                    }) => Ok(b.value) == v.parse::<f64>(),
+                    }) => Ok(b.value) == v.parse::<f64>() && *v == b.value.to_string(),
                     Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { value: v, .. }),
                         ..
