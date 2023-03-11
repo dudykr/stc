@@ -21,7 +21,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | (x: any) => x is number)
+  > ((x: any) => x is number | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:2:1]
@@ -196,7 +196,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | (x: any) => x is number)
+  > ((x: any) => x is number | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:1]
@@ -268,7 +268,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | (x: any) => x is number)
+  > ((x: any) => x is number | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1]

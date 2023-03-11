@@ -25,10 +25,10 @@ Error:
     `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     type: string;
   |     coordinates: number[];
-  | })
+  | } | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
@@ -39,7 +39,7 @@ Error:
     `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]

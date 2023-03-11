@@ -23,9 +23,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | <T>(obj: {
+  > (<T>(obj: {
   |     x: T;
-  | }) => T)
+  | }) => T | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:2:1]
@@ -49,7 +49,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | 12)
+  > (12 | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
@@ -73,9 +73,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | <T>(obj: {
+  > (<T>(obj: {
   |     x: T;
-  | }) => T)
+  | }) => T | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
@@ -117,7 +117,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | number)
+  > (number | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:6:1]
@@ -143,9 +143,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | <T>(obj: {
+  > (<T>(obj: {
   |     x: T;
-  | }) => T)
+  | }) => T | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:6:1]
@@ -169,7 +169,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | 12)
+  > (12 | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
@@ -207,9 +207,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | <T>(obj: {
+  > (<T>(obj: {
   |     x: T;
-  | }) => T)
+  | }) => T | undefined)
 
   x Type
    ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]

@@ -22,7 +22,7 @@ Error:
 
 Error: 
   > ({ x , y =0  }: {
-  |     x?: (undefined | number);
+  |     x?: (number | undefined);
   |     y?: number;
   | }) => void
 
@@ -47,7 +47,7 @@ Error:
 
 Error: 
   > ({ x , y =0  }: {
-  |     x?: (undefined | number);
+  |     x?: (number | undefined);
   |     y?: number;
   | }) => void
 
@@ -84,7 +84,7 @@ Error:
 
 Error: 
   > ({ x , y =0  }: {
-  |     x?: (undefined | number);
+  |     x?: (number | undefined);
   |     y?: number;
   | }) => void
 

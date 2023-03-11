@@ -27,13 +27,13 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     c: {
   |         d?: {
   |             e: string;
   |         };
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:1:1]
@@ -44,11 +44,11 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     d?: {
   |         e: string;
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:1:1]
@@ -59,9 +59,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     e: string;
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:1:1]
@@ -72,7 +72,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:2:1]
@@ -102,13 +102,13 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     c: {
   |         d?: {
   |             e: string;
   |         };
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:2:1]
@@ -119,11 +119,11 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     d?: {
   |         e: string;
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:2:1]
@@ -134,9 +134,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     e: string;
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:2:1]
@@ -147,7 +147,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:3:1]
@@ -177,13 +177,13 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     c: {
   |         d?: {
   |             e: string;
   |         };
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:3:1]
@@ -194,11 +194,11 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     d?: {
   |         e: string;
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:3:1]
@@ -209,9 +209,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     e: string;
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:3:1]
@@ -222,7 +222,7 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:4:1]
@@ -250,13 +250,13 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     c: {
   |         d?: {
   |             e: string;
   |         };
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:4:1]
@@ -266,11 +266,11 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     d?: {
   |         e: string;
   |     };
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:4:1]
@@ -280,9 +280,9 @@ Error:
    `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     e: string;
-  | })
+  | } | undefined)
 
   x Type
    ,-[$DIR/tests/pass/exprs/optionalChaining/access-5.ts:4:1]
@@ -292,4 +292,4 @@ Error:
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
