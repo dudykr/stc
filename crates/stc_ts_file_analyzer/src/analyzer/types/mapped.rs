@@ -169,15 +169,7 @@ impl Analyzer<'_, '_> {
             Type::Array(array) => {
                 let elem_type = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
                 let elem_type = match m.optional {
-                    Some(TruePlusMinus::True) => {
-                        let undefined = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        box Type::new_union(span, vec![*elem_type, undefined])
-                    }
+                    Some(TruePlusMinus::True) => box elem_type.union_with_undefined(span),
                     _ => elem_type,
                 };
 
@@ -288,15 +280,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             let ty = match m.optional {
-                                Some(TruePlusMinus::True) => {
-                                    let undefined = Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    });
-                                    box Type::new_union(span, vec![*ty, undefined])
-                                }
+                                Some(TruePlusMinus::True) => box ty.union_with_undefined(span),
                                 _ => ty,
                             };
 
