@@ -7,6 +7,13 @@
       28
     ]
   },
-  "extra_errors": {},
-  "extra_error_lines": {}
+  "extra_errors": {
+    "TS2322": 2
+  },
+  "extra_error_lines": {
+    "TS2322": [
+      10,
+      28
+    ]
+  }
 }
