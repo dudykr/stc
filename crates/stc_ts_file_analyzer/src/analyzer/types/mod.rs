@@ -80,7 +80,7 @@ pub(crate) struct NormalizeTypeOpts {
     pub expand_enum_variant: bool,
 
     pub preserve_keyof: bool,
-    pub in_type: bool,
+    pub in_type_or_type_param: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to expand intrinsic type as a part of normalization")?;
 
                         let ctx = Ctx {
-                            in_actual_type: opts.in_type,
+                            in_actual_type: opts.in_type_or_type_param,
                             ..self.ctx
                         };
 
@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
                                 &ty.ty,
                                 NormalizeTypeOpts {
                                     preserve_global_this: true,
-                                    in_type: true,
+                                    in_type_or_type_param: true,
                                     ..opts
                                 },
                             )
@@ -2003,7 +2003,7 @@ impl Analyzer<'_, '_> {
                 None,
                 Cow::Borrowed(&arg.params[0]),
                 NormalizeTypeOpts {
-                    in_type: true,
+                    in_type_or_type_param: true,
                     ..Default::default()
                 },
             )?

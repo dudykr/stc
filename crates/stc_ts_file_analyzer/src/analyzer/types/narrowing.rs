@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
         actual.assert_valid();
 
         let opts = NormalizeTypeOpts {
-            in_type: true,
+            in_type_or_type_param: true,
             ..Default::default()
         };
 

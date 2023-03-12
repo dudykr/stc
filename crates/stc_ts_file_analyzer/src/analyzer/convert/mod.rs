@@ -272,7 +272,7 @@ impl Analyzer<'_, '_> {
                             Cow::Borrowed(&ty),
                             NormalizeTypeOpts {
                                 process_only_key: true,
-                                in_type: true,
+                                in_type_or_type_param: true,
                                 ..Default::default()
                             },
                         )

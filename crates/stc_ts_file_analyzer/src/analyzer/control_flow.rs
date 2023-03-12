@@ -849,7 +849,7 @@ impl Analyzer<'_, '_> {
                 Some(ty.span().or_else(|| span)),
                 Cow::Borrowed(ty),
                 NormalizeTypeOpts {
-                    in_type: true,
+                    in_type_or_type_param: true,
                     ..Default::default()
                 },
             )

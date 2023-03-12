@@ -16,7 +16,6 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info};
 
-use super::pat::PatMode;
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
@@ -553,7 +552,7 @@ impl Analyzer<'_, '_> {
                         NormalizeTypeOpts {
                             merge_union_elements: true,
                             preserve_global_this: true,
-                            in_type: true,
+                            in_type_or_type_param: true,
                             ..Default::default()
                         },
                     )?
