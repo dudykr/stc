@@ -9,11 +9,13 @@
     ]
   },
   "extra_errors": {
-    "TS2322": 2
+    "TS2322": 4
   },
   "extra_error_lines": {
     "TS2322": [
       6,
+      20,
+      25,
       26
     ]
   }
