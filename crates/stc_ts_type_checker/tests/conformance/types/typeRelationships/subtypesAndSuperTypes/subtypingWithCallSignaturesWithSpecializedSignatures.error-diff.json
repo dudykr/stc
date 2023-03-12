@@ -1,11 +1,10 @@
 {
   "required_errors": {
-    "TS2430": 2
+    "TS2430": 1
   },
   "required_error_lines": {
     "TS2430": [
-      70,
-      76
+      70
     ]
   },
   "extra_errors": {},

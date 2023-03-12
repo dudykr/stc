@@ -371,87 +371,69 @@ impl Analyzer<'_, '_> {
                     let default_ty = match default_ty {
                         Some(d_ty) => {
                             let d_ty = d_ty.fold_with(&mut Widen { tuple_to_array: false });
+                            let mut left_elems = vec![];
+
+                            for (i, left_element) in arr.elems.iter().enumerate() {
+                                if let Some(r_pat) = left_element {
+                                    match r_pat {
+                                        RPat::Assign(p) => {
+                                            let elem_ty = box p
+                                                .right
+                                                .validate_with_default(self)?
+                                                .fold_with(&mut Widen { tuple_to_array: false })
+                                                .union_with_undefined(span)
+                                                .freezed();
+
+                                            left_elems.push(TupleElement {
+                                                span,
+                                                label: None,
+                                                ty: box Type::Optional(OptionalType {
+                                                    span,
+                                                    ty: elem_ty,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+                                        _ => {
+                                            left_elems.push(TupleElement {
+                                                span,
+                                                label: None,
+                                                ty: box Type::Optional(OptionalType {
+                                                    span,
+                                                    ty: box Type::any(span, Default::default()),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
 
                             match d_ty {
                                 Type::Tuple(mut ty) => {
                                     let right_type_len = ty.elems.len();
+                                    let left_type_len = left_elems.len();
+                                    let assign_possible = left_type_len > right_type_len;
 
-                                    for (i, left_element) in arr.elems.iter().enumerate() {
-                                        let is_not_assigned_type = i + 1 > right_type_len;
-
-                                        if let Some(r_pat) = left_element {
-                                            match r_pat {
-                                                RPat::Assign(p) => {
-                                                    if is_not_assigned_type {
-                                                        let elem_ty = box p
-                                                            .right
-                                                            .validate_with_default(self)?
-                                                            .fold_with(&mut Widen { tuple_to_array: false })
-                                                            .union_with_undefined(span)
-                                                            .freezed();
-
-                                                        ty.elems.push(TupleElement {
-                                                            span,
-                                                            label: None,
-                                                            ty: box Type::Optional(OptionalType {
-                                                                span,
-                                                                ty: elem_ty,
-                                                                metadata: Default::default(),
-                                                                tracker: Default::default(),
-                                                            }),
-
-                                                            tracker: Default::default(),
-                                                        });
-                                                    }
-                                                }
-                                                _ => {
-                                                    if is_not_assigned_type {
-                                                        ty.elems.push(TupleElement {
-                                                            span,
-                                                            label: None,
-                                                            ty: box Type::Optional(OptionalType {
-                                                                span,
-                                                                ty: box Type::any(span, Default::default()),
-                                                                metadata: Default::default(),
-                                                                tracker: Default::default(),
-                                                            }),
-                                                            tracker: Default::default(),
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    if assign_possible {
+                                        let assign_range = left_type_len - right_type_len;
+                                        let start = left_type_len - assign_range;
+                                        ty.elems.extend(left_elems.drain(start..start + assign_range));
                                     }
 
                                     Some(Type::Tuple(ty))
                                 }
 
-                                Type::Array(..) => {
-                                    let any_len = arr.elems.len();
-
-                                    let mut elems: Vec<TupleElement> = vec![];
-
-                                    for i in 0..any_len {
-                                        elems.push(TupleElement {
-                                            span,
-                                            label: None,
-                                            ty: box Type::Optional(OptionalType {
-                                                span,
-                                                ty: box Type::any(span, Default::default()),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            }),
-                                            tracker: Default::default(),
-                                        });
-                                    }
-
-                                    Some(Type::Tuple(Tuple {
-                                        span,
-                                        elems,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }))
-                                }
+                                Type::Array(..) => Some(Type::Tuple(Tuple {
+                                    span,
+                                    elems: left_elems,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })),
                                 _ => Some(d_ty),
                             }
                         }
@@ -461,7 +443,6 @@ impl Analyzer<'_, '_> {
                     Ok(ty.or(default_ty))
                 } else {
                     let mut elems = vec![];
-
                     let destructure_key = self.get_destructor_unique_key();
 
                     let mut has_rest = false;
