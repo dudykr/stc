@@ -2236,6 +2236,7 @@ types/any/assignAnyToEveryType.ts
 types/any/assignEveryTypeToAny.ts
 types/any/narrowExceptionVariableInCatchClause.ts
 types/any/narrowFromAnyWithInstanceof.ts
+types/asyncGenerators/types.asyncGenerators.es2018.1.ts
 types/conditional/inferTypes2.ts
 types/conditional/variance.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionAwaitOperand.ts

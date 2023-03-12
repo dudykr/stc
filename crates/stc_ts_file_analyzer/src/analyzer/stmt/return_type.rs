@@ -8,7 +8,7 @@ use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
     CommonTypeMetadata, Index, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature,
-    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    PropertySignature, Ref, RefMetadata, TypeElement, TypeLit, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
@@ -491,14 +491,25 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RYieldExpr) -> VResult<Type> {
         let span = e.span;
+        println!("test ! {:#?} {:#?}", self.ctx.in_async, e.delegate);
 
         if let Some(res) = e.arg.validate_with_default(self) {
             let ty = res?;
 
+            let item_ty = Type::Keyword(KeywordType {
+                span: e.span,
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            });
+
             let item_ty = if e.delegate {
                 if self.ctx.in_async {
                     self.get_async_iterator_element_type(e.span, Cow::Owned(ty))
-                        .context("tried to convert argument as an async iterator for delegating yield")?
+                        .context(
+                            "tried to convert argument as an async iterator for
+            delegating yield",
+                        )?
                         .into_owned()
                 } else {
                     self.get_iterator_element_type(e.span, Cow::Owned(ty), false, GetIteratorOpts { ..Default::default() })
@@ -510,52 +521,74 @@ impl Analyzer<'_, '_> {
             }
             .freezed();
 
-            if let Some(declared) = self.scope.declared_return_type().cloned() {
-                match if self.ctx.in_async {
-                    self.get_async_iterator_element_type(e.span, Cow::Owned(declared))
-                        .context("tried to get an element type from an async iterator for normal yield")
-                } else {
-                    self.get_iterator_element_type(e.span, Cow::Owned(declared), true, GetIteratorOpts { ..Default::default() })
-                        .context("tried to get an element type from an iterator for normal yield")
-                }
-                .map(Cow::into_owned)
-                .map(Freeze::freezed)
-                {
-                    Ok(declared) => {
-                        let declared = Type::Instance(Instance {
-                            span: declared.span(),
-                            ty: box declared,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
+            let item_ty = if self.ctx.in_async {
+                Type::Keyword(KeywordType {
+                    span: e.span,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                })
+            } else {
+                item_ty
+            };
 
-                        match self.assign_with_opts(
-                            &mut Default::default(),
-                            &declared,
-                            &item_ty,
-                            AssignOpts {
-                                span: e.span,
-                                allow_unknown_rhs: Some(true),
-                                use_missing_fields_for_class: true,
-                                ..Default::default()
-                            },
-                        ) {
-                            Ok(()) => {}
-                            Err(err) => {
-                                self.storage.report(err);
-                                return Ok(Type::any(span, Default::default()));
+            if let Some(declared) = self.scope.declared_return_type().cloned() {
+                let is_empty = match &declared.normalize() {
+                    Type::TypeLit(ty_lit) => {
+                        println!("test!!! {:?}", ty_lit.members);
+
+                        ty_lit.members.is_empty()
+                    }
+                    _ => false,
+                };
+
+                if !self.ctx.in_async {
+                    match if self.ctx.in_async {
+                        self.get_async_iterator_element_type(e.span, Cow::Owned(declared))
+                            .context("tried to get an element type from an async iterator for normal yield")
+                    } else {
+                        self.get_iterator_element_type(e.span, Cow::Owned(declared), true, GetIteratorOpts { ..Default::default() })
+                            .context("tried to get an element type from an iterator for normal yield")
+                    }
+                    .map(Cow::into_owned)
+                    .map(Freeze::freezed)
+                    {
+                        Ok(declared) => {
+                            let declared = Type::Instance(Instance {
+                                span: declared.span(),
+                                ty: box declared,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            });
+                            println!("assing!1");
+                            match self.assign_with_opts(
+                                &mut Default::default(),
+                                &declared,
+                                &item_ty,
+                                AssignOpts {
+                                    span: e.span,
+                                    allow_unknown_rhs: Some(true),
+                                    use_missing_fields_for_class: true,
+                                    ..Default::default()
+                                },
+                            ) {
+                                Ok(()) => {}
+                                Err(err) => {
+                                    self.storage.report(err);
+                                    return Ok(Type::any(span, Default::default()));
+                                }
                             }
                         }
-                    }
-                    Err(err) => {
-                        self.storage.report(
-                            ErrorKind::SimpleAssignFailed {
-                                span,
-                                cause: Some(box err),
-                            }
-                            .into(),
-                        );
-                        return Ok(Type::any(span, Default::default()));
+                        Err(err) => {
+                            self.storage.report(
+                                ErrorKind::SimpleAssignFailed {
+                                    span,
+                                    cause: Some(box err),
+                                }
+                                .into(),
+                            );
+                            return Ok(Type::any(span, Default::default()));
+                        }
                     }
                 }
             }
