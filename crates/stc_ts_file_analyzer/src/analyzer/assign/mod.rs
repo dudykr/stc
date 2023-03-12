@@ -16,6 +16,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info};
 
+use super::pat::PatMode;
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
@@ -2805,6 +2806,13 @@ impl Analyzer<'_, '_> {
             }) => {
                 if self.ctx.in_actual_type {
                     return Ok(());
+                }
+
+                // declare var x: Uppercase<string>
+                if let PatMode::Decl = self.ctx.pat_mode {
+                    if to.type_args.params[0].is_str() {
+                        return Ok(());
+                    }
                 }
 
                 if self.ctx.in_return_arg {
