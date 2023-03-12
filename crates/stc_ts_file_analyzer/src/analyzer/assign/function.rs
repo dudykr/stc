@@ -361,18 +361,16 @@ impl Analyzer<'_, '_> {
         // (t: unknown, t1: unknown) => void
         //
         // So we check for length first.
-        if !r_params.is_empty() {
-            self.assign_params(
-                data,
-                l_params,
-                r_params,
-                AssignOpts {
-                    is_params_of_method_definition: false,
-                    ..opts
-                },
-            )
-            .context("tried to assign parameters of a function to parameters of another function")?;
-        }
+        self.assign_params(
+            data,
+            l_params,
+            r_params,
+            AssignOpts {
+                is_params_of_method_definition: false,
+                ..opts
+            },
+        )
+        .context("tried to assign parameters of a function to parameters of another function")?;
 
         if let Some(l_ret_ty) = l_ret_ty {
             if let Some(r_ret_ty) = r_ret_ty {
