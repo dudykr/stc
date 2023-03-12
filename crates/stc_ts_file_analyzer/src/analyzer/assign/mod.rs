@@ -3084,18 +3084,6 @@ impl Analyzer<'_, '_> {
             Type::Alias(alias_ty) => {
                 return self.assign_to_intrinsic(&mut Default::default(), to, &alias_ty.ty, Default::default());
             }
-            Type::Ref(ref_ty) => {
-                if let RTsEntityName::Ident(id) = &ref_ty.type_name {
-                    if let RTsEntityName::Ident(id) = &ref_ty.type_name {
-                        if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
-                            let s = v.clone().collect::<Vec<Type>>();
-                            return self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default());
-                        }
-                    }
-                }
-
-                return Ok(());
-            }
             Type::Param(param) => {
                 if let Some(constraint) = &param.constraint {
                     if constraint.is_union_type() || constraint.is_type_param() {
