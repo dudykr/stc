@@ -8,7 +8,7 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
-use stc_utils::{cache::Freeze, dev_span};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -42,6 +42,8 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("assign_to_fn_like");
 
         let span = opts.span.with_ctxt(SyntaxContext::empty());
+
+        let _stack = stack::track(span)?;
 
         if let Some(r_ret_ty) = r_ret_ty {
             // Fast path for
