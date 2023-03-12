@@ -2842,10 +2842,6 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if type_param.is_alias() || type_param.is_ref_type() {
-                    return Ok(());
-                }
-
                 match to.kind {
                     IntrinsicKind::Uppercase => {
                         if let Some(value) = &str_lit.raw {
