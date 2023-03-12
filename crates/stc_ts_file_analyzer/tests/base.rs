@@ -192,9 +192,13 @@ fn compare(input: PathBuf) {
         .collect_vec();
     expected.sort();
 
-    assert_eq!(actual, expected);
+    if actual == expected {
+        testing::unignore_fixture(&input);
+        return;
+    }
+    let stderr = run_test(input, false).unwrap();
 
-    testing::unignore_fixture(&input);
+    panic!("Watnted {:?}\n{}", expected, stderr)
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
