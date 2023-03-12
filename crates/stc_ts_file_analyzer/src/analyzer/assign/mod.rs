@@ -2808,12 +2808,6 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if let PatMode::Decl = self.ctx.pat_mode {
-                    if to.type_args.params[0].is_str() {
-                        return Ok(());
-                    }
-                }
-
                 if self.ctx.in_return_arg {
                     if to.type_args.params[0].is_str_like() {
                         return Ok(());
@@ -3138,7 +3132,7 @@ impl Analyzer<'_, '_> {
                     cause: vec![],
                 }
                 .into());
-            } // dump_type_as_string(r));
+            }
         }
 
         Ok(())
