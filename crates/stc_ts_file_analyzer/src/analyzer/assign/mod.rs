@@ -20,7 +20,6 @@ use super::pat::PatMode;
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
-        scope::ItemRef,
         types::NormalizeTypeOpts,
         util::is_lit_eq_ignore_span,
         Analyzer,
