@@ -2821,8 +2821,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // TODO: Handle this better
-                let mut span = opts.span;
+                let mut span = opts.span();
                 if span.is_dummy() {
                     span = to.span();
                 }
@@ -2950,15 +2949,15 @@ impl Analyzer<'_, '_> {
                 }
                 .into());
             }
-            Type::Union(union) => {
+            Type::Union(ty) => {
                 // TODO: Maybe change when https://github.com/dudykr/stc/issues/795 is resolved
                 // This handles cases where one of the union elements is any
                 // ex: type A = Uppercase<any | 30> // no error
-                if union.types.iter().any(|v| v.is_any()) {
+                if ty.types.iter().any(|v| v.is_any()) {
                     return Ok(());
                 }
 
-                if union.types.iter().all(|v| v.is_str_like()) {
+                if ty.types.iter().all(|v| v.is_str_like()) {
                     return Ok(());
                 }
 
@@ -3039,13 +3038,13 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        Type::Union(union) => {
-                            if union.types.iter().any(|v| v.is_any()) {
+                        Type::Union(ty) => {
+                            if ty.types.iter().any(|v| v.is_any()) {
                                 return Ok(());
                             }
                             // type A = Uppercase<`aB${string | number}`> - valid
                             // type A = Uppercase<`aB${string | { x: string }}`>; - invalid
-                            let is_valid_union = union.types.iter().all(|v| {
+                            let is_valid_union = ty.types.iter().all(|v| {
                                 v.is_num_like()
                                     || v.is_bigint_like()
                                     || v.is_bool_like()
@@ -3056,7 +3055,7 @@ impl Analyzer<'_, '_> {
 
                             if !is_valid_union {
                                 return Err(ErrorKind::AssignFailed {
-                                    span: union.span(),
+                                    span: ty.span(),
                                     left: box Type::StringMapping(to.clone()),
                                     right_ident: None,
                                     right: box r.clone(),
@@ -3094,9 +3093,11 @@ impl Analyzer<'_, '_> {
             }
             Type::Ref(ref_ty) => {
                 if let RTsEntityName::Ident(id) = &ref_ty.type_name {
-                    if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
-                        let s = v.clone().collect::<Vec<Type>>();
-                        return self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default());
+                    if let RTsEntityName::Ident(id) = &ref_ty.type_name {
+                        if let Ok(Some(ItemRef::Owned(v))) = &self.find_type(&id.into()) {
+                            let s = v.clone().collect::<Vec<Type>>();
+                            return self.assign_to_intrinsic(&mut Default::default(), to, &s[0], Default::default());
+                        }
                     }
                 }
 

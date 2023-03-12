@@ -221,26 +221,22 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::StringMapping(i) => {
-                        let ty = self
-                            .expand_intrinsic_types(actual_span, i)
-                            .context("tried to expand intrinsic type as a part of normalization")?;
-
                         let ctx = Ctx {
                             in_actual_type: opts.in_type_or_type_param,
                             ..self.ctx
                         };
 
-                        if let Type::StringMapping(ty) = ty.normalize() {
-                            self.with_ctx(ctx).assign_to_intrinsic(
-                                &mut Default::default(),
-                                ty,
-                                &ty.type_args.params[0],
+                        let ty = self
+                            .with_ctx(ctx)
+                            .expand_intrinsic_types(
+                                actual_span,
+                                i,
                                 AssignOpts {
                                     span: span.unwrap_or(DUMMY_SP),
                                     ..Default::default()
                                 },
-                            )?;
-                        }
+                            )
+                            .context("tried to expand intrinsic type as a part of normalization")?;
 
                         return Ok(Cow::Owned(ty));
                     }
@@ -1995,10 +1991,10 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping, opts: AssignOpts) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match self
+        let normalized_ty = match self
             .normalize(
                 None,
                 Cow::Borrowed(&arg.params[0]),
@@ -2012,7 +2008,7 @@ impl Analyzer<'_, '_> {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                 let new_val = apply_string_mapping(&ty.kind, &s.value);
 
-                return Ok(Type::Lit(LitType {
+                Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
                     lit: RTsLit::Str(RStr {
                         span: arg.params[0].span(),
@@ -2024,7 +2020,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     tracker: Default::default(),
-                }));
+                }))
             }
             Type::Tpl(TplType {
                 span,
@@ -2042,13 +2038,13 @@ impl Analyzer<'_, '_> {
                     })
                     .collect();
 
-                return Ok(Type::Tpl(TplType {
+                Ok(Type::Tpl(TplType {
                     span: *span,
                     quasis,
                     types: types.clone(),
                     metadata: *metadata,
                     tracker: Default::default(),
-                }));
+                }))
             }
 
             Type::Param(TypeParam {
@@ -2082,6 +2078,7 @@ impl Analyzer<'_, '_> {
                                 },
                                 metadata: ty.metadata,
                             },
+                            opts,
                         )
                         .ok()
                         .map(|value| value.freezed())
@@ -2107,6 +2104,7 @@ impl Analyzer<'_, '_> {
                                             },
                                             metadata: ty.metadata,
                                         },
+                                        opts,
                                     )
                                 })
                                 .map(|val| val.ok())
@@ -2139,7 +2137,7 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 });
 
-                return Ok(Type::StringMapping(StringMapping {
+                Ok(Type::StringMapping(StringMapping {
                     span,
                     kind: ty.kind.clone(),
                     type_args: TypeParamInstantiation {
@@ -2147,13 +2145,29 @@ impl Analyzer<'_, '_> {
                         params: vec![arg],
                     },
                     metadata: ty.metadata,
-                }));
+                }))
             }
 
-            _ => {}
+            _ => Ok(Type::StringMapping(ty.clone())),
+        };
+
+        if let Ok(ref ty) = normalized_ty {
+            if let Type::StringMapping(ty) = ty.normalize() {
+                if let Err(e) = self.assign_to_intrinsic(
+                    &mut Default::default(),
+                    ty,
+                    &ty.type_args.params[0],
+                    AssignOpts {
+                        span: opts.span,
+                        ..Default::default()
+                    },
+                ) {
+                    return Err(e);
+                }
+            }
         }
 
-        Ok(Type::StringMapping(ty.clone()))
+        normalized_ty
     }
 
     pub(crate) fn report_error_for_unresolved_type(
