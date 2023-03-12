@@ -2151,6 +2151,7 @@ impl Analyzer<'_, '_> {
             _ => Ok(Type::StringMapping(ty.clone())),
         };
 
+        #[allow(clippy::question_mark)]
         if let Ok(ref ty) = normalized_ty {
             if let Type::StringMapping(ty) = ty.normalize() {
                 if let Err(e) = self.assign_to_intrinsic(

@@ -10,7 +10,7 @@ use stc_ts_types::{
     LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, dev_span, stack};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
@@ -2821,10 +2821,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let mut span = opts.span();
-                if span.is_dummy() {
-                    span = to.span();
-                }
+                let span = opts.span.or_else(|| to.span());
 
                 return Err(ErrorKind::AssignFailed {
                     span,
@@ -3110,10 +3107,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !constraint.is_str_like() && !constraint.is_never() {
-                        let mut span: Span = to.type_args.span();
-                        if span.is_dummy() {
-                            span = to.span();
-                        }
+                        let span = to.type_args.span().or_else(|| to.span());
 
                         return Err(ErrorKind::NotSatisfyConstraint {
                             // This ideally should be to.type_args.params[0].span()
