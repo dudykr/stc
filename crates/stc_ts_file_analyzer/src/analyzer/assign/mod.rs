@@ -3080,9 +3080,7 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Alias(alias_ty) => {
-                unreachable!("Can't assign type alias to intrisic string type");
-            }
+
             Type::Param(param) => {
                 if let Some(constraint) = &param.constraint {
                     if constraint.is_union_type() || constraint.is_type_param() {

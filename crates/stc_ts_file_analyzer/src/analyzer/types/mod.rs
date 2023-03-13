@@ -2141,6 +2141,37 @@ impl Analyzer<'_, '_> {
                 }))
             }
 
+            Type::Ref(ref_ty) => {
+                if let RTsEntityName::Ident(r_ident) = &ref_ty.type_name {
+                    if let Ok(Some(ty_found)) = self.find_type(&r_ident.into()) {
+                        let ty_found = &ty_found.into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
+
+                        if let Type::Alias(alias) = ty_found.normalize() {
+                            return Ok(Type::StringMapping(StringMapping {
+                                span: ty.span(),
+                                kind: ty.clone().kind,
+                                type_args: TypeParamInstantiation {
+                                    span: alias.span,
+                                    params: vec![*alias.ty.clone()],
+                                },
+                                metadata: Default::default(),
+                            }));
+                        } else {
+                            return Ok(Type::StringMapping(StringMapping {
+                                span: ty.span(),
+                                kind: ty.clone().kind,
+                                type_args: TypeParamInstantiation {
+                                    span: ty_found.span(),
+                                    params: vec![ty_found.clone()],
+                                },
+                                metadata: Default::default(),
+                            }));
+                        }
+                    }
+                }
+                Ok(Type::StringMapping(ty.clone()))
+            }
+
             _ => Ok(Type::StringMapping(ty.clone())),
         };
 
