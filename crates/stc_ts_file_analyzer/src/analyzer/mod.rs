@@ -907,6 +907,12 @@ impl Analyzer<'_, '_> {
                 }
             };
 
+            #[allow(clippy::unnecessary_unwrap)]
+            if var_ty.is_err() && type_ty.is_err() {
+                analyzer.storage.report(type_ty.unwrap_err());
+                return Ok(());
+            }
+
             if let Ok(ty) = type_ty {
                 ty.assert_clone_cheap();
 
