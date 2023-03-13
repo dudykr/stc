@@ -2141,53 +2141,78 @@ impl Analyzer<'_, '_> {
                 }))
             }
 
-            Type::Ref(ref_ty) => {
-                if let RTsEntityName::Ident(r_ident) = &ref_ty.type_name {
-                    if let Ok(Some(ty_found)) = self.find_type(&r_ident.into()) {
-                        let ty_found = &ty_found.into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
-
-                        if let Type::Alias(alias) = ty_found.normalize() {
-                            return Ok(Type::StringMapping(StringMapping {
-                                span: ty.span(),
-                                kind: ty.clone().kind,
-                                type_args: TypeParamInstantiation {
-                                    span: alias.span,
-                                    params: vec![*alias.ty.clone()],
-                                },
-                                metadata: Default::default(),
-                            }));
-                        } else {
-                            return Ok(Type::StringMapping(StringMapping {
-                                span: ty.span(),
-                                kind: ty.clone().kind,
-                                type_args: TypeParamInstantiation {
-                                    span: ty_found.span(),
-                                    params: vec![ty_found.clone()],
-                                },
-                                metadata: Default::default(),
-                            }));
-                        }
-                    }
-                }
-                Ok(Type::StringMapping(ty.clone()))
-            }
-
             _ => Ok(Type::StringMapping(ty.clone())),
         };
 
         #[allow(clippy::question_mark)]
         if let Ok(ref ty) = normalized_ty {
             if let Type::StringMapping(ty) = ty.normalize() {
-                if let Err(e) = self.assign_to_intrinsic(
-                    &mut Default::default(),
-                    ty,
-                    &ty.type_args.params[0],
-                    AssignOpts {
-                        span: span_for_validation,
-                        ..Default::default()
-                    },
-                ) {
-                    return Err(e);
+                match ty.type_args.params[0].normalize() {
+                    Type::Ref(ref_ty) => {
+                        if let RTsEntityName::Ident(r_ident) = &ref_ty.type_name {
+                            if let Ok(Some(ty_found)) = self.find_type(&r_ident.into()) {
+                                let ty_found = &ty_found.into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
+
+                                if let Type::Alias(alias) = ty_found.normalize() {
+                                    return self.expand_intrinsic_types(
+                                        ty.span(),
+                                        &StringMapping {
+                                            span: ty.span(),
+                                            kind: ty.clone().kind,
+                                            type_args: TypeParamInstantiation {
+                                                span: alias.span,
+                                                params: vec![*alias.ty.clone()],
+                                            },
+                                            metadata: ty.metadata,
+                                        },
+                                        span_for_validation,
+                                    );
+                                } else {
+                                    return self.expand_intrinsic_types(
+                                        ty.span(),
+                                        &StringMapping {
+                                            span: ty.span(),
+                                            kind: ty.clone().kind,
+                                            type_args: TypeParamInstantiation {
+                                                span: ty_found.span(),
+                                                params: vec![ty_found.clone()],
+                                            },
+                                            metadata: ty.metadata,
+                                        },
+                                        span_for_validation,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    Type::Alias(alias) => {
+                        return self.expand_intrinsic_types(
+                            ty.span(),
+                            &StringMapping {
+                                span: ty.span(),
+                                kind: ty.clone().kind,
+                                type_args: TypeParamInstantiation {
+                                    span: alias.span,
+                                    params: vec![*alias.ty.clone()],
+                                },
+                                metadata: ty.metadata,
+                            },
+                            span_for_validation,
+                        );
+                    }
+                    _ => {
+                        if let Err(e) = self.assign_to_intrinsic(
+                            &mut Default::default(),
+                            ty,
+                            &ty.type_args.params[0],
+                            AssignOpts {
+                                span: span_for_validation,
+                                ..Default::default()
+                            },
+                        ) {
+                            return Err(e);
+                        }
+                    }
                 }
             }
         }
