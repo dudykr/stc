@@ -849,27 +849,35 @@ impl Analyzer<'_, '_> {
         };
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let ty = match node.module_ref {
-                RTsModuleRef::TsEntityName(ref e) => analyzer
-                    .type_of_ts_entity_name(node.span, &e.clone().into(), None)
-                    .convert_err(|err| match err {
-                        ErrorKind::TypeNotFound {
-                            span,
-                            name,
-                            ctxt,
-                            type_args,
-                        } => ErrorKind::NamespaceNotFound {
-                            span,
-                            name,
-                            ctxt,
-                            type_args,
-                        },
-                        _ => err,
-                    })
-                    .unwrap_or_else(|err| {
-                        analyzer.storage.report(err);
-                        Type::any(node.span, Default::default())
-                    })
-                    .freezed(),
+                RTsModuleRef::TsEntityName(ref e) => {
+                    let var_ty = analyzer.resolve_typeof(node.span, e);
+
+                    let ty = analyzer
+                        .type_of_ts_entity_name(node.span, &e.clone().into(), None)
+                        .convert_err(|err| match err {
+                            ErrorKind::TypeNotFound {
+                                span,
+                                name,
+                                ctxt,
+                                type_args,
+                            } => ErrorKind::NamespaceNotFound {
+                                span,
+                                name,
+                                ctxt,
+                                type_args,
+                            },
+                            _ => err,
+                        });
+
+                    match (var_ty, ty) {
+                        (Ok(var_ty), Ok(ty)) => Type::new_intersection(node.span, vec![var_ty, ty]).freezed(),
+                        (Ok(val), _) | (_, Ok(val)) => val.freezed(),
+                        (Err(_), Err(err)) => {
+                            analyzer.storage.report(err);
+                            Type::any(node.span, Default::default())
+                        }
+                    }
+                }
                 RTsModuleRef::TsExternalModuleRef(ref e) => {
                     let (dep, data) = analyzer.get_imported_items(e.span, &e.expr.value);
                     data.assert_clone_cheap();
@@ -904,6 +912,7 @@ impl Analyzer<'_, '_> {
             ty.assert_clone_cheap();
             ty.assert_valid();
 
+            dbg!(&ty);
             let (is_type, is_var) = match ty.normalize() {
                 Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
                 Type::Class(..) | Type::Instance(..) | Type::EnumVariant(..) => (false, true),
