@@ -117,10 +117,10 @@ impl Analyzer<'_, '_> {
             | Type::TypeLit(..)
             | Type::Interface(..)
             | Type::Class(..)
+            | Type::Param(..)
             | Type::ClassDef(..)
             | Type::Function(..)
             | Type::Constructor(..)
-            | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
             _ => {}
         }
@@ -152,7 +152,30 @@ impl Analyzer<'_, '_> {
 
             {
                 match ty.normalize() {
-                    Type::Ref(_) => {
+                    Type::Ref(ref_ty) => {
+                        if let Some(ty_args) = &ref_ty.type_args {
+                            if !ty_args.params.is_empty() {
+                                if let RTsEntityName::Ident(id) = &ref_ty.type_name {
+                                    if let Ok(Some(ty)) = &self.find_type(&id.into()) {
+                                        let ty_found = &ty.clone().into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
+
+                                        if let Type::Alias(alias) = ty_found.normalize() {
+                                            if alias.type_params.is_none() {
+                                                self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
+
+                                                return Ok(Cow::Owned(Type::Keyword(KeywordType {
+                                                    span: span.unwrap_or(ref_ty.span()),
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                })));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         let mut new_ty = self
                             .expand_top_ref(
                                 actual_span,
