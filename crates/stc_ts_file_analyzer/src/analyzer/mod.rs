@@ -912,7 +912,6 @@ impl Analyzer<'_, '_> {
             ty.assert_clone_cheap();
             ty.assert_valid();
 
-            dbg!(&ty);
             let (is_type, is_var) = match ty.normalize() {
                 Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
                 Type::Class(..) | Type::Instance(..) | Type::EnumVariant(..) => (false, true),
