@@ -850,7 +850,7 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let (var_ty, type_ty) = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => {
-                    let var_ty = analyzer.resolve_typeof(node.span, e);
+                    let var_ty = analyzer.resolve_typeof(node.span, e).map(|ty| ty.freezed());
 
                     let type_ty = analyzer
                         .type_of_ts_entity_name(node.span, &e.clone().into(), None)
@@ -867,7 +867,8 @@ impl Analyzer<'_, '_> {
                                 type_args,
                             },
                             _ => err,
-                        });
+                        })
+                        .map(|ty| ty.freezed());
 
                     (var_ty, type_ty)
                 }
@@ -896,7 +897,8 @@ impl Analyzer<'_, '_> {
                                 IdCtx::Type,
                                 Default::default(),
                             )
-                            .unwrap_or(module_ty);
+                            .unwrap_or(module_ty)
+                            .freezed();
 
                         (Ok(module_ty.clone()), Ok(module_ty))
                     } else {
