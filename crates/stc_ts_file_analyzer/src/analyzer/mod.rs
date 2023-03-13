@@ -906,8 +906,9 @@ impl Analyzer<'_, '_> {
 
             let (is_type, is_var) = match ty.normalize() {
                 Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
+                Type::Class(..) | Type::Instance(..) | Type::EnumVariant(..) => (false, true),
                 Type::ClassDef(..) => (true, true),
-                _ => (false, true),
+                _ => (true, true),
             };
 
             if is_type {
