@@ -848,28 +848,30 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-            let ty = match node.module_ref {
-                RTsModuleRef::TsEntityName(ref e) => analyzer
-                    .type_of_ts_entity_name(node.span, &e.clone().into(), None)
-                    .convert_err(|err| match err {
-                        ErrorKind::TypeNotFound {
-                            span,
-                            name,
-                            ctxt,
-                            type_args,
-                        } => ErrorKind::NamespaceNotFound {
-                            span,
-                            name,
-                            ctxt,
-                            type_args,
-                        },
-                        _ => err,
-                    })
-                    .unwrap_or_else(|err| {
-                        analyzer.storage.report(err);
-                        Type::any(node.span, Default::default())
-                    })
-                    .freezed(),
+            let (var_ty, type_ty) = match node.module_ref {
+                RTsModuleRef::TsEntityName(ref e) => {
+                    let var_ty = analyzer.resolve_typeof(node.span, e).map(|ty| ty.freezed());
+
+                    let type_ty = analyzer
+                        .type_of_ts_entity_name(node.span, &e.clone().into(), None)
+                        .convert_err(|err| match err {
+                            ErrorKind::TypeNotFound {
+                                span,
+                                name,
+                                ctxt,
+                                type_args,
+                            } => ErrorKind::NamespaceNotFound {
+                                span,
+                                name,
+                                ctxt,
+                                type_args,
+                            },
+                            _ => err,
+                        })
+                        .map(|ty| ty.freezed());
+
+                    (var_ty, type_ty)
+                }
                 RTsModuleRef::TsExternalModuleRef(ref e) => {
                     let (dep, data) = analyzer.get_imported_items(e.span, &e.expr.value);
                     data.assert_clone_cheap();
@@ -883,7 +885,7 @@ impl Analyzer<'_, '_> {
                             .cloned()
                             .unwrap_or_else(|| Type::any(e.span, Default::default()));
 
-                        analyzer
+                        let module_ty = analyzer
                             .access_property(
                                 node.span,
                                 &module_ty,
@@ -896,30 +898,35 @@ impl Analyzer<'_, '_> {
                                 Default::default(),
                             )
                             .unwrap_or(module_ty)
+                            .freezed();
+
+                        (Ok(module_ty.clone()), Ok(module_ty))
                     } else {
-                        Type::any(e.span, Default::default())
+                        (Ok(Type::any(e.span, Default::default())), Ok(Type::any(e.span, Default::default())))
                     }
                 }
             };
-            ty.assert_clone_cheap();
-            ty.assert_valid();
 
-            let (is_type, is_var) = match ty.normalize() {
-                Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
-                Type::ClassDef(..) => (true, true),
-                _ => (false, true),
-            };
+            #[allow(clippy::unnecessary_unwrap)]
+            if var_ty.is_err() && type_ty.is_err() {
+                analyzer.storage.report(type_ty.unwrap_err());
+                return Ok(());
+            }
 
-            if is_type {
+            if let Ok(ty) = type_ty {
+                ty.assert_clone_cheap();
+
                 analyzer.register_type(node.id.clone().into(), ty.clone());
                 if node.is_export {
                     analyzer
                         .storage
-                        .export_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
+                        .export_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
                 }
             }
 
-            if is_var {
+            if let Ok(ty) = var_ty {
+                ty.assert_clone_cheap();
+
                 analyzer.declare_var(
                     node.span,
                     VarKind::Import,
@@ -932,11 +939,9 @@ impl Analyzer<'_, '_> {
                     false,
                 )?;
 
-                if node.is_export {
-                    analyzer
-                        .storage
-                        .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
-                }
+                analyzer
+                    .storage
+                    .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
             }
 
             Ok(())
