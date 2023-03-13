@@ -3081,12 +3081,12 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Alias(alias_ty) => {
-                return self.assign_to_intrinsic(&mut Default::default(), to, &alias_ty.ty, Default::default());
+                unreachable!("Can't assign type alias to intrisic string type");
             }
             Type::Param(param) => {
                 if let Some(constraint) = &param.constraint {
                     if constraint.is_union_type() || constraint.is_type_param() {
-                        return self.assign_to_intrinsic(&mut Default::default(), to, constraint, Default::default());
+                        return self.assign_to_intrinsic(data, to, constraint, opts);
                     }
 
                     if !constraint.is_str_like() && !constraint.is_never() {

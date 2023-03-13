@@ -228,14 +228,7 @@ impl Analyzer<'_, '_> {
 
                         let ty = self
                             .with_ctx(ctx)
-                            .expand_intrinsic_types(
-                                actual_span,
-                                i,
-                                AssignOpts {
-                                    span: span.unwrap_or(DUMMY_SP),
-                                    ..Default::default()
-                                },
-                            )
+                            .expand_intrinsic_types(actual_span, i, span.unwrap_or(DUMMY_SP))
                             .context("tried to expand intrinsic type as a part of normalization")?;
 
                         return Ok(Cow::Owned(ty));
@@ -1991,7 +1984,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping, opts: AssignOpts) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping, span_for_validation: Span) -> VResult<Type> {
         let arg = &ty.type_args;
 
         let normalized_ty = match self
@@ -2078,7 +2071,7 @@ impl Analyzer<'_, '_> {
                                 },
                                 metadata: ty.metadata,
                             },
-                            opts,
+                            span_for_validation,
                         )
                         .ok()
                         .map(|value| value.freezed())
@@ -2104,7 +2097,7 @@ impl Analyzer<'_, '_> {
                                             },
                                             metadata: ty.metadata,
                                         },
-                                        opts,
+                                        span_for_validation,
                                     )
                                 })
                                 .map(|val| val.ok())
@@ -2159,7 +2152,7 @@ impl Analyzer<'_, '_> {
                     ty,
                     &ty.type_args.params[0],
                     AssignOpts {
-                        span: opts.span,
+                        span: span_for_validation,
                         ..Default::default()
                     },
                 ) {
