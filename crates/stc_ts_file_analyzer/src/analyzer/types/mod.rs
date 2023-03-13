@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
                                                 self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
 
                                                 return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                                                    span: span.unwrap_or(ref_ty.span()),
+                                                    span: span.unwrap_or_else(|| ref_ty.span()),
                                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
