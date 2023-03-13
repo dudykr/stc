@@ -848,11 +848,11 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-            let ty = match node.module_ref {
+            let (var_ty, type_ty) = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => {
                     let var_ty = analyzer.resolve_typeof(node.span, e);
 
-                    let ty = analyzer
+                    let type_ty = analyzer
                         .type_of_ts_entity_name(node.span, &e.clone().into(), None)
                         .convert_err(|err| match err {
                             ErrorKind::TypeNotFound {
@@ -869,16 +869,7 @@ impl Analyzer<'_, '_> {
                             _ => err,
                         });
 
-                    match (var_ty, ty) {
-                        (Ok(var_ty), Ok(ty)) => Type::new_intersection(node.span, vec![var_ty, ty]).freezed(),
-                        (Ok(val), _) | (_, Ok(val)) => val.freezed(),
-                        (Err(_), Err(err)) => {
-                            analyzer
-                                .storage
-                                .report(err.context("tried to validate a typescript import equals declaration"));
-                            Type::any(node.span, Default::default())
-                        }
-                    }
+                    (var_ty, type_ty)
                 }
                 RTsModuleRef::TsExternalModuleRef(ref e) => {
                     let (dep, data) = analyzer.get_imported_items(e.span, &e.expr.value);
@@ -893,7 +884,7 @@ impl Analyzer<'_, '_> {
                             .cloned()
                             .unwrap_or_else(|| Type::any(e.span, Default::default()));
 
-                        analyzer
+                        let module_ty = analyzer
                             .access_property(
                                 node.span,
                                 &module_ty,
@@ -905,23 +896,18 @@ impl Analyzer<'_, '_> {
                                 IdCtx::Type,
                                 Default::default(),
                             )
-                            .unwrap_or(module_ty)
+                            .unwrap_or(module_ty);
+
+                        (Ok(module_ty.clone()), Ok(module_ty))
                     } else {
-                        Type::any(e.span, Default::default())
+                        (Ok(Type::any(e.span, Default::default())), Ok(Type::any(e.span, Default::default())))
                     }
                 }
             };
-            ty.assert_clone_cheap();
-            ty.assert_valid();
 
-            let (is_type, is_var) = match ty.normalize() {
-                Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
-                Type::Class(..) | Type::Instance(..) | Type::EnumVariant(..) => (false, true),
-                Type::ClassDef(..) => (true, true),
-                _ => (true, true),
-            };
+            if let Ok(ty) = type_ty {
+                ty.assert_clone_cheap();
 
-            if is_type {
                 analyzer.register_type(node.id.clone().into(), ty.clone());
                 if node.is_export {
                     analyzer
@@ -930,7 +916,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            if is_var {
+            if let Ok(ty) = var_ty {
+                ty.assert_clone_cheap();
+
                 analyzer.declare_var(
                     node.span,
                     VarKind::Import,
@@ -943,19 +931,9 @@ impl Analyzer<'_, '_> {
                     false,
                 )?;
 
-                if node.is_export {
-                    if is_var {
-                        analyzer
-                            .storage
-                            .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
-                    }
-
-                    if is_type {
-                        analyzer
-                            .storage
-                            .export_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty);
-                    }
-                }
+                analyzer
+                    .storage
+                    .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
             }
 
             Ok(())
