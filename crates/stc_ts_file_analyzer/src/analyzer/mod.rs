@@ -934,9 +934,17 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 if node.is_export {
-                    analyzer
-                        .storage
-                        .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
+                    if is_var {
+                        analyzer
+                            .storage
+                            .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
+                    }
+
+                    if is_type {
+                        analyzer
+                            .storage
+                            .export_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty);
+                    }
                 }
             }
 
