@@ -873,7 +873,9 @@ impl Analyzer<'_, '_> {
                         (Ok(var_ty), Ok(ty)) => Type::new_intersection(node.span, vec![var_ty, ty]).freezed(),
                         (Ok(val), _) | (_, Ok(val)) => val.freezed(),
                         (Err(_), Err(err)) => {
-                            analyzer.storage.report(err);
+                            analyzer
+                                .storage
+                                .report(err.context("tried to validate a typescript import equals declaration"));
                             Type::any(node.span, Default::default())
                         }
                     }
