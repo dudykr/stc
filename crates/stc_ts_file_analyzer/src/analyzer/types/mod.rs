@@ -2164,7 +2164,7 @@ impl Analyzer<'_, '_> {
         match type_name {
             RExpr::Member(_) => {
                 if let Ok(var) = self.type_of_var(l, TypeOfMode::RValue, None) {
-                    if var.is_module() {
+                    if var.is_module() || var.is_class_def() || var.is_fn_type() || var.is_union_type() {
                         return Ok(());
                     }
                 }
