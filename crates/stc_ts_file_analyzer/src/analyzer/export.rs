@@ -399,32 +399,30 @@ impl Analyzer<'_, '_> {
             node.specifiers.visit_with(self);
         }
 
-        for specifier in &node.specifiers {
-            match specifier {
-                RExportSpecifier::Namespace(s) => {
-                    // We need
-                    match &node.src {
-                        Some(src) => {
-                            let (dep, data) = self.get_imported_items(node.span, &src.value);
+        match &node.src {
+            Some(src) => {
+                let (dep, data) = self.get_imported_items(node.span, &src.value);
 
-                            let name = match &s.name {
-                                RModuleExportName::Ident(v) => v.sym.clone(),
-                                RModuleExportName::Str(v) => v.value.clone(),
-                            };
+                for specifier in &node.specifiers {
+                    match specifier {
+                        RExportSpecifier::Namespace(s) => {
+                            // We need
+                            match &node.src {
+                                Some(src) => {
+                                    let name = match &s.name {
+                                        RModuleExportName::Ident(v) => v.sym.clone(),
+                                        RModuleExportName::Str(v) => v.value.clone(),
+                                    };
 
-                            self.storage.export_type(s.span, self.ctx.module_id, name.clone(), data.clone());
-                            self.storage.export_var(s.span, self.ctx.module_id, name, data);
+                                    self.storage.export_type(s.span, self.ctx.module_id, name.clone(), data.clone());
+                                    self.storage.export_var(s.span, self.ctx.module_id, name, data.clone());
+                                }
+                                None => {}
+                            }
                         }
-                        None => {}
-                    }
-                }
-                RExportSpecifier::Default(named) => {}
-                RExportSpecifier::Named(named) => {
-                    //
-
-                    match &node.src {
-                        Some(src) => {
-                            let (dep, data) = self.get_imported_items(node.span, &src.value);
+                        RExportSpecifier::Default(named) => {}
+                        RExportSpecifier::Named(named) => {
+                            //
 
                             self.reexport(
                                 span,
@@ -434,7 +432,18 @@ impl Analyzer<'_, '_> {
                                 Id::from(&named.orig),
                             );
                         }
-                        None => {
+                    }
+                }
+            }
+            None => {
+                for specifier in &node.specifiers {
+                    match specifier {
+                        RExportSpecifier::Namespace(s) => {
+                            unreachable!("namespace export should be handled in `export_all`")
+                        }
+                        RExportSpecifier::Default(named) => {}
+                        RExportSpecifier::Named(named) => {
+                            //
                             self.export_named(
                                 span,
                                 base,
