@@ -285,7 +285,21 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
 
         match l {
-            ClassMember::Constructor(..) | ClassMember::IndexSignature(..) => {}
+            ClassMember::Constructor(lc) => {
+                for rm in r {
+                    match rm {
+                        ClassMember::Constructor(rc) => match (lc.accessibility, rc.accessibility) {
+                            (Some(Accessibility::Public), Some(Accessibility::Private | Accessibility::Protected)) => {
+                                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("accessibility differes"));
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    }
+                }
+            }
+
+            ClassMember::IndexSignature(..) => {}
             ClassMember::Method(lm) => {
                 for r_member in r {
                     match r_member {
