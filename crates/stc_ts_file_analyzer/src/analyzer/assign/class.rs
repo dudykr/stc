@@ -289,7 +289,8 @@ impl Analyzer<'_, '_> {
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(rc) => match (lc.accessibility, rc.accessibility) {
-                            (Some(Accessibility::Public) | None, Some(Accessibility::Private | Accessibility::Protected)) => {
+                            (Some(Accessibility::Public) | None, Some(Accessibility::Private | Accessibility::Protected))
+                            | (Some(Accessibility::Protected), Some(Accessibility::Private)) => {
                                 return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("accessibility differes"));
                             }
                             _ => {}
