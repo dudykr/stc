@@ -129,6 +129,12 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS2538
+    TypeCannotBeUsedForIndex {
+        span: Span,
+        prop: Box<Key>,
+    },
+
     /// TS2698
     NonObjectInSpread {
         span: Span,
@@ -2104,6 +2110,8 @@ impl ErrorKind {
             ErrorKind::NotExtendableType { .. } => 2312,
 
             ErrorKind::NonObjectInSpread { .. } => 2698,
+
+            ErrorKind::TypeCannotBeUsedForIndex { .. } => 2538,
 
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
