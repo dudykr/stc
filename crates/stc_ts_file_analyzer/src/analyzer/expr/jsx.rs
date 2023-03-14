@@ -83,6 +83,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )
+            .convert_err(|err| ErrorKind::ImplicitAnyBecauseThereIsNoJsxInterface { span: err.span() })
             .context("tried to get JSX.IntrinsicElements")?,
         ))
     }
