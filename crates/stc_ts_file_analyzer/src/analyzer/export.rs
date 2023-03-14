@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, IdCtx, ModuleId};
+use stc_ts_types::{Id, IdCtx, Key, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
@@ -422,15 +422,50 @@ impl Analyzer<'_, '_> {
                         }
                         RExportSpecifier::Default(named) => {}
                         RExportSpecifier::Named(named) => {
-                            //
+                            let span = named.span;
 
-                            self.reexport(
+                            let orig_sym = match &named.orig {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            let export_sym = named.exported.as_ref().unwrap_or(&named.orig);
+                            let export_sym = match export_sym {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            let var_result = self.access_property(
                                 span,
-                                base,
-                                dep,
-                                named.exported.as_ref().map(Id::from).unwrap_or_else(|| Id::from(&named.orig)),
-                                Id::from(&named.orig),
+                                &data,
+                                &Key::Normal {
+                                    span,
+                                    sym: orig_sym.clone(),
+                                },
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                Default::default(),
                             );
+                            let type_result = self.access_property(
+                                span,
+                                &data,
+                                &Key::Normal { span, sym: orig_sym },
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                Default::default(),
+                            );
+
+                            if let Ok(mut ty) = var_result {
+                                ty.freeze();
+
+                                self.storage.export_var(span, self.ctx.module_id, export_sym.clone(), ty);
+                            }
+
+                            if let Ok(mut ty) = type_result {
+                                ty.freeze();
+
+                                self.storage.export_type(span, self.ctx.module_id, export_sym, ty);
+                            }
                         }
                     }
                 }
@@ -468,43 +503,6 @@ impl Analyzer<'_, '_> {
 
         if self.storage.get_local_type(ctxt, orig.clone()).is_some() {
             self.storage.export_stored_type(span, ctxt, id, orig);
-        }
-    }
-
-    fn reexport(&mut self, span: Span, ctxt: ModuleId, from: ModuleId, orig: Id, id: Id) {
-        let mut did_work = false;
-
-        let is_import_successful = ctxt != from;
-
-        // Dependency module is not found.
-        if !is_import_successful {
-            return;
-        }
-
-        if let Some(data) = self.data.imports.get(&(ctxt, from)) {
-            match data.normalize() {
-                Type::Module(data) => {
-                    if let Some(ty) = data.exports.vars.get(orig.sym()) {
-                        did_work = true;
-                        self.storage.export_var(span, ctxt, id.sym().clone(), ty.clone());
-                    }
-
-                    if let Some(ty) = data.exports.types.get(orig.sym()) {
-                        did_work = true;
-                        let ty = Type::new_union(span, ty.clone());
-                        self.storage.export_type(span, ctxt, id.sym().clone(), ty);
-                    }
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
-        } else {
-            unreachable!("import should be successful")
-        }
-
-        if !did_work {
-            self.storage.report(ErrorKind::ExportFailed { span, orig, id }.into())
         }
     }
 }
