@@ -1378,7 +1378,7 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) | Type::Instance(..) => {
-                let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+                let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
                 return self.extract(span, expr, &ty, kind, args, arg_types, spread_arg_types, type_args, type_ann, opts);
             }
 
