@@ -1120,12 +1120,12 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn check_type_element_for_call<'a>(
+    fn check_type_element_for_call(
         &mut self,
         span: Span,
         kind: ExtractKind,
         candidates: &mut Vec<CallCandidate>,
-        m: &'a TypeElement,
+        m: &TypeElement,
         prop: &Key,
         opts: CallOpts,
     ) {

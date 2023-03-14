@@ -928,7 +928,7 @@ impl Take for ClassDef {
             super_class: None,
             body: vec![],
             type_params: None,
-            implements: Box::new(vec![]),
+            implements: Default::default(),
             metadata: ClassDefMetadata::default(),
             tracker: Default::default(),
         }
