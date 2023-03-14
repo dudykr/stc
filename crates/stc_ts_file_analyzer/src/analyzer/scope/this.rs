@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_type_ops::this::contains_this;
 use stc_ts_types::{ClassMember, ClassProperty, CommonTypeMetadata, Id, Key, KeywordTypeMetadata, Method, Type};
+use stc_utils::cache::Freeze;
 use swc_common::Span;
 
 use crate::analyzer::Analyzer;
@@ -115,6 +116,7 @@ impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
                 *ty = self.this_ty.clone();
             }
             Type::Instance(i) => {
+                i.ty.freeze();
                 if let Ok(instantiated) = self.analyzer.instantiate_class(i.span, &i.ty) {
                     *ty = instantiated;
                 }

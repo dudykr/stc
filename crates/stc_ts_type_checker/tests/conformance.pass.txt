@@ -291,6 +291,7 @@ classes/members/privateNames/privateNamesUnique-5.ts
 classes/members/privateNames/privateStaticNameShadowing.ts
 classes/members/privateNames/typeFromPrivatePropertyAssignment.ts
 classes/methodDeclarations/optionalMethodDeclarations.ts
+classes/mixinAbstractClasses.ts
 classes/mixinAbstractClassesReturnTypeInference.ts
 classes/mixinClassesAnnotated.ts
 classes/mixinClassesAnonymous.ts

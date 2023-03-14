@@ -2138,12 +2138,15 @@ impl Expander<'_, '_, '_> {
                                         &type_params.params,
                                         &[],
                                         &[],
-                                        Some(&Type::TypeLit(TypeLit {
-                                            span,
-                                            members: vec![],
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        })),
+                                        Some(
+                                            &Type::TypeLit(TypeLit {
+                                                span,
+                                                members: vec![],
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })
+                                            .freezed(),
+                                        ),
                                         None,
                                         None,
                                         InferTypeOpts { ..Default::default() },
