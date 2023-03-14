@@ -266,17 +266,22 @@ impl Analyzer<'_, '_> {
                 ty.freeze();
 
                 if !child.config.is_builtin {
-                    child
-                        .normalize(
-                            Some(span),
-                            Cow::Borrowed(&ty),
-                            NormalizeTypeOpts {
-                                process_only_key: true,
-                                in_type_or_type_param: true,
-                                ..Default::default()
-                            },
-                        )
-                        .report(&mut child.storage);
+                    let ctx = Ctx {
+                        is_validating_written_type: true,
+                        ..child.ctx
+                    };
+                    let res = child.with_ctx(ctx).normalize(
+                        Some(span),
+                        Cow::Borrowed(&ty),
+                        NormalizeTypeOpts {
+                            process_only_key: true,
+                            in_type_or_type_param: true,
+                            ..Default::default()
+                        },
+                    );
+                    if let Err(err) = res {
+                        child.storage.report(err);
+                    }
                 }
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),

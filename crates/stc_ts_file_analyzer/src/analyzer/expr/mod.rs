@@ -1313,7 +1313,7 @@ impl Analyzer<'_, '_> {
                 Ok(ty)
             })
             .convert_err(|err| {
-                if id_ctx == IdCtx::Type && err.is_property_not_found() && prop.is_computed() {
+                if id_ctx == IdCtx::Type && self.ctx.is_validating_written_type && err.is_property_not_found() && prop.is_computed() {
                     ErrorKind::TypeCannotBeUsedForIndex {
                         span,
                         prop: box prop.clone(),
