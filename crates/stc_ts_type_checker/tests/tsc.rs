@@ -176,7 +176,7 @@ fn is_parser_test(errors: &[TscError]) -> bool {
     false
 }
 
-fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
+fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() -> Result<(), String> + Send + Sync>> {
     if is_ignored(&path) {
         return None;
     }
