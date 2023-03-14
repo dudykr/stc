@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
                         match (lc.accessibility, rc.accessibility) {
                             (Some(Accessibility::Public) | None, Some(Accessibility::Private | Accessibility::Protected))
                             | (Some(Accessibility::Protected), Some(Accessibility::Private)) => {
-                                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("accessibility differes"));
+                                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("accessibility differs"));
                             }
                             _ => {}
                         }
