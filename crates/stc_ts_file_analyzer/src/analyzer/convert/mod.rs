@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
     RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl,
     RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
@@ -19,7 +19,7 @@ use stc_ts_types::{
     Interface, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, OptionalType,
     Predicate, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem,
     TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Unique,
+    TypeParamInstantiation, Union, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, dev_span, AHashSet};
@@ -1018,6 +1018,17 @@ impl Analyzer<'_, '_> {
     }
 }
 
+fn is_valid_index_type(ty: &Type) -> bool {
+    if ty.is_any() || ty.is_symbol_like() || ty.is_num_like() || ty.is_str_like() {
+        return true;
+    }
+
+    match ty.normalize() {
+        Type::Union(Union { types, .. }) => types.iter().all(is_valid_index_type),
+        _ => false,
+    }
+}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
@@ -1035,21 +1046,34 @@ impl Analyzer<'_, '_> {
                 disallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let prop_ty = self.with_ctx(ctx).access_property(
+            let prop = Key::Computed(ComputedKey {
                 span,
-                &obj_type,
-                &Key::Computed(ComputedKey {
+                expr: box RExpr::Invalid(RInvalid { span }),
+                ty: index_type.clone(),
+            });
+            let prop_ty = self
+                .with_ctx(ctx)
+                .access_property(
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: index_type.clone(),
-                }),
-                TypeOfMode::RValue,
-                IdCtx::Type,
-                AccessPropertyOpts {
-                    for_validation_of_indexed_access_type: true,
-                    ..Default::default()
-                },
-            );
+                    &obj_type,
+                    &prop,
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    AccessPropertyOpts {
+                        for_validation_of_indexed_access_type: true,
+                        ..Default::default()
+                    },
+                )
+                .convert_err(|err| {
+                    if err.is_property_not_found() && !is_valid_index_type(&prop.ty()) {
+                        ErrorKind::TypeCannotBeUsedForIndex {
+                            span,
+                            prop: box prop.clone(),
+                        }
+                    } else {
+                        err
+                    }
+                });
 
             prop_ty.report(&mut self.storage);
         }

@@ -24,7 +24,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Index, Instance,
     Key, KeywordType, KeywordTypeMetadata, LitType, Method, Module, ModuleTypeData, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation, Union,
+    QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -1304,29 +1304,13 @@ impl Analyzer<'_, '_> {
         let obj_str = dump_type_as_string(obj);
 
         // We use child scope to store type parameters.
-        let mut res = self
-            .with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-                let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
-                ty.assert_valid();
-                ty = analyzer.expand_type_params_using_scope(ty)?;
-                ty.assert_valid();
-                Ok(ty)
-            })
-            .convert_err(|err| {
-                if id_ctx == IdCtx::Type
-                    && opts.for_validation_of_indexed_access_type
-                    && err.is_property_not_found()
-                    && prop.is_computed()
-                    && !is_valid_index_type(&prop.ty())
-                {
-                    ErrorKind::TypeCannotBeUsedForIndex {
-                        span,
-                        prop: box prop.clone(),
-                    }
-                } else {
-                    err
-                }
-            });
+        let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
+            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
+            ty.assert_valid();
+            ty = analyzer.expand_type_params_using_scope(ty)?;
+            ty.assert_valid();
+            Ok(ty)
+        });
 
         if !self.config.is_builtin {
             res = res.with_context(|| {
@@ -4466,17 +4450,6 @@ impl Analyzer<'_, '_> {
             || elems
                 .iter()
                 .any(|el| matches!(el, TypeElement::Property(PropertySignature { key: Key::Num(..), .. })))
-    }
-}
-
-fn is_valid_index_type(ty: &Type) -> bool {
-    if ty.is_any() || ty.is_symbol_like() || ty.is_num_like() || ty.is_str_like() {
-        return true;
-    }
-
-    match ty.normalize() {
-        Type::Union(Union { types, .. }) => types.iter().all(is_valid_index_type),
-        _ => false,
     }
 }
 
