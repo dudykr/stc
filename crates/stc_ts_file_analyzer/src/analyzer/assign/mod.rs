@@ -543,7 +543,6 @@ impl Analyzer<'_, '_> {
             | Type::Tuple(..)
             | Type::Union(..)
             | Type::Index(..)
-            | Type::Tpl(..)
             | Type::Query(..) => {
                 let ty = self
                     .normalize(
