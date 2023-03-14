@@ -2069,11 +2069,7 @@ impl Expander<'_, '_, '_> {
                 }
 
                 if let Some(types) = self.analyzer.find_type(&i.into())? {
-                    info!(
-                        "expand: expanding `{}` using analyzer: {}",
-                        Id::from(i),
-                        types.clone().into_iter().count()
-                    );
+                    info!("expand: expanding `{}` using analyzer: {}", Id::from(i), types.clone().count());
 
                     let mut stored_ref = None;
 

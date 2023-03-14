@@ -156,7 +156,6 @@ where
                 .find_type(&Id::new("T1".into(), top_level_ctxt))
                 .expect("type T1 should resolved without an issue")
                 .expect("type T1 should exist")
-                .into_iter()
                 .next()
                 .unwrap()
                 .into_owned();
@@ -164,7 +163,6 @@ where
                 .find_type(&Id::new("T2".into(), top_level_ctxt))
                 .expect("type T2 should resolved without an issue")
                 .expect("type T2 should exist")
-                .into_iter()
                 .next()
                 .unwrap()
                 .into_owned();
