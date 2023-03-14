@@ -129,6 +129,11 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS7026
+    ImplicitAnyBecauseThereIsNoJsxInterface {
+        span: Span,
+    },
+
     /// TS2538
     TypeCannotBeUsedForIndex {
         span: Span,
@@ -2112,6 +2117,8 @@ impl ErrorKind {
             ErrorKind::NonObjectInSpread { .. } => 2698,
 
             ErrorKind::TypeCannotBeUsedForIndex { .. } => 2538,
+
+            ErrorKind::ImplicitAnyBecauseThereIsNoJsxInterface { .. } => 7026,
 
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
