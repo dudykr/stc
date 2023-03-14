@@ -1304,13 +1304,24 @@ impl Analyzer<'_, '_> {
         let obj_str = dump_type_as_string(obj);
 
         // We use child scope to store type parameters.
-        let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
-            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
-            ty.assert_valid();
-            ty = analyzer.expand_type_params_using_scope(ty)?;
-            ty.assert_valid();
-            Ok(ty)
-        });
+        let mut res = self
+            .with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
+                let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?.fixed();
+                ty.assert_valid();
+                ty = analyzer.expand_type_params_using_scope(ty)?;
+                ty.assert_valid();
+                Ok(ty)
+            })
+            .convert_err(|err| {
+                if id_ctx == IdCtx::Type && err.is_property_not_found() && prop.is_computed() {
+                    ErrorKind::TypeCannotBeUsedForIndex {
+                        span,
+                        prop: box prop.clone(),
+                    }
+                } else {
+                    err
+                }
+            });
 
         if !self.config.is_builtin {
             res = res.with_context(|| {
