@@ -12,13 +12,6 @@
       7
     ]
   },
-  "extra_errors": {
-    "TS0": 2
-  },
-  "extra_error_lines": {
-    "TS0": [
-      2,
-      2
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
