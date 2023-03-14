@@ -62,7 +62,7 @@ pub(crate) fn calc_order(cycles: Vec<Vec<usize>>, graph: &mut FastDiGraphMap<usi
     let mut orders = vec![];
 
     'outer: loop {
-        if (0..len).into_iter().all(|idx| done.contains(&idx)) {
+        if (0..len).all(|idx| done.contains(&idx)) {
             break;
         }
 

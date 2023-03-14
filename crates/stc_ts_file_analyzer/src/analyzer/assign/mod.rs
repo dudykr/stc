@@ -2422,7 +2422,7 @@ impl Analyzer<'_, '_> {
 
                     // Extra check to handle "has_escape"
                     match (lit, r_lit) {
-                        (&RTsLit::Str(ref l), &RTsLit::Str(ref r)) if l.value == r.value => return Ok(()),
+                        (RTsLit::Str(l), RTsLit::Str(r)) if l.value == r.value => return Ok(()),
                         _ => {}
                     }
 

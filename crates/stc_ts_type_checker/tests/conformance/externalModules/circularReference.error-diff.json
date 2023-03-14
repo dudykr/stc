@@ -5,8 +5,8 @@
   "required_error_lines": {
     "TS2339": [
       9,
-      9,
-      14
+      8,
+      13
     ]
   },
   "extra_errors": {

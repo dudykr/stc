@@ -5,11 +5,11 @@
   },
   "required_error_lines": {
     "TS2322": [
-      15,
-      21
+      13,
+      19
     ],
     "TS2786": [
-      15
+      13
     ]
   },
   "extra_errors": {},

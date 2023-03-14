@@ -3411,6 +3411,15 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("type_of_var");
 
         let span = i.span();
+
+        if i.sym == js_word!("this") {
+            return Ok(Type::This(ThisType {
+                span,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }));
+        }
+
         let id: Id = i.into();
         let name: Name = i.into();
 

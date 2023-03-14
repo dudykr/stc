@@ -331,7 +331,7 @@ fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
 #[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
     let res = run_test(file_name.clone(), false).unwrap();
-    res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
+    res.compare_to_file(file_name.with_extension("swc-stderr")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
 }
@@ -345,7 +345,7 @@ fn pass(file_name: PathBuf) {
         run_test(file_name.clone(), true);
     }
 
-    res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
+    res.compare_to_file(file_name.with_extension("swc-stderr")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
 }

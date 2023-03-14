@@ -41,7 +41,7 @@ pub trait BuiltInGen: Sized {
             format!("{:x}", result)
         };
 
-        let cache_path = Path::new(".stc").join(".builtin-cache").join(&format!("{}.rmp", key));
+        let cache_path = Path::new(".stc").join(".builtin-cache").join(format!("{}.rmp", key));
 
         if cache_path.is_file() {
             let res = || -> Result<BuiltIn, Box<dyn Error>> {
@@ -86,8 +86,7 @@ pub trait BuiltInGen: Sized {
         std::fs::create_dir_all(cache_path.parent().unwrap())
             .unwrap_or_else(|err| panic!("failed to create directory for builtin cache at {:?}: {:?}", cache_path, err));
 
-        std::fs::write(&cache_path, &json_data)
-            .unwrap_or_else(|err| panic!("failed to write builtin cache at {:?}: {:?}", cache_path, err));
+        std::fs::write(&cache_path, json_data).unwrap_or_else(|err| panic!("failed to write builtin cache at {:?}: {:?}", cache_path, err));
 
         builtin
     }

@@ -5,10 +5,10 @@
   },
   "required_error_lines": {
     "TS2322": [
-      9
+      4
     ],
     "TS2352": [
-      10
+      5
     ]
   },
   "extra_errors": {},

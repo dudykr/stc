@@ -4,8 +4,8 @@
   },
   "required_error_lines": {
     "TS7036": [
-      7,
-      9
+      4,
+      6
     ]
   },
   "extra_errors": {

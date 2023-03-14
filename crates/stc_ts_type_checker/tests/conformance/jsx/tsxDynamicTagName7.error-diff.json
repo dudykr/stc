@@ -4,7 +4,7 @@
   },
   "required_error_lines": {
     "TS2604": [
-      11
+      8
     ]
   },
   "extra_errors": {
