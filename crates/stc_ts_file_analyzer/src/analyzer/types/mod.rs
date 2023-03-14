@@ -2146,56 +2146,23 @@ impl Analyzer<'_, '_> {
 
         #[allow(clippy::question_mark)]
         if let Ok(ref ty) = normalized_ty {
-            if let Type::StringMapping(ty) = ty.normalize() {
-                match ty.type_args.params[0].normalize() {
+            if let Type::StringMapping(str_map) = ty.normalize() {
+                match str_map.type_args.params[0].normalize() {
                     Type::Ref(ref_ty) => {
-                        if let RTsEntityName::Ident(r_ident) = &ref_ty.type_name {
-                            if let Ok(Some(ty_found)) = self.find_type(&r_ident.into()) {
-                                let ty_found = &ty_found.into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
+                        let ty_ = Type::Ref(ref_ty.clone());
+                        let ty_found = self.expand_top_ref(span, Cow::Borrowed(&ty_), Default::default())?;
+                        let ty_found = ty_found.normalize();
 
-                                if let Type::Alias(alias) = ty_found.normalize() {
-                                    return self.expand_intrinsic_types(
-                                        ty.span(),
-                                        &StringMapping {
-                                            span: ty.span(),
-                                            kind: ty.clone().kind,
-                                            type_args: TypeParamInstantiation {
-                                                span: alias.span,
-                                                params: vec![*alias.ty.clone()],
-                                            },
-                                            metadata: ty.metadata,
-                                        },
-                                        span_for_validation,
-                                    );
-                                } else {
-                                    return self.expand_intrinsic_types(
-                                        ty.span(),
-                                        &StringMapping {
-                                            span: ty.span(),
-                                            kind: ty.clone().kind,
-                                            type_args: TypeParamInstantiation {
-                                                span: ty_found.span(),
-                                                params: vec![ty_found.clone()],
-                                            },
-                                            metadata: ty.metadata,
-                                        },
-                                        span_for_validation,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    Type::Alias(alias) => {
                         return self.expand_intrinsic_types(
-                            ty.span(),
+                            str_map.span(),
                             &StringMapping {
-                                span: ty.span(),
-                                kind: ty.clone().kind,
+                                span: str_map.span(),
+                                kind: str_map.clone().kind,
                                 type_args: TypeParamInstantiation {
-                                    span: alias.span,
-                                    params: vec![*alias.ty.clone()],
+                                    span: ty_found.span(),
+                                    params: vec![ty_found.clone()],
                                 },
-                                metadata: ty.metadata,
+                                metadata: str_map.metadata,
                             },
                             span_for_validation,
                         );
@@ -2203,8 +2170,8 @@ impl Analyzer<'_, '_> {
                     _ => {
                         if let Err(e) = self.assign_to_intrinsic(
                             &mut Default::default(),
-                            ty,
-                            &ty.type_args.params[0],
+                            str_map,
+                            &str_map.type_args.params[0],
                             AssignOpts {
                                 span: span_for_validation,
                                 ..Default::default()
