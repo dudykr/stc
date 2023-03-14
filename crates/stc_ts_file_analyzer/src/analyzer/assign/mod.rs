@@ -2999,27 +2999,25 @@ impl Analyzer<'_, '_> {
                 }
 
                 // If both are type params, and r type_param does not extend l type_param
-                match (last_ty, last_r_ty) {
-                    (Type::Param(l), Type::Param(rr)) => {
-                        if let Some(constraint) = &rr.constraint {
-                            if let Type::Param(param) = constraint.normalize() {
-                                if param.type_eq(l) {
-                                    return Ok(());
-                                }
+
+                if let (Type::Param(l), Type::Param(rr)) = (last_ty, last_r_ty) {
+                    if let Some(constraint) = &rr.constraint {
+                        if let Type::Param(param) = constraint.normalize() {
+                            if param.type_eq(l) {
+                                return Ok(());
                             }
                         }
-
-                        return Err(ErrorKind::AssignFailed {
-                            span: opts.span,
-                            left: box Type::StringMapping(to.clone()),
-                            right_ident: None,
-                            right: box r.clone(),
-                            cause: vec![],
-                        }
-                        .into());
                     }
-                    _ => {}
-                };
+
+                    return Err(ErrorKind::AssignFailed {
+                        span: opts.span,
+                        left: box Type::StringMapping(to.clone()),
+                        right_ident: None,
+                        right: box r.clone(),
+                        cause: vec![],
+                    }
+                    .into());
+                }
 
                 return Ok(());
             }
