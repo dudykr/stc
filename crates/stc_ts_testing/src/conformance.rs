@@ -261,6 +261,11 @@ pub fn parse_conformance_test(file_name: &Path) -> Result<Vec<TestSpec>> {
         libs.sort();
 
         err_shift_n = err_shift_n.min(first_stmt_line);
+
+        if !sub_files.is_empty() {
+            err_shift_n = 0;
+        }
+
         dbg!(err_shift_n);
 
         if targets.len() > 1 {

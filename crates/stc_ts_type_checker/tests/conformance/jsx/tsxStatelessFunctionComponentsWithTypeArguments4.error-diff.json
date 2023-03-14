@@ -4,8 +4,8 @@
   },
   "required_error_lines": {
     "TS2769": [
-      16,
-      17
+      9,
+      10
     ]
   },
   "extra_errors": {},

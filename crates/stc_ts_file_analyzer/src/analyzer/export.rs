@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, IdCtx, Key, ModuleId};
+use stc_ts_types::{Id, IdCtx, Key};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
@@ -478,13 +478,31 @@ impl Analyzer<'_, '_> {
                         }
                         RExportSpecifier::Default(named) => {}
                         RExportSpecifier::Named(named) => {
+                            let export_sym = named.exported.as_ref().unwrap_or(&named.orig);
+                            let export_sym = match export_sym {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            let orig = match &named.orig {
+                                RModuleExportName::Ident(v) => v.clone(),
+                                RModuleExportName::Str(v) => unreachable!(),
+                            };
                             //
-                            self.export_named(
-                                span,
-                                base,
-                                Id::from(&named.orig),
-                                named.exported.as_ref().map(Id::from).unwrap_or_else(|| Id::from(&named.orig)),
-                            );
+                            let var_result = self.type_of_var(&orig, TypeOfMode::RValue, None);
+                            let type_result = self.type_of_ts_entity_name(span, &RExpr::Ident(orig.clone()), None);
+
+                            if let Ok(mut ty) = var_result {
+                                ty.freeze();
+
+                                self.storage.export_var(span, self.ctx.module_id, export_sym.clone(), ty);
+                            }
+
+                            if let Ok(mut ty) = type_result {
+                                ty.freeze();
+
+                                self.storage.export_type(span, self.ctx.module_id, export_sym, ty);
+                            }
                         }
                     }
                 }
@@ -492,17 +510,5 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(())
-    }
-
-    fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
-        if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
-            self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
-
-            self.storage.export_stored_var(span, ctxt, id.clone(), orig.clone());
-        }
-
-        if self.storage.get_local_type(ctxt, orig.clone()).is_some() {
-            self.storage.export_stored_type(span, ctxt, id, orig);
-        }
     }
 }

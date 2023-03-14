@@ -4,7 +4,7 @@
   },
   "required_error_lines": {
     "TS2339": [
-      7
+      6
     ]
   },
   "extra_errors": {
