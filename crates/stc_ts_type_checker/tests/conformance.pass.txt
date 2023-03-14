@@ -379,6 +379,7 @@ decorators/1.0lib-noErrors.ts
 directives/ts-expect-error-nocheck.ts
 dynamicImport/importCallExpression1ES2020.ts
 dynamicImport/importCallExpression3ES2020.ts
+dynamicImport/importCallExpression5ES2020.ts
 dynamicImport/importCallExpressionDeclarationEmit1.ts
 dynamicImport/importCallExpressionDeclarationEmit2.ts
 dynamicImport/importCallExpressionDeclarationEmit3.ts
@@ -1640,6 +1641,7 @@ externalModules/exportAmbientClassNameWithObject.ts
 externalModules/exportAssignDottedName.ts
 externalModules/exportAssignImportedIdentifier.ts
 externalModules/exportAssignTypes.ts
+externalModules/exportAssignmentAndDeclaration.ts
 externalModules/exportAssignmentGenericType.ts
 externalModules/exportAssignmentTopLevelIdentifier.ts
 externalModules/exportClassNameWithObjectAMD.ts
@@ -1652,6 +1654,7 @@ externalModules/exportNonLocalDeclarations.ts
 externalModules/exportNonVisibleType.ts
 externalModules/globalAugmentationModuleResolution.ts
 externalModules/importImportOnlyModule.ts
+externalModules/importTsBeforeDTs.ts
 externalModules/multipleExportDefault1.ts
 externalModules/multipleExportDefault2.ts
 externalModules/multipleExportDefault3.ts
@@ -1660,13 +1663,14 @@ externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
 externalModules/reexportClassDefinition.ts
 externalModules/topLevelAwait.3.ts
+externalModules/topLevelFileModuleMissing.ts
 externalModules/typeOnly/nestedNamespace.ts
 externalModules/typeOnly/preserveValueImports.ts
 externalModules/typeOnly/preserveValueImports_errors.ts
 externalModules/typeOnlyMerge1.ts
+externalModules/umd2.ts
 externalModules/verbatimModuleSyntaxConstEnum.ts
 externalModules/verbatimModuleSyntaxRestrictionsESM.ts
-externalModulesSymbols/ES5SymbolProperty6.ts
 functions/functionOverloadCompatibilityWithVoid01.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
@@ -1714,6 +1718,7 @@ internalModules/DeclarationMerging/ClassAndModuleThatMergeWithStaticFunctionAndN
 internalModules/DeclarationMerging/ClassAndModuleThatMergeWithStaticVariableAndNonExportedVarThatShareAName.ts
 internalModules/DeclarationMerging/ClassAndModuleThatMergeWithStringIndexerAndExportedFunctionWithTypeIncompatibleWithIndexer.ts
 internalModules/DeclarationMerging/EnumAndModuleWithSameNameAndCommonRoot.ts
+internalModules/DeclarationMerging/TwoInternalModulesThatMergeEachWithExportedLocalVarsOfTheSameName.ts
 internalModules/codeGeneration/exportCodeGen.ts
 internalModules/codeGeneration/importStatements.ts
 internalModules/codeGeneration/nameCollision.ts

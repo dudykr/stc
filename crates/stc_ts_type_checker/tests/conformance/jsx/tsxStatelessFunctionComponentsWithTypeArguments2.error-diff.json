@@ -4,10 +4,10 @@
   },
   "required_error_lines": {
     "TS2322": [
-      15,
+      8,
+      13,
       20,
-      27,
-      38
+      31
     ]
   },
   "extra_errors": {},

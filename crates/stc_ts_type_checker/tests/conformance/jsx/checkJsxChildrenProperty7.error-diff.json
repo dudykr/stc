@@ -4,9 +4,9 @@
   },
   "required_error_lines": {
     "TS2747": [
-      30,
-      32,
-      33
+      24,
+      26,
+      27
     ]
   },
   "extra_errors": {},
