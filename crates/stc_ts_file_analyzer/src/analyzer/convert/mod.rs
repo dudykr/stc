@@ -266,11 +266,7 @@ impl Analyzer<'_, '_> {
                 ty.freeze();
 
                 if !child.config.is_builtin {
-                    let ctx = Ctx {
-                        is_validating_written_type: true,
-                        ..child.ctx
-                    };
-                    let res = child.with_ctx(ctx).normalize(
+                    let res = child.normalize(
                         Some(span),
                         Cow::Borrowed(&ty),
                         NormalizeTypeOpts {
