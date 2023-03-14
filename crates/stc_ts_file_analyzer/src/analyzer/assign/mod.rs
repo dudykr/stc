@@ -2978,6 +2978,49 @@ impl Analyzer<'_, '_> {
                     .into());
                 }
 
+                let mut last_ty = &to.type_args.params[0];
+                let mut last_r_ty = &string.type_args.params[0];
+                loop {
+                    match (last_ty.normalize(), last_r_ty.normalize()) {
+                        (Type::StringMapping(l_map), Type::StringMapping(r_map)) => {
+                            last_ty = &l_map.type_args.params[0];
+                            last_r_ty = &r_map.type_args.params[0];
+                        }
+                        (Type::StringMapping(l_map), _) => {
+                            last_ty = &l_map.type_args.params[0];
+                        }
+                        (_, Type::StringMapping(r_map)) => {
+                            last_r_ty = &r_map.type_args.params[0];
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                }
+
+                // If both are type params, and r type_param does not extend l type_param
+                match (last_ty, last_r_ty) {
+                    (Type::Param(l), Type::Param(rr)) => {
+                        if let Some(constraint) = &rr.constraint {
+                            if let Type::Param(param) = constraint.normalize() {
+                                if param.type_eq(l) {
+                                    return Ok(());
+                                }
+                            }
+                        }
+
+                        return Err(ErrorKind::AssignFailed {
+                            span: opts.span,
+                            left: box Type::StringMapping(to.clone()),
+                            right_ident: None,
+                            right: box r.clone(),
+                            cause: vec![],
+                        }
+                        .into());
+                    }
+                    _ => {}
+                };
+
                 return Ok(());
             }
             Type::Tpl(tpl) => {
