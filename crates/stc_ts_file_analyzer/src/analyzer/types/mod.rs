@@ -29,11 +29,11 @@ use stc_utils::{
     stack,
 };
 use swc_atoms::{js_word, Atom, JsWord};
-use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error};
 
-use super::expr::AccessPropertyOpts;
+use super::{assign::AssignOpts, expr::AccessPropertyOpts};
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
@@ -80,6 +80,7 @@ pub(crate) struct NormalizeTypeOpts {
     pub expand_enum_variant: bool,
 
     pub preserve_keyof: bool,
+    pub in_type_or_type_param: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -220,8 +221,14 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::StringMapping(i) => {
+                        let ctx = Ctx {
+                            in_actual_type: opts.in_type_or_type_param,
+                            ..self.ctx
+                        };
+
                         let ty = self
-                            .expand_intrinsic_types(actual_span, i)
+                            .with_ctx(ctx)
+                            .expand_intrinsic_types(actual_span, i, span.unwrap_or(DUMMY_SP))
                             .context("tried to expand intrinsic type as a part of normalization")?;
 
                         return Ok(Cow::Owned(ty));
@@ -461,6 +468,7 @@ impl Analyzer<'_, '_> {
                                 &ty.ty,
                                 NormalizeTypeOpts {
                                     preserve_global_this: true,
+                                    in_type_or_type_param: true,
                                     ..opts
                                 },
                             )
@@ -1225,6 +1233,7 @@ impl Analyzer<'_, '_> {
             Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 normalize_keywords: false,
+
                 ..opts
             },
         )?;
@@ -1975,14 +1984,24 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping, span_for_validation: Span) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
+        let normalized_ty = match self
+            .normalize(
+                None,
+                Cow::Borrowed(&arg.params[0]),
+                NormalizeTypeOpts {
+                    in_type_or_type_param: true,
+                    ..Default::default()
+                },
+            )?
+            .normalize()
+        {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                 let new_val = apply_string_mapping(&ty.kind, &s.value);
 
-                return Ok(Type::Lit(LitType {
+                Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
                     lit: RTsLit::Str(RStr {
                         span: arg.params[0].span(),
@@ -1994,7 +2013,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     tracker: Default::default(),
-                }));
+                }))
             }
             Type::Tpl(TplType {
                 span,
@@ -2012,13 +2031,13 @@ impl Analyzer<'_, '_> {
                     })
                     .collect();
 
-                return Ok(Type::Tpl(TplType {
+                Ok(Type::Tpl(TplType {
                     span: *span,
                     quasis,
                     types: types.clone(),
                     metadata: *metadata,
                     tracker: Default::default(),
-                }));
+                }))
             }
 
             Type::Param(TypeParam {
@@ -2052,6 +2071,7 @@ impl Analyzer<'_, '_> {
                                 },
                                 metadata: ty.metadata,
                             },
+                            span_for_validation,
                         )
                         .ok()
                         .map(|value| value.freezed())
@@ -2077,6 +2097,7 @@ impl Analyzer<'_, '_> {
                                             },
                                             metadata: ty.metadata,
                                         },
+                                        span_for_validation,
                                     )
                                 })
                                 .map(|val| val.ok())
@@ -2109,7 +2130,7 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 });
 
-                return Ok(Type::StringMapping(StringMapping {
+                Ok(Type::StringMapping(StringMapping {
                     span,
                     kind: ty.kind.clone(),
                     type_args: TypeParamInstantiation {
@@ -2117,13 +2138,53 @@ impl Analyzer<'_, '_> {
                         params: vec![arg],
                     },
                     metadata: ty.metadata,
-                }));
+                }))
             }
 
-            _ => {}
+            _ => Ok(Type::StringMapping(ty.clone())),
+        };
+
+        #[allow(clippy::question_mark)]
+        if let Ok(ref ty) = normalized_ty {
+            if let Type::StringMapping(str_map) = ty.normalize() {
+                match str_map.type_args.params[0].normalize() {
+                    Type::Ref(ref_ty) => {
+                        let ty_ = Type::Ref(ref_ty.clone());
+                        let ty_found = self.expand_top_ref(span, Cow::Borrowed(&ty_), Default::default())?;
+                        let ty_found = ty_found.normalize();
+
+                        return self.expand_intrinsic_types(
+                            str_map.span(),
+                            &StringMapping {
+                                span: str_map.span(),
+                                kind: str_map.clone().kind,
+                                type_args: TypeParamInstantiation {
+                                    span: ty_found.span(),
+                                    params: vec![ty_found.clone()],
+                                },
+                                metadata: str_map.metadata,
+                            },
+                            span_for_validation,
+                        );
+                    }
+                    _ => {
+                        if let Err(e) = self.assign_to_intrinsic(
+                            &mut Default::default(),
+                            str_map,
+                            &str_map.type_args.params[0],
+                            AssignOpts {
+                                span: span_for_validation,
+                                ..Default::default()
+                            },
+                        ) {
+                            return Err(e);
+                        }
+                    }
+                }
+            }
         }
 
-        Ok(Type::StringMapping(ty.clone()))
+        normalized_ty
     }
 
     pub(crate) fn report_error_for_unresolved_type(

@@ -1663,6 +1663,7 @@ externalModules/typeOnly/preserveValueImports_errors.ts
 externalModules/typeOnlyMerge1.ts
 externalModules/verbatimModuleSyntaxConstEnum.ts
 externalModules/verbatimModuleSyntaxRestrictionsESM.ts
+externalModulesSymbols/ES5SymbolProperty6.ts
 functions/functionOverloadCompatibilityWithVoid01.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
