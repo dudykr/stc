@@ -3036,7 +3036,7 @@ impl Analyzer<'_, '_> {
                     if let Some(constraint) = &l.constraint {
                         if let Type::Param(param_l) = constraint.normalize() {
                             if let Some(box Type::Param(param_r)) = &rr.constraint {
-                                if !param_l.type_eq(&param_r) {
+                                if !param_l.type_eq(param_r) {
                                     return Err(ErrorKind::AssignFailed {
                                         span: opts.span,
                                         left: box Type::StringMapping(to.clone()),
