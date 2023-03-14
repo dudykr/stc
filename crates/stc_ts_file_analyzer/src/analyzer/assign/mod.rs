@@ -2998,25 +2998,57 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // If both are type params, and r type_param does not extend l type_param
-
+                // if lhs_param extends rhs_param (or both params) -> error
                 if let (Type::Param(l), Type::Param(rr)) = (last_ty, last_r_ty) {
                     if let Some(constraint) = &rr.constraint {
-                        if let Type::Param(param) = constraint.normalize() {
-                            if param.type_eq(l) {
-                                return Ok(());
+                        let Type::Param(param) = constraint.normalize() else {
+                            return Err(ErrorKind::AssignFailed {
+                                span: opts.span,
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        };
+                        if !param.type_eq(l) {
+                            return Err(ErrorKind::AssignFailed {
+                                span: opts.span,
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        }
+                    } else {
+                        return Err(ErrorKind::AssignFailed {
+                            span: opts.span,
+                            left: box Type::StringMapping(to.clone()),
+                            right_ident: None,
+                            right: box r.clone(),
+                            cause: vec![],
+                        }
+                        .into());
+                    }
+
+                    // if both params, but rhs_param extends lhs_param -> no error
+                    if let Some(constraint) = &l.constraint {
+                        if let Type::Param(param_l) = constraint.normalize() {
+                            if let Some(box Type::Param(param_r)) = &rr.constraint {
+                                if !param_l.type_eq(&param_r) {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: opts.span,
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
                             }
                         }
                     }
-
-                    return Err(ErrorKind::AssignFailed {
-                        span: opts.span,
-                        left: box Type::StringMapping(to.clone()),
-                        right_ident: None,
-                        right: box r.clone(),
-                        cause: vec![],
-                    }
-                    .into());
                 }
 
                 return Ok(());
