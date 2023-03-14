@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, IdCtx, Key, ModuleId};
+use stc_ts_types::{Id, IdCtx, Key};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
