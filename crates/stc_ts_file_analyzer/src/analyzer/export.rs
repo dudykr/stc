@@ -384,7 +384,13 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RNamedExport) {
+    fn validate(&mut self, node: &RNamedExport) -> VResult<()> {
+        self.validate_named_export(node)
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn validate_named_export(&mut self, node: &RNamedExport) -> VResult<()> {
         let span = node.span;
         let base = self.ctx.module_id;
 
@@ -443,9 +449,7 @@ impl Analyzer<'_, '_> {
 
         Ok(())
     }
-}
 
-impl Analyzer<'_, '_> {
     fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
             self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
