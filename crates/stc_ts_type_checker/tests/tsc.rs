@@ -231,6 +231,8 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() -> Result<(), String> +
         if let Some(last) = last {
             resume_unwind(last);
         }
+
+        Ok(())
     })
 }
 
