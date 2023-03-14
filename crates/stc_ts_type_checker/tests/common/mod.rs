@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 
 pub fn load_fixtures<F>(dir_name: &str, op: F) -> Vec<TestDescAndFn>
 where
-    F: Fn(PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>>,
+    F: Fn(PathBuf) -> Option<Box<dyn FnOnce() -> Result<(), String> + Send + Sync>>,
 {
     let root = {
         let mut root = Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf();
