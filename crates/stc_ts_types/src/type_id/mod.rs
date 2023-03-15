@@ -1,4 +1,4 @@
-pub use self::{class::ClassId, destructure::DestructureId, symbol::SymbolId};
+pub use self::{class::ClassId, destructure::DestructuringId, symbol::SymbolId};
 
 mod class;
 mod destructure;

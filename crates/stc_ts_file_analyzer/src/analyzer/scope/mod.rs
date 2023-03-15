@@ -20,7 +20,7 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, ClassProperty, Conditional, EnumVariant, FnParam, Id, Index, IndexedAccessType,
+    name::Name, type_id::DestructuringId, Class, ClassProperty, Conditional, EnumVariant, FnParam, Id, Index, IndexedAccessType,
     Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
     TypeParamInstantiation,
 };
@@ -124,7 +124,7 @@ pub(crate) struct Scope<'a> {
     pub(super) class: ClassState,
 
     /// Save All destructure state
-    pub(super) destructure_vars: FxHashMap<DestructureId, Type>,
+    pub(super) destructure_vars: FxHashMap<DestructuringId, Type>,
 }
 
 impl Scope<'_> {
@@ -1260,13 +1260,13 @@ impl Analyzer<'_, '_> {
         }))
     }
 
-    pub fn get_destructor_unique_key(&self) -> DestructureId {
+    pub fn get_destructor_unique_key(&self) -> DestructuringId {
         let mut id = self.destructure_count.get();
         self.destructure_count.set(id.next_id());
         id
     }
 
-    pub fn declare_destructor(&mut self, span: Span, ty: &Type, key: DestructureId) -> VResult<bool> {
+    pub fn declare_destructor(&mut self, span: Span, ty: &Type, key: DestructuringId) -> VResult<bool> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1288,7 +1288,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub fn find_destructor(&self, key: DestructureId) -> Option<Cow<Type>> {
+    pub fn find_destructor(&self, key: DestructuringId) -> Option<Cow<Type>> {
         let mut scope = Some(&self.scope);
         while let Some(s) = scope {
             if let Some(v) = s.destructure_vars.get(&key) {

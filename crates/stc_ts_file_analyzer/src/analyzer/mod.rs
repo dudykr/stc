@@ -19,7 +19,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{type_id::DestructuringId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
@@ -249,7 +249,7 @@ pub struct Analyzer<'scope, 'b> {
 
     data: Box<AnalyzerData>,
 
-    destructure_count: Rc<Cell<DestructureId>>,
+    destructure_count: Rc<Cell<DestructuringId>>,
 }
 
 /// This type **should be boxed** for performance.

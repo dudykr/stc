@@ -9,7 +9,7 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, OptionalType, PropertySignature, Ref, RestType, Tuple,
+    type_id::DestructuringId, Array, CommonTypeMetadata, Instance, Key, LitType, OptionalType, PropertySignature, Ref, RestType, Tuple,
     TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
@@ -1126,7 +1126,7 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    pub fn regist_destructuring(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
+    pub fn regist_destructuring(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructuringId>) -> DestructuringId {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
@@ -1165,7 +1165,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
-        DestructureId(0)
+        DestructuringId(0)
     }
 }
 
@@ -1181,7 +1181,7 @@ fn remove_readonly(ty: &mut Type) {
     }
 }
 
-fn add_destructure_sign(ty: &mut Type, key: DestructureId) {
+fn add_destructure_sign(ty: &mut Type, key: DestructuringId) {
     ty.metadata_mut().destructure_key = key;
     ty.freeze();
 }

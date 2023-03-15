@@ -4,7 +4,7 @@ use rnode::NodeId;
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::{
-    type_id::DestructureId, Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type, TypeParam, Union,
+    type_id::DestructuringId, Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type, TypeParam, Union,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
@@ -328,7 +328,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn add_destructure_sign(ty: &mut Type, key: DestructureId) {
+fn add_destructure_sign(ty: &mut Type, key: DestructuringId) {
     ty.metadata_mut().destructure_key = key;
     ty.freeze();
 }

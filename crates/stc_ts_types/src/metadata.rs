@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use stc_visit::Visitable;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
-use crate::type_id::DestructureId;
+use crate::type_id::DestructuringId;
 
 pub trait TypeMetadata {
     fn common(&self) -> CommonTypeMetadata;
@@ -100,7 +100,7 @@ pub struct CommonTypeMetadata {
     /// generalized.
     pub prevent_generalization: bool,
 
-    pub destructure_key: DestructureId,
+    pub destructure_key: DestructuringId,
 }
 
 impl_basic_traits!(CommonTypeMetadata);
