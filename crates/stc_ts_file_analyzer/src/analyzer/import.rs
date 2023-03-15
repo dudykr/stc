@@ -333,6 +333,8 @@ where
 {
     /// Extracts require('foo')
     fn visit(&mut self, expr: &RCallExpr) {
+        expr.visit_children_with(self);
+
         let span = expr.span();
 
         match &expr.callee {
