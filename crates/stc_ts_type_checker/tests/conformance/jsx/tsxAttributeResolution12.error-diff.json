@@ -8,12 +8,6 @@
       28
     ]
   },
-  "extra_errors": {
-    "TS2503": 1
-  },
-  "extra_error_lines": {
-    "TS2503": [
-      7
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
