@@ -1606,6 +1606,7 @@ impl Analyzer<'_, '_> {
 
             for parent in &t.extends {
                 let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
+                let parent = self.instantiate_class(span, &parent)?;
 
                 let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
 
