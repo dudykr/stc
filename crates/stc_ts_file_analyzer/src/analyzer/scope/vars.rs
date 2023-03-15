@@ -1126,7 +1126,7 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    pub fn regist_destructuring(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructuringId>) -> DestructuringId {
+    pub(crate) fn regist_destructuring(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructuringId>) -> DestructuringId {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
