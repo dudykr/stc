@@ -2545,6 +2545,7 @@ types/typeAliases/circularTypeAliasForUnionWithClass.ts
 types/typeAliases/circularTypeAliasForUnionWithInterface.ts
 types/typeAliases/classDoesNotDependOnBaseTypes.ts
 types/typeAliases/genericTypeAliases.ts
+types/typeAliases/intrinsicTypes.ts
 types/typeAliases/typeAliases.ts
 types/typeAliases/typeAliasesDoNotMerge.ts
 types/typeAliases/typeAliasesForObjectTypes.ts
