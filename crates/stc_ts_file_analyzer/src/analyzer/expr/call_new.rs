@@ -153,6 +153,12 @@ impl Analyzer<'_, '_> {
                 let dep_id = self.loader.module_id(&base, &src);
 
                 if let Some(dep_id) = dep_id {
+                    // We need to update the import map because of code like
+                    //
+                    // declare function bar(): boolean;
+                    // const specify = bar() ? "./0" : undefined;
+                    // let myModule = import(specify);
+
                     if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
                         return Ok(Type::Ref(Ref {
                             span,
@@ -165,7 +171,9 @@ impl Analyzer<'_, '_> {
                             tracker: Default::default(),
                         }));
                     } else {
-                        return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
+                        return self
+                            .load_import_lazily(&base, dep_id, &src)
+                            .context("tried to load a dynamic import lazily");
                     }
                 }
 
