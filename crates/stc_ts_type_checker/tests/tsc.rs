@@ -360,6 +360,12 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 checker.check(Arc::new(FileName::Real(lib.to_path_buf())));
             }
 
+            for (file_name, _) in spec.sub_files.iter() {
+                if file_name.ends_with(".d.ts") {
+                    checker.check(Arc::new(FileName::Real(file_name.into())));
+                }
+            }
+
             if spec.sub_files.is_empty() {
                 checker.check(Arc::new(FileName::Real(file_name.into())));
             } else if let Some((file_name, ..)) = spec.sub_files.last() {
