@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     real_ty.freeze();
-                    self.regist_destructure(span, save_ty, Some(destructure_key));
+                    self.regist_destructuring(span, save_ty, Some(destructure_key));
                     Ok(Some(real_ty))
                 }
             }
@@ -609,7 +609,7 @@ impl Analyzer<'_, '_> {
             RPat::Object(obj) => {
                 let normalize_ty = ty.as_ref().map(Type::normalize);
                 let should_use_no_such_property = !matches!(normalize_ty, Some(Type::TypeLit(..)));
-                let destructure_key = self.regist_destructure(span, ty.clone(), None);
+                let destructure_key = self.regist_destructuring(span, ty.clone(), None);
 
                 let mut real = Type::TypeLit(TypeLit {
                     span,
@@ -1126,7 +1126,7 @@ impl Analyzer<'_, '_> {
         .context("tried to ensure iterator")
     }
 
-    pub fn regist_destructure(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
+    pub fn regist_destructuring(&mut self, span: Span, ty: Option<Type>, des_key: Option<DestructureId>) -> DestructureId {
         match ty.as_ref().map(Type::normalize) {
             Some(real @ Type::Union(..)) => {
                 let des_key = des_key.unwrap_or_else(|| self.get_destructor_unique_key());
@@ -1142,26 +1142,26 @@ impl Analyzer<'_, '_> {
                 ..
             })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                    return self.regist_destructuring(span, Some(result.into_owned()), des_key);
                 }
             }
 
             Some(Type::Instance(Instance { ty: box result, .. })) => {
                 if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(result), Default::default()) {
-                    return self.regist_destructure(span, Some(result.into_owned()), des_key);
+                    return self.regist_destructuring(span, Some(result.into_owned()), des_key);
                 }
             }
 
             Some(Type::Tuple(Tuple { elems, .. })) => {
                 if elems.len() == 1 {
                     if let Some(TupleElement { ty: box ty, .. }) = elems.first() {
-                        return self.regist_destructure(span, Some(ty.clone()), des_key);
+                        return self.regist_destructuring(span, Some(ty.clone()), des_key);
                     }
                 }
             }
 
             Some(Type::Rest(RestType { ty: box ty, .. })) => {
-                return self.regist_destructure(span, Some(ty.clone()), des_key);
+                return self.regist_destructuring(span, Some(ty.clone()), des_key);
             }
             _ => {}
         }

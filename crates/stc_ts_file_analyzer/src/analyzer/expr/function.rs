@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.regist_destructure(
+            self.regist_destructuring(
                 span,
                 Some(
                     Type::Tuple(Tuple {
