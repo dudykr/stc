@@ -144,8 +144,18 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn load_import_lazily(&mut self, base: &Arc<FileName>, dep_id: ModuleId, module_specifier: &str) -> VResult<Type> {
+    pub(crate) fn load_import_lazily(
+        &mut self,
+        span: Span,
+        base: &Arc<FileName>,
+        dep_id: ModuleId,
+        module_specifier: &str,
+    ) -> VResult<Type> {
         let ctxt = self.ctx.module_id;
+        if ctxt == dep_id {
+            return Ok(Type::any(span, Default::default()));
+        }
+
         let ty = self.loader.load_non_circular_dep(base, module_specifier)?;
 
         self.insert_import_info(ctxt, dep_id, ty.clone()).report(&mut self.storage);

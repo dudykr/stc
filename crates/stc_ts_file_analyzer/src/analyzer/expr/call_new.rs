@@ -172,7 +172,7 @@ impl Analyzer<'_, '_> {
                         }));
                     } else {
                         return self
-                            .load_import_lazily(&base, dep_id, &src)
+                            .load_import_lazily(span, &base, dep_id, &src)
                             .context("tried to load a dynamic import lazily");
                     }
                 }
