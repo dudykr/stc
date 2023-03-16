@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
@@ -10,7 +12,7 @@ use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
 use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
-use swc_common::{comments::Comments, Span, Spanned, GLOBALS};
+use swc_common::{comments::Comments, FileName, Span, Spanned, GLOBALS};
 
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
@@ -142,6 +144,25 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn load_import_lazily(
+        &mut self,
+        span: Span,
+        base: &Arc<FileName>,
+        dep_id: ModuleId,
+        module_specifier: &str,
+    ) -> VResult<Type> {
+        let ctxt = self.ctx.module_id;
+        if ctxt == dep_id {
+            return Ok(Type::any(span, Default::default()));
+        }
+
+        let ty = self.loader.load_non_circular_dep(base, module_specifier)?;
+
+        self.insert_import_info(ctxt, dep_id, ty.clone()).report(&mut self.storage);
+
+        Ok(ty)
+    }
+
     fn handle_import(&mut self, span: Span, ctxt: ModuleId, target: ModuleId, orig: Id, id: Id) {
         let mut found_entry = false;
         let is_import_successful = ctxt != target;
@@ -333,6 +354,8 @@ where
 {
     /// Extracts require('foo')
     fn visit(&mut self, expr: &RCallExpr) {
+        expr.visit_children_with(self);
+
         let span = expr.span();
 
         match &expr.callee {

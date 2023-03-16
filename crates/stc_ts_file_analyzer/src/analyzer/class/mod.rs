@@ -1359,6 +1359,7 @@ impl Analyzer<'_, '_> {
                 let parent = self
                     .type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?
                     .freezed();
+                let parent = self.instantiate_class(parent.span(), &parent)?;
 
                 self.assign_with_opts(
                     &mut Default::default(),

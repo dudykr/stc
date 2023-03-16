@@ -543,6 +543,7 @@ impl Analyzer<'_, '_> {
             | Type::Tuple(..)
             | Type::Union(..)
             | Type::Index(..)
+            | Type::Tpl(..)
             | Type::Query(..) => {
                 let ty = self
                     .normalize(
@@ -2975,6 +2976,79 @@ impl Analyzer<'_, '_> {
                         cause: vec![],
                     }
                     .into());
+                }
+
+                let mut last_ty = &to.type_args.params[0];
+                let mut last_r_ty = &string.type_args.params[0];
+                loop {
+                    match (last_ty.normalize(), last_r_ty.normalize()) {
+                        (Type::StringMapping(l_map), Type::StringMapping(r_map)) => {
+                            last_ty = &l_map.type_args.params[0];
+                            last_r_ty = &r_map.type_args.params[0];
+                        }
+                        (Type::StringMapping(l_map), _) => {
+                            last_ty = &l_map.type_args.params[0];
+                        }
+                        (_, Type::StringMapping(r_map)) => {
+                            last_r_ty = &r_map.type_args.params[0];
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                }
+
+                // if lhs_param extends rhs_param (or both params) -> error
+                if let (Type::Param(l), Type::Param(rr)) = (last_ty, last_r_ty) {
+                    if let Some(constraint) = &rr.constraint {
+                        let Type::Param(param) = constraint.normalize() else {
+                            return Err(ErrorKind::AssignFailed {
+                                span: opts.span,
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        };
+                        if !param.type_eq(l) {
+                            return Err(ErrorKind::AssignFailed {
+                                span: opts.span,
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        }
+                    } else {
+                        return Err(ErrorKind::AssignFailed {
+                            span: opts.span,
+                            left: box Type::StringMapping(to.clone()),
+                            right_ident: None,
+                            right: box r.clone(),
+                            cause: vec![],
+                        }
+                        .into());
+                    }
+
+                    // if both params, but rhs_param extends lhs_param -> no error
+                    if let Some(constraint) = &l.constraint {
+                        if let Type::Param(param_l) = constraint.normalize() {
+                            if let Some(box Type::Param(param_r)) = &rr.constraint {
+                                if !param_l.type_eq(param_r) {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: opts.span,
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                    }
                 }
 
                 return Ok(());
