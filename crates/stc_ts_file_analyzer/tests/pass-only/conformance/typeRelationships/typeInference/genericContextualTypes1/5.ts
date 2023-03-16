@@ -1,8 +1,8 @@
 // @strict: true
 // @declaration: true
 
-type Box<T> = { value: T };
+type Box<A> = { value: A };
 
-const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
+const arrayFilter = <B>(f: (x: B) => boolean) => (a: B[]) => a.filter(f);
 
-export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
+export const f31: <C extends Box<number>>(a: C[]) => C[] = arrayFilter(x => x.value > 10);
