@@ -1614,8 +1614,9 @@ impl Analyzer<'_, '_> {
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
                     // We are currently declaring a class.
-                    for (_, member) in self.scope.class_members() {
-                        match member {
+                    #[allow(clippy::unnecessary_to_owned)]
+                    for (_, member) in self.scope.class_members().to_vec() {
+                        match &member {
                             // No-op, as constructor parameter properties are handled by
                             // Validate<Class>.
                             ClassMember::Constructor(_) => {}
@@ -1650,7 +1651,7 @@ impl Analyzer<'_, '_> {
                                     let prop_ty = prop.ty();
 
                                     let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
-                                        || (**index_ty).type_eq(&prop_ty);
+                                        || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
 
                                     if indexed {
                                         return Ok(index
