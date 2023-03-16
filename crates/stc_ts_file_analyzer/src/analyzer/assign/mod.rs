@@ -2740,11 +2740,19 @@ impl Analyzer<'_, '_> {
             (Type::Tpl(l), r) => {
                 return self
                     .assign_to_tpl(data, l, r, opts)
-                    .with_context(|| format!("tried to assign to a template type: {}", force_dump_type_as_string(to)))
+                    .with_context(|| format!("tried to assign to a template type: {}", force_dump_type_as_string(to)));
             }
             (
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUnknownKeyword,
                     ..
                 }),
                 Type::Tpl(..),
@@ -2757,7 +2765,9 @@ impl Analyzer<'_, '_> {
                 }),
             )
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
-
+            (Type::Keyword(keyword), Type::Tpl(..)) => {
+                fail!()
+            }
             (Type::StringMapping(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
 
             (Type::Rest(l), Type::Rest(r)) => {

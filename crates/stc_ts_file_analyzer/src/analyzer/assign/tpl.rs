@@ -1,10 +1,12 @@
 #![allow(clippy::if_same_then_else)]
 
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
 use stc_ts_types::{IntrinsicKind, LitType, StringMapping, TplType, Type};
 use stc_utils::dev_span;
-use swc_common::{Span, TypeEq};
+use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
@@ -39,7 +41,7 @@ impl Analyzer<'_, '_> {
         };
 
         for (i, ty) in inference.iter().enumerate() {
-            if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i])? {
+            if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i], data)? {
                 return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
                     "verified types:\nsource = {}\ntarget = {}",
                     force_dump_type_as_string(ty),
@@ -52,7 +54,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `isValidTypeForTemplateLiteralPlaceholder` of `tsc`
-    pub(crate) fn is_valid_type_for_tpl_lit_placeholder(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+    pub(crate) fn is_valid_type_for_tpl_lit_placeholder(
+        &mut self,
+        span: Span,
+        source: &Type,
+        target: &Type,
+        data: &mut AssignData,
+    ) -> VResult<bool> {
         let _tracing = dev_span!(
             "is_valid_type_for_tpl_lit_placeholder",
             source = tracing::field::display(&force_dump_type_as_string(source)),
@@ -72,6 +80,46 @@ impl Analyzer<'_, '_> {
                     || target.is_bigint() && self.is_valid_big_int_str(&value.value, false)
                 {
                     return Ok(true);
+                }
+
+                if target.is_bool() {
+                    let value = &*value.value;
+                    if value == "true" || value == "false" {
+                        return Ok(true);
+                    }
+                    if value == "TRUE" || value == "FALSE" {
+                        if let Type::Instance(ty) = &data.dejavu[0].0.normalize() {
+                            let ty = &ty.ty;
+                            let t = self.expand_top_ref(ty.span(), Cow::Owned(ty.normalize().clone()), Default::default());
+
+                            if let Ok(ty) = t {
+                                if let Type::StringMapping(StringMapping {
+                                    kind: IntrinsicKind::Uppercase,
+                                    ..
+                                }) = ty.normalize()
+                                {
+                                    return Ok(true);
+                                }
+                            }
+                        }
+                    }
+
+                    if value == "True" || value == "False" {
+                        if let Type::Instance(ty) = &data.dejavu[0].0.normalize() {
+                            let ty = &ty.ty;
+                            let t = self.expand_top_ref(ty.span(), Cow::Owned(ty.normalize().clone()), Default::default());
+
+                            if let Ok(ty) = t {
+                                if let Type::StringMapping(StringMapping {
+                                    kind: IntrinsicKind::Capitalize,
+                                    ..
+                                }) = ty.normalize()
+                                {
+                                    return Ok(true);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // TODO: Check for `source`
@@ -103,6 +151,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::StringMapping(str_map) => {
+                if let Type::Tpl(tpl) = &str_map.type_args.params[0].normalize() {
+                    if self.is_type_assignable_to(span, &tpl.types[0], target) {
+                        return Ok(true);
+                    }
+                }
+
+                return Ok(false);
+            }
             _ => {}
         }
 
