@@ -84,42 +84,45 @@ impl Analyzer<'_, '_> {
 
                 if target.is_bool() {
                     let value = &*value.value;
-                    if value == "true" || value == "false" {
-                        return Ok(true);
-                    }
-                    if value == "TRUE" || value == "FALSE" {
-                        if let Type::Instance(ty) = &data.dejavu[0].0.normalize() {
-                            let ty = &ty.ty;
-                            let t = self.expand_top_ref(ty.span(), Cow::Owned(ty.normalize().clone()), Default::default());
 
-                            if let Ok(ty) = t {
-                                if let Type::StringMapping(StringMapping {
-                                    kind: IntrinsicKind::Uppercase,
-                                    ..
-                                }) = ty.normalize()
-                                {
-                                    return Ok(true);
+                    match value {
+                        "true" | "false" => {
+                            return Ok(true);
+                        }
+                        "TRUE" | "FALSE" if !data.dejavu.is_empty() => {
+                            if let Type::Instance(ty) = &data.dejavu[0].0.normalize() {
+                                let ty = &ty.ty;
+                                let t = self.expand_top_ref(ty.span(), Cow::Owned(ty.normalize().clone()), Default::default());
+
+                                if let Ok(ty) = t {
+                                    if let Type::StringMapping(StringMapping {
+                                        kind: IntrinsicKind::Uppercase,
+                                        ..
+                                    }) = ty.normalize()
+                                    {
+                                        return Ok(true);
+                                    }
                                 }
                             }
                         }
-                    }
+                        "True" | "False" if !data.dejavu.is_empty() => {
+                            if let Type::Instance(ty) = &data.dejavu[0].0.normalize() {
+                                let ty = &ty.ty;
+                                let t = self.expand_top_ref(ty.span(), Cow::Owned(ty.normalize().clone()), Default::default());
 
-                    if value == "True" || value == "False" {
-                        if let Type::Instance(ty) = &data.dejavu[0].0.normalize() {
-                            let ty = &ty.ty;
-                            let t = self.expand_top_ref(ty.span(), Cow::Owned(ty.normalize().clone()), Default::default());
-
-                            if let Ok(ty) = t {
-                                if let Type::StringMapping(StringMapping {
-                                    kind: IntrinsicKind::Capitalize,
-                                    ..
-                                }) = ty.normalize()
-                                {
-                                    return Ok(true);
+                                if let Ok(ty) = t {
+                                    if let Type::StringMapping(StringMapping {
+                                        kind: IntrinsicKind::Capitalize,
+                                        ..
+                                    }) = ty.normalize()
+                                    {
+                                        return Ok(true);
+                                    }
                                 }
                             }
                         }
-                    }
+                        _ => {}
+                    };
                 }
 
                 // TODO: Check for `source`
