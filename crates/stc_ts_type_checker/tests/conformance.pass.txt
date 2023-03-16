@@ -2394,6 +2394,7 @@ types/nonPrimitive/nonPrimitiveAndEmptyObject.ts
 types/nonPrimitive/nonPrimitiveAndTypeVariables.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveAssignError.ts
+types/nonPrimitive/nonPrimitiveConstraintOfIndexAccessType.ts
 types/nonPrimitive/nonPrimitiveInFunction.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForIn.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForInNoImplicitAny.ts
