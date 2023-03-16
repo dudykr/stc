@@ -1641,8 +1641,25 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            ClassMember::IndexSignature(_) => {
-                                unimplemented!("class -> this.foo where an `IndexSignature` exists")
+                            ClassMember::IndexSignature(index) => {
+                                if index.params.len() == 1 {
+                                    // `[s: string]: boolean` can be indexed with a number.
+
+                                    let index_ty = &index.params[0].ty;
+
+                                    let prop_ty = prop.ty();
+
+                                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
+                                        || (**index_ty).type_eq(&prop_ty);
+
+                                    if indexed {
+                                        return Ok(index
+                                            .type_ann
+                                            .clone()
+                                            .map(|v| *v)
+                                            .unwrap_or_else(|| Type::any(span, Default::default())));
+                                    }
+                                }
                             }
                         }
                     }
