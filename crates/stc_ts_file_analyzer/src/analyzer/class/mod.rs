@@ -1795,6 +1795,16 @@ impl Analyzer<'_, '_> {
 
                 // Handle static properties
                 for (index, node) in c.body.iter().enumerate() {
+                    if let RClassMember::TsIndexSignature(..) = node {
+                        let m = node.validate_with_args(child, type_ann)?;
+                        if let Some(member) = m {
+                            child.scope.this_class_members.push((index, member));
+                        }
+                    }
+                }
+
+                // Handle static properties
+                for (index, node) in c.body.iter().enumerate() {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
                         | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
