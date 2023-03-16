@@ -1642,7 +1642,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             ClassMember::IndexSignature(index) => {
-                                if index.params.len() == 1 {
+                                if index.params.len() == 1 && !prop.is_private() {
                                     // `[s: string]: boolean` can be indexed with a number.
 
                                     let index_ty = &index.params[0].ty;
