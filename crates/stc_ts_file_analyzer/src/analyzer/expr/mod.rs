@@ -1613,47 +1613,47 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
+                    // We are currently declaring a class.
+                    for (_, member) in self.scope.class_members() {
+                        match member {
+                            // No-op, as constructor parameter properties are handled by
+                            // Validate<Class>.
+                            ClassMember::Constructor(_) => {}
+
+                            ClassMember::Method(member @ Method { is_static, .. }) => {
+                                if !is_static && member.key.type_eq(prop) {
+                                    return Ok(Type::Function(ty::Function {
+                                        span: member.span,
+                                        type_params: member.type_params.clone(),
+                                        params: member.params.clone(),
+                                        ret_ty: member.ret_ty.clone(),
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }));
+                                }
+                            }
+
+                            ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
+                                if !is_static && member.key.type_eq(prop) {
+                                    let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+
+                                    return Ok(ty);
+                                }
+                            }
+
+                            ClassMember::IndexSignature(_) => {
+                                unimplemented!("class -> this.foo where an `IndexSignature` exists")
+                            }
+                        }
+                    }
+
+                    if let Some(super_class) = self.scope.get_super_class(false) {
+                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                            return Ok(v);
+                        }
+                    }
+
                     if !computed {
-                        // We are currently declaring a class.
-                        for (_, member) in self.scope.class_members() {
-                            match member {
-                                // No-op, as constructor parameter properties are handled by
-                                // Validate<Class>.
-                                ClassMember::Constructor(_) => {}
-
-                                ClassMember::Method(member @ Method { is_static, .. }) => {
-                                    if !is_static && member.key.type_eq(prop) {
-                                        return Ok(Type::Function(ty::Function {
-                                            span: member.span,
-                                            type_params: member.type_params.clone(),
-                                            params: member.params.clone(),
-                                            ret_ty: member.ret_ty.clone(),
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }));
-                                    }
-                                }
-
-                                ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
-                                    if !is_static && member.key.type_eq(prop) {
-                                        let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
-
-                                        return Ok(ty);
-                                    }
-                                }
-
-                                ClassMember::IndexSignature(_) => {
-                                    unimplemented!("class -> this.foo where an `IndexSignature` exists")
-                                }
-                            }
-                        }
-
-                        if let Some(super_class) = self.scope.get_super_class(false) {
-                            if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
-                                return Ok(v);
-                            }
-                        }
-
                         return Err(ErrorKind::NoSuchPropertyInClass {
                             span,
                             class_name: self.scope.get_this_class_name(),
