@@ -151,7 +151,7 @@ impl AddAssign for ModuleTypeData {
 /// clone deeply, you have to clone this type in a closure passed to
 /// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
 /// performance.
-#[derive(PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -209,51 +209,6 @@ pub enum Type {
     Tpl(TplType),
 
     StringMapping(StringMapping),
-}
-
-impl Debug for Type {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Instance(arg0) => write!(f, "{:?}", arg0),
-            Self::StaticThis(arg0) => write!(f, "{:?}", arg0),
-            Self::This(arg0) => write!(f, "{:?}", arg0),
-            Self::Lit(arg0) => write!(f, "{:?}", arg0),
-            Self::Query(arg0) => write!(f, "{:?}", arg0),
-            Self::Infer(arg0) => write!(f, "{:?}", arg0),
-            Self::Import(arg0) => write!(f, "{:?}", arg0),
-            Self::Predicate(arg0) => write!(f, "{:?}", arg0),
-            Self::IndexedAccessType(arg0) => write!(f, "{:?}", arg0),
-            Self::Ref(arg0) => write!(f, "{:?}", arg0),
-            Self::TypeLit(arg0) => write!(f, "{:?}", arg0),
-            Self::Keyword(arg0) => write!(f, "{:?}", arg0),
-            Self::Conditional(arg0) => write!(f, "{:?}", arg0),
-            Self::Tuple(arg0) => write!(f, "{:?}", arg0),
-            Self::Array(arg0) => write!(f, "{:?}", arg0),
-            Self::Union(arg0) => write!(f, "{:?}", arg0),
-            Self::Intersection(arg0) => write!(f, "{:?}", arg0),
-            Self::Function(arg0) => write!(f, "{:?}", arg0),
-            Self::Constructor(arg0) => write!(f, "{:?}", arg0),
-            Self::Index(arg0) => write!(f, "{:?}", arg0),
-            Self::Readonly(arg0) => write!(f, "{:?}", arg0),
-            Self::Unique(arg0) => write!(f, "{:?}", arg0),
-            Self::Param(arg0) => write!(f, "{:?}", arg0),
-            Self::EnumVariant(arg0) => write!(f, "{:?}", arg0),
-            Self::Interface(arg0) => write!(f, "{:?}", arg0),
-            Self::Enum(arg0) => write!(f, "{:?}", arg0),
-            Self::Mapped(arg0) => write!(f, "{:?}", arg0),
-            Self::Alias(arg0) => write!(f, "{:?}", arg0),
-            Self::Namespace(arg0) => write!(f, "{:?}", arg0),
-            Self::Module(arg0) => write!(f, "{:?}", arg0),
-            Self::Class(arg0) => write!(f, "{:?}", arg0),
-            Self::ClassDef(arg0) => write!(f, "{:?}", arg0),
-            Self::Arc(arg0) => write!(f, "{:?}", arg0),
-            Self::Rest(arg0) => write!(f, "{:?}", arg0),
-            Self::Optional(arg0) => write!(f, "{:?}", arg0),
-            Self::Symbol(arg0) => write!(f, "{:?}", arg0),
-            Self::Tpl(arg0) => write!(f, "{:?}", arg0),
-            Self::StringMapping(arg0) => write!(f, "{:?}", arg0),
-        }
-    }
 }
 
 impl Clone for Type {
