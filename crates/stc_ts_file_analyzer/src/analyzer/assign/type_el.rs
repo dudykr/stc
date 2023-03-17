@@ -1570,4 +1570,20 @@ impl Analyzer<'_, '_> {
 
         Ok(())
     }
+
+    pub(crate) fn index_signature_matches(&mut self, span: Span, index_ty: &Type, prop_ty: &Type) -> VResult<bool> {
+        if (prop_ty.is_num() && index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+            || (prop_ty.is_str() && index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword))
+        {
+            return Ok(true);
+        }
+
+        if index_ty.is_str() {
+            if prop_ty.iter_union().any(|ty| ty.is_num()) && prop_ty.iter_union().any(|ty| ty.is_str()) {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
 }
