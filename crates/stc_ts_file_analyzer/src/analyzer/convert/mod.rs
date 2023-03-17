@@ -1075,7 +1075,10 @@ impl Analyzer<'_, '_> {
                     }
                 });
 
-            prop_ty.report(&mut self.storage);
+            if let Err(err) = prop_ty {
+                self.storage.report(err);
+                return Ok(Type::any(span, Default::default()));
+            }
         }
 
         Ok(Type::IndexedAccessType(IndexedAccessType {
