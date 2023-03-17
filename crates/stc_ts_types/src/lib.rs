@@ -2514,7 +2514,14 @@ impl Type {
     }
 
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
-        Iter {
+        UnionIter {
+            ty: self.normalize(),
+            idx: 0,
+        }
+    }
+
+    pub fn iter_intersection(&self) -> impl Debug + Iterator<Item = &Type> {
+        IntersectionIter {
             ty: self.normalize(),
             idx: 0,
         }
@@ -2522,12 +2529,12 @@ impl Type {
 }
 
 #[derive(Debug)]
-struct Iter<'a> {
+struct UnionIter<'a> {
     ty: &'a Type,
     idx: usize,
 }
 
-impl<'a> Iterator for Iter<'a> {
+impl<'a> Iterator for UnionIter<'a> {
     type Item = &'a Type;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -2548,7 +2555,36 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
-impl FusedIterator for Iter<'_> {}
+impl FusedIterator for UnionIter<'_> {}
+
+#[derive(Debug)]
+struct IntersectionIter<'a> {
+    ty: &'a Type,
+    idx: usize,
+}
+
+impl<'a> Iterator for IntersectionIter<'a> {
+    type Item = &'a Type;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &self.ty {
+            Type::Intersection(ref u) => {
+                let ty = u.types.get(self.idx);
+                self.idx += 1;
+                ty
+            }
+
+            _ if self.idx == 0 => {
+                self.idx = 1;
+                Some(self.ty)
+            }
+
+            _ => None,
+        }
+    }
+}
+
+impl FusedIterator for IntersectionIter<'_> {}
 
 impl Type {
     /// Return true if `self` is a [Type::Ref] pointing to `name`.

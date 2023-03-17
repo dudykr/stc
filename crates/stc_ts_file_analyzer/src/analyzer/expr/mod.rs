@@ -1062,9 +1062,7 @@ impl Analyzer<'_, '_> {
 
                     let index_ty = &params[0].ty;
 
-                    if (prop_is_num && index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
-                        || (prop_is_str && index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword))
-                    {
+                    if self.index_signature_matches(span, index_ty, &prop_ty)? {
                         if *readonly && type_mode == TypeOfMode::LValue {
                             return Err(ErrorKind::ReadOnly { span }.into());
                         }
@@ -1554,10 +1552,11 @@ impl Analyzer<'_, '_> {
             match &obj {
                 Type::This(..) | Type::StaticThis(..) if self.ctx.is_static() => {
                     // Handle static access to class itself while *declaring* the class.
-                    for (_, member) in self.scope.class_members() {
+                    #[allow(clippy::unnecessary_to_owned)]
+                    for (_, member) in self.scope.class_members().to_vec() {
                         match member {
                             ClassMember::Method(member @ Method { is_static: true, .. }) => {
-                                if member.key.type_eq(prop) {
+                                if self.key_matches(span, &member.key, prop, false) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
@@ -1570,7 +1569,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             ClassMember::Property(property) => {
-                                if property.key.type_eq(prop) {
+                                if self.key_matches(span, &property.key, prop, false) {
                                     return Ok(*property
                                         .value
                                         .clone()
@@ -1622,7 +1621,7 @@ impl Analyzer<'_, '_> {
                             ClassMember::Constructor(_) => {}
 
                             ClassMember::Method(member @ Method { is_static, .. }) => {
-                                if !is_static && member.key.type_eq(prop) {
+                                if !is_static && self.key_matches(span, &member.key, prop, false) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
@@ -1635,7 +1634,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
-                                if !is_static && member.key.type_eq(prop) {
+                                if !is_static && self.key_matches(span, &member.key, prop, false) {
                                     let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
 
                                     return Ok(ty);
@@ -1705,10 +1704,11 @@ impl Analyzer<'_, '_> {
 
                 Type::StaticThis(StaticThis { span, metadata, .. }) => {
                     // Handle static access to class itself while *declaring* the class.
-                    for (_, member) in self.scope.class_members() {
+                    #[allow(clippy::unnecessary_to_owned)]
+                    for (_, member) in self.scope.class_members().to_vec() {
                         match member {
                             ClassMember::Method(member @ Method { is_static: true, .. }) => {
-                                if member.key.type_eq(prop) {
+                                if self.key_matches(*span, &member.key, prop, false) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
@@ -1721,7 +1721,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             ClassMember::Property(property) => {
-                                if property.key.type_eq(prop) {
+                                if self.key_matches(*span, &property.key, prop, false) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
                                             *span,
