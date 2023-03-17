@@ -1296,6 +1296,14 @@ impl Analyzer<'_, '_> {
                 Type::Union(Union { types, ..ty }).fixed()
             }
 
+            Type::Enum(def) => Type::EnumVariant(EnumVariant {
+                span: actual_span,
+                def: def.cheap_clone(),
+                name: None,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }),
+
             _ => ty,
         })
     }

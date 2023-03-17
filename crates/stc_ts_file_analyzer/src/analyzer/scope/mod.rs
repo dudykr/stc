@@ -20,9 +20,8 @@ use stc_ts_errors::{
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
-    name::Name, type_id::DestructureId, Class, ClassProperty, Conditional, EnumVariant, FnParam, Id, Index, IndexedAccessType,
-    Intersection, Key, KeywordType, KeywordTypeMetadata, Mapped, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam,
-    TypeParamInstantiation,
+    name::Name, type_id::DestructureId, Class, ClassProperty, Conditional, FnParam, Id, Index, IndexedAccessType, Intersection, Key,
+    KeywordType, KeywordTypeMetadata, Mapped, QueryExpr, QueryType, StaticThis, ThisType, TypeElement, TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::{AssertCloneCheap, Freeze, ALLOW_DEEP_CLONE},
@@ -2287,16 +2286,6 @@ impl Expander<'_, '_, '_> {
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
             ty.freeze();
-
-            if let Type::Enum(e) = ty.normalize() {
-                return Ok(Some(Type::EnumVariant(EnumVariant {
-                    span,
-                    def: e.cheap_clone(),
-                    name: None,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })));
-            }
         }
 
         Ok(ty)
