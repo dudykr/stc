@@ -45,7 +45,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > keyof T
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:8:1]
