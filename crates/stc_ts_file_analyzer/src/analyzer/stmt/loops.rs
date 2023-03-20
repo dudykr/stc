@@ -11,6 +11,7 @@ use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, VarDeclKind};
+use tracing::error;
 
 use super::return_type::LoopBreakerFinder;
 use crate::{
@@ -42,7 +43,15 @@ impl Analyzer<'_, '_> {
         let mut last = false;
         let mut orig_vars = Some(self.scope.vars.clone());
 
+        let mut max = 10;
+
         loop {
+            max -= 1;
+            if max == 0 {
+                error!("Too many iterations");
+                break;
+            }
+
             let mut facts_from_body: CondFacts = self.with_child_with_hook(
                 ScopeKind::LoopBody { last },
                 prev_facts.clone(),
