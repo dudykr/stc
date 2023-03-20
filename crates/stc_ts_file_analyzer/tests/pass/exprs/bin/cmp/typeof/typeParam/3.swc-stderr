@@ -56,7 +56,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[string]
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:1]
@@ -67,7 +67,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[string]
 
   x Type
     ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:1]

@@ -80,7 +80,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[string]
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:10:1]
@@ -128,4 +128,4 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[string]

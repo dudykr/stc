@@ -56,7 +56,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[string]
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]
@@ -67,7 +67,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[string]
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]
