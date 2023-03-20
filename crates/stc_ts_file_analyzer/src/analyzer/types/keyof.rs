@@ -356,7 +356,8 @@ impl Analyzer<'_, '_> {
                         ty: box ty.into_owned(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }));
+                    })
+                    .freezed());
                 }
 
                 Type::Mapped(m) => {
