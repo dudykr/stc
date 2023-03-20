@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                             }
                         }
-                        Ok(Type::new_union(span, types))
+                        Ok(Type::new_union(span, types).freezed())
                     })
                     .fixed());
                 }
@@ -312,7 +312,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::new_union(span, types));
+                    return Ok(Type::new_union(span, types).freezed());
                 }
 
                 Type::Union(u) => {
