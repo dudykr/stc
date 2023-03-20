@@ -2,7 +2,6 @@ use fxhash::FxHashSet;
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_generics::type_param::finder::TypeParamDeclFinder;
 use stc_ts_types::{Id, Mapped, Type, TypeLit};
-use swc_common::SyntaxContext;
 
 use crate::analyzer::{scope::Scope, Analyzer};
 
@@ -57,10 +56,6 @@ impl Analyzer<'_, '_> {
 
     fn is_type_param_dead(&mut self, name: &Id) -> bool {
         fn is_dead(s: &Scope, name: &Id) -> bool {
-            if name.ctxt() == SyntaxContext::empty() {
-                return false;
-            }
-
             if s.is_root() {
                 return true;
             }
