@@ -1,6 +1,7 @@
 classStaticBlock16.ts
 conditionalTypes1.ts
 controlFlowBindingElement.ts
+keyofAndIndexedAccessErrors.ts
 mixinAccessModifiers.ts
 moduleExportAssignment7.ts
 namedTupleMembers.ts

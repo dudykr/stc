@@ -22,9 +22,10 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Index, Instance,
-    Key, KeywordType, KeywordTypeMetadata, LitType, Method, Module, ModuleTypeData, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
+    name::Name, replace::replace_type, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
+    Function, Id, Index, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, Method, Module, ModuleTypeData, OptionalType,
+    PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -3107,7 +3108,18 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         ) {
-                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())));
+                            let mut result_ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
+
+                            replace_type(
+                                &mut result_ty,
+                                |ty| match ty.normalize() {
+                                    Type::Param(ty) => ty.name == m.type_param.name,
+                                    _ => false,
+                                },
+                                |_| Some(index_type.clone()),
+                            );
+
+                            return Ok(result_ty);
                         }
                     }
                 }

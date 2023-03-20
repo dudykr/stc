@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
-    TypeElement, Union,
+    Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref,
+    Type, TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt, try_cache};
 use swc_atoms::js_word;
@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                             }
                         }
-                        Ok(Type::new_union(span, types))
+                        Ok(Type::new_union(span, types).freezed())
                     })
                     .fixed());
                 }
@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::new_union(span, types));
+                    return Ok(Type::new_union(span, types).freezed());
                 }
 
                 Type::Union(u) => {
@@ -348,18 +348,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(..) => {
-                    return Ok(Type::Keyword(KeywordType {
+                    return Ok(Type::Index(Index {
                         span,
-                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ty: box ty.into_owned(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }))
+                    })
+                    .freezed());
                 }
 
                 Type::Mapped(m) => {
                     //
                     if let Some(ty) = m.type_param.constraint.as_deref() {
-                        return self.keyof(span, ty);
+                        return Ok(ty.clone());
                     }
                 }
 
