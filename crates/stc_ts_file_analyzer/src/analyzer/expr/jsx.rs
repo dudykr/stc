@@ -15,7 +15,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::{AccessPropertyOpts, TypeOfMode};
 use crate::{
-    analyzer::{assign::AssignOpts, util::ResultExt, Analyzer},
+    analyzer::{assign::AssignOpts, expr::call_new::ExtractKind, util::ResultExt, Analyzer},
     validator::ValidateWith,
     VResult,
 };
@@ -179,9 +179,26 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
+                .context("tried to assign attributes to intrinsic jsx element")
                 .report(&mut self.storage);
             }
-            ResolvedJsxName::Value(name) => {}
+            ResolvedJsxName::Value(name) => {
+                let constructor = self.extract_callee_candidates(jsx_element_span, ExtractKind::New, name)?;
+                if !constructor.is_empty() && !constructor[0].params.is_empty() {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        &constructor[0].params[0].ty,
+                        &object,
+                        AssignOpts {
+                            span: jsx_element_span,
+                            allow_missing_fields: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to assign attributes to custom jsx element")
+                    .report(&mut self.storage);
+                }
+            }
         }
 
         Ok(())
