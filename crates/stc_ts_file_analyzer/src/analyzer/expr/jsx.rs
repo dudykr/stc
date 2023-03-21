@@ -400,10 +400,6 @@ impl Analyzer<'_, '_> {
                     Default::default(),
                 )
                 .ok(),
-            None => None,
-        };
-
-        let props = match props {
             None => {
                 let constructors = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
 
@@ -413,7 +409,6 @@ impl Analyzer<'_, '_> {
                     None
                 }
             }
-            _ => props,
         };
 
         if let Some(props) = props {
