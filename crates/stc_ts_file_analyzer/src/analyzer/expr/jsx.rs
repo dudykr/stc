@@ -65,10 +65,10 @@ impl Analyzer<'_, '_> {
 
         if ty.members.len() == 1 {
             match &ty.members[0] {
-                TypeElement::Property(PropertySignature { key, .. }) => match key {
-                    Key::Normal { sym, .. } => Some(sym.clone()),
-                    _ => None,
-                },
+                TypeElement::Property(PropertySignature {
+                    key: Key::Normal { sym, .. },
+                    ..
+                }) => Some(sym.clone()),
                 _ => None,
             }
         } else {
