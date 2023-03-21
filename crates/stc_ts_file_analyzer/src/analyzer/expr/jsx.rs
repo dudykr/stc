@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
                 ResolvedJsxName::Value(_, props) => props,
             };
 
-            let result = self.access_property(
+            let type_ann_res = self.access_property(
                 e.span,
                 obj,
                 &Key::Normal {
@@ -248,7 +248,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             );
 
-            dbg!(result).ok()
+            dbg!(type_ann_res).ok()
         };
 
         let children = e.children.validate_with_args(self, type_ann_for_children.as_ref())?;
