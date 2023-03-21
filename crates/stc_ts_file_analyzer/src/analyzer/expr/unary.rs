@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
                     let ty = self
-                        .type_of_member_expr(expr, TypeOfMode::RValue, false)
+                        .type_of_member_expr(expr, TypeOfMode::RValue, None, false)
                         .convert_err(|err| match err {
                             ErrorKind::ObjectIsPossiblyNull { span, .. }
                             | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
