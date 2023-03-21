@@ -19,7 +19,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{name::Name, type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
@@ -308,6 +308,9 @@ struct AnalyzerData {
     jsx_prop_name: Option<Option<JsWord>>,
 
     destructuring_id: DestructureId,
+
+    destructuring_path: FxHashMap<DestructureId, Name>,
+    vars_to_path: FxHashMap<Id, DestructureId>,
 }
 
 /// Configuration for the analyzer.
