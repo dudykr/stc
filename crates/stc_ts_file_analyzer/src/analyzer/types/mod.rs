@@ -2484,7 +2484,17 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn name_for_expr(&mut self, e: &RExpr) -> Option<Name> {
         match e {
-            RExpr::Ident(i) => Some(Name::new(i.sym.clone(), i.span.ctxt)),
+            RExpr::Ident(i) => {
+                let id: Id = i.clone().into();
+
+                if let Some(path) = self.data.vars_to_path.get(&id) {
+                    if let Some(name) = self.data.destructuring_path.get(path) {
+                        return Some(name.clone());
+                    }
+                }
+
+                Some(Name::new(i.sym.clone(), i.span.ctxt))
+            }
             RExpr::Member(m) => self.name_for_member_expr(m),
             RExpr::OptChain(ROptChainExpr {
                 base: ROptChainBase::Member(m),
