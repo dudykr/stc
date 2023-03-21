@@ -229,7 +229,29 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<Type> {
         let name = e.opening.name.validate_with(self)?;
-        let children = e.children.validate_with(self)?;
+
+        let type_ann_for_children = {
+            let obj = match &name {
+                ResolvedJsxName::Intrinsic(name) => name,
+                ResolvedJsxName::Value(_, props) => props,
+            };
+
+            let result = self.access_property(
+                e.span,
+                obj,
+                &Key::Normal {
+                    span: e.span,
+                    sym: "children".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                Default::default(),
+            );
+
+            dbg!(result).ok()
+        };
+
+        let children = e.children.validate_with_args(self, type_ann_for_children.as_ref())?;
 
         self.validate_jsx_attrs(e.span, &name, &e.opening.attrs).report(&mut self.storage);
 
@@ -243,7 +265,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<Type> {
-        let children = e.children.validate_with(self)?;
+        let children = e.children.validate_with_default(self)?;
 
         self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
     }
@@ -251,10 +273,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXElementChild, type_ann: Option<&Type>) -> VResult<Option<Type>> {
         match e {
             RJSXElementChild::JSXText(e) => e.validate_with(self).map(Some),
-            RJSXElementChild::JSXExprContainer(e) => e.validate_with_default(self),
+            RJSXElementChild::JSXExprContainer(e) => e.validate_with_args(self, type_ann),
             RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self).map(Some),
             RJSXElementChild::JSXElement(e) => e.validate_with_default(self).map(Some),
             RJSXElementChild::JSXFragment(e) => e.validate_with_default(self).map(Some),
