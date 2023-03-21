@@ -57,6 +57,7 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
             // https://github.com/microsoft/TypeScript/blob/71b2ba6111e934f2b4ee112bc4d8d2f47ced22f5/src/testRunner/compilerRunner.ts#L118-L148
             if let "filename" = &*meta_data_name {
                 if !sub_filename.is_empty() {
+                    buf = buf.trim().to_string();
                     files.push((sub_filename, take(&mut buf)));
                 }
 
@@ -68,6 +69,7 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
         }
     }
     if !sub_filename.is_empty() {
+        buf = buf.trim().to_string();
         files.push((sub_filename, buf));
     }
 
