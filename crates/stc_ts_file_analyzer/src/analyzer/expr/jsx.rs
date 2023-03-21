@@ -22,9 +22,11 @@ use crate::{
 
 #[derive(Debug)]
 pub enum ResolvedJsxName {
-    /// [Type] is the object.
+    /// `(props)`
     Intrinsic(Type),
-    Value(Type),
+
+    /// `(type, props)`
+    Value(Type, Type),
 }
 
 impl Analyzer<'_, '_> {
@@ -117,22 +119,25 @@ impl Analyzer<'_, '_> {
                             Some(v) => {
                                 // TODO(kdy1): Pass down type annotation
 
-                                let type_ann = self
-                                    .access_property(
-                                        attr_name.span,
-                                        match name {
-                                            ResolvedJsxName::Intrinsic(v) => v,
-                                            ResolvedJsxName::Value(v) => v,
-                                        },
-                                        &Key::Normal {
-                                            span: attr_name.span,
-                                            sym: attr_name.sym.clone(),
-                                        },
-                                        TypeOfMode::RValue,
-                                        IdCtx::Var,
-                                        Default::default(),
-                                    )
-                                    .ok();
+                                let props_object = match name {
+                                    ResolvedJsxName::Intrinsic(v) => v,
+                                    ResolvedJsxName::Value(_, props) => props,
+                                };
+                                dbg!(props_object);
+
+                                let res = self.access_property(
+                                    attr_name.span,
+                                    props_object,
+                                    &Key::Normal {
+                                        span: attr_name.span,
+                                        sym: attr_name.sym.clone(),
+                                    },
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    Default::default(),
+                                );
+
+                                let type_ann = dbg!(res).ok();
 
                                 v.validate_with_args(self, type_ann.as_ref())?
                             }
@@ -200,22 +205,19 @@ impl Analyzer<'_, '_> {
                 .context("tried to assign attributes to intrinsic jsx element")
                 .report(&mut self.storage);
             }
-            ResolvedJsxName::Value(name) => {
-                let constructor = self.extract_callee_candidates(jsx_element_span, ExtractKind::New, name)?;
-                if !constructor.is_empty() && !constructor[0].params.is_empty() {
-                    self.assign_with_opts(
-                        &mut Default::default(),
-                        &constructor[0].params[0].ty,
-                        &object,
-                        AssignOpts {
-                            span: jsx_element_span,
-                            allow_missing_fields: true,
-                            ..Default::default()
-                        },
-                    )
-                    .context("tried to assign attributes to custom jsx element")
-                    .report(&mut self.storage);
-                }
+            ResolvedJsxName::Value(name, props) => {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    props,
+                    &object,
+                    AssignOpts {
+                        span: jsx_element_span,
+                        allow_missing_fields: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to assign attributes to custom jsx element")
+                .report(&mut self.storage);
             }
         }
 
@@ -226,23 +228,14 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<Type> {
-        let mut name = e.opening.name.validate_with(self)?;
+        let name = e.opening.name.validate_with(self)?;
         let children = e.children.validate_with(self)?;
-
-        match &mut name {
-            ResolvedJsxName::Intrinsic(name) => {
-                name.freeze();
-            }
-            ResolvedJsxName::Value(name) => {
-                name.freeze();
-            }
-        }
 
         self.validate_jsx_attrs(e.span, &name, &e.opening.attrs).report(&mut self.storage);
 
         match name {
             ResolvedJsxName::Intrinsic(name) => Ok(name),
-            ResolvedJsxName::Value(name) => Ok(name),
+            ResolvedJsxName::Value(name, props) => Ok(name),
         }
     }
 }
@@ -308,17 +301,28 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElementName) -> VResult<ResolvedJsxName> {
-        match e {
+        let ty = match e {
             RJSXElementName::Ident(ident) => {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
-                    ident.validate_with_default(self).map(ResolvedJsxName::Value)
+                    ident.validate_with_default(self)?
                 } else {
-                    self.get_jsx_intrinsic_element(ident.span, &ident.sym)
-                        .map(ResolvedJsxName::Intrinsic)
+                    return self
+                        .get_jsx_intrinsic_element(ident.span, &ident.sym)
+                        .map(ResolvedJsxName::Intrinsic);
                 }
             }
-            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self).map(ResolvedJsxName::Value),
-            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self).map(ResolvedJsxName::Value),
+            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self)?,
+            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self)?,
+        }
+        .freezed();
+
+        let span = e.span();
+        let constructor = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
+
+        if !constructor.is_empty() && !constructor[0].params.is_empty() {
+            Ok(ResolvedJsxName::Value(ty, *constructor[0].params[0].ty.clone()))
+        } else {
+            Ok(ResolvedJsxName::Value(ty, Type::any(span, Default::default())))
         }
     }
 }
