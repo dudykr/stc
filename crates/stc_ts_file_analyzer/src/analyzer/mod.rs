@@ -304,6 +304,8 @@ struct AnalyzerData {
 
     /// Used to check mixed default exports.
     merged_default_exports: AHashSet<Id>,
+
+    jsx_prop_name: Option<Option<JsWord>>,
 }
 
 /// Configuration for the analyzer.
