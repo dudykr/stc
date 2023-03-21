@@ -339,10 +339,10 @@ impl Analyzer<'_, '_> {
         .freezed();
 
         let span = e.span();
-        let constructor = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
+        let constructors = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
 
-        if constructor.len() == 1 && !constructor[0].params.is_empty() {
-            Ok(ResolvedJsxName::Value(ty, *constructor[0].params[0].ty.clone()))
+        if constructors.len() == 1 && !constructors[0].params.is_empty() {
+            Ok(ResolvedJsxName::Value(ty, *constructors[0].params[0].ty.clone()))
         } else {
             Ok(ResolvedJsxName::Value(ty, Type::any(span, Default::default())))
         }
