@@ -116,7 +116,25 @@ impl Analyzer<'_, '_> {
                         let value = match &attr.value {
                             Some(v) => {
                                 // TODO(kdy1): Pass down type annotation
-                                v.validate_with_args(self, None)?
+
+                                let type_ann = self
+                                    .access_property(
+                                        attr_name.span,
+                                        match name {
+                                            ResolvedJsxName::Intrinsic(v) => v,
+                                            ResolvedJsxName::Value(v) => v,
+                                        },
+                                        &Key::Normal {
+                                            span: attr_name.span,
+                                            sym: attr_name.sym.clone(),
+                                        },
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        Default::default(),
+                                    )
+                                    .ok();
+
+                                v.validate_with_args(self, type_ann.as_ref())?
                             }
                             None => Some(Type::Lit(LitType {
                                 span: attr_name.span,
