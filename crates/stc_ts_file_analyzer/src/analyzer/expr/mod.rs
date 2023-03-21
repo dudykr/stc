@@ -1,7 +1,6 @@
 use std::{
     borrow::Cow,
     collections::HashMap,
-    convert::{TryFrom, TryInto},
     time::{Duration, Instant},
 };
 
@@ -33,7 +32,6 @@ use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, VarDeclKind};
 use tracing::{debug, info, warn};
 
-use self::bin::extract_name_for_assignment;
 pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
 use crate::{
     analyzer::{
@@ -262,7 +260,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Member(ref expr) => {
                     // Foo.a
                     if self.ctx.should_store_truthy_for_access {
-                        if let Ok(name) = Name::try_from(expr) {
+                        if let Some(name) = self.name_for_member_expr(expr) {
                             self.cur_facts.true_facts.facts.insert(
                                 name.clone(),
                                 TypeFacts::Truthy | TypeFacts::NEUndefinedOrNull | TypeFacts::NEUndefined | TypeFacts::NENull,
@@ -4140,7 +4138,7 @@ impl Analyzer<'_, '_> {
         } = *expr;
         let computed = matches!(prop, RMemberProp::Computed(_));
 
-        let name: Option<Name> = expr.try_into().ok();
+        let name: Option<Name> = self.name_for_member_expr(expr);
 
         if let TypeOfMode::RValue = type_mode {
             if let Some(name) = &name {
@@ -4258,7 +4256,7 @@ impl Analyzer<'_, '_> {
         } else {
             if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
-                if let Some(name) = extract_name_for_assignment(obj, false) {
+                if let Some(name) = self.extract_name_for_assignment(obj, false) {
                     let next_ty = self
                         .narrow_types_with_property(
                             span,

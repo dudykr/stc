@@ -2221,10 +2221,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
         let span = l.span.or_else(|| span);
-        let name = Name::try_from(type_name);
+        let name = self.name_for_expr(type_name);
 
         let name = match name {
-            Ok(v) => v,
+            Some(v) => v,
             _ => return Ok(()),
         };
 
@@ -2482,7 +2482,7 @@ impl Analyzer<'_, '_> {
         self.data.bindings = collect_bindings(node);
     }
 
-    pub(crate) fn name_for_expr(&mut self, e: &RExpr) -> Option<Name> {
+    pub(crate) fn name_for_expr(&self, e: &RExpr) -> Option<Name> {
         match e {
             RExpr::Ident(i) => {
                 let id: Id = i.clone().into();
@@ -2512,7 +2512,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn name_for_member_expr(&mut self, e: &RMemberExpr) -> Option<Name> {
+    pub(crate) fn name_for_member_expr(&self, e: &RMemberExpr) -> Option<Name> {
         let mut obj = self.name_for_expr(&e.obj)?;
         match &e.prop {
             RMemberProp::Ident(prop) => {
@@ -2521,7 +2521,7 @@ impl Analyzer<'_, '_> {
             _ => return None,
         }
 
-        obj
+        Some(obj)
     }
 }
 

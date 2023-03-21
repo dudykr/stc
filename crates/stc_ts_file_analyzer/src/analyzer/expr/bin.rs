@@ -1,8 +1,4 @@
-use std::{
-    borrow::Cow,
-    collections::hash_map::Entry,
-    convert::{TryFrom, TryInto},
-};
+use std::{borrow::Cow, collections::hash_map::Entry};
 
 use fxhash::FxHashMap;
 use stc_ts_ast_rnode::{
@@ -335,13 +331,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some((Ok(name), ty)) = c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
+                if let Some((Some(name), ty)) = c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
                         //
-                        Some((Name::try_from(l), r_ty))
+                        Some((self.name_for_expr(l), r_ty))
                     }
                     _ => None,
                 }) {
@@ -366,7 +362,7 @@ impl Analyzer<'_, '_> {
                     )
                     | (RExpr::Lit(RLit::Null(..)), _) => None,
 
-                    (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
+                    (l, r) => Some((self.extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
                     // === with an unknown does not narrow type
                     if self.ctx.in_cond && !r_ty.is_unknown() {
@@ -533,7 +529,7 @@ impl Analyzer<'_, '_> {
 
             op!("instanceof") => {
                 if !self.config.is_builtin {
-                    if let Ok(name) = Name::try_from(&**left) {
+                    if let Some(name) = self.name_for_expr(left) {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
@@ -874,7 +870,7 @@ impl Analyzer<'_, '_> {
                             _ => None,
                         },
                     };
-                    let name = Name::try_from(&**right).ok();
+                    let name = self.name_for_expr(&right);
 
                     if let Some(name) = name {
                         if let Some(property) = left {
@@ -1005,7 +1001,7 @@ impl Analyzer<'_, '_> {
         let c = Comparator { left: l, right: r };
 
         // Check typeof a === 'string'
-        if let Some((Ok(name), (Some(t), Some(f)))) = c.take_if_any_matches(|l, r| {
+        if let Some((Some(name), (Some(t), Some(f)))) = c.take_if_any_matches(|l, r| {
             if let RExpr::Unary(RUnaryExpr {
                 op: op!("typeof"),
                 ref arg,
@@ -1013,7 +1009,7 @@ impl Analyzer<'_, '_> {
             }) = l
             {
                 //
-                let name = Name::try_from(&**arg);
+                let name = self.name_for_expr(arg);
                 info!("cond_facts: typeof {:?}", name);
                 match r {
                     RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
@@ -1042,7 +1038,7 @@ impl Analyzer<'_, '_> {
                             // A type guard of the form typeof x === s and typeof x !== s,
                             // where s is a string literal with any value but 'string', 'number' or
                             // 'boolean'
-                            let name = Name::try_from(&**arg).unwrap();
+                            let name = self.name_for_expr(&**arg).unwrap();
 
                             if is_eq {
                                 //  - typeof x === s
@@ -1147,33 +1143,6 @@ impl Analyzer<'_, '_> {
     /// The condition in the if statement above will be `true` if `f.geometry`
     /// is `undefined`.
     fn add_type_facts_for_opt_chains(&mut self, span: Span, l: &RExpr, r: &RExpr, lt: &Type, rt: &Type) -> VResult<()> {
-        /// Convert expression to names.
-        ///
-        /// This may return multiple names if there are optional chaining
-        /// expressions.
-        fn non_undefined_names(e: &RExpr) -> Vec<Name> {
-            match e {
-                RExpr::OptChain(ROptChainExpr {
-                    base: ROptChainBase::Member(me),
-                    ..
-                }) => {
-                    let mut names = non_undefined_names(&me.obj);
-
-                    names.extend(e.try_into().ok());
-                    names
-                }
-
-                RExpr::Member(e) => {
-                    let mut names = non_undefined_names(&e.obj);
-
-                    names.extend(e.try_into().ok());
-                    names
-                }
-
-                _ => vec![],
-            }
-        }
-
         if !self.ctx.in_cond {
             return Ok(());
         }
@@ -1194,7 +1163,7 @@ impl Analyzer<'_, '_> {
             | (RExpr::Lit(RLit::Null(..)), _) => None,
 
             (l, r) => {
-                let names = non_undefined_names(l);
+                let names = self.non_undefined_names(l);
                 if names.is_empty() {
                     return None;
                 }
@@ -1211,6 +1180,33 @@ impl Analyzer<'_, '_> {
 
         // TODO
         Ok(())
+    }
+
+    /// Convert expression to names.
+    ///
+    /// This may return multiple names if there are optional chaining
+    /// expressions.
+    fn non_undefined_names(&self, e: &RExpr) -> Vec<Name> {
+        match e {
+            RExpr::OptChain(ROptChainExpr {
+                base: ROptChainBase::Member(me),
+                ..
+            }) => {
+                let mut names = self.non_undefined_names(&me.obj);
+
+                names.extend(self.name_for_expr(e));
+                names
+            }
+
+            RExpr::Member(e) => {
+                let mut names = self.non_undefined_names(&e.obj);
+
+                names.extend(self.name_for_member_expr(e));
+                names
+            }
+
+            _ => vec![],
+        }
     }
 
     fn can_compare_with_eq(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
@@ -2426,35 +2422,35 @@ impl Analyzer<'_, '_> {
             }
         }
     }
-}
 
-pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Option<Name> {
-    match e {
-        RExpr::Paren(e) => extract_name_for_assignment(&e.expr, is_exact_eq),
-        RExpr::Assign(e) => match &e.left {
-            RPatOrExpr::Expr(e) => extract_name_for_assignment(e, is_exact_eq),
-            RPatOrExpr::Pat(pat) => match &**pat {
-                RPat::Ident(i) => Some(i.id.clone().into()),
-                RPat::Expr(e) => extract_name_for_assignment(e, is_exact_eq),
-                _ => None,
+    pub(super) fn extract_name_for_assignment(&self, e: &RExpr, is_exact_eq: bool) -> Option<Name> {
+        match e {
+            RExpr::Paren(e) => self.extract_name_for_assignment(&e.expr, is_exact_eq),
+            RExpr::Assign(e) => match &e.left {
+                RPatOrExpr::Expr(e) => self.extract_name_for_assignment(e, is_exact_eq),
+                RPatOrExpr::Pat(pat) => match &**pat {
+                    RPat::Ident(i) => Some(i.id.clone().into()),
+                    RPat::Expr(e) => self.extract_name_for_assignment(e, is_exact_eq),
+                    _ => None,
+                },
             },
-        },
-        RExpr::Member(RMemberExpr { obj, prop, .. }) => {
-            let mut name = extract_name_for_assignment(obj, is_exact_eq)?;
+            RExpr::Member(RMemberExpr { obj, prop, .. }) => {
+                let mut name = self.extract_name_for_assignment(obj, is_exact_eq)?;
 
-            name.push(match prop {
-                RMemberProp::Ident(i) => i.sym.clone(),
-                RMemberProp::Computed(RComputedPropName {
-                    expr: box RExpr::Lit(RLit::Str(s)),
-                    ..
-                }) => s.value.clone(),
-                _ => return None,
-            });
+                name.push(match prop {
+                    RMemberProp::Ident(i) => i.sym.clone(),
+                    RMemberProp::Computed(RComputedPropName {
+                        expr: box RExpr::Lit(RLit::Str(s)),
+                        ..
+                    }) => s.value.clone(),
+                    _ => return None,
+                });
 
-            Some(name)
+                Some(name)
+            }
+
+            _ => self.name_for_expr(e),
         }
-
-        _ => Name::try_from(e).ok(),
     }
 }
 
