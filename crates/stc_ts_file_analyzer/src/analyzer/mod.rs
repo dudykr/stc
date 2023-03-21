@@ -306,6 +306,8 @@ struct AnalyzerData {
     merged_default_exports: AHashSet<Id>,
 
     jsx_prop_name: Option<Option<JsWord>>,
+
+    destructuring_id: DestructureId,
 }
 
 /// Configuration for the analyzer.
