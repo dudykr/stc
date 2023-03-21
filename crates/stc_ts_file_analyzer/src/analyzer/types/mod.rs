@@ -4,8 +4,8 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RExpr, RIdent, RInvalid, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RPat, RStr,
-    RTsEntityName, RTsEnumMemberId, RTsLit,
+    RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr,
+    RParenExpr, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit,
 };
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
@@ -2515,9 +2515,11 @@ impl Analyzer<'_, '_> {
     pub(crate) fn name_for_member_expr(&self, e: &RMemberExpr) -> Option<Name> {
         let mut obj = self.name_for_expr(&e.obj)?;
         match &e.prop {
-            RMemberProp::Ident(prop) => {
-                obj.push(prop.sym.clone());
-            }
+            RMemberProp::Ident(prop) => obj.push(prop.sym.clone()),
+            RMemberProp::Computed(RComputedPropName {
+                expr: box RExpr::Lit(RLit::Str(s)),
+                ..
+            }) => obj.push(s.value.clone()),
             _ => return None,
         }
 
