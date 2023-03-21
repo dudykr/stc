@@ -1,13 +1,7 @@
-use std::{
-    convert::{TryFrom, TryInto},
-    fmt::{self, Debug, Formatter},
-};
+use std::fmt::{self, Debug, Formatter};
 
-use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RParenExpr, RThisExpr, RTsEntityName,
-    RTsThisType, RTsThisTypeOrIdent,
-};
-use swc_atoms::{js_word, JsWord};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use swc_atoms::JsWord;
 use swc_common::SyntaxContext;
 
 use crate::Id;
@@ -97,22 +91,6 @@ impl From<Id> for Name {
     }
 }
 
-impl From<RThisExpr> for Name {
-    #[inline]
-    fn from(this: RThisExpr) -> Name {
-        let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
-        this.into()
-    }
-}
-
-impl From<RTsThisType> for Name {
-    #[inline]
-    fn from(this: RTsThisType) -> Name {
-        let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
-        this.into()
-    }
-}
-
 impl From<RTsEntityName> for Name {
     fn from(n: RTsEntityName) -> Self {
         Self::from(&n)
@@ -141,57 +119,5 @@ impl From<&'_ RTsEntityName> for Name {
 
         let top = expand(&mut buf, n);
         Self(top, buf)
-    }
-}
-
-impl TryFrom<&'_ RExpr> for Name {
-    type Error = ();
-
-    fn try_from(e: &RExpr) -> Result<Self, Self::Error> {
-        match e {
-            RExpr::Ident(i) => Ok(i.into()),
-            RExpr::Member(m) => m.try_into(),
-            RExpr::OptChain(ROptChainExpr {
-                base: ROptChainBase::Member(m),
-                ..
-            }) => m.try_into(),
-            RExpr::This(this) => Ok({
-                let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
-
-                this.into()
-            }),
-            RExpr::Paren(RParenExpr { expr, .. }) => (&**expr).try_into(),
-
-            // TODO
-            _ => Err(()),
-        }
-    }
-}
-
-impl From<&'_ RTsThisTypeOrIdent> for Name {
-    fn from(ty: &RTsThisTypeOrIdent) -> Self {
-        match ty {
-            RTsThisTypeOrIdent::TsThisType(this) => Name::from(RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty()))),
-            RTsThisTypeOrIdent::Ident(ref i) => Name::from(i),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a RMemberExpr> for Name {
-    type Error = ();
-
-    fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
-        let mut name: Name = (&*e.obj).try_into()?;
-
-        name.1.push(match &e.prop {
-            RMemberProp::Ident(i) => i.sym.clone(),
-            RMemberProp::Computed(RComputedPropName {
-                expr: box RExpr::Lit(RLit::Str(s)),
-                ..
-            }) => s.value.clone(),
-            _ => return Err(()),
-        });
-
-        Ok(name)
     }
 }
