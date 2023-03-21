@@ -1666,7 +1666,6 @@ impl Analyzer<'_, '_> {
                     }
 
                     if let Some(super_class) = self.scope.get_super_class(false) {
-                        dbg!(&super_class);
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
