@@ -3,7 +3,10 @@ use std::{borrow::Cow, fmt::Debug};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RInvalid, RNumber, RPat, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RExpr, RIdent, RInvalid, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RPat, RStr,
+    RTsEntityName, RTsEnumMemberId, RTsLit,
+};
 use stc_ts_base_type_ops::{
     bindings::{collect_bindings, BindingCollector, KnownTypeVisitor},
     is_str_lit_or_union,
@@ -2477,6 +2480,38 @@ impl Analyzer<'_, '_> {
         }
 
         self.data.bindings = collect_bindings(node);
+    }
+
+    pub(crate) fn name_for_expr(&mut self, e: &RExpr) -> Option<Name> {
+        match e {
+            RExpr::Ident(i) => Some(Name::new(i.sym.clone(), i.span.ctxt)),
+            RExpr::Member(m) => self.name_for_member_expr(m),
+            RExpr::OptChain(ROptChainExpr {
+                base: ROptChainBase::Member(m),
+                ..
+            }) => self.name_for_member_expr(m),
+            RExpr::This(this) => Some({
+                let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+
+                this.into()
+            }),
+            RExpr::Paren(RParenExpr { expr, .. }) => self.name_for_expr(expr),
+
+            // TODO
+            _ => None,
+        }
+    }
+
+    fn name_for_member_expr(&mut self, e: &RMemberExpr) -> Option<Name> {
+        let mut obj = self.name_for_expr(&e.obj)?;
+        match &e.prop {
+            RMemberProp::Ident(prop) => {
+                obj.push(prop.sym.clone());
+            }
+            _ => return None,
+        }
+
+        obj
     }
 }
 
