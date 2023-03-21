@@ -60,10 +60,8 @@ impl Analyzer<'_, '_> {
                 },
             )
             .ok()?;
-        dbg!(&ty);
 
         let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty)).ok()??;
-        dbg!(&ty);
 
         if ty.members.len() == 1 {
             match &ty.members[0] {
