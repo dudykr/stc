@@ -259,6 +259,8 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         span: jsx_element_span,
                         allow_missing_fields: true,
+                        // TODO: Remove the line below after fixing inference issues
+                        allow_unknown_rhs: Some(true),
                         ..Default::default()
                     },
                 )
