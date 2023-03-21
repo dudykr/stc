@@ -271,7 +271,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.type_of_member_expr(expr, mode, true)
+                    self.type_of_member_expr(expr, mode, type_args, true)
                 }
 
                 RExpr::SuperProp(ref expr) => self.type_of_super_prop_expr(expr, mode),
@@ -4132,6 +4132,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         expr: &RMemberExpr,
         type_mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
         include_optional_chaining_undefined: bool,
     ) -> VResult<Type> {
         let RMemberExpr {
@@ -4252,7 +4253,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = if computed {
+        let mut ty = if computed {
             ty
         } else {
             if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
@@ -4285,6 +4286,10 @@ impl Analyzer<'_, '_> {
 
             ty
         };
+
+        if let Some(type_args) = type_args {
+            ty = self.expand_generics_with_type_args(span, ty, type_args)?;
+        }
 
         if should_be_optional && include_optional_chaining_undefined {
             Ok(ty.union_with_undefined(span))
