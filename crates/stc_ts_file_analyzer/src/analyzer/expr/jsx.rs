@@ -169,7 +169,6 @@ impl Analyzer<'_, '_> {
                                     ResolvedJsxName::Intrinsic(v) => v,
                                     ResolvedJsxName::Value(_, props) => props,
                                 };
-                                dbg!(props_object);
 
                                 let res = self.access_property(
                                     attr_name.span,
@@ -183,7 +182,7 @@ impl Analyzer<'_, '_> {
                                     Default::default(),
                                 );
 
-                                let type_ann = dbg!(res).ok();
+                                let type_ann = res.ok();
 
                                 v.validate_with_args(self, type_ann.as_ref())?
                             }
@@ -296,7 +295,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             );
 
-            dbg!(type_ann_res).ok()
+            type_ann_res.ok()
         };
 
         let children = e.children.validate_with_args(self, type_ann_for_children.as_ref())?;
