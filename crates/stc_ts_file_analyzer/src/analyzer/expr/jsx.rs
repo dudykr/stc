@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::{
     RBool, RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
     RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText, RTsLit,
@@ -13,9 +15,9 @@ use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 
-use super::{AccessPropertyOpts, TypeOfMode};
+use super::{call_new::ExtractKind, AccessPropertyOpts, TypeOfMode};
 use crate::{
-    analyzer::{assign::AssignOpts, expr::call_new::ExtractKind, util::ResultExt, Analyzer},
+    analyzer::{assign::AssignOpts, util::ResultExt, Analyzer},
     validator::ValidateWith,
     VResult,
 };
@@ -30,6 +32,52 @@ pub enum ResolvedJsxName {
 }
 
 impl Analyzer<'_, '_> {
+    fn get_jsx_prop_name(&mut self, span: Span) -> Option<JsWord> {
+        if let Some(jsx_cache) = self.data.jsx_prop_name.clone() {
+            return jsx_cache;
+        }
+        let jsx_cache = self.get_jsx_prop_name_no_cache(span);
+        self.data.jsx_prop_name = Some(jsx_cache.clone());
+        jsx_cache
+    }
+
+    fn get_jsx_prop_name_no_cache(&mut self, span: Span) -> Option<JsWord> {
+        let jsx = self.get_jsx_namespace()?;
+
+        let ty = self
+            .access_property(
+                span,
+                &jsx,
+                &Key::Normal {
+                    span,
+                    sym: "ElementAttributesProperty".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            )
+            .ok()?;
+        dbg!(&ty);
+
+        let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty)).ok()??;
+        dbg!(&ty);
+
+        if ty.members.len() == 1 {
+            match &ty.members[0] {
+                TypeElement::Property(PropertySignature { key, .. }) => match key {
+                    Key::Normal { sym, .. } => Some(sym.clone()),
+                    _ => None,
+                },
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
     fn get_jsx_intrinsic_element(&mut self, span: Span, sym: &JsWord) -> VResult<Type> {
         if let Some(jsx) = self.get_jsx_intrinsic_element_list(span)? {
             self.access_property(
@@ -339,10 +387,32 @@ impl Analyzer<'_, '_> {
         .freezed();
 
         let span = e.span();
-        let constructors = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
+        let jsx_prop_name = self.get_jsx_prop_name(span);
 
-        if constructors.len() == 1 && !constructors[0].params.is_empty() {
-            Ok(ResolvedJsxName::Value(ty, *constructors[0].params[0].ty.clone()))
+        let props = match jsx_prop_name {
+            Some(jsx_prop_name) => self
+                .access_property(
+                    span,
+                    &ty,
+                    &Key::Normal { span, sym: jsx_prop_name },
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                )
+                .ok(),
+            None => {
+                let constructors = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
+
+                if constructors.len() == 1 && !constructors[0].params.is_empty() {
+                    Some(*constructors[0].params[0].ty.clone())
+                } else {
+                    None
+                }
+            }
+        };
+
+        if let Some(props) = props {
+            Ok(ResolvedJsxName::Value(ty, props))
         } else {
             Ok(ResolvedJsxName::Value(ty, Type::any(span, Default::default())))
         }
