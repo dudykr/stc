@@ -2,9 +2,9 @@
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, ROptChainBase,
-    ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName,
-    RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
+    RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl,
+    RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs,
+    RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
@@ -340,6 +340,30 @@ impl Visit<RTsTypeRef> for DepAnalyzer {
 impl Visit<RTsFnType> for DepAnalyzer {
     fn visit(&mut self, t: &RTsFnType) {
         t.type_ann.visit_with(self);
+    }
+}
+
+impl Visit<RNamedExport> for DepAnalyzer {
+    fn visit(&mut self, value: &RNamedExport) {
+        if value.src.is_some() {
+            return;
+        }
+
+        value.visit_children_with(self);
+    }
+}
+
+impl Visit<RExportNamedSpecifier> for DepAnalyzer {
+    fn visit(&mut self, s: &RExportNamedSpecifier) {
+        match &s.orig {
+            RModuleExportName::Ident(orig) => {
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: orig.clone().into(),
+                });
+            }
+            RModuleExportName::Str(_) => {}
+        }
     }
 }
 
