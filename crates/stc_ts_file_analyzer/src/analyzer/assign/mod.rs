@@ -2766,6 +2766,10 @@ impl Analyzer<'_, '_> {
                     .context("tried to assign to a rest type")
             }
 
+            (Type::IndexedAccessType(..), _) | (_, Type::IndexedAccessType(..)) => {
+                fail!()
+            }
+
             (
                 _,
                 Type::Keyword(KeywordType {
