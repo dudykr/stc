@@ -81,6 +81,7 @@ impl Tester<'_, '_> {
 
                     dts: false,
                     no_early_errors: false,
+                    ..Default::default()
                 }),
                 EsVersion::latest(),
                 StringInput::from(&*fm),

@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
             }
 
             match member {
-                RClassMember::Constructor(_) | RClassMember::StaticBlock(_) => continue,
+                RClassMember::Constructor(_) | RClassMember::AutoAccessor(_) | RClassMember::StaticBlock(_) => continue,
 
                 RClassMember::TsIndexSignature(_) => {}
 

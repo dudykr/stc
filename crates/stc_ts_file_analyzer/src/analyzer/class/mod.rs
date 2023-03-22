@@ -852,6 +852,13 @@ impl Analyzer<'_, '_> {
             }
             RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
+            RClassMember::AutoAccessor(auto) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: auto.span,
+                    msg: "auto accessor".into(),
+                }
+                .into())
+            }
         })
     }
 }
