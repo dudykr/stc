@@ -4108,7 +4108,7 @@ impl Analyzer<'_, '_> {
             }
             RExpr::OptChain(ROptChainExpr {
                 base:
-                    ROptChainBase::Member(RMemberExpr {
+                    box ROptChainBase::Member(RMemberExpr {
                         obj,
                         prop: RMemberProp::Ident(right),
                         ..

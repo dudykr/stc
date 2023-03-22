@@ -360,7 +360,7 @@ fn left_of_expr(e: &RExpr) -> &RIdent {
         RExpr::Ident(i) => i,
         RExpr::Member(m)
         | RExpr::OptChain(ROptChainExpr {
-            base: ROptChainBase::Member(m),
+            base: box ROptChainBase::Member(m),
             ..
         }) => left_of_expr(&m.obj),
         _ => unreachable!(),

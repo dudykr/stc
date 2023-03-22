@@ -22,6 +22,7 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, to
             decorators: true,
             dts: fm.name.to_string().ends_with(".d.ts"),
             no_early_errors: false,
+            ..Default::default()
         }),
         EsVersion::latest(),
         SourceFileInput::from(fm),
