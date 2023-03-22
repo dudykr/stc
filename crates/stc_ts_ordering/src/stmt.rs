@@ -2,10 +2,9 @@
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExportNamedSpecifier, RExportSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp,
-    RModuleDecl, RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt, RTsEntityName,
-    RTsExprWithTypeArgs, RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat,
-    RVarDeclarator,
+    RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl,
+    RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs,
+    RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
