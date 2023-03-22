@@ -305,7 +305,8 @@ impl Analyzer<'_, '_> {
 
         if let Ok(name) = Name::try_from(&*node.expr) {
             let ty = self.type_of_name(span, &name, TypeOfMode::RValue, None);
-            if let Ok(ty) = ty {
+            if let Ok(mut ty) = ty {
+                ty.freeze();
                 self.storage.export_type(span, self.ctx.module_id, js_word!("default"), ty);
             }
         }
