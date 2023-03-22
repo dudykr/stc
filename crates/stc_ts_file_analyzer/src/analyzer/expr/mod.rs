@@ -2572,9 +2572,11 @@ impl Analyzer<'_, '_> {
 
                 if !result_types.is_empty()
                     && !errors.is_empty()
-                    && types.iter().all(|ty| match ty.normalize() {
-                        Type::Module(_) | Type::Enum(..) | Type::ClassDef(..) | Type::Namespace(..) => true,
-                        _ => false,
+                    && types.iter().all(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Module(_) | Type::Enum(..) | Type::ClassDef(..) | Type::Namespace(..)
+                        )
                     })
                 {
                     errors.retain(|err| !err.is_property_not_found())
