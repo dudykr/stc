@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, IdCtx, Key};
+use stc_ts_types::{name::Name, Id, IdCtx, Key};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
@@ -295,12 +295,20 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
+        let span = node.span;
         let ctx = Ctx {
             in_export_assignment: true,
             ..self.ctx
         };
         self.with_ctx(ctx)
             .export_expr(node.span, js_word!("default"), node.node_id, &node.expr)?;
+
+        if let Ok(name) = Name::try_from(&*node.expr) {
+            let ty = self.type_of_name(span, &name, TypeOfMode::RValue, None);
+            if let Ok(ty) = ty {
+                self.storage.export_type(span, self.ctx.module_id, js_word!("default"), ty);
+            }
+        }
 
         Ok(())
     }
