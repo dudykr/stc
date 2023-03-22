@@ -94,6 +94,7 @@ impl VisitMut<RClassMember> for Operator<'_> {
             RClassMember::PrivateProp(p) => p.node_id,
             RClassMember::TsIndexSignature(s) => s.node_id,
             RClassMember::StaticBlock(s) => s.node_id,
+            RClassMember::AutoAccessor(a) => a.node_id,
             RClassMember::Empty(_) => return,
         };
 

@@ -8,7 +8,7 @@
    `----
 
 Error: 
-  > new () => string[]
+  > new() => string[]
 
   x Type
    ,-[$DIR/tests/pass/exprs/member/constructor/1.ts:3:1]

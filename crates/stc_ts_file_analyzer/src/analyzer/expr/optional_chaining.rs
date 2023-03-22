@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let span = node.span;
 
-        match &node.base {
+        match &*node.base {
             ROptChainBase::Member(me) => {
                 let prop = self.validate_key(
                     &match &me.prop {

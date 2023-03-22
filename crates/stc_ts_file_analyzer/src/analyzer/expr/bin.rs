@@ -1154,7 +1154,7 @@ impl Analyzer<'_, '_> {
         fn non_undefined_names(e: &RExpr) -> Vec<Name> {
             match e {
                 RExpr::OptChain(ROptChainExpr {
-                    base: ROptChainBase::Member(me),
+                    base: box ROptChainBase::Member(me),
                     ..
                 }) => {
                     let mut names = non_undefined_names(&me.obj);

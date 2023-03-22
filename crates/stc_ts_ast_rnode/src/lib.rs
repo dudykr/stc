@@ -225,6 +225,7 @@ define_rnode!({
         PrivateProp(PrivateProp),
         TsIndexSignature(TsIndexSignature),
         StaticBlock(StaticBlock),
+        AutoAccessor(AutoAccessor),
         Empty(EmptyStmt),
     }
 
@@ -476,7 +477,7 @@ define_rnode!({
     pub struct ArrowExpr {
         pub span: Span,
         pub params: Vec<Pat>,
-        pub body: BlockStmtOrExpr,
+        pub body: Box<BlockStmtOrExpr>,
         pub is_async: bool,
         pub is_generator: bool,
         pub type_params: Option<Box<TsTypeParamDecl>>,
@@ -503,7 +504,7 @@ define_rnode!({
     pub struct TaggedTpl {
         pub span: Span,
         pub tag: Box<Expr>,
-        pub tpl: Tpl,
+        pub tpl: Box<Tpl>,
         pub type_params: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TplElement {
@@ -535,7 +536,7 @@ define_rnode!({
     pub struct OptChainExpr {
         pub span: Span,
         pub question_dot_token: Span,
-        pub base: OptChainBase,
+        pub base: Box<OptChainBase>,
     }
     pub enum OptChainBase {
         Member(MemberExpr),
@@ -778,6 +779,7 @@ define_rnode!({
         pub span: Span,
         pub src: Box<Str>,
         pub asserts: Option<Box<ObjectLit>>,
+        pub type_only: bool,
     }
     pub struct NamedExport {
         pub span: Span,
@@ -1040,7 +1042,7 @@ define_rnode!({
     }
     pub struct ForOfStmt {
         pub span: Span,
-        pub await_token: Option<Span>,
+        pub is_await: bool,
         pub left: VarDeclOrPat,
         pub right: Box<Expr>,
         pub body: Box<Stmt>,
@@ -1493,5 +1495,20 @@ define_rnode!({
     pub enum SuperProp {
         Ident(Ident),
         Computed(ComputedPropName),
+    }
+
+    pub enum Key {
+        Private(PrivateName),
+        Public(PropName),
+    }
+
+    pub struct AutoAccessor {
+        pub span: Span,
+        pub key: Key,
+        pub value: Option<Box<Expr>>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub is_static: bool,
+        pub decorators: Vec<Decorator>,
+        pub accessibility: Option<Accessibility>,
     }
 });

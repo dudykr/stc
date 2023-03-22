@@ -152,7 +152,7 @@ impl TryFrom<&'_ RExpr> for Name {
             RExpr::Ident(i) => Ok(i.into()),
             RExpr::Member(m) => m.try_into(),
             RExpr::OptChain(ROptChainExpr {
-                base: ROptChainBase::Member(m),
+                base: box ROptChainBase::Member(m),
                 ..
             }) => m.try_into(),
             RExpr::This(this) => Ok({

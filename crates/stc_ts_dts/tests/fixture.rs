@@ -292,6 +292,7 @@ fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
                 decorators: true,
                 dts: true,
                 no_early_errors: true,
+                ..Default::default()
             }),
             SourceFileInput::from(&*fm),
             None,

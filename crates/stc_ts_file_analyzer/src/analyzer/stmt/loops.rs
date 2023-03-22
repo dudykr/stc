@@ -436,15 +436,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
-        self.check_for_of_in_loop(
-            s.span,
-            &s.left,
-            &s.right,
-            ForHeadKind::Of {
-                is_awaited: s.await_token.is_some(),
-            },
-            &s.body,
-        );
+        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of { is_awaited: s.is_await }, &s.body);
 
         Ok(())
     }
