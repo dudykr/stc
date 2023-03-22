@@ -2514,7 +2514,7 @@ impl Analyzer<'_, '_> {
             Type::Union(ty::Union { types, .. }) => {
                 debug_assert!(!types.is_empty());
 
-                let mut tys = vec![];
+                let mut result_types = vec![];
                 let mut errors = Vec::with_capacity(types.len());
 
                 let has_null = types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
@@ -2561,13 +2561,23 @@ impl Analyzer<'_, '_> {
                     ) {
                         Ok(ty) => {
                             if ty.is_union_type() {
-                                tys.extend(ty.expect_union_type().types);
+                                result_types.extend(ty.expect_union_type().types);
                             } else {
-                                tys.push(ty);
+                                result_types.push(ty);
                             }
                         }
                         Err(err) => errors.push(err),
                     }
+                }
+
+                if !result_types.is_empty()
+                    && !errors.is_empty()
+                    && types.iter().all(|ty| match ty.normalize() {
+                        Type::Module(_) | Type::Enum(..) | Type::ClassDef(..) | Type::Namespace(..) => true,
+                        _ => false,
+                    })
+                {
+                    errors.retain(|err| !err.is_property_not_found())
                 }
 
                 if type_mode == TypeOfMode::LValue {
@@ -2589,14 +2599,14 @@ impl Analyzer<'_, '_> {
                 } else {
                     if !errors.is_empty() {
                         if is_all_tuple && errors.len() != types.len() {
-                            tys.push(Type::Keyword(KeywordType {
+                            result_types.push(Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }));
-                            tys.dedup_type();
-                            let ty = Type::new_union(span, tys);
+                            result_types.dedup_type();
+                            let ty = Type::new_union(span, result_types);
                             ty.assert_valid();
                             return Ok(ty);
                         }
@@ -2610,10 +2620,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                tys.dedup_type();
+                result_types.dedup_type();
 
                 // TODO(kdy1): Validate that the ty has same type instead of returning union.
-                let ty = Type::new_union(span, tys);
+                let ty = Type::new_union(span, result_types);
                 ty.assert_valid();
                 return Ok(ty);
             }
