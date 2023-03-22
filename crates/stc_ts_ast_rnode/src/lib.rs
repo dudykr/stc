@@ -1497,6 +1497,11 @@ define_rnode!({
         Computed(ComputedPropName),
     }
 
+    pub enum Key {
+        Private(PrivateName),
+        Public(PropName),
+    }
+
     pub struct AutoAccessor {
         pub span: Span,
         pub key: Key,
