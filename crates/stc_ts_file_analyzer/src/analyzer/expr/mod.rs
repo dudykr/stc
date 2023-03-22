@@ -2570,6 +2570,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // Support for declaration merging.
+                // TODO: We need to check if it's created from the declaration merging
                 if !result_types.is_empty()
                     && !errors.is_empty()
                     && types.iter().all(|ty| {
