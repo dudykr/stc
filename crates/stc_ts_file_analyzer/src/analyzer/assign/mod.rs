@@ -1,13 +1,13 @@
-use std::{borrow::Cow, cmp::min, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RIdent, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
+    Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
@@ -18,17 +18,13 @@ use tracing::{debug, error, info};
 
 use super::pat::PatMode;
 use crate::{
-    analyzer::{
-        expr::{AccessPropertyOpts, TypeOfMode},
-        types::NormalizeTypeOpts,
-        util::is_lit_eq_ignore_span,
-        Analyzer,
-    },
+    analyzer::{types::NormalizeTypeOpts, util::is_lit_eq_ignore_span, Analyzer},
     ty::TypeExt,
     util::is_str_or_union,
     VResult,
 };
 
+mod array;
 mod builtin;
 mod cast;
 mod class;
@@ -2473,183 +2469,12 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Tuple(Tuple { elems: ref lhs_elems, .. }) => {
-                if lhs_elems.is_empty() {
-                    match rhs {
-                        Type::Array(..) | Type::Tuple(..) => return Ok(()),
-                        _ => {}
-                    }
-                }
-
-                match *rhs.normalize() {
-                    Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
-                        if rhs_elems.is_empty() {
-                            fail!()
-                        }
-
-                        if !opts.ignore_tuple_length_difference && lhs_elems.len() < rhs_elems.len() {
-                            if lhs_elems.iter().any(|elem| elem.ty.is_rest()) {
-                                // Type::Rest eats many elements
-                            } else {
-                                return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
-                            }
-                        }
-
-                        if !opts.ignore_tuple_length_difference && lhs_elems.len() > rhs_elems.len() {
-                            let is_len_fine = rhs_elems.iter().any(|elem| elem.ty.is_rest())
-                                || lhs_elems.iter().skip(rhs_elems.len()).all(|l| {
-                                    matches!(
-                                        l.ty.normalize_instance(),
-                                        Type::Keyword(KeywordType {
-                                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                                            ..
-                                        }) | Type::Optional(..)
-                                    )
-                                });
-
-                            if !is_len_fine {
-                                return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
-                            }
-                        }
-
-                        let len = lhs_elems.len().max(rhs_elems.len());
-
-                        let r_max = rhs_elems.len().saturating_sub(get_tuple_subtract_count(lhs_elems));
-
-                        let mut errors = vec![];
-
-                        for index in 0..len {
-                            let li = index;
-                            let ri = min(index, r_max);
-
-                            let _tracing = dev_span!("assign_tuple_to_tuple", li = li, ri = ri);
-
-                            let l_elem_type = self.access_property(
-                                span,
-                                to,
-                                &Key::Num(RNumber {
-                                    span,
-                                    value: li as _,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Type,
-                                AccessPropertyOpts {
-                                    do_not_validate_type_of_computed_prop: true,
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    use_undefined_for_tuple_index_error: true,
-                                    ..Default::default()
-                                },
-                            )?;
-
-                            let r_elem_type = self.access_property(
-                                span,
-                                rhs,
-                                &Key::Num(RNumber {
-                                    span,
-                                    value: ri as _,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Type,
-                                AccessPropertyOpts {
-                                    do_not_validate_type_of_computed_prop: true,
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    use_undefined_for_tuple_index_error: true,
-                                    ..Default::default()
-                                },
-                            )?;
-
-                            errors.extend(
-                                self.assign_inner(
-                                    data,
-                                    &l_elem_type,
-                                    &r_elem_type,
-                                    AssignOpts {
-                                        allow_unknown_rhs: Some(true),
-                                        ..opts
-                                    },
-                                )
-                                .with_context(|| format!("tried to assign {}th tuple element\nli = {},ri = {}", index, li, ri))
-                                .err(),
-                            );
-                        }
-
-                        if !errors.is_empty() {
-                            return Err(ErrorKind::TupleAssignError { span, errors }.into());
-                        }
-
-                        return Ok(());
-                    }
-                    Type::Array(Array {
-                        elem_type: ref rhs_elem_type,
-                        ..
-                    }) => {
-                        if lhs_elems.len() != 1 {
-                            fail!();
-                        }
-
-                        match lhs_elems[0].ty.normalize() {
-                            Type::Rest(RestType { ty: l_ty, .. }) => {
-                                self.assign_inner(
-                                    data,
-                                    l_ty,
-                                    rhs_elem_type,
-                                    AssignOpts {
-                                        allow_unknown_rhs: Some(true),
-                                        ..opts
-                                    },
-                                )?;
-                            }
-                            _ => {
-                                fail!();
-                            }
-                        }
-                    }
-
-                    Type::Index(..)
-                    | Type::Lit(..)
-                    | Type::Interface(..)
-                    | Type::TypeLit(..)
-                    | Type::Keyword(..)
-                    | Type::Class(..)
-                    | Type::ClassDef(..)
-                        if !opts.allow_iterable_on_rhs =>
-                    {
-                        fail!()
-                    }
-
-                    _ => {
-                        // Try to assign by converting rhs to an iterable.
-                        if opts.allow_iterable_on_rhs {
-                            let r = self
-                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
-                                .context("tried to convert a type to an iterator to assign to a tuple")?;
-                            //
-                            for (i, elem) in lhs_elems.iter().enumerate() {
-                                let r_ty = self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&r), i)
-                                    .context("tried to get an element of type to assign to a tuple element")?
-                                    .freezed();
-
-                                self.assign_with_opts(
-                                    data,
-                                    &elem.ty,
-                                    &r_ty,
-                                    AssignOpts {
-                                        allow_iterable_on_rhs: false,
-                                        ..opts
-                                    },
-                                )?;
-                            }
-
-                            return Ok(());
-                        }
-                    }
+            Type::Tuple(l) => {
+                if let Some(()) = self
+                    .assign_to_tuple(data, l, to, rhs, opts)
+                    .context("tried to assign to a tuple type")?
+                {
+                    return Ok(());
                 }
             }
 
