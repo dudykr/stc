@@ -2595,6 +2595,22 @@ impl Analyzer<'_, '_> {
             }
 
             (
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsObjectKeyword,
+                    ..
+                }),
+                Type::Array(..) | Type::Tuple(..),
+            ) => return Ok(()),
+
+            (
+                Type::Optional(..),
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }),
+            ) => return Ok(()),
+
+            (
                 _,
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
