@@ -2594,6 +2594,10 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
+            (Type::Function(..), Type::Lit(..)) => {
+                fail!()
+            }
+
             (
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsObjectKeyword,
