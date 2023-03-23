@@ -45,7 +45,7 @@ swc_ecma_parser = "0.130.5"
 swc_ecma_transforms = "0.212.14"
 swc_ecma_transforms_base = "0.122.11"
 swc_ecma_visit = "0.86.2"
-swc_fast_graph = "0.17.16"
+swc_fast_graph = "0.17.41"
 tracing = {version = "0.1.37", features = ["release_max_level_trace"]}
 
 [dev-dependencies]
