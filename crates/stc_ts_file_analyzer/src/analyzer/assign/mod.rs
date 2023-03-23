@@ -2607,6 +2607,19 @@ impl Analyzer<'_, '_> {
             ) => return Ok(()),
 
             (
+                Type::Keyword(KeywordType {
+                    kind:
+                        TsKeywordTypeKind::TsStringKeyword
+                        | TsKeywordTypeKind::TsBigIntKeyword
+                        | TsKeywordTypeKind::TsNumberKeyword
+                        | TsKeywordTypeKind::TsBooleanKeyword
+                        | TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }),
+                Type::Array(..) | Type::Tuple(..),
+            ) => fail!(),
+
+            (
                 Type::Optional(..),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
