@@ -22,7 +22,7 @@ stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
 swc_atoms = "0.4.39"
 swc_common = "0.29.37"
-swc_fast_graph = "0.17.16"
+swc_fast_graph = "0.17.41"
 swc_graph_analyzer = "0.18.16"
 tracing = "0.1.37"
 
