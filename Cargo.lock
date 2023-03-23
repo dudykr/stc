@@ -2884,9 +2884,9 @@ dependencies = [
 
 [[package]]
 name = "swc_fast_graph"
-version = "0.17.16"
+version = "0.17.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13830b02764bf532d347118283393fe6f2b6b5a93c6948af443d2891958705f9"
+checksum = "e3a720ad8028d6c6e992039c862ed7318d143dee3994929793f59067fd69600b"
 dependencies = [
  "ahash 0.7.6",
  "indexmap",
