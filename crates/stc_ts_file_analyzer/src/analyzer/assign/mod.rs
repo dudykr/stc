@@ -2594,7 +2594,7 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
-            (Type::Function(..), Type::Lit(..)) => {
+            (Type::Function(..) | Type::Unique(..), Type::Lit(..)) => {
                 fail!()
             }
 
@@ -2612,11 +2612,10 @@ impl Analyzer<'_, '_> {
                         TsKeywordTypeKind::TsStringKeyword
                         | TsKeywordTypeKind::TsBigIntKeyword
                         | TsKeywordTypeKind::TsNumberKeyword
-                        | TsKeywordTypeKind::TsBooleanKeyword
-                        | TsKeywordTypeKind::TsSymbolKeyword,
+                        | TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 }),
-                Type::Array(..) | Type::Tuple(..),
+                Type::Array(..) | Type::Tuple(..) | Type::Unique(..),
             ) => fail!(),
 
             (
@@ -2626,6 +2625,18 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => return Ok(()),
+
+            (Type::Optional(l_opt), _) => {
+                return self
+                    .assign_inner(data, &l_opt.ty.clone().union_with_undefined(span), rhs, opts)
+                    .context("tried to assign to an optional type")
+            }
+
+            (_, Type::Readonly(r_readonly)) => {
+                return self
+                    .assign_inner(data, to, &r_readonly.ty, opts)
+                    .context("tried to assign a readonly type to another type")
+            }
 
             (
                 _,
