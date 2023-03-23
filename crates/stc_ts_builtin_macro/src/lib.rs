@@ -245,7 +245,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
             }
         ));
 
-        print("builtin", tokens)
+        print("builtin", tokens.into())
     })
 }
 

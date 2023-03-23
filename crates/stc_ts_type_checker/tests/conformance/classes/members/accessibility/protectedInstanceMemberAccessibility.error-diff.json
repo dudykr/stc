@@ -1,0 +1,19 @@
+{
+  "required_errors": {
+    "TS2446": 4,
+    "TS2445": 1
+  },
+  "required_error_lines": {
+    "TS2446": [
+      22,
+      23,
+      34,
+      35
+    ],
+    "TS2445": [
+      37
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
+}

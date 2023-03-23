@@ -1,44 +1,54 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5]
- 14 | dispatchAction({ type: (active ? 'disactivate' : 'activate') });
-    : ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
+ 13 | 
+ 14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+    :     ^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 
   > (action: Action) => void
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5]
- 14 | dispatchAction({ type: (active ? 'disactivate' : 'activate') });
-    :                         ^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
+ 13 | 
+ 14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+    :                             ^^^^^^
+ 15 | }
     `----
 
 Error: 
   > true
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5]
- 14 | dispatchAction({ type: (active ? 'disactivate' : 'activate') });
-    :                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
+ 13 | 
+ 14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+    :                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 
   > ('disactivate' | 'activate')
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5]
- 14 | dispatchAction({ type: (active ? 'disactivate' : 'activate') });
-    :                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
+ 13 | 
+ 14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+    :                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 
   > ('disactivate' | 'activate')
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5]
- 14 | dispatchAction({ type: (active ? 'disactivate' : 'activate') });
-    :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
+ 13 | 
+ 14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+    :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 
@@ -47,9 +57,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5]
- 14 | dispatchAction({ type: (active ? 'disactivate' : 'activate') });
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
+ 13 | 
+ 14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 

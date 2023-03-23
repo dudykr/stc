@@ -1,1 +1,1 @@
-[{"line":22,"column":14,"code":"TS2678"},{"line":26,"column":14,"code":"TS2678"}]
+[{"filename":"tests/cases/compiler/letConstInCaseClauses.ts","line":22,"column":14,"code":"TS2678"},{"filename":"tests/cases/compiler/letConstInCaseClauses.ts","line":26,"column":14,"code":"TS2678"}]

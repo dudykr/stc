@@ -2,6 +2,7 @@ use std::{borrow::Cow, cell::RefCell, mem::take};
 
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
+use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
     RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
     RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock, RStmt,
@@ -13,7 +14,7 @@ use stc_ts_simple_ast_validations::constructor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ConstructorSignature, FnParam, Id, IdCtx,
-    Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    Intersection, Key, KeywordType, Method, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type, Unique,
 };
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::{cache::Freeze, AHashSet};
@@ -30,7 +31,7 @@ use crate::{
         expr::TypeOfMode,
         props::ComputedPropMode,
         scope::VarKind,
-        util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
+        util::{is_prop_name_eq, ResultExt, VarVisitor},
         Analyzer, Ctx, ScopeKind,
     },
     ty::TypeExt,
@@ -68,7 +69,7 @@ impl Analyzer<'_, '_> {
             try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
         };
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             // Disabled because of false positives when the constructor initializes the
             // field.
             #[allow(clippy::overly_complex_bool_expr)]
@@ -121,9 +122,8 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(ty.or(value_ty).map(|ty| match ty {
-            Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
+            Type::Symbol(..) if readonly && is_static => Type::Unique(Unique {
                 span: ty.span(),
-                op: TsTypeOperatorOp::Unique,
                 ty: box Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -255,7 +255,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RConstructor, super_class: Option<&Type>) -> VResult<ConstructorSignature> {
         let c_span = c.span();
 
-        if !self.is_builtin
+        if !self.config.is_builtin
             && !self.ctx.ignore_errors
             && self.ctx.in_class_with_super
             && c.body.is_some()
@@ -383,7 +383,17 @@ impl Analyzer<'_, '_> {
             RTsParamPropParam::Ident(ref i) => {
                 let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
 
-                self.declare_var(i.id.span, VarKind::Param, i.id.clone().into(), ty.clone(), None, true, false, false)?;
+                self.declare_var(
+                    i.id.span,
+                    VarKind::Param,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                    false,
+                )?;
 
                 Ok(FnParam {
                     span: p.span,
@@ -416,7 +426,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.declare_var(i.id.span, VarKind::Param, i.id.clone().into(), ty.clone(), None, true, false, false)?;
+                self.declare_var(
+                    i.id.span,
+                    VarKind::Param,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                    false,
+                )?;
 
                 Ok(FnParam {
                     span: p.span,
@@ -496,45 +516,44 @@ impl Analyzer<'_, '_> {
         let key = c.key.validate_with(self).map(Key::Private)?;
         let key_span = key.span();
 
-        let (type_params, params, ret_ty) = self.with_child(
-            ScopeKind::Method { is_static: c.is_static },
-            Default::default(),
-            |child: &mut Analyzer| -> VResult<_> {
-                child.ctx.in_static_method = c.is_static;
+        let (type_params, params, ret_ty) =
+            self.with_child(
+                ScopeKind::Method { is_static: c.is_static },
+                Default::default(),
+                |child: &mut Analyzer| -> VResult<_> {
+                    child.ctx.in_static_method = c.is_static;
 
-                let type_params = try_opt!(c.function.type_params.validate_with(child));
-                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
-                }
+                    let type_params = try_opt!(c.function.type_params.validate_with(child));
+                    if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
+                        child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
+                    }
 
-                let params = c.function.params.validate_with(child)?;
+                    let params = c.function.params.validate_with(child)?;
 
-                let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+                    let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
 
-                let span = c.function.span;
-                let is_async = c.function.is_async;
-                let is_generator = c.function.is_generator;
+                    let span = c.function.span;
+                    let is_async = c.function.is_async;
+                    let is_generator = c.function.is_generator;
 
-                let inferred_ret_ty = match c
-                    .function
-                    .body
-                    .as_ref()
-                    .map(|bs| child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts))
-                {
-                    Some(Ok(ty)) => ty,
-                    Some(err) => err?,
-                    None => None,
-                };
+                    let inferred_ret_ty =
+                        match c.function.body.as_ref().map(|bs| {
+                            child.visit_stmts_for_return(span.with_ctxt(SyntaxContext::empty()), is_async, is_generator, &bs.stmts)
+                        }) {
+                            Some(Ok(ty)) => ty,
+                            Some(err) => err?,
+                            None => None,
+                        };
 
-                Ok((
-                    type_params,
-                    params,
-                    box declared_ret_ty
-                        .or(inferred_ret_ty)
-                        .unwrap_or_else(|| Type::any(key_span, Default::default())),
-                ))
-            },
-        )?;
+                    Ok((
+                        type_params,
+                        params,
+                        box declared_ret_ty
+                            .or(inferred_ret_ty)
+                            .unwrap_or_else(|| Type::any(key_span, Default::default())),
+                    ))
+                },
+            )?;
 
         match c.kind {
             MethodKind::Method => Ok(ClassMember::Method(Method {
@@ -601,117 +620,121 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             ) {
-                self.apply_fn_type_ann(c.span, c.function.params.iter().map(|v| &v.pat), Some(&type_ann));
+                self.apply_fn_type_ann(
+                    c.span,
+                    c.function.node_id,
+                    c.function.params.iter().map(|v| &v.pat),
+                    Some(&type_ann),
+                );
             }
         }
 
         let c_span = c.span();
         let key_span = c.key.span();
 
-        let (params, type_params, declared_ret_ty, inferred_ret_ty) = self.with_child(
-            ScopeKind::Method { is_static: c.is_static },
-            Default::default(),
-            |child: &mut Analyzer| -> VResult<_> {
-                child.ctx.in_declare |= c.function.body.is_none();
-                child.ctx.in_async = c.function.is_async;
-                child.ctx.in_generator = c.function.is_generator;
-                child.ctx.in_static_method = c.is_static;
-                child.ctx.is_fn_param = true;
+        let (params, type_params, declared_ret_ty, inferred_ret_ty) =
+            self.with_child(
+                ScopeKind::Method { is_static: c.is_static },
+                Default::default(),
+                |child: &mut Analyzer| -> VResult<_> {
+                    child.ctx.in_declare |= c.function.body.is_none();
+                    child.ctx.in_async = c.function.is_async;
+                    child.ctx.in_generator = c.function.is_generator;
+                    child.ctx.in_static_method = c.is_static;
+                    child.ctx.is_fn_param = true;
 
-                child.scope.declaring_prop = match &key {
-                    Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
-                    _ => None,
-                };
+                    child.scope.declaring_prop = match &key {
+                        Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
+                        _ => None,
+                    };
 
-                {
-                    // It's error if abstract method has a body
+                    {
+                        // It's error if abstract method has a body
 
-                    if c.is_abstract && c.function.body.is_some() {
-                        child.storage.report(ErrorKind::TS1318 { span: key_span }.into());
+                        if c.is_abstract && c.function.body.is_some() {
+                            child.storage.report(ErrorKind::TS1318 { span: key_span }.into());
+                        }
                     }
-                }
 
-                {
-                    // Validate params
-                    // TODO(kdy1): Move this to parser
-                    let mut has_optional = false;
-                    for p in &c.function.params {
-                        if has_optional {
-                            match p.pat {
-                                RPat::Ident(RBindingIdent {
-                                    id: RIdent { optional: true, .. },
-                                    ..
-                                })
-                                | RPat::Rest(..) => {}
-                                _ => {
-                                    child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
+                    {
+                        // Validate params
+                        // TODO(kdy1): Move this to parser
+                        let mut has_optional = false;
+                        for p in &c.function.params {
+                            if has_optional {
+                                match p.pat {
+                                    RPat::Ident(RBindingIdent {
+                                        id: RIdent { optional: true, .. },
+                                        ..
+                                    })
+                                    | RPat::Rest(..) => {}
+                                    _ => {
+                                        child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
+                                    }
+                                }
+                            }
+
+                            if let RPat::Ident(RBindingIdent {
+                                id: RIdent { optional, .. },
+                                ..
+                            }) = p.pat
+                            {
+                                if optional {
+                                    has_optional = true;
                                 }
                             }
                         }
-
-                        if let RPat::Ident(RBindingIdent {
-                            id: RIdent { optional, .. },
-                            ..
-                        }) = p.pat
-                        {
-                            if optional {
-                                has_optional = true;
-                            }
-                        }
                     }
-                }
 
-                let type_params = try_opt!(c.function.type_params.validate_with(child));
-                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
-                }
+                    let type_params = try_opt!(c.function.type_params.validate_with(child));
+                    if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
+                        child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
+                    }
 
-                let params = {
-                    let prev_len = child.scope.declaring_parameters.len();
-                    let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
-                    child.scope.declaring_parameters.extend(ids);
+                    let params = {
+                        let prev_len = child.scope.declaring_parameters.len();
+                        let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
+                        child.scope.declaring_parameters.extend(ids);
 
-                    let res = c.function.params.validate_with(child);
+                        let res = c.function.params.validate_with(child);
 
-                    child.scope.declaring_parameters.truncate(prev_len);
+                        child.scope.declaring_parameters.truncate(prev_len);
 
-                    res?
-                };
-                child.ctx.is_fn_param = false;
+                        res?
+                    };
+                    child.ctx.is_fn_param = false;
 
-                // c.function.visit_children_with(child);
+                    // c.function.visit_children_with(child);
 
-                // if child.ctx.in_declare && c.function.body.is_some() {
-                //     child.storage.report(Error::TS1183 { span: key_span })
-                // }
+                    // if child.ctx.in_declare && c.function.body.is_some() {
+                    //     child.storage.report(Error::TS1183 { span: key_span })
+                    // }
 
-                if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.storage.report(ErrorKind::TS1095 { span: key_span }.into())
-                }
+                    if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
+                        child.storage.report(ErrorKind::TS1095 { span: key_span }.into())
+                    }
 
-                let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
-                let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
-                child.scope.declared_return_type = declared_ret_ty.clone();
+                    let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+                    let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
+                    child.scope.declared_return_type = declared_ret_ty.clone();
 
-                let span = c.function.span;
-                let is_async = c.function.is_async;
-                let is_generator = c.function.is_generator;
+                    let span = c.function.span;
+                    let is_async = c.function.is_async;
+                    let is_generator = c.function.is_generator;
 
-                child.ctx.in_class_member = true;
-                let inferred_ret_ty = match c
-                    .function
-                    .body
-                    .as_ref()
-                    .map(|bs| child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts))
-                {
-                    Some(Ok(ty)) => ty,
-                    Some(err) => err?,
-                    None => None,
-                };
+                    child.ctx.in_class_member = true;
+                    let inferred_ret_ty =
+                        match c.function.body.as_ref().map(|bs| {
+                            child.visit_stmts_for_return(span.with_ctxt(SyntaxContext::empty()), is_async, is_generator, &bs.stmts)
+                        }) {
+                            Some(Ok(ty)) => ty,
+                            Some(err) => err?,
+                            None => None,
+                        };
 
-                Ok((params, type_params, declared_ret_ty, inferred_ret_ty))
-            },
-        )?;
+                    Ok((params, type_params, declared_ret_ty, inferred_ret_ty))
+                },
+            )?;
 
         if c.kind == MethodKind::Getter && c.function.body.is_some() {
             // Inferred return type.
@@ -814,7 +837,7 @@ impl Analyzer<'_, '_> {
             }
 
             RClassMember::Constructor(v) => {
-                if self.is_builtin {
+                if self.config.is_builtin {
                     Some(v.validate_with_default(self).map(From::from)?)
                 } else {
                     unreachable!("constructors should be handled by class handler")
@@ -827,6 +850,13 @@ impl Analyzer<'_, '_> {
             }
             RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
+            RClassMember::AutoAccessor(auto) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: auto.span,
+                    msg: "auto accessor".into(),
+                }
+                .into())
+            }
         })
     }
 }
@@ -1014,7 +1044,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn report_errors_for_wrong_ambient_methods_of_class(&mut self, c: &RClass, declare: bool) -> VResult<()> {
-        if self.ctx.in_declare || self.is_builtin {
+        if self.ctx.in_declare || self.config.is_builtin {
             return Ok(());
         }
 
@@ -1254,7 +1284,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             // We don't need to validate builtin
             return Ok(());
         }
@@ -1287,18 +1317,12 @@ impl Analyzer<'_, '_> {
             }
         };
 
+        let ty = self.expand_enum_variant(ty)?;
+
         match *ty.normalize() {
             Type::Lit(..) => {}
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ty:
-                    box Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    }),
-                ..
-            }) => {}
-            _ if is_symbol_access => {}
+
+            _ if is_symbol_access || ty.is_symbol_like() => {}
             _ => errors.push(ErrorKind::TS1166 { span }.into()),
         }
 
@@ -1315,8 +1339,8 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Implement this.
     fn report_errors_for_conflicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
-    fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
-        if self.is_builtin {
+    fn report_errors_for_wrong_implementations_of_class(&mut self, name: Option<Span>, class: &ArcCow<ClassDef>) {
+        if self.config.is_builtin {
             return;
         }
 
@@ -1326,7 +1350,7 @@ impl Analyzer<'_, '_> {
 
         let class_ty = Type::Class(Class {
             span: class.span,
-            def: box class.clone(),
+            def: class.clone(),
             metadata: ClassMetadata {
                 common: class.metadata.common,
                 ..Default::default()
@@ -1340,6 +1364,7 @@ impl Analyzer<'_, '_> {
                 let parent = self
                     .type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?
                     .freezed();
+                let parent = self.instantiate_class(parent.span(), &parent)?;
 
                 self.assign_with_opts(
                     &mut Default::default(),
@@ -1376,10 +1401,19 @@ impl Analyzer<'_, '_> {
                                 .collect(),
                         }
                     } else {
-                        if let ErrorKind::MissingFields { .. } = err {
-                            return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() };
+                        match err {
+                            ErrorKind::Errors { errors, span } => {
+                                for e in &errors {
+                                    if let ErrorKind::MissingFields { .. } = **e {
+                                        return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() };
+                                    }
+                                }
+
+                                ErrorKind::Errors { errors, span }
+                            }
+                            ErrorKind::MissingFields { .. } => ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() },
+                            _ => err,
                         }
-                        err
                     }
                 })?;
             };
@@ -1437,6 +1471,13 @@ impl Analyzer<'_, '_> {
                                     {
                                         self.storage
                                             .report(ErrorKind::DefinedWithAccessorInSuper { span: p.key.span() }.into())
+                                    }
+
+                                    if super_property.accessibility == Some(Accessibility::Private)
+                                        && p.accessibility != Some(Accessibility::Private)
+                                    {
+                                        self.storage
+                                            .report(ErrorKind::PrivatePropertyIsDifferent { span: super_ty.span() }.into())
                                     }
 
                                     continue 'outer;
@@ -1514,7 +1555,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ClassDef> {
+    fn validate(&mut self, c: &RClass, type_ann: Option<&Type>) -> VResult<ArcCow<ClassDef>> {
         let marks = self.marks();
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -1567,10 +1608,19 @@ impl Analyzer<'_, '_> {
                 // Then, we can expand super class
 
                 let super_type_params = try_opt!(c.super_type_params.validate_with(child));
+
                 match &c.super_class {
                     Some(box expr) => {
                         let need_base_class = !matches!(expr, RExpr::Ident(..));
-                        let super_ty = expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
+                        let super_ty = expr
+                            .validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))
+                            .context("tried to validate super class")
+                            .convert_err(|err| match err {
+                                ErrorKind::TypeUsedAsVar { span, name } => ErrorKind::CannotExtendTypeOnlyItem { span, name },
+                                _ => err,
+                            })
+                            .report(&mut child.storage)
+                            .unwrap_or_else(|| Type::any(expr.span(), Default::default()));
                         child.validate_with(|a| match super_ty.normalize() {
                             Type::Lit(..)
                             | Type::Keyword(KeywordType {
@@ -1632,7 +1682,7 @@ impl Analyzer<'_, '_> {
                                 });
 
                                 if has_class_in_super {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
@@ -1654,7 +1704,7 @@ impl Analyzer<'_, '_> {
                                         }],
                                     })));
                                 } else {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
+                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         declare: false,
@@ -1709,7 +1759,7 @@ impl Analyzer<'_, '_> {
             child.report_errors_for_statics_mixed_with_instances(c).report(&mut child.storage);
             child.report_errors_for_duplicate_class_members(c).report(&mut child.storage);
 
-            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty).freezed());
+            child.scope.super_class = super_class.clone();
             {
                 // Validate constructors
                 let constructors_with_body = c
@@ -1747,6 +1797,16 @@ impl Analyzer<'_, '_> {
             let body = {
                 let mut declared_static_keys = vec![];
                 let mut declared_instance_keys = vec![];
+
+                // Handle static properties
+                for (index, node) in c.body.iter().enumerate() {
+                    if let RClassMember::TsIndexSignature(..) = node {
+                        let m = node.validate_with_args(child, type_ann)?;
+                        if let Some(member) = m {
+                            child.scope.this_class_members.push((index, member));
+                        }
+                    }
+                }
 
                 // Handle static properties
                 for (index, node) in c.body.iter().enumerate() {
@@ -1966,7 +2026,7 @@ impl Analyzer<'_, '_> {
 
             let body = body.into_iter().map(|v| v.1).collect_vec();
 
-            let class = ClassDef {
+            let class = ArcCow::new_freezed(ClassDef {
                 span: c.span,
                 name,
                 is_abstract: c.is_abstract,
@@ -1976,7 +2036,7 @@ impl Analyzer<'_, '_> {
                 implements,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            };
+            });
 
             child
                 .report_errors_for_class_member_incompatible_with_index_signature(&class)
@@ -2026,6 +2086,7 @@ impl Analyzer<'_, '_> {
                         // initialized = true
                         true,
                         // declare Class does not allow multiple declarations.
+                        false,
                         false,
                         false,
                     ) {
@@ -2222,7 +2283,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_super_class(&mut self, span: Span, ty: &Type) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 
@@ -2256,7 +2317,7 @@ impl Analyzer<'_, '_> {
         Ok(match ty.normalize() {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
-                def: box def.clone(),
+                def: def.clone(),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }),
@@ -2291,6 +2352,7 @@ impl Analyzer<'_, '_> {
             // initialized = true
             true,
             // declare Class does not allow multiple declarations.
+            false,
             false,
             false,
         ) {

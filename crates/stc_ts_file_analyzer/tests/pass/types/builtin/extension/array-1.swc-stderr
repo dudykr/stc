@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/builtin/extension/array-1.ts:7:1]
+   ,-[$DIR/tests/pass/types/builtin/extension/array-1.ts:6:1]
+ 6 | 
  7 | let x = a.equalsShallow();
    :         ^
    `----
@@ -9,7 +10,8 @@ Error:
   > ((string | number))[]
 
   x Type
-   ,-[$DIR/tests/pass/types/builtin/extension/array-1.ts:7:1]
+   ,-[$DIR/tests/pass/types/builtin/extension/array-1.ts:6:1]
+ 6 | 
  7 | let x = a.equalsShallow();
    :         ^^^^^^^^^^^^^^^^^
    `----

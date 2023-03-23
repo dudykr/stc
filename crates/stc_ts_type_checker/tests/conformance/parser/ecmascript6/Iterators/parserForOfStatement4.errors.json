@@ -1,1 +1,1 @@
-[{"line":1,"column":10,"code":"TS1190"},{"line":1,"column":19,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript6/Iterators/parserForOfStatement4.ts","line":1,"column":10,"code":"TS1190"},{"filename":"tests/cases/conformance/parser/ecmascript6/Iterators/parserForOfStatement4.ts","line":1,"column":19,"code":"TS2304"}]

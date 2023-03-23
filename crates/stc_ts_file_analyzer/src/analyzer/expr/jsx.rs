@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::{
     RBool, RJSXAttrName, RJSXAttrOrSpread, RJSXAttrValue, RJSXElement, RJSXElementChild, RJSXElementName, RJSXExpr, RJSXExprContainer,
     RJSXFragment, RJSXMemberExpr, RJSXNamespacedName, RJSXObject, RJSXSpreadChild, RJSXText, RTsLit,
@@ -13,7 +15,7 @@ use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 
-use super::{AccessPropertyOpts, TypeOfMode};
+use super::{call_new::ExtractKind, AccessPropertyOpts, TypeOfMode};
 use crate::{
     analyzer::{assign::AssignOpts, util::ResultExt, Analyzer},
     validator::ValidateWith,
@@ -22,12 +24,58 @@ use crate::{
 
 #[derive(Debug)]
 pub enum ResolvedJsxName {
-    /// [Type] is the object.
+    /// `(props)`
     Intrinsic(Type),
-    Value(Type),
+
+    /// `(type, props)`
+    Value(Type, Type),
 }
 
 impl Analyzer<'_, '_> {
+    fn get_jsx_prop_name(&mut self, span: Span) -> Option<JsWord> {
+        if let Some(jsx_cache) = self.data.jsx_prop_name.clone() {
+            return jsx_cache;
+        }
+        let jsx_cache = self.get_jsx_prop_name_no_cache(span);
+        self.data.jsx_prop_name = Some(jsx_cache.clone());
+        jsx_cache
+    }
+
+    fn get_jsx_prop_name_no_cache(&mut self, span: Span) -> Option<JsWord> {
+        let jsx = self.get_jsx_namespace()?;
+
+        let ty = self
+            .access_property(
+                span,
+                &jsx,
+                &Key::Normal {
+                    span,
+                    sym: "ElementAttributesProperty".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            )
+            .ok()?;
+
+        let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty)).ok()??;
+
+        if ty.members.len() == 1 {
+            match &ty.members[0] {
+                TypeElement::Property(PropertySignature {
+                    key: Key::Normal { sym, .. },
+                    ..
+                }) => Some(sym.clone()),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
     fn get_jsx_intrinsic_element(&mut self, span: Span, sym: &JsWord) -> VResult<Type> {
         if let Some(jsx) = self.get_jsx_intrinsic_element_list(span)? {
             self.access_property(
@@ -83,6 +131,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )
+            .convert_err(|err| ErrorKind::ImplicitAnyBecauseThereIsNoJsxInterface { span: err.span() })
             .context("tried to get JSX.IntrinsicElements")?,
         ))
     }
@@ -115,7 +164,27 @@ impl Analyzer<'_, '_> {
                         let value = match &attr.value {
                             Some(v) => {
                                 // TODO(kdy1): Pass down type annotation
-                                v.validate_with_args(self, None)?
+
+                                let props_object = match name {
+                                    ResolvedJsxName::Intrinsic(v) => v,
+                                    ResolvedJsxName::Value(_, props) => props,
+                                };
+
+                                let res = self.access_property(
+                                    attr_name.span,
+                                    props_object,
+                                    &Key::Normal {
+                                        span: attr_name.span,
+                                        sym: attr_name.sym.clone(),
+                                    },
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    Default::default(),
+                                );
+
+                                let type_ann = res.ok();
+
+                                v.validate_with_args(self, type_ann.as_ref())?
                             }
                             None => Some(Type::Lit(LitType {
                                 span: attr_name.span,
@@ -174,12 +243,29 @@ impl Analyzer<'_, '_> {
                     &object,
                     AssignOpts {
                         span: jsx_element_span,
+                        allow_missing_fields: true,
                         ..Default::default()
                     },
                 )
+                .context("tried to assign attributes to intrinsic jsx element")
                 .report(&mut self.storage);
             }
-            ResolvedJsxName::Value(name) => {}
+            ResolvedJsxName::Value(name, props) => {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    props,
+                    &object,
+                    AssignOpts {
+                        span: jsx_element_span,
+                        allow_missing_fields: true,
+                        // TODO: Remove the line below after fixing inference issues
+                        allow_unknown_rhs: Some(true),
+                        ..Default::default()
+                    },
+                )
+                .context("tried to assign attributes to custom jsx element")
+                .report(&mut self.storage);
+            }
         }
 
         Ok(())
@@ -189,23 +275,36 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElement, type_ann: Option<&Type>) -> VResult<Type> {
-        let mut name = e.opening.name.validate_with(self)?;
-        let children = e.children.validate_with(self)?;
+        let name = e.opening.name.validate_with(self)?;
 
-        match &mut name {
-            ResolvedJsxName::Intrinsic(name) => {
-                name.freeze();
-            }
-            ResolvedJsxName::Value(name) => {
-                name.freeze();
-            }
-        }
+        let type_ann_for_children = {
+            let obj = match &name {
+                ResolvedJsxName::Intrinsic(name) => name,
+                ResolvedJsxName::Value(_, props) => props,
+            };
+
+            let type_ann_res = self.access_property(
+                e.span,
+                obj,
+                &Key::Normal {
+                    span: e.span,
+                    sym: "children".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                Default::default(),
+            );
+
+            type_ann_res.ok()
+        };
+
+        let children = e.children.validate_with_args(self, type_ann_for_children.as_ref())?;
 
         self.validate_jsx_attrs(e.span, &name, &e.opening.attrs).report(&mut self.storage);
 
         match name {
             ResolvedJsxName::Intrinsic(name) => Ok(name),
-            ResolvedJsxName::Value(name) => Ok(name),
+            ResolvedJsxName::Value(name, props) => Ok(name),
         }
     }
 }
@@ -213,7 +312,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<Type> {
-        let children = e.children.validate_with(self)?;
+        let children = e.children.validate_with_default(self)?;
 
         self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
     }
@@ -221,10 +320,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RJSXElementChild) -> VResult<Option<Type>> {
+    fn validate(&mut self, e: &RJSXElementChild, type_ann: Option<&Type>) -> VResult<Option<Type>> {
         match e {
             RJSXElementChild::JSXText(e) => e.validate_with(self).map(Some),
-            RJSXElementChild::JSXExprContainer(e) => e.validate_with_default(self),
+            RJSXElementChild::JSXExprContainer(e) => e.validate_with_args(self, type_ann),
             RJSXElementChild::JSXSpreadChild(e) => e.validate_with(self).map(Some),
             RJSXElementChild::JSXElement(e) => e.validate_with_default(self).map(Some),
             RJSXElementChild::JSXFragment(e) => e.validate_with_default(self).map(Some),
@@ -271,17 +370,50 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXElementName) -> VResult<ResolvedJsxName> {
-        match e {
+        let ty = match e {
             RJSXElementName::Ident(ident) => {
                 if ident.sym.starts_with(|c: char| c.is_ascii_uppercase()) {
-                    ident.validate_with_default(self).map(ResolvedJsxName::Value)
+                    ident.validate_with_default(self)?
                 } else {
-                    self.get_jsx_intrinsic_element(ident.span, &ident.sym)
-                        .map(ResolvedJsxName::Intrinsic)
+                    return self
+                        .get_jsx_intrinsic_element(ident.span, &ident.sym)
+                        .map(ResolvedJsxName::Intrinsic);
                 }
             }
-            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self).map(ResolvedJsxName::Value),
-            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self).map(ResolvedJsxName::Value),
+            RJSXElementName::JSXMemberExpr(e) => e.validate_with(self)?,
+            RJSXElementName::JSXNamespacedName(e) => e.validate_with(self)?,
+        }
+        .freezed();
+
+        let span = e.span();
+        let jsx_prop_name = self.get_jsx_prop_name(span);
+
+        let props = match jsx_prop_name {
+            Some(jsx_prop_name) => self
+                .access_property(
+                    span,
+                    &ty,
+                    &Key::Normal { span, sym: jsx_prop_name },
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                )
+                .ok(),
+            None => {
+                let constructors = self.extract_callee_candidates(span, ExtractKind::New, &ty)?;
+
+                if constructors.len() == 1 && !constructors[0].params.is_empty() {
+                    Some(*constructors[0].params[0].ty.clone())
+                } else {
+                    None
+                }
+            }
+        };
+
+        if let Some(props) = props {
+            Ok(ResolvedJsxName::Value(ty, props))
+        } else {
+            Ok(ResolvedJsxName::Value(ty, Type::any(span, Default::default())))
         }
     }
 }

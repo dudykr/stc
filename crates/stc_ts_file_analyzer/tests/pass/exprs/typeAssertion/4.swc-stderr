@@ -1,62 +1,76 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:6:5]
- 6 | let x: string | number | undefined = undefined;
-   :                                      ^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:5:1]
+ 5 | export function f2() {
+ 6 |     let x: string | number | undefined = undefined;
+   :                                          ^^^^^^^^^
+ 7 |     x;  // undefined
    `----
 
 Error: 
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:7:5]
- 7 | x;  // undefined
-   : ^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:6:1]
+ 6 |     let x: string | number | undefined = undefined;
+ 7 |     x;  // undefined
+   :     ^
+ 8 |     if (typeof x === "string") {
    `----
 
 Error: 
   > (string | number | undefined)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
- 8 | if (typeof x === "string") {
-   :            ^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:7:1]
+ 7 |     x;  // undefined
+ 8 |     if (typeof x === "string") {
+   :                ^
+ 9 |         x;  // string (guard as assertion)
    `----
 
 Error: 
   > (string | number | undefined)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
- 8 | if (typeof x === "string") {
-   :     ^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:7:1]
+ 7 |     x;  // undefined
+ 8 |     if (typeof x === "string") {
+   :         ^^^^^^^^
+ 9 |         x;  // string (guard as assertion)
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:5]
- 8 | if (typeof x === "string") {
-   :     ^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:7:1]
+ 7 |     x;  // undefined
+ 8 |     if (typeof x === "string") {
+   :         ^^^^^^^^^^^^^^^^^^^^^
+ 9 |         x;  // string (guard as assertion)
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:9:9]
- 9 | x;  // string (guard as assertion)
-   : ^
-   `----
+    ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:8:1]
+  8 |     if (typeof x === "string") {
+  9 |         x;  // string (guard as assertion)
+    :         ^
+ 10 |     }
+    `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:11:5]
- 11 | x;  // string | undefined
-    : ^
+    ,-[$DIR/tests/pass/exprs/typeAssertion/4.ts:10:1]
+ 10 |     }
+ 11 |     x;  // string | undefined
+    :     ^
+ 12 | }
     `----
 
 Error: 

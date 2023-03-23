@@ -1,1 +1,1 @@
-[{"line":2,"column":11,"code":"TS1309"},{"line":4,"column":5,"code":"TS1309"}]
+[{"filename":"tests/cases/conformance/node/index.ts","line":2,"column":11,"code":"TS1378"},{"filename":"tests/cases/conformance/node/index.ts","line":4,"column":5,"code":"TS1432"},{"filename":"tests/cases/conformance/node/subfolder/index.ts","line":2,"column":11,"code":"TS1309"},{"filename":"tests/cases/conformance/node/subfolder/index.ts","line":4,"column":5,"code":"TS1309"}]

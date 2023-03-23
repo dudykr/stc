@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/2.ts:4:5]
- 4 | obj = x;
-   :       ^
+   ,-[$DIR/tests/pass/types/mapped/2.ts:3:1]
+ 3 |     let obj: { [x: string]: any };
+ 4 |     obj = x;
+   :           ^
+ 5 |     obj = y;
    `----
 
 Error: 
@@ -11,9 +13,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/2.ts:4:5]
- 4 | obj = x;
-   : ^^^^^^^
+   ,-[$DIR/tests/pass/types/mapped/2.ts:3:1]
+ 3 |     let obj: { [x: string]: any };
+ 4 |     obj = x;
+   :     ^^^^^^^
+ 5 |     obj = y;
    `----
 
 Error: 
@@ -22,9 +26,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/2.ts:5:5]
- 5 | obj = y;
-   :       ^
+   ,-[$DIR/tests/pass/types/mapped/2.ts:4:1]
+ 4 |     obj = x;
+ 5 |     obj = y;
+   :           ^
+ 6 | }
    `----
 
 Error: 
@@ -33,9 +39,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/2.ts:5:5]
- 5 | obj = y;
-   : ^^^^^^^
+   ,-[$DIR/tests/pass/types/mapped/2.ts:4:1]
+ 4 |     obj = x;
+ 5 |     obj = y;
+   :     ^^^^^^^
+ 6 | }
    `----
 
 Error: 

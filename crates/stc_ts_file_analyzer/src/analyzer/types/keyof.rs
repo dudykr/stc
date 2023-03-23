@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref, Type,
-    TypeElement, Union,
+    Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref,
+    Type, TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt, try_cache};
 use swc_atoms::js_word;
@@ -45,7 +45,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
         }
 
@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                             }
                         }
-                        Ok(Type::new_union(span, types))
+                        Ok(Type::new_union(span, types).freezed())
                     })
                     .fixed());
                 }
@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                     //
                     // Class instance cannot be operand, but it can be passed as argument while
                     // normalizing.
-                    return self.keyof(span, &Type::ClassDef(*def.clone()));
+                    return self.keyof(span, &Type::ClassDef(def.clone()));
                 }
 
                 Type::ClassDef(cls) => {
@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(..) | Type::Enum(..) => {
                     let ty = self
-                        .convert_type_to_type_lit(span, ty)?
+                        .convert_type_to_type_lit(span, ty.freezed())?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                         .unwrap();
@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::new_union(span, types));
+                    return Ok(Type::new_union(span, types).freezed());
                 }
 
                 Type::Union(u) => {
@@ -348,18 +348,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(..) => {
-                    return Ok(Type::Keyword(KeywordType {
+                    return Ok(Type::Index(Index {
                         span,
-                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ty: box ty.into_owned(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }))
+                    })
+                    .freezed());
                 }
 
                 Type::Mapped(m) => {
                     //
                     if let Some(ty) = m.type_param.constraint.as_deref() {
-                        return self.keyof(span, ty);
+                        return Ok(ty.clone());
                     }
                 }
 

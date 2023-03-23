@@ -1,0 +1,17 @@
+{
+  "required_errors": {
+    "TS2821": 6
+  },
+  "required_error_lines": {
+    "TS2821": [
+      1,
+      2,
+      3,
+      4,
+      1,
+      2
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
+}

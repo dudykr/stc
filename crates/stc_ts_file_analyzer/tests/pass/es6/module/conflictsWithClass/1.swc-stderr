@@ -1,27 +1,33 @@
 
   x Type
-   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:8:3]
- 8 | var inside = foo
-   :              ^^^
+   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:7:1]
+ 7 | module Foo {
+ 8 |   var inside = foo
+   :                ^^^
+ 9 |   var a = inside.a
    `----
 
 Error: 
   > Foo
 
   x Type
-   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:9:3]
- 9 | var a = inside.a
-   :         ^^^^^^
-   `----
+    ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:8:1]
+  8 |   var inside = foo
+  9 |   var a = inside.a
+    :           ^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > Foo
 
   x Type
-   ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:9:3]
- 9 | var a = inside.a
-   :         ^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/es6/module/conflictsWithClass/1.ts:8:1]
+  8 |   var inside = foo
+  9 |   var a = inside.a
+    :           ^^^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > string

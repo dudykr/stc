@@ -1,69 +1,83 @@
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:5:1]
+ 5 | function fn5(f: (n: number) => void): number;
  6 | function fn5() { return undefined; }
    :                         ^^^^^^^^^
+ 7 | var n = fn5((n) => n.toFixed());
    `----
 
 Error: 
   > undefined
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+ 6 | function fn5() { return undefined; }
  7 | var n = fn5((n) => n.toFixed());
    :         ^^^
+ 8 | var s = fn5((n) => n.substr(0));
    `----
 
 Error: 
-  > (() => any | (f: (n: string) => void) => string)
+  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number)
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+ 6 | function fn5() { return undefined; }
  7 | var n = fn5((n) => n.toFixed());
    :                    ^
+ 8 | var s = fn5((n) => n.substr(0));
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+ 6 | function fn5() { return undefined; }
  7 | var n = fn5((n) => n.toFixed());
    :                    ^^^^^^^^^^^
+ 8 | var s = fn5((n) => n.substr(0));
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+ 6 | function fn5() { return undefined; }
  7 | var n = fn5((n) => n.toFixed());
    :             ^^^^^^^^^^^^^^^^^^
+ 8 | var s = fn5((n) => n.substr(0));
    `----
 
 Error: 
   > (n: any) => any
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+ 6 | function fn5() { return undefined; }
  7 | var n = fn5((n) => n.toFixed());
    :         ^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | var s = fn5((n) => n.substr(0));
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
  8 | var s = fn5((n) => n.substr(0));
    :         ^^^
    `----
 
 Error: 
-  > (() => any | (f: (n: string) => void) => string | (f: (n: number) => void) => number)
+  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number)
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
  8 | var s = fn5((n) => n.substr(0));
    :                    ^
    `----
@@ -72,7 +86,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
  8 | var s = fn5((n) => n.substr(0));
    :                    ^^^^^^^^^^^
    `----
@@ -81,7 +96,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
  8 | var s = fn5((n) => n.substr(0));
    :             ^^^^^^^^^^^^^^^^^^
    `----
@@ -90,7 +106,8 @@ Error:
   > (n: any) => any
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
  8 | var s = fn5((n) => n.substr(0));
    :         ^^^^^^^^^^^^^^^^^^^^^^^
    `----

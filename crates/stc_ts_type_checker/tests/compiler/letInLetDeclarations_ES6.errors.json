@@ -1,1 +1,1 @@
-[{"line":2,"column":13,"code":"TS2480"},{"line":5,"column":17,"code":"TS2480"}]
+[{"filename":"tests/cases/compiler/letInLetDeclarations_ES6.ts","line":2,"column":13,"code":"TS2480"},{"filename":"tests/cases/compiler/letInLetDeclarations_ES6.ts","line":5,"column":17,"code":"TS2480"}]

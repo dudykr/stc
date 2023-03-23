@@ -1,14 +1,14 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::max};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{ClassDef, Constructor, FnParam, Function, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
-use stc_utils::cache::Freeze;
+use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -17,11 +17,11 @@ use tracing::debug;
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
-        expr::GetIteratorOpts,
+        expr::{AccessPropertyOpts, GetIteratorOpts, TypeOfMode},
         generic::InferTypeOpts,
         Analyzer,
     },
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -39,13 +39,11 @@ impl Analyzer<'_, '_> {
         r_ret_ty: Option<&Type>,
         opts: AssignOpts,
     ) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_fn_like").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_fn_like");
 
         let span = opts.span.with_ctxt(SyntaxContext::empty());
+
+        let _stack = stack::track(span)?;
 
         if let Some(r_ret_ty) = r_ret_ty {
             // Fast path for
@@ -58,12 +56,12 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath") && l_params.len() == 1 && l_params[0].ty.is_type_param() && l_params[0].ty.span().is_dummy() {
                 if let Some(l_ret_ty) = l_ret_ty {
-                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(r_ret_ty, "Promise") {
+                    if let Some(r_ret_ty) = unwrap_builtin_with_single_arg(r_ret_ty, "Promise") {
                         if let Type::Union(l_ret_ty) = l_ret_ty.normalize() {
                             // Exact match
                             if l_ret_ty.types.len() == 4
                                 && l_ret_ty.types[0].is_type_param()
-                                && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
+                                && unwrap_builtin_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
                                 && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                                 && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
                             {
@@ -232,7 +230,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -240,7 +239,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
 
                 let map = self.infer_type_with_types(
                     span,
@@ -286,7 +286,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -294,7 +295,8 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                });
+                })
+                .freezed();
 
                 let map = self.infer_type_with_types(
                     span,
@@ -347,10 +349,12 @@ impl Analyzer<'_, '_> {
             _ => (r_params, r_ret_ty),
         };
 
+        let mut params_done = false;
+
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
             if self.assign_params(data, r_params, l_params, opts).is_ok() {
-                return Ok(());
+                params_done = true;
             }
         }
 
@@ -359,9 +363,8 @@ impl Analyzer<'_, '_> {
         // is assignable to
         //
         // (t: unknown, t1: unknown) => void
-        //
-        // So we check for length first.
-        if !r_params.is_empty() {
+
+        if !params_done {
             self.assign_params(
                 data,
                 l_params,
@@ -408,11 +411,7 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     pub(super) fn assign_to_function(&mut self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_function").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_function");
 
         let span = opts.span;
         let r = r.normalize();
@@ -525,11 +524,7 @@ impl Analyzer<'_, '_> {
         r: &Type,
         opts: AssignOpts,
     ) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_to_constructor").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_to_constructor");
 
         let span = opts.span;
         let r = r.normalize();
@@ -555,9 +550,8 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
-            }
+            Type::Lit(..) | Type::Function(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
+            Type::ClassDef(c) if c.is_abstract => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
             Type::TypeLit(rt) => {
                 let r_el_cnt = rt.members.iter().filter(|m| matches!(m, TypeElement::Constructor(..))).count();
@@ -605,6 +599,12 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an expanded type to a constructor type");
                 }
             }
+
+            Type::ClassDef(rhs) => {
+                // TODO(kdy1): Implement validation rules
+                return Ok(());
+            }
+
             _ => {}
         }
 
@@ -652,11 +652,7 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `string` is assignable to `...args: any[]`.
     fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_param").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_param");
 
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
@@ -680,11 +676,7 @@ impl Analyzer<'_, '_> {
 
     /// Implementation of `assign_param`.
     fn assign_param_type(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_param_type").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_param_type");
 
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
@@ -824,11 +816,7 @@ impl Analyzer<'_, '_> {
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "assign_params").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("assign_params");
 
         let span = opts.span;
 
@@ -900,6 +888,7 @@ impl Analyzer<'_, '_> {
                     l,
                     AssignOpts {
                         allow_unknown_type: true,
+                        allow_assignment_to_param: false,
                         ..opts
                     },
                 ) {
@@ -922,26 +911,52 @@ impl Analyzer<'_, '_> {
                 }
 
                 (_, RPat::Rest(..)) => {
-                    // If r is a tuple, we should assign each element to l.
-                    let r_ty = self.normalize(Some(span), Cow::Borrowed(&r.ty), Default::default())?;
-                    if let Some(r_tuple) = r_ty.as_tuple() {
-                        let mut ri = r_tuple.elems.iter();
+                    // If r is an iterator, we should assign each element to l.
+                    if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
+                        if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
+                            for idx in 0..max(li.clone().count(), ri.clone().count()) {
+                                let le = self.access_property(
+                                    span,
+                                    &l_iter,
+                                    &Key::Num(RNumber {
+                                        span: l.span,
+                                        value: idx as f64,
+                                        raw: None,
+                                    }),
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_indexing_class_with_computed: true,
+                                        disallow_inexact: true,
+                                        ..Default::default()
+                                    },
+                                )?;
 
-                        let re = ri.next();
-                        if let Some(ri) = re {
-                            self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
-                                format!(
-                                    "tried to assign a rest parameter to parameters; r_ty = {}",
-                                    force_dump_type_as_string(&r.ty)
-                                )
-                            })?;
-                        }
-                        for l in li {
-                            let re = ri.next();
-                            if let Some(ri) = re {
-                                self.assign_param_type(data, &l.ty, &ri.ty, opts).with_context(|| {
+                                let re = self.access_property(
+                                    span,
+                                    &r_iter,
+                                    &Key::Num(RNumber {
+                                        span: r.span,
+                                        value: idx as f64,
+                                        raw: None,
+                                    }),
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_indexing_class_with_computed: true,
+                                        disallow_inexact: true,
+                                        use_last_element_for_tuple_on_out_of_bound: true,
+                                        ..Default::default()
+                                    },
+                                )?;
+
+                                self.assign_param_type(data, &le, &re, opts).with_context(|| {
                                     format!(
-                                        "tried to assign a rest parameter to parameters; r_ty = {} (iter)",
+                                        "tried to assign a rest parameter to parameters; r_ty = {}",
                                         force_dump_type_as_string(&r.ty)
                                     )
                                 })?;

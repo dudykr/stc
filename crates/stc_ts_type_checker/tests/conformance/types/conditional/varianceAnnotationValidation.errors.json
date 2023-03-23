@@ -1,1 +1,1 @@
-[{"line":5,"column":22,"code":"TS2636"},{"line":27,"column":1,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/varianceAnnotationValidation.ts","line":5,"column":22,"code":"TS2636"},{"filename":"tests/cases/compiler/varianceAnnotationValidation.ts","line":27,"column":1,"code":"TS2322"}]

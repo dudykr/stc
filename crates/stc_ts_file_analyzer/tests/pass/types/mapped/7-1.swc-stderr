@@ -1,40 +1,48 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:9:1]
+  9 | 
  10 | let vue = new Vue({
     :               ^^^
+ 11 |     test(): number {
     `----
 
 Error: 
   > new <P>(options: Accessors<P>) => P
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:12:9]
- 12 | return this.x;
-    :        ^^^^
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:11:1]
+ 11 |     test(): number {
+ 12 |         return this.x;
+    :                ^^^^
+ 13 |     },
     `----
 
 Error: 
   > this
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:12:9]
- 12 | return this.x;
-    :        ^^^^^^
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:11:1]
+ 11 |     test(): number {
+ 12 |         return this.x;
+    :                ^^^^^^
+ 13 |     },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:14:5]
- 14 | ,-> hello: {
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:13:1]
+ 13 |         },
+ 14 | ,->     hello: {
  15 | |           get() {
  16 | |               return "hi";
  17 | |           },
  18 | |           set(value: string) {
  19 | |           }
  20 | `->     }
+ 21 |     });
     `----
 
 Error: 
@@ -44,7 +52,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:9:1]
+  9 |     
  10 | ,-> let vue = new Vue({
  11 | |       test(): number {
  12 | |           return this.x;
@@ -69,7 +78,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:10:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:9:1]
+  9 |     
  10 | ,-> let vue = new Vue({
  11 | |       test(): number {
  12 | |           return this.x;
@@ -91,9 +101,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:23:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:22:1]
+ 22 | 
  23 | vue;
     : ^^^
+ 24 | vue.test;
     `----
 
 Error: 
@@ -103,9 +115,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:24:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:23:1]
+ 23 | vue;
  24 | vue.test;
     : ^^^
+ 25 | vue.hello;
     `----
 
 Error: 
@@ -115,16 +129,19 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:24:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:23:1]
+ 23 | vue;
  24 | vue.test;
     : ^^^^^^^^
+ 25 | vue.hello;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:25:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:24:1]
+ 24 | vue.test;
  25 | vue.hello;
     : ^^^
     `----
@@ -136,7 +153,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/7-1.ts:25:1]
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:24:1]
+ 24 | vue.test;
  25 | vue.hello;
     : ^^^^^^^^^
     `----

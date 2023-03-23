@@ -1,1 +1,1 @@
-[{"line":9,"column":12,"code":"TS2511"},{"line":13,"column":6,"code":"TS2345"}]
+[{"filename":"tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractFactoryFunction.ts","line":9,"column":12,"code":"TS2511"},{"filename":"tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractFactoryFunction.ts","line":13,"column":6,"code":"TS2345"}]

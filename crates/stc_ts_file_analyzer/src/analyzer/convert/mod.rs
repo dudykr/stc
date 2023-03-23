@@ -11,23 +11,24 @@ use stc_ts_ast_rnode::{
     RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl,
     RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
-    ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
-    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
-    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem, TplType,
-    TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation,
+    ConstructorSignature, FnParam, Id, IdCtx, ImportType, Index, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata,
+    Interface, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, OptionalType,
+    Predicate, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RefMetadata, RestType, StringMapping, Symbol, ThisType, TplElem,
+    TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, AHashSet};
+use stc_utils::{cache::Freeze, dev_span, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::warn;
 
+use super::NormalizeTypeOpts;
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
@@ -49,7 +50,7 @@ mod interface;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsTypeParamDecl) -> VResult<TypeParamDecl> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             Ok(TypeParamDecl {
                 span: decl.span,
                 params: decl.params.validate_with(self)?,
@@ -182,7 +183,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<Type> {
         let span = d.span;
-
         let alias = {
             self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
                 let type_params = try_opt!(d.type_params.validate_with(child)).map(Box::new);
@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                     RTsType::TsKeywordType(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
-                    }) if !child.is_builtin => {
+                    }) if !child.config.is_builtin => {
                         let span = *span;
                         child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
                         Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
@@ -225,7 +225,34 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }),
 
-                    _ => d.type_ann.validate_with(child)?,
+                    t => match t {
+                        RTsType::TsTypeRef(type_ref) => {
+                            if let RTsEntityName::Ident(t) = &type_ref.type_name {
+                                match &*t.sym {
+                                    "Uppercase" | "Lowercase" | "Capitalize" | "Uncapitalize" => Type::StringMapping(StringMapping {
+                                        span: t.span,
+                                        kind: IntrinsicKind::from(&*t.sym),
+                                        type_args: TypeParamInstantiation {
+                                            span: type_ref.type_params.span(),
+                                            params: type_ref
+                                                .clone()
+                                                .type_params
+                                                .unwrap()
+                                                .params
+                                                .into_iter()
+                                                .map(|v| v.validate_with(child).unwrap())
+                                                .collect(),
+                                        },
+                                        metadata: Default::default(),
+                                    }),
+                                    _ => d.type_ann.validate_with(child)?,
+                                }
+                            } else {
+                                d.type_ann.validate_with(child)?
+                            }
+                        }
+                        _ => d.type_ann.validate_with(child)?,
+                    },
                 };
 
                 let contains_infer_type = contains_infer_type(&ty);
@@ -237,6 +264,21 @@ impl Analyzer<'_, '_> {
                     child.prevent_expansion(&mut ty);
                 }
                 ty.freeze();
+
+                if !child.config.is_builtin {
+                    let res = child.normalize(
+                        Some(span),
+                        Cow::Borrowed(&ty),
+                        NormalizeTypeOpts {
+                            process_only_key: true,
+                            in_type_or_type_param: true,
+                            ..Default::default()
+                        },
+                    );
+                    if let Err(err) = res {
+                        child.storage.report(err);
+                    }
+                }
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,
@@ -254,6 +296,7 @@ impl Analyzer<'_, '_> {
                 Ok(alias)
             })?
         };
+
         self.register_type(d.id.clone().into(), alias.clone());
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
@@ -433,7 +476,7 @@ impl Analyzer<'_, '_> {
         let type_params = try_opt!(d.type_params.validate_with(self));
 
         let key = self.validate_key(&d.key, d.computed)?;
-        if !self.is_builtin && d.computed {
+        if !self.config.is_builtin && d.computed {
             RComputedPropName {
                 node_id: NodeId::invalid(),
                 span: d.key.span(),
@@ -450,7 +493,7 @@ impl Analyzer<'_, '_> {
                 Some(v) => match v {
                     Ok(mut ty) => {
                         // Handle some symbol types.
-                        if self.is_builtin {
+                        if self.config.is_builtin {
                             if ty.is_unique_symbol() || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
                                 let key = match &key {
                                     Key::Normal { sym, .. } => sym,
@@ -588,10 +631,7 @@ impl Analyzer<'_, '_> {
             span,
             elems: t.elem_types.validate_with(self)?,
             metadata: TupleMetadata {
-                common: CommonTypeMetadata {
-                    prevent_tuple_to_array: true,
-                    ..Default::default()
-                },
+                prevent_tuple_to_array: true,
                 ..Default::default()
             },
             tracker: Default::default(),
@@ -652,14 +692,27 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsTypeOperator) -> VResult<Operator> {
-        Ok(Operator {
-            span: ty.span,
-            op: ty.op,
-            ty: box ty.type_ann.validate_with(self)?,
-            metadata: Default::default(),
-            tracker: Default::default(),
-        })
+    fn validate(&mut self, ty: &RTsTypeOperator) -> VResult<Type> {
+        match ty.op {
+            TsTypeOperatorOp::KeyOf => Ok(Type::Index(Index {
+                span: ty.span,
+                ty: box ty.type_ann.validate_with(self)?,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            TsTypeOperatorOp::Unique => Ok(Type::Unique(Unique {
+                span: ty.span,
+                ty: box ty.type_ann.validate_with(self)?,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+            TsTypeOperatorOp::ReadOnly => Ok(Type::Readonly(Readonly {
+                span: ty.span,
+                ty: box ty.type_ann.validate_with(self)?,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })),
+        }
     }
 }
 
@@ -712,7 +765,7 @@ impl Analyzer<'_, '_> {
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
-            if !child.is_builtin {
+            if !child.config.is_builtin {
                 for param in params.iter() {
                     child
                         .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
@@ -782,6 +835,21 @@ impl Analyzer<'_, '_> {
                     }));
                 }
             }
+            RTsEntityName::Ident(ref i) if i.sym == js_word!("ReadonlyArray") && type_args.is_some() => {
+                if type_args.as_ref().unwrap().params.len() == 1 {
+                    return Ok(Type::Readonly(Readonly {
+                        span,
+                        ty: box Type::Array(Array {
+                            span: t.span,
+                            elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                }
+            }
 
             RTsEntityName::Ident(ref i) => {
                 self.report_error_for_type_param_usages_in_static_members(i);
@@ -800,7 +868,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if !self.is_builtin && !found && self.ctx.in_actual_type {
+                    if !self.config.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
@@ -808,7 +876,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 } else {
-                    if !self.is_builtin && self.ctx.in_actual_type {
+                    if !self.config.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
@@ -821,7 +889,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if !self.is_builtin {
+        if !self.config.is_builtin {
             if !cfg!(feature = "profile") {
                 warn!("Creating a ref from TsTypeRef: {:?}", t.type_name);
             }
@@ -950,6 +1018,17 @@ impl Analyzer<'_, '_> {
     }
 }
 
+fn is_valid_index_type(ty: &Type) -> bool {
+    if ty.is_any() || ty.is_symbol_like() || ty.is_num_like() || ty.is_str_like() {
+        return true;
+    }
+
+    match ty.normalize() {
+        Type::Union(Union { types, .. }) => types.iter().all(is_valid_index_type),
+        _ => false,
+    }
+}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
@@ -958,28 +1037,48 @@ impl Analyzer<'_, '_> {
         let obj_type = box t.obj_type.validate_with(self)?;
         let index_type = box t.index_type.validate_with(self)?.freezed();
 
-        if !self.is_builtin {
+        if index_type.is_undefined() || index_type.is_bool() || index_type.is_void() {
+            return Err(ErrorKind::CannotUseTypeAsIndexIndex { span: index_type.span() }.into());
+        }
+
+        if !self.config.is_builtin {
             let ctx = Ctx {
                 disallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let prop_ty = self.with_ctx(ctx).access_property(
+            let prop = Key::Computed(ComputedKey {
                 span,
-                &obj_type,
-                &Key::Computed(ComputedKey {
+                expr: box RExpr::Invalid(RInvalid { span }),
+                ty: index_type.clone(),
+            });
+            let prop_ty = self
+                .with_ctx(ctx)
+                .access_property(
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: index_type.clone(),
-                }),
-                TypeOfMode::RValue,
-                IdCtx::Type,
-                AccessPropertyOpts {
-                    for_validation_of_indexed_access_type: true,
-                    ..Default::default()
-                },
-            );
+                    &obj_type,
+                    &prop,
+                    TypeOfMode::RValue,
+                    IdCtx::Type,
+                    AccessPropertyOpts {
+                        for_validation_of_indexed_access_type: true,
+                        ..Default::default()
+                    },
+                )
+                .convert_err(|err| {
+                    if err.is_property_not_found() && !is_valid_index_type(&prop.ty()) {
+                        ErrorKind::TypeCannotBeUsedForIndex {
+                            span,
+                            prop: box prop.clone(),
+                        }
+                    } else {
+                        err
+                    }
+                });
 
-            prop_ty.report(&mut self.storage);
+            if let Err(err) = prop_ty {
+                self.storage.report(err);
+                return Ok(Type::any(span, Default::default()));
+            }
         }
 
         Ok(Type::IndexedAccessType(IndexedAccessType {
@@ -1050,7 +1149,7 @@ impl Analyzer<'_, '_> {
                 }
                 RTsType::TsKeywordType(ty) => {
                     if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
-                        if !a.is_builtin {
+                        if !a.config.is_builtin {
                             let span = ty.span;
 
                             a.storage.report(
@@ -1079,7 +1178,7 @@ impl Analyzer<'_, '_> {
                 RTsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(a)?),
                 RTsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(a)?),
                 RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(a)?),
-                RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(a)?),
+                RTsType::TsTypeOperator(ty) => return ty.validate_with(a),
                 RTsType::TsParenthesizedType(ty) => return ty.validate_with(a),
                 RTsType::TsTypeRef(ty) => ty.validate_with(a)?,
                 RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(a)?),
@@ -1105,9 +1204,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_type_elements(&mut self, elems: &[TypeElement]) {
-        if self.is_builtin {
+        let _tracing = dev_span!("report_error_for_duplicate_type_elements");
+
+        if self.config.is_builtin {
             return;
         }
 
@@ -1143,9 +1243,10 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
-        if self.is_builtin {
+        let _tracing = dev_span!("report_error_for_duplicate_params");
+
+        if self.config.is_builtin {
             return;
         }
 
@@ -1177,8 +1278,9 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
+        let _tracing = dev_span!("report_error_for_type_param_usages_in_static_members");
+
         let span = i.span;
         let id = i.into();
         let static_method = self.scope.first(|scope| {

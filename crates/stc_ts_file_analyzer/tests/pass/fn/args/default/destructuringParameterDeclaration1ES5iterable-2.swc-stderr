@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:8:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:7:1]
+ 7 | 
  8 | function b2(z = null, o = { x: 0, y: undefined }) { }
    :                                      ^^^^^^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:8:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:7:1]
+ 7 | 
  8 | function b2(z = null, o = { x: 0, y: undefined }) { }
    :                           ^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -21,7 +23,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:1]
+    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:9:1]
+  9 | 
  10 | export default b2("string", { x: 200, y: "string" });
     :                ^^
     `----
@@ -33,7 +36,8 @@ Error:
   | }) => void
 
   x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:1]
+    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:9:1]
+  9 | 
  10 | export default b2("string", { x: 200, y: "string" });
     :                             ^^^^^^^^^^^^^^^^^^^^^^^
     `----
@@ -45,7 +49,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:1]
+    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:9:1]
+  9 | 
  10 | export default b2("string", { x: 200, y: "string" });
     :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----

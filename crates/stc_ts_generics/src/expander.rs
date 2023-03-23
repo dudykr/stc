@@ -6,15 +6,15 @@ use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
-    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
-    InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type,
-    TypeElement, TypeLit, TypeParam,
+    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, Index, IndexSignature,
+    IndexedAccessType, InferType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, PropertySignature, Ref,
+    Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, stack};
 use stc_visit::visit_cache;
 use swc_atoms::js_word;
 use swc_common::{SourceMap, Spanned, DUMMY_SP};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error, info, warn};
 
 use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
@@ -149,13 +149,7 @@ impl GenericExpander<'_> {
                 m.freeze();
 
                 if let Some(constraint) = &m.type_param.constraint {
-                    if let Type::Operator(
-                        operator @ Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ..
-                        },
-                    ) = constraint.normalize()
-                    {
+                    if let Type::Index(operator) = constraint.normalize() {
                         match operator.ty.normalize() {
                             Type::Param(param) if self.params.contains_key(&param.name) => {
                                 let ty = self.params.get(&param.name).unwrap();
@@ -241,43 +235,33 @@ impl GenericExpander<'_> {
 
                 m = m.fold_with(self);
 
-                match m.type_param.constraint {
-                    Some(box Type::TypeLit(lit)) => {
-                        let ty = m.ty.clone();
+                if let Some(Type::TypeLit(lit)) = m.type_param.constraint.as_deref().map(Type::normalize) {
+                    let ty = m.ty.clone();
 
-                        let mut members = lit
-                            .members
-                            .into_iter()
-                            .map(|mut v| match v {
-                                TypeElement::Property(ref mut p) => {
-                                    p.type_ann = ty.clone();
+                    let mut members = lit
+                        .members
+                        .iter()
+                        .cloned()
+                        .map(|mut v| match v {
+                            TypeElement::Property(ref mut p) => {
+                                p.type_ann = ty.clone();
 
-                                    v
-                                }
-                                _ => todo!("type element other than property in a mapped type"),
-                            })
-                            .collect();
+                                v
+                            }
+                            _ => todo!("type element other than property in a mapped type"),
+                        })
+                        .collect();
 
-                        for member in &mut members {
-                            apply_mapped_flags(member, m.optional, m.readonly);
-                        }
-
-                        return Type::TypeLit(TypeLit {
-                            span,
-                            members,
-                            metadata: lit.metadata,
-                            tracker: Default::default(),
-                        });
+                    for member in &mut members {
+                        apply_mapped_flags(member, m.optional, m.readonly);
                     }
 
-                    Some(box Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Union(ref u),
-                        ..
-                    })) => {
-                        error!("Union!");
-                    }
-                    _ => {}
+                    return Type::TypeLit(TypeLit {
+                        span,
+                        members,
+                        metadata: lit.metadata,
+                        tracker: Default::default(),
+                    });
                 }
 
                 // TODO(kdy1): PERF
@@ -338,13 +322,7 @@ impl GenericExpander<'_> {
                 };
 
                 if let Some(constraint) = &m.type_param.constraint {
-                    if let Type::Operator(Operator {
-                        span,
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty,
-                        ..
-                    }) = constraint.normalize()
-                    {
+                    if let Type::Index(Index { span, ty, .. }) = constraint.normalize() {
                         match ty.normalize() {
                             Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return *ty.clone(),
                             Type::TypeLit(TypeLit {
@@ -442,7 +420,9 @@ impl GenericExpander<'_> {
             }
 
             Type::Query(..)
-            | Type::Operator(..)
+            | Type::Index(..)
+            | Type::Readonly(..)
+            | Type::Unique(..)
             | Type::Tuple(..)
             | Type::Infer(..)
             | Type::Import(..)
@@ -645,13 +625,7 @@ impl Fold<Type> for MappedHandler<'_> {
                     ..
                 }) = ty.index_type.normalize()
                 {
-                    if let Type::Operator(
-                        operator @ Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ..
-                        },
-                    ) = index_type_constraint.normalize()
-                    {
+                    if let Type::Index(operator) = index_type_constraint.normalize() {
                         if let Type::Param(constraint_param) = operator.ty.normalize() {
                             if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
                                 return self.prop_ty.clone();

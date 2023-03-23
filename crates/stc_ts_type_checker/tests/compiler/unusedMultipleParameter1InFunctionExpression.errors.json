@@ -1,1 +1,1 @@
-[{"line":1,"column":21,"code":"TS6133"},{"line":1,"column":37,"code":"TS6133"},{"line":2,"column":9,"code":"TS6133"}]
+[{"filename":"tests/cases/compiler/unusedMultipleParameter1InFunctionExpression.ts","line":1,"column":21,"code":"TS6133"},{"filename":"tests/cases/compiler/unusedMultipleParameter1InFunctionExpression.ts","line":1,"column":37,"code":"TS6133"},{"filename":"tests/cases/compiler/unusedMultipleParameter1InFunctionExpression.ts","line":2,"column":9,"code":"TS6133"}]

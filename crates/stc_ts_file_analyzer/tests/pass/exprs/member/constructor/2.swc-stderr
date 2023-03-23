@@ -1,26 +1,43 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:5:1]
+ 5 | var x2: { new(): string }[];
  6 | var r3 = x[1];
    :          ^
+ 7 | var r4 = new r3();
    `----
 
 Error: 
-  > new () => string[]
+  > new() => string[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:5:1]
+ 5 | var x2: { new(): string }[];
+ 6 | var r3 = x[1];
+   :          ^^^^
+ 7 | var r4 = new r3();
+   `----
+
+Error: 
+  > any
 
   x Type
    ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:6:1]
  6 | var r3 = x[1];
-   :          ^^^^
-   `----
-
-Error: 
-  > any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:7:1]
  7 | var r4 = new r3();
    :              ^^
+ 8 | var r4b = new r3();
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:6:1]
+ 6 | var r3 = x[1];
+ 7 | var r4 = new r3();
+   :          ^^^^^^^^
+ 8 | var r4b = new r3();
    `----
 
 Error: 
@@ -29,14 +46,6 @@ Error:
   x Type
    ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:7:1]
  7 | var r4 = new r3();
-   :          ^^^^^^^^
-   `----
-
-Error: 
-  > any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:8:1]
  8 | var r4b = new r3();
    :               ^^
    `----
@@ -45,7 +54,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:8:1]
+   ,-[$DIR/tests/pass/exprs/member/constructor/2.ts:7:1]
+ 7 | var r4 = new r3();
  8 | var r4b = new r3();
    :           ^^^^^^^^
    `----

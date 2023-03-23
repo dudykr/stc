@@ -1,0 +1,18 @@
+{
+  "required_errors": {
+    "TS18033": 2,
+    "TS2332": 2
+  },
+  "required_error_lines": {
+    "TS18033": [
+      31,
+      72
+    ],
+    "TS2332": [
+      32,
+      73
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
+}

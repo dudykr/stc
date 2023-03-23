@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:15:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:14:1]
+ 14 | 
  15 | var sourceObj: EventTargetLike = <any>undefined;
     :                                       ^^^^^^^^^
     `----
@@ -9,7 +10,8 @@ Error:
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:15:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:14:1]
+ 14 | 
  15 | var sourceObj: EventTargetLike = <any>undefined;
     :                                  ^^^^^^^^^^^^^^
     `----
@@ -18,18 +20,22 @@ Error:
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :     ^^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
   > (sourceObj: any) => sourceObj is I1
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :                ^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
@@ -38,27 +44,33 @@ Error:
   | } | I2 | I1)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :     ^^^^^^^^^^^^^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
   > sourceObj is I1
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :                              ^^^^^^^^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
   > (sourceObj: any) => sourceObj is I2
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :                                               ^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
@@ -67,36 +79,44 @@ Error:
   | } | I2)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
   > sourceObj is I2
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:16:1]
+ 16 | 
  17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
     :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 18 |     sourceObj.length;
     `----
 
 Error: 
   > (sourceObj is I1 | sourceObj is I2)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:18:5]
- 18 | sourceObj.length;
-    : ^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+ 17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
+ 18 |     sourceObj.length;
+    :     ^^^^^^^^^
+ 19 | }
     `----
 
 Error: 
   > (I2 | I1)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:18:5]
- 18 | sourceObj.length;
-    : ^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/3.ts:17:1]
+ 17 | if (isNodeList(sourceObj) || isHTMLCollection(sourceObj)) {
+ 18 |     sourceObj.length;
+    :     ^^^^^^^^^^^^^^^^
+ 19 | }
     `----
 
 Error: 

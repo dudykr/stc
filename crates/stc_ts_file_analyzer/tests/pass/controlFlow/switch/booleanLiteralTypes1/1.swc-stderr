@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:3:5]
- 3 | throw new Error("Unexpected value");
-   :           ^^^^^
+   ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:2:1]
+ 2 | function assertNever(x: never): never {
+ 3 |     throw new Error("Unexpected value");
+   :               ^^^^^
+ 4 | }
    `----
 
 Error: 
   > ErrorConstructor
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:3:5]
- 3 | throw new Error("Unexpected value");
-   :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:2:1]
+ 2 | function assertNever(x: never): never {
+ 3 |     throw new Error("Unexpected value");
+   :           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 4 | }
    `----
 
 Error: 
   > Error
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:5]
- 11 | switch (x.kind) {
-    :         ^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:10:1]
+ 10 | function f21(x: Item) {
+ 11 |     switch (x.kind) {
+    :             ^
+ 12 |         case true: return x.a;
     `----
 
 Error: 
@@ -33,27 +39,33 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:5]
- 11 | switch (x.kind) {
-    :         ^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:10:1]
+ 10 | function f21(x: Item) {
+ 11 |     switch (x.kind) {
+    :             ^^^^^^
+ 12 |         case true: return x.a;
     `----
 
 Error: 
   > (true | false)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:9]
- 12 | case true: return x.a;
-    :      ^^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:1]
+ 11 |     switch (x.kind) {
+ 12 |         case true: return x.a;
+    :              ^^^^
+ 13 |         case false: return x.b;
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:9]
- 12 | case true: return x.a;
-    :                   ^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:1]
+ 11 |     switch (x.kind) {
+ 12 |         case true: return x.a;
+    :                           ^
+ 13 |         case false: return x.b;
     `----
 
 Error: 
@@ -63,27 +75,33 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:9]
- 12 | case true: return x.a;
-    :                   ^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:1]
+ 11 |     switch (x.kind) {
+ 12 |         case true: return x.a;
+    :                           ^^^
+ 13 |         case false: return x.b;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:13:9]
- 13 | case false: return x.b;
-    :      ^^^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:1]
+ 12 |         case true: return x.a;
+ 13 |         case false: return x.b;
+    :              ^^^^^
+ 14 |     }
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:13:9]
- 13 | case false: return x.b;
-    :                    ^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:1]
+ 12 |         case true: return x.a;
+ 13 |         case false: return x.b;
+    :                            ^
+ 14 |     }
     `----
 
 Error: 
@@ -93,36 +111,44 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:13:9]
- 13 | case false: return x.b;
-    :                    ^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:1]
+ 12 |         case true: return x.a;
+ 13 |         case false: return x.b;
+    :                            ^^^
+ 14 |     }
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
- 15 | return assertNever(x);
-    :        ^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:14:1]
+ 14 |     }
+ 15 |     return assertNever(x);
+    :            ^^^^^^^^^^^
+ 16 | }
     `----
 
 Error: 
   > (x: never) => never
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
- 15 | return assertNever(x);
-    :                    ^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:14:1]
+ 14 |     }
+ 15 |     return assertNever(x);
+    :                        ^
+ 16 | }
     `----
 
 Error: 
   > never
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
- 15 | return assertNever(x);
-    :        ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:14:1]
+ 14 |     }
+ 15 |     return assertNever(x);
+    :            ^^^^^^^^^^^^^^
+ 16 | }
     `----
 
 Error: 

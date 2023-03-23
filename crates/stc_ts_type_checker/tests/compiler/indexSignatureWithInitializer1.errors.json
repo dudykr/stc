@@ -1,1 +1,1 @@
-[{"line":2,"column":4,"code":"TS1020"},{"line":2,"column":4,"code":"TS2371"}]
+[{"filename":"tests/cases/compiler/indexSignatureWithInitializer1.ts","line":2,"column":4,"code":"TS1020"},{"filename":"tests/cases/compiler/indexSignatureWithInitializer1.ts","line":2,"column":4,"code":"TS2371"}]

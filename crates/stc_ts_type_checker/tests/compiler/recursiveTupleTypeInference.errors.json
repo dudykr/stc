@@ -1,1 +1,1 @@
-[{"line":23,"column":5,"code":"TS2345"}]
+[{"filename":"tests/cases/compiler/recursiveTupleTypeInference.ts","line":23,"column":5,"code":"TS2345"}]

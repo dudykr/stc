@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/vars/typeAnn/fn/3.ts:2:1]
+   ,-[$DIR/tests/pass/vars/typeAnn/fn/3.ts:1:1]
+ 1 | type fn = <A>(a: A) => A;
  2 | const fn: fn = a => a;
    :                     ^
    `----
@@ -9,7 +10,8 @@ Error:
   > A
 
   x Type
-   ,-[$DIR/tests/pass/vars/typeAnn/fn/3.ts:2:1]
+   ,-[$DIR/tests/pass/vars/typeAnn/fn/3.ts:1:1]
+ 1 | type fn = <A>(a: A) => A;
  2 | const fn: fn = a => a;
    :                ^^^^^^
    `----

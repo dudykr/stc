@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    : ^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number) => void
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :    ^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > ArrayConstructor
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :               ^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > [0]
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :    ^^^^^^^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > number[]
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :                     ^^
    `----
@@ -45,7 +50,8 @@ Error:
   > any[]
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :                                     ^^
    `----
@@ -54,7 +60,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :                                          ^^
    `----
@@ -63,7 +70,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :                                     ^^^^^^^
    `----
@@ -72,7 +80,8 @@ Error:
   > number
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    :                         ^^^^^^^^^^^^^^^^^^^
    `----
@@ -81,7 +90,8 @@ Error:
   > (a1: any, a2: any) => number
 
   x Type
-   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:2:1]
+   ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]
+ 1 | declare function f2<a>(as1: a[], as2: a[], cmp: (a1: a, a2: a) => number): void;
  2 | f2(Array.from([0]), [], (a1, a2) => a1 - a2);
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

@@ -1,1 +1,1 @@
-[{"line":4,"column":9,"code":"TS2356"},{"line":5,"column":39,"code":"TS2356"}]
+[{"filename":"tests/cases/compiler/incrementOnTypeParameter.ts","line":4,"column":9,"code":"TS2356"},{"filename":"tests/cases/compiler/incrementOnTypeParameter.ts","line":5,"column":39,"code":"TS2356"}]

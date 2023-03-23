@@ -1,96 +1,117 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:5]
- 3 | return [x];
-   :         ^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:2:1]
+ 2 | function makeArray<T>(x: T): T[] {
+ 3 |     return [x];
+   :             ^
+ 4 | }
    `----
 
 Error: 
   > T
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:5]
- 3 | return [x];
-   :        ^^^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:2:1]
+ 2 | function makeArray<T>(x: T): T[] {
+ 3 |     return [x];
+   :            ^^^
+ 4 | }
    `----
 
 Error: 
   > [T]
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:5]
- 7 | let result = a.slice();
-   :              ^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:6:1]
+ 6 | function append<T>(a: T[], x: T): T[] {
+ 7 |     let result = a.slice();
+   :                  ^
+ 8 |     result.push(x);
    `----
 
 Error: 
   > T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:5]
- 7 | let result = a.slice();
-   :              ^^^^^^^^^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:6:1]
+ 6 | function append<T>(a: T[], x: T): T[] {
+ 7 |     let result = a.slice();
+   :                  ^^^^^^^^^
+ 8 |     result.push(x);
    `----
 
 Error: 
   > T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5]
- 8 | result.push(x);
-   : ^^^^^^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:1]
+ 7 |     let result = a.slice();
+ 8 |     result.push(x);
+   :     ^^^^^^
+ 9 |     return result;
    `----
 
 Error: 
   > T[]
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5]
- 8 | result.push(x);
-   :             ^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:1]
+ 7 |     let result = a.slice();
+ 8 |     result.push(x);
+   :                 ^
+ 9 |     return result;
    `----
 
 Error: 
   > T
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5]
- 8 | result.push(x);
-   : ^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:1]
+ 7 |     let result = a.slice();
+ 8 |     result.push(x);
+   :     ^^^^^^^^^^^^^^
+ 9 |     return result;
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:9:5]
- 9 | return result;
-   :        ^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:1]
+  8 |     result.push(x);
+  9 |     return result;
+    :            ^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > T[]
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:13:1]
+ 13 | 
  14 | let aa = makeArray<Bit>(0);
     :          ^^^^^^^^^
+ 15 | aa = append(aa, 1);
     `----
 
 Error: 
   > <T>(x: T) => T[]
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:13:1]
+ 13 | 
  14 | let aa = makeArray<Bit>(0);
     :          ^^^^^^^^^^^^^^^^^
+ 15 | aa = append(aa, 1);
     `----
 
 Error: 
   > Bit[]
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+ 14 | let aa = makeArray<Bit>(0);
  15 | aa = append(aa, 1);
     :      ^^^^^^
     `----
@@ -99,7 +120,8 @@ Error:
   > <T>(a: T[], x: T) => T[]
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+ 14 | let aa = makeArray<Bit>(0);
  15 | aa = append(aa, 1);
     :             ^^
     `----
@@ -108,7 +130,8 @@ Error:
   > ((0 | 1))[]
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+ 14 | let aa = makeArray<Bit>(0);
  15 | aa = append(aa, 1);
     :      ^^^^^^^^^^^^^
     `----
@@ -117,7 +140,8 @@ Error:
   > ((0 | 1))[]
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+ 14 | let aa = makeArray<Bit>(0);
  15 | aa = append(aa, 1);
     : ^^^^^^^^^^^^^^^^^^
     `----

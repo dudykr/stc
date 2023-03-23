@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
     /// This method is called at the end of each call and each `T` is converted
     /// to `{}` even though span hygiene differs.
     pub(crate) fn replace_invalid_type_params(&mut self, ty: &mut Type) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
 

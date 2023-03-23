@@ -1,1 +1,1 @@
-[{"line":3,"column":10,"code":"TS2449"},{"line":6,"column":10,"code":"TS2449"},{"line":9,"column":6,"code":"TS2449"}]
+[{"filename":"tests/cases/conformance/es6/computedProperties/computedPropertyNamesWithStaticProperty.ts","line":3,"column":10,"code":"TS2449"},{"filename":"tests/cases/conformance/es6/computedProperties/computedPropertyNamesWithStaticProperty.ts","line":6,"column":10,"code":"TS2449"},{"filename":"tests/cases/conformance/es6/computedProperties/computedPropertyNamesWithStaticProperty.ts","line":9,"column":6,"code":"TS2449"}]

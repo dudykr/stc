@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:7:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:6:1]
+ 6 | 
  7 | foo((t: string | number) => t) // string | number
    : ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: (t: T) => T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:7:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:6:1]
+ 6 | 
  7 | foo((t: string | number) => t) // string | number
    :                             ^
    `----
@@ -18,7 +20,8 @@ Error:
   > (string | number)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:7:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:6:1]
+ 6 | 
  7 | foo((t: string | number) => t) // string | number
    :     ^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > (t: (string | number)) => (string | number)
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:7:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-only/union-in-closure-param.ts:6:1]
+ 6 | 
  7 | foo((t: string | number) => t) // string | number
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

@@ -1,1 +1,1 @@
-[{"line":18,"column":5,"code":"TS2322"},{"line":24,"column":5,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/mappedTypeIndexedAccess.ts","line":18,"column":5,"code":"TS2322"},{"filename":"tests/cases/compiler/mappedTypeIndexedAccess.ts","line":24,"column":5,"code":"TS2322"}]

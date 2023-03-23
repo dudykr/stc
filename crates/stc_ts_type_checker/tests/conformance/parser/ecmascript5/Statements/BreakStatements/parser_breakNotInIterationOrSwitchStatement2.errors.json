@@ -1,1 +1,1 @@
-[{"line":3,"column":5,"code":"TS1107"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/Statements/BreakStatements/parser_breakNotInIterationOrSwitchStatement2.ts","line":3,"column":5,"code":"TS1107"}]

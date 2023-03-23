@@ -1,1 +1,1 @@
-[{"line":1,"column":9,"code":"TS1109"},{"line":1,"column":12,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/Expressions/parseIncompleteBinaryExpression1.ts","line":1,"column":9,"code":"TS1109"},{"filename":"tests/cases/conformance/parser/ecmascript5/Expressions/parseIncompleteBinaryExpression1.ts","line":1,"column":12,"code":"TS2304"}]

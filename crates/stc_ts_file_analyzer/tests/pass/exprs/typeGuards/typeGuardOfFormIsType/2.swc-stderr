@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:8:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:7:1]
+ 7 | }
  8 | class D1 extends C1 {
    :                  ^^
+ 9 |     p3: number;
    `----
 
 Error: 
   > typeof C1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:18:1]
+ 18 | var c2Ord1: C2 | D1;
  19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
     :                             ^^^^
     `----
@@ -18,7 +21,8 @@ Error:
   > (x: any) => x is C1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:18:1]
+ 18 | var c2Ord1: C2 | D1;
  19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
     :                                  ^^^^^^
     `----
@@ -27,7 +31,8 @@ Error:
   > (C2 | D1)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:18:1]
+ 18 | var c2Ord1: C2 | D1;
  19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
     :                             ^^^^^^^^^^^^
     `----
@@ -36,7 +41,8 @@ Error:
   > x is C1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:18:1]
+ 18 | var c2Ord1: C2 | D1;
  19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
     :                                             ^^^^^^
     `----
@@ -45,7 +51,8 @@ Error:
   > D1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:19:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/2.ts:18:1]
+ 18 | var c2Ord1: C2 | D1;
  19 | export var r2: false | D1 = isC1(c2Ord1) && c2Ord1; // C2 | D1
     :                             ^^^^^^^^^^^^^^^^^^^^^^
     `----

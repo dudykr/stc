@@ -1,1 +1,1 @@
-[{"line":3,"column":14,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/invokingNonGenericMethodWithTypeArguments1.ts","line":3,"column":14,"code":"TS2339"}]

@@ -27,21 +27,20 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
-use stc_arc_cow::freeze::Freezer;
+use stc_arc_cow::{freeze::Freezer, ArcCow};
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
-    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit, RTsModuleName,
+    RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx,
     ext::TypeVecExt,
     panic_ctx,
 };
 use stc_visit::{Visit, Visitable};
 use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind};
 use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
@@ -175,14 +174,16 @@ pub enum Type {
     Function(Function),
     Constructor(Constructor),
 
-    Operator(Operator),
+    Index(Index),
+    Readonly(Readonly),
+    Unique(Unique),
 
     Param(TypeParam),
     EnumVariant(EnumVariant),
 
     Interface(Interface),
 
-    Enum(Enum),
+    Enum(ArcCow<Enum>),
 
     Mapped(Mapped),
 
@@ -195,7 +196,7 @@ pub enum Type {
     Class(Class),
 
     /// Class definition itself.
-    ClassDef(ClassDef),
+    ClassDef(ArcCow<ClassDef>),
 
     Arc(Freezed),
 
@@ -211,7 +212,7 @@ pub enum Type {
 }
 
 impl Clone for Type {
-    #[instrument(name = "Type::clone", skip(self))]
+    #[instrument(name = "Type::clone", skip_all)]
     fn clone(&self) -> Self {
         match self {
             Type::Arc(ty) => ty.clone().into(),
@@ -243,7 +244,9 @@ impl Clone for Type {
                             Type::Intersection(ty) => ty.clone().into(),
                             Type::Function(ty) => ty.clone().into(),
                             Type::Constructor(ty) => ty.clone().into(),
-                            Type::Operator(ty) => ty.clone().into(),
+                            Type::Index(ty) => ty.clone().into(),
+                            Type::Readonly(ty) => ty.clone().into(),
+                            Type::Unique(ty) => ty.clone().into(),
                             Type::Param(ty) => ty.clone().into(),
                             Type::EnumVariant(ty) => ty.clone().into(),
                             Type::Interface(ty) => ty.clone().into(),
@@ -281,7 +284,7 @@ impl Clone for Type {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Type, [u8; 120]);
+assert_eq_size!(Type, [u8; 112]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -305,7 +308,9 @@ impl TypeEq for Type {
             (Type::Intersection(l), Type::Intersection(r)) => l.type_eq(r),
             (Type::Function(l), Type::Function(r)) => l.type_eq(r),
             (Type::Constructor(l), Type::Constructor(r)) => l.type_eq(r),
-            (Type::Operator(l), Type::Operator(r)) => l.type_eq(r),
+            (Type::Index(l), Type::Index(r)) => l.type_eq(r),
+            (Type::Readonly(l), Type::Readonly(r)) => l.type_eq(r),
+            (Type::Unique(l), Type::Unique(r)) => l.type_eq(r),
             (Type::Param(l), Type::Param(r)) => l.type_eq(r),
             (Type::EnumVariant(l), Type::EnumVariant(r)) => l.type_eq(r),
             (Type::Interface(l), Type::Interface(r)) => l.type_eq(r),
@@ -330,52 +335,27 @@ fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
 
     assert::<Type>();
-    assert::<StaticThis>();
-    assert::<RTsThisType>();
-    assert::<QueryType>();
-    assert::<InferType>();
-    assert::<ImportType>();
-    assert::<Predicate>();
-    assert::<IndexedAccessType>();
-
-    assert::<Ref>();
-    assert::<TypeLit>();
-    assert::<RTsKeywordType>();
-    assert::<Conditional>();
-    assert::<Tuple>();
-    assert::<Array>();
-    assert::<Union>();
-    assert::<Intersection>();
-    assert::<Function>();
-    assert::<Constructor>();
-
-    assert::<Operator>();
-
-    assert::<TypeParam>();
-    assert::<EnumVariant>();
-    assert::<Interface>();
-    assert::<Enum>();
-
-    assert::<Mapped>();
-    assert::<Alias>();
-    assert::<RTsNamespaceDecl>();
-    assert::<Module>();
-
-    assert::<Class>();
-    assert::<ClassDef>();
-
-    assert::<RestType>();
-    assert::<OptionalType>();
-    assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
     Num(RNumber),
     BigInt(RBigInt),
     Private(PrivateName),
+}
+
+impl Debug for Key {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Key::Computed(v) => v.fmt(f),
+            Key::Normal { sym, .. } => write!(f, "{}", sym),
+            Key::Num(v) => write!(f, "{}", v.value),
+            Key::BigInt(v) => write!(f, "{}", v.value),
+            Key::Private(v) => v.fmt(f),
+        }
+    }
 }
 
 impl TypeEq for Key {
@@ -398,14 +378,14 @@ impl TypeEq for Key {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { value: v, .. }),
                         ..
-                    }) => Ok(*v) == sym.parse::<f64>(),
+                    }) => Ok(*v) == sym.parse::<f64>() && *v == sym.parse::<f64>().unwrap(),
                     _ => false,
                 },
                 Key::Num(b) => match &**a {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(RStr { value: v, .. }),
                         ..
-                    }) => Ok(b.value) == v.parse::<f64>(),
+                    }) => Ok(b.value) == v.parse::<f64>() && *v == b.value.to_string(),
                     Type::Lit(LitType {
                         lit: RTsLit::Number(RNumber { value: v, .. }),
                         ..
@@ -424,7 +404,7 @@ impl TypeEq for Key {
 
             (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
             | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
-                Ok(v) => v == *n,
+                Ok(v) => v == *n && *n.to_string() == **s,
                 _ => false,
             },
 
@@ -527,11 +507,17 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
+}
+
+impl Debug for ComputedKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{:?}]", self.ty)
+    }
 }
 
 impl TypeEq for ComputedKey {
@@ -568,9 +554,9 @@ pub struct Instance {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Instance, [u8; 40]);
+assert_eq_size!(Instance, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
     pub span: Span,
 
@@ -580,10 +566,22 @@ pub struct LitType {
     pub tracker: Tracker<"LitType">,
 }
 
-#[cfg(target_pointer_width = "64")]
-assert_eq_size!(LitType, [u8; 104]);
+impl Debug for LitType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.lit {
+            RTsLit::Str(s) => write!(f, "'{}'", s.value),
+            RTsLit::Number(n) => write!(f, "{}", n.value),
+            RTsLit::BigInt(n) => write!(f, "{}n", n.value),
+            RTsLit::Bool(b) => write!(f, "{}", b.value),
+            RTsLit::Tpl(..) => write!(f, "`<tpl>`"),
+        }
+    }
+}
 
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(LitType, [u8; 96]);
+
+#[derive(Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct KeywordType {
     pub span: Span,
 
@@ -594,8 +592,28 @@ pub struct KeywordType {
     pub tracker: Tracker<"KeywordType">,
 }
 
+impl Debug for KeywordType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TsKeywordTypeKind::TsAnyKeyword => write!(f, "any"),
+            TsKeywordTypeKind::TsUnknownKeyword => write!(f, "unknown"),
+            TsKeywordTypeKind::TsNumberKeyword => write!(f, "number"),
+            TsKeywordTypeKind::TsObjectKeyword => write!(f, "object"),
+            TsKeywordTypeKind::TsBooleanKeyword => write!(f, "boolean"),
+            TsKeywordTypeKind::TsBigIntKeyword => write!(f, "bigint"),
+            TsKeywordTypeKind::TsStringKeyword => write!(f, "string"),
+            TsKeywordTypeKind::TsSymbolKeyword => write!(f, "symbol"),
+            TsKeywordTypeKind::TsVoidKeyword => write!(f, "void"),
+            TsKeywordTypeKind::TsUndefinedKeyword => write!(f, "undefined"),
+            TsKeywordTypeKind::TsNullKeyword => write!(f, "null"),
+            TsKeywordTypeKind::TsNeverKeyword => write!(f, "never"),
+            TsKeywordTypeKind::TsIntrinsicKeyword => write!(f, "intrinsic"),
+        }
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(KeywordType, [u8; 32]);
+assert_eq_size!(KeywordType, [u8; 28]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Symbol {
@@ -607,7 +625,7 @@ pub struct Symbol {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Symbol, [u8; 56]);
+assert_eq_size!(Symbol, [u8; 48]);
 
 /// Type of form `...T` .
 ///
@@ -623,7 +641,7 @@ pub struct RestType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(RestType, [u8; 40]);
+assert_eq_size!(RestType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct OptionalType {
@@ -635,7 +653,7 @@ pub struct OptionalType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(OptionalType, [u8; 40]);
+assert_eq_size!(OptionalType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct IndexedAccessType {
@@ -665,13 +683,25 @@ pub struct Ref {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(Ref, [u8; 72]);
 
+fn write_entity_name(f: &mut Formatter<'_>, name: &RTsEntityName) -> Result<(), fmt::Error> {
+    match name {
+        RTsEntityName::Ident(i) => write!(f, "{}", i.sym),
+        RTsEntityName::TsQualifiedName(q) => {
+            write_entity_name(f, &q.left)?;
+            write!(f, ".{}", q.right.sym)
+        }
+    }
+}
+
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write_entity_name(f, &self.type_name)?;
+
         if let Some(type_args) = &self.type_args {
-            write!(f, "{:?}<{:?}>", self.type_name, type_args)
-        } else {
-            write!(f, "{:?}", self.type_name)
+            write!(f, "{:?}", type_args)?
         }
+
+        Ok(())
     }
 }
 
@@ -685,7 +715,7 @@ pub struct InferType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(InferType, [u8; 96]);
+assert_eq_size!(InferType, [u8; 80]);
 
 impl Debug for InferType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -703,7 +733,7 @@ pub struct QueryType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(QueryType, [u8; 40]);
+assert_eq_size!(QueryType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub enum QueryExpr {
@@ -724,7 +754,7 @@ pub struct ImportType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ImportType, [u8; 104]);
+assert_eq_size!(ImportType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Namespace {
@@ -736,7 +766,7 @@ pub struct Namespace {
     pub tracker: Tracker<"Namespace">,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Module {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -747,8 +777,30 @@ pub struct Module {
     pub tracker: Tracker<"Module">,
 }
 
+impl Debug for Module {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        writeln!(f, "module {{")?;
+
+        writeln!(f, "  types:")?;
+
+        for k in self.exports.types.keys() {
+            writeln!(f, "    {}", k)?;
+        }
+
+        writeln!(f, "  vars:")?;
+
+        for k in self.exports.vars.keys() {
+            writeln!(f, "    {}", k)?;
+        }
+
+        write!(f, "}}")?;
+
+        Ok(())
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Module, [u8; 80]);
+assert_eq_size!(Module, [u8; 72]);
 
 /// Enum **definition**.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -756,8 +808,7 @@ pub struct Enum {
     pub span: Span,
     pub declare: bool,
     pub is_const: bool,
-    #[use_eq_ignore_span]
-    pub id: RIdent,
+    pub id: Id,
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
@@ -768,21 +819,36 @@ pub struct Enum {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Enum, [u8; 88]);
+assert_eq_size!(Enum, [u8; 72]);
+
+impl Take for Enum {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            declare: false,
+            is_const: false,
+            id: Id::new(js_word!(""), Default::default()),
+            members: vec![],
+            has_num: false,
+            has_str: false,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumMember {
     pub span: Span,
     #[use_eq_ignore_span]
     pub id: RTsEnumMemberId,
-    #[use_eq_ignore_span]
-    pub val: Box<RExpr>,
+    pub val: Box<Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
-    pub def: Box<ClassDef>,
+    pub def: ArcCow<ClassDef>,
     pub metadata: ClassMetadata,
 
     pub tracker: Tracker<"Class">,
@@ -807,6 +873,22 @@ pub struct ClassDef {
 
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(ClassDef, [u8; 96]);
+
+impl Take for ClassDef {
+    fn dummy() -> Self {
+        Self {
+            span: DUMMY_SP,
+            is_abstract: false,
+            name: None,
+            super_class: None,
+            body: vec![],
+            type_params: None,
+            implements: Default::default(),
+            metadata: ClassDefMetadata::default(),
+            tracker: Default::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum ClassMember {
@@ -877,7 +959,7 @@ pub struct Mapped {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Mapped, [u8; 112]);
+assert_eq_size!(Mapped, [u8; 104]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
@@ -892,7 +974,7 @@ pub struct Conditional {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Conditional, [u8; 64]);
+assert_eq_size!(Conditional, [u8; 56]);
 
 impl Debug for Conditional {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -904,12 +986,36 @@ impl Debug for Conditional {
     }
 }
 
-/// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
-pub struct Operator {
+/// `keyof T`
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct Index {
     pub span: Span,
-    #[use_eq]
-    pub op: TsTypeOperatorOp,
+    pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Index">,
+}
+
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Index, [u8; 32]);
+
+/// `readonly T`
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+pub struct Readonly {
+    pub span: Span,
+    pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
+
+    pub tracker: Tracker<"Index">,
+}
+
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Readonly, [u8; 32]);
+
+/// Currently only used for `unique symbol`.
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
+pub struct Unique {
+    pub span: Span,
     pub ty: Box<Type>,
     pub metadata: OperatorMetadata,
 
@@ -917,15 +1023,12 @@ pub struct Operator {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Operator, [u8; 40]);
+assert_eq_size!(Unique, [u8; 32]);
 
-impl TypeEq for Operator {
-    fn type_eq(&self, other: &Self) -> bool {
-        if let TsTypeOperatorOp::Unique = self.op {
-            return false;
-        }
-
-        self.op == other.op && self.ty.type_eq(&other.ty)
+impl TypeEq for Unique {
+    #[inline]
+    fn type_eq(&self, _: &Self) -> bool {
+        false
     }
 }
 
@@ -972,7 +1075,7 @@ pub struct Alias {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Alias, [u8; 48]);
+assert_eq_size!(Alias, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Interface {
@@ -987,9 +1090,9 @@ pub struct Interface {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Interface, [u8; 104]);
+assert_eq_size!(Interface, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
@@ -1001,12 +1104,45 @@ pub struct TypeLit {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(TypeLit, [u8; 56]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+impl Debug for TypeLit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{{")?;
+        for (i, member) in self.members.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            writeln!(f, "    {:?}", member)?;
+        }
+
+        write!(f, "}}")
+    }
+}
+
+impl TypeLit {
+    pub fn is_empty(&self) -> bool {
+        self.members.is_empty()
+    }
+}
+
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
 
     pub tracker: Tracker<"TypeParamDecl">,
+}
+
+impl Debug for TypeParamDecl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ">")
+    }
 }
 
 /// Typescript expression with type arguments
@@ -1020,7 +1156,7 @@ pub struct TsExpr {
     pub tracker: Tracker<"TsExpr">,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamInstantiation {
     pub span: Span,
 
@@ -1028,13 +1164,38 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
+impl Debug for TypeParamInstantiation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "<")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ">")
+    }
+}
+
+#[derive(Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
     Property(PropertySignature),
     Method(MethodSignature),
     Index(IndexSignature),
+}
+
+impl Debug for TypeElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TypeElement::Call(c) => write!(f, "{:?}", c),
+            TypeElement::Constructor(c) => write!(f, "{:?}", c),
+            TypeElement::Property(p) => write!(f, "{:?}", p),
+            TypeElement::Method(m) => write!(f, "{:?}", m),
+            TypeElement::Index(i) => write!(f, "{:?}", i),
+        }
+    }
 }
 
 impl Take for TypeElement {
@@ -1094,7 +1255,7 @@ pub struct ConstructorSignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct PropertySignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -1111,7 +1272,19 @@ pub struct PropertySignature {
     pub accessor: Accessor,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+impl Debug for PropertySignature {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.key)?;
+
+        if let Some(type_ann) = &self.type_ann {
+            write!(f, ": {:?}", type_ann)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct MethodSignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -1124,6 +1297,28 @@ pub struct MethodSignature {
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
+}
+
+impl Debug for MethodSignature {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.key)?;
+        if let Some(type_params) = &self.type_params {
+            write!(f, "{:?}", type_params)?;
+        }
+        write!(f, "(")?;
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ")")?;
+        if let Some(ret_ty) = &self.ret_ty {
+            write!(f, ": {:?}", ret_ty)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1150,7 +1345,7 @@ impl Take for IndexSignature {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
@@ -1159,8 +1354,14 @@ pub struct Array {
     pub tracker: Tracker<"Array">,
 }
 
+impl Debug for Array {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}[]", self.elem_type)
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Array, [u8; 40]);
+assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1173,7 +1374,7 @@ pub struct Union {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Union, [u8; 56]);
+assert_eq_size!(Union, [u8; 48]);
 
 impl Debug for Union {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1202,13 +1403,27 @@ impl Union {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct FnParam {
     pub span: Span,
     pub required: bool,
     #[not_type]
     pub pat: RPat,
     pub ty: Box<Type>,
+}
+
+impl Debug for FnParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        if !self.required {
+            write!(f, "?")?;
+        }
+
+        write!(f, "{:?}", self.ty)?;
+
+        write!(f, ")")
+    }
 }
 
 /// a & b
@@ -1222,7 +1437,7 @@ pub struct Intersection {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Intersection, [u8; 56]);
+assert_eq_size!(Intersection, [u8; 48]);
 
 impl Debug for Intersection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1249,10 +1464,61 @@ impl Intersection {
 
         self.visit_with(&mut AssertValid);
     }
+
+    pub fn is_trivial_never(iter: &[Type]) -> bool {
+        let mut tys = vec![];
+
+        for ty in iter {
+            if let Type::Intersection(Intersection { types, .. }) = ty {
+                tys.extend(types);
+            } else {
+                tys.push(ty);
+            }
+        }
+        tys.dedup_type();
+
+        if tys.iter().any(|ty| ty.is_never()) {
+            return true;
+        }
+
+        let is_symbol = tys.iter().any(|ty| ty.is_symbol());
+        let is_str = tys.iter().any(|ty| ty.is_str());
+        let is_num = tys.iter().any(|ty| ty.is_num());
+        let is_bool = tys.iter().any(|ty| ty.is_bool());
+        let is_null = tys.iter().any(|ty| ty.is_null());
+        let is_undefined = tys.iter().any(|ty| ty.is_undefined());
+        let is_void = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let is_object = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+        let is_function = tys.iter().any(|ty| ty.is_fn_type());
+        let is_type_lit = tys.iter().any(|ty| ty.is_type_lit());
+
+        if (is_null || is_undefined) && is_type_lit {
+            return true;
+        }
+
+        let sum = u32::from(is_symbol)
+            + u32::from(is_str)
+            + u32::from(is_num)
+            + u32::from(is_bool)
+            + u32::from(is_null)
+            + u32::from(is_undefined)
+            + u32::from(is_void)
+            + u32::from(is_object)
+            + u32::from(is_function);
+
+        if sum > 1 {
+            if sum == 2 && is_undefined && is_void {
+                return false;
+            }
+            return true;
+        }
+
+        false
+    }
 }
 
 /// A type parameter
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
@@ -1263,11 +1529,19 @@ pub struct TypeParam {
     pub tracker: Tracker<"TypeParam">,
 }
 
+impl Debug for TypeParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+
+        Ok(())
+    }
+}
+
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
-    pub enum_name: Id,
+    pub def: ArcCow<Enum>,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
@@ -1276,9 +1550,9 @@ pub struct EnumVariant {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(EnumVariant, [u8; 56]);
+assert_eq_size!(EnumVariant, [u8; 48]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -1289,8 +1563,32 @@ pub struct Function {
     pub tracker: Tracker<"Function">,
 }
 
+impl Debug for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        if let Some(type_params) = &self.type_params {
+            write!(f, "{:?}", type_params)?;
+        }
+
+        write!(f, "(")?;
+
+        for (i, param) in self.params.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", param)?;
+        }
+        write!(f, ") => {:?}", self.ret_ty)?;
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Function, [u8; 104]);
+assert_eq_size!(Function, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Constructor {
@@ -1336,7 +1634,9 @@ struct AssertCloneCheap;
 
 impl Visit<Type> for AssertCloneCheap {
     fn visit(&mut self, ty: &Type) {
-        debug_assert!(ty.is_clone_cheap(), "{:?} is not cheap to clone", ty);
+        if cfg![debug_assertions] && !ty.is_clone_cheap() {
+            unreachable!("{:?} is not cheap to clone", ty);
+        }
     }
 }
 
@@ -1347,7 +1647,7 @@ impl Type {
             return;
         }
 
-        let _ctx = debug_ctx!(format!("assert_clone_cheap: {:?}", self));
+        // let _ctx = panic_ctx!(format!("assert_clone_cheap: {:?}", self));
 
         self.visit_with(&mut AssertCloneCheap);
     }
@@ -1367,21 +1667,27 @@ impl Type {
         }
         tys.dedup_type();
 
-        let has_str = tys.iter().any(|ty| ty.is_str());
-        let has_bool = tys.iter().any(|ty| ty.is_bool());
-        let has_num = tys.iter().any(|ty| ty.is_num());
-
-        if u32::from(has_str) + u32::from(has_bool) + u32::from(has_num) > 1 {
-            return Type::never(span, Default::default());
-        }
-
-        if tys.iter().any(|ty| ty.is_never()) {
+        if Intersection::is_trivial_never(&tys) {
             return Type::never(span, Default::default());
         }
 
         if tys.len() > 1 {
             // In an intersection everything absorbs unknown
             tys.retain(|ty| !ty.is_unknown());
+        }
+
+        if tys.len() > 1
+            && !(tys.len() == 2 && tys.iter().any(|ty| ty.is_type_param() || ty.is_conditional()))
+            && tys.iter().any(|ty| ty.is_type_lit())
+        {
+            // reduce empty type lit
+            tys.retain(|ty| {
+                if let Type::TypeLit(ty) = ty.normalize() {
+                    !ty.is_empty()
+                } else {
+                    true
+                }
+            });
         }
 
         match tys.len() {
@@ -1479,56 +1785,30 @@ impl Type {
         Self::new_union_without_dedup(span, elements)
     }
 
-    /// Creates a new type from `iter`.
-    ///
-    /// Note:
-    ///
-    ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let mut span = DUMMY_SP;
-
-        let mut elements = vec![];
-
-        for ty in iter {
-            let sp = ty.span();
-
-            if sp.lo() < span.lo() {
-                span = span.with_lo(sp.lo());
-            }
-            if sp.hi() > span.hi() {
-                span = span.with_hi(sp.hi());
-            }
-
-            if ty.is_union_type() {
-                let types = ty.expect_union_type().types;
-                for new in types {
-                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
-                        continue;
-                    }
-                    elements.push(new)
+    pub fn union_with_undefined(self, span: Span) -> Type {
+        match self.normalize() {
+            Type::Union(u) => {
+                if u.types.iter().any(|ty| ty.is_undefined()) {
+                    return self;
                 }
-            } else {
-                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
-                    continue;
-                }
-                elements.push(ty)
+
+                let mut u = self.expect_union_type();
+                u.types.push(Type::undefined(span, Default::default()));
+                Type::Union(u)
             }
+
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsUnknownKeyword,
+                ..
+            }) => self,
+
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            }) => Type::undefined(span, Default::default()),
+
+            _ => Self::new_union_without_dedup(span, vec![self, Type::undefined(span, Default::default())]),
         }
-        // Drop `never`s.
-        elements.retain(|ty| !ty.is_never());
-
-        let ty = match elements.len() {
-            0 => Type::never(span, Default::default()),
-            1 => elements.into_iter().next().unwrap(),
-            _ => Type::Union(Union {
-                span,
-                types: elements,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }),
-        };
-        ty.assert_valid();
-        ty
     }
 
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].
@@ -1553,6 +1833,10 @@ impl Type {
             }),
             _ => self,
         }
+    }
+
+    pub fn is_void(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
     }
 
     pub fn contains_void(&self) -> bool {
@@ -1613,11 +1897,7 @@ impl Type {
     pub fn as_array_without_readonly(&self) -> Option<&Array> {
         match self.normalize_instance() {
             Type::Array(t) => Some(t),
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::ReadOnly,
-                ty,
-                ..
-            }) => ty.as_array_without_readonly(),
+            Type::Readonly(ty) => ty.ty.as_array_without_readonly(),
             _ => None,
         }
     }
@@ -1660,12 +1940,8 @@ impl Type {
     }
 
     pub fn is_unique_symbol(&self) -> bool {
-        match self.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::Unique,
-                ref ty,
-                ..
-            }) => ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
+        match self.normalize_instance() {
+            Type::Unique(u) => u.ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
             _ => false,
         }
     }
@@ -1783,17 +2059,6 @@ impl Type {
         self.is_type_param() || self.is_conditional() || self.is_substitution()
     }
 
-    /// Is `self` `keyof` type?
-    pub fn is_index(&self) -> bool {
-        matches!(
-            self.normalize_instance(),
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ..
-            })
-        )
-    }
-
     pub fn is_instantiable_primitive(&self) -> bool {
         self.is_index() || self.is_tpl() || self.is_string_mapping()
     }
@@ -1829,7 +2094,9 @@ impl Type {
             Type::Intersection(ty) => ty.metadata.common,
             Type::Function(ty) => ty.metadata.common,
             Type::Constructor(ty) => ty.metadata.common,
-            Type::Operator(ty) => ty.metadata.common,
+            Type::Index(ty) => ty.metadata.common,
+            Type::Readonly(ty) => ty.metadata.common,
+            Type::Unique(ty) => ty.metadata.common,
             Type::Param(ty) => ty.metadata.common,
             Type::EnumVariant(ty) => ty.metadata.common,
             Type::Interface(ty) => ty.metadata.common,
@@ -1871,17 +2138,19 @@ impl Type {
             Type::Intersection(ty) => &mut ty.metadata.common,
             Type::Function(ty) => &mut ty.metadata.common,
             Type::Constructor(ty) => &mut ty.metadata.common,
-            Type::Operator(ty) => &mut ty.metadata.common,
+            Type::Index(ty) => &mut ty.metadata.common,
+            Type::Readonly(ty) => &mut ty.metadata.common,
+            Type::Unique(ty) => &mut ty.metadata.common,
             Type::Param(ty) => &mut ty.metadata.common,
             Type::EnumVariant(ty) => &mut ty.metadata.common,
             Type::Interface(ty) => &mut ty.metadata.common,
-            Type::Enum(ty) => &mut ty.metadata.common,
+            Type::Enum(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Mapped(ty) => &mut ty.metadata.common,
             Type::Alias(ty) => &mut ty.metadata.common,
             Type::Namespace(ty) => &mut ty.metadata.common,
             Type::Module(ty) => &mut ty.metadata.common,
             Type::Class(ty) => &mut ty.metadata.common,
-            Type::ClassDef(ty) => &mut ty.metadata.common,
+            Type::ClassDef(ty) => &mut ty.normalize_mut().metadata.common,
             Type::Rest(ty) => &mut ty.metadata.common,
             Type::Optional(ty) => &mut ty.metadata.common,
             Type::Symbol(ty) => &mut ty.metadata.common,
@@ -1905,7 +2174,11 @@ impl Type {
         }
 
         match self.normalize_mut() {
-            Type::Operator(ty) => ty.span = span,
+            Type::Index(ty) => ty.span = span,
+
+            Type::Readonly(ty) => ty.span = span,
+
+            Type::Unique(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
 
@@ -1929,7 +2202,7 @@ impl Type {
 
             Type::Constructor(c) => c.span = span,
 
-            Type::Enum(e) => e.span = span,
+            Type::Enum(e) => e.normalize_mut().span = span,
 
             Type::EnumVariant(e) => e.span = span,
 
@@ -1943,7 +2216,7 @@ impl Type {
 
             Type::Class(c) => c.span = span,
 
-            Type::ClassDef(c) => c.span = span,
+            Type::ClassDef(c) => c.normalize_mut().span = span,
 
             Type::Param(p) => p.span = span,
 
@@ -2083,6 +2356,15 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
+    pub fn get_type_param_decl(&self) -> Option<&TypeParamDecl> {
+        match self.normalize() {
+            Type::Class(ty) => ty.def.type_params.as_deref(),
+            Type::ClassDef(ty) => ty.type_params.as_deref(),
+            Type::Interface(Interface { ref type_params, .. }) | Type::Alias(Alias { ref type_params, .. }) => type_params.as_deref(),
+            _ => None,
+        }
+    }
+
     /// Panics if type is invalid. This is debug-build only and it's noop on a
     /// release build.
     ///
@@ -2232,7 +2514,14 @@ impl Type {
     }
 
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
-        Iter {
+        UnionIter {
+            ty: self.normalize(),
+            idx: 0,
+        }
+    }
+
+    pub fn iter_intersection(&self) -> impl Debug + Iterator<Item = &Type> {
+        IntersectionIter {
             ty: self.normalize(),
             idx: 0,
         }
@@ -2240,12 +2529,12 @@ impl Type {
 }
 
 #[derive(Debug)]
-struct Iter<'a> {
+struct UnionIter<'a> {
     ty: &'a Type,
     idx: usize,
 }
 
-impl<'a> Iterator for Iter<'a> {
+impl<'a> Iterator for UnionIter<'a> {
     type Item = &'a Type;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -2266,7 +2555,36 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
-impl FusedIterator for Iter<'_> {}
+impl FusedIterator for UnionIter<'_> {}
+
+#[derive(Debug)]
+struct IntersectionIter<'a> {
+    ty: &'a Type,
+    idx: usize,
+}
+
+impl<'a> Iterator for IntersectionIter<'a> {
+    type Item = &'a Type;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &self.ty {
+            Type::Intersection(ref u) => {
+                let ty = u.types.get(self.idx);
+                self.idx += 1;
+                ty
+            }
+
+            _ if self.idx == 0 => {
+                self.idx = 1;
+                Some(self.ty)
+            }
+
+            _ => None,
+        }
+    }
+}
+
+impl FusedIterator for IntersectionIter<'_> {}
 
 impl Type {
     /// Return true if `self` is a [Type::Ref] pointing to `name`.
@@ -2697,7 +3015,7 @@ pub struct StaticThis {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(StaticThis, [u8; 28]);
+assert_eq_size!(StaticThis, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ThisType {
@@ -2708,7 +3026,7 @@ pub struct ThisType {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(ThisType, [u8; 28]);
+assert_eq_size!(ThisType, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TplType {
@@ -2748,11 +3066,17 @@ impl From<RTplElement> for TplElem {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(TplType, [u8; 80]);
+assert_eq_size!(TplType, [u8; 72]);
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct Freezed {
     ty: Arc<Type>,
+}
+
+impl Debug for Freezed {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.ty)
+    }
 }
 
 impl Spanned for Freezed {
@@ -2952,4 +3276,6 @@ impl_freeze!(TypeParamDecl);
 impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(Key);
+impl_freeze!(Enum);
+impl_freeze!(ClassDef);
 impl_freeze!(Mapped);

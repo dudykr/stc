@@ -1,44 +1,54 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:6:5]
- 6 | if (message instanceof Array) {
-   :     ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:5:1]
+ 5 | export function saySize(message: Message | Message[]) {
+ 6 |     if (message instanceof Array) {
+   :         ^^^^^^^
+ 7 |         return message.length;  // Should have type Message[] here
    `----
 
 Error: 
   > (Message | Message[])
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:6:5]
- 6 | if (message instanceof Array) {
-   :                        ^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:5:1]
+ 5 | export function saySize(message: Message | Message[]) {
+ 6 |     if (message instanceof Array) {
+   :                            ^^^^^
+ 7 |         return message.length;  // Should have type Message[] here
    `----
 
 Error: 
   > ArrayConstructor
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:6:5]
- 6 | if (message instanceof Array) {
-   :     ^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:5:1]
+ 5 | export function saySize(message: Message | Message[]) {
+ 6 |     if (message instanceof Array) {
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |         return message.length;  // Should have type Message[] here
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:7:9]
- 7 | return message.length;  // Should have type Message[] here
-   :        ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:6:1]
+ 6 |     if (message instanceof Array) {
+ 7 |         return message.length;  // Should have type Message[] here
+   :                ^^^^^^^
+ 8 |     }
    `----
 
 Error: 
   > Message[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:7:9]
- 7 | return message.length;  // Should have type Message[] here
-   :        ^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/instanceof/array-1.ts:6:1]
+ 6 |     if (message instanceof Array) {
+ 7 |         return message.length;  // Should have type Message[] here
+   :                ^^^^^^^^^^^^^^
+ 8 |     }
    `----
 
 Error: 

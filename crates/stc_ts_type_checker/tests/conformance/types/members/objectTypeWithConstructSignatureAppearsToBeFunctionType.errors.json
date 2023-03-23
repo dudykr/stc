@@ -1,1 +1,1 @@
-[{"line":8,"column":18,"code":"TS2348"},{"line":16,"column":18,"code":"TS2348"}]
+[{"filename":"tests/cases/conformance/types/members/objectTypeWithConstructSignatureAppearsToBeFunctionType.ts","line":8,"column":18,"code":"TS2348"},{"filename":"tests/cases/conformance/types/members/objectTypeWithConstructSignatureAppearsToBeFunctionType.ts","line":16,"column":18,"code":"TS2348"}]

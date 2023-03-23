@@ -1,4 +1,3 @@
-#![feature(bench_black_box)]
 #![feature(box_syntax)]
 #![feature(test)]
 
@@ -15,13 +14,15 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::Checker;
+use stc_ts_type_checker::{
+    loader::{DefaultFileLoader, ModuleLoader},
+    Checker,
+};
 use swc_common::{
     errors::{ColorConfig, Handler},
     FileName,
 };
 use swc_ecma_ast::EsVersion;
-use swc_ecma_parser::TsConfig;
 use test::Bencher;
 
 #[bench]
@@ -58,19 +59,19 @@ fn run_bench(b: &mut Bencher, path: &Path) {
 
         let handler = Arc::new(handler);
 
+        let env = Env::simple(
+            Default::default(),
+            EsVersion::latest(),
+            ModuleConfig::None,
+            &Lib::load("es2020.full"),
+        );
         b.iter(|| {
             let mut checker = Checker::new(
                 cm.clone(),
                 handler.clone(),
-                Env::simple(
-                    Default::default(),
-                    EsVersion::latest(),
-                    ModuleConfig::None,
-                    &Lib::load("es2020.full"),
-                ),
-                TsConfig { ..Default::default() },
+                env.clone(),
                 None,
-                Arc::new(NodeResolver),
+                ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
             );
 
             let id = checker.check(Arc::new(FileName::Real(path.to_path_buf())));

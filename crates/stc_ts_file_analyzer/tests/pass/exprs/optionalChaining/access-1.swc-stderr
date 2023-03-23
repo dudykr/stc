@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:1:1]
+ 1 | declare const o1: undefined | { b: string };
  2 | o1?.["b"];
    : ^^
    `----
@@ -11,10 +12,11 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:1:1]
+ 1 | declare const o1: undefined | { b: string };
  2 | o1?.["b"];
    : ^^^^^^^^^
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)

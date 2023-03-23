@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/vars/duplicate/1.ts:3:5]
- 3 | return r;
-   :        ^
+   ,-[$DIR/tests/pass/vars/duplicate/1.ts:2:1]
+ 2 |     var r: (x: T) => T;
+ 3 |     return r;
+   :            ^
+ 4 | }
    `----
 
 Error: 

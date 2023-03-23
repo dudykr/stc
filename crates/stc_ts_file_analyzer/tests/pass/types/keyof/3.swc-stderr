@@ -1,8 +1,21 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:15:1]
+    ,-[$DIR/tests/pass/types/keyof/3.ts:14:1]
+ 14 | 
  15 | foo = keys
     :       ^^^^
+ 16 | keys = foo
+    `----
+
+Error: 
+  > ("a" | "c" | string | number | symbol)
+
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/3.ts:14:1]
+ 14 | 
+ 15 | foo = keys
+    : ^^^^^^^^^^
+ 16 | keys = foo
     `----
 
 Error: 
@@ -11,14 +24,6 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/keyof/3.ts:15:1]
  15 | foo = keys
-    : ^^^^^^^^^^
-    `----
-
-Error: 
-  > ("a" | "c" | string | number | symbol)
-
-  x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:16:1]
  16 | keys = foo
     :        ^^^
     `----
@@ -27,7 +32,8 @@ Error:
   > (string | number | symbol)
 
   x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:16:1]
+    ,-[$DIR/tests/pass/types/keyof/3.ts:15:1]
+ 15 | foo = keys
  16 | keys = foo
     : ^^^^^^^^^^
     `----

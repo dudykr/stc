@@ -1,1 +1,1 @@
-[{"line":12,"column":5,"code":"TS2339"},{"line":13,"column":5,"code":"TS2339"},{"line":12,"column":5,"code":"TS2339"},{"line":13,"column":5,"code":"TS2339"}]
+[{"line":0,"column":0,"code":"TS5101"},{"filename":"tests/cases/conformance/es2019/actual.ts","line":12,"column":5,"code":"TS2339"},{"filename":"tests/cases/conformance/es2019/actual.ts","line":13,"column":5,"code":"TS2339"},{"filename":"tests/cases/conformance/es2019/b.js","line":12,"column":5,"code":"TS2339"},{"filename":"tests/cases/conformance/es2019/b.js","line":13,"column":5,"code":"TS2339"}]

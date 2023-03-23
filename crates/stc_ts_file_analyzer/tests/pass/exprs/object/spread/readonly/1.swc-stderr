@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:8:1]
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:7:1]
+  7 |     
   8 | ,-> export const obj: Readonly<ObjType> = {
   9 | |       foo: 'bar',
  10 | |       baz: 'qux',
@@ -16,7 +17,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:14:1]
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:13:1]
+ 13 | 
  14 | export const { foo, ...rest } = obj
     :                                 ^^^
     `----
@@ -29,7 +31,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:15:1]
+ 15 | 
  16 | delete rest.baz
     :        ^^^^
     `----
@@ -41,7 +44,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:15:1]
+ 15 | 
  16 | delete rest.baz
     :        ^^^^^^^^
     `----
@@ -50,7 +54,8 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
+    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:15:1]
+ 15 | 
  16 | delete rest.baz
     : ^^^^^^^^^^^^^^^
     `----

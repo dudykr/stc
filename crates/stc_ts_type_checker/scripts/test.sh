@@ -12,11 +12,11 @@ trap err_handler ERR
 
 export RUST_BACKTRACE=1
 export RUST_LOG=debug,swc_common=off
-export RUST_MIN_STACK=$((16 * 1024 * 1024))
+export RUST_MIN_STACK=$((8 * 1024 * 1024))
 
 # We prevent regression using faster checks
 RUST_LOG=error ./scripts/base.sh  --features tracing/max_level_error
 
-TEST="$@" cargo test --color always -q --test tsc
+TEST="$@" cargo test --color always -q --test tsc  --features no-threading
 
 ./scripts/_/notify.sh 'Test finished!'

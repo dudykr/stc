@@ -1,8 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use itertools::Itertools;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
@@ -10,13 +9,16 @@ use stc_ts_errors::{
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
-    Type, TypeElement, TypeLit, TypeParam,
+    replace::replace_type, Array, Conditional, FnParam, Id, Index, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped,
+    PropertySignature, Readonly, RestType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    dev_span, stack,
+};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument};
+use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
+use tracing::{debug, error};
 
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
@@ -33,8 +35,10 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Handle index signatures.
-    #[instrument(name = "expand_mapped", skip_all)]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+        let _guard = stack::track(span)?;
+        let _tracing = dev_span!("expand_mapped");
+
         let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
         let ty = self.expand_mapped_inner(span, m)?;
@@ -43,6 +47,8 @@ impl Analyzer<'_, '_> {
             let expanded = dump_type_as_string(ty);
 
             debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
+        } else {
+            debug!("[types/mapped]: Cannot expand\n{}", orig);
         }
 
         Ok(ty)
@@ -50,11 +56,9 @@ impl Analyzer<'_, '_> {
 
     fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
-            Some(Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty: keyof_operand,
-                ..
-            })) => return self.expand_mapped_type_with_keyof(span, keyof_operand, m),
+            Some(Type::Index(Index { ty: keyof_operand, .. })) => {
+                return self.expand_mapped_type_with_keyof(span, keyof_operand, keyof_operand, m)
+            }
             _ => {
                 if let Some(constraint) = m.type_param.constraint.as_deref() {
                     if constraint.is_kwd(TsKeywordTypeKind::TsStringKeyword) || constraint.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
@@ -86,7 +90,7 @@ impl Analyzer<'_, '_> {
                         })));
                     }
 
-                    if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
+                    if let Some(keys) = self.convert_type_to_keys_for_mapped_type(span, constraint, m.name_type.as_deref())? {
                         let members = keys
                             .into_iter()
                             .map(|key| -> VResult<_> {
@@ -130,12 +134,20 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn expand_mapped_type_with_keyof(&mut self, span: Span, keyof_operand: &Type, m: &Mapped) -> VResult<Option<Type>> {
+    fn expand_mapped_type_with_keyof(
+        &mut self,
+        span: Span,
+        keyof_operand: &Type,
+        original_keyof_operand: &Type,
+        m: &Mapped,
+    ) -> VResult<Option<Type>> {
+        let _tracing = dev_span!("expand_mapped_type_with_keyof");
+
         let keyof_operand = self
             .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
             .context("tried to normalize the operand of `in keyof`")?;
 
-        if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
+        if let Some(mapped_ty) = &m.ty {
             // Special case, but many usages can be handled with this check.
             if (*keyof_operand).type_eq(mapped_ty) {
                 let new_type = self
@@ -153,31 +165,164 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(array) = keyof_operand.as_array_without_readonly() {
-            let ty = Type::Array(Array {
-                span,
-                elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
-                metadata: array.metadata,
-                tracker: Default::default(),
-            })
-            .freezed();
-            return Ok(Some(ty));
-        }
+        match keyof_operand.normalize() {
+            Type::Array(array) => {
+                let elem_type = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+                let elem_type = match m.optional {
+                    Some(TruePlusMinus::True) => box elem_type.union_with_undefined(span),
+                    _ => elem_type,
+                };
 
-        if let Type::Param(TypeParam {
-            constraint: Some(constraint),
-            ..
-        }) = keyof_operand.normalize()
-        {
-            if let Some(v) = self
-                .expand_mapped_type_with_keyof(span, constraint, m)
-                .context("tried to expand mapped type using a constraint")?
-            {
-                return Ok(Some(v));
+                let mut ty = Type::Array(Array {
+                    span,
+                    elem_type,
+                    metadata: array.metadata,
+                    tracker: Default::default(),
+                });
+
+                replace_type(
+                    &mut ty,
+                    |ty| {
+                        // Check for indexed access type
+                        if let Type::IndexedAccessType(iat) = ty.normalize() {
+                            if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
+                                if let Type::Param(index_type) = iat.index_type.normalize() {
+                                    return index_type.name == m.type_param.name;
+                                }
+                            }
+                        }
+
+                        false
+                    },
+                    |_| Some(*array.elem_type.clone()),
+                );
+
+                return Ok(Some(ty));
             }
+            Type::Tuple(tuple) => {
+                // type ToArray<T> = { [P in keyof T]: T[P][] };
+                // type F<T extends unknown[]> = ToArray<[string, number, ...T]>
+
+                // =>
+
+                // type F<T extends unknown[]> = [string[], number[], ...ToArray<T>]
+
+                let ty = Type::Tuple(Tuple {
+                    span,
+                    elems: tuple
+                        .elems
+                        .iter()
+                        .enumerate()
+                        .map(|(idx, elem)| {
+                            let mut ty = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+
+                            if let Type::Rest(elem_rest_ty) = elem.ty.normalize() {
+                                let mut mapped_ty = m.ty.clone();
+                                // Replace `T` with `N` in mapped_ty
+                                //
+                                // type ToArray<T> = { [P in keyof T]: T[P][] };
+                                //
+                                //  declare function fm1<N extends unknown[]>(t: ToArray<[string, number,
+                                // ...N]>): N;
+
+                                if let Some(mapped_ty) = &mut mapped_ty {
+                                    replace_type(
+                                        mapped_ty,
+                                        |ty| {
+                                            if original_keyof_operand.type_eq(ty) {
+                                                return true;
+                                            }
+
+                                            false
+                                        },
+                                        |ty| Some(*elem_rest_ty.ty.clone()),
+                                    );
+                                }
+                                mapped_ty.freeze();
+
+                                *ty = Type::Rest(RestType {
+                                    span,
+                                    ty: box Type::Mapped(Mapped {
+                                        type_param: TypeParam {
+                                            constraint: Some(box Type::Index(Index {
+                                                span: elem.span,
+                                                ty: elem_rest_ty.ty.clone(),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })),
+                                            tracker: Default::default(),
+                                            ..m.type_param.clone()
+                                        },
+                                        ty: mapped_ty.clone(),
+                                        tracker: Default::default(),
+                                        ..m.clone()
+                                    }),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                });
+                            } else {
+                                replace_type(
+                                    &mut ty,
+                                    |ty| {
+                                        // Check for indexed access type
+                                        if let Type::IndexedAccessType(iat) = ty.normalize() {
+                                            if iat.obj_type.as_ref().type_eq(original_keyof_operand) {
+                                                if let Type::Param(index_type) = iat.index_type.normalize() {
+                                                    return index_type.name == m.type_param.name;
+                                                }
+                                            }
+                                        }
+
+                                        false
+                                    },
+                                    |_| Some(*elem.ty.clone()),
+                                );
+                            }
+
+                            let ty = match m.optional {
+                                Some(TruePlusMinus::True) => box ty.union_with_undefined(span),
+                                _ => ty,
+                            };
+
+                            Ok(TupleElement { ty, ..elem.clone() })
+                        })
+                        .collect::<VResult<_>>()?,
+                    metadata: tuple.metadata,
+                    tracker: Default::default(),
+                });
+
+                return Ok(Some(ty));
+            }
+            _ => (),
         }
 
-        let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
+        // Delegate by recursively calling this function.
+        match keyof_operand.normalize() {
+            Type::Readonly(Readonly { ty, .. }) => {
+                if let Some(v) = self
+                    .expand_mapped_type_with_keyof(span, ty, original_keyof_operand, m)
+                    .context("tried to expand mapped type using a readonly operator")?
+                {
+                    return Ok(Some(v));
+                }
+            }
+
+            Type::Param(TypeParam {
+                constraint: Some(constraint),
+                ..
+            }) => {
+                if let Some(v) = self
+                    .expand_mapped_type_with_keyof(span, constraint, original_keyof_operand, m)
+                    .context("tried to expand mapped type using a constraint")?
+                {
+                    return Ok(Some(v));
+                }
+            }
+            _ => (),
+        }
+
+        let keys =
+            self.get_property_names_for_mapped_type(span, &keyof_operand, &m.type_param, original_keyof_operand, m.name_type.as_deref())?;
         if let Some(keys) = keys {
             let members = keys
                 .into_iter()
@@ -301,7 +446,9 @@ impl Analyzer<'_, '_> {
     /// Evaluate a type and convert it to keys.
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
-    fn convert_type_to_keys(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<Key>>> {
+    fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
+        let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
+
         let ty = ty.normalize();
 
         match ty {
@@ -315,7 +462,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                self.convert_type_to_keys(span, &ty)
+                self.convert_type_to_keys_for_mapped_type(span, &ty, name_type)
             }
 
             Type::Lit(LitType { lit, .. }) => match lit {
@@ -339,7 +486,7 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for ty in &u.types {
-                    let elem_keys = self.convert_type_to_keys(span, ty)?;
+                    let elem_keys = self.convert_type_to_keys_for_mapped_type(span, ty, name_type)?;
                     match elem_keys {
                         Some(v) => keys.extend(v),
                         None => return Ok(None),
@@ -353,8 +500,19 @@ impl Analyzer<'_, '_> {
                 let mut keys = vec![];
 
                 for v in &e.members {
-                    if let Ok(val) = self.validate_key(&v.val, false) {
-                        keys.push(val);
+                    if let Type::Lit(v) = v.val.normalize() {
+                        match &v.lit {
+                            RTsLit::Str(key) => {
+                                keys.push(Key::Normal {
+                                    span: key.span,
+                                    sym: key.value.clone(),
+                                });
+                            }
+                            RTsLit::Number(key) => {
+                                keys.push(Key::Num(key.clone()));
+                            }
+                            _ => {}
+                        }
                     }
                 }
 
@@ -364,14 +522,8 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(e) => {
                 let mut keys = vec![];
 
-                if let Some(types) = self.find_type(&e.enum_name)? {
-                    for ty in types.into_iter().map(Cow::into_owned).collect_vec() {
-                        if ty.is_enum_type() {
-                            let items = self.convert_type_to_keys(span, &ty)?;
-                            keys.extend(items.into_iter().flatten());
-                        }
-                    }
-                }
+                let items = self.convert_type_to_keys_for_mapped_type(span, &Type::Enum(e.def.cheap_clone()), name_type)?;
+                keys.extend(items.into_iter().flatten());
 
                 Ok(Some(keys))
             }
@@ -386,7 +538,87 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a property name.
-    fn get_property_names_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<PropertyName>>> {
+    pub(crate) fn get_property_names_for_mapped_type(
+        &mut self,
+        span: Span,
+        ty: &Type,
+        type_param: &TypeParam,
+        original_keyof_operand: &Type,
+        name_type: Option<&Type>,
+    ) -> VResult<Option<Vec<PropertyName>>> {
+        let _tracing = dev_span!("get_property_names_for_mapped_type");
+
+        if let Some(name_type) = name_type {
+            let property_names = self
+                .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, None)
+                .context("tried to get property names from a type to expand a mapper typw with a name type")?;
+
+            let property_names = match property_names {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+
+            let name_type = self
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(name_type),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to normalize a name type to expand a mapper type")?
+                .freezed();
+
+            let mut new_keys = vec![];
+
+            for property_name in property_names {
+                match property_name {
+                    PropertyName::Key(key) => {
+                        let mut new_key = name_type.clone().into_owned();
+
+                        // Replace T with ty
+                        replace_type(&mut new_key, |needle| needle.type_eq(original_keyof_operand), |_| Some(ty.clone()));
+                        // Replace K with key
+                        replace_type(
+                            &mut new_key,
+                            |needle| match needle.normalize() {
+                                Type::Param(needle) => needle.name.sym() == type_param.name.sym(),
+                                _ => false,
+                            },
+                            |_| Some(key.ty().into_owned()),
+                        );
+
+                        let new_key = self
+                            .normalize(
+                                Some(span),
+                                Cow::Owned(new_key),
+                                NormalizeTypeOpts {
+                                    preserve_mapped: true,
+                                    preserve_global_this: true,
+                                    preserve_intersection: true,
+                                    preserve_union: true,
+                                    ..Default::default()
+                                },
+                            )?
+                            .freezed()
+                            .into_owned();
+
+                        new_keys.push(new_key);
+                    }
+
+                    PropertyName::IndexSignature { span, params, readonly } => todo!(),
+                }
+            }
+
+            let keys = self.convert_type_to_keys_for_mapped_type(span, &Type::new_union(span, new_keys), None)?;
+            let keys = match keys {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+            return Ok(Some(keys.into_iter().map(|v| v.into()).collect()));
+        }
+
         let ty = self
             .normalize(
                 Some(span),
@@ -456,7 +688,9 @@ impl Analyzer<'_, '_> {
 
                 for parent in &ty.extends {
                     let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
-                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
+                    if let Some(parent_keys) =
+                        self.get_property_names_for_mapped_type(span, &parent, type_param, original_keyof_operand, name_type)?
+                    {
                         keys.extend(parent_keys);
                     }
                 }
@@ -486,7 +720,9 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
+                    .map(|ty| -> VResult<_> {
+                        self.get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
@@ -524,7 +760,9 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
+                    .map(|ty| -> VResult<_> {
+                        self.get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -545,17 +783,85 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(result));
             }
-            Type::Tuple(..) | Type::Array(..) => return Ok(None),
+
+            Type::Tuple(tuple) => {
+                // numeric keys and length
+
+                let mut keys = vec![];
+                for (i, elem) in tuple.elems.iter().enumerate() {
+                    if elem.ty.is_rest() {
+                        keys.push(PropertyName::IndexSignature {
+                            span: elem.span,
+                            params: vec![FnParam {
+                                span: elem.span,
+                                required: true,
+                                pat: RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: RIdent::new("__key".into(), elem.span.with_ctxt(SyntaxContext::empty())),
+                                    type_ann: None,
+                                }),
+                                ty: box Type::Keyword(KeywordType {
+                                    span: elem.span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            }],
+                            readonly: false,
+                        });
+                        return Ok(Some(keys));
+                    }
+                    keys.push(PropertyName::Key(Key::Num(RNumber {
+                        span: elem.span,
+                        value: i as _,
+                        raw: None,
+                    })));
+                }
+
+                // .length
+
+                // keys.push(PropertyName::Key(Key::Normal {
+                //     span: tuple.span,
+                //     sym: js_word!("length"),
+                // }));
+
+                return Ok(Some(keys));
+            }
+
+            Type::Array(array) => {
+                // numeric indexer and length
+
+                return Ok(Some(vec![
+                    PropertyName::IndexSignature {
+                        span: array.span,
+                        params: vec![FnParam {
+                            span: array.span,
+                            required: true,
+                            pat: RPat::Ident(RBindingIdent {
+                                node_id: NodeId::invalid(),
+                                id: RIdent::new("__array_key".into(), array.span.with_ctxt(SyntaxContext::empty())),
+                                type_ann: None,
+                            }),
+                            ty: box Type::Keyword(KeywordType {
+                                span: array.span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
+                        }],
+                        readonly: false,
+                    },
+                    // PropertyName::Key(Key::Normal {
+                    //     span: array.span,
+                    //     sym: js_word!("length"),
+                    // }),
+                ]));
+            }
 
             Type::Mapped(m) => {
-                if let Some(Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                {
+                if let Some(Type::Index(Index { ty, .. })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                     return self
-                        .get_property_names_for_mapped_type(span, ty)
+                        .get_property_names_for_mapped_type(span, ty, type_param, original_keyof_operand, name_type)
                         .context("tried to get property names by using `keyof` constraint");
                 }
             }

@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/keyof/union/mappedTypes2/1.ts:16:1]
+    ,-[$DIR/tests/pass/types/keyof/union/mappedTypes2/1.ts:15:1]
+ 15 | 
  16 | k
     : ^
     `----

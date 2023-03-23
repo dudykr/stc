@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/generic/extends/1.ts:4:5]
- 4 | return x;
-   :        ^
+   ,-[$DIR/tests/pass/types/generic/extends/1.ts:3:1]
+ 3 | function foo<T>(x: T) {
+ 4 |     return x;
+   :            ^
+ 5 | }
    `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]
- 12 | var r2 = foo(b);
-    :          ^^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:11:1]
+ 11 |     };
+ 12 |     var r2 = foo(b);
+    :              ^^^
+ 13 |     var d = r2[1];
     `----
 
 Error: 
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]
- 12 | var r2 = foo(b);
-    :              ^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:11:1]
+ 11 |     };
+ 12 |     var r2 = foo(b);
+    :                  ^
+ 13 |     var d = r2[1];
     `----
 
 Error: 
@@ -30,9 +36,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:5]
- 12 | var r2 = foo(b);
-    :          ^^^^^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:11:1]
+ 11 |     };
+ 12 |     var r2 = foo(b);
+    :              ^^^^^^
+ 13 |     var d = r2[1];
     `----
 
 Error: 
@@ -42,9 +50,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:13:5]
- 13 | var d = r2[1];
-    :         ^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:1]
+ 12 |     var r2 = foo(b);
+ 13 |     var d = r2[1];
+    :             ^^
+ 14 |     var e = r2['1'];
     `----
 
 Error: 
@@ -54,18 +64,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:13:5]
- 13 | var d = r2[1];
-    :         ^^^^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:12:1]
+ 12 |     var r2 = foo(b);
+ 13 |     var d = r2[1];
+    :             ^^^^^
+ 14 |     var e = r2['1'];
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:14:5]
- 14 | var e = r2['1'];
-    :         ^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:13:1]
+ 13 |     var d = r2[1];
+ 14 |     var e = r2['1'];
+    :             ^^
+ 15 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
@@ -75,18 +89,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:14:5]
- 14 | var e = r2['1'];
-    :         ^^^^^^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:13:1]
+ 13 |     var d = r2[1];
+ 14 |     var e = r2['1'];
+    :             ^^^^^^^
+ 15 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:15:5]
- 15 | var u: U = r2[1]; // ok
-    :            ^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:14:1]
+ 14 |     var e = r2['1'];
+ 15 |     var u: U = r2[1]; // ok
+    :                ^^
+ 16 | }
     `----
 
 Error: 
@@ -96,9 +114,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/generic/extends/1.ts:15:5]
- 15 | var u: U = r2[1]; // ok
-    :            ^^^^^
+    ,-[$DIR/tests/pass/types/generic/extends/1.ts:14:1]
+ 14 |     var e = r2['1'];
+ 15 |     var u: U = r2[1]; // ok
+    :                ^^^^^
+ 16 | }
     `----
 
 Error: 

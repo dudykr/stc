@@ -1,8 +1,10 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:5]
- 11 | if (f.geometry?.type !== 'test') {
-    :     ^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^
+ 12 |         return [];
     `----
 
 Error: 
@@ -15,48 +17,58 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:5]
- 11 | if (f.geometry?.type !== 'test') {
-    :     ^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^^^^^^^^^^
+ 12 |         return [];
     `----
 
 Error: 
-  > (undefined | {
+  > ({
   |     type: string;
   |     coordinates: number[];
-  | })
+  | } | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:5]
- 11 | if (f.geometry?.type !== 'test') {
-    :     ^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^^^^^^^^^^^^^^^^
+ 12 |         return [];
     `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:5]
- 11 | if (f.geometry?.type !== 'test') {
-    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 12 |         return [];
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:12:9]
- 12 | return [];
-    :        ^^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:1]
+ 11 |     if (f.geometry?.type !== 'test') {
+ 12 |         return [];
+    :                ^^
+ 13 |     }
     `----
 
 Error: 
   > []
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:14:5]
- 14 | return f.geometry.coordinates;
-    :        ^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:13:1]
+ 13 |     }
+ 14 |     return f.geometry.coordinates;
+    :            ^
+ 15 | }
     `----
 
 Error: 
@@ -69,9 +81,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:14:5]
- 14 | return f.geometry.coordinates;
-    :        ^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:13:1]
+ 13 |     }
+ 14 |     return f.geometry.coordinates;
+    :            ^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 
@@ -81,9 +95,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:14:5]
- 14 | return f.geometry.coordinates;
-    :        ^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:13:1]
+ 13 |     }
+ 14 |     return f.geometry.coordinates;
+    :            ^^^^^^^^^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 

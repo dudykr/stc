@@ -1,1 +1,1 @@
-[{"line":5,"column":14,"code":"TS2300"},{"line":5,"column":19,"code":"TS2300"}]
+[{"filename":"tests/cases/compiler/exportInterfaceClassAndValueWithDuplicatesInImportList.ts","line":5,"column":14,"code":"TS2300"},{"filename":"tests/cases/compiler/exportInterfaceClassAndValueWithDuplicatesInImportList.ts","line":5,"column":19,"code":"TS2300"}]

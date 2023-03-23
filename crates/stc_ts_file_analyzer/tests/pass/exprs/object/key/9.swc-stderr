@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/9.ts:6:5]
- 6 | get [<any>true]() { return 0; },
-   :      ^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/object/key/9.ts:5:1]
+ 5 | var v = {
+ 6 |     get [<any>true]() { return 0; },
+   :          ^^^^^^^^^
+ 7 | }
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/9.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/object/key/9.ts:4:1]
+ 4 |     var a: any;
  5 | ,-> var v = {
  6 | |       get [<any>true]() { return 0; },
  7 | `-> }

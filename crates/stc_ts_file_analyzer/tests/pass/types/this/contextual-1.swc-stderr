@@ -1,15 +1,18 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/this/contextual-1.ts:10:9]
- 10 | return p;
-    :        ^
+    ,-[$DIR/tests/pass/types/this/contextual-1.ts:9:1]
+  9 |     a(p) {
+ 10 |         return p;
+    :                ^
+ 11 |     }
     `----
 
 Error: 
   > this
 
   x Type
-    ,-[$DIR/tests/pass/types/this/contextual-1.ts:8:1]
+    ,-[$DIR/tests/pass/types/this/contextual-1.ts:7:1]
+  7 |     
   8 | ,-> var x: Y = {
   9 | |       a(p) {
  10 | |           return p;
@@ -23,7 +26,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/this/contextual-1.ts:14:1]
+    ,-[$DIR/tests/pass/types/this/contextual-1.ts:13:1]
+ 13 | 
  14 | var y = x.a(x);
     :         ^
     `----
@@ -32,7 +36,8 @@ Error:
   > Y
 
   x Type
-    ,-[$DIR/tests/pass/types/this/contextual-1.ts:14:1]
+    ,-[$DIR/tests/pass/types/this/contextual-1.ts:13:1]
+ 13 | 
  14 | var y = x.a(x);
     :             ^
     `----
@@ -41,7 +46,8 @@ Error:
   > Y
 
   x Type
-    ,-[$DIR/tests/pass/types/this/contextual-1.ts:14:1]
+    ,-[$DIR/tests/pass/types/this/contextual-1.ts:13:1]
+ 13 | 
  14 | var y = x.a(x);
     :         ^^^^^^
     `----

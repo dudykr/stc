@@ -10,9 +10,9 @@ impl VisitMut<Ref> for ExpansionPreventer {
         ty.visit_mut_children_with(self);
 
         if self.is_for_ignoring {
-            ty.metadata.common.ignore_no_expand = true;
+            ty.metadata.ignore_no_expand = true;
         } else {
-            ty.metadata.common.no_expand = true;
+            ty.metadata.no_expand = true;
         }
     }
 }

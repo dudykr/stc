@@ -1,1 +1,1 @@
-[{"line":1,"column":23,"code":"TS2693"}]
+[{"filename":"tests/cases/compiler/cannotInvokeNewOnIndexExpression.ts","line":1,"column":23,"code":"TS2693"}]

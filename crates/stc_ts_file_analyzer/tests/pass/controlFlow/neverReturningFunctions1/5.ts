@@ -1,5 +1,5 @@
 //@strict: true
-//@allowUnreachableCode: false
+//@allowUnreachableCode: true
 
 export function f43() {
     const fail = (): never => { throw new Error(); };

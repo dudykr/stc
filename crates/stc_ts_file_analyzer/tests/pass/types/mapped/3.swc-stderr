@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/3.ts:2:5]
- 2 | x = {};
-   :     ^^
+   ,-[$DIR/tests/pass/types/mapped/3.ts:1:1]
+ 1 | export function f3<T>(x: Partial<T>) {
+ 2 |     x = {};
+   :         ^^
+ 3 | }
    `----
 
 Error: 
@@ -10,9 +12,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/3.ts:2:5]
- 2 | x = {};
-   : ^^^^^^
+   ,-[$DIR/tests/pass/types/mapped/3.ts:1:1]
+ 1 | export function f3<T>(x: Partial<T>) {
+ 2 |     x = {};
+   :     ^^^^^^
+ 3 | }
    `----
 
 Error: 

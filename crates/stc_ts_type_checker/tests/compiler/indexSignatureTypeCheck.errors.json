@@ -1,1 +1,1 @@
-[{"line":14,"column":8,"code":"TS1019"},{"line":15,"column":6,"code":"TS1017"},{"line":16,"column":6,"code":"TS1096"},{"line":17,"column":6,"code":"TS1096"}]
+[{"filename":"tests/cases/compiler/indexSignatureTypeCheck.ts","line":14,"column":8,"code":"TS1019"},{"filename":"tests/cases/compiler/indexSignatureTypeCheck.ts","line":15,"column":6,"code":"TS1017"},{"filename":"tests/cases/compiler/indexSignatureTypeCheck.ts","line":16,"column":6,"code":"TS1096"},{"filename":"tests/cases/compiler/indexSignatureTypeCheck.ts","line":17,"column":6,"code":"TS1096"}]

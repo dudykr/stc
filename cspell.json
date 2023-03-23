@@ -19,9 +19,11 @@
     "ctxt",
     "dashmap",
     "debuginfo",
+    "dedup",
     "dejavu",
     "Deque",
     "doctest",
+    "dudykr",
     "elems",
     "fastpath",
     "finalizer",
@@ -39,6 +41,7 @@
     "jemalloc",
     "Jsxdev",
     "keyof",
+    "kosaraju",
     "libcore",
     "libpanic",
     "libstd",
@@ -60,6 +63,7 @@
     "quasis",
     "RAII",
     "Redeclared",
+    "reeval",
     "refcell",
     "regist",
     "Renamer",
@@ -80,6 +84,7 @@
     "subclassing",
     "subpat",
     "subscope",
+    "subtyping",
     "Swatinem",
     "tarjan",
     "tempdir",
@@ -114,6 +119,6 @@
     // Useless
     "config.toml",
     "scripts/npm",
-    "**/stc_ts_type_checker/tests/tsc.rs"
+    "**/stc_ts_testing/src/conformance.rs"
   ]
 }

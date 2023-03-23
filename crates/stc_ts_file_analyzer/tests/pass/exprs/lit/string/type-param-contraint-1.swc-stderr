@@ -1,78 +1,95 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:2:5]
- 2 | return f;
-   :        ^
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:1:1]
+ 1 | export function foo<T extends "foo">(f: (x: T) => T) {
+ 2 |     return f;
+   :            ^
+ 3 | }
    `----
 
 Error: 
   > (x: T) => T
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                ^^^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > <T extends "foo">(f: (x: T) => T) => (x: T) => T
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                                          ^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > ("foo" | "bar")
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                                          ^^^^^^^^^^^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                                                        ^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > "foo"
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                                          ^^^^^^^^^^^^^^^^^^^^^^^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > "foo"
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > (y: ("foo" | "bar")) => "foo"
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:4:1]
+ 4 | 
  5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
    :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 | export let fResult = f("foo");
    `----
 
 Error: 
   > (x: "foo") => "foo"
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+ 5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
  6 | export let fResult = f("foo");
    :                      ^
    `----
@@ -81,7 +98,8 @@ Error:
   > (x: "foo") => "foo"
 
   x Type
-   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:1]
+ 5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
  6 | export let fResult = f("foo");
    :                      ^^^^^^^^
    `----

@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:3:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:2:1]
+ 2 | let array: { x: number, y: string }[];
  3 | for (let { x, ...restOf } of array) {
    :                              ^^^^^
+ 4 |     [x, restOf];
    `----
 
 Error: 
@@ -12,18 +14,22 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:4:5]
- 4 | [x, restOf];
-   :  ^
+   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:3:1]
+ 3 | for (let { x, ...restOf } of array) {
+ 4 |     [x, restOf];
+   :      ^
+ 5 | }
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:4:5]
- 4 | [x, restOf];
-   :     ^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:3:1]
+ 3 | for (let { x, ...restOf } of array) {
+ 4 |     [x, restOf];
+   :         ^^^^^^
+ 5 | }
    `----
 
 Error: 
@@ -32,9 +38,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:4:5]
- 4 | [x, restOf];
-   : ^^^^^^^^^^^
+   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:3:1]
+ 3 | for (let { x, ...restOf } of array) {
+ 4 |     [x, restOf];
+   :     ^^^^^^^^^^^
+ 5 | }
    `----
 
 Error: 
@@ -43,9 +51,11 @@ Error:
   | }))[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:8:1]
+   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:7:1]
+ 7 | let rrestOff: { y: string };
  8 | for ({ x: xx, ...rrestOff } of array) {
    :                                ^^^^^
+ 9 |     [xx, rrestOff];
    `----
 
 Error: 
@@ -55,19 +65,23 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:9:5]
- 9 | [xx, rrestOff];
-   :  ^^
-   `----
+    ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:8:1]
+  8 | for ({ x: xx, ...rrestOff } of array) {
+  9 |     [xx, rrestOff];
+    :      ^^
+ 10 | }
+    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:9:5]
- 9 | [xx, rrestOff];
-   :      ^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:8:1]
+  8 | for ({ x: xx, ...rrestOff } of array) {
+  9 |     [xx, rrestOff];
+    :          ^^^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > {
@@ -75,10 +89,12 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:9:5]
- 9 | [xx, rrestOff];
-   : ^^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/vars/forOf/rest/1.ts:8:1]
+  8 | for ({ x: xx, ...rrestOff } of array) {
+  9 |     [xx, rrestOff];
+    :     ^^^^^^^^^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > ((number | {

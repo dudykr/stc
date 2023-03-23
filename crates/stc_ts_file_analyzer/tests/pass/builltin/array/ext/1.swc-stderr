@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:8:1]
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:7:1]
+ 7 | 
  8 | let x = a.equalsShallow(b);
    :         ^
    `----
@@ -10,7 +11,8 @@ Error:
   | }[])
 
   x Type
-   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:8:1]
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:7:1]
+ 7 | 
  8 | let x = a.equalsShallow(b);
    :                         ^
    `----
@@ -20,7 +22,8 @@ Error:
   | }[])
 
   x Type
-   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:8:1]
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:7:1]
+ 7 | 
  8 | let x = a.equalsShallow(b);
    :         ^^^^^^^^^^^^^^^^^^
    `----

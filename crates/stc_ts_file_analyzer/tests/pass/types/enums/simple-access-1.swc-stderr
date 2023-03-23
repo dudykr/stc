@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:15:1]
+    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:14:1]
+ 14 | declare const e: E;
  15 | const snb: string | number | boolean = item[e];
     :                                        ^^^^
     `----
@@ -9,7 +10,8 @@ Error:
   > Item
 
   x Type
-    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:15:1]
+    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:14:1]
+ 14 | declare const e: E;
  15 | const snb: string | number | boolean = item[e];
     :                                             ^
     `----
@@ -18,7 +20,8 @@ Error:
   > E
 
   x Type
-    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:15:1]
+    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:14:1]
+ 14 | declare const e: E;
  15 | const snb: string | number | boolean = item[e];
     :                                        ^^^^^^^
     `----

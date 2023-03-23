@@ -1,1 +1,1 @@
-[{"line":7,"column":7,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/conditionalDoesntLeakUninstantiatedTypeParameter.ts","line":7,"column":7,"code":"TS2322"}]

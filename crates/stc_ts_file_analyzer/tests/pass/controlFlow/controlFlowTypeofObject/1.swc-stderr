@@ -1,72 +1,88 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:6:5]
- 6 | if (x === null) {
-   :     ^
+   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:5:1]
+ 5 | function f2(x: unknown) {
+ 6 |     if (x === null) {
+   :         ^
+ 7 |         return;
    `----
 
 Error: 
   > unknown
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:6:5]
- 6 | if (x === null) {
-   :     ^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:5:1]
+ 5 | function f2(x: unknown) {
+ 6 |     if (x === null) {
+   :         ^^^^^^^^^^
+ 7 |         return;
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:9:5]
- 9 | if (typeof x === 'object') {
-   :            ^
-   `----
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:8:1]
+  8 |     }
+  9 |     if (typeof x === 'object') {
+    :                ^
+ 10 |         obj(x);
+    `----
 
 Error: 
   > (undefined | {
   | })
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:9:5]
- 9 | if (typeof x === 'object') {
-   :     ^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:8:1]
+  8 |     }
+  9 |     if (typeof x === 'object') {
+    :         ^^^^^^^^
+ 10 |         obj(x);
+    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:9:5]
- 9 | if (typeof x === 'object') {
-   :     ^^^^^^^^^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:8:1]
+  8 |     }
+  9 |     if (typeof x === 'object') {
+    :         ^^^^^^^^^^^^^^^^^^^^^
+ 10 |         obj(x);
+    `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:10:9]
- 10 | obj(x);
-    : ^^^
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:9:1]
+  9 |     if (typeof x === 'object') {
+ 10 |         obj(x);
+    :         ^^^
+ 11 |     }
     `----
 
 Error: 
   > (x: object) => void
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:10:9]
- 10 | obj(x);
-    :     ^
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:9:1]
+  9 |     if (typeof x === 'object') {
+ 10 |         obj(x);
+    :             ^
+ 11 |     }
     `----
 
 Error: 
   > object
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:10:9]
- 10 | obj(x);
-    : ^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/controlFlowTypeofObject/1.ts:9:1]
+  9 |     if (typeof x === 'object') {
+ 10 |         obj(x);
+    :         ^^^^^^
+ 11 |     }
     `----
 
 Error: 

@@ -1,13 +1,13 @@
 use std::time::Instant;
 
 use rnode::VisitWith;
-use stc_ts_ast_rnode::{RBlockStmt, RBool, RExpr, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RDecl, RExpr, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{LitType, Type};
-use stc_utils::stack;
+use stc_utils::{dev_span, stack};
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
-use tracing::{instrument, span, trace, warn, Level};
+use tracing::{trace, warn};
 
 use self::return_type::LoopBreakerFinder;
 use crate::{
@@ -39,21 +39,19 @@ impl Analyzer<'_, '_> {
         let span = s.span();
         let line_col = self.line_col(span);
 
-        let tracing_span = span!(Level::ERROR, "Stmt", line_col = &*line_col);
-        let _tracing_guard = tracing_span.enter();
+        let _tracing = dev_span!("Stmt", line_col = &*line_col);
 
         warn!("Statement start");
         let start = Instant::now();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
-            self.storage.report(ErrorKind::UnreachableCode { span: s.span() }.into());
+            if !matches!(s, RStmt::Decl(RDecl::TsInterface(..) | RDecl::TsTypeAlias(..))) {
+                self.storage.report(ErrorKind::UnreachableCode { span: s.span() }.into());
+            }
         }
 
         let old_in_conditional = self.scope.return_values.in_conditional;
-        self.scope.return_values.in_conditional |= matches!(
-            s,
-            RStmt::If(_) | RStmt::Switch(_) | RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..)
-        );
+        self.scope.return_values.in_conditional |= matches!(s, RStmt::If(_) | RStmt::Switch(_));
 
         s.visit_children_with(self);
 
@@ -107,10 +105,11 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
             tracker: Default::default(),
         });
-        self.check_for_infinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 
         node.update.visit_with(self);
         node.body.validate_with(self)?;
+
+        self.check_for_infinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 
         Ok(())
     }
@@ -142,9 +141,10 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
-    #[instrument(skip_all)]
     pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs], is_for_interface: bool) {
-        if self.is_builtin {
+        let _tracing = dev_span!("resolve_parent_interfaces");
+
+        if self.config.is_builtin {
             return;
         }
 

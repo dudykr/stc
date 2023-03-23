@@ -1,0 +1,17 @@
+{
+  "required_errors": {},
+  "required_error_lines": {},
+  "extra_errors": {
+    "TS2322": 6
+  },
+  "extra_error_lines": {
+    "TS2322": [
+      25,
+      31,
+      37,
+      57,
+      63,
+      69
+    ]
+  }
+}

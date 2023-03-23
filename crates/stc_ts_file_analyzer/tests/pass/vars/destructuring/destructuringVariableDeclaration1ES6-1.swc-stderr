@@ -38,9 +38,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:4:1]
+   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:3:1]
+ 3 | 
  4 | f1;
    : ^^
+ 5 | f2;
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:4:1]
+ 4 | f1;
+ 5 | f2;
+   : ^^
+ 6 | f4;
    `----
 
 Error: 
@@ -49,7 +62,9 @@ Error:
   x Type
    ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:5:1]
  5 | f2;
+ 6 | f4;
    : ^^
+ 7 | f5
    `----
 
 Error: 
@@ -58,14 +73,6 @@ Error:
   x Type
    ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:6:1]
  6 | f4;
-   : ^^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:7:1]
  7 | f5
    : ^^
    `----

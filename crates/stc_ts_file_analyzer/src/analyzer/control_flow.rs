@@ -9,14 +9,16 @@ use std::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RMemberExpr, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
+    RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::Freeze,
+    dev_span,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_atoms::JsWord;
@@ -450,8 +452,9 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
+        let _tracing = dev_span!("adjust_ternary_type");
+
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             if let Some(tuple) = ty.as_tuple_mut() {
@@ -473,6 +476,13 @@ impl Analyzer<'_, '_> {
             }
         });
 
+        if types.iter().all(|ty| ty.normalize_instance().is_lit()) {
+            types.iter_mut().for_each(|ty| {
+                prevent_generalize(ty);
+            });
+            return Ok(types);
+        }
+
         let should_preserve = types
             .iter()
             .flat_map(|ty| ty.iter_union())
@@ -485,8 +495,9 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
+        let _tracing = dev_span!("downcast_types");
+
         fn need_work(ty: &Type) -> bool {
             !matches!(
                 ty.normalize(),
@@ -545,8 +556,9 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
+        let _tracing = dev_span!("remove_child_types");
+
         let mut new = vec![];
 
         'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
@@ -745,7 +757,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                     } else {
-                        self.assign_with_op(span, op, &lhs_ty, rhs_ty)?;
+                        self.assign_with_operator(span, op, &lhs_ty, rhs_ty)?;
                     }
 
                     if let RExpr::Ident(left) = &**expr {
@@ -793,7 +805,7 @@ impl Analyzer<'_, '_> {
                                 let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
 
                                 if let Ok(lhs) = lhs {
-                                    self.assign_with_op(span, op, &lhs, rhs_ty)?;
+                                    self.assign_with_operator(span, op, &lhs, rhs_ty)?;
                                 }
                             }
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,
@@ -827,8 +839,20 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let is_in_loop = self.scope.is_in_loop_body();
+
+        let ctx = Ctx {
+            in_actual_type: true,
+            ..self.ctx
+        };
         let orig_ty = self
-            .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
+            .normalize(
+                Some(ty.span().or_else(|| span)),
+                Cow::Borrowed(ty),
+                NormalizeTypeOpts {
+                    in_type_or_type_param: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .freezed();
@@ -1014,7 +1038,8 @@ impl Analyzer<'_, '_> {
                         let elem_ty = self
                             .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
                             .context("tried to get an element of type to assign with an array pattern")
-                            .report(&mut self.storage);
+                            .report(&mut self.storage)
+                            .freezed();
                         if let Some(elem_ty) = elem_ty {
                             self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
                                 .context("tried to assign an element of an array pattern")
@@ -1103,16 +1128,16 @@ impl Analyzer<'_, '_> {
                                         .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
-                                RPat::Expr(box RExpr::SuperProp(..)) => {}
-
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(expr) {
                                         return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span }.into());
                                     }
 
-                                    self.storage
-                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
+                                    if !is_expr_correct_binding_pat(expr, true) {
+                                        self.storage
+                                            .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
+                                    }
                                 }
 
                                 RPat::Invalid(_) => {
@@ -1175,7 +1200,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
-        debug_assert!(!self.is_builtin);
+        debug_assert!(!self.config.is_builtin);
 
         ty.assert_valid();
         ty.assert_clone_cheap();
@@ -1355,7 +1380,7 @@ impl Analyzer<'_, '_> {
                 if new_obj_types.is_empty() {
                     return Ok(None);
                 }
-                let mut ty = Type::union(new_obj_types);
+                let mut ty = Type::new_union(span, new_obj_types);
                 ty.fix();
 
                 return Ok(Some((Name::from(top.clone()), ty)));
@@ -1363,6 +1388,16 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(None)
+    }
+}
+
+fn is_expr_correct_binding_pat(e: &RExpr, is_top_level: bool) -> bool {
+    match e {
+        RExpr::This(..) => !is_top_level,
+        RExpr::Ident(..) => true,
+        RExpr::SuperProp(..) => true,
+        RExpr::Member(RMemberExpr { obj, .. }) => is_expr_correct_binding_pat(obj, false),
+        _ => false,
     }
 }
 
@@ -1412,8 +1447,7 @@ impl Analyzer<'_, '_> {
         } else {
             vec![cons, alt]
         };
-        let mut ty = Type::union(new_types).fixed();
-        ty.reposition(span);
+        let ty = Type::new_union(span, new_types).fixed();
         ty.assert_valid();
         Ok(ty)
     }

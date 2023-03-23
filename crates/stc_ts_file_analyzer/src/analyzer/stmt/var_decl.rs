@@ -2,18 +2,19 @@ use std::borrow::Cow;
 
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl, RVarDeclarator,
+    RArrayPat, RArrowExpr, RBindingIdent, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsFnOrConstructorType,
+    RTsFnParam, RTsFnType, RTsQualifiedName, RTsType, RTsTypeAssertion, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata, QueryExpr, QueryType,
-    Symbol, SymbolMetadata,
+    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, OperatorMetadata, QueryExpr, QueryType, Symbol,
+    SymbolMetadata, ThisType, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
-use swc_common::Spanned;
+use swc_common::{Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::debug;
 use ty::TypeExt;
@@ -26,7 +27,7 @@ use crate::{
         scope::{vars::DeclareVarsOpts, ExpandOpts, VarKind},
         types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
-        Analyzer, Ctx,
+        Analyzer, Ctx, ScopeKind,
     },
     ty::{self, Tuple, Type, TypeParam},
     util::{should_instantiate_type_ann, RemoveTypes},
@@ -86,7 +87,7 @@ impl Analyzer<'_, '_> {
 
         let res: Result<_, _> = try {
             let v_span = v.span();
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 debug_assert!(!v_span.is_dummy());
             }
 
@@ -173,6 +174,16 @@ impl Analyzer<'_, '_> {
                 let old_this = if creates_new_this { self.scope.this.take() } else { None };
 
                 let declared_ty = v.name.get_ty();
+                let declared_ty_include_this =
+                    if let Some(RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(RTsFnType { params, .. }))) = declared_ty {
+                        if let [RTsFnParam::Ident(RBindingIdent { id, .. }), ..] = &params[..] {
+                            id.sym == js_word!("this")
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    };
                 if declared_ty.is_some() {
                     //TODO(kdy1):
                     // self.span_allowed_implicit_any = span;
@@ -191,7 +202,7 @@ impl Analyzer<'_, '_> {
                                 if creates_new_this {
                                     self.scope.this = old_this;
                                 }
-                                if self.is_builtin {
+                                if self.config.is_builtin {
                                     unreachable!("failed to assign builtin: \nError: {:?}", err)
                                 } else {
                                     self.storage.report(err);
@@ -210,7 +221,7 @@ impl Analyzer<'_, '_> {
                 match declared_ty {
                     Some(ty) => {
                         debug!("var: user declared type");
-                        let ty = match ty.validate_with(self) {
+                        let mut ty = match ty.validate_with(self) {
                             Ok(ty) => ty,
                             Err(err) => {
                                 self.storage.report(err);
@@ -218,12 +229,22 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
                         };
+
+                        if declared_ty_include_this {
+                            if let box RExpr::Arrow(RArrowExpr { .. }) = init {
+                                if let Type::Function(stc_ts_types::Function { params, .. }) = ty.normalize_mut() {
+                                    *params = params[1..].to_vec();
+                                }
+                            }
+                        }
+
                         let ty = self.expand(span, ty, Default::default())?;
                         let error_for_null_or_undefined = if matches!(v.name, RPat::Array(..) | RPat::Object(..)) {
                             self.deny_null_or_undefined(span, &ty)
                         } else {
                             Ok(())
                         };
+
                         ty.assert_valid();
                         let mut ty = (|| {
                             if !should_instantiate_type_ann(&ty) {
@@ -241,12 +262,71 @@ impl Analyzer<'_, '_> {
                         ty.freeze();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
-                        self.scope.this = Some(ty.clone().remove_falsy());
+                        self.scope.this = Some(
+                            if matches!(
+                                ty.normalize(),
+                                Type::Query(QueryType {
+                                    expr: box QueryExpr::TsEntityName(RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                                        left: RTsEntityName::Ident(RIdent { sym: js_word!("this"), .. }),
+                                        ..
+                                    })),
+                                    ..
+                                })
+                            ) || self.ctx.in_class_member
+                            {
+                                if self.scope.this().is_some() {
+                                    self.scope.this().unwrap().into_owned()
+                                } else {
+                                    if matches!(self.scope.kind(), ScopeKind::ArrowFn) {
+                                        // ```ts
+                                        // const Test8 = () => {
+                                        //     let x: typeof this.no = 1;
+                                        //   };
+                                        // ```
+                                        Type::Query(QueryType {
+                                            span,
+                                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                                                "globalThis".into(),
+                                                span.with_ctxt(SyntaxContext::empty()),
+                                            ))),
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                    } else {
+                                        // ```ts
+                                        // class Test {
+                                        //     data = {};
+                                        //     constructor() {
+                                        //       var copy: typeof this.data = {};
+                                        //     }
+                                        //   }
+                                        // ```
+                                        Type::This(ThisType {
+                                            span,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        })
+                                    }
+                                }
+                            } else {
+                                // export let p1: Point = {
+                                //     x: 10,
+                                //     y: 20,
+                                //     moveBy(dx, dy, dz) {
+                                //         this.x += dx;
+                                //         this.y += dy;
+                                //         if (this.z && dz) {
+                                //             this.z += dz;
+                                //         }
+                                //     }
+                                // };
+                                ty.clone().remove_falsy()
+                            },
+                        );
+
                         let mut value_ty = get_value_ty!(Some(&ty));
                         value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty, Default::default())?;
-                        value_ty.assert_valid();
-                        value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
                         value_ty.freeze();
 
@@ -324,6 +404,10 @@ impl Analyzer<'_, '_> {
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
                         ty.assert_valid();
+
+                        if self.ctx.var_kind == VarDeclKind::Const && ty.is_lit() {
+                            prevent_generalize(&mut ty);
+                        }
 
                         #[allow(clippy::nonminimal_bool)]
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) && !matches!(v.name, RPat::Array(_) | RPat::Object(..))
@@ -405,9 +489,8 @@ impl Analyzer<'_, '_> {
                                         metadata: KeywordTypeMetadata { common, .. },
                                         ..
                                     })
-                                    | Type::Operator(Operator {
+                                    | Type::Unique(Unique {
                                         span,
-                                        op: TsTypeOperatorOp::Unique,
                                         ty:
                                             box Type::Keyword(KeywordType {
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -423,9 +506,8 @@ impl Analyzer<'_, '_> {
                                     }) => {
                                         match self.ctx.var_kind {
                                             // It's `unique symbol` only if it's `Symbol()`
-                                            VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
+                                            VarDeclKind::Const if is_symbol_call => Type::Unique(Unique {
                                                 span: *span,
-                                                op: TsTypeOperatorOp::Unique,
                                                 ty: box Type::Keyword(KeywordType {
                                                     span: *span,
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -662,7 +744,7 @@ impl Analyzer<'_, '_> {
 
                         ty.freeze();
 
-                        if !self.is_builtin {
+                        if !self.config.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
                                 self.normalize(
@@ -687,6 +769,7 @@ impl Analyzer<'_, '_> {
                             false,
                             // allow_multiple
                             kind == VarDeclKind::Var,
+                            false,
                             false,
                         ) {
                             Ok(..) => {}

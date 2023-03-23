@@ -29,6 +29,14 @@ impl RExpr {
             })
         )
     }
+
+    pub fn is_arrow_expr(&self) -> bool {
+        match self {
+            RExpr::Arrow(RArrowExpr { .. }) => true,
+            RExpr::Paren(RParenExpr { expr, .. }) => expr.is_arrow_expr(),
+            _ => false,
+        }
+    }
 }
 
 impl From<RTsEntityName> for RExpr {
@@ -152,6 +160,51 @@ impl TypeEq for RTsLit {
     }
 }
 
+impl RExpr {
+    pub fn node_id(&self) -> Option<NodeId> {
+        match self {
+            RExpr::This(v) => Some(v.node_id),
+            RExpr::Array(v) => Some(v.node_id),
+            RExpr::Object(v) => Some(v.node_id),
+            RExpr::Fn(v) => Some(v.node_id),
+            RExpr::Unary(v) => Some(v.node_id),
+            RExpr::Update(v) => Some(v.node_id),
+            RExpr::Bin(v) => Some(v.node_id),
+            RExpr::Assign(v) => Some(v.node_id),
+            RExpr::Member(v) => Some(v.node_id),
+            RExpr::SuperProp(v) => Some(v.node_id),
+            RExpr::Cond(v) => Some(v.node_id),
+            RExpr::Call(v) => Some(v.node_id),
+            RExpr::New(v) => Some(v.node_id),
+            RExpr::Seq(v) => Some(v.node_id),
+            RExpr::Ident(v) => Some(v.node_id),
+            RExpr::Lit(..) => None,
+            RExpr::Tpl(v) => Some(v.node_id),
+            RExpr::TaggedTpl(v) => Some(v.node_id),
+            RExpr::Arrow(v) => Some(v.node_id),
+            RExpr::Class(v) => Some(v.node_id),
+            RExpr::Yield(v) => Some(v.node_id),
+            RExpr::MetaProp(v) => Some(v.node_id),
+            RExpr::Await(v) => Some(v.node_id),
+            RExpr::Paren(v) => Some(v.node_id),
+            RExpr::JSXMember(v) => Some(v.node_id),
+            RExpr::JSXNamespacedName(v) => Some(v.node_id),
+            RExpr::JSXEmpty(v) => Some(v.node_id),
+            RExpr::JSXElement(v) => Some(v.node_id),
+            RExpr::JSXFragment(v) => Some(v.node_id),
+            RExpr::TsTypeAssertion(v) => Some(v.node_id),
+            RExpr::TsConstAssertion(v) => Some(v.node_id),
+            RExpr::TsNonNull(v) => Some(v.node_id),
+            RExpr::TsAs(v) => Some(v.node_id),
+            RExpr::TsInstantiation(v) => Some(v.node_id),
+            RExpr::TsSatisfies(v) => Some(v.node_id),
+            RExpr::PrivateName(v) => Some(v.node_id),
+            RExpr::OptChain(v) => Some(v.node_id),
+            RExpr::Invalid(..) => None,
+        }
+    }
+}
+
 define_rnode!({
     pub struct Class {
         pub span: Span,
@@ -172,6 +225,7 @@ define_rnode!({
         PrivateProp(PrivateProp),
         TsIndexSignature(TsIndexSignature),
         StaticBlock(StaticBlock),
+        AutoAccessor(AutoAccessor),
         Empty(EmptyStmt),
     }
 
@@ -423,7 +477,7 @@ define_rnode!({
     pub struct ArrowExpr {
         pub span: Span,
         pub params: Vec<Pat>,
-        pub body: BlockStmtOrExpr,
+        pub body: Box<BlockStmtOrExpr>,
         pub is_async: bool,
         pub is_generator: bool,
         pub type_params: Option<Box<TsTypeParamDecl>>,
@@ -450,7 +504,7 @@ define_rnode!({
     pub struct TaggedTpl {
         pub span: Span,
         pub tag: Box<Expr>,
-        pub tpl: Tpl,
+        pub tpl: Box<Tpl>,
         pub type_params: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TplElement {
@@ -482,7 +536,7 @@ define_rnode!({
     pub struct OptChainExpr {
         pub span: Span,
         pub question_dot_token: Span,
-        pub base: OptChainBase,
+        pub base: Box<OptChainBase>,
     }
     pub enum OptChainBase {
         Member(MemberExpr),
@@ -725,6 +779,7 @@ define_rnode!({
         pub span: Span,
         pub src: Box<Str>,
         pub asserts: Option<Box<ObjectLit>>,
+        pub type_only: bool,
     }
     pub struct NamedExport {
         pub span: Span,
@@ -987,7 +1042,7 @@ define_rnode!({
     }
     pub struct ForOfStmt {
         pub span: Span,
-        pub await_token: Option<Span>,
+        pub is_await: bool,
         pub left: VarDeclOrPat,
         pub right: Box<Expr>,
         pub body: Box<Stmt>,
@@ -1440,5 +1495,20 @@ define_rnode!({
     pub enum SuperProp {
         Ident(Ident),
         Computed(ComputedPropName),
+    }
+
+    pub enum Key {
+        Private(PrivateName),
+        Public(PropName),
+    }
+
+    pub struct AutoAccessor {
+        pub span: Span,
+        pub key: Key,
+        pub value: Option<Box<Expr>>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub is_static: bool,
+        pub decorators: Vec<Decorator>,
+        pub accessibility: Option<Accessibility>,
     }
 });

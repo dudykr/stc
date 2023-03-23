@@ -1,24 +1,29 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:28:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:27:1]
+ 27 | 
  28 | x6.x
     : ^^
+ 29 | x6.x
     `----
 
 Error: 
   > I6
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:28:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:27:1]
+ 27 | 
  28 | x6.x
     : ^^^^
+ 29 | x6.x
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:29:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:28:1]
+ 28 | x6.x
  29 | x6.x
     : ^^
     `----
@@ -27,7 +32,8 @@ Error:
   > I6
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:29:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:28:1]
+ 28 | x6.x
  29 | x6.x
     : ^^^^
     `----

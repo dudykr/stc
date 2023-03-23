@@ -1,1 +1,1 @@
-[{"line":4,"column":9,"code":"TS2322"},{"line":4,"column":14,"code":"TS2803"}]
+[{"filename":"tests/cases/conformance/classes/members/privateNames/privateNameReadonly.ts","line":4,"column":9,"code":"TS2322"},{"filename":"tests/cases/conformance/classes/members/privateNames/privateNameReadonly.ts","line":4,"column":14,"code":"TS2803"}]

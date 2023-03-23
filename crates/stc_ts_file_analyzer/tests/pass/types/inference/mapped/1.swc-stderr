@@ -1,26 +1,32 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:5]
- 12 | assign(s1, { name: "circle" });
-    : ^^^^^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:11:1]
+ 11 | export function f0(s1: Shape, s2: Shape) {
+ 12 |     assign(s1, { name: "circle" });
+    :     ^^^^^^
+ 13 |     assign(s2, { width: 10, height: 20 });
     `----
 
 Error: 
   > <T>(obj: T, props: Partial<T>) => void
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:5]
- 12 | assign(s1, { name: "circle" });
-    :        ^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:11:1]
+ 11 | export function f0(s1: Shape, s2: Shape) {
+ 12 |     assign(s1, { name: "circle" });
+    :            ^^
+ 13 |     assign(s2, { width: 10, height: 20 });
     `----
 
 Error: 
   > Shape
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:5]
- 12 | assign(s1, { name: "circle" });
-    :            ^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:11:1]
+ 11 | export function f0(s1: Shape, s2: Shape) {
+ 12 |     assign(s1, { name: "circle" });
+    :                ^^^^^^^^^^^^^^^^^^
+ 13 |     assign(s2, { width: 10, height: 20 });
     `----
 
 Error: 
@@ -29,36 +35,44 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:5]
- 12 | assign(s1, { name: "circle" });
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:11:1]
+ 11 | export function f0(s1: Shape, s2: Shape) {
+ 12 |     assign(s1, { name: "circle" });
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 13 |     assign(s2, { width: 10, height: 20 });
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:13:5]
- 13 | assign(s2, { width: 10, height: 20 });
-    : ^^^^^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:1]
+ 12 |     assign(s1, { name: "circle" });
+ 13 |     assign(s2, { width: 10, height: 20 });
+    :     ^^^^^^
+ 14 | }
     `----
 
 Error: 
   > <T>(obj: T, props: Partial<T>) => void
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:13:5]
- 13 | assign(s2, { width: 10, height: 20 });
-    :        ^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:1]
+ 12 |     assign(s1, { name: "circle" });
+ 13 |     assign(s2, { width: 10, height: 20 });
+    :            ^^
+ 14 | }
     `----
 
 Error: 
   > Shape
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:13:5]
- 13 | assign(s2, { width: 10, height: 20 });
-    :            ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:1]
+ 12 |     assign(s1, { name: "circle" });
+ 13 |     assign(s2, { width: 10, height: 20 });
+    :                ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 14 | }
     `----
 
 Error: 
@@ -68,9 +82,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:13:5]
- 13 | assign(s2, { width: 10, height: 20 });
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/inference/mapped/1.ts:12:1]
+ 12 |     assign(s1, { name: "circle" });
+ 13 |     assign(s2, { width: 10, height: 20 });
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 14 | }
     `----
 
 Error: 

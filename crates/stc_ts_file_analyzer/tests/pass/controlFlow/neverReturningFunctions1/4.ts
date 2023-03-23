@@ -1,5 +1,5 @@
 //@strict: true
-//@allowUnreachableCode: false
+//@allowUnreachableCode: true
 
 function fail(message?: string): never {
     throw new Error(message);

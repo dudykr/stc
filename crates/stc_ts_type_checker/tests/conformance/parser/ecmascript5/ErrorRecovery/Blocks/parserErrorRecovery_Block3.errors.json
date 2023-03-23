@@ -1,1 +1,1 @@
-[{"line":2,"column":18,"code":"TS2355"},{"line":4,"column":5,"code":"TS1128"},{"line":4,"column":18,"code":"TS2355"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/Blocks/parserErrorRecovery_Block3.ts","line":2,"column":18,"code":"TS2355"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/Blocks/parserErrorRecovery_Block3.ts","line":4,"column":5,"code":"TS1128"},{"filename":"tests/cases/conformance/parser/ecmascript5/ErrorRecovery/Blocks/parserErrorRecovery_Block3.ts","line":4,"column":18,"code":"TS2355"}]

@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:8:1]
+ 8 | // no error
  9 | i1.tuple1 = ["foo", 5, false, true];
    : ^^
    `----
@@ -9,7 +10,8 @@ Error:
   > I
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:8:1]
+ 8 | // no error
  9 | i1.tuple1 = ["foo", 5, false, true];
    : ^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > [string, number]
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:8:1]
+ 8 | // no error
  9 | i1.tuple1 = ["foo", 5, false, true];
    :             ^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > ["foo", 5, false, true]
 
   x Type
-   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:8:1]
+ 8 | // no error
  9 | i1.tuple1 = ["foo", 5, false, true];
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

@@ -1,23 +1,24 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/3.ts:19:1]
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/3.ts:18:1]
+ 18 | declare let x: ListChild;
  19 | x.type;
     : ^
     `----
 
 Error: 
   > {
-  |     type: ListWidget["type"];
-  |     minimum_count: ListWidget["minimum_count"];
-  |     maximum_count: ListWidget["maximum_count"];
-  |     each: ListWidget["each"];
+  |     [P in NonOptionalKeys<ListWidget>]: ListWidget[P];
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/3.ts:19:1]
+    ,-[$DIR/tests/pass/types/mapped/recursiveMappedTypes/3.ts:18:1]
+ 18 | declare let x: ListChild;
  19 | x.type;
     : ^^^^^^
     `----
 
 Error: 
-  > "list"
+  > {
+  |     [P in NonOptionalKeys<ListWidget>]: ListWidget[P];
+  | }["type"]

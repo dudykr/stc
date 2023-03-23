@@ -1,1 +1,1 @@
-[{"line":5,"column":9,"code":"TS1029"},{"line":5,"column":27,"code":"TS2708"},{"line":5,"column":29,"code":"TS2694"}]
+[{"filename":"tests/cases/compiler/importDeclWithDeclareModifier.ts","line":5,"column":9,"code":"TS1029"},{"filename":"tests/cases/compiler/importDeclWithDeclareModifier.ts","line":5,"column":27,"code":"TS2708"},{"filename":"tests/cases/compiler/importDeclWithDeclareModifier.ts","line":5,"column":29,"code":"TS2694"}]

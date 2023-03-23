@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:5]
- 2 | if (x.a === 0) {
-   :     ^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:1:1]
+ 1 | function f14<T>(x: { a: 0; b: string } | { a: T, c: number }) {
+ 2 |     if (x.a === 0) {
+   :         ^
+ 3 |         x
    `----
 
 Error: 
@@ -15,27 +17,33 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:5]
- 2 | if (x.a === 0) {
-   :     ^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:1:1]
+ 1 | function f14<T>(x: { a: 0; b: string } | { a: T, c: number }) {
+ 2 |     if (x.a === 0) {
+   :         ^^^
+ 3 |         x
    `----
 
 Error: 
   > (0 | T)
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:5]
- 2 | if (x.a === 0) {
-   :     ^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:1:1]
+ 1 | function f14<T>(x: { a: 0; b: string } | { a: T, c: number }) {
+ 2 |     if (x.a === 0) {
+   :         ^^^^^^^^^
+ 3 |         x
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:3:9]
- 3 | x
-   : ^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/1.ts:2:1]
+ 2 |     if (x.a === 0) {
+ 3 |         x
+   :         ^
+ 4 |     }
    `----
 
 Error: 

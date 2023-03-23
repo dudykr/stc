@@ -3,15 +3,18 @@
    ,-[$DIR/tests/pass/fn/impl/1.ts:1:1]
  1 | undefined === function(): number {
    : ^^^^^^^^^
+ 2 |   throw undefined
    `----
 
 Error: 
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/fn/impl/1.ts:2:3]
- 2 | throw undefined
-   :       ^^^^^^^^^
+   ,-[$DIR/tests/pass/fn/impl/1.ts:1:1]
+ 1 | undefined === function(): number {
+ 2 |   throw undefined
+   :         ^^^^^^^^^
+ 3 | }
    `----
 
 Error: 

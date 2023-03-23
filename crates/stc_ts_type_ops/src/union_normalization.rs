@@ -9,11 +9,10 @@ use stc_ts_types::{
     CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
     TypeParamDecl, Union,
 };
-use stc_utils::{cache::Freeze, ext::TypeVecExt};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::instrument;
 
 /// See https://github.com/dudykr/stc/blob/e8f1daf0e336d978a1de5479ad9676093faf5921/crates/stc_ts_type_checker/tests/conformance/expressions/objectLiterals/objectLiteralNormalization.ts
 pub struct ObjectUnionNormalizer {
@@ -320,7 +319,6 @@ impl ObjectUnionNormalizer {
     }
 
     /// - `types`: Types of a union.
-    #[instrument(skip_all)]
     fn normalize_keys(&self, types: &mut Vec<Type>) {
         fn insert_property_to(ty: &mut Type, keys: &[JsWord], inexact: bool) {
             if let Some(ty) = ty.as_union_type_mut() {
@@ -419,6 +417,8 @@ impl ObjectUnionNormalizer {
                 }
             }
         }
+
+        let _tracing = dev_span!("normalize_keys");
 
         let deep = self.find_keys(&*types);
 

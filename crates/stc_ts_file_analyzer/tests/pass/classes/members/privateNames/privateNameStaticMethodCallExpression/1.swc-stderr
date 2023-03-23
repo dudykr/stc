@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:3:5]
- 3 | static #method() { this.x = 10; };
-   :                    ^^^^
+   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:2:1]
+ 2 | export class AA {
+ 3 |     static #method() { this.x = 10; };
+   :                        ^^^^
+ 4 |     static #method2(a: any, ...b: any) { };
    `----
 
 Error: 
   > this
 
   x Type
-   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:3:5]
- 3 | static #method() { this.x = 10; };
-   :                    ^^^^^^
+   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:2:1]
+ 2 | export class AA {
+ 3 |     static #method() { this.x = 10; };
+   :                        ^^^^^^
+ 4 |     static #method2(a: any, ...b: any) { };
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:3:5]
- 3 | static #method() { this.x = 10; };
-   :                    ^^^^^^^^^^^
+   ,-[$DIR/tests/pass/classes/members/privateNames/privateNameStaticMethodCallExpression/1.ts:2:1]
+ 2 | export class AA {
+ 3 |     static #method() { this.x = 10; };
+   :                        ^^^^^^^^^^^
+ 4 |     static #method2(a: any, ...b: any) { };
    `----
 
 Error: 

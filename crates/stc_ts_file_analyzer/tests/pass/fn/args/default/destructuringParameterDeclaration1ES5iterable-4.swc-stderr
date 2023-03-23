@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                    ^^^^^^^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                   ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > [any]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                                ^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                                             ^^^^^^^^^
    `----
@@ -36,7 +40,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                                                        ^^^^^^^^^
    `----
@@ -45,7 +50,8 @@ Error:
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                                            ^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -54,7 +60,8 @@ Error:
   > [any, any]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                                           ^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -63,7 +70,8 @@ Error:
   > [[any, any]]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:6:1]
+ 6 | 
  7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
    :                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -72,16 +80,18 @@ Error:
   > [[any], undefined, [[any, any]]]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
+ 8 | 
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                ^^
    `----
 
 Error: 
-  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+  > ([[a], b, [[c, d]]]?: [[any], any, [[any, any]]]) => void
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
+ 8 | 
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                    ^^^^^^^^^^
    `----
@@ -90,7 +100,8 @@ Error:
   > ["string"]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
+ 8 | 
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                                    ^^^^^^^^^^^^^
    `----
@@ -99,7 +110,8 @@ Error:
   > [true, false]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
+ 8 | 
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                                   ^^^^^^^^^^^^^^^
    `----
@@ -108,7 +120,8 @@ Error:
   > [[true, false]]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
+ 8 | 
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -117,7 +130,8 @@ Error:
   > [["string"], 1, [[true, false]]]
 
   x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:1]
+   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:8:1]
+ 8 | 
  9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

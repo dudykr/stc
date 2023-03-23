@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/3.ts:4:5]
- 4 | let y3: string | undefined = x;
-   :                              ^
+   ,-[$DIR/tests/pass/types/intersection/intersectionWithUnionConstraint/3.ts:3:1]
+ 3 | function f2<T extends string | number | undefined, U extends string | null | undefined>(x: T & U) {
+ 4 |     let y3: string | undefined = x;
+   :                                  ^
+ 5 | }
    `----
 
 Error: 

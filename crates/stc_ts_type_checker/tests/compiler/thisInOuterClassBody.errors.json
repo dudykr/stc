@@ -1,1 +1,1 @@
-[{"line":12,"column":22,"code":"TS2576"},{"line":18,"column":22,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/thisInOuterClassBody.ts","line":12,"column":22,"code":"TS2576"},{"filename":"tests/cases/compiler/thisInOuterClassBody.ts","line":18,"column":22,"code":"TS2339"}]

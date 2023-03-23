@@ -6,9 +6,9 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, IdCtx, ModuleId};
+use stc_ts_types::{name::Name, Id, IdCtx, Key};
 use stc_ts_utils::find_ids_in_pat;
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -39,7 +39,6 @@ impl Analyzer<'_, '_> {
                 }
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
-
                     a.export_type(i.span(), i.id.clone().into(), None)
                 }
 
@@ -65,15 +64,16 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()));
                     a.register_type(e.id.clone().into(), ty);
 
-                    a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
                     a.storage
-                        .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
+                        .export_stored_type(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
+                    a.storage
+                        .export_stored_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
                 RDecl::TsModule(module) => match &module.id {
                     RTsModuleName::Ident(id) => {
                         module.visit_with(a);
-
-                        a.storage.export_type(span, a.ctx.module_id, id.clone().into());
+                        a.storage
+                            .export_stored_type(span, a.ctx.module_id, id.clone().into(), id.clone().into());
                     }
                     RTsModuleName::Str(..) => {
                         let module: Option<Type> = module.validate_with(a)?;
@@ -85,11 +85,7 @@ impl Analyzer<'_, '_> {
                         };
                         // a.storage.export_wildcard_module(s.span, s.value,
                         // module);
-                        return Err(ErrorKind::Unimplemented {
-                            span,
-                            msg: format!("Exporting module with a wildcard: {:?}", module),
-                        }
-                        .into());
+                        return Err(ErrorKind::ExportAmbientModule { span }.into());
                     }
                 },
                 RDecl::TsTypeAlias(ref decl) => {
@@ -98,7 +94,6 @@ impl Analyzer<'_, '_> {
                     // export type Foo = {};
 
                     // TODO(kdy1): Handle type parameters.
-
                     a.export_type(span, decl.id.clone().into(), None)
                 }
             }
@@ -131,7 +126,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.declare_var(span, VarKind::Fn, i.clone(), Some(fn_ty.into()), None, true, true, false)
+                self.declare_var(span, VarKind::Fn, i.clone(), Some(fn_ty.into()), None, true, true, false, false)
                     .report(&mut self.storage);
 
                 self.export_var(f.span(), Id::word(js_word!("default")), Some(i), f.function.body.is_some());
@@ -150,7 +145,7 @@ impl Analyzer<'_, '_> {
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
 
-                self.declare_var(span, VarKind::Class, var_name, Some(class_ty), None, true, true, false)
+                self.declare_var(span, VarKind::Class, var_name, Some(class_ty), None, true, true, false, false)
                     .report(&mut self.storage);
 
                 self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
@@ -172,19 +167,28 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Currently noop because we need to know if a function is last item among
     /// overloads
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_errors_for_duplicated_exports_of_var(&mut self, span: Span, sym: JsWord) {
         if self.ctx.reevaluating() {
             return;
         }
+        let _tracing = dev_span!("report_errors_for_duplicated_exports_of_var");
+
         let v = self.data.for_module.exports_spans.entry((sym.clone(), IdCtx::Var)).or_default();
+        let func_spans = &self.data.fn_impl_spans;
+        let is_duplicated_func = func_spans.iter().any(|(_, spans)| spans.len() >= 2);
+
         v.push(span);
 
+        let is_duplicated_export = v.len() >= 2;
         // TODO(kdy1): Optimize this by emitting same error only once.
-        if v.len() >= 2 {
+        if is_duplicated_export {
             for &span in &*v {
                 if sym == js_word!("default") {
-                    self.storage.report(ErrorKind::DuplicateDefaultExport { span }.into());
+                    if is_duplicated_func || func_spans.len() >= 2 {
+                        self.storage.report(ErrorKind::DuplicateExport { span }.into());
+                    } else {
+                        self.storage.report(ErrorKind::DuplicateDefaultExport { span }.into());
+                    }
                 } else {
                     self.storage.report(ErrorKind::DuplicateExport { span }.into());
                 }
@@ -193,14 +197,15 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
+        let _tracing = dev_span!("export_var", name = tracing::field::debug(&name));
+
         if check_duplicate {
             self.report_errors_for_duplicated_exports_of_var(span, name.sym().clone());
         }
 
         self.storage
-            .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
+            .export_stored_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
     }
 
     /// Exports a type.
@@ -211,8 +216,9 @@ impl Analyzer<'_, '_> {
     /// Note: We don't freeze types at here because doing so may prevent proper
     /// finalization.
     #[extra_validator]
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
+        let _tracing = dev_span!("export_type", name = tracing::field::debug(&name));
+
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
         let types = match self.find_type(&orig_name) {
@@ -229,24 +235,22 @@ impl Analyzer<'_, '_> {
         };
 
         let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.freezed()).collect::<Vec<_>>();
-
         for ty in iter {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
 
-        self.storage.export_type(span, self.ctx.module_id, name);
+        self.storage.export_stored_type(span, self.ctx.module_id, name, orig_name);
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> VResult<()> {
-        self.report_errors_for_duplicated_exports_of_var(e.span(), name.sym().clone());
+    fn export_expr(&mut self, span: Span, name: JsWord, item_node_id: NodeId, e: &RExpr) -> VResult<()> {
+        self.report_errors_for_duplicated_exports_of_var(e.span(), name.clone());
 
         let ty = e.validate_with_default(self)?.freezed();
 
-        if *name.sym() == js_word!("default") {
-            if let RExpr::Ident(..) = e {
-                return Ok(());
-            }
+        self.storage.export_var(span, self.ctx.module_id, name.clone(), ty.clone());
+
+        if name == js_word!("default") {
             let var = RVarDeclarator {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
@@ -267,7 +271,7 @@ impl Analyzer<'_, '_> {
                 init: None,
                 definite: false,
             };
-            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+            self.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
@@ -291,9 +295,21 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
-        let ctx = Ctx { ..self.ctx };
+        let span = node.span;
+        let ctx = Ctx {
+            in_export_assignment: true,
+            ..self.ctx
+        };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
+            .export_expr(node.span, js_word!("default"), node.node_id, &node.expr)?;
+
+        if let Ok(name) = Name::try_from(&*node.expr) {
+            let ty = self.type_of_name(span, &name, TypeOfMode::RValue, None);
+            if let Ok(mut ty) = ty {
+                ty.freeze();
+                self.storage.export_type(span, self.ctx.module_id, js_word!("default"), ty);
+            }
+        }
 
         Ok(())
     }
@@ -308,7 +324,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
+            .export_expr(node.span, js_word!("default"), node.node_id, &node.expr)?;
 
         Ok(())
     }
@@ -319,6 +335,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportNamedSpecifier) {
         let ctx = Ctx {
             report_error_for_non_local_vars: true,
+            in_export_named: true,
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
@@ -357,11 +374,11 @@ impl Analyzer<'_, '_> {
             match data.normalize() {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
-                        self.storage.reexport_var(span, dep, id.clone(), ty.clone());
+                        self.storage.export_var(span, dep, id.clone(), ty.clone());
                     }
                     for (id, types) in data.exports.types.iter() {
                         for ty in types {
-                            self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+                            self.storage.export_type(span, dep, id.clone(), ty.clone());
                         }
                     }
                 }
@@ -376,7 +393,13 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RNamedExport) {
+    fn validate(&mut self, node: &RNamedExport) -> VResult<()> {
+        self.validate_named_export(node)
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn validate_named_export(&mut self, node: &RNamedExport) -> VResult<()> {
         let span = node.span;
         let base = self.ctx.module_id;
 
@@ -385,40 +408,110 @@ impl Analyzer<'_, '_> {
             node.specifiers.visit_with(self);
         }
 
-        for specifier in &node.specifiers {
-            match specifier {
-                RExportSpecifier::Namespace(_) => {
-                    // We need
-                    match &node.src {
-                        Some(src) => {
-                            let (dep, data) = self.get_imported_items(node.span, &src.value);
+        match &node.src {
+            Some(src) => {
+                let (dep, data) = self.get_imported_items(node.span, &src.value);
+
+                for specifier in &node.specifiers {
+                    match specifier {
+                        RExportSpecifier::Namespace(s) => {
+                            // We need
+                            match &node.src {
+                                Some(src) => {
+                                    let name = match &s.name {
+                                        RModuleExportName::Ident(v) => v.sym.clone(),
+                                        RModuleExportName::Str(v) => v.value.clone(),
+                                    };
+
+                                    self.storage.export_type(s.span, self.ctx.module_id, name.clone(), data.clone());
+                                    self.storage.export_var(s.span, self.ctx.module_id, name, data.clone());
+                                }
+                                None => {}
+                            }
                         }
-                        None => {}
+                        RExportSpecifier::Default(named) => {}
+                        RExportSpecifier::Named(named) => {
+                            let span = named.span;
+
+                            let orig_sym = match &named.orig {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            let export_sym = named.exported.as_ref().unwrap_or(&named.orig);
+                            let export_sym = match export_sym {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            let var_result = self.access_property(
+                                span,
+                                &data,
+                                &Key::Normal {
+                                    span,
+                                    sym: orig_sym.clone(),
+                                },
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                Default::default(),
+                            );
+                            let type_result = self.access_property(
+                                span,
+                                &data,
+                                &Key::Normal { span, sym: orig_sym },
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                Default::default(),
+                            );
+
+                            if let Ok(mut ty) = var_result {
+                                ty.freeze();
+
+                                self.storage.export_var(span, self.ctx.module_id, export_sym.clone(), ty);
+                            }
+
+                            if let Ok(mut ty) = type_result {
+                                ty.freeze();
+
+                                self.storage.export_type(span, self.ctx.module_id, export_sym, ty);
+                            }
+                        }
                     }
                 }
-                RExportSpecifier::Default(_) => {}
-                RExportSpecifier::Named(named) => {
-                    //
-
-                    match &node.src {
-                        Some(src) => {
-                            let (dep, data) = self.get_imported_items(node.span, &src.value);
-
-                            self.reexport(
-                                span,
-                                base,
-                                dep,
-                                named.exported.as_ref().map(Id::from).unwrap_or_else(|| Id::from(&named.orig)),
-                                Id::from(&named.orig),
-                            );
+            }
+            None => {
+                for specifier in &node.specifiers {
+                    match specifier {
+                        RExportSpecifier::Namespace(s) => {
+                            unreachable!("namespace export should be handled in `export_all`")
                         }
-                        None => {
-                            self.export_named(
-                                span,
-                                base,
-                                Id::from(&named.orig),
-                                named.exported.as_ref().map(Id::from).unwrap_or_else(|| Id::from(&named.orig)),
-                            );
+                        RExportSpecifier::Default(named) => {}
+                        RExportSpecifier::Named(named) => {
+                            let export_sym = named.exported.as_ref().unwrap_or(&named.orig);
+                            let export_sym = match export_sym {
+                                RModuleExportName::Ident(v) => v.sym.clone(),
+                                RModuleExportName::Str(v) => v.value.clone(),
+                            };
+
+                            let orig = match &named.orig {
+                                RModuleExportName::Ident(v) => v.clone(),
+                                RModuleExportName::Str(v) => unreachable!(),
+                            };
+                            //
+                            let var_result = self.type_of_var(&orig, TypeOfMode::RValue, None);
+                            let type_result = self.type_of_ts_entity_name(span, &RExpr::Ident(orig.clone()), None);
+
+                            if let Ok(mut ty) = var_result {
+                                ty.freeze();
+
+                                self.storage.export_var(span, self.ctx.module_id, export_sym.clone(), ty);
+                            }
+
+                            if let Ok(mut ty) = type_result {
+                                ty.freeze();
+
+                                self.storage.export_type(span, self.ctx.module_id, export_sym, ty);
+                            }
                         }
                     }
                 }
@@ -426,52 +519,5 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(())
-    }
-}
-
-impl Analyzer<'_, '_> {
-    fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
-        if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
-            self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
-
-            self.storage.export_var(span, ctxt, id.clone(), orig.clone());
-        }
-
-        if self.storage.get_local_type(ctxt, orig).is_some() {
-            self.storage.export_type(span, ctxt, id);
-        }
-    }
-
-    fn reexport(&mut self, span: Span, ctxt: ModuleId, from: ModuleId, orig: Id, id: Id) {
-        let mut did_work = false;
-
-        // Dependency module is not found.
-        if ctxt == from {
-            return;
-        }
-
-        if let Some(data) = self.imports.get(&(ctxt, from)) {
-            match data.normalize() {
-                Type::Module(data) => {
-                    if let Some(ty) = data.exports.vars.get(orig.sym()) {
-                        did_work = true;
-                        self.storage.reexport_var(span, ctxt, id.sym().clone(), ty.clone());
-                    }
-
-                    if let Some(ty) = data.exports.types.get(orig.sym()) {
-                        did_work = true;
-                        let ty = Type::union(ty.clone());
-                        self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
-                    }
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
-        }
-
-        if !did_work {
-            self.storage.report(ErrorKind::ExportFailed { span, orig, id }.into())
-        }
     }
 }

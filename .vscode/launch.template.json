@@ -15,8 +15,11 @@
                 ],
             },
             // "args": ["path/to/.ts file"],
-            "cwd": "${workspaceFolder}"
-        },
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "CARGO_MANIFEST_DIR": "${fileDirname}"
+              }
+        }
 
     ]
 }

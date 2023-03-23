@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use stc_ts_errors::ErrorKind;
 use stc_ts_types::{TsExpr, Type, TypeElement, TypeLit};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use swc_common::{Span, TypeEq, DUMMY_SP};
 
 use crate::{
@@ -11,9 +11,10 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn report_error_for_wrong_interface_inheritance(&mut self, span: Span, body: &[TypeElement], parent: &[TsExpr]) {
-        if self.is_builtin || self.ctx.is_dts {
+        let _tracing = dev_span!("report_error_for_wrong_interface_inheritance");
+
+        if self.config.is_builtin || self.config.is_dts {
             return;
         }
         if body.is_empty() {
@@ -68,9 +69,10 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn report_error_for_conflicting_parents(&mut self, span: Span, parent: &[TsExpr]) {
-        if self.is_builtin || self.ctx.is_dts {
+        let _tracing = dev_span!("report_error_for_conflicting_parents");
+
+        if self.config.is_builtin || self.config.is_dts {
             return;
         }
 

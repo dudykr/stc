@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
+use itertools::Itertools;
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
-use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
@@ -61,24 +61,40 @@ impl Analyzer<'_, '_> {
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
+                let lhs_members = l
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, true))
+                    .collect_vec();
+
+                self.assign_to_type_elements(
+                    data,
+                    l.span,
+                    &lhs_members,
+                    &r,
+                    TypeLitMetadata {
+                        specified: true,
+                        ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: Some(true),
+                        is_assigning_to_class_members: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign to type elements created from a class")?;
+
                 return Ok(());
             }
 
-            Type::TypeLit(..) | Type::Interface(..) => {
+            Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
                 let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(&*r))?.unwrap();
 
-                let mut lhs_members = vec![];
-                for lm in &l.body {
-                    let lm = self.make_type_el_from_class_member(lm, true)?;
-                    let lm = match lm {
-                        Some(v) => v,
-                        None => {
-                            // Instance property does not exist at the moment.
-                            continue;
-                        }
-                    };
-                    lhs_members.push(lm);
-                }
+                let lhs_members = l
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, true))
+                    .collect_vec();
 
                 self.assign_to_type_elements(
                     data,
@@ -112,15 +128,9 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
-        let r = r.normalize();
+        let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
 
-        match r {
-            Type::Ref(..) => {
-                let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
-                r.freeze();
-                return self.assign_to_class(data, l, &r, opts);
-            }
-
+        match r.normalize() {
             Type::Class(rc) => {
                 if l.eq_ignore_span(rc) {
                     return Ok(());
@@ -128,7 +138,7 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.def.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(&[], r)? {
+                    if let Some(members) = self.collect_class_members(&[], &r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -146,6 +156,37 @@ impl Analyzer<'_, '_> {
                     self.assign_class_members_to_class_member(data, lm, r_body, opts)
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
+
+                let lhs_members = l
+                    .def
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, false))
+                    .collect_vec();
+
+                self.assign_to_type_elements(
+                    data,
+                    l.span,
+                    &lhs_members,
+                    &r,
+                    TypeLitMetadata {
+                        specified: true,
+                        ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: Some(true),
+                        is_assigning_to_class_members: true,
+                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
+                            if l.def.body.iter().any(|m| matches!(m, ClassMember::Method(..))) {
+                                return Some(false);
+                            }
+
+                            Some(true)
+                        }),
+                        ..opts
+                    },
+                )
+                .context("tried to assign to type elements created from a class")?;
 
                 if !rc.def.is_abstract {
                     // class Child extends Parent
@@ -174,23 +215,18 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
-                let mut lhs_members = vec![];
-                for lm in &l.def.body {
-                    let lm = self.make_type_el_from_class_member(lm, false)?;
-                    let lm = match lm {
-                        Some(v) => v,
-                        None => {
-                            continue;
-                        }
-                    };
-                    lhs_members.push(lm);
-                }
+                let lhs_members = l
+                    .def
+                    .body
+                    .iter()
+                    .filter_map(|m| self.make_type_el_from_class_member(m, false))
+                    .collect_vec();
 
                 self.assign_to_type_elements(
                     data,
                     l.span,
                     &lhs_members,
-                    r,
+                    &r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
@@ -198,6 +234,12 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
+                        report_assign_failure_for_missing_properties: opts.report_assign_failure_for_missing_properties.or_else(|| {
+                            Some(match r.normalize() {
+                                Type::Interface(r) => !r.extends.is_empty(),
+                                _ => false,
+                            })
+                        }),
                         ..opts
                     },
                 )
@@ -218,7 +260,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Type::Lit(..) | Type::Keyword(..) = r {
+        if let Type::Lit(..) | Type::Keyword(..) = r.normalize() {
             return Err(ErrorKind::SimpleAssignFailed {
                 span: opts.span,
                 cause: None,
@@ -246,12 +288,18 @@ impl Analyzer<'_, '_> {
             ClassMember::Constructor(lc) => {
                 for rm in r {
                     if let ClassMember::Constructor(rc) = rm {
-                        self.assign_params(data, &lc.params, &rc.params, opts)?;
-                        // TODO(kdy1): Validate parameters and etc..
-                        return Ok(());
+                        match (lc.accessibility, rc.accessibility) {
+                            (Some(Accessibility::Public) | None, Some(Accessibility::Private | Accessibility::Protected))
+                            | (Some(Accessibility::Protected), Some(Accessibility::Private)) => {
+                                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("accessibility differs"));
+                            }
+                            _ => {}
+                        }
                     }
                 }
             }
+
+            ClassMember::IndexSignature(..) => {}
             ClassMember::Method(lm) => {
                 for r_member in r {
                     match r_member {
@@ -260,11 +308,10 @@ impl Analyzer<'_, '_> {
                             //
                             if self.key_matches(span, &lm.key, &rm.key, false) {
                                 if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
-                                    return Ok(());
-                                }
-
-                                if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
-                                    return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
+                                } else {
+                                    if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
+                                        return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
+                                    }
                                 }
 
                                 self.assign_to_fn_like(
@@ -295,8 +342,6 @@ impl Analyzer<'_, '_> {
                 if lm.is_optional {
                     return Ok(());
                 }
-
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign a class member to another one"));
             }
             ClassMember::Property(lp) => {
                 for rm in r {
@@ -313,11 +358,15 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
-                                    return Ok(());
-                                }
+                                } else {
+                                    if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
+                                        return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                    }
 
-                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
-                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                    if lp.accessibility == Some(Accessibility::Private) && rp.accessibility != Some(Accessibility::Private)
+                                    {
+                                        return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
+                                    }
                                 }
 
                                 return Ok(());
@@ -342,13 +391,8 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                 }
             }
-            ClassMember::IndexSignature(_) => {}
         }
 
-        Err(ErrorKind::Unimplemented {
-            span: opts.span,
-            msg: format!("fine-grained class assignment to lhs member: {:#?}", l),
-        }
-        .into())
+        Ok(())
     }
 }

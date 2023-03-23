@@ -1,8 +1,10 @@
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:16:1]
+ 16 | 
  17 | if (foo.obj.obj2.type === 'a') {
     :     ^^^
+ 18 |     useA(foo.obj.obj2)
     `----
 
 Error: 
@@ -13,9 +15,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:16:1]
+ 16 | 
  17 | if (foo.obj.obj2.type === 'a') {
     :     ^^^^^^^
+ 18 |     useA(foo.obj.obj2)
     `----
 
 Error: 
@@ -24,54 +28,66 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:16:1]
+ 16 | 
  17 | if (foo.obj.obj2.type === 'a') {
     :     ^^^^^^^^^^^^
+ 18 |     useA(foo.obj.obj2)
     `----
 
 Error: 
   > (A | B)
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:16:1]
+ 16 | 
  17 | if (foo.obj.obj2.type === 'a') {
     :     ^^^^^^^^^^^^^^^^^
+ 18 |     useA(foo.obj.obj2)
     `----
 
 Error: 
   > ('a' | 'b')
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:16:1]
+ 16 | 
  17 | if (foo.obj.obj2.type === 'a') {
     :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 18 |     useA(foo.obj.obj2)
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
- 18 | useA(foo.obj.obj2)
-    : ^^^^
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+ 18 |     useA(foo.obj.obj2)
+    :     ^^^^
+ 19 | }
     `----
 
 Error: 
   > (a: A) => void
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
- 18 | useA(foo.obj.obj2)
-    :      ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+ 18 |     useA(foo.obj.obj2)
+    :          ^^^^^^^^^^^^
+ 19 | }
     `----
 
 Error: 
   > A
 
   x Type
-    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
- 18 | useA(foo.obj.obj2)
-    : ^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+ 18 |     useA(foo.obj.obj2)
+    :     ^^^^^^^^^^^^^^^^^^
+ 19 | }
     `----
 
 Error: 

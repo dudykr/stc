@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/hoisting-1.ts:2:1]
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/hoisting-1.ts:1:1]
+ 1 | v;
  2 | for (var v of [0]) { }
    :               ^^^
    `----
@@ -12,6 +13,7 @@ Error:
    ,-[$DIR/tests/pass/controlFlow/forOfStmt/hoisting-1.ts:1:1]
  1 | v;
    : ^
+ 2 | for (var v of [0]) { }
    `----
 
 Error: 

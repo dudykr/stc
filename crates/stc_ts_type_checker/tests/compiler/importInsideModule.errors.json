@@ -1,1 +1,1 @@
-[{"line":2,"column":26,"code":"TS1147"},{"line":2,"column":26,"code":"TS2307"}]
+[{"filename":"tests/cases/compiler/importInsideModule_file2.ts","line":2,"column":26,"code":"TS1147"},{"filename":"tests/cases/compiler/importInsideModule_file2.ts","line":2,"column":26,"code":"TS2307"}]

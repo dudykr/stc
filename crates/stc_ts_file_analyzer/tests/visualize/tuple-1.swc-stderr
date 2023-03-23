@@ -1,15 +1,18 @@
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:10:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:9:1]
+  9 | 
  10 | var a0: [any, any, any] = [];                             // Error
     :                           ^^
+ 11 | var a1: [boolean, string, number] = ["string", 1, true];  // Error
     `----
 
 Error: 
   > []
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:11:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:10:1]
+ 10 | var a0: [any, any, any] = [];                             // Error
  11 | var a1: [boolean, string, number] = ["string", 1, true];  // Error
     :                                     ^^^^^^^^^^^^^^^^^^^
     `----
@@ -18,7 +21,8 @@ Error:
   > ["string", 1, true]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:17:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:16:1]
+ 16 | 
  17 | var [b1, b2]: [number, number] = [1, 2, "string", true];
     :                                  ^^^^^^^^^^^^^^^^^^^^^^
     `----
@@ -27,25 +31,30 @@ Error:
   > [1, 2, "string", true]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:22:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:21:1]
+ 21 | //        non - spread element expressions and the numeric index signature types of the spread element expressions
  22 | var temp = ["s", "t", "r"];
     :            ^^^^^^^^^^^^^^^
+ 23 | var temp1 = [1, 2, 3];
     `----
 
 Error: 
   > ["s", "t", "r"]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:23:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:22:1]
+ 22 | var temp = ["s", "t", "r"];
  23 | var temp1 = [1, 2, 3];
     :             ^^^^^^^^^
+ 24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
     `----
 
 Error: 
   > [1, 2, 3]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:24:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:23:1]
+ 23 | var temp1 = [1, 2, 3];
  24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
     :                                    ^^^^^^^^^
     `----
@@ -54,7 +63,8 @@ Error:
   > [1, 2, 3]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:24:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:23:1]
+ 23 | var temp1 = [1, 2, 3];
  24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
     :                                               ^^^^^^^^^^^^^^^^^^^
     `----
@@ -63,7 +73,8 @@ Error:
   > ["hello", "string"]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:24:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:23:1]
+ 23 | var temp1 = [1, 2, 3];
  24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
     :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----
@@ -72,9 +83,22 @@ Error:
   > [[1, 2, 3], ["hello", "string"]]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:32:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:31:1]
+ 31 | interface myArray2 extends Array<Number | String> { }
  32 | var c0: tup = [...temp2];                         // Error
     :                   ^^^^^
+ 33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
+    `----
+
+Error: 
+  > [number[], string[]]
+
+  x Type
+    ,-[$DIR/tests/visualize/tuple-1.ts:31:1]
+ 31 | interface myArray2 extends Array<Number | String> { }
+ 32 | var c0: tup = [...temp2];                         // Error
+    :               ^^^^^^^^^^
+ 33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
     `----
 
 Error: 
@@ -83,16 +107,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/tuple-1.ts:32:1]
  32 | var c0: tup = [...temp2];                         // Error
-    :               ^^^^^^^^^^
-    `----
-
-Error: 
-  > [number[], string[]]
-
-  x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:33:1]
  33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
     :                                        ^^^^^
+ 34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
+    `----
+
+Error: 
+  > number[]
+
+  x Type
+    ,-[$DIR/tests/visualize/tuple-1.ts:32:1]
+ 32 | var c0: tup = [...temp2];                         // Error
+ 33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
+    :                                    ^^^^^^^^^^
+ 34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
     `----
 
 Error: 
@@ -101,14 +129,6 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/tuple-1.ts:33:1]
  33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
-    :                                    ^^^^^^^^^^
-    `----
-
-Error: 
-  > number[]
-
-  x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:34:1]
  34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
     :                       ^^^^^
     `----
@@ -117,7 +137,8 @@ Error:
   > number[]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:34:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:33:1]
+ 33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
  34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
     :                                 ^^^^
     `----
@@ -126,7 +147,8 @@ Error:
   > string[]
 
   x Type
-    ,-[$DIR/tests/visualize/tuple-1.ts:34:1]
+    ,-[$DIR/tests/visualize/tuple-1.ts:33:1]
+ 33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
  34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
     :                   ^^^^^^^^^^^^^^^^^^^
     `----

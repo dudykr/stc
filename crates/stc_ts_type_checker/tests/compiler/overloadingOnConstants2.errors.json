@@ -1,1 +1,1 @@
-[{"line":9,"column":10,"code":"TS2394"},{"line":15,"column":13,"code":"TS2769"},{"line":19,"column":10,"code":"TS2394"}]
+[{"filename":"tests/cases/compiler/overloadingOnConstants2.ts","line":9,"column":10,"code":"TS2394"},{"filename":"tests/cases/compiler/overloadingOnConstants2.ts","line":15,"column":13,"code":"TS2769"},{"filename":"tests/cases/compiler/overloadingOnConstants2.ts","line":19,"column":10,"code":"TS2394"}]

@@ -1,7 +1,7 @@
 use fxhash::FxHashMap;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RClassMember, RExpr, RStmt};
-use stc_ts_types::Type;
+use stc_ts_types::{Type, TypeParamDecl};
 
 /// Stores ast mutation information.
 ///
@@ -19,6 +19,11 @@ pub struct Mutations {
     pub for_class_props: FxHashMap<NodeId, ClassPropMut>,
     pub for_export_defaults: FxHashMap<NodeId, ExportDefaultMut>,
     pub for_module_items: FxHashMap<NodeId, ModuleItemMut>,
+
+    /// Used for validation, not dts generation.
+    pub for_exprs: FxHashMap<NodeId, ExprMut>,
+    /// Used for validation, not dts generation.
+    pub for_callable: FxHashMap<NodeId, CallableMut>,
 }
 
 #[derive(Default)]
@@ -36,6 +41,16 @@ pub struct VarDeclMut {
 #[derive(Default)]
 pub struct FunctionMut {
     pub ret_ty: Option<Type>,
+}
+
+#[derive(Default)]
+pub struct CallableMut {
+    pub type_params: Option<TypeParamDecl>,
+}
+
+#[derive(Default)]
+pub struct ExprMut {
+    pub type_ann: Option<Type>,
 }
 
 #[derive(Default)]

@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:1:1]
+ 1 | 
  2 | const sa = Symbol();
    :            ^^^^^^^^
+ 3 | const sb = Symbol();
    `----
 
 Error: 
   > symbol
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:2:1]
+ 2 | const sa = Symbol();
  3 | const sb = Symbol();
    :            ^^^^^^^^
    `----
@@ -18,9 +21,22 @@ Error:
   > symbol
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:5:1]
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:4:1]
+ 4 | 
  5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
    :                          ^^
+ 6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+   `----
+
+Error: 
+  > symbol
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:4:1]
+ 4 | 
+ 5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
+   :                                        ^^
+ 6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
    `----
 
 Error: 
@@ -29,34 +45,31 @@ Error:
   x Type
    ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:5:1]
  5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
-   :                                        ^^
-   `----
-
-Error: 
-  > symbol
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:6:5]
- 6 | let { [sa]: a1, [sb]: b1, ...r1 } = obj;
-   :                                     ^^^
+ 6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+   :                                         ^^^
+ 7 | }
    `----
 
 Error: 
   > T
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:6:5]
- 6 | let { [sa]: a1, [sb]: b1, ...r1 } = obj;
-   :        ^^
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:5:1]
+ 5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
+ 6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+   :            ^^
+ 7 | }
    `----
 
 Error: 
   > symbol
 
   x Type
-   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:6:5]
- 6 | let { [sa]: a1, [sb]: b1, ...r1 } = obj;
-   :                  ^^
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/2.ts:5:1]
+ 5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
+ 6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+   :                      ^^
+ 7 | }
    `----
 
 Error: 

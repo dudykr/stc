@@ -1,0 +1,50 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-2.ts:2:1]
+ 2 | 
+ 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
+   :                                      ^^^^
+   `----
+
+Error: 
+  > <A, B>(f: (a: A) => B) => (a: A) => B
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-2.ts:2:1]
+ 2 | 
+ 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
+   :                                                 ^
+   `----
+
+Error: 
+  > A
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-2.ts:2:1]
+ 2 | 
+ 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
+   :                                                ^^^
+   `----
+
+Error: 
+  > [A]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-2.ts:2:1]
+ 2 | 
+ 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
+   :                                           ^^^^^^^^
+   `----
+
+Error: 
+  > <A>(x: A) => [A]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-2.ts:2:1]
+ 2 | 
+ 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
+   :                                      ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > <A>(a: A) => [A]

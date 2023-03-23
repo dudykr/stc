@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:7:5]
- 7 | const strings: string[] = [];
-   :                           ^^
+   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:6:1]
+ 6 | function fun<T>(item: { [P in keyof T]: T[P] }) {
+ 7 |     const strings: string[] = [];
+   :                               ^^
+ 8 |     for (const key in item) {
    `----
 
 Error: 
   > []
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:8:5]
- 8 | for (const key in item) {
-   :                   ^^^^
+   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:7:1]
+ 7 |     const strings: string[] = [];
+ 8 |     for (const key in item) {
+   :                       ^^^^
+ 9 |         const value = item[key];
    `----
 
 Error: 
@@ -20,10 +24,12 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:9]
- 9 | const value = item[key];
-   :               ^^^^
-   `----
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:8:1]
+  8 |     for (const key in item) {
+  9 |         const value = item[key];
+    :                       ^^^^
+ 10 |         if (typeof value === "string") {
+    `----
 
 Error: 
   > {
@@ -31,72 +37,88 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:9]
- 9 | const value = item[key];
-   :                    ^^^
-   `----
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:8:1]
+  8 |     for (const key in item) {
+  9 |         const value = item[key];
+    :                            ^^^
+ 10 |         if (typeof value === "string") {
+    `----
+
+Error: 
+  > keyof T
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:8:1]
+  8 |     for (const key in item) {
+  9 |         const value = item[key];
+    :                       ^^^^^^^^^
+ 10 |         if (typeof value === "string") {
+    `----
+
+Error: 
+  > T[keyof T]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]
+  9 |         const value = item[key];
+ 10 |         if (typeof value === "string") {
+    :                    ^^^^^
+ 11 |             strings.push(value);
+    `----
+
+Error: 
+  > T[keyof T]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]
+  9 |         const value = item[key];
+ 10 |         if (typeof value === "string") {
+    :             ^^^^^^^^^^^^
+ 11 |             strings.push(value);
+    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:9]
- 9 | const value = item[key];
-   :               ^^^^^^^^^
-   `----
-
-Error: 
-  > T[P]
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:9]
- 10 | if (typeof value === "string") {
-    :            ^^^^^
-    `----
-
-Error: 
-  > T[P]
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:9]
- 10 | if (typeof value === "string") {
-    :     ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:9]
- 10 | if (typeof value === "string") {
-    :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]
+  9 |         const value = item[key];
+ 10 |         if (typeof value === "string") {
+    :             ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 11 |             strings.push(value);
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]
- 11 | strings.push(value);
-    : ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:1]
+ 10 |         if (typeof value === "string") {
+ 11 |             strings.push(value);
+    :             ^^^^^^^
+ 12 |         }
     `----
 
 Error: 
   > string[]
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]
- 11 | strings.push(value);
-    :              ^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:1]
+ 10 |         if (typeof value === "string") {
+ 11 |             strings.push(value);
+    :                          ^^^^^
+ 12 |         }
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13]
- 11 | strings.push(value);
-    : ^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:1]
+ 10 |         if (typeof value === "string") {
+ 11 |             strings.push(value);
+    :             ^^^^^^^^^^^^^^^^^^^
+ 12 |         }
     `----
 
 Error: 

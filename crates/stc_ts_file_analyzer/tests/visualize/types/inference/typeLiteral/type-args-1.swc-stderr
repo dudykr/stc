@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:2:5]
- 2 | return x;
-   :        ^
+   ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:1:1]
+ 1 | function foo<T>(x: T) {
+ 2 |     return x;
+   :            ^
+ 3 | }
    `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:10:5]
- 10 | var r2 = foo(b); // T
-    :          ^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b); // T
+    :              ^^^
+ 11 | }
     `----
 
 Error: 
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:10:5]
- 10 | var r2 = foo(b); // T
-    :              ^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b); // T
+    :                  ^
+ 11 | }
     `----
 
 Error: 
@@ -30,9 +36,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:10:5]
- 10 | var r2 = foo(b); // T
-    :          ^^^^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b); // T
+    :              ^^^^^^
+ 11 | }
     `----
 
 Error: 
@@ -42,18 +50,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:18:5]
- 18 | var r2 = foo(b);
-    :          ^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:17:1]
+ 17 |     };
+ 18 |     var r2 = foo(b);
+    :              ^^^
+ 19 |     var d = r2[1];
     `----
 
 Error: 
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:18:5]
- 18 | var r2 = foo(b);
-    :              ^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:17:1]
+ 17 |     };
+ 18 |     var r2 = foo(b);
+    :                  ^
+ 19 |     var d = r2[1];
     `----
 
 Error: 
@@ -63,9 +75,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:18:5]
- 18 | var r2 = foo(b);
-    :          ^^^^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:17:1]
+ 17 |     };
+ 18 |     var r2 = foo(b);
+    :              ^^^^^^
+ 19 |     var d = r2[1];
     `----
 
 Error: 
@@ -75,9 +89,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:19:5]
- 19 | var d = r2[1];
-    :         ^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:18:1]
+ 18 |     var r2 = foo(b);
+ 19 |     var d = r2[1];
+    :             ^^
+ 20 |     var e = r2['1'];
     `----
 
 Error: 
@@ -87,18 +103,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:19:5]
- 19 | var d = r2[1];
-    :         ^^^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:18:1]
+ 18 |     var r2 = foo(b);
+ 19 |     var d = r2[1];
+    :             ^^^^^
+ 20 |     var e = r2['1'];
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:20:5]
- 20 | var e = r2['1'];
-    :         ^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:19:1]
+ 19 |     var d = r2[1];
+ 20 |     var e = r2['1'];
+    :             ^^
+ 21 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
@@ -108,18 +128,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:20:5]
- 20 | var e = r2['1'];
-    :         ^^^^^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:19:1]
+ 19 |     var d = r2[1];
+ 20 |     var e = r2['1'];
+    :             ^^^^^^^
+ 21 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:21:5]
- 21 | var u: U = r2[1]; // ok
-    :            ^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:20:1]
+ 20 |     var e = r2['1'];
+ 21 |     var u: U = r2[1]; // ok
+    :                ^^
+ 22 | }
     `----
 
 Error: 
@@ -129,9 +153,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:21:5]
- 21 | var u: U = r2[1]; // ok
-    :            ^^^^^
+    ,-[$DIR/tests/visualize/types/inference/typeLiteral/type-args-1.ts:20:1]
+ 20 |     var e = r2['1'];
+ 21 |     var u: U = r2[1]; // ok
+    :                ^^^^^
+ 22 | }
     `----
 
 Error: 

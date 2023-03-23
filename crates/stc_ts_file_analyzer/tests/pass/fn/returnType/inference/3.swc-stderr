@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:2:5]
- 2 | return f();
-   :        ^
+   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:1:1]
+ 1 | export var a: any = function f() {
+ 2 |     return f();
+   :            ^
+ 3 | };
    `----
 
 Error: 
   > typeof f
 
   x Type
-   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:2:5]
- 2 | return f();
-   :        ^^^
+   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:1:1]
+ 1 | export var a: any = function f() {
+ 2 |     return f();
+   :            ^^^
+ 3 | };
    `----
 
 Error: 

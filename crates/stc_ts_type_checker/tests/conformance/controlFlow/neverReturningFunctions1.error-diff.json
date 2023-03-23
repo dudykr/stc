@@ -1,0 +1,23 @@
+{
+  "required_errors": {
+    "TS7027": 5
+  },
+  "required_error_lines": {
+    "TS7027": [
+      107,
+      109,
+      133,
+      145,
+      157
+    ]
+  },
+  "extra_errors": {
+    "TS7027": 2
+  },
+  "extra_error_lines": {
+    "TS7027": [
+      164,
+      165
+    ]
+  }
+}

@@ -1,33 +1,40 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:9:1]
- 9 | s1 = Tag1.a;
-   :      ^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:8:1]
+  8 | 
+  9 | s1 = Tag1.a;
+    :      ^^^^
+ 10 | s2 = Tag1.b;
+    `----
 
 Error: 
   > Tag1
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:9:1]
- 9 | s1 = Tag1.a;
-   :      ^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:8:1]
+  8 | 
+  9 | s1 = Tag1.a;
+    :      ^^^^^^
+ 10 | s2 = Tag1.b;
+    `----
 
 Error: 
   > Tag1.a
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:9:1]
- 9 | s1 = Tag1.a;
-   : ^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:8:1]
+  8 | 
+  9 | s1 = Tag1.a;
+    : ^^^^^^^^^^^
+ 10 | s2 = Tag1.b;
+    `----
 
 Error: 
   > Tag1.a
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:9:1]
+  9 | s1 = Tag1.a;
  10 | s2 = Tag1.b;
     :      ^^^^
     `----
@@ -36,7 +43,8 @@ Error:
   > Tag1
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:9:1]
+  9 | s1 = Tag1.a;
  10 | s2 = Tag1.b;
     :      ^^^^^^
     `----
@@ -45,7 +53,8 @@ Error:
   > Tag1.b
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/10.ts:9:1]
+  9 | s1 = Tag1.a;
  10 | s2 = Tag1.b;
     : ^^^^^^^^^^^
     `----

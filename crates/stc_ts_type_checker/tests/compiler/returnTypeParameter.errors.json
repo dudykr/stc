@@ -1,1 +1,1 @@
-[{"line":1,"column":22,"code":"TS2355"},{"line":2,"column":34,"code":"TS2693"}]
+[{"filename":"tests/cases/compiler/returnTypeParameter.ts","line":1,"column":22,"code":"TS2355"},{"filename":"tests/cases/compiler/returnTypeParameter.ts","line":2,"column":34,"code":"TS2693"}]

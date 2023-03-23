@@ -1,0 +1,19 @@
+{
+  "required_errors": {
+    "TS4112": 2,
+    "TS4113": 3
+  },
+  "required_error_lines": {
+    "TS4112": [
+      4,
+      8
+    ],
+    "TS4113": [
+      20,
+      33,
+      46
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
+}

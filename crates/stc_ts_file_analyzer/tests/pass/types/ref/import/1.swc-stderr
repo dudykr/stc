@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/ref/import/1.ts:6:5]
- 6 | export var Origin = new Point(0, 0);
-   :                         ^^^^^
+   ,-[$DIR/tests/pass/types/ref/import/1.ts:5:1]
+ 5 | 
+ 6 |     export var Origin = new Point(0, 0);
+   :                             ^^^^^
+ 7 | }
    `----
 
 Error: 
   > typeof Point
 
   x Type
-   ,-[$DIR/tests/pass/types/ref/import/1.ts:6:5]
- 6 | export var Origin = new Point(0, 0);
-   :                     ^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/ref/import/1.ts:5:1]
+ 5 | 
+ 6 |     export var Origin = new Point(0, 0);
+   :                         ^^^^^^^^^^^^^^^
+ 7 | }
    `----
 
 Error: 
   > Point
 
   x Type
-    ,-[$DIR/tests/pass/types/ref/import/1.ts:14:5]
- 14 | var p = { x: 0, y: 0 };
-    :         ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/types/ref/import/1.ts:13:1]
+ 13 |     var p: a.Point;
+ 14 |     var p = { x: 0, y: 0 };
+    :             ^^^^^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 

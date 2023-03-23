@@ -1,8 +1,10 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:9]
- 14 | this.x += dx;
-    : ^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :         ^^^^
+ 15 |         this.y += dy;
     `----
 
 Error: 
@@ -14,36 +16,44 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:9]
- 14 | this.x += dx;
-    : ^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :         ^^^^^^
+ 15 |         this.y += dy;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:9]
- 14 | this.x += dx;
-    :           ^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :                   ^^
+ 15 |         this.y += dy;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:9]
- 14 | this.x += dx;
-    : ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :         ^^^^^^^^^^^^
+ 15 |         this.y += dy;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:9]
- 15 | this.y += dy;
-    : ^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :         ^^^^
+ 16 |         if (this.z && dz) {
     `----
 
 Error: 
@@ -55,36 +65,44 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:9]
- 15 | this.y += dy;
-    : ^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :         ^^^^^^
+ 16 |         if (this.z && dz) {
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:9]
- 15 | this.y += dy;
-    :           ^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :                   ^^
+ 16 |         if (this.z && dz) {
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:9]
- 15 | this.y += dy;
-    : ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :         ^^^^^^^^^^^^
+ 16 |         if (this.z && dz) {
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:9]
- 16 | if (this.z && dz) {
-    :     ^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :             ^^^^
+ 17 |             this.z += dz;
     `----
 
 Error: 
@@ -96,36 +114,44 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:9]
- 16 | if (this.z && dz) {
-    :     ^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :             ^^^^^^
+ 17 |             this.z += dz;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:9]
- 16 | if (this.z && dz) {
-    :               ^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :                       ^^
+ 17 |             this.z += dz;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:9]
- 16 | if (this.z && dz) {
-    :     ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :             ^^^^^^^^^^^^
+ 17 |             this.z += dz;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:17:13]
- 17 | this.z += dz;
-    : ^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :             ^^^^
+ 18 |         }
     `----
 
 Error: 
@@ -137,34 +163,41 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:17:13]
- 17 | this.z += dz;
-    : ^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :             ^^^^^^
+ 18 |         }
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:17:13]
- 17 | this.z += dz;
-    :           ^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :                       ^^
+ 18 |         }
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:17:13]
- 17 | this.z += dz;
-    : ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :             ^^^^^^^^^^^^
+ 18 |         }
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:10:1]
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:9:1]
+  9 |     
  10 | ,-> export let p1: Point = {
  11 | |       x: 10,
  12 | |       y: 20,

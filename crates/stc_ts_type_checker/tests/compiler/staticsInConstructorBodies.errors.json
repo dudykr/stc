@@ -1,1 +1,1 @@
-[{"line":3,"column":3,"code":"TS1128"},{"line":6,"column":1,"code":"TS1128"}]
+[{"filename":"tests/cases/compiler/staticsInConstructorBodies.ts","line":3,"column":3,"code":"TS1128"},{"filename":"tests/cases/compiler/staticsInConstructorBodies.ts","line":6,"column":1,"code":"TS1128"}]

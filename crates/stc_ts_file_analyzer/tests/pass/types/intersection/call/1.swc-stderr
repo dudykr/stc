@@ -1,24 +1,29 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/call/1.ts:9:1]
- 9 | a('s')
-   : ^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/call/1.ts:8:1]
+  8 | 
+  9 | a('s')
+    : ^
+ 10 | a(1)
+    `----
 
 Error: 
   > ((x: string) => string & (x: number) => number)
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/call/1.ts:9:1]
- 9 | a('s')
-   : ^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/call/1.ts:8:1]
+  8 | 
+  9 | a('s')
+    : ^^^^^^
+ 10 | a(1)
+    `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/call/1.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/call/1.ts:9:1]
+  9 | a('s')
  10 | a(1)
     : ^
     `----
@@ -27,7 +32,8 @@ Error:
   > ((x: string) => string & (x: number) => number)
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/call/1.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/call/1.ts:9:1]
+  9 | a('s')
  10 | a(1)
     : ^^^^
     `----

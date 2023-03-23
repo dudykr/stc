@@ -1,1 +1,1 @@
-[{"line":3,"column":9,"code":"TS2347"},{"line":3,"column":11,"code":"TS2749"},{"line":3,"column":14,"code":"TS2749"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator4.ts","line":3,"column":9,"code":"TS2347"},{"filename":"tests/cases/conformance/parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator4.ts","line":3,"column":11,"code":"TS2749"},{"filename":"tests/cases/conformance/parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator4.ts","line":3,"column":14,"code":"TS2749"}]

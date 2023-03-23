@@ -1,8 +1,10 @@
-#[cfg(not(feature = "no-threading"))]
+use std::sync::Arc;
+
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr, RTsExternalModuleRef,
+    RTsImportType,
 };
 use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -10,7 +12,7 @@ use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
 use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
-use swc_common::{comments::Comments, Span, Spanned, GLOBALS};
+use swc_common::{comments::Comments, FileName, Span, Spanned, GLOBALS};
 
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
@@ -35,7 +37,7 @@ impl Analyzer<'_, '_> {
                 return (ctxt, Type::any(span, Default::default()));
             }
         };
-        let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
+        let data = match self.data.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
@@ -48,7 +50,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
-        if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(id) {
+        if let Some(ModuleInfo { module_id, data }) = self.data.imports_by_id.get(id) {
             match data.normalize() {
                 Type::Module(data) => {
                     if let Some(dep) = data.exports.vars.get(id.sym()).cloned() {
@@ -66,15 +68,15 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
-        self.imports.entry((ctxt, dep_module_id)).or_insert(ty);
+    pub(crate) fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
+        self.data.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
     }
 
     #[extra_validator]
     pub(super) fn load_normal_imports(&mut self, module_spans: Vec<(ModuleId, Span)>, items: &Vec<&RModuleItem>) {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return;
         }
         // We first load non-circular imports.
@@ -95,27 +97,38 @@ impl Analyzer<'_, '_> {
                 }
             };
 
-            if loader.is_in_same_circular_group(ctxt, dep_id) {
+            if loader.is_in_same_circular_group(&base, &import.src) {
                 continue;
             }
 
-            normal_imports.push((ctxt, dep_id, import));
+            normal_imports.push((ctxt, base.clone(), dep_id, import.src.clone(), import));
         }
 
-        #[cfg(feature = "no-threading")]
-        let iter = normal_imports.into_iter();
-        #[cfg(not(feature = "no-threading"))]
-        let iter = normal_imports.into_par_iter();
+        let import_results = if cfg!(feature = "no-threading") {
+            let iter = normal_imports.into_iter();
 
-        let import_results = GLOBALS.with(|globals| {
-            iter.map(|(ctxt, dep_id, import)| {
-                GLOBALS.set(globals, || {
-                    let res = loader.load_non_circular_dep(ctxt, dep_id);
-                    (ctxt, dep_id, import, res)
+            GLOBALS.with(|globals| {
+                iter.map(|(ctxt, base, dep_id, module_specifier, import)| {
+                    GLOBALS.set(globals, || {
+                        let res = loader.load_non_circular_dep(&base, &module_specifier);
+                        (ctxt, dep_id, import, res)
+                    })
                 })
+                .collect::<Vec<_>>()
             })
-            .collect::<Vec<_>>()
-        });
+        } else {
+            let iter = normal_imports.into_par_iter();
+
+            GLOBALS.with(|globals| {
+                iter.map(|(ctxt, base, dep_id, module_specifier, import)| {
+                    GLOBALS.set(globals, || {
+                        let res = loader.load_non_circular_dep(&base, &module_specifier);
+                        (ctxt, dep_id, import, res)
+                    })
+                })
+                .collect::<Vec<_>>()
+            })
+        };
 
         for (ctxt, dep_id, import, res) in import_results {
             let span = import.span;
@@ -131,27 +144,44 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn load_import_lazily(
+        &mut self,
+        span: Span,
+        base: &Arc<FileName>,
+        dep_id: ModuleId,
+        module_specifier: &str,
+    ) -> VResult<Type> {
+        let ctxt = self.ctx.module_id;
+        if ctxt == dep_id {
+            return Ok(Type::any(span, Default::default()));
+        }
+
+        let ty = self.loader.load_non_circular_dep(base, module_specifier)?;
+
+        self.insert_import_info(ctxt, dep_id, ty.clone()).report(&mut self.storage);
+
+        Ok(ty)
+    }
+
     fn handle_import(&mut self, span: Span, ctxt: ModuleId, target: ModuleId, orig: Id, id: Id) {
         let mut found_entry = false;
+        let is_import_successful = ctxt != target;
 
         // Check for entry only if import was successful.
-        if ctxt != target {
-            if let Some(data) = self.imports.get(&(ctxt, target)) {
+        if is_import_successful {
+            if let Some(data) = self.data.imports.get(&(ctxt, target)) {
                 match data.normalize() {
                     Type::Module(data) => {
-                        for (i, ty) in &data.exports.vars {
-                            if orig.sym() == i {
-                                found_entry = true;
-                                self.storage.store_private_var(ctxt, id.clone(), ty.clone());
-                            }
+                        if let Some(ty) = data.exports.vars.get(orig.sym()).cloned() {
+                            found_entry = true;
+                            self.storage.store_private_var(ctxt, id.clone(), ty);
                         }
 
-                        for (i, types) in &data.exports.types {
-                            if orig.sym() == i {
-                                for ty in types {
-                                    found_entry = true;
-                                    self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
-                                }
+                        if let Some(types) = data.exports.types.get(orig.sym()).cloned() {
+                            found_entry = true;
+                            for ty in types {
+                                found_entry = true;
+                                self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                             }
                         }
                     }
@@ -159,6 +189,8 @@ impl Analyzer<'_, '_> {
                         unreachable!()
                     }
                 }
+            } else {
+                unreachable!("Import should be successful")
             }
         }
 
@@ -175,10 +207,11 @@ impl Analyzer<'_, '_> {
                 true,
                 false,
                 false,
+                false,
             )
             .report(&mut self.storage);
 
-            if ctxt != target {
+            if is_import_successful {
                 // If import was successful but the entry is not found, the error should point
                 // the specifier.
                 self.storage.report(ErrorKind::ImportFailed { span, orig, id }.into());
@@ -223,6 +256,7 @@ impl Analyzer<'_, '_> {
                             true,
                             false,
                             false,
+                            false,
                         )?;
                     } else {
                         self.declare_var(
@@ -232,6 +266,7 @@ impl Analyzer<'_, '_> {
                             Some(data.clone()),
                             None,
                             true,
+                            false,
                             false,
                             false,
                         )?;
@@ -319,10 +354,12 @@ where
 {
     /// Extracts require('foo')
     fn visit(&mut self, expr: &RCallExpr) {
+        expr.visit_children_with(self);
+
         let span = expr.span();
 
-        match expr.callee {
-            RCallee::Expr(box RExpr::Ident(ref i)) if i.sym == js_word!("require") => {
+        match &expr.callee {
+            RCallee::Expr(box RExpr::Ident(i)) if i.sym == js_word!("require") => {
                 let src = expr
                     .args
                     .iter()
@@ -333,6 +370,16 @@ where
                     .next()
                     .unwrap();
                 self.to.push((self.cur_ctxt, DepInfo { span, src }));
+            }
+            RCallee::Import(import) => {
+                let src = expr.args.first().and_then(|v| match *v.expr {
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some(value.clone()),
+                    _ => None,
+                });
+
+                if let Some(src) = src {
+                    self.to.push((self.cur_ctxt, DepInfo { span, src }));
+                }
             }
             _ => {}
         }
@@ -400,6 +447,23 @@ where
             DepInfo {
                 span: r.span,
                 src: r.expr.value.clone(),
+            },
+        ));
+    }
+}
+
+impl<C> Visit<RTsImportType> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
+    fn visit(&mut self, import: &RTsImportType) {
+        let span = import.span();
+
+        self.to.push((
+            self.cur_ctxt,
+            DepInfo {
+                span,
+                src: import.arg.value.clone(),
             },
         ));
     }

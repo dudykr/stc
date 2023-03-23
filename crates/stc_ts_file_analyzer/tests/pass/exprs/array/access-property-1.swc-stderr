@@ -1,24 +1,29 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:5:1]
+ 5 | var x: any;
  6 | var y = x as A<B>[];
    :         ^
+ 7 | var z = y[0].x.m; // z should be string
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:5:1]
+ 5 | var x: any;
  6 | var y = x as A<B>[];
    :         ^^^^^^^^^^^
+ 7 | var z = y[0].x.m; // z should be string
    `----
 
 Error: 
   > A<B>[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+ 6 | var y = x as A<B>[];
  7 | var z = y[0].x.m; // z should be string
    :         ^
    `----
@@ -27,7 +32,8 @@ Error:
   > A[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+ 6 | var y = x as A<B>[];
  7 | var z = y[0].x.m; // z should be string
    :         ^^^^
    `----
@@ -36,7 +42,8 @@ Error:
   > A
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+ 6 | var y = x as A<B>[];
  7 | var z = y[0].x.m; // z should be string
    :         ^^^^^^
    `----
@@ -45,7 +52,8 @@ Error:
   > B
 
   x Type
-   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+ 6 | var y = x as A<B>[];
  7 | var z = y[0].x.m; // z should be string
    :         ^^^^^^^^
    `----

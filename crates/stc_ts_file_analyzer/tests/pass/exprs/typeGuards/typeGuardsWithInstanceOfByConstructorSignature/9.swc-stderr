@@ -1,143 +1,175 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:1:1]
+ 1 | var obj17: any;
  2 | if (obj17 instanceof Object) {
    :     ^^^^^
+ 3 |   obj17; // any
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:1:1]
+ 1 | var obj17: any;
  2 | if (obj17 instanceof Object) {
    :                      ^^^^^^
+ 3 |   obj17; // any
    `----
 
 Error: 
   > ObjectConstructor
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:1:1]
+ 1 | var obj17: any;
  2 | if (obj17 instanceof Object) {
    :     ^^^^^^^^^^^^^^^^^^^^^^^
+ 3 |   obj17; // any
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:3:3]
- 3 | obj17; // any
-   : ^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:2:1]
+ 2 | if (obj17 instanceof Object) {
+ 3 |   obj17; // any
+   :   ^^^^^
+ 4 |   // can't narrow type from 'any' to 'Object'
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:5:3]
- 5 | obj17.foo1;
-   : ^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:4:1]
+ 4 |   // can't narrow type from 'any' to 'Object'
+ 5 |   obj17.foo1;
+   :   ^^^^^
+ 6 |   obj17.foo2;
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:5:3]
- 5 | obj17.foo1;
-   : ^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:4:1]
+ 4 |   // can't narrow type from 'any' to 'Object'
+ 5 |   obj17.foo1;
+   :   ^^^^^^^^^^
+ 6 |   obj17.foo2;
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:6:3]
- 6 | obj17.foo2;
-   : ^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:5:1]
+ 5 |   obj17.foo1;
+ 6 |   obj17.foo2;
+   :   ^^^^^
+ 7 | }
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:6:3]
- 6 | obj17.foo2;
-   : ^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:5:1]
+ 5 |   obj17.foo1;
+ 6 |   obj17.foo2;
+   :   ^^^^^^^^^^
+ 7 | }
    `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:10:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:9:1]
+  9 | var obj18: any;
  10 | if (obj18 instanceof Function) {
     :     ^^^^^
+ 11 |   obj18; // any;
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:10:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:9:1]
+  9 | var obj18: any;
  10 | if (obj18 instanceof Function) {
     :                      ^^^^^^^^
+ 11 |   obj18; // any;
     `----
 
 Error: 
   > FunctionConstructor
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:10:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:9:1]
+  9 | var obj18: any;
  10 | if (obj18 instanceof Function) {
     :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 11 |   obj18; // any;
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:11:3]
- 11 | obj18; // any;
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:10:1]
+ 10 | if (obj18 instanceof Function) {
+ 11 |   obj18; // any;
+    :   ^^^^^
+ 12 |   // can't narrow type from 'any' to 'Function'
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:13:3]
- 13 | obj18.foo1;
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:12:1]
+ 12 |   // can't narrow type from 'any' to 'Function'
+ 13 |   obj18.foo1;
+    :   ^^^^^
+ 14 |   obj18.foo2;
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:13:3]
- 13 | obj18.foo1;
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:12:1]
+ 12 |   // can't narrow type from 'any' to 'Function'
+ 13 |   obj18.foo1;
+    :   ^^^^^^^^^^
+ 14 |   obj18.foo2;
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:14:3]
- 14 | obj18.foo2;
-    : ^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:13:1]
+ 13 |   obj18.foo1;
+ 14 |   obj18.foo2;
+    :   ^^^^^
+ 15 | }
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:14:3]
- 14 | obj18.foo2;
-    : ^^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/9.ts:13:1]
+ 13 |   obj18.foo1;
+ 14 |   obj18.foo2;
+    :   ^^^^^^^^^^
+ 15 | }
     `----
 
 Error: 

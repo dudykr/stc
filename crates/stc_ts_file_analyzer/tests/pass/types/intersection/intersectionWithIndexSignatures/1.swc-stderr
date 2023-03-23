@@ -1,8 +1,10 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:9:1]
+  9 | 
  10 | ta1 = sa1;
     :       ^^^
+ 11 | ta1 = sa2;
     `----
 
 Error: 
@@ -11,9 +13,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:9:1]
+  9 | 
  10 | ta1 = sa1;
     : ^^^^^^^^^
+ 11 | ta1 = sa2;
     `----
 
 Error: 
@@ -22,9 +26,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:11:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:10:1]
+ 10 | ta1 = sa1;
  11 | ta1 = sa2;
     :       ^^^
+ 12 | export { }
     `----
 
 Error: 
@@ -35,9 +41,11 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:11:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/1.ts:10:1]
+ 10 | ta1 = sa1;
  11 | ta1 = sa2;
     : ^^^^^^^^^
+ 12 | export { }
     `----
 
 Error: 

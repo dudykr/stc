@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:4:5]
- 4 | return x;
-   :        ^
+   ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:3:1]
+ 3 | function foo<T>(x: T) {
+ 4 |     return x;
+   :            ^
+ 5 | }
    `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:12:5]
- 12 | var r2 = foo(b); // T
-    :          ^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:11:1]
+ 11 |     };
+ 12 |     var r2 = foo(b); // T
+    :              ^^^
+ 13 | }
     `----
 
 Error: 
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:12:5]
- 12 | var r2 = foo(b); // T
-    :              ^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:11:1]
+ 11 |     };
+ 12 |     var r2 = foo(b); // T
+    :                  ^
+ 13 | }
     `----
 
 Error: 
@@ -30,9 +36,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:12:5]
- 12 | var r2 = foo(b); // T
-    :          ^^^^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:11:1]
+ 11 |     };
+ 12 |     var r2 = foo(b); // T
+    :              ^^^^^^
+ 13 | }
     `----
 
 Error: 
@@ -42,18 +50,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:20:5]
- 20 | var r2 = foo(b);
-    :          ^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:19:1]
+ 19 |     };
+ 20 |     var r2 = foo(b);
+    :              ^^^
+ 21 |     var d = r2[1];
     `----
 
 Error: 
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:20:5]
- 20 | var r2 = foo(b);
-    :              ^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:19:1]
+ 19 |     };
+ 20 |     var r2 = foo(b);
+    :                  ^
+ 21 |     var d = r2[1];
     `----
 
 Error: 
@@ -63,9 +75,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:20:5]
- 20 | var r2 = foo(b);
-    :          ^^^^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:19:1]
+ 19 |     };
+ 20 |     var r2 = foo(b);
+    :              ^^^^^^
+ 21 |     var d = r2[1];
     `----
 
 Error: 
@@ -75,9 +89,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:21:5]
- 21 | var d = r2[1];
-    :         ^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:20:1]
+ 20 |     var r2 = foo(b);
+ 21 |     var d = r2[1];
+    :             ^^
+ 22 |     var e = r2['1'];
     `----
 
 Error: 
@@ -87,18 +103,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:21:5]
- 21 | var d = r2[1];
-    :         ^^^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:20:1]
+ 20 |     var r2 = foo(b);
+ 21 |     var d = r2[1];
+    :             ^^^^^
+ 22 |     var e = r2['1'];
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:22:5]
- 22 | var e = r2['1'];
-    :         ^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:21:1]
+ 21 |     var d = r2[1];
+ 22 |     var e = r2['1'];
+    :             ^^
+ 23 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
@@ -108,18 +128,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:22:5]
- 22 | var e = r2['1'];
-    :         ^^^^^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:21:1]
+ 21 |     var d = r2[1];
+ 22 |     var e = r2['1'];
+    :             ^^^^^^^
+ 23 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:23:5]
- 23 | var u: U = r2[1]; // ok
-    :            ^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:22:1]
+ 22 |     var e = r2['1'];
+ 23 |     var u: U = r2[1]; // ok
+    :                ^^
+ 24 | }
     `----
 
 Error: 
@@ -129,9 +153,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:23:5]
- 23 | var u: U = r2[1]; // ok
-    :            ^^^^^
+    ,-[$DIR/tests/visualize/types/inference/generic/object/index-signatures-1.ts:22:1]
+ 22 |     var e = r2['1'];
+ 23 |     var u: U = r2[1]; // ok
+    :                ^^^^^
+ 24 | }
     `----
 
 Error: 

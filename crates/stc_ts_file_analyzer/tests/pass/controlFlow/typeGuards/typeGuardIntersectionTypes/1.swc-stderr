@@ -1,98 +1,114 @@
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:20:5]
- 20 | if (hasLegs(beast)) {
-    :     ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:19:1]
+ 19 |     // All beasts with legs
+ 20 |     if (hasLegs(beast)) {
+    :         ^^^^^^^
     `----
 
 Error: 
   > (x: Beast) => x is Legged
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:20:5]
- 20 | if (hasLegs(beast)) {
-    :             ^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:19:1]
+ 19 |     // All beasts with legs
+ 20 |     if (hasLegs(beast)) {
+    :                 ^^^^^
     `----
 
 Error: 
   > Beast
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:20:5]
- 20 | if (hasLegs(beast)) {
-    :     ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:19:1]
+ 19 |     // All beasts with legs
+ 20 |     if (hasLegs(beast)) {
+    :         ^^^^^^^^^^^^^^
     `----
 
 Error: 
   > x is Legged
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:23:9]
- 23 | if (hasWings(beast)) {
-    :     ^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:22:1]
+ 22 |         // All winged beasts with legs
+ 23 |         if (hasWings(beast)) {
+    :             ^^^^^^^^
     `----
 
 Error: 
   > (x: Beast) => x is Winged
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:23:9]
- 23 | if (hasWings(beast)) {
-    :              ^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:22:1]
+ 22 |         // All winged beasts with legs
+ 23 |         if (hasWings(beast)) {
+    :                      ^^^^^
     `----
 
 Error: 
   > (Beast & Legged)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:23:9]
- 23 | if (hasWings(beast)) {
-    :     ^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:22:1]
+ 22 |         // All winged beasts with legs
+ 23 |         if (hasWings(beast)) {
+    :             ^^^^^^^^^^^^^^^
     `----
 
 Error: 
   > x is Winged
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]
- 29 | log(`manbearpig - ${beast.legs} legs, no wings`);
-    : ^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:28:1]
+ 28 |         else {
+ 29 |             log(`manbearpig - ${beast.legs} legs, no wings`);
+    :             ^^^
+ 30 |         }
     `----
 
 Error: 
   > (s: string) => void
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]
- 29 | log(`manbearpig - ${beast.legs} legs, no wings`);
-    :                     ^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:28:1]
+ 28 |         else {
+ 29 |             log(`manbearpig - ${beast.legs} legs, no wings`);
+    :                                 ^^^^^
+ 30 |         }
     `----
 
 Error: 
   > (Beast & Legged)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]
- 29 | log(`manbearpig - ${beast.legs} legs, no wings`);
-    :                     ^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:28:1]
+ 28 |         else {
+ 29 |             log(`manbearpig - ${beast.legs} legs, no wings`);
+    :                                 ^^^^^^^^^^
+ 30 |         }
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]
- 29 | log(`manbearpig - ${beast.legs} legs, no wings`);
-    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:28:1]
+ 28 |         else {
+ 29 |             log(`manbearpig - ${beast.legs} legs, no wings`);
+    :                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 30 |         }
     `----
 
 Error: 
   > `manbearpig - ${number} legs, no wings`
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:29:13]
- 29 | log(`manbearpig - ${beast.legs} legs, no wings`);
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/typeGuards/typeGuardIntersectionTypes/1.ts:28:1]
+ 28 |         else {
+ 29 |             log(`manbearpig - ${beast.legs} legs, no wings`);
+    :             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 30 |         }
     `----
 
 Error: 

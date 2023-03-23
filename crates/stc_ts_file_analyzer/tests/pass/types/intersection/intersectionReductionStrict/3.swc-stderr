@@ -1,24 +1,29 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:9:1]
- 9 | t1 = t2;
-   :      ^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:8:1]
+  8 | 
+  9 | t1 = t2;
+    :      ^^
+ 10 | t2 = t1;
+    `----
 
 Error: 
   > undefined
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:9:1]
- 9 | t1 = t2;
-   : ^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:8:1]
+  8 | 
+  9 | t1 = t2;
+    : ^^^^^^^
+ 10 | t2 = t1;
+    `----
 
 Error: 
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:9:1]
+  9 | t1 = t2;
  10 | t2 = t1;
     :      ^^
     `----
@@ -27,7 +32,8 @@ Error:
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:9:1]
+  9 | t1 = t2;
  10 | t2 = t1;
     : ^^^^^^^
     `----

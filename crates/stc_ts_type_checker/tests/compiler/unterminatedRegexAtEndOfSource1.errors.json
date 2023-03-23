@@ -1,1 +1,1 @@
-[{"line":1,"column":10,"code":"TS1161"}]
+[{"filename":"tests/cases/compiler/unterminatedRegexAtEndOfSource1.ts","line":1,"column":10,"code":"TS1161"}]

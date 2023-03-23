@@ -13,6 +13,7 @@ async function* walk(dir: string): AsyncGenerator<string> {
 }
 
 interface ErrorRef {
+    filename: string | undefined
     line: number,
     column: number,
     code: string,
@@ -24,14 +25,15 @@ function extract(content: string): ErrorRef[] {
         if (str.startsWith('====')) {
             break
         }
-        if (str.startsWith(' ')) {
+        if (str.startsWith(' ') || str.startsWith('lib.') || str.includes('error TS-')) {
             continue
         }
-        const [, data] = str.split('(', 2);
+        const [filename, data] = str.split('(', 2);
         if (!data) {
             if (str.startsWith('error ')) {
                 const code = str.substring(6).split(':')[0];
                 errors.push({
+                    filename: undefined,
                     line: 0,
                     column: 0,
                     code
@@ -53,6 +55,7 @@ function extract(content: string): ErrorRef[] {
             throw new Error(`invalid line found: ${str}; ${line}:${column}; code = ${code}`)
         }
         errors.push({
+            filename,
             line,
             column,
             code
@@ -99,12 +102,17 @@ async function handleTestSuite(suiteName: string) {
 
             console.log('Error refs:', errorFilePath)
 
-            const errors = extract(content)
+            try {
+                const errors = extract(content)
 
-            if (p.includes('generatorReturnTypeFallback.2') && errors.length === 0) {
-                throw new Error(`ERROR(${errors})`)
+                if (p.includes('generatorReturnTypeFallback.2') && errors.length === 0) {
+                    throw new Error(`ERROR(${errors})`)
+                }
+                await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
+            } catch (e) {
+                console.error('failed to extract errors from', errorFilePath)
+                throw e
             }
-            await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
         }
     }
 }

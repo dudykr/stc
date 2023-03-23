@@ -1,1 +1,1 @@
-[{"line":1,"column":7,"code":"TS2567"},{"line":2,"column":6,"code":"TS2567"}]
+[{"filename":"tests/cases/compiler/enumGenericTypeClash.ts","line":1,"column":7,"code":"TS2567"},{"filename":"tests/cases/compiler/enumGenericTypeClash.ts","line":2,"column":6,"code":"TS2567"}]

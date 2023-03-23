@@ -1,1 +1,1 @@
-[{"line":7,"column":9,"code":"TS17011"},{"line":13,"column":15,"code":"TS17011"}]
+[{"filename":"tests/cases/conformance/classes/constructorDeclarations/superCalls/superPropertyInConstructorBeforeSuperCall.ts","line":7,"column":9,"code":"TS17011"},{"filename":"tests/cases/conformance/classes/constructorDeclarations/superCalls/superPropertyInConstructorBeforeSuperCall.ts","line":13,"column":15,"code":"TS17011"}]

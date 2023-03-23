@@ -1,69 +1,84 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:5:5]
- 5 | return class Inner<TInner> extends A<W> { }
-   :                                    ^
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:4:1]
+ 4 | function B3<W>() {
+ 5 |     return class Inner<TInner> extends A<W> { }
+   :                                        ^
+ 6 | }
    `----
 
 Error: 
   > typeof A
 
   x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:5:5]
- 5 | return class Inner<TInner> extends A<W> { }
-   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:4:1]
+ 4 | function B3<W>() {
+ 5 |     return class Inner<TInner> extends A<W> { }
+   :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 | }
    `----
 
 Error: 
   > typeof Inner
 
   x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:8:1]
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:7:1]
+ 7 | // extends can call B
  8 | let b3Number = B3<number>();
    :                ^^
+ 9 | class S extends b3Number<string> {
    `----
 
 Error: 
   > <W>() => typeof Inner
 
   x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:8:1]
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:7:1]
+ 7 | // extends can call B
  8 | let b3Number = B3<number>();
    :                ^^^^^^^^^^^^
-   `----
-
-Error: 
-  > typeof Inner
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:9:1]
  9 | class S extends b3Number<string> {
-   :                 ^^^^^^^^
    `----
 
 Error: 
   > typeof Inner
 
   x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:8:1]
+  8 | let b3Number = B3<number>();
+  9 | class S extends b3Number<string> {
+    :                 ^^^^^^^^
+ 10 |     nom: string;
+    `----
+
+Error: 
+  > typeof Inner
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:11:1]
+ 11 | }
  12 | var s = new S();
     :             ^
+ 13 | s.genericVar = 12;
     `----
 
 Error: 
   > typeof S
 
   x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:1]
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:11:1]
+ 11 | }
  12 | var s = new S();
     :         ^^^^^^^
+ 13 | s.genericVar = 12;
     `----
 
 Error: 
   > S
 
   x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:13:1]
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:1]
+ 12 | var s = new S();
  13 | s.genericVar = 12;
     : ^
     `----
@@ -72,7 +87,8 @@ Error:
   > S
 
   x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:13:1]
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:1]
+ 12 | var s = new S();
  13 | s.genericVar = 12;
     : ^^^^^^^^^^^^
     `----
@@ -81,7 +97,8 @@ Error:
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:13:1]
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:1]
+ 12 | var s = new S();
  13 | s.genericVar = 12;
     : ^^^^^^^^^^^^^^^^^
     `----

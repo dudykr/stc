@@ -1,39 +1,47 @@
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:45:1]
+ 45 | export type Some = ComponentDefinition<object>;
  46 | const Component = registerComponent("test-component", {
     :                   ^^^^^^^^^^^^^^^^^
+ 47 |   schema: {
     `----
 
 Error: 
   > <T extends object>(name: string, component: ComponentDefinition<T>) => ComponentConstructor<T>
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:49:7]
- 49 | default: [],
-    :          ^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:48:1]
+ 48 |     myProperty: {
+ 49 |       default: [],
+    :                ^^
+ 50 |       parse() {
     `----
 
 Error: 
   > any[]
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:51:9]
- 51 | return [true];
-    :        ^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:50:1]
+ 50 |       parse() {
+ 51 |         return [true];
+    :                ^^^^^^
+ 52 |       },
     `----
 
 Error: 
   > [true]
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:48:5]
- 48 | ,-> myProperty: {
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:47:1]
+ 47 |       schema: {
+ 48 | ,->     myProperty: {
  49 | |         default: [],
  50 | |         parse() {
  51 | |           return [true];
  52 | |         },
  53 | `->     },
+ 54 |         string: { type: "string" },
     `----
 
 Error: 
@@ -43,9 +51,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:54:5]
- 54 | string: { type: "string" },
-    :         ^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:53:1]
+ 53 |     },
+ 54 |     string: { type: "string" },
+    :             ^^^^^^^^^^^^^^^^^^
+ 55 |     num: 0,
     `----
 
 Error: 
@@ -54,8 +64,9 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:47:3]
- 47 | ,-> schema: {
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+ 46 |     const Component = registerComponent("test-component", {
+ 47 | ,->   schema: {
  48 | |       myProperty: {
  49 | |         default: [],
  50 | |         parse() {
@@ -65,6 +76,7 @@ Error:
  54 | |       string: { type: "string" },
  55 | |       num: 0,
  56 | `->   },
+ 57 |       init() {
     `----
 
 Error: 
@@ -80,169 +92,206 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
- 58 | this.data.num = 0;
-    : ^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:57:1]
+ 57 |   init() {
+ 58 |     this.data.num = 0;
+    :     ^^^^
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
     `----
 
 Error: 
   > this
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
- 58 | this.data.num = 0;
-    : ^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:57:1]
+ 57 |   init() {
+ 58 |     this.data.num = 0;
+    :     ^^^^^^^^^
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
- 58 | this.data.num = 0;
-    : ^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:57:1]
+ 57 |   init() {
+ 58 |     this.data.num = 0;
+    :     ^^^^^^^^^^^^^
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:5]
- 58 | this.data.num = 0;
-    : ^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:57:1]
+ 57 |   init() {
+ 58 |     this.data.num = 0;
+    :     ^^^^^^^^^^^^^^^^^
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
     `----
 
 Error: 
   > 0
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:59:5]
- 59 | this.el.setAttribute("custom-attribute", "custom-value");
-    : ^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:1]
+ 58 |     this.data.num = 0;
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
+    :     ^^^^
+ 60 |   },
     `----
 
 Error: 
   > this
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:59:5]
- 59 | this.el.setAttribute("custom-attribute", "custom-value");
-    : ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:1]
+ 58 |     this.data.num = 0;
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
+    :     ^^^^^^^
+ 60 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:59:5]
- 59 | this.el.setAttribute("custom-attribute", "custom-value");
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:58:1]
+ 58 |     this.data.num = 0;
+ 59 |     this.el.setAttribute("custom-attribute", "custom-value");
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 60 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :        ^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :            ^
+ 70 |   },
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :            ^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                ^^^^
+ 70 |   },
     `----
 
 Error: 
   > this
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :            ^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                ^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :            ^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                ^^^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :        ^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :            ^^^^^^^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :                            ^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                                ^^^^
+ 70 |   },
     `----
 
 Error: 
   > this
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :                            ^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                                ^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :                            ^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                                ^^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :                            ^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                                ^^^^^^^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > any
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:69:5]
- 69 | return f * this.data.num * this.system!.data.counter;
-    :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:68:1]
+ 68 |     // Reference to system because both were registered with the same name.
+ 69 |     return f * this.data.num * this.system!.data.counter;
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 70 |   },
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:45:1]
+ 45 |     export type Some = ComponentDefinition<object>;
  46 | ,-> const Component = registerComponent("test-component", {
  47 | |     schema: {
  48 | |       myProperty: {
@@ -293,7 +342,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:46:1]
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:45:1]
+ 45 |     export type Some = ComponentDefinition<object>;
  46 | ,-> const Component = registerComponent("test-component", {
  47 | |     schema: {
  48 | |       myProperty: {

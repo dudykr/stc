@@ -1,44 +1,54 @@
 
   x Type
-   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:6:1]
+ 6 | 
  7 | if (a instanceof Narrow) {
    :     ^
+ 8 |     a.narrowed; // ok
    `----
 
 Error: 
   > object
 
   x Type
-   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:6:1]
+ 6 | 
  7 | if (a instanceof Narrow) {
    :                  ^^^^^^
+ 8 |     a.narrowed; // ok
    `----
 
 Error: 
   > typeof Narrow
 
   x Type
-   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:6:1]
+ 6 | 
  7 | if (a instanceof Narrow) {
    :     ^^^^^^^^^^^^^^^^^^^
+ 8 |     a.narrowed; // ok
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:8:5]
- 8 | a.narrowed; // ok
-   : ^
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+ 7 | if (a instanceof Narrow) {
+ 8 |     a.narrowed; // ok
+   :     ^
+ 9 | }
    `----
 
 Error: 
   > Narrow
 
   x Type
-   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:8:5]
- 8 | a.narrowed; // ok
-   : ^^^^^^^^^^
+   ,-[$DIR/tests/pass/nonPrimitive/nonPrimitiveNarrow/1.ts:7:1]
+ 7 | if (a instanceof Narrow) {
+ 8 |     a.narrowed; // ok
+   :     ^^^^^^^^^^
+ 9 | }
    `----
 
 Error: 

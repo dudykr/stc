@@ -1,1 +1,1 @@
-[{"line":4,"column":5,"code":"TS2413"},{"line":14,"column":5,"code":"TS2411"},{"line":20,"column":5,"code":"TS2411"}]
+[{"filename":"tests/cases/conformance/interfaces/declarationMerging/mergedInterfacesWithIndexers2.ts","line":4,"column":5,"code":"TS2413"},{"filename":"tests/cases/conformance/interfaces/declarationMerging/mergedInterfacesWithIndexers2.ts","line":14,"column":5,"code":"TS2411"},{"filename":"tests/cases/conformance/interfaces/declarationMerging/mergedInterfacesWithIndexers2.ts","line":20,"column":5,"code":"TS2411"}]

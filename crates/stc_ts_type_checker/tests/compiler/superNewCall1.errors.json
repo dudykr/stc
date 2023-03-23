@@ -1,1 +1,1 @@
-[{"line":8,"column":5,"code":"TS2377"},{"line":9,"column":13,"code":"TS2351"},{"line":9,"column":13,"code":"TS17011"}]
+[{"filename":"tests/cases/compiler/superNewCall1.ts","line":8,"column":5,"code":"TS2377"},{"filename":"tests/cases/compiler/superNewCall1.ts","line":9,"column":13,"code":"TS2351"},{"filename":"tests/cases/compiler/superNewCall1.ts","line":9,"column":13,"code":"TS17011"}]

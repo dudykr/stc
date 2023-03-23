@@ -1,1 +1,1 @@
-[{"line":11,"column":32,"code":"TS2741"},{"line":17,"column":5,"code":"TS2403"}]
+[{"filename":"tests/cases/compiler/fixingTypeParametersRepeatedly2.ts","line":11,"column":32,"code":"TS2741"},{"filename":"tests/cases/compiler/fixingTypeParametersRepeatedly2.ts","line":17,"column":5,"code":"TS2403"}]

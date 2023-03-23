@@ -1,1 +1,1 @@
-[{"line":3,"column":16,"code":"TS1056"}]
+[{"filename":"tests/cases/compiler/optionalSetterParam.ts","line":3,"column":25,"code":"TS1051"}]

@@ -23,6 +23,10 @@ impl Analyzer<'_, '_> {
             self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into())
         }
 
+        if let RExpr::OptChain(..) = &*e.arg {
+            self.storage.report(ErrorKind::InvalidOperandOfIncDecOptionalProp { span }.into())
+        }
+
         let res = e
             .arg
             .validate_with_args(self, (TypeOfMode::LValue, None, None))

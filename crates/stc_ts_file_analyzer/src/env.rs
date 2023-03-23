@@ -26,8 +26,10 @@ pub trait BuiltInGen: Sized {
     #[allow(clippy::new_ret_no_self)]
     fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
 
-    fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> BuiltIn {
-        debug_assert_ne!(libs, &[], "No typescript library file is specified");
+    fn from_ts_libs(env: &StableEnv, libs: &[Lib], no_lib: bool) -> BuiltIn {
+        if !no_lib {
+            debug_assert_ne!(libs, &[], "No typescript library file is specified");
+        };
 
         // Loading builtin is very slow, so we cache it to a file using serde_json
 
@@ -39,7 +41,7 @@ pub trait BuiltInGen: Sized {
             format!("{:x}", result)
         };
 
-        let cache_path = Path::new(".stc").join(".builtin-cache").join(&format!("{}.rmp", key));
+        let cache_path = Path::new(".stc").join(".builtin-cache").join(format!("{}.rmp", key));
 
         if cache_path.is_file() {
             let res = || -> Result<BuiltIn, Box<dyn Error>> {
@@ -84,8 +86,7 @@ pub trait BuiltInGen: Sized {
         std::fs::create_dir_all(cache_path.parent().unwrap())
             .unwrap_or_else(|err| panic!("failed to create directory for builtin cache at {:?}: {:?}", cache_path, err));
 
-        std::fs::write(&cache_path, &json_data)
-            .unwrap_or_else(|err| panic!("failed to write builtin cache at {:?}: {:?}", cache_path, err));
+        std::fs::write(&cache_path, json_data).unwrap_or_else(|err| panic!("failed to write builtin cache at {:?}: {:?}", cache_path, err));
 
         builtin
     }
@@ -131,30 +132,33 @@ pub trait BuiltInGen: Sized {
                                 debug_assert_eq!(c.class.implements, vec![]);
                                 let ty = analyzer
                                     .with_child(ScopeKind::Flow, Default::default(), |analyzer: &mut Analyzer| {
-                                        Ok(Type::ClassDef(ClassDef {
-                                            span: c.class.span,
-                                            name: Some(c.ident.clone().into()),
-                                            is_abstract: c.class.is_abstract,
-                                            body: c
-                                                .class
-                                                .body
-                                                .clone()
-                                                .validate_with_default(analyzer)
-                                                .unwrap()
-                                                .into_iter()
-                                                .flatten()
-                                                .collect(),
-                                            super_class: None,
-                                            // implements: vec![],
-                                            type_params: c
-                                                .class
-                                                .type_params
-                                                .validate_with(analyzer)
-                                                .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
-                                            implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }))
+                                        Ok(Type::ClassDef(
+                                            ClassDef {
+                                                span: c.class.span,
+                                                name: Some(c.ident.clone().into()),
+                                                is_abstract: c.class.is_abstract,
+                                                body: c
+                                                    .class
+                                                    .body
+                                                    .clone()
+                                                    .validate_with_default(analyzer)
+                                                    .unwrap()
+                                                    .into_iter()
+                                                    .flatten()
+                                                    .collect(),
+                                                super_class: None,
+                                                // implements: vec![],
+                                                type_params: c
+                                                    .class
+                                                    .type_params
+                                                    .validate_with(analyzer)
+                                                    .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
+                                                implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            }
+                                            .into(),
+                                        ))
                                     })
                                     .unwrap();
 
@@ -298,7 +302,7 @@ pub trait EnvFactory {
 
         let builtin = {
             let builtin = cell.get_or_init(|| {
-                let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
+                let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs, rule.no_lib);
                 Arc::new(builtin)
             });
             (*builtin).clone()

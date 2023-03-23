@@ -1,78 +1,95 @@
 
   x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:3:9]
- 3 | public x = x;
-   :            ^
+   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:2:1]
+ 2 |     class C<Y> {
+ 3 |         public x = x;
+   :                    ^
+ 4 |         constructor(public y: Y) { }
    `----
 
 Error: 
   > X
 
   x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:6:5]
- 6 | return C;
-   :        ^
+   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:5:1]
+ 5 |     }
+ 6 |     return C;
+   :            ^
+ 7 | }
    `----
 
 Error: 
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:8:1]
+   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:7:1]
+ 7 | }
  8 | let C = f(10);
    :         ^
+ 9 | let v = new C("hello");
    `----
 
 Error: 
   > <X>(x: X) => typeof C
 
   x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:8:1]
+   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:7:1]
+ 7 | }
  8 | let C = f(10);
    :         ^^^^^
+ 9 | let v = new C("hello");
    `----
 
 Error: 
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:9:1]
- 9 | let v = new C("hello");
-   :             ^
-   `----
-
-Error: 
-  > typeof C
-
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:9:1]
- 9 | let v = new C("hello");
-   :         ^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:10:1]
+    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:8:1]
+  8 | let C = f(10);
+  9 | let v = new C("hello");
+    :             ^
  10 | v.x;
-    : ^
+    `----
+
+Error: 
+  > typeof C
+
+  x Type
+    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:8:1]
+  8 | let C = f(10);
+  9 | let v = new C("hello");
+    :         ^^^^^^^^^^^^^^
+ 10 | v.x;
     `----
 
 Error: 
   > C
 
   x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:10:1]
+    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:9:1]
+  9 | let v = new C("hello");
+ 10 | v.x;
+    : ^
+ 11 | v.y;
+    `----
+
+Error: 
+  > C
+
+  x Type
+    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:9:1]
+  9 | let v = new C("hello");
  10 | v.x;
     : ^^^
+ 11 | v.y;
     `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:11:1]
+    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:10:1]
+ 10 | v.x;
  11 | v.y;
     : ^
     `----
@@ -81,7 +98,8 @@ Error:
   > C
 
   x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:11:1]
+    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:10:1]
+ 10 | v.x;
  11 | v.y;
     : ^^^
     `----

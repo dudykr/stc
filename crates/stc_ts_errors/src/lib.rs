@@ -15,7 +15,6 @@ use ansi_term::Color::Yellow;
 use derivative::Derivative;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
-use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
 use swc_atoms::JsWord;
@@ -130,6 +129,17 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS7026
+    ImplicitAnyBecauseThereIsNoJsxInterface {
+        span: Span,
+    },
+
+    /// TS2538
+    TypeCannotBeUsedForIndex {
+        span: Span,
+        prop: Box<Key>,
+    },
+
     /// TS2698
     NonObjectInSpread {
         span: Span,
@@ -186,6 +196,12 @@ pub enum ErrorKind {
 
     /// TS2538
     CannotUseTypeAsIndexIndex {
+        span: Span,
+    },
+
+    /// TS2534
+    /// A function returning 'never' cannot have a reachable end point.
+    CannotFunctionReturningNever {
         span: Span,
     },
 
@@ -588,6 +604,12 @@ pub enum ErrorKind {
     ExportMixedWithLocal {
         span: Span,
     },
+
+    /// TS2652
+    MixedDefaultExports {
+        span: Span,
+    },
+
     /// TS2420
     ClassIncorrectlyImplementsInterface {
         span: Span,
@@ -628,10 +650,17 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2335
     SuperInClassWithoutSuper {
         span: Span,
     },
 
+    /// TS2660
+    SuperCanBeOnlyReferencedInDerivedClass {
+        span: Span,
+    },
+
+    /// TS2505
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -646,10 +675,11 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2463
     OptionalBindingPatternInImplSignature {
         span: Span,
     },
-
+    /// TS5076
     NullishCoalescingMixedWithLogicalWithoutParen {
         span: Span,
     },
@@ -759,6 +789,11 @@ pub enum ErrorKind {
         id: Id,
     },
 
+    /// TS7036
+    NonStringDynamicImport {
+        span: Span,
+    },
+
     ExportFailed {
         span: Span,
         orig: Id,
@@ -792,7 +827,7 @@ pub enum ErrorKind {
 
     NoSuchPropertyInModule {
         span: Span,
-        name: Box<RTsModuleName>,
+        name: Box<Key>,
     },
 
     /// TS2355
@@ -927,6 +962,12 @@ pub enum ErrorKind {
     },
 
     NoSuchVar {
+        span: Span,
+        name: Id,
+    },
+
+    /// TS2689
+    CannotExtendTypeOnlyItem {
         span: Span,
         name: Id,
     },
@@ -1426,8 +1467,15 @@ pub enum ErrorKind {
         span: Span,
     },
 
+    /// TS2488
     MustHaveSymbolIteratorThatReturnsIterator {
         span: Span,
+    },
+
+    /// TS2407
+    RightHandSideMustBeObject {
+        span: Span,
+        ty: Box<Type>,
     },
 
     MustHaveSymbolAsyncIteratorThatReturnsIterator {
@@ -1445,7 +1493,7 @@ pub enum ErrorKind {
     },
 
     /// TS2340
-    SuperCanOnlyAccessMethod {
+    SuperCanOnlyAccessPublicAndProtectedMethod {
         span: Span,
     },
 
@@ -1482,6 +1530,28 @@ pub enum ErrorKind {
     /// TS2804
     DuplicatePrivateStaticInstance {
         span: Span,
+    },
+
+    /// TS2668
+    ExportAmbientModule {
+        span: Span,
+    },
+
+    /// TS18046
+    IsTypeUnknown {
+        span: Span,
+    },
+
+    /// TS2700
+    RestTypeNotFromObject {
+        span: Span,
+    },
+
+    /// TS2729
+    UsePropBeforeInit {
+        span: Span,
+        obj: Option<Box<Type>>,
+        prop: Option<Box<Key>>,
     },
 }
 
@@ -1592,8 +1662,7 @@ impl ErrorKind {
             2531 | 18047 => 2531,
 
             // TS2571: Object is of type 'unknown'
-            // TS18046: ${obj} is of type 'unknown'.
-            2571 | 18046 => 2531,
+            2571 => 2531,
 
             // TS2533: Object is possibly 'null' or 'undefined'.
             // TS18049: '{0}' is possibly 'null' or 'undefined'.
@@ -1602,7 +1671,7 @@ impl ErrorKind {
             // TS2739: Missing properties with a type name
             // TS2740: Missing properties with type names
             // TS2741: Missing properties with comparison-like error message
-            2739 | 2740 | 2741 => 2741,
+            2739 | 2740 | 2741 => 2322,
 
             _ => code,
         }
@@ -1693,6 +1762,8 @@ impl ErrorKind {
 
             ErrorKind::SuperInClassWithoutSuper { .. } => 2335,
 
+            ErrorKind::SuperCanBeOnlyReferencedInDerivedClass { .. } => 2660,
+
             ErrorKind::NoSuchProperty { .. }
             | ErrorKind::NoSuchPropertyInThis { .. }
             | ErrorKind::NoSuchPropertyInClass { .. }
@@ -1700,9 +1771,17 @@ impl ErrorKind {
 
             ErrorKind::AssignOpCannotBeApplied { .. } => 2365,
             ErrorKind::TypeUsedAsVar { .. } => 2693,
+            ErrorKind::CannotExtendTypeOnlyItem { .. } => 2689,
             ErrorKind::TypeNotFound { .. } => 2304,
 
-            ErrorKind::NotVariable { .. } => 2539,
+            ErrorKind::NotVariable { ty, .. } => match ty.as_deref().map(Type::normalize) {
+                Some(Type::Enum(..)) => 2628,
+                Some(Type::ClassDef(..)) => 2629,
+                Some(Type::Function(..)) => 2630,
+                Some(Type::Module(..)) => 2631,
+                Some(Type::Import(..)) => 2632,
+                _ => 2539,
+            },
 
             ErrorKind::NoInitAndNoDefault { .. } => 2525,
 
@@ -1753,6 +1832,8 @@ impl ErrorKind {
             ErrorKind::TypeInvalidForUpdateArg { .. } => 2356,
             ErrorKind::ExprInvalidForUpdateArg { .. } => 2357,
 
+            ErrorKind::PrivatePropertyIsDifferent { .. } => 2415,
+
             ErrorKind::CannotAssignToNonVariable { .. } => 2539,
             ErrorKind::CannotAssignToModule { .. } => 2708,
             ErrorKind::CannotAssignToClass { .. } => 2629,
@@ -1799,6 +1880,8 @@ impl ErrorKind {
 
             ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
+            ErrorKind::RightHandSideMustBeObject { .. } => 2407,
+
             ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { .. } => 2504,
 
             ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
@@ -1822,6 +1905,8 @@ impl ErrorKind {
             ErrorKind::InvalidImplOfInterface { .. } => 2420,
 
             ErrorKind::ClassIncorrectlyImplementsInterface { .. } => 2420,
+
+            ErrorKind::MixedDefaultExports { .. } => 2652,
 
             ErrorKind::ExportMixedWithLocal { .. } => 2395,
 
@@ -2010,7 +2095,7 @@ impl ErrorKind {
             ErrorKind::OnlyOneEnumCanOmitInit { .. } => 2432,
 
             ErrorKind::CannotUseTypeAsIndexIndex { .. } => 2538,
-
+            ErrorKind::CannotFunctionReturningNever { .. } => 2534,
             ErrorKind::InterfaceNotCompatible { .. } => 2320,
 
             ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
@@ -2031,15 +2116,29 @@ impl ErrorKind {
 
             ErrorKind::NonObjectInSpread { .. } => 2698,
 
+            ErrorKind::TypeCannotBeUsedForIndex { .. } => 2538,
+
+            ErrorKind::ImplicitAnyBecauseThereIsNoJsxInterface { .. } => 7026,
+
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
             ErrorKind::ClassConstructorProtected { .. } => 2674,
 
             ErrorKind::InvalidExtendDueToConstructorPrivate { .. } => 2675,
 
-            ErrorKind::SuperCanOnlyAccessMethod { .. } => 2340,
+            ErrorKind::SuperCanOnlyAccessPublicAndProtectedMethod { .. } => 2340,
 
             ErrorKind::DuplicatePrivateStaticInstance { .. } => 2804,
+
+            ErrorKind::ExportAmbientModule { .. } => 2668,
+
+            ErrorKind::IsTypeUnknown { .. } => 18046,
+
+            ErrorKind::RestTypeNotFromObject { .. } => 2700,
+
+            ErrorKind::UsePropBeforeInit { .. } => 2729,
+
+            ErrorKind::NonStringDynamicImport { .. } => 7036,
 
             _ => 0,
         }

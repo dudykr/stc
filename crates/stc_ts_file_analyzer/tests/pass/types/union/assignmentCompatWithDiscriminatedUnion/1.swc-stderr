@@ -1,8 +1,10 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:15:5]
- 15 | t = s;
-    :     ^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:14:1]
+ 14 |     // S is assignable to T1 when S["done"] is false
+ 15 |     t = s;
+    :         ^
+ 16 | }
     `----
 
 Error: 
@@ -12,9 +14,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:15:5]
- 15 | t = s;
-    : ^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:14:1]
+ 14 |     // S is assignable to T1 when S["done"] is false
+ 15 |     t = s;
+    :     ^^^^^
+ 16 | }
     `----
 
 Error: 

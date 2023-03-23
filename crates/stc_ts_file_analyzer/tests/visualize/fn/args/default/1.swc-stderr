@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/fn/args/default/1.ts:2:1]
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:1:1]
+ 1 | 
  2 | export function foo({ z } = { z: 1 }) { }
    :                             ^^^^^^^^
    `----
@@ -11,18 +12,20 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/fn/args/default/1.ts:4:1]
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:3:1]
+ 3 | 
  4 | foo({})
    : ^^^
    `----
 
 Error: 
   > ({ z  }: {
-  |     z?: (undefined | number);
+  |     z?: (number | undefined);
   | }) => void
 
   x Type
-   ,-[$DIR/tests/visualize/fn/args/default/1.ts:4:1]
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:3:1]
+ 3 | 
  4 | foo({})
    :     ^^
    `----
@@ -32,7 +35,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/visualize/fn/args/default/1.ts:4:1]
+   ,-[$DIR/tests/visualize/fn/args/default/1.ts:3:1]
+ 3 | 
  4 | foo({})
    : ^^^^^^^
    `----

@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:2:1]
+ 2 | 
  3 | const x = extractIndexer({
    :           ^^^^^^^^^^^^^^
+ 4 |     ["" || 0]: ""
    `----
 
 Error: 
@@ -11,16 +13,19 @@ Error:
   | }) => T
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:4:5]
- 4 | ["" || 0]: ""
-   :  ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:1]
+ 3 | const x = extractIndexer({
+ 4 |     ["" || 0]: ""
+   :      ^^^^^^^
+ 5 | }); // Should return any (widened form of undefined)
    `----
 
 Error: 
   > 0
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:2:1]
+ 2 |     
  3 | ,-> const x = extractIndexer({
  4 | |       ["" || 0]: ""
  5 | `-> }); // Should return any (widened form of undefined)
@@ -32,7 +37,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:2:1]
+ 2 |     
  3 | ,-> const x = extractIndexer({
  4 | |       ["" || 0]: ""
  5 | `-> }); // Should return any (widened form of undefined)
@@ -42,7 +48,8 @@ Error:
   > string
 
   x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:6:1]
+ 6 | 
  7 | export default x
    :                ^
    `----

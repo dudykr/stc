@@ -1,1 +1,1 @@
-[{"line":10,"column":6,"code":"TS2554"},{"line":16,"column":6,"code":"TS2349"}]
+[{"filename":"tests/cases/compiler/methodChainError.ts","line":10,"column":6,"code":"TS2554"},{"filename":"tests/cases/compiler/methodChainError.ts","line":16,"column":6,"code":"TS2349"}]

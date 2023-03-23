@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/mapped/5.ts:6:5]
- 6 | values: { [P in keyof T]?: T[P] } = {}
-   :                                     ^^
+   ,-[$DIR/tests/pass/types/mapped/5.ts:5:1]
+ 5 | export class Form<T> {
+ 6 |     values: { [P in keyof T]?: T[P] } = {}
+   :                                         ^^
+ 7 | }
    `----
 
 Error: 
@@ -10,18 +12,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+    ,-[$DIR/tests/pass/types/mapped/5.ts:15:1]
+ 15 | 
  16 | form.values.email
     : ^^^^
+ 17 | form.values.password
     `----
 
 Error: 
   > Form
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+    ,-[$DIR/tests/pass/types/mapped/5.ts:15:1]
+ 15 | 
  16 | form.values.email
     : ^^^^^^^^^^^
+ 17 | form.values.password
     `----
 
 Error: 
@@ -31,16 +37,19 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+    ,-[$DIR/tests/pass/types/mapped/5.ts:15:1]
+ 15 | 
  16 | form.values.email
     : ^^^^^^^^^^^^^^^^^
+ 17 | form.values.password
     `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/5.ts:17:1]
+    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+ 16 | form.values.email
  17 | form.values.password
     : ^^^^
     `----
@@ -49,7 +58,8 @@ Error:
   > Form
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/5.ts:17:1]
+    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+ 16 | form.values.email
  17 | form.values.password
     : ^^^^^^^^^^^
     `----
@@ -61,10 +71,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/mapped/5.ts:17:1]
+    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+ 16 | form.values.email
  17 | form.values.password
     : ^^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)

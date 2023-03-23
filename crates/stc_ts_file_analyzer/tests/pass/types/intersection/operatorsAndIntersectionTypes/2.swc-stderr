@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:5:5]
- 5 | return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
-   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:4:1]
+ 4 | function createGuid() {
+ 5 |     return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
+   :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 | }
    `----
 
 Error: 
   > Guid
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:9:5]
- 9 | return 12345 as SerialNo;
-   :        ^^^^^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:8:1]
+  8 | function createSerialNo() {
+  9 |     return 12345 as SerialNo;
+    :            ^^^^^^^^^^^^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > SerialNo
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:12:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:11:1]
+ 11 | 
  12 | let map1: { [x: string]: number } = {};
     :                                     ^^
+ 13 | let guid = createGuid();
     `----
 
 Error: 
@@ -28,25 +34,30 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:12:1]
+ 12 | let map1: { [x: string]: number } = {};
  13 | let guid = createGuid();
     :            ^^^^^^^^^^
+ 14 | map1[guid] = 123;  // Can with tagged string
     `----
 
 Error: 
   > () => Guid
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:12:1]
+ 12 | let map1: { [x: string]: number } = {};
  13 | let guid = createGuid();
     :            ^^^^^^^^^^^^
+ 14 | map1[guid] = 123;  // Can with tagged string
     `----
 
 Error: 
   > Guid
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
+ 13 | let guid = createGuid();
  14 | map1[guid] = 123;  // Can with tagged string
     : ^^^^
     `----
@@ -57,7 +68,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
+ 13 | let guid = createGuid();
  14 | map1[guid] = 123;  // Can with tagged string
     :      ^^^^
     `----
@@ -68,7 +80,8 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
+ 13 | let guid = createGuid();
  14 | map1[guid] = 123;  // Can with tagged string
     : ^^^^^^^^^^
     `----
@@ -77,7 +90,8 @@ Error:
   > number
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
+ 13 | let guid = createGuid();
  14 | map1[guid] = 123;  // Can with tagged string
     : ^^^^^^^^^^^^^^^^
     `----
@@ -86,9 +100,11 @@ Error:
   > 123
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:16:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:15:1]
+ 15 | 
  16 | let map2: { [x: number]: string } = {};
     :                                     ^^
+ 17 | let serialNo = createSerialNo();
     `----
 
 Error: 
@@ -96,25 +112,30 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:16:1]
+ 16 | let map2: { [x: number]: string } = {};
  17 | let serialNo = createSerialNo();
     :                ^^^^^^^^^^^^^^
+ 18 | map2[serialNo] = "hello";  // Can index with tagged number
     `----
 
 Error: 
   > () => SerialNo
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:16:1]
+ 16 | let map2: { [x: number]: string } = {};
  17 | let serialNo = createSerialNo();
     :                ^^^^^^^^^^^^^^^^
+ 18 | map2[serialNo] = "hello";  // Can index with tagged number
     `----
 
 Error: 
   > SerialNo
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
+ 17 | let serialNo = createSerialNo();
  18 | map2[serialNo] = "hello";  // Can index with tagged number
     : ^^^^
     `----
@@ -125,7 +146,8 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
+ 17 | let serialNo = createSerialNo();
  18 | map2[serialNo] = "hello";  // Can index with tagged number
     :      ^^^^^^^^
     `----
@@ -136,7 +158,8 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
+ 17 | let serialNo = createSerialNo();
  18 | map2[serialNo] = "hello";  // Can index with tagged number
     : ^^^^^^^^^^^^^^
     `----
@@ -145,7 +168,8 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
+ 17 | let serialNo = createSerialNo();
  18 | map2[serialNo] = "hello";  // Can index with tagged number
     : ^^^^^^^^^^^^^^^^^^^^^^^^
     `----
@@ -154,7 +178,8 @@ Error:
   > "hello"
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:19:1]
+ 19 | 
  20 | export const s4 = guid + serialNo;
     :                   ^^^^
     `----
@@ -165,7 +190,8 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:19:1]
+ 19 | 
  20 | export const s4 = guid + serialNo;
     :                          ^^^^^^^^
     `----
@@ -176,7 +202,8 @@ Error:
   | })
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:1]
+    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:19:1]
+ 19 | 
  20 | export const s4 = guid + serialNo;
     :                   ^^^^^^^^^^^^^^^
     `----

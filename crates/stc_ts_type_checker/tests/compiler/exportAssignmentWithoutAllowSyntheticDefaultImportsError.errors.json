@@ -1,1 +1,1 @@
-[{"line":1,"column":1,"code":"TS1203"},{"line":1,"column":8,"code":"TS1259"}]
+[{"filename":"/bar.ts","line":1,"column":1,"code":"TS1203"},{"filename":"/foo.ts","line":1,"column":8,"code":"TS1259"}]

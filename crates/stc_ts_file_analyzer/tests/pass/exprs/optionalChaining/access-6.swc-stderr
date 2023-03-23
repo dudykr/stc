@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:1:1]
+ 1 | declare const o6: <T>() => undefined | { x: number };
  2 | const x = o6<number>()?.["x"];
    :           ^^
    `----
@@ -11,7 +12,8 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:1:1]
+ 1 | declare const o6: <T>() => undefined | { x: number };
  2 | const x = o6<number>()?.["x"];
    :           ^^^^^^^^^^^^
    `----
@@ -22,10 +24,11 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:1:1]
+ 1 | declare const o6: <T>() => undefined | { x: number };
  2 | const x = o6<number>()?.["x"];
    :           ^^^^^^^^^^^^^^^^^^^
    `----
 
 Error: 
-  > (undefined | number)
+  > (number | undefined)

@@ -6,8 +6,8 @@ use stc_ts_generics::{
     ExpandGenericOpts,
 };
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
-use stc_utils::{cache::Freeze, ext::SpanExt};
+use stc_ts_types::{Id, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -36,17 +36,20 @@ pub(crate) struct ExtendsOpts {
 
     /// `strictSubtype` of `tsc`.
     pub strict: bool,
+
+    pub allow_missing_fields: bool,
 }
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn instantiate_type_params_using_args(
         &mut self,
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
     ) -> VResult<FxHashMap<Id, Type>> {
+        let _tracing = dev_span!("instantiate_type_params_using_args");
+
         let mut params = FxHashMap::default();
 
         for (idx, param) in type_params.params.iter().enumerate() {
@@ -87,11 +90,12 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
+        let _tracing = dev_span!("expand_type_params");
+
         for param in params.values() {
             param.assert_valid();
             debug_assert!(param.is_clone_cheap());
@@ -115,7 +119,13 @@ impl Analyzer<'_, '_> {
     /// Returns `Some(true)` if `child` extends `parent`.
     pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
         let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "extends").entered())
+            let child = dump_type_as_string(child);
+            let parent = dump_type_as_string(parent);
+            Some(dev_span!(
+                "extends",
+                child = tracing::field::display(&child),
+                parent = tracing::field::display(&parent)
+            ))
         } else {
             None
         };
@@ -147,7 +157,7 @@ impl Analyzer<'_, '_> {
         }
 
         match child {
-            Type::Param(..) | Type::Infer(..) => return None,
+            Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) | Type::Conditional(..) => return None,
             Type::Ref(..) => {
                 let child = self
                     .expand(
@@ -200,7 +210,7 @@ impl Analyzer<'_, '_> {
         }
 
         match parent {
-            Type::Param(..) | Type::Infer(..) => return None,
+            Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) => return None,
             Type::Ref(..) => {
                 let mut parent = self
                     .expand(
@@ -259,6 +269,18 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"Function" => match child {
+                Type::Function(..) => {
+                    return Some(true);
+                }
+                Type::TypeLit(child) => {
+                    if child.members.iter().any(|m| matches!(m, TypeElement::Call(..))) {
+                        return Some(true);
+                    }
+                }
+                _ => {}
+            },
+
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
                 Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::TypeLit(..) => {
                     return Some(true);
@@ -281,7 +303,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => {
-                if self.rule().strict_null_checks {
+                if !self.rule().strict_null_checks {
                     return Some(true);
                 }
                 return Some(false);
@@ -303,6 +325,7 @@ impl Analyzer<'_, '_> {
             },
             Type::ClassDef(child_class) => match parent {
                 Type::Function(..) | Type::Lit(..) => return Some(false),
+                Type::Constructor(..) => return Some(true),
                 Type::TypeLit(parent) => {
                     // //
                     // // TODO
@@ -358,7 +381,20 @@ impl Analyzer<'_, '_> {
                     return Some(false);
                 }
             }
+            Type::Intersection(child_intersection) => {
+                for child_ty in child_intersection.types.iter() {
+                    match self.extends(span, child_ty, parent, opts) {
+                        Some(true) => return Some(true),
+                        None => return None,
+                        _ => {}
+                    }
+                }
+            }
             _ => {}
+        }
+
+        if child.is_null_or_undefined() && (parent.is_fn_type() || parent.is_constructor()) {
+            return Some(false);
         }
 
         let res = self.assign_with_opts(
@@ -372,6 +408,7 @@ impl Analyzer<'_, '_> {
                 allow_assignment_to_param_constraint: true,
                 allow_unknown_rhs: Some(!opts.strict),
                 allow_unknown_rhs_if_expanded: !opts.strict,
+                allow_missing_fields: opts.allow_missing_fields,
                 ..Default::default()
             },
         );

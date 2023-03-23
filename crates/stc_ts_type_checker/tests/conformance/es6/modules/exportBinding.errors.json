@@ -1,1 +1,1 @@
-[{"line":3,"column":16,"code":"TS2448"},{"line":3,"column":16,"code":"TS2454"},{"line":3,"column":16,"code":"TS2454"}]
+[{"filename":"tests/cases/conformance/es6/modules/exportConsts.ts","line":3,"column":16,"code":"TS2448"},{"filename":"tests/cases/conformance/es6/modules/exportConsts.ts","line":3,"column":16,"code":"TS2454"},{"filename":"tests/cases/conformance/es6/modules/exportVars.ts","line":3,"column":16,"code":"TS2454"}]

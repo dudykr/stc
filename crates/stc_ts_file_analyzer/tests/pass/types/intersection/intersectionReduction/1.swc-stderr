@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:8:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:7:1]
+ 7 | declare let x: A | (B & C);  // A
  8 | export let a: A = x;
    :                   ^
    `----

@@ -6,7 +6,7 @@ set -eu
 export RUST_LOG=off
 export MIMALLOC_SHOW_STATS=1
 export CARGO_MANIFEST_DIR="$(pwd)"
-export RUST_MIN_STACK=$((16 * 1024 * 1024))
+export RUST_MIN_STACK=$((8 * 1024 * 1024))
 
 export STC_SKIP_EXEC=1
 

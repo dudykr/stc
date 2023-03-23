@@ -1,1 +1,1 @@
-[{"line":0,"column":0,"code":"TS5059"},{"line":1,"column":2,"code":"TS2304"}]
+[{"line":0,"column":0,"code":"TS5059"},{"filename":"tests/cases/compiler/reactNamespaceInvalidInput.tsx","line":1,"column":2,"code":"TS2304"}]

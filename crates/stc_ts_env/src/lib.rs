@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, dev_span};
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -92,8 +92,9 @@ impl Env {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+        let _tracing = dev_span!("get_global_var");
+
         if let Some(ty) = self.global_vars.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -111,8 +112,9 @@ impl Env {
         .into())
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+        let _tracing = dev_span!("get_global_type");
+
         if let Some(ty) = self.global_types.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -198,6 +200,7 @@ pub struct Rule {
     pub no_unused_locals: bool,
     pub no_unused_parameters: bool,
     pub use_define_property_for_class_fields: bool,
+    pub no_lib: bool,
 
     pub jsx: JsxMode,
 }

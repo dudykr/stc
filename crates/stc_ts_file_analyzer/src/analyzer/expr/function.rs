@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 
+use rnode::NodeId;
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
+use stc_ts_errors::DebugExt;
 use stc_ts_types::{
     type_id::DestructureId, Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type, TypeParam, Union,
 };
@@ -11,7 +13,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 use super::call_new::ExtractKind;
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, pat::PatMode, Analyzer, Ctx, ScopeKind},
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, pat::PatMode, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty::TypeExt,
     validator,
     validator::ValidateWith,
@@ -26,7 +28,15 @@ impl Analyzer<'_, '_> {
         let type_ann = self.expand_type_ann(f.span, type_ann)?;
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
-            let type_params = try_opt!(f.type_params.validate_with(child));
+            let mut type_params = try_opt!(f.type_params.validate_with(child));
+
+            if type_params.is_none() {
+                if let Some(mutations) = &child.mutations {
+                    if let Some(ann) = mutations.for_callable.get(&f.node_id) {
+                        type_params = ann.type_params.clone();
+                    }
+                }
+            }
 
             let params = {
                 let ctx = Ctx {
@@ -36,13 +46,14 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
 
-                child.apply_fn_type_ann(f.span, f.params.iter(), type_ann.as_deref());
+                child.apply_fn_type_ann(f.span, f.node_id, f.params.iter(), type_ann.as_deref());
 
                 for p in &f.params {
                     child.default_any_pat(p);
                 }
                 f.params.validate_with(&mut *child.with_ctx(ctx))?
             };
+
             let declared_ret_ty = match f.return_type.validate_with(child) {
                 Some(Ok(ty)) => Some(ty),
                 Some(Err(err)) => {
@@ -61,7 +72,7 @@ impl Analyzer<'_, '_> {
                                 common: def.metadata.common,
                                 ..Default::default()
                             },
-                            def: box def,
+                            def,
                             tracker: Default::default(),
                         }),
                         _ => ty,
@@ -72,7 +83,7 @@ impl Analyzer<'_, '_> {
             .freezed();
 
             let inferred_return_type = {
-                match f.body {
+                match *f.body {
                     RBlockStmtOrExpr::Expr(ref e) => Some({
                         let ty = e.validate_with_args(child, (TypeOfMode::RValue, None, declared_ret_ty.as_ref()))?;
                         if !child.ctx.in_argument && f.return_type.is_none() && type_ann.is_none() && child.may_generalize(&ty) {
@@ -106,16 +117,20 @@ impl Analyzer<'_, '_> {
             if let Some(ref declared) = declared_ret_ty {
                 let span = inferred_return_type.span();
                 if let Some(ref inferred) = inferred_return_type {
-                    child.assign_with_opts(
-                        &mut Default::default(),
-                        declared,
-                        inferred,
-                        AssignOpts {
-                            span,
-                            allow_assignment_of_void: Some(true),
-                            ..Default::default()
-                        },
-                    )?;
+                    child
+                        .assign_with_opts(
+                            &mut Default::default(),
+                            declared,
+                            inferred,
+                            AssignOpts {
+                                span,
+                                allow_assignment_of_void: Some(true),
+                                may_unwrap_promise: f.is_async,
+                                ..Default::default()
+                            },
+                        )
+                        .context("tried to assign inferred return type to declared return type of an arrow")
+                        .report(&mut child.storage);
                 }
             }
 
@@ -133,7 +148,15 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn apply_fn_type_ann<'a>(&mut self, span: Span, params: impl Iterator<Item = &'a RPat> + Clone, type_ann: Option<&Type>) {
+    /// `fn_node_id` should be [NodeId] of [stc_ts_ast_rnode::RFunction] or
+    /// [stc_ts_ast_rnode::RArrowExpr]
+    pub(crate) fn apply_fn_type_ann<'a>(
+        &mut self,
+        span: Span,
+        fn_node_id: NodeId,
+        params: impl Iterator<Item = &'a RPat> + Clone,
+        type_ann: Option<&Type>,
+    ) {
         if let Some(ty) = &type_ann {
             // See functionExpressionContextualTyping1.ts
             //
@@ -146,6 +169,11 @@ impl Analyzer<'_, '_> {
             };
             if candidates.len() != 1 {
                 return;
+            }
+
+            // We handle type parameters using mutations
+            if let Some(mutations) = &mut self.mutations {
+                mutations.for_callable.entry(fn_node_id).or_default().type_params = candidates[0].type_params.clone();
             }
 
             // Handle rest in `ty.params`.
@@ -198,6 +226,19 @@ impl Analyzer<'_, '_> {
                                 ty: Box::new(ty.clone().freezed()),
                                 tracker: Default::default(),
                             });
+                        }
+                    }
+                    ty @ Type::Ref(..) => {
+                        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default());
+                        if let Ok(ty) = ty {
+                            if let ty @ Type::Union(..) = ty.normalize() {
+                                temp_els.push(TupleElement {
+                                    span: param.span,
+                                    label: None,
+                                    ty: Box::new(ty.clone().freezed()),
+                                    tracker: Default::default(),
+                                });
+                            }
                         }
                     }
                     _ => {}

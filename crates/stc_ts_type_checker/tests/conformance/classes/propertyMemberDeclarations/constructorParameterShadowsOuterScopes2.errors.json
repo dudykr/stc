@@ -1,1 +1,1 @@
-[{"line":28,"column":9,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/classes/propertyMemberDeclarations/constructorParameterShadowsOuterScopes2.ts","line":28,"column":9,"code":"TS2304"}]

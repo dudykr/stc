@@ -4,14 +4,13 @@ use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
-    Union,
+    Array, Class, ClassMember, CommonTypeMetadata, Index, IndexedAccessType, IndexedAccessTypeMetadata, Intersection, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
 };
-use stc_utils::ext::TypeVecExt;
+use stc_utils::{dev_span, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{info, trace};
 
 use crate::{analyzer::Analyzer, ty::Type};
@@ -20,8 +19,9 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Remove this.
     ///
     /// Check if it's okay to generalize `ty`.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
+        let _tracing = dev_span!("may_generalize");
+
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
             Type::Function(f) => {
@@ -46,13 +46,15 @@ impl Analyzer<'_, '_> {
         !ty.metadata().prevent_generalization
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
+        let _tracing = dev_span!("prevent_inference_while_simplifying");
+
         ty.visit_mut_with(&mut PreventComplexSimplification);
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
+        let _tracing = dev_span!("simplify");
+
         info!("Simplifying {}", dump_type_as_string(&ty));
         ty.fold_with(&mut Simplifier { env: &self.env })
     }
@@ -114,10 +116,8 @@ impl Fold<Type> for Simplifier<'_> {
                     index_type:
                         box Type::Param(TypeParam {
                             constraint:
-                                Some(box Type::Operator(Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ty: box Type::Param(..),
-                                    ..
+                                Some(box Type::Index(Index {
+                                    ty: box Type::Param(..), ..
                                 })),
                             ..
                         }),
@@ -271,12 +271,8 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::Intersection(ref i) => {
-                let is_str = i.types.iter().any(|ty| ty.is_str());
-                let is_num = i.types.iter().any(|ty| ty.is_num());
-                let is_bool = i.types.iter().any(|ty| ty.is_bool());
-
                 // LHS is never.
-                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+                if Intersection::is_trivial_never(&i.types) {
                     return Type::never(i.span, KeywordTypeMetadata { common: i.metadata.common });
                 }
             }
@@ -331,12 +327,7 @@ impl Fold<Type> for Simplifier<'_> {
                 type_param:
                     TypeParam {
                         name: p1,
-                        constraint:
-                            Some(box Type::Operator(Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ty,
-                                ..
-                            })),
+                        constraint: Some(box Type::Index(Index { ty, .. })),
                         ..
                     },
                 ty:
@@ -446,7 +437,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 types.dedup_type();
 
-                return Type::union(types);
+                return Type::new_union(span, types);
             }
 
             Type::IndexedAccessType(IndexedAccessType {
@@ -652,29 +643,27 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
-                obj_type:
-                    box Type::Class(Class {
-                        def: box ClassDef { body, .. },
-                        ..
-                    }),
+                obj_type: box Type::Class(Class { def, .. }),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
-            }) if body.iter().any(|member| match member {
+            }) if def.body.iter().any(|member| match member {
                 ClassMember::Constructor(_) => false,
                 ClassMember::Method(_) => false,
                 ClassMember::Property(p) => p.key == s.value,
                 ClassMember::IndexSignature(_) => false,
             }) =>
             {
-                let member = body
-                    .into_iter()
+                let member = def
+                    .body
+                    .iter()
                     .find(|member| match member {
                         ClassMember::Constructor(_) => false,
                         ClassMember::Method(_) => false,
                         ClassMember::Property(p) => p.key == s.value,
                         ClassMember::IndexSignature(_) => false,
                     })
-                    .unwrap();
+                    .unwrap()
+                    .clone();
 
                 match member {
                     ClassMember::Method(_) => unimplemented!(),
@@ -692,11 +681,7 @@ impl Fold<Type> for Simplifier<'_> {
 
             Type::IndexedAccessType(IndexedAccessType {
                 span,
-                obj_type:
-                    box Type::Class(Class {
-                        def: box ClassDef { ref body, .. },
-                        ..
-                    }),
+                obj_type: box Type::Class(Class { ref def, .. }),
                 index_type: box Type::Union(ref keys),
                 ..
             }) if keys.types.iter().all(is_str_lit_or_union) => {
@@ -708,7 +693,7 @@ impl Fold<Type> for Simplifier<'_> {
                         _ => unreachable!(),
                     })
                     .map(|key| {
-                        let member = body.iter().find(|member| match member {
+                        let member = def.body.iter().find(|member| match member {
                             ClassMember::Constructor(_) => false,
                             ClassMember::Method(_) => false,
                             ClassMember::Property(p) => p.key == key.value,

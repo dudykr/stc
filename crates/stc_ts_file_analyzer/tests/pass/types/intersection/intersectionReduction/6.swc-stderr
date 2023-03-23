@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/6.ts:7:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/6.ts:6:1]
+ 6 | 
  7 | export const f2 = (t: Container<"a"> | (Container<"b"> & Container<"c">)): Container<"a"> => t;
    :                                                                                              ^
    `----
@@ -11,7 +12,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/6.ts:7:1]
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/6.ts:6:1]
+ 6 | 
  7 | export const f2 = (t: Container<"a"> | (Container<"b"> & Container<"c">)): Container<"a"> => t;
    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

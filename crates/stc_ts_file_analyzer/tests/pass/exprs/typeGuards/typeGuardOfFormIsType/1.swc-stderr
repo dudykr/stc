@@ -1,15 +1,18 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:8:1]
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:7:1]
+ 7 | }
  8 | class D1 extends C1 {
    :                  ^^
+ 9 |     p3: number;
    `----
 
 Error: 
   > typeof C1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:19:1]
+ 19 | export var c1Orc2: C1 | C2;
  20 | isD1(c1Orc2) && c1Orc2.p3; // D1
     : ^^^^
     `----
@@ -18,7 +21,8 @@ Error:
   > (x: any) => x is D1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:19:1]
+ 19 | export var c1Orc2: C1 | C2;
  20 | isD1(c1Orc2) && c1Orc2.p3; // D1
     :      ^^^^^^
     `----
@@ -27,7 +31,8 @@ Error:
   > (C1 | C2)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:19:1]
+ 19 | export var c1Orc2: C1 | C2;
  20 | isD1(c1Orc2) && c1Orc2.p3; // D1
     : ^^^^^^^^^^^^
     `----
@@ -36,7 +41,8 @@ Error:
   > x is D1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:19:1]
+ 19 | export var c1Orc2: C1 | C2;
  20 | isD1(c1Orc2) && c1Orc2.p3; // D1
     :                 ^^^^^^
     `----
@@ -45,7 +51,8 @@ Error:
   > D1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:19:1]
+ 19 | export var c1Orc2: C1 | C2;
  20 | isD1(c1Orc2) && c1Orc2.p3; // D1
     :                 ^^^^^^^^^
     `----
@@ -54,7 +61,8 @@ Error:
   > number
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFormIsType/1.ts:19:1]
+ 19 | export var c1Orc2: C1 | C2;
  20 | isD1(c1Orc2) && c1Orc2.p3; // D1
     : ^^^^^^^^^^^^^^^^^^^^^^^^^
     `----

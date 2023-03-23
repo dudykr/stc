@@ -8,7 +8,7 @@ If you want to help this project successfully launch, please consider contributi
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md)
+See [contributing documentation](https://stc.dudy.dev/docs/contributing)
 
 ## Sponsors
 

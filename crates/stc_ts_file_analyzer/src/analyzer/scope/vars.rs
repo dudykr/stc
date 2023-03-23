@@ -9,11 +9,11 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::{tuple_to_array::TupleToArray, widen::Widen, Fix};
 use stc_ts_types::{
-    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, PropertySignature, Ref, RestType, Tuple, TupleElement,
-    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    type_id::DestructureId, Array, CommonTypeMetadata, Instance, Key, LitType, OptionalType, PropertySignature, Ref, RestType, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{run, PatExt};
-use stc_utils::{cache::Freeze, TryOpt};
+use stc_utils::{cache::Freeze, dev_span, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
 use tracing::debug;
@@ -85,37 +85,24 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Option<Type>> {
         if let Some(ty) = &ty {
             ty.assert_valid();
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 ty.assert_clone_cheap();
             }
         }
         if let Some(ty) = &actual {
             ty.assert_valid();
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 ty.assert_clone_cheap();
             }
         }
         if let Some(ty) = &default {
             ty.assert_valid();
-            if !self.is_builtin {
+            if !self.config.is_builtin {
                 ty.assert_clone_cheap();
             }
         }
 
         let span = pat.span().with_ctxt(SyntaxContext::empty());
-
-        if !matches!(pat, RPat::Ident(..)) {
-            if let Some(ty @ Type::Ref(..)) = ty.as_ref().map(Type::normalize) {
-                let mut ty = self
-                    .expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
-                    .context("tried to expand reference to declare a complex variable")?
-                    .into_owned();
-
-                ty.freeze();
-
-                return self.add_vars(pat, Some(ty), actual, default, opts);
-            }
-        }
 
         match pat {
             RPat::Ident(i) => {
@@ -160,6 +147,7 @@ impl Analyzer<'_, '_> {
                     // same name
                     opts.kind == VarKind::Var(VarDeclKind::Var),
                     false,
+                    false,
                 )
             }
 
@@ -184,8 +172,14 @@ impl Analyzer<'_, '_> {
                     // only when the parameter list occurs in conjunction with a
                     // function body), the parameter type is the widened form (section
                     // 3.11) of the type of the initializer expression.
-
-                    right = right.fold_with(&mut Widen { tuple_to_array: true });
+                    match &*p.left {
+                        RPat::Array(p_left) => {
+                            right = right.fold_with(&mut Widen { tuple_to_array: false });
+                        }
+                        _ => {
+                            right = right.fold_with(&mut Widen { tuple_to_array: true });
+                        }
+                    }
                 }
 
                 right.freeze();
@@ -369,14 +363,86 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             // TODO(kdy1): actual_ty
+
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
                         }
                     }
+                    // Type inference for functions
+                    let default_ty = match default_ty {
+                        Some(d_ty) => {
+                            let d_ty = d_ty.fold_with(&mut Widen { tuple_to_array: false });
+                            let mut left_elems = vec![];
+
+                            for (i, left_element) in arr.elems.iter().enumerate() {
+                                if let Some(r_pat) = left_element {
+                                    match r_pat {
+                                        RPat::Assign(p) => {
+                                            let elem_ty = box p
+                                                .right
+                                                .validate_with_default(self)?
+                                                .fold_with(&mut Widen { tuple_to_array: false })
+                                                .union_with_undefined(span)
+                                                .freezed();
+
+                                            left_elems.push(TupleElement {
+                                                span,
+                                                label: None,
+                                                ty: box Type::Optional(OptionalType {
+                                                    span,
+                                                    ty: elem_ty,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+                                        _ => {
+                                            left_elems.push(TupleElement {
+                                                span,
+                                                label: None,
+                                                ty: box Type::Optional(OptionalType {
+                                                    span,
+                                                    ty: box Type::any(span, Default::default()),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+
+                            match d_ty {
+                                Type::Tuple(mut ty) => {
+                                    let right_type_len = ty.elems.len();
+                                    let left_type_len = left_elems.len();
+                                    let assign_possible = left_type_len > right_type_len;
+
+                                    if assign_possible {
+                                        let assign_range = left_type_len - right_type_len;
+                                        let start = left_type_len - assign_range;
+                                        ty.elems.extend(left_elems.drain(start..start + assign_range));
+                                    }
+
+                                    Some(Type::Tuple(ty))
+                                }
+
+                                Type::Array(..) => Some(Type::Tuple(Tuple {
+                                    span,
+                                    elems: left_elems,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })),
+                                _ => Some(d_ty),
+                            }
+                        }
+                        None => None,
+                    };
 
                     Ok(ty.or(default_ty))
                 } else {
                     let mut elems = vec![];
-
                     let destructure_key = self.get_destructor_unique_key();
 
                     let mut has_rest = false;
@@ -526,14 +592,15 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(ty) = &ty {
-                        if ty.normalize_instance().is_array() {
+                        let t = ty.normalize_instance();
+
+                        if t.is_array() || (t.is_tuple() && arr.type_ann.is_none() && self.ctx.is_calling_iife) {
                             real_ty = real_ty.fold_with(&mut TupleToArray);
                             real_ty.fix();
                         }
                     }
 
                     real_ty.freeze();
-
                     self.regist_destructure(span, save_ty, Some(destructure_key));
                     Ok(Some(real_ty))
                 }
@@ -893,11 +960,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> VResult<Type> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "exclude_props").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("exclude_props");
 
         let span = span.with_ctxt(SyntaxContext::empty());
 

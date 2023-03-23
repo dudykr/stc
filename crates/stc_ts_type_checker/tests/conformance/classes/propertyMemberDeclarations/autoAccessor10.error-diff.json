@@ -1,0 +1,16 @@
+{
+  "required_errors": {},
+  "required_error_lines": {},
+  "extra_errors": {
+    "TS0": 5
+  },
+  "extra_error_lines": {
+    "TS0": [
+      4,
+      9,
+      16,
+      25,
+      29
+    ]
+  }
+}

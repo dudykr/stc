@@ -1,1 +1,1 @@
-[{"line":7,"column":5,"code":"TS2309"}]
+[{"filename":"tests/cases/compiler/importDeclWithExportModifierAndExportAssignmentInAmbientContext.ts","line":7,"column":5,"code":"TS2309"}]

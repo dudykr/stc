@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/symbol/any-1.ts:2:5]
- 2 | [Symbol.iterator]: 0
-   :  ^^^^^^
+   ,-[$DIR/tests/pass/types/symbol/any-1.ts:1:1]
+ 1 | var obj = {
+ 2 |     [Symbol.iterator]: 0
+   :      ^^^^^^
+ 3 | };
    `----
 
 Error: 
   > SymbolConstructor
 
   x Type
-   ,-[$DIR/tests/pass/types/symbol/any-1.ts:2:5]
- 2 | [Symbol.iterator]: 0
-   :  ^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/symbol/any-1.ts:1:1]
+ 1 | var obj = {
+ 2 |     [Symbol.iterator]: 0
+   :      ^^^^^^^^^^^^^^^
+ 3 | };
    `----
 
 Error: 
@@ -30,7 +34,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/symbol/any-1.ts:6:1]
+   ,-[$DIR/tests/pass/types/symbol/any-1.ts:5:1]
+ 5 | // Should give type 'any'.
  6 | obj[Symbol["nonsense"]];
    : ^^^
    `----
@@ -41,7 +46,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/types/symbol/any-1.ts:6:1]
+   ,-[$DIR/tests/pass/types/symbol/any-1.ts:5:1]
+ 5 | // Should give type 'any'.
  6 | obj[Symbol["nonsense"]];
    :     ^^^^^^
    `----
@@ -50,7 +56,8 @@ Error:
   > SymbolConstructor
 
   x Type
-   ,-[$DIR/tests/pass/types/symbol/any-1.ts:6:1]
+   ,-[$DIR/tests/pass/types/symbol/any-1.ts:5:1]
+ 5 | // Should give type 'any'.
  6 | obj[Symbol["nonsense"]];
    :     ^^^^^^^^^^^^^^^^^^
    `----
@@ -59,7 +66,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/pass/types/symbol/any-1.ts:6:1]
+   ,-[$DIR/tests/pass/types/symbol/any-1.ts:5:1]
+ 5 | // Should give type 'any'.
  6 | obj[Symbol["nonsense"]];
    : ^^^^^^^^^^^^^^^^^^^^^^^
    `----

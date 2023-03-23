@@ -1,1 +1,1 @@
-[{"line":2,"column":12,"code":"TS2355"},{"line":2,"column":20,"code":"TS1183"}]
+[{"filename":"tests/cases/compiler/methodInAmbientClass1.ts","line":2,"column":12,"code":"TS2355"},{"filename":"tests/cases/compiler/methodInAmbientClass1.ts","line":2,"column":20,"code":"TS1183"}]

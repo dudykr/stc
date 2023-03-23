@@ -1,1 +1,1 @@
-[{"line":1,"column":2,"code":"TS2304"},{"line":1,"column":2,"code":"TS2695"}]
+[{"filename":"tests/cases/compiler/parseCommaSeparatedNewlineNumber.ts","line":1,"column":2,"code":"TS2304"},{"filename":"tests/cases/compiler/parseCommaSeparatedNewlineNumber.ts","line":1,"column":2,"code":"TS2695"}]

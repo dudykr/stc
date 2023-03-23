@@ -4,9 +4,7 @@ use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Id, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
-};
+use stc_ts_types::{CallSignature, Class, ClassMetadata, Function, Id, KeywordType, KeywordTypeMetadata, Ref, TypeElement};
 use stc_ts_utils::find_ids_in_pat;
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -51,6 +49,7 @@ impl Analyzer<'_, '_> {
             child.ctx.in_static_method = false;
             child.ctx.in_static_property_initializer = false;
             child.ctx.in_static_block = false;
+            child.ctx.super_references_super_class = false;
 
             let mut errors = Errors::default();
 
@@ -85,7 +84,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let type_params = try_opt!(f.type_params.validate_with(child));
+            let mut type_params = try_opt!(f.type_params.validate_with(child));
+
+            if type_params.is_none() {
+                if let Some(mutations) = &child.mutations {
+                    if let Some(ann) = mutations.for_callable.get(&f.node_id) {
+                        type_params = ann.type_params.clone();
+                    }
+                }
+            }
 
             let params = {
                 let prev_len = child.scope.declaring_parameters.len();
@@ -129,7 +136,7 @@ impl Analyzer<'_, '_> {
                 declared_ret_ty = Some(match ret_ty {
                     Type::ClassDef(def) => Type::Class(Class {
                         span,
-                        def: box def,
+                        def,
                         metadata: ClassMetadata {
                             common: metadata,
                             ..Default::default()
@@ -151,11 +158,12 @@ impl Analyzer<'_, '_> {
             let is_async = f.is_async;
             let is_generator = f.is_generator;
 
-            let inferred_return_type =
-                try_opt!(f
-                    .body
-                    .as_ref()
-                    .map(|body| child.visit_stmts_for_return(span, is_async, is_generator, &body.stmts)));
+            let inferred_return_type = try_opt!(f.body.as_ref().map(|body| child.visit_stmts_for_return(
+                span.with_ctxt(SyntaxContext::empty()),
+                is_async,
+                is_generator,
+                &body.stmts
+            )));
 
             let mut inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
@@ -276,22 +284,8 @@ impl Analyzer<'_, '_> {
         let actual_ty = self.type_of_ts_entity_name(span, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
 
         // TODO(kdy1): PERF
-        let type_params = match actual_ty.foldable() {
-            Type::Alias(Alias {
-                type_params: Some(type_params),
-                ..
-            })
-            | Type::Interface(Interface {
-                type_params: Some(type_params),
-                ..
-            })
-            | Type::Class(stc_ts_types::Class {
-                def: box ClassDef {
-                    type_params: Some(type_params),
-                    ..
-                },
-                ..
-            }) => type_params,
+        let type_params = match actual_ty.get_type_param_decl() {
+            Some(type_params) => type_params.clone(),
 
             _ => return Ok(ty),
         };
@@ -329,7 +323,7 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            self.apply_fn_type_ann(f.span, f.params.iter().map(|p| &p.pat), type_ann);
+            self.apply_fn_type_ann(f.span, f.node_id, f.params.iter().map(|p| &p.pat), type_ann);
 
             // if let Some(name) = name {
             //     // We use `typeof function` to infer recursive function's return type.
@@ -442,7 +436,17 @@ impl Analyzer<'_, '_> {
             })?;
 
         let mut a = self.with_ctx(ctx);
-        match a.declare_var(f.span(), VarKind::Fn, f.ident.clone().into(), Some(fn_ty), None, true, true, false) {
+        match a.declare_var(
+            f.span(),
+            VarKind::Fn,
+            f.ident.clone().into(),
+            Some(fn_ty),
+            None,
+            true,
+            true,
+            false,
+            f.function.body.is_some(),
+        ) {
             Ok(..) => {}
             Err(err) => {
                 a.storage.report(err);

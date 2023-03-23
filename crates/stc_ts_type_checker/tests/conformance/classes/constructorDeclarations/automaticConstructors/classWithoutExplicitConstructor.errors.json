@@ -1,1 +1,1 @@
-[{"line":7,"column":16,"code":"TS2554"},{"line":15,"column":16,"code":"TS2554"}]
+[{"filename":"tests/cases/conformance/classes/constructorDeclarations/automaticConstructors/classWithoutExplicitConstructor.ts","line":7,"column":16,"code":"TS2554"},{"filename":"tests/cases/conformance/classes/constructorDeclarations/automaticConstructors/classWithoutExplicitConstructor.ts","line":15,"column":16,"code":"TS2554"}]

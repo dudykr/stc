@@ -1,1 +1,1 @@
-[{"line":7,"column":7,"code":"TS2415"}]
+[{"filename":"tests/cases/compiler/inheritanceGrandParentPublicMemberCollisionWithPrivateMember.ts","line":7,"column":7,"code":"TS2415"}]

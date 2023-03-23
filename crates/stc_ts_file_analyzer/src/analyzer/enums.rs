@@ -1,11 +1,13 @@
 use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
+use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
 use stc_ts_errors::{ErrorKind, Errors};
+use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, PropertySignature, TypeElement, TypeLit,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
@@ -15,7 +17,8 @@ use swc_ecma_ast::*;
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
     ty::{Enum, EnumMember, Type},
-    validator, VResult,
+    validator::ValidateWith,
+    VResult,
 };
 
 /// Value does not contain RTsLit::Bool
@@ -38,7 +41,7 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Enum> {
+    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<ArcCow<Enum>> {
         for m in &e.members {
             self.validate_with(|a| a.validate_enum_member_name(&m.id));
         }
@@ -59,7 +62,7 @@ impl Analyzer<'_, '_> {
                 .map(|m| -> VResult<_> {
                     let id_span = m.id.span();
                     let val = eval
-                        .compute(id_span, Some(default), m.init.as_deref())
+                        .compute(self, id_span, Some(default), m.init.as_deref())
                         .map(|val| {
                             if let RTsLit::Number(n) = &val {
                                 default = n.value + 1.0;
@@ -72,17 +75,24 @@ impl Analyzer<'_, '_> {
                                 val.clone(),
                             );
 
-                            match val {
-                                RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
-                                RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
-                                RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(RStr {
+                            let lit = match &val {
+                                RTsLit::Number(v) => RTsLit::Number(v.clone()),
+                                RTsLit::Str(v) => RTsLit::Str(v.clone()),
+                                RTsLit::Bool(v) => RTsLit::Bool(v.clone()),
+                                RTsLit::Tpl(v) => RTsLit::Str(RStr {
                                     span: v.span,
-                                    value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
+                                    value: From::from(&*v.quasis.first().unwrap().raw.clone()),
                                     raw: None,
-                                })),
-                                RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
-                            }
+                                }),
+                                RTsLit::BigInt(v) => RTsLit::BigInt(v.clone()),
+                            };
+
+                            box Type::Lit(LitType {
+                                span: m.span,
+                                lit,
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            })
                         })
                         .or_else(|err| match &m.init {
                             None => Err(err),
@@ -90,19 +100,35 @@ impl Analyzer<'_, '_> {
                                 if e.is_const {
                                     self.storage.report(err);
                                 }
-                                Ok(*v.clone())
+                                Ok(box Type::any(m.span, Default::default()))
                             }
                         })?;
 
                     Ok(EnumMember {
                         id: m.id.clone(),
-                        val: box val,
+                        val,
                         span: m.span,
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
-            let has_str = members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Str(..))));
+            if e.members.iter().any(|m| matches!(m.init, Some(box RExpr::Lit(RLit::Str(..))))) {
+                for m in e.members.iter() {
+                    if let Some(box (RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Member(..))) = m.init {
+                        if let Some(box RExpr::Bin(bin)) = &m.init {
+                            if bin.op == op!(bin, "+") {
+                                if non_str_nor_plus(bin) {
+                                    continue;
+                                }
+                            }
+                        }
+                        self.storage
+                            .report(ErrorKind::ComputedMemberInEnumWithStrMember { span: m.span }.into());
+                    }
+                }
+            }
+
+            let has_str = members.iter().any(|m| m.val.is_str_lit());
 
             if has_str {
                 for m in &e.members {
@@ -110,17 +136,17 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Enum {
+            ArcCow::new_freezed(Enum {
                 span: e.span,
-                has_num: members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Num(..)))),
+                has_num: members.iter().any(|m| m.val.is_num_lit()),
                 has_str,
                 declare: e.declare,
                 is_const: e.is_const,
-                id: e.id.clone(),
+                id: e.id.clone().into(),
                 members,
                 metadata: Default::default(),
                 tracker: Default::default(),
-            }
+            })
         };
 
         let span = e.span;
@@ -132,10 +158,11 @@ impl Analyzer<'_, '_> {
             .map(Type::freezed)
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span, Default::default()));
+        stored_ty.assert_clone_cheap();
 
         self.register_type(name.clone(), stored_ty.clone());
 
-        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty), None, true, true, false)
+        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty), None, true, true, false, false)
             .report(&mut self.storage);
 
         // Validate const enums
@@ -173,13 +200,13 @@ impl Evaluator<'_> {
     ///
     /// If both of the default value and the initialization is None, this method
     /// returns [Err].
-    fn compute(&mut self, span: Span, default: Option<f64>, init: Option<&RExpr>) -> VResult<RTsLit> {
+    fn compute(&mut self, analyzer: &mut Analyzer, span: Span, default: Option<f64>, init: Option<&RExpr>) -> VResult<RTsLit> {
         if let Some(expr) = init {
             match expr {
                 RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
                 RExpr::Lit(RLit::Num(s)) => return Ok(RTsLit::Number(s.clone())),
                 RExpr::Bin(ref bin) => {
-                    let v = self.compute_bin(span, bin)?;
+                    let v = self.compute_bin(analyzer, span, bin)?;
 
                     match &v {
                         RTsLit::Number(n) => {
@@ -194,7 +221,7 @@ impl Evaluator<'_> {
                         _ => return Ok(v),
                     }
                 }
-                RExpr::Paren(ref paren) => return self.compute(span, default, Some(&paren.expr)),
+                RExpr::Paren(ref paren) => return self.compute(analyzer, span, default, Some(&paren.expr)),
 
                 RExpr::Ident(ref id) => {
                     if self.e.is_const {
@@ -214,7 +241,7 @@ impl Evaluator<'_> {
                         match m.id {
                             RTsEnumMemberId::Str(RStr { value: ref sym, .. }) | RTsEnumMemberId::Ident(RIdent { ref sym, .. }) => {
                                 if *sym == id.sym {
-                                    return self.compute(span, None, m.init.as_deref());
+                                    return self.compute(analyzer, span, None, m.init.as_deref());
                                 }
                             }
                         }
@@ -222,7 +249,7 @@ impl Evaluator<'_> {
                     return Err(ErrorKind::InvalidEnumInit { span }.into());
                 }
                 RExpr::Unary(ref expr) => {
-                    let v = self.compute(span, None, Some(&expr.arg))?;
+                    let v = self.compute(analyzer, span, None, Some(&expr.arg))?;
                     match v {
                         RTsLit::Number(RNumber { value: v, .. }) => {
                             return Ok(RTsLit::Number(RNumber {
@@ -256,7 +283,14 @@ impl Evaluator<'_> {
                     }
                 }
 
-                _ => {}
+                _ => {
+                    let res = expr.validate_with_default(analyzer)?;
+                    let res = analyzer.expand_enum_variant(res)?;
+
+                    if let Type::Lit(ty) = res.normalize() {
+                        return Ok(ty.lit.clone());
+                    }
+                }
             }
         } else {
             if let Some(value) = default {
@@ -271,9 +305,9 @@ impl Evaluator<'_> {
         Err(ErrorKind::InvalidEnumInit { span }.into())
     }
 
-    fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> VResult<RTsLit> {
-        let l = self.compute(span, None, Some(&expr.left))?;
-        let r = self.compute(span, None, Some(&expr.right))?;
+    fn compute_bin(&mut self, analyzer: &mut Analyzer, span: Span, expr: &RBinExpr) -> VResult<RTsLit> {
+        let l = self.compute(analyzer, span, None, Some(&expr.left))?;
+        let r = self.compute(analyzer, span, None, Some(&expr.right))?;
 
         Ok(match (l, r) {
             (RTsLit::Number(RNumber { value: l, .. }), RTsLit::Number(RNumber { value: r, .. })) => {
@@ -359,7 +393,7 @@ impl Analyzer<'_, '_> {
     /// };
     /// var e: typeof E1;
     /// ```
-    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> VResult<TypeLit> {
+    pub(super) fn enum_to_type_lit(&mut self, e: &ArcCow<Enum>) -> VResult<TypeLit> {
         let mut members = vec![];
 
         for m in &e.members {
@@ -380,7 +414,7 @@ impl Analyzer<'_, '_> {
                 params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
-                    enum_name: e.id.clone().into(),
+                    def: e.cheap_clone(),
                     name: Some(key.sym),
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -547,26 +581,11 @@ impl Analyzer<'_, '_> {
         let mut values = vec![];
 
         for m in &e.members {
-            match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
-                    span: m.span,
-                    lit: RTsLit::Str(lit.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
-                    span: m.span,
-                    lit: RTsLit::Number(lit.clone()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                })),
-                _ => {
-                    unimplemented!("Handle enum with value other than string literal or numeric literals")
-                }
-            }
+            values.push(*m.val.clone());
         }
+        let span = ty.span();
 
-        let mut ty = Type::union(values);
+        let mut ty = Type::new_union(span, values);
         ty.reposition(e.span);
 
         Ok(ty)
@@ -576,32 +595,12 @@ impl Analyzer<'_, '_> {
     pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         if let Type::EnumVariant(ref ev) = ty.normalize() {
             if let Some(variant_name) = &ev.name {
-                if let Some(types) = self.find_type(&ev.enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = ty.normalize() {
-                            if let Some(v) = members.iter().find(|m| match m.id {
-                                RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
-                                    sym == variant_name
-                                }
-                            }) {
-                                if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
-                                    return Ok(Type::Lit(LitType {
-                                        span: v.span,
-                                        lit: match *v.val.clone() {
-                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                            RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                            _ => unreachable!(),
-                                        },
-                                        metadata: LitTypeMetadata {
-                                            common: ev.metadata.common,
-                                            ..Default::default()
-                                        },
-                                        tracker: Default::default(),
-                                    }));
-                                }
-                            }
-                        }
+                if let Some(v) = ev.def.members.iter().find(|m| match m.id {
+                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                        sym == variant_name
                     }
+                }) {
+                    return Ok(*v.val.clone());
                 }
             }
         }
@@ -645,4 +644,15 @@ impl Visit<RExpr> for LitValidator<'_> {
             }
         }
     }
+}
+
+fn non_str_nor_plus(bin: &RBinExpr) -> bool {
+    if bin.op == op!(bin, "+") {
+        match (&bin.left, &bin.right) {
+            (box RExpr::Lit(RLit::Str(..)), box RExpr::Lit(RLit::Str(..))) => return true,
+            (box RExpr::Bin(bin), box RExpr::Lit(RLit::Str(..))) => return non_str_nor_plus(bin),
+            _ => {}
+        }
+    }
+    false
 }

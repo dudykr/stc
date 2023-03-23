@@ -1,1 +1,1 @@
-[{"line":30,"column":13,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/matchReturnTypeInAllBranches.ts","line":30,"column":13,"code":"TS2322"}]

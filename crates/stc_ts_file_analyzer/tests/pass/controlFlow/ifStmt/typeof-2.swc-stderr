@@ -1,53 +1,76 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
    :            ^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
    `----
 
 Error: 
   > (string | number | boolean)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
    :     ^^^^^^^^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
    :                                                  ^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
    `----
 
 Error: 
   > (number | boolean)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
    :                                           ^^^^^^^^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
    :                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:5:1]
+ 5 | 
+ 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
    `----
 
 Error: 
@@ -56,43 +79,42 @@ Error:
   x Type
    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
  6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
-   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > boolean
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:7:5]
- 7 | strOrNum = strOrNumOrBool; // string | number
-   :            ^^^^^^^^^^^^^^
+ 7 |     strOrNum = strOrNumOrBool; // string | number
+   :                ^^^^^^^^^^^^^^
+ 8 | }
    `----
 
 Error: 
   > (string | number)
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:7:5]
- 7 | strOrNum = strOrNumOrBool; // string | number
-   : ^^^^^^^^^^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:1]
+ 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+ 7 |     strOrNum = strOrNumOrBool; // string | number
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | }
    `----
 
 Error: 
   > (string | number)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:10:5]
- 10 | bool = strOrNumOrBool; // boolean
-    :        ^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:9:1]
+  9 | else {
+ 10 |     bool = strOrNumOrBool; // boolean
+    :            ^^^^^^^^^^^^^^
+ 11 | }
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:10:5]
- 10 | bool = strOrNumOrBool; // boolean
-    : ^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:9:1]
+  9 | else {
+ 10 |     bool = strOrNumOrBool; // boolean
+    :     ^^^^^^^^^^^^^^^^^^^^^
+ 11 | }
     `----
 
 Error: 

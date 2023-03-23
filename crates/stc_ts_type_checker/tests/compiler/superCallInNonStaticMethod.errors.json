@@ -1,1 +1,1 @@
-[{"line":30,"column":16,"code":"TS1056"},{"line":37,"column":16,"code":"TS1056"}]
+[{"filename":"tests/cases/compiler/superCallInNonStaticMethod.ts","line":30,"column":16,"code":"TS1056"},{"filename":"tests/cases/compiler/superCallInNonStaticMethod.ts","line":37,"column":16,"code":"TS1056"}]

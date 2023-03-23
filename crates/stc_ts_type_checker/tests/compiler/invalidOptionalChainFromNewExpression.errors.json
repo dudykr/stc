@@ -1,1 +1,1 @@
-[{"line":5,"column":6,"code":"TS1209"}]
+[{"filename":"tests/cases/compiler/invalidOptionalChainFromNewExpression.ts","line":5,"column":6,"code":"TS1209"}]

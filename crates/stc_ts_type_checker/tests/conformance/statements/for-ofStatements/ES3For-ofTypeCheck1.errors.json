@@ -1,1 +1,1 @@
-[{"line":1,"column":15,"code":"TS2494"}]
+[{"line":0,"column":0,"code":"TS5101"},{"filename":"tests/cases/conformance/statements/for-ofStatements/ES3For-ofTypeCheck1.ts","line":1,"column":15,"code":"TS2494"}]

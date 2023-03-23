@@ -1,1 +1,1 @@
-[{"line":1,"column":7,"code":"TS2451"},{"line":2,"column":5,"code":"TS2451"},{"line":2,"column":15,"code":"TS2365"}]
+[{"filename":"tests/cases/conformance/salsa/plainJSRedeclare.js","line":1,"column":7,"code":"TS2451"},{"filename":"tests/cases/conformance/salsa/plainJSRedeclare.js","line":2,"column":5,"code":"TS2451"},{"filename":"tests/cases/conformance/salsa/plainJSRedeclare.js","line":2,"column":15,"code":"TS2365"}]

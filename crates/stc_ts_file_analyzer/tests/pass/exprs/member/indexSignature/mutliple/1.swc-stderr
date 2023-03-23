@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:2:5]
- 2 | return x;
-   :        ^
+   ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:1:1]
+ 1 | function foo<T>(x: T) {
+ 2 |     return x;
+   :            ^
+ 3 | }
    `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:5]
- 10 | var r2 = foo(b);
-    :          ^^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b);
+    :              ^^^
+ 11 |     var d = r2[1];
     `----
 
 Error: 
   > <T>(x: T) => T
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:5]
- 10 | var r2 = foo(b);
-    :              ^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b);
+    :                  ^
+ 11 |     var d = r2[1];
     `----
 
 Error: 
@@ -30,9 +36,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:5]
- 10 | var r2 = foo(b);
-    :          ^^^^^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b);
+    :              ^^^^^^
+ 11 |     var d = r2[1];
     `----
 
 Error: 
@@ -42,9 +50,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:11:5]
- 11 | var d = r2[1];
-    :         ^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:1]
+ 10 |     var r2 = foo(b);
+ 11 |     var d = r2[1];
+    :             ^^
+ 12 |     var e = r2['1'];
     `----
 
 Error: 
@@ -54,18 +64,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:11:5]
- 11 | var d = r2[1];
-    :         ^^^^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:1]
+ 10 |     var r2 = foo(b);
+ 11 |     var d = r2[1];
+    :             ^^^^^
+ 12 |     var e = r2['1'];
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:12:5]
- 12 | var e = r2['1'];
-    :         ^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:11:1]
+ 11 |     var d = r2[1];
+ 12 |     var e = r2['1'];
+    :             ^^
+ 13 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
@@ -75,18 +89,22 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:12:5]
- 12 | var e = r2['1'];
-    :         ^^^^^^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:11:1]
+ 11 |     var d = r2[1];
+ 12 |     var e = r2['1'];
+    :             ^^^^^^^
+ 13 |     var u: U = r2[1]; // ok
     `----
 
 Error: 
   > T
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:13:5]
- 13 | var u: U = r2[1]; // ok
-    :            ^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:12:1]
+ 12 |     var e = r2['1'];
+ 13 |     var u: U = r2[1]; // ok
+    :                ^^
+ 14 | }
     `----
 
 Error: 
@@ -96,9 +114,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:13:5]
- 13 | var u: U = r2[1]; // ok
-    :            ^^^^^
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:12:1]
+ 12 |     var e = r2['1'];
+ 13 |     var u: U = r2[1]; // ok
+    :                ^^^^^
+ 14 | }
     `----
 
 Error: 

@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:4:1]
+ 4 | 
  5 | f1('a', null as any as Object) // Object
    : ^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(a: T, b: T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:4:1]
+ 4 | 
  5 | f1('a', null as any as Object) // Object
    :         ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:4:1]
+ 4 | 
  5 | f1('a', null as any as Object) // Object
    :         ^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > Object
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab2/1.ts:4:1]
+ 4 | 
  5 | f1('a', null as any as Object) // Object
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

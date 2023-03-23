@@ -46,8 +46,8 @@ impl Analyzer<'_, '_> {
                 stmts[idx].visit_with(self);
 
                 if self.scope.is_root() {
-                    let prepended = self.prepend_stmts.drain(..);
-                    let appended = self.append_stmts.drain(..);
+                    let prepended = self.data.prepend_stmts.drain(..);
+                    let appended = self.data.append_stmts.drain(..);
 
                     if let Some(node_id) = node_id {
                         if let Some(m) = &mut self.mutations {

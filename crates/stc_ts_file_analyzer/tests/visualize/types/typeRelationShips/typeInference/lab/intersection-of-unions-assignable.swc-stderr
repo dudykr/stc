@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as (string | number) & (number | boolean), true) // number
    : ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: T, b: T) => T
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as (string | number) & (number | boolean), true) // number
    :        ^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as (string | number) & (number | boolean), true) // number
    :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > ((string | number) & (number | boolean))
 
   x Type
-   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:5:1]
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection-of-unions-assignable.ts:4:1]
+ 4 | 
  5 | foo(1, null as any as (string | number) & (number | boolean), true) // number
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

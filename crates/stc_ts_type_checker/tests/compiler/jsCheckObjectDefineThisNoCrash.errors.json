@@ -1,1 +1,1 @@
-[{"line":5,"column":36,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/jsCheckObjectDefineThisNoCrash.js","line":5,"column":36,"code":"TS2339"}]

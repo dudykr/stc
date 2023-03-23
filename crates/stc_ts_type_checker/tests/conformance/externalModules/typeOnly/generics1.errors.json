@@ -1,1 +1,1 @@
-[{"line":10,"column":14,"code":"TS2344"},{"line":13,"column":9,"code":"TS2314"},{"line":14,"column":9,"code":"TS2314"}]
+[{"filename":"tests/cases/compiler/generics1.ts","line":10,"column":14,"code":"TS2344"},{"filename":"tests/cases/compiler/generics1.ts","line":13,"column":9,"code":"TS2314"},{"filename":"tests/cases/compiler/generics1.ts","line":14,"column":9,"code":"TS2314"}]

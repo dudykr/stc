@@ -7,11 +7,12 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator, PropertySignature,
-    Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, Index, IndexedAccessType, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature,
+    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
+    dev_span,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -62,17 +63,13 @@ impl Analyzer<'_, '_> {
         is_generator: bool,
         stmts: &Vec<RStmt>,
     ) -> VResult<Option<Type>> {
-        let _tracing = if cfg!(debug_assertions) {
-            Some(tracing::span!(tracing::Level::ERROR, "visit_stmts_for_return").entered())
-        } else {
-            None
-        };
+        let _tracing = dev_span!("visit_stmts_for_return");
 
         let marks = self.marks();
 
         debug_assert_eq!(span.ctxt, SyntaxContext::empty());
         debug!("visit_stmts_for_return()");
-        debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
+        debug_assert!(!self.config.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         let mut unconditional_throw = None;
         for stmt in stmts {
@@ -92,6 +89,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
+        let mut is_unreachable = false;
         let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
@@ -100,7 +98,7 @@ impl Analyzer<'_, '_> {
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
-
+                    is_unreachable = analyzer.ctx.in_unreachable;
                     take(&mut analyzer.scope.return_values)
                 })
             };
@@ -204,13 +202,13 @@ impl Analyzer<'_, '_> {
                         },
                     )
                 } else {
-                    Type::union(types)
+                    Type::new_union(span, types)
                 };
 
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::union(actual))
+                    self.simplify(Type::new_union(span, actual))
                 };
 
                 let mut metadata = yield_ty.metadata();
@@ -254,7 +252,7 @@ impl Analyzer<'_, '_> {
                 let ret_ty = if actual.is_empty() {
                     Type::void(span, Default::default())
                 } else {
-                    self.simplify(Type::union(actual))
+                    self.simplify(Type::new_union(span, actual))
                 };
 
                 return Ok(Some(Type::Ref(Ref {
@@ -281,7 +279,11 @@ impl Analyzer<'_, '_> {
 
             actual.dedup_type();
 
-            let ty = Type::union(actual);
+            if actual.len() == 1 {
+                return Ok(actual.pop());
+            }
+
+            let ty = Type::new_union(span, actual);
             let ty = self.simplify(ty);
 
             // print_type("Return",  &ty);
@@ -290,24 +292,48 @@ impl Analyzer<'_, '_> {
         })()?;
         ret_ty.freeze();
 
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(ret_ty);
         }
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             if !is_async && !is_generator {
+                if ret_ty.is_none() && !is_unreachable {
+                    if let Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                        span,
+                        ..
+                    }) = declared
+                    {
+                        self.storage.report(ErrorKind::CannotFunctionReturningNever { span }.into());
+                    }
+                }
                 // Noop
             } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 // We use different error code
             } else if let Some(ret_ty) = &ret_ty {
+                let declared = Type::Instance(Instance {
+                    span: declared.span(),
+                    ty: box declared,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                });
+
+                let ret_ty = Type::Instance(Instance {
+                    span: ret_ty.span(),
+                    ty: box ret_ty.clone(),
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                });
+
                 self.assign_with_opts(
                     &mut Default::default(),
                     &declared,
-                    ret_ty,
+                    &ret_ty,
                     AssignOpts {
                         span,
                         allow_unknown_rhs: Some(true),
-                        may_unwrap_promise: true,
+                        may_unwrap_promise: is_async,
                         ..Default::default()
                     },
                 )
@@ -323,7 +349,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RReturnStmt) {
-        debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
+        debug_assert!(!self.config.is_builtin, "builtin: return statement is not supported");
         debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
 
         let mut ty = if let Some(res) = {
@@ -349,6 +375,13 @@ impl Analyzer<'_, '_> {
         ty.freeze();
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
+            let declared = Type::Instance(Instance {
+                span: declared.span(),
+                ty: box declared,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            });
+
             match (self.ctx.in_async, self.ctx.in_generator) {
                 // AsyncGenerator
                 (true, true) => {
@@ -368,9 +401,12 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
+                            may_unwrap_promise: true,
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of an async generator")
                     .report(&mut self.storage);
                 }
 
@@ -383,6 +419,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
                             may_unwrap_promise: true,
                             ..Default::default()
                         },
@@ -417,9 +454,11 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of a generator")
                     .report(&mut self.storage);
                 }
 
@@ -431,9 +470,12 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: Some(true),
+                            allow_assignment_of_void: Some(!self.rule().strict_null_checks),
+
                             ..Default::default()
                         },
                     )
+                    .context("tried to validate the return type of a function")
                     .report(&mut self.storage);
                 }
             }
@@ -480,6 +522,13 @@ impl Analyzer<'_, '_> {
                 .map(Freeze::freezed)
                 {
                     Ok(declared) => {
+                        let declared = Type::Instance(Instance {
+                            span: declared.span(),
+                            ty: box declared,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        });
+
                         match self.assign_with_opts(
                             &mut Default::default(),
                             &declared,
@@ -585,9 +634,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
             readonly,
             ref obj_type,
             index_type:
-                box Type::Operator(Operator {
+                box Type::Index(Index {
                     span: op_span,
-                    op: TsTypeOperatorOp::KeyOf,
                     ty: ref index_type,
                     metadata: op_metadata,
                     ..
@@ -649,7 +697,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                             }
                         }
                     }
-                    let ty = Type::union(types);
+                    let ty = Type::new_union(span, types);
 
                     return ty;
                 }
@@ -707,7 +755,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         span,
                         readonly,
                         obj_type: obj_type.clone(),
-                        index_type: box Type::union(types),
+                        index_type: box Type::new_union(span, types),
                         metadata,
                         tracker: Default::default(),
                     });

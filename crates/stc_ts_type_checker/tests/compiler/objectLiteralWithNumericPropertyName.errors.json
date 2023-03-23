@@ -1,1 +1,1 @@
-[{"line":5,"column":5,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/objectLiteralWithNumericPropertyName.ts","line":5,"column":5,"code":"TS2322"}]

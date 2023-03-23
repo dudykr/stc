@@ -1,1 +1,1 @@
-[{"line":5,"column":4,"code":"TS2304"}]
+[{"filename":"tests/cases/compiler/decoratorMetadataGenericTypeVariableInScope.ts","line":5,"column":4,"code":"TS2304"}]

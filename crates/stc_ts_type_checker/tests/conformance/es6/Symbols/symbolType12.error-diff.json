@@ -1,0 +1,27 @@
+{
+  "required_errors": {
+    "TS2363": 10,
+    "TS2469": 3
+  },
+  "required_error_lines": {
+    "TS2363": [
+      4,
+      6,
+      8,
+      14,
+      16,
+      18,
+      20,
+      22,
+      24,
+      26
+    ],
+    "TS2469": [
+      12,
+      13,
+      29
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
+}

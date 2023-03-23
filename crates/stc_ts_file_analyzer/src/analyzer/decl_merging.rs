@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
     /// Handle declaration merging. This method is used to avoid implementing
     /// same logic twice.
     fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> VResult<Option<Type>> {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return Ok(None);
         }
 
@@ -86,10 +86,13 @@ impl Analyzer<'_, '_> {
                         new_members.extend(self.type_element_to_class_member(el)?);
                     }
 
-                    return Ok(Some(Type::ClassDef(ClassDef {
-                        body: new_members,
-                        ..a.clone()
-                    })));
+                    return Ok(Some(Type::ClassDef(
+                        ClassDef {
+                            body: new_members,
+                            ..(**a).clone()
+                        }
+                        .into(),
+                    )));
                 }
             }
 

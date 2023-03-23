@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:6:5]
- 6 | const b = k in obj;
-   :           ^
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:5:1]
+ 5 | export function f2<T>(obj: { [P in keyof T]: T[P] }, k: keyof T) {
+ 6 |     const b = k in obj;
+   :               ^
+ 7 |     let k1: keyof T;
    `----
 
 Error: 
-  > string
+  > keyof T
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:6:5]
- 6 | const b = k in obj;
-   :                ^^^
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:5:1]
+ 5 | export function f2<T>(obj: { [P in keyof T]: T[P] }, k: keyof T) {
+ 6 |     const b = k in obj;
+   :                    ^^^
+ 7 |     let k1: keyof T;
    `----
 
 Error: 
@@ -20,18 +24,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:6:5]
- 6 | const b = k in obj;
-   :           ^^^^^^^^
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:5:1]
+ 5 | export function f2<T>(obj: { [P in keyof T]: T[P] }, k: keyof T) {
+ 6 |     const b = k in obj;
+   :               ^^^^^^^^
+ 7 |     let k1: keyof T;
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:8:5]
- 8 | for (k1 in obj) {
-   :            ^^^
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:7:1]
+ 7 |     let k1: keyof T;
+ 8 |     for (k1 in obj) {
+   :                ^^^
+ 9 |         let x1 = obj[k1];
    `----
 
 Error: 
@@ -40,38 +48,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:9:9]
- 9 | let x1 = obj[k1];
-   :          ^^^
-   `----
-
-Error: 
-  > {
-  |     [P in keyof T]: T[P];
-  | }
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:9:9]
- 9 | let x1 = obj[k1];
-   :              ^^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:9:9]
- 9 | let x1 = obj[k1];
-   :          ^^^^^^^
-   `----
-
-Error: 
-  > T[P]
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:11:5]
- 11 | for (let k2 in obj) {
-    :                ^^^
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:8:1]
+  8 |     for (k1 in obj) {
+  9 |         let x1 = obj[k1];
+    :                  ^^^
+ 10 |     }
     `----
 
 Error: 
@@ -80,9 +61,33 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:12:9]
- 12 | let x2 = obj[k2];
-    :          ^^^
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:8:1]
+  8 |     for (k1 in obj) {
+  9 |         let x1 = obj[k1];
+    :                      ^^
+ 10 |     }
+    `----
+
+Error: 
+  > keyof T
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:8:1]
+  8 |     for (k1 in obj) {
+  9 |         let x1 = obj[k1];
+    :                  ^^^^^^^
+ 10 |     }
+    `----
+
+Error: 
+  > T[keyof T]
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:10:1]
+ 10 |     }
+ 11 |     for (let k2 in obj) {
+    :                    ^^^
+ 12 |         let x2 = obj[k2];
     `----
 
 Error: 
@@ -91,19 +96,36 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:12:9]
- 12 | let x2 = obj[k2];
-    :              ^^
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:11:1]
+ 11 |     for (let k2 in obj) {
+ 12 |         let x2 = obj[k2];
+    :                  ^^^
+ 13 |     }
     `----
 
 Error: 
-  > string
+  > {
+  |     [P in keyof T]: T[P];
+  | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:12:9]
- 12 | let x2 = obj[k2];
-    :          ^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:11:1]
+ 11 |     for (let k2 in obj) {
+ 12 |         let x2 = obj[k2];
+    :                      ^^
+ 13 |     }
     `----
 
 Error: 
-  > T[P]
+  > keyof T
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:11:1]
+ 11 |     for (let k2 in obj) {
+ 12 |         let x2 = obj[k2];
+    :                  ^^^^^^^
+ 13 |     }
+    `----
+
+Error: 
+  > T[keyof T]

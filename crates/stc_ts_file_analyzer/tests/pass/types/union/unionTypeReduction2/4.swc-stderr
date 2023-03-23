@@ -1,80 +1,98 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:5]
- 4 | let f = !!true ? x : y;  // (x?: string) => void
-   :          ^^^^^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:3:1]
+ 3 | function f4(x: (x: string | undefined) => void, y: (x?: string) => void) {
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+   :              ^^^^^
+ 5 |     f();
    `----
 
 Error: 
   > false
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:5]
- 4 | let f = !!true ? x : y;  // (x?: string) => void
-   :         ^^^^^^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:3:1]
+ 3 | function f4(x: (x: string | undefined) => void, y: (x?: string) => void) {
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+   :             ^^^^^^
+ 5 |     f();
    `----
 
 Error: 
   > true
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:5]
- 4 | let f = !!true ? x : y;  // (x?: string) => void
-   :                  ^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:3:1]
+ 3 | function f4(x: (x: string | undefined) => void, y: (x?: string) => void) {
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+   :                      ^
+ 5 |     f();
    `----
 
 Error: 
   > (x: (string | undefined)) => void
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:5]
- 4 | let f = !!true ? x : y;  // (x?: string) => void
-   :                      ^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:3:1]
+ 3 | function f4(x: (x: string | undefined) => void, y: (x?: string) => void) {
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+   :                          ^
+ 5 |     f();
    `----
 
 Error: 
   > (x?: string) => void
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:5]
- 4 | let f = !!true ? x : y;  // (x?: string) => void
-   :         ^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:3:1]
+ 3 | function f4(x: (x: string | undefined) => void, y: (x?: string) => void) {
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+   :             ^^^^^^^^^^^^^^
+ 5 |     f();
    `----
 
 Error: 
   > (x?: string) => void
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:5:5]
- 5 | f();
-   : ^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:1]
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+ 5 |     f();
+   :     ^
+ 6 |     f('hello');
    `----
 
 Error: 
   > (x?: string) => void
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:5:5]
- 5 | f();
-   : ^^^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:4:1]
+ 4 |     let f = !!true ? x : y;  // (x?: string) => void
+ 5 |     f();
+   :     ^^^
+ 6 |     f('hello');
    `----
 
 Error: 
   > void
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:6:5]
- 6 | f('hello');
-   : ^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:5:1]
+ 5 |     f();
+ 6 |     f('hello');
+   :     ^
+ 7 | }
    `----
 
 Error: 
   > (x?: string) => void
 
   x Type
-   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:6:5]
- 6 | f('hello');
-   : ^^^^^^^^^^
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/4.ts:5:1]
+ 5 |     f();
+ 6 |     f('hello');
+   :     ^^^^^^^^^^
+ 7 | }
    `----
 
 Error: 

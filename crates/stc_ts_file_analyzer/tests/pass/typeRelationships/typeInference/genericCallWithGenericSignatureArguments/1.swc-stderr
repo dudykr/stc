@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
  6 | var r1 = foo('', (x: string) => '', (x: Object) => null); // string => string
    :          ^^^
    `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: (x: T) => T, b: (x: T) => T) => (x: T) => T
 
   x Type
-   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
  6 | var r1 = foo('', (x: string) => '', (x: Object) => null); // string => string
    :                  ^^^^^^^^^^^^^^^^^
    `----
@@ -18,7 +20,8 @@ Error:
   > (x: string) => ''
 
   x Type
-   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
  6 | var r1 = foo('', (x: string) => '', (x: Object) => null); // string => string
    :                                     ^^^^^^^^^^^^^^^^^^^
    `----
@@ -27,7 +30,8 @@ Error:
   > (x: Object) => null
 
   x Type
-   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
  6 | var r1 = foo('', (x: string) => '', (x: Object) => null); // string => string
    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

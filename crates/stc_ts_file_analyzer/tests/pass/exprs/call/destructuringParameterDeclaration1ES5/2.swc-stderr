@@ -21,7 +21,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/2.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/2.ts:2:1]
+ 2 | 
  3 | b2("string", { x: 200, y: "string" });
    : ^^
    `----
@@ -33,7 +34,8 @@ Error:
   | }) => void
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/2.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/2.ts:2:1]
+ 2 | 
  3 | b2("string", { x: 200, y: "string" });
    :              ^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -45,7 +47,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/2.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/2.ts:2:1]
+ 2 | 
  3 | b2("string", { x: 200, y: "string" });
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

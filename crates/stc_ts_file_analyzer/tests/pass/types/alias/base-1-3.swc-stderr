@@ -1,24 +1,29 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:6:1]
+   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:5:1]
+ 5 | 
  6 | x13_1.x
    : ^^^^^
+ 7 | x13_2.x
    `----
 
 Error: 
   > I13
 
   x Type
-   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:6:1]
+   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:5:1]
+ 5 | 
  6 | x13_1.x
    : ^^^^^^^
+ 7 | x13_2.x
    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:7:1]
+   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:6:1]
+ 6 | x13_1.x
  7 | x13_2.x
    : ^^^^^
    `----
@@ -27,7 +32,8 @@ Error:
   > I13
 
   x Type
-   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:7:1]
+   ,-[$DIR/tests/pass/types/alias/base-1-3.ts:6:1]
+ 6 | x13_1.x
  7 | x13_2.x
    : ^^^^^^^
    `----
@@ -36,43 +42,52 @@ Error:
   > string
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:9:1]
+  9 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
  10 | foo13(x13_1, x13_2);
     : ^^^^^
+ 11 | foo13(x13_2, x13_1);
     `----
 
 Error: 
   > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:9:1]
+  9 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
  10 | foo13(x13_1, x13_2);
     :       ^^^^^
+ 11 | foo13(x13_2, x13_1);
     `----
 
 Error: 
   > I13
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:9:1]
+  9 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
  10 | foo13(x13_1, x13_2);
     :              ^^^^^
+ 11 | foo13(x13_2, x13_1);
     `----
 
 Error: 
   > I13
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:9:1]
+  9 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
  10 | foo13(x13_1, x13_2);
     : ^^^^^^^^^^^^^^^^^^^
+ 11 | foo13(x13_2, x13_1);
     `----
 
 Error: 
   > void
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:11:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+ 10 | foo13(x13_1, x13_2);
  11 | foo13(x13_2, x13_1);
     : ^^^^^
     `----
@@ -81,7 +96,8 @@ Error:
   > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:11:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+ 10 | foo13(x13_1, x13_2);
  11 | foo13(x13_2, x13_1);
     :       ^^^^^
     `----
@@ -90,7 +106,8 @@ Error:
   > I13
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:11:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+ 10 | foo13(x13_1, x13_2);
  11 | foo13(x13_2, x13_1);
     :              ^^^^^
     `----
@@ -99,7 +116,8 @@ Error:
   > I13
 
   x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:11:1]
+    ,-[$DIR/tests/pass/types/alias/base-1-3.ts:10:1]
+ 10 | foo13(x13_1, x13_2);
  11 | foo13(x13_2, x13_1);
     : ^^^^^^^^^^^^^^^^^^^
     `----

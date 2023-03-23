@@ -1,7 +1,83 @@
 
   x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:10:1]
+ 10 | // no errors
+ 11 | c.func4 = c.func5;
+    : ^
+ 12 | c.func5 = c.func4;
+    `----
+
+Error: 
+  > {
+  |     func4?(x: number): number;
+  |     func4?(s: string): string;
+  |     func5?: {
+  |         (x: number) : number;
+  |         (s: string) : string;
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:10:1]
+ 10 | // no errors
+ 11 | c.func4 = c.func5;
+    : ^^^^^^^
+ 12 | c.func5 = c.func4;
+    `----
+
+Error: 
+  > (((x: number) => number & (s: string) => string) | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:10:1]
+ 10 | // no errors
+ 11 | c.func4 = c.func5;
+    :           ^
+ 12 | c.func5 = c.func4;
+    `----
+
+Error: 
+  > {
+  |     func4?(x: number): number;
+  |     func4?(s: string): string;
+  |     func5?: {
+  |         (x: number) : number;
+  |         (s: string) : string;
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:10:1]
+ 10 | // no errors
+ 11 | c.func4 = c.func5;
+    :           ^^^^^^^
+ 12 | c.func5 = c.func4;
+    `----
+
+Error: 
+  > ({
+  |     (x: number) : number;
+  |     (s: string) : string;
+  | } | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:10:1]
+ 10 | // no errors
+ 11 | c.func4 = c.func5;
+    : ^^^^^^^^^^^^^^^^^
+ 12 | c.func5 = c.func4;
+    `----
+
+Error: 
+  > ({
+  |     (x: number) : number;
+  |     (s: string) : string;
+  | } | undefined)
+
+  x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
  11 | c.func4 = c.func5;
+ 12 | c.func5 = c.func4;
     : ^
     `----
 
@@ -18,15 +94,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
  11 | c.func4 = c.func5;
+ 12 | c.func5 = c.func4;
     : ^^^^^^^
     `----
 
 Error: 
-  > (undefined | ((x: number) => number & (s: string) => string))
+  > ({
+  |     (x: number) : number;
+  |     (s: string) : string;
+  | } | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
  11 | c.func4 = c.func5;
+ 12 | c.func5 = c.func4;
     :           ^
     `----
 
@@ -43,92 +124,102 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
  11 | c.func4 = c.func5;
+ 12 | c.func5 = c.func4;
     :           ^^^^^^^
     `----
 
 Error: 
-  > (undefined | {
-  |     (x: number) : number;
-  |     (s: string) : string;
-  | })
+  > ((x: number) => number | undefined | (s: string) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:11:1]
  11 | c.func4 = c.func5;
-    : ^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > (undefined | {
-  |     (x: number) : number;
-  |     (s: string) : string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
- 12 | c.func5 = c.func4;
-    : ^
-    `----
-
-Error: 
-  > {
-  |     func4?(x: number): number;
-  |     func4?(s: string): string;
-  |     func5?: {
-  |         (x: number) : number;
-  |         (s: string) : string;
-  |     };
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
- 12 | c.func5 = c.func4;
-    : ^^^^^^^
-    `----
-
-Error: 
-  > (undefined | {
-  |     (x: number) : number;
-  |     (s: string) : string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
- 12 | c.func5 = c.func4;
-    :           ^
-    `----
-
-Error: 
-  > {
-  |     func4?(x: number): number;
-  |     func4?(s: string): string;
-  |     func5?: {
-  |         (x: number) : number;
-  |         (s: string) : string;
-  |     };
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
- 12 | c.func5 = c.func4;
-    :           ^^^^^^^
-    `----
-
-Error: 
-  > (undefined | (x: number) => number | (s: string) => string)
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:12:1]
  12 | c.func5 = c.func4;
     : ^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
-  > (undefined | (x: number) => number | (s: string) => string)
+  > ((x: number) => number | undefined | (s: string) => string)
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:23:1]
+ 23 | // no errors
+ 24 | c2.func4 = c2.func5;
+    : ^^
+ 25 | c2.func5 = c2.func4;
+    `----
+
+Error: 
+  > {
+  |     func4?<T>(x: T): number;
+  |     func4?<T>(s: T): string;
+  |     func5?: {
+  |         <T>(x: T) : number;
+  |         <T>(s: T) : string;
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:23:1]
+ 23 | // no errors
+ 24 | c2.func4 = c2.func5;
+    : ^^^^^^^^
+ 25 | c2.func5 = c2.func4;
+    `----
+
+Error: 
+  > ((<T>(x: T) => number & <T>(s: T) => string) | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:23:1]
+ 23 | // no errors
+ 24 | c2.func4 = c2.func5;
+    :            ^^
+ 25 | c2.func5 = c2.func4;
+    `----
+
+Error: 
+  > {
+  |     func4?<T>(x: T): number;
+  |     func4?<T>(s: T): string;
+  |     func5?: {
+  |         <T>(x: T) : number;
+  |         <T>(s: T) : string;
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:23:1]
+ 23 | // no errors
+ 24 | c2.func4 = c2.func5;
+    :            ^^^^^^^^
+ 25 | c2.func5 = c2.func4;
+    `----
+
+Error: 
+  > ({
+  |     <T>(x: T) : number;
+  |     <T>(s: T) : string;
+  | } | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:23:1]
+ 23 | // no errors
+ 24 | c2.func4 = c2.func5;
+    : ^^^^^^^^^^^^^^^^^^^
+ 25 | c2.func5 = c2.func4;
+    `----
+
+Error: 
+  > ({
+  |     <T>(x: T) : number;
+  |     <T>(s: T) : string;
+  | } | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
  24 | c2.func4 = c2.func5;
+ 25 | c2.func5 = c2.func4;
     : ^^
     `----
 
@@ -145,15 +236,20 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
  24 | c2.func4 = c2.func5;
+ 25 | c2.func5 = c2.func4;
     : ^^^^^^^^
     `----
 
 Error: 
-  > (undefined | (<T>(x: T) => number & <T>(s: T) => string))
+  > ({
+  |     <T>(x: T) : number;
+  |     <T>(s: T) : string;
+  | } | undefined)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
  24 | c2.func4 = c2.func5;
+ 25 | c2.func5 = c2.func4;
     :            ^^
     `----
 
@@ -170,85 +266,19 @@ Error:
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
  24 | c2.func4 = c2.func5;
+ 25 | c2.func5 = c2.func4;
     :            ^^^^^^^^
     `----
 
 Error: 
-  > (undefined | {
-  |     <T>(x: T) : number;
-  |     <T>(s: T) : string;
-  | })
+  > (<T>(x: T) => number | undefined | <T>(s: T) => string)
 
   x Type
     ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:24:1]
  24 | c2.func4 = c2.func5;
-    : ^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > (undefined | {
-  |     <T>(x: T) : number;
-  |     <T>(s: T) : string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
- 25 | c2.func5 = c2.func4;
-    : ^^
-    `----
-
-Error: 
-  > {
-  |     func4?<T>(x: T): number;
-  |     func4?<T>(s: T): string;
-  |     func5?: {
-  |         <T>(x: T) : number;
-  |         <T>(s: T) : string;
-  |     };
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
- 25 | c2.func5 = c2.func4;
-    : ^^^^^^^^
-    `----
-
-Error: 
-  > (undefined | {
-  |     <T>(x: T) : number;
-  |     <T>(s: T) : string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
- 25 | c2.func5 = c2.func4;
-    :            ^^
-    `----
-
-Error: 
-  > {
-  |     func4?<T>(x: T): number;
-  |     func4?<T>(s: T): string;
-  |     func5?: {
-  |         <T>(x: T) : number;
-  |         <T>(s: T) : string;
-  |     };
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
- 25 | c2.func5 = c2.func4;
-    :            ^^^^^^^^
-    `----
-
-Error: 
-  > (undefined | <T>(x: T) => number | <T>(s: T) => string)
-
-  x Type
-    ,-[$DIR/tests/pass/types/objectTypeLiteral/methodSignatures/overload/1.ts:25:1]
  25 | c2.func5 = c2.func4;
     : ^^^^^^^^^^^^^^^^^^^
     `----
 
 Error: 
-  > (undefined | <T>(x: T) => number | <T>(s: T) => string)
+  > (<T>(x: T) => number | undefined | <T>(s: T) => string)

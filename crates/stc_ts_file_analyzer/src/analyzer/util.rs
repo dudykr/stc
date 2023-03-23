@@ -6,10 +6,10 @@ use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr, QueryType, Ref,
+    Class, ClassMetadata, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, LitType, QueryExpr, QueryType, Ref,
     RefMetadata, Tuple, TypeElement, Union,
 };
-use stc_utils::cache::ALLOW_DEEP_CLONE;
+use stc_utils::{cache::ALLOW_DEEP_CLONE, dev_span};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
@@ -42,8 +42,9 @@ impl Analyzer<'_, '_> {
     }
 
     /// `span` and `callee` is used only for error reporting.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn make_instance_from_type_elements(&mut self, span: Span, callee: &Type, elements: &[TypeElement]) -> VResult<Type> {
+        let _tracing = dev_span!("make_instance_from_type_elements");
+
         let mut ret_ty_vec = vec![];
         for member in elements {
             match member {
@@ -78,8 +79,9 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Use Cow
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
+        let _tracing = dev_span!("make_instance_or_report");
+
         if span.is_dummy() {
             unreachable!("Cannot make an instance with dummy span")
         }
@@ -100,8 +102,9 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+        let _tracing = dev_span!("make_instance");
+
         let ty = ty.normalize();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -159,7 +162,7 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(def) => {
                 return Ok(Type::Class(Class {
                     span,
-                    def: box def.clone(),
+                    def: def.clone(),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }))
@@ -198,7 +201,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
         }),
         Type::ClassDef(ref def) => Type::Class(Class {
             span,
-            def: box def.clone(),
+            def: def.clone(),
             metadata: ClassMetadata {
                 common: def.metadata.common,
                 ..Default::default()
@@ -234,14 +237,11 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
             tracker: Default::default(),
         }),
 
-        Type::Enum(Enum { id, metadata, .. }) => Type::EnumVariant(EnumVariant {
+        Type::Enum(e) => Type::EnumVariant(EnumVariant {
             span,
-            enum_name: id.into(),
+            def: e.cheap_clone(),
             name: None,
-            metadata: EnumVariantMetadata {
-                common: metadata.common,
-                ..Default::default()
-            },
+            metadata: EnumVariantMetadata { ..Default::default() },
             tracker: Default::default(),
         }),
 

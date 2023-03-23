@@ -1,27 +1,33 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/await/fn-1.ts:9:5]
- 9 | await foo()
-   :       ^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/await/fn-1.ts:8:1]
+  8 | export async function bar() {
+  9 |     await foo()
+    :           ^^^
+ 10 | }
+    `----
 
 Error: 
   > () => Promise<string>
 
   x Type
-   ,-[$DIR/tests/pass/exprs/await/fn-1.ts:9:5]
- 9 | await foo()
-   :       ^^^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/await/fn-1.ts:8:1]
+  8 | export async function bar() {
+  9 |     await foo()
+    :           ^^^^^
+ 10 | }
+    `----
 
 Error: 
   > Promise<string>
 
   x Type
-   ,-[$DIR/tests/pass/exprs/await/fn-1.ts:9:5]
- 9 | await foo()
-   : ^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/exprs/await/fn-1.ts:8:1]
+  8 | export async function bar() {
+  9 |     await foo()
+    :     ^^^^^^^^^^^
+ 10 | }
+    `----
 
 Error: 
   > string

@@ -1,1 +1,1 @@
-[{"line":2,"column":15,"code":"TS2304"},{"line":19,"column":15,"code":"TS2304"}]
+[{"filename":"tests/cases/conformance/es6/arrowFunction/emitArrowFunctionWhenUsingArguments01_ES6.ts","line":2,"column":15,"code":"TS2304"},{"filename":"tests/cases/conformance/es6/arrowFunction/emitArrowFunctionWhenUsingArguments01_ES6.ts","line":19,"column":15,"code":"TS2304"}]

@@ -12,10 +12,10 @@ use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
 use crate::{
-    Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType, InferType, Interface,
-    Intersection, Key, KeywordType, LitType, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType, StaticThis,
+    Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, Index, IndexedAccessType, InferType,
+    Interface, Intersection, Key, KeywordType, LitType, OptionalType, Predicate, QueryExpr, QueryType, Readonly, Ref, RestType, StaticThis,
     StringMapping, Symbol, ThisType, TplElem, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    TypeParamInstantiation, Union, Unique,
 };
 
 impl From<Box<Type>> for RTsType {
@@ -45,11 +45,13 @@ impl From<Type> for RTsType {
             Type::Intersection(t) => t.into(),
             Type::Function(t) => t.into(),
             Type::Constructor(t) => t.into(),
-            Type::Operator(t) => t.into(),
+            Type::Index(t) => t.into(),
+            Type::Readonly(t) => t.into(),
+            Type::Unique(t) => t.into(),
             Type::Param(t) => t.into(),
             Type::EnumVariant(t) => t.into(),
             Type::Interface(t) => t.into(),
-            Type::Enum(t) => t.into(),
+            Type::Enum(t) => t.into_inner().into(),
             Type::Mapped(t) => t.into(),
             Type::Alias(t) => t.into(),
             Type::Namespace(..) => {
@@ -57,7 +59,7 @@ impl From<Type> for RTsType {
             }
             Type::Module(t) => t.into(),
             Type::Class(t) => t.into(),
-            Type::ClassDef(t) => t.into(),
+            Type::ClassDef(t) => t.into_inner().into(),
             Type::Arc(t) => (*t.ty).clone().into(),
             Type::Optional(t) => t.into(),
             Type::Rest(t) => t.into(),
@@ -405,12 +407,36 @@ impl From<TypeParam> for RTsTypeParam {
     }
 }
 
-impl From<Operator> for RTsType {
-    fn from(t: Operator) -> Self {
+impl From<Index> for RTsType {
+    fn from(t: Index) -> Self {
         RTsTypeOperator {
             node_id: NodeId::invalid(),
             span: t.span,
-            op: t.op,
+            op: TsTypeOperatorOp::KeyOf,
+            type_ann: t.ty.into(),
+        }
+        .into()
+    }
+}
+
+impl From<Readonly> for RTsType {
+    fn from(t: Readonly) -> Self {
+        RTsTypeOperator {
+            node_id: NodeId::invalid(),
+            span: t.span,
+            op: TsTypeOperatorOp::ReadOnly,
+            type_ann: t.ty.into(),
+        }
+        .into()
+    }
+}
+
+impl From<Unique> for RTsType {
+    fn from(t: Unique) -> Self {
+        RTsTypeOperator {
+            node_id: NodeId::invalid(),
+            span: t.span,
+            op: TsTypeOperatorOp::Unique,
             type_ann: t.ty.into(),
         }
         .into()
@@ -437,7 +463,7 @@ impl From<EnumVariant> for RTsType {
                 span: t.span,
                 type_name: RTsEntityName::TsQualifiedName(box RTsQualifiedName {
                     node_id: NodeId::invalid(),
-                    left: t.enum_name.into(),
+                    left: t.def.id.clone().into(),
                     right: RIdent::new(name, DUMMY_SP),
                 }),
                 type_params: None,
@@ -445,7 +471,7 @@ impl From<EnumVariant> for RTsType {
             None => RTsType::TsTypeRef(RTsTypeRef {
                 node_id: NodeId::invalid(),
                 span: t.span,
-                type_name: RTsEntityName::Ident(t.enum_name.into()),
+                type_name: RTsEntityName::Ident(t.def.id.clone().into()),
                 type_params: None,
             }),
         }
@@ -509,7 +535,10 @@ impl From<super::Module> for RTsType {
             type_name: RTsEntityName::Ident(match m.name {
                 RTsModuleName::Ident(i) => i,
                 RTsModuleName::Str(..) => {
-                    unimplemented!("converting stringly-named module type to ast")
+                    return RTsType::TsKeywordType(RTsKeywordType {
+                        span: m.span,
+                        kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                    })
                 }
             }),
         })
@@ -526,23 +555,12 @@ impl From<TypeParamInstantiation> for RTsTypeParamInstantiation {
     }
 }
 
-impl From<Operator> for RTsTypeOperator {
-    fn from(t: Operator) -> Self {
-        RTsTypeOperator {
-            node_id: NodeId::invalid(),
-            span: t.span,
-            op: t.op,
-            type_ann: t.ty.into(),
-        }
-    }
-}
-
 impl From<super::Class> for RTsType {
     fn from(t: super::Class) -> Self {
         RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_name: RTsEntityName::Ident(t.def.name.unwrap_or_else(|| Id::word("anonymous class".into())).into()),
+            type_name: RTsEntityName::Ident(t.def.name.clone().unwrap_or_else(|| Id::word("anonymous class".into())).into()),
             type_params: None,
         }
         .into()

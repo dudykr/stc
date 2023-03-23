@@ -1,26 +1,32 @@
 
   x Type
-   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
- 2 | var v = { [yield]: foo }
-   :            ^^^^^
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:1:1]
+ 1 | function* foo() {
+ 2 |     var v = { [yield]: foo }
+   :                ^^^^^
+ 3 | }
    `----
 
 Error: 
   > any
 
   x Type
-   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
- 2 | var v = { [yield]: foo }
-   :                    ^^^
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:1:1]
+ 1 | function* foo() {
+ 2 |     var v = { [yield]: foo }
+   :                        ^^^
+ 3 | }
    `----
 
 Error: 
   > typeof foo
 
   x Type
-   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
- 2 | var v = { [yield]: foo }
-   :         ^^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:1:1]
+ 1 | function* foo() {
+ 2 |     var v = { [yield]: foo }
+   :             ^^^^^^^^^^^^^^^^
+ 3 | }
    `----
 
 Error: 

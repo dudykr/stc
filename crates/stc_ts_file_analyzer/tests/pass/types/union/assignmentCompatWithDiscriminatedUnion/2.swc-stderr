@@ -1,8 +1,10 @@
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:14:5]
- 14 | t = s;
-    :     ^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:13:1]
+ 13 |     // S is assignable to T2 when S["a"] is 2
+ 14 |     t = s;
+    :         ^
+ 15 | }
     `----
 
 Error: 
@@ -12,9 +14,11 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:14:5]
- 14 | t = s;
-    : ^^^^^
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:13:1]
+ 13 |     // S is assignable to T2 when S["a"] is 2
+ 14 |     t = s;
+    :     ^^^^^
+ 15 | }
     `----
 
 Error: 

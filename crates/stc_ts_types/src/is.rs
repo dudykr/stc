@@ -6,7 +6,7 @@ use debug_unreachable::debug_unreachable;
 use crate::*;
 
 macro_rules! impl_is {
-    ($variant:ident,$type_name:ident, $is_name:ident,$as_name:ident,$as_mut_name:ident,$opt_name:ident,$expect_name:ident) => {
+    ($variant:ident,$type_name:ty, $is_name:ident,$as_name:ident,$as_mut_name:ident,$opt_name:ident,$expect_name:ident) => {
         impl Type {
             pub fn $is_name(&self) -> bool {
                 matches!(self.normalize(), Type::$variant(_))
@@ -137,15 +137,17 @@ impl_is!(
     constructor,
     expect_constructor
 );
+impl_is!(Index, Index, is_index, as_index, as_index_mut, index, expect_index);
 impl_is!(
-    Operator,
-    Operator,
-    is_operator,
-    as_operator,
-    as_operator_mut,
-    operator,
-    expect_operator
+    Readonly,
+    Readonly,
+    is_readonly,
+    as_readonly,
+    as_readonly_mut,
+    readonly,
+    expect_readonly
 );
+impl_is!(Unique, Unique, is_unique, as_unique, as_unique_mut, unique, expect_unique);
 impl_is!(
     Param,
     TypeParam,
@@ -175,7 +177,7 @@ impl_is!(
 );
 impl_is!(
     Enum,
-    Enum,
+    ArcCow<Enum>,
     is_enum_type,
     as_enum_type,
     as_enum_type_mut,
@@ -197,7 +199,7 @@ impl_is!(Module, Module, is_module, as_module, as_module_mut, module, expect_mod
 impl_is!(Class, Class, is_class, as_class, as_class_mut, class, expect_class);
 impl_is!(
     ClassDef,
-    ClassDef,
+    ArcCow<ClassDef>,
     is_class_def,
     as_class_def,
     as_class_def_mut,

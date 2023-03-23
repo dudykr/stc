@@ -1,1 +1,1 @@
-[{"line":14,"column":21,"code":"TS2339"}]
+[{"filename":"tests/cases/compiler/internalAliasEnumInsideLocalModuleWithoutExportAccessError.ts","line":14,"column":21,"code":"TS2339"}]

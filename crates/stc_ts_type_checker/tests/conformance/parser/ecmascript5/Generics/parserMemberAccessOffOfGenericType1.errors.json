@@ -1,1 +1,1 @@
-[{"line":1,"column":9,"code":"TS2304"},{"line":1,"column":13,"code":"TS1477"}]
+[{"filename":"tests/cases/conformance/parser/ecmascript5/Generics/parserMemberAccessOffOfGenericType1.ts","line":1,"column":9,"code":"TS2304"},{"filename":"tests/cases/conformance/parser/ecmascript5/Generics/parserMemberAccessOffOfGenericType1.ts","line":1,"column":13,"code":"TS1477"}]

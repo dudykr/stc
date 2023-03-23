@@ -1,1 +1,1 @@
-[{"line":4,"column":12,"code":"TS1433"},{"line":8,"column":29,"code":"TS1433"},{"line":8,"column":30,"code":"TS2680"}]
+[{"filename":"tests/cases/conformance/decorators/class/method/parameter/decoratorOnClassMethodThisParameter.ts","line":4,"column":12,"code":"TS1433"},{"filename":"tests/cases/conformance/decorators/class/method/parameter/decoratorOnClassMethodThisParameter.ts","line":8,"column":29,"code":"TS1433"},{"filename":"tests/cases/conformance/decorators/class/method/parameter/decoratorOnClassMethodThisParameter.ts","line":8,"column":30,"code":"TS2680"}]

@@ -1,24 +1,29 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:9:1]
- 9 | s1 = s2;
-   :      ^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:8:1]
+  8 | 
+  9 | s1 = s2;
+    :      ^^
+ 10 | s2 = s1;
+    `----
 
 Error: 
   > never
 
   x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:9:1]
- 9 | s1 = s2;
-   : ^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:8:1]
+  8 | 
+  9 | s1 = s2;
+    : ^^^^^^^
+ 10 | s2 = s1;
+    `----
 
 Error: 
   > never
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:9:1]
+  9 | s1 = s2;
  10 | s2 = s1;
     :      ^^
     `----
@@ -27,7 +32,8 @@ Error:
   > never
 
   x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:10:1]
+    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/4.ts:9:1]
+  9 | s1 = s2;
  10 | s2 = s1;
     : ^^^^^^^
     `----

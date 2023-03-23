@@ -1,1 +1,1 @@
-[{"line":2,"column":12,"code":"TS2355"}]
+[{"filename":"tests/cases/compiler/missingReturnStatement1.ts","line":2,"column":12,"code":"TS2355"}]

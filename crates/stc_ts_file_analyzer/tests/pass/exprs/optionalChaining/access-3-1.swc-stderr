@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:2:1]
+ 2 | declare const o3: { b: undefined | { c: string } };
  3 | o3.b
    : ^^
+ 4 | o3.b?.["c"];
    `----
 
 Error: 
@@ -13,9 +15,11 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:2:1]
+ 2 | declare const o3: { b: undefined | { c: string } };
  3 | o3.b
    : ^^^^
+ 4 | o3.b?.["c"];
    `----
 
 Error: 
@@ -24,7 +28,8 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1]
+ 3 | o3.b
  4 | o3.b?.["c"];
    : ^^
    `----
@@ -37,7 +42,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1]
+ 3 | o3.b
  4 | o3.b?.["c"];
    : ^^^^
    `----
@@ -48,10 +54,11 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1]
+ 3 | o3.b
  4 | o3.b?.["c"];
    : ^^^^^^^^^^^
    `----
 
 Error: 
-  > (undefined | string)
+  > (string | undefined)

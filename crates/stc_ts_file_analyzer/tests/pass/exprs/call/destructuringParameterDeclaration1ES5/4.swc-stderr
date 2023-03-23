@@ -72,16 +72,18 @@ Error:
   > [[any], undefined, [[any, any]]]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
+ 3 | 
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    : ^^
    `----
 
 Error: 
-  > ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+  > ([[a], b, [[c, d]]]?: [[any], any, [[any, any]]]) => void
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
+ 3 | 
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :     ^^^^^^^^^^
    `----
@@ -90,7 +92,8 @@ Error:
   > ["string"]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
+ 3 | 
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                     ^^^^^^^^^^^^^
    `----
@@ -99,7 +102,8 @@ Error:
   > [true, false]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
+ 3 | 
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :                    ^^^^^^^^^^^^^^^
    `----
@@ -108,7 +112,8 @@ Error:
   > [[true, false]]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
+ 3 | 
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    :    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -117,7 +122,8 @@ Error:
   > [["string"], 1, [[true, false]]]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1]
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:3:1]
+ 3 | 
  4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    `----

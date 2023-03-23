@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/new/generic/interface-1.ts:9:1]
+   ,-[$DIR/tests/pass/exprs/new/generic/interface-1.ts:8:1]
+ 8 | 
  9 | export var anInterface: I = new C()
    :                                 ^
    `----
@@ -9,7 +10,8 @@ Error:
   > typeof C
 
   x Type
-   ,-[$DIR/tests/pass/exprs/new/generic/interface-1.ts:9:1]
+   ,-[$DIR/tests/pass/exprs/new/generic/interface-1.ts:8:1]
+ 8 | 
  9 | export var anInterface: I = new C()
    :                             ^^^^^^^
    `----

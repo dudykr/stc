@@ -292,6 +292,7 @@ fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
                 decorators: true,
                 dts: true,
                 no_early_errors: true,
+                ..Default::default()
             }),
             SourceFileInput::from(&*fm),
             None,
@@ -348,7 +349,7 @@ impl Normalizer {
         }
 
         types.sort_by(|a, b| match (&**a, &**b) {
-            (&TsType::TsKeywordType(ref a), &TsType::TsKeywordType(ref b)) => kwd_rank(a.kind).cmp(&kwd_rank(b.kind)),
+            (TsType::TsKeywordType(a), TsType::TsKeywordType(b)) => kwd_rank(a.kind).cmp(&kwd_rank(b.kind)),
             (
                 &TsType::TsLitType(TsLitType {
                     lit: TsLit::Str(ref a), ..

@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:10:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:9:1]
+  9 | 
  10 | foo(1, null as any as I, true) // 1
     : ^^^
     `----
@@ -9,7 +10,8 @@ Error:
   > <T>(x: T, a: T, b: T) => T
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:10:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:9:1]
+  9 | 
  10 | foo(1, null as any as I, true) // 1
     :        ^^^^^^^^^^^
     `----
@@ -18,7 +20,8 @@ Error:
   > any
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:10:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:9:1]
+  9 | 
  10 | foo(1, null as any as I, true) // 1
     :        ^^^^^^^^^^^^^^^^
     `----
@@ -27,7 +30,8 @@ Error:
   > I
 
   x Type
-    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:10:1]
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/interface-with-props.ts:9:1]
+  9 | 
  10 | foo(1, null as any as I, true) // 1
     : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     `----

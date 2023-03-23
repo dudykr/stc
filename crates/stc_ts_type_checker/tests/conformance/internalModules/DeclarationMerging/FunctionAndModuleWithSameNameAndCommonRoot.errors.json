@@ -1,1 +1,1 @@
-[{"line":2,"column":19,"code":"TS2433"},{"line":13,"column":5,"code":"TS2403"},{"line":2,"column":5,"code":"TS2403"}]
+[{"filename":"tests/cases/conformance/internalModules/DeclarationMerging/module.ts","line":2,"column":19,"code":"TS2433"},{"filename":"tests/cases/conformance/internalModules/DeclarationMerging/simple.ts","line":13,"column":5,"code":"TS2403"},{"filename":"tests/cases/conformance/internalModules/DeclarationMerging/test.ts","line":2,"column":5,"code":"TS2403"}]

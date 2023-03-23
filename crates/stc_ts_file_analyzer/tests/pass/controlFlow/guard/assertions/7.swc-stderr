@@ -1,6 +1,7 @@
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:12:1]
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:11:1]
+ 11 | 
  12 | export const none: None = { none: '' };
     :                           ^^^^^^^^^^^^
     `----
@@ -11,27 +12,33 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:5]
- 15 | return 'some' in value;
-    :                  ^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:14:1]
+ 14 | export function isSome<a>(value: Optional<a>): value is Some<a> {
+ 15 |     return 'some' in value;
+    :                      ^^^^^
+ 16 | }
     `----
 
 Error: 
   > (Some | None)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:5]
- 15 | return 'some' in value;
-    :        ^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:14:1]
+ 14 | export function isSome<a>(value: Optional<a>): value is Some<a> {
+ 15 |     return 'some' in value;
+    :            ^^^^^^^^^^^^^^^
+ 16 | }
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:19:5]
- 19 | return { some };
-    :        ^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:18:1]
+ 18 | function someFrom<a>(some: a) {
+ 19 |     return { some };
+    :            ^^^^^^^^
+ 20 | }
     `----
 
 Error: 
@@ -40,63 +47,77 @@ Error:
   | }
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:23:5]
- 23 | let x: string | number | undefined = undefined;
-    :                                      ^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:22:1]
+ 22 | function f4() {
+ 23 |     let x: string | number | undefined = undefined;
+    :                                          ^^^^^^^^^
+ 24 |     x;  // undefined
     `----
 
 Error: 
   > undefined
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:5]
- 24 | x;  // undefined
-    : ^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:23:1]
+ 23 |     let x: string | number | undefined = undefined;
+ 24 |     x;  // undefined
+    :     ^
+ 25 |     if (typeof x === "boolean") {
     `----
 
 Error: 
   > (string | number | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:5]
- 25 | if (typeof x === "boolean") {
-    :            ^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:1]
+ 24 |     x;  // undefined
+ 25 |     if (typeof x === "boolean") {
+    :                ^
+ 26 |         x;  // nothing (boolean not in declared type)
     `----
 
 Error: 
   > (string | number | undefined)
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:5]
- 25 | if (typeof x === "boolean") {
-    :     ^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:1]
+ 24 |     x;  // undefined
+ 25 |     if (typeof x === "boolean") {
+    :         ^^^^^^^^
+ 26 |         x;  // nothing (boolean not in declared type)
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:5]
- 25 | if (typeof x === "boolean") {
-    :     ^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:1]
+ 24 |     x;  // undefined
+ 25 |     if (typeof x === "boolean") {
+    :         ^^^^^^^^^^^^^^^^^^^^^^
+ 26 |         x;  // nothing (boolean not in declared type)
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:26:9]
- 26 | x;  // nothing (boolean not in declared type)
-    : ^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:1]
+ 25 |     if (typeof x === "boolean") {
+ 26 |         x;  // nothing (boolean not in declared type)
+    :         ^
+ 27 |     }
     `----
 
 Error: 
   > never
 
   x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:28:5]
- 28 | x;  // undefined
-    : ^
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:27:1]
+ 27 |     }
+ 28 |     x;  // undefined
+    :     ^
+ 29 | }
     `----
 
 Error: 

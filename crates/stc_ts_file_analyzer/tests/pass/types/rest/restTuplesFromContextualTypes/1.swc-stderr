@@ -1,33 +1,40 @@
 
   x Type
-   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:7:3]
- 7 | const [num, strOrErr] = params;
-   :                         ^^^^^^
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:6:1]
+ 6 | const funcUnionTupleRest: TupleUnionFunc = (...params) => {
+ 7 |   const [num, strOrErr] = params;
+   :                           ^^^^^^
+ 8 |   strOrErr;
    `----
 
 Error: 
   > [...([number, string] | [number, Error])]
 
   x Type
-   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:8:3]
- 8 | strOrErr;
-   : ^^^^^^^^
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:7:1]
+ 7 |   const [num, strOrErr] = params;
+ 8 |   strOrErr;
+   :   ^^^^^^^^
+ 9 |   return num;
    `----
 
 Error: 
   > (string | Error)
 
   x Type
-   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:9:3]
- 9 | return num;
-   :        ^^^
-   `----
+    ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:8:1]
+  8 |   strOrErr;
+  9 |   return num;
+    :          ^^^
+ 10 | };
+    `----
 
 Error: 
   > number
 
   x Type
-    ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:6:1]
+    ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:5:1]
+  5 |     
   6 | ,-> const funcUnionTupleRest: TupleUnionFunc = (...params) => {
   7 | |     const [num, strOrErr] = params;
   8 | |     strOrErr;

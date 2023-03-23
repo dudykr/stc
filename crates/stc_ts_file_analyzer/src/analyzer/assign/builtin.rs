@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
@@ -9,7 +11,7 @@ use crate::{
         assign::{AssignData, AssignOpts},
         Analyzer,
     },
-    util::unwrap_ref_with_single_arg,
+    util::unwrap_builtin_with_single_arg,
     VResult,
 };
 
@@ -147,9 +149,9 @@ impl Analyzer<'_, '_> {
 
         if cfg!(feature = "fastpath") {
             if let Type::Array(l) = l {
-                if let Some(r_elem) = unwrap_ref_with_single_arg(r, "TemplateStringArray")
-                    .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
-                    .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
+                if let Some(r_elem) = unwrap_builtin_with_single_arg(r, "TemplateStringArray")
+                    .or_else(|| unwrap_builtin_with_single_arg(r, "Array"))
+                    .or_else(|| unwrap_builtin_with_single_arg(r, "ReadonlyArray"))
                 {
                     return Some(
                         self.assign_with_opts(data, &l.elem_type, r_elem, opts)
@@ -160,7 +162,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(feature = "fastpath") {
-            if let Some(r_elem) = unwrap_ref_with_single_arg(r, "ReadonlyArray") {
+            if let Some(r_elem) = unwrap_builtin_with_single_arg(r, "ReadonlyArray") {
                 return Some(self.assign_with_opts(
                     data,
                     l,
@@ -181,10 +183,7 @@ impl Analyzer<'_, '_> {
             // lhs: (TResult1#0#0 | PromiseLike<TResult1>);
             // rhs: Promise<boolean>
             if let Type::Union(l) = l.normalize() {
-                if l.types.len() == 2
-                    && l.types[0].is_type_param()
-                    && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
-                {
+                if l.types.len() == 2 && unwrap_builtin_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0])) {
                     return Some(Ok(()));
                 }
             }
@@ -192,7 +191,7 @@ impl Analyzer<'_, '_> {
 
         if cfg!(feature = "fastpath") {
             if let Type::Union(l) = l.normalize() {
-                if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+                if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
                     // Fast path for
                     //
                     // (Promise<number> | Promise<string> | Promise<boolean> |
@@ -200,7 +199,7 @@ impl Analyzer<'_, '_> {
                     // Promise<boolean>)>); = Promise<boolean>;
                     let mut done = true;
                     for l in &l.types {
-                        if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+                        if let Some(l) = unwrap_builtin_with_single_arg(l, "Promise") {
                             if let Ok(()) = self.assign_with_opts(data, l, r, opts) {
                                 return Some(Ok(()));
                             }
@@ -218,41 +217,40 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.may_unwrap_promise {
-            if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+            if let Ok(l) = self.get_awaited_type(span, Cow::Borrowed(l), true) {
                 // We are in return type of an async function.
 
-                if let Ok(()) = self.assign_with_opts(
-                    data,
-                    l,
-                    r,
-                    AssignOpts {
-                        may_unwrap_promise: false,
-                        ..opts
-                    },
-                ) {
-                    return Some(Ok(()));
+                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r), true) {
+                    return Some(
+                        self.assign_with_opts(data, &l, &r, AssignOpts { ..opts })
+                            .context("tried to assign an awaited type to an awaited type"),
+                    );
                 }
 
-                if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
-                    let r = self.normalize_promise_arg(r);
-
-                    if let Ok(()) = self.assign_with_opts(
+                return Some(
+                    self.assign_with_opts(
                         data,
-                        l,
-                        &r,
+                        &l,
+                        r,
                         AssignOpts {
                             may_unwrap_promise: false,
                             ..opts
                         },
-                    ) {
-                        return Some(Ok(()));
-                    }
+                    )
+                    .context("tried to assign an awaited type to a non-awaited type"),
+                );
+            } else {
+                if let Ok(r) = self.get_awaited_type(span, Cow::Borrowed(r), true) {
+                    return Some(
+                        self.assign_with_opts(data, l, &r, AssignOpts { ..opts })
+                            .context("tried to assign an non-waited type to an awaited type"),
+                    );
                 }
             }
         }
 
-        if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
-            if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+        if let Some(l) = unwrap_builtin_with_single_arg(l, "Promise") {
+            if let Some(r) = unwrap_builtin_with_single_arg(r, "Promise") {
                 return Some(
                     self.assign_with_opts(data, l, r, opts)
                         .context("tried to assign a promise to another using optimized algorithm"),

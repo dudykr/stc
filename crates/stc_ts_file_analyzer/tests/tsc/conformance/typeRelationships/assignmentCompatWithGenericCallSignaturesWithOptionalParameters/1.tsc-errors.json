@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/conformance/typeRelationships/assignmentCompatWithGenericCallSignaturesWithOptionalParameters/1.ts",
+    "line": 8,
+    "col": 13,
+    "code": 2322
+  }
+]

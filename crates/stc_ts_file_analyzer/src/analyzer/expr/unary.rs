@@ -208,13 +208,13 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | RExpr::OptChain(ROptChainExpr {
-                base: ROptChainBase::Member(expr),
+                base: box ROptChainBase::Member(expr),
                 ..
             })
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
                     let ty = self
-                        .type_of_member_expr(expr, TypeOfMode::RValue, false)
+                        .type_of_member_expr(expr, TypeOfMode::RValue, None, false)
                         .convert_err(|err| match err {
                             ErrorKind::ObjectIsPossiblyNull { span, .. }
                             | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
@@ -273,7 +273,12 @@ impl Analyzer<'_, '_> {
                 }) => {}
 
                 Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUnknownKeyword,
+                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                    ..
+                }) => errors.push(ErrorKind::IsTypeUnknown { span: arg.span() }.into()),
+
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => errors.push(ErrorKind::TS2531 { span: arg.span() }.into()),
 

@@ -99,20 +99,4 @@ jobs:
 
       - name: Run cargo test
         run: |
-          RUST_MIN_STACK=16777216 cargo test --all --features tracing/max_level_off
-
-  # check-spelling:
-  #   name: Cargo test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-
-  #     # Source map format
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: "18"
-  #         cache: "yarn"
-
-  #     - name: Run cspell
-  #       run: |
-  #         cspell "**/*.rs"
+          RUST_MIN_STACK=8388608 cargo test --all --features tracing/max_level_off

@@ -1,1 +1,1 @@
-[{"line":2,"column":10,"code":"TS2322"},{"line":2,"column":18,"code":"TS2339"}]
+[{"filename":"tests/cases/conformance/es6/destructuring/restElementWithAssignmentPattern2.ts","line":2,"column":10,"code":"TS2322"},{"filename":"tests/cases/conformance/es6/destructuring/restElementWithAssignmentPattern2.ts","line":2,"column":18,"code":"TS2339"}]

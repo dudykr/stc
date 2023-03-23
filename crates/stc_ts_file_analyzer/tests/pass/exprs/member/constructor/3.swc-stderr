@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:5:1]
+ 5 | var x3: Array<new () => string>;
  6 | var r5 = x2[1];
    :          ^^
+ 7 | var r6 = new r5();
    `----
 
 Error: 
@@ -11,9 +13,11 @@ Error:
   | }[]
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:6:1]
+   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:5:1]
+ 5 | var x3: Array<new () => string>;
  6 | var r5 = x2[1];
    :          ^^^^^
+ 7 | var r6 = new r5();
    `----
 
 Error: 
@@ -22,7 +26,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:6:1]
+ 6 | var r5 = x2[1];
  7 | var r6 = new r5();
    :              ^^
    `----
@@ -33,7 +38,8 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:7:1]
+   ,-[$DIR/tests/pass/exprs/member/constructor/3.ts:6:1]
+ 6 | var r5 = x2[1];
  7 | var r6 = new r5();
    :          ^^^^^^^^
    `----

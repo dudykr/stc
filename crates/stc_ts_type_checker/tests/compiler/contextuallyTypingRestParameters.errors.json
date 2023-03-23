@@ -1,1 +1,1 @@
-[{"line":3,"column":9,"code":"TS2322"},{"line":5,"column":9,"code":"TS2322"}]
+[{"filename":"tests/cases/compiler/contextuallyTypingRestParameters.ts","line":3,"column":9,"code":"TS2322"},{"filename":"tests/cases/compiler/contextuallyTypingRestParameters.ts","line":5,"column":9,"code":"TS2322"}]

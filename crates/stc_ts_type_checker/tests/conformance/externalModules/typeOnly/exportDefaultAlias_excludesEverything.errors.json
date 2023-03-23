@@ -1,1 +1,1 @@
-[{"line":1,"column":26,"code":"TS2528"},{"line":3,"column":16,"code":"TS2528"}]
+[{"filename":"tests/cases/compiler/exportDefaultAlias_excludesEverything.ts","line":1,"column":26,"code":"TS2528"},{"filename":"tests/cases/compiler/exportDefaultAlias_excludesEverything.ts","line":3,"column":16,"code":"TS2528"}]

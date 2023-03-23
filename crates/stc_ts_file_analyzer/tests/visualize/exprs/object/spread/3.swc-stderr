@@ -1,17 +1,21 @@
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/object/spread/3.ts:2:5]
- 2 | return { ...arg }
-   :             ^^^
+   ,-[$DIR/tests/visualize/exprs/object/spread/3.ts:1:1]
+ 1 | function f3<T extends number | string[]>(arg: T) {
+ 2 |     return { ...arg }
+   :                 ^^^
+ 3 | }
    `----
 
 Error: 
   > T
 
   x Type
-   ,-[$DIR/tests/visualize/exprs/object/spread/3.ts:2:5]
- 2 | return { ...arg }
-   :        ^^^^^^^^^^
+   ,-[$DIR/tests/visualize/exprs/object/spread/3.ts:1:1]
+ 1 | function f3<T extends number | string[]>(arg: T) {
+ 2 |     return { ...arg }
+   :            ^^^^^^^^^^
+ 3 | }
    `----
 
 Error: 

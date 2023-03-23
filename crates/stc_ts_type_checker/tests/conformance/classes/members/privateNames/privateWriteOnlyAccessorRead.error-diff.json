@@ -1,0 +1,19 @@
+{
+  "required_errors": {
+    "TS2806": 8
+  },
+  "required_error_lines": {
+    "TS2806": [
+      10,
+      13,
+      18,
+      20,
+      23,
+      27,
+      28,
+      31
+    ]
+  },
+  "extra_errors": {},
+  "extra_error_lines": {}
+}

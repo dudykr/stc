@@ -1,8 +1,10 @@
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:5]
- 4 | if (!x.error) {
-   :      ^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:3:1]
+ 3 | export function f15(x: Result<number>) {
+ 4 |     if (!x.error) {
+   :          ^
+ 5 |         x.value;
    `----
 
 Error: 
@@ -14,27 +16,33 @@ Error:
   | })
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:5]
- 4 | if (!x.error) {
-   :      ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:3:1]
+ 3 | export function f15(x: Result<number>) {
+ 4 |     if (!x.error) {
+   :          ^^^^^^^
+ 5 |         x.value;
    `----
 
 Error: 
   > Error
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:5]
- 4 | if (!x.error) {
-   :     ^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:3:1]
+ 3 | export function f15(x: Result<number>) {
+ 4 |     if (!x.error) {
+   :         ^^^^^^^^
+ 5 |         x.value;
    `----
 
 Error: 
   > boolean
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:5:9]
- 5 | x.value;
-   : ^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:1]
+ 4 |     if (!x.error) {
+ 5 |         x.value;
+   :         ^
+ 6 |     }
    `----
 
 Error: 
@@ -44,18 +52,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:5:9]
- 5 | x.value;
-   : ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:1]
+ 4 |     if (!x.error) {
+ 5 |         x.value;
+   :         ^^^^^^^
+ 6 |     }
    `----
 
 Error: 
   > number
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:8:9]
- 8 | x.error.message;
-   : ^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:7:1]
+ 7 |     else {
+ 8 |         x.error.message;
+   :         ^
+ 9 |     }
    `----
 
 Error: 
@@ -64,18 +76,22 @@ Error:
   | }
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:8:9]
- 8 | x.error.message;
-   : ^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:7:1]
+ 7 |     else {
+ 8 |         x.error.message;
+   :         ^^^^^^^
+ 9 |     }
    `----
 
 Error: 
   > Error
 
   x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:8:9]
- 8 | x.error.message;
-   : ^^^^^^^^^^^^^^^
+   ,-[$DIR/tests/pass/exprs/bin/cmp/union/2.ts:7:1]
+ 7 |     else {
+ 8 |         x.error.message;
+   :         ^^^^^^^^^^^^^^^
+ 9 |     }
    `----
 
 Error: 

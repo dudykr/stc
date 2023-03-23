@@ -1,6 +1,7 @@
 
   x Type
-   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:6:1]
+   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:5:1]
+ 5 | 
  6 | class StringTreeCollection extends StringTreeCollectionBase { }
    :                                    ^^^^^^^^^^^^^^^^^^^^^^^^
    `----
@@ -9,99 +10,121 @@ Error:
   > typeof StringTreeCollectionBase
 
   x Type
-   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
- 9 | if (typeof x !== "string") {
-   :            ^
-   `----
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:8:1]
+  8 | var x: StringTree;
+  9 | if (typeof x !== "string") {
+    :            ^
+ 10 |     x[0] = "";
+    `----
 
 Error: 
   > (string | StringTreeCollection)
 
   x Type
-   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
- 9 | if (typeof x !== "string") {
-   :     ^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:8:1]
+  8 | var x: StringTree;
+  9 | if (typeof x !== "string") {
+    :     ^^^^^^^^
+ 10 |     x[0] = "";
+    `----
 
 Error: 
   > string
 
   x Type
-   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
- 9 | if (typeof x !== "string") {
-   :     ^^^^^^^^^^^^^^^^^^^^^
-   `----
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:8:1]
+  8 | var x: StringTree;
+  9 | if (typeof x !== "string") {
+    :     ^^^^^^^^^^^^^^^^^^^^^
+ 10 |     x[0] = "";
+    `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
- 10 | x[0] = "";
-    : ^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
+  9 | if (typeof x !== "string") {
+ 10 |     x[0] = "";
+    :     ^
+ 11 |     x[0] = new StringTreeCollection;
     `----
 
 Error: 
   > StringTreeCollection
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
- 10 | x[0] = "";
-    : ^^^^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
+  9 | if (typeof x !== "string") {
+ 10 |     x[0] = "";
+    :     ^^^^
+ 11 |     x[0] = new StringTreeCollection;
     `----
 
 Error: 
   > StringTree
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:5]
- 10 | x[0] = "";
-    : ^^^^^^^^^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:9:1]
+  9 | if (typeof x !== "string") {
+ 10 |     x[0] = "";
+    :     ^^^^^^^^^
+ 11 |     x[0] = new StringTreeCollection;
     `----
 
 Error: 
   > ""
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
- 11 | x[0] = new StringTreeCollection;
-    : ^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:1]
+ 10 |     x[0] = "";
+ 11 |     x[0] = new StringTreeCollection;
+    :     ^
+ 12 | }
     `----
 
 Error: 
   > StringTreeCollection
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
- 11 | x[0] = new StringTreeCollection;
-    : ^^^^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:1]
+ 10 |     x[0] = "";
+ 11 |     x[0] = new StringTreeCollection;
+    :     ^^^^
+ 12 | }
     `----
 
 Error: 
   > StringTree
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
- 11 | x[0] = new StringTreeCollection;
-    :            ^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:1]
+ 10 |     x[0] = "";
+ 11 |     x[0] = new StringTreeCollection;
+    :                ^^^^^^^^^^^^^^^^^^^^
+ 12 | }
     `----
 
 Error: 
   > typeof StringTreeCollection
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
- 11 | x[0] = new StringTreeCollection;
-    :        ^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:1]
+ 10 |     x[0] = "";
+ 11 |     x[0] = new StringTreeCollection;
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^
+ 12 | }
     `----
 
 Error: 
   > StringTreeCollection
 
   x Type
-    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:11:5]
- 11 | x[0] = new StringTreeCollection;
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:10:1]
+ 10 |     x[0] = "";
+ 11 |     x[0] = new StringTreeCollection;
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 12 | }
     `----
 
 Error: 

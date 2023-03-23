@@ -1,62 +1,76 @@
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:19:1]
+ 19 | var obj9: E1 | A;
  20 | if (obj9 instanceof E) {
     :     ^^^^
+ 21 |   obj9.foo;
     `----
 
 Error: 
   > (E1 | A)
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:19:1]
+ 19 | var obj9: E1 | A;
  20 | if (obj9 instanceof E) {
     :                     ^
+ 21 |   obj9.foo;
     `----
 
 Error: 
   > EConstructor
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:20:1]
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:19:1]
+ 19 | var obj9: E1 | A;
  20 | if (obj9 instanceof E) {
     :     ^^^^^^^^^^^^^^^^^
+ 21 |   obj9.foo;
     `----
 
 Error: 
   > boolean
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:21:3]
- 21 | obj9.foo;
-    : ^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:20:1]
+ 20 | if (obj9 instanceof E) {
+ 21 |   obj9.foo;
+    :   ^^^^
+ 22 |   obj9.bar1;
     `----
 
 Error: 
   > E1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:21:3]
- 21 | obj9.foo;
-    : ^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:20:1]
+ 20 | if (obj9 instanceof E) {
+ 21 |   obj9.foo;
+    :   ^^^^^^^^
+ 22 |   obj9.bar1;
     `----
 
 Error: 
   > string
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:22:3]
- 22 | obj9.bar1;
-    : ^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:21:1]
+ 21 |   obj9.foo;
+ 22 |   obj9.bar1;
+    :   ^^^^
+ 23 | }
     `----
 
 Error: 
   > E1
 
   x Type
-    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:22:3]
- 22 | obj9.bar1;
-    : ^^^^^^^^^
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/13.ts:21:1]
+ 21 |   obj9.foo;
+ 22 |   obj9.bar1;
+    :   ^^^^^^^^^
+ 23 | }
     `----
 
 Error: 

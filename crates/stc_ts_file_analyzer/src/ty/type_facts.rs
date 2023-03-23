@@ -9,10 +9,10 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{cache::Freeze, stack};
+use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 use crate::{
     analyzer::{Analyzer, NormalizeTypeOpts},
@@ -25,11 +25,12 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    #[instrument(skip_all)]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
-        if self.is_builtin {
+        if self.config.is_builtin {
             return ty;
         }
+
+        let _tracing = dev_span!("apply_type_facts_to_type");
 
         if facts.contains(TypeFacts::TypeofEQNumber)
             || facts.contains(TypeFacts::TypeofEQString)
@@ -352,6 +353,15 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
             }));
         }
 
+        if self.facts.contains(TypeFacts::Truthy) {
+            ty.types.push(Type::TypeLit(TypeLit {
+                span: DUMMY_SP,
+                members: vec![],
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }));
+        }
+
         ty
     }
 }
@@ -361,6 +371,29 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u = u.fold_children_with(self);
 
         u.types.retain(|v| !v.is_never());
+
+        if self.facts.contains(TypeFacts::Truthy) {
+            u.types = u
+                .types
+                .iter_mut()
+                .map(|ty| {
+                    ty.freeze();
+                    Type::new_intersection(
+                        u.span,
+                        vec![
+                            ty.clone(),
+                            Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: vec![],
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
+                        ],
+                    )
+                })
+                .collect();
+            u.types.retain(|ty| !ty.is_null_or_undefined());
+        }
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
             u.types
@@ -585,5 +618,5 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
         }));
     }
 
-    Type::union(types)
+    Type::new_union(span, types)
 }

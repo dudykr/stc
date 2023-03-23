@@ -1,1 +1,1 @@
-[{"line":18,"column":12,"code":"TS2589"},{"line":22,"column":12,"code":"TS2589"}]
+[{"filename":"tests/cases/compiler/awaitedTypeStrictNull.ts","line":22,"column":12,"code":"TS2589"},{"filename":"tests/cases/compiler/awaitedTypeStrictNull.ts","line":26,"column":12,"code":"TS2589"}]

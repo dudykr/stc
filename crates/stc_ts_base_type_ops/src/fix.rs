@@ -44,8 +44,9 @@ where
 macro_rules! impl_fix {
     ($T:ty) => {
         impl Fix for $T {
-            #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
             fn fix(&mut self) {
+                let _tracing = stc_utils::dev_span!("fix");
+
                 self.visit_mut_with(&mut Fixer);
             }
         }

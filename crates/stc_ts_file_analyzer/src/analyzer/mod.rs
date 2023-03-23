@@ -19,7 +19,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, DebugExt, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{type_id::DestructureId, Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, AHashMap, AHashSet};
 use swc_atoms::{js_word, JsWord};
@@ -81,8 +81,6 @@ mod visit_mut;
 pub(crate) struct Ctx {
     module_id: ModuleId,
 
-    is_dts: bool,
-
     /// `true` for the **body** of class members. This is false for class keys
     /// of a non-nested class declaration.
     in_class_member: bool,
@@ -120,6 +118,7 @@ pub(crate) struct Ctx {
     in_declare: bool,
     in_fn_without_body: bool,
     in_global: bool,
+    in_export_assignment: bool,
     in_export_default_expr: bool,
 
     in_async: bool,
@@ -163,7 +162,7 @@ pub(crate) struct Ctx {
     in_assign_rhs: bool,
 
     in_export_decl: bool,
-
+    in_export_named: bool,
     skip_identical_while_inference: bool,
 
     super_references_super_class: bool,
@@ -199,6 +198,10 @@ pub(crate) struct Ctx {
     obj_is_super: bool,
 
     use_properties_of_this_implicitly: bool,
+
+    is_type_ann_for_call_reeval_chosen_from_overload: bool,
+
+    is_type_predicate: bool,
 }
 
 impl Ctx {
@@ -208,6 +211,10 @@ impl Ctx {
 
     pub fn can_generalize_literals(self) -> bool {
         !self.in_const_assertion && !self.in_argument && !self.in_cond
+    }
+
+    fn is_static(&self) -> bool {
+        self.in_static_block || self.in_static_method || self.in_static_property_initializer
     }
 }
 
@@ -225,6 +232,29 @@ pub struct Analyzer<'scope, 'b> {
 
     export_equals_span: Span,
 
+    scope: Scope<'scope>,
+
+    ctx: Ctx,
+
+    loader: &'b dyn Load,
+
+    pub(crate) config: InnerConfig,
+
+    cur_facts: Facts,
+
+    /// Used while inferring types.
+    mapped_type_param_name: Vec<Id>,
+
+    debugger: Option<Debugger>,
+
+    data: Box<AnalyzerData>,
+
+    destructure_count: Rc<Cell<DestructureId>>,
+}
+
+/// This type **should be boxed** for performance.
+#[derive(Debug, Default)]
+struct AnalyzerData {
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
     /// Value should [Type::Arc] of [Type::Module]
@@ -235,27 +265,6 @@ pub struct Analyzer<'scope, 'b> {
     /// See docs of ModuleItemMut for documentation.
     append_stmts: Vec<RStmt>,
 
-    scope: Scope<'scope>,
-
-    ctx: Ctx,
-
-    loader: &'b dyn Load,
-
-    pub(crate) is_builtin: bool,
-
-    cur_facts: Facts,
-
-    /// Used while inferring types.
-    mapped_type_param_name: Vec<Id>,
-
-    debugger: Option<Debugger>,
-
-    data: AnalyzerData,
-
-    destructure_count: Rc<Cell<DestructureId>>,
-}
-#[derive(Debug, Default)]
-struct AnalyzerData {
     unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
 
     /// Used to check mixed exports.
@@ -292,6 +301,19 @@ struct AnalyzerData {
     cache: TypeCache,
 
     checked_for_async_iterator: bool,
+
+    /// Used to check mixed default exports.
+    merged_default_exports: AHashSet<Id>,
+
+    jsx_prop_name: Option<Option<JsWord>>,
+}
+
+/// Configuration for the analyzer.
+#[derive(Debug, Default)]
+pub(crate) struct InnerConfig {
+    pub is_builtin: bool,
+
+    pub is_dts: bool,
 }
 
 #[derive(Debug, Default)]
@@ -418,7 +440,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     }
 
     #[allow(clippy::wrong_self_convention)]
-    fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
+    fn new(&'b self, scope: Scope<'scope>, data: Box<AnalyzerData>) -> Self {
         Self::new_inner(
             self.env.clone(),
             self.cm.clone(),
@@ -427,7 +449,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             None,
             self.loader,
             scope,
-            self.is_builtin,
+            self.config.is_builtin,
             self.debugger.clone(),
             data,
         )
@@ -443,7 +465,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         scope: Scope<'scope>,
         is_builtin: bool,
         debugger: Option<Debugger>,
-        data: AnalyzerData,
+        data: Box<AnalyzerData>,
     ) -> Self {
         let is_dts = storage.is_dts();
 
@@ -454,13 +476,10 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             storage,
             mutations,
             export_equals_span: DUMMY_SP,
-            imports: Default::default(),
-            prepend_stmts: Default::default(),
-            append_stmts: Default::default(),
             scope,
+            config: InnerConfig { is_builtin, is_dts },
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
-                is_dts,
                 in_class_member: false,
                 in_const_assertion: false,
                 in_constructor_param: false,
@@ -480,6 +499,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_declare: is_dts,
                 in_fn_without_body: false,
                 in_global: !is_builtin && is_dts,
+                in_export_assignment: false,
                 in_export_default_expr: false,
                 in_async: false,
                 in_generator: false,
@@ -503,6 +523,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_return_arg: false,
                 in_assign_rhs: false,
                 in_export_decl: false,
+                in_export_named: false,
                 skip_identical_while_inference: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
@@ -516,12 +537,12 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 checking_switch_discriminant_as_bin: false,
                 obj_is_super: false,
                 use_properties_of_this_implicitly: false,
+                is_type_ann_for_call_reeval_chosen_from_overload: false,
+                is_type_predicate: false,
             },
             loader,
-            is_builtin,
             cur_facts: Default::default(),
             mapped_type_param_name: vec![],
-            imports_by_id: Default::default(),
             debugger,
             data,
             destructure_count: Default::default(),
@@ -564,8 +585,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         H: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>),
     {
         let ctx = self.ctx;
-        let imports = take(&mut self.imports);
-        let imports_by_id = take(&mut self.imports_by_id);
         let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
         let module_data = if kind == ScopeKind::Module {
@@ -576,10 +595,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
-        let (ret, errors, imports, imports_by_id, cur_facts, mut child_scope, prepend_stmts, append_stmts, mutations, data) = {
+        let (ret, errors, cur_facts, mut child_scope, mutations, data) = {
             let mut child = self.new(child_scope, data);
-            child.imports = imports;
-            child.imports_by_id = imports_by_id;
             child.mutations = mutations;
             child.cur_facts = cur_facts;
             child.ctx = ctx;
@@ -595,20 +612,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             (
                 ret,
                 errors,
-                child.imports,
-                child.imports_by_id,
                 child.cur_facts,
                 child.scope.remove_parent(),
-                child.prepend_stmts,
-                child.append_stmts,
                 child.mutations.take(),
                 take(&mut child.data),
             )
         };
         self.storage.report_all(errors);
 
-        self.imports = imports;
-        self.imports_by_id = imports_by_id;
         self.cur_facts = cur_facts;
         self.mutations = mutations;
         self.data = data;
@@ -617,8 +628,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         self.scope.move_types_from_child(&mut child_scope);
         self.scope.move_vars_from_child(&mut child_scope);
-        self.prepend_stmts.extend(prepend_stmts);
-        self.append_stmts.extend(append_stmts);
         if kind == ScopeKind::Module {
             self.data.for_module = module_data;
         }
@@ -703,23 +712,23 @@ impl<'b, 'c> DerefMut for WithCtx<'_, 'b, 'c> {
 pub struct NoopLoader;
 
 impl Load for NoopLoader {
-    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: &Arc<FileName>, src: &str) -> Option<ModuleId> {
         unreachable!()
     }
 
-    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+    fn is_in_same_circular_group(&self, base: &Arc<FileName>, dep: &str) -> bool {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type> {
+    fn load_circular_dep(&self, base: &Arc<FileName>, dep: &str, partial: &ModuleTypeData) -> VResult<Type> {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
+    fn load_non_circular_dep(&self, base: &Arc<FileName>, dep: &str) -> VResult<Type> {
         unreachable!()
     }
 
-    fn declare_module(&self, name: &JsWord, module: Type) {
+    fn declare_module(&self, name: &JsWord, module: Type) -> ModuleId {
         unreachable!()
     }
 }
@@ -748,7 +757,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RModule) {
         self.ctx.in_module = true;
-        let is_dts = self.ctx.is_dts;
+        let is_dts = self.config.is_dts;
 
         debug_assert!(GLOBALS.is_set(), "Analyzer requires swc_common::GLOBALS");
 
@@ -798,7 +807,7 @@ impl Analyzer<'_, '_> {
             self.report_error_for_wrong_top_level_ambient_fns(&m.body);
         }
 
-        if self.is_builtin {
+        if self.config.is_builtin {
             m.body.visit_children_with(self);
         } else {
             self.validate_stmts_and_collect(&items_ref);
@@ -841,62 +850,85 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-            let ty = match node.module_ref {
-                RTsModuleRef::TsEntityName(ref e) => analyzer
-                    .type_of_ts_entity_name(node.span, &e.clone().into(), None)
-                    .convert_err(|err| match err {
-                        ErrorKind::TypeNotFound {
-                            span,
-                            name,
-                            ctxt,
-                            type_args,
-                        } => ErrorKind::NamespaceNotFound {
-                            span,
-                            name,
-                            ctxt,
-                            type_args,
-                        },
-                        _ => err,
-                    })
-                    .unwrap_or_else(|err| {
-                        analyzer.storage.report(err);
-                        Type::any(node.span, Default::default())
-                    })
-                    .freezed(),
+            let (var_ty, type_ty) = match node.module_ref {
+                RTsModuleRef::TsEntityName(ref e) => {
+                    let var_ty = analyzer.resolve_typeof(node.span, e).map(|ty| ty.freezed());
+
+                    let type_ty = analyzer
+                        .type_of_ts_entity_name(node.span, &e.clone().into(), None)
+                        .convert_err(|err| match err {
+                            ErrorKind::TypeNotFound {
+                                span,
+                                name,
+                                ctxt,
+                                type_args,
+                            } => ErrorKind::NamespaceNotFound {
+                                span,
+                                name,
+                                ctxt,
+                                type_args,
+                            },
+                            _ => err,
+                        })
+                        .map(|ty| ty.freezed());
+
+                    (var_ty, type_ty)
+                }
                 RTsModuleRef::TsExternalModuleRef(ref e) => {
                     let (dep, data) = analyzer.get_imported_items(e.span, &e.expr.value);
+                    data.assert_clone_cheap();
 
                     // Import successful
                     if ctxt != dep {
-                        analyzer
+                        let module_ty = analyzer
+                            .data
                             .imports
                             .get(&(ctxt, dep))
                             .cloned()
-                            .unwrap_or_else(|| Type::any(e.span, Default::default()))
+                            .unwrap_or_else(|| Type::any(e.span, Default::default()));
+
+                        let module_ty = analyzer
+                            .access_property(
+                                node.span,
+                                &module_ty,
+                                &Key::Normal {
+                                    span: node.span,
+                                    sym: js_word!("default"),
+                                },
+                                expr::TypeOfMode::RValue,
+                                IdCtx::Type,
+                                Default::default(),
+                            )
+                            .unwrap_or(module_ty)
+                            .freezed();
+
+                        (Ok(module_ty.clone()), Ok(module_ty))
                     } else {
-                        Type::any(e.span, Default::default())
+                        (Ok(Type::any(e.span, Default::default())), Ok(Type::any(e.span, Default::default())))
                     }
                 }
             };
-            ty.assert_clone_cheap();
-            ty.assert_valid();
 
-            let (is_type, is_var) = match ty.normalize() {
-                Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
-                Type::ClassDef(..) => (true, true),
-                _ => (false, true),
-            };
+            #[allow(clippy::unnecessary_unwrap)]
+            if var_ty.is_err() && type_ty.is_err() {
+                analyzer.storage.report(type_ty.unwrap_err());
+                return Ok(());
+            }
 
-            if is_type {
+            if let Ok(ty) = type_ty {
+                ty.assert_clone_cheap();
+
                 analyzer.register_type(node.id.clone().into(), ty.clone());
                 if node.is_export {
                     analyzer
                         .storage
-                        .reexport_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
+                        .export_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
                 }
             }
 
-            if is_var {
+            if let Ok(ty) = var_ty {
+                ty.assert_clone_cheap();
+
                 analyzer.declare_var(
                     node.span,
                     VarKind::Import,
@@ -906,13 +938,12 @@ impl Analyzer<'_, '_> {
                     true,
                     false,
                     false,
+                    false,
                 )?;
 
-                if node.is_export {
-                    analyzer
-                        .storage
-                        .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
-                }
+                analyzer
+                    .storage
+                    .export_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
             }
 
             Ok(())
@@ -933,7 +964,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
-        let is_builtin = self.is_builtin;
+        let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
 
@@ -968,7 +999,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsModuleDecl) -> VResult<Option<Type>> {
-        let is_builtin = self.is_builtin;
+        let is_builtin = self.config.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -1043,7 +1074,9 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.loader.declare_module(&s.value, ty.clone());
+                    let module_id = self.loader.declare_module(&s.value, ty.clone());
+
+                    self.insert_import_info(ctxt, module_id, ty.clone()).report(&mut self.storage);
                 }
             }
         }

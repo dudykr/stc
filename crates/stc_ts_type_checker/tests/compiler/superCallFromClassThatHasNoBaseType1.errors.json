@@ -1,1 +1,1 @@
-[{"line":8,"column":21,"code":"TS2335"}]
+[{"filename":"tests/cases/compiler/superCallFromClassThatHasNoBaseType1.ts","line":8,"column":21,"code":"TS2335"}]
