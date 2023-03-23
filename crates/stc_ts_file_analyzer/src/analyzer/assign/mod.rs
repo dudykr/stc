@@ -2522,8 +2522,7 @@ impl Analyzer<'_, '_> {
                             let li = index;
                             let ri = min(index, r_max);
 
-                            #[cfg(debug_assertions)]
-                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", li = li, ri = ri).entered();
+                            let _tracing = dev_span!("assign_tuple_to_tuple", li = li, ri = ri);
 
                             let l_elem_type = self.access_property(
                                 span,
