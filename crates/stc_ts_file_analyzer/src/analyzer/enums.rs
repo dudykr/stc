@@ -112,22 +112,6 @@ impl Analyzer<'_, '_> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
-            if e.members.iter().any(|m| matches!(m.init, Some(box RExpr::Lit(RLit::Str(..))))) {
-                for m in e.members.iter() {
-                    if let Some(box (RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Member(..))) = m.init {
-                        if let Some(box RExpr::Bin(bin)) = &m.init {
-                            if bin.op == op!(bin, "+") {
-                                if non_str_nor_plus(bin) {
-                                    continue;
-                                }
-                            }
-                        }
-                        self.storage
-                            .report(ErrorKind::ComputedMemberInEnumWithStrMember { span: m.span }.into());
-                    }
-                }
-            }
-
             let has_str = members.iter().any(|m| m.val.is_str_lit());
 
             if has_str {
@@ -644,15 +628,4 @@ impl Visit<RExpr> for LitValidator<'_> {
             }
         }
     }
-}
-
-fn non_str_nor_plus(bin: &RBinExpr) -> bool {
-    if bin.op == op!(bin, "+") {
-        match (&bin.left, &bin.right) {
-            (box RExpr::Lit(RLit::Str(..)), box RExpr::Lit(RLit::Str(..))) => return true,
-            (box RExpr::Bin(bin), box RExpr::Lit(RLit::Str(..))) => return non_str_nor_plus(bin),
-            _ => {}
-        }
-    }
-    false
 }
