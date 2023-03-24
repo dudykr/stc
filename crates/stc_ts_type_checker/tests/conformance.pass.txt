@@ -13,6 +13,7 @@ ambient/ambientExternalModuleMerging.ts
 ambient/ambientInsideNonAmbient.ts
 ambient/ambientInsideNonAmbientExternalModule.ts
 ambient/ambientShorthand_declarationEmit.ts
+ambient/ambientShorthand_reExport.ts
 async/es2017/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunction10_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunction1_es2017.ts
