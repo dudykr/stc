@@ -235,11 +235,13 @@ impl Analyzer<'_, '_> {
         };
 
         let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.freezed()).collect::<Vec<_>>();
-        for ty in iter {
-            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
-        }
 
-        self.storage.export_stored_type(span, self.ctx.module_id, name, orig_name);
+        self.storage.export_type(
+            span,
+            self.ctx.module_id,
+            name.sym().clone(),
+            Type::new_intersection(span, iter).freezed(),
+        );
     }
 
     /// Exports a variable.
