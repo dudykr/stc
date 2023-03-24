@@ -537,6 +537,7 @@ impl Analyzer<'_, '_> {
                                 span: e.span,
                                 allow_unknown_rhs: Some(true),
                                 use_missing_fields_for_class: true,
+                                may_unwrap_promise: true,
                                 ..Default::default()
                             },
                         ) {
