@@ -371,6 +371,11 @@ impl Analyzer<'_, '_> {
         let (dep, data) = self.get_imported_items(span, &node.src.value);
 
         if ctxt != dep {
+            if data.is_any() {
+                // TODO: Make this module `any`
+                return Ok(());
+            }
+
             match data.normalize() {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
@@ -382,6 +387,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+
                 _ => {
                     unreachable!()
                 }

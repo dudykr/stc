@@ -1017,6 +1017,10 @@ impl Analyzer<'_, '_> {
                     RTsModuleName::Str(_) => None,
                 };
 
+                if decl.body.is_none() {
+                    return Ok(Some(Type::any(span, Default::default())));
+                }
+
                 decl.visit_children_with(child);
 
                 let mut exports = child.storage.take_info(ctxt);
