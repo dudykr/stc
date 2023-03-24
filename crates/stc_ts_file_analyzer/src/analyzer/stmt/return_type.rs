@@ -497,7 +497,7 @@ impl Analyzer<'_, '_> {
 
             let item_ty = if e.delegate {
                 if self.ctx.in_async {
-                    self.get_async_iterator_element_type(e.span, Cow::Owned(ty))
+                    self.get_async_iterator_element_type(e.span, Cow::Owned(ty), false)
                         .context("tried to convert argument as an async iterator for delegating yield")?
                         .into_owned()
                 } else {
@@ -512,7 +512,7 @@ impl Analyzer<'_, '_> {
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
                 match if self.ctx.in_async {
-                    self.get_async_iterator_element_type(e.span, Cow::Owned(declared))
+                    self.get_async_iterator_element_type(e.span, Cow::Owned(declared), true)
                         .context("tried to get an element type from an async iterator for normal yield")
                 } else {
                     self.get_iterator_element_type(e.span, Cow::Owned(declared), true, GetIteratorOpts { ..Default::default() })
