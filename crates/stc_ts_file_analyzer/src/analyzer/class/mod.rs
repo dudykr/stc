@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(value) = &p.value {
             if let Some(object_type) = object_type {
-                if let Ok(type_ann) = self.access_property(
+                if let Ok(mut type_ann) = self.access_property(
                     p.span,
                     object_type,
                     &key,
@@ -172,6 +172,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 ) {
+                    type_ann.freeze();
                     self.apply_type_ann_to_expr(value, &type_ann)?;
                 }
             }
