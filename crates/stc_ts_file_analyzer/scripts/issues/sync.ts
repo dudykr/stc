@@ -92,7 +92,7 @@ This issue is created by sync script.
 
             if (prevIssue) {
                 console.log(`Prev issue found: ${prevIssue.number}`)
-                if (prevIssue.body !== body) {
+                if (prevIssue.body !== body || prevIssue.title !== title) {
                     await octokit.rest.issues.update({
                         owner: 'dudykr',
                         repo: 'stc',
