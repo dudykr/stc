@@ -546,6 +546,8 @@ impl Analyzer<'_, '_> {
                                         ..params[0].clone()
                                     };
                                 }
+
+                                ty.freeze();
                             }
 
                             e.right
