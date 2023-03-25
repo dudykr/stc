@@ -360,6 +360,7 @@ impl Analyzer<'_, '_> {
                 let type_ann = object_type.and_then(|obj| {
                     self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
+                        .freezed()
                 });
 
                 let ty = kv.value.validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))?;
