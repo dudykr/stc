@@ -1,33 +1,30 @@
-use std::{borrow::Cow, cmp::min, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RIdent, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, IdCtx, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, RestType, StringMapping, ThisType, Tuple, TupleElement, Type,
+    Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, dev_span, stack};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus::*, *};
 use tracing::{debug, error, info};
 
+use super::pat::PatMode;
 use crate::{
-    analyzer::{
-        expr::{AccessPropertyOpts, TypeOfMode},
-        types::NormalizeTypeOpts,
-        util::is_lit_eq_ignore_span,
-        Analyzer,
-    },
+    analyzer::{types::NormalizeTypeOpts, util::is_lit_eq_ignore_span, Analyzer},
     ty::TypeExt,
     util::is_str_or_union,
     VResult,
 };
 
+mod array;
 mod builtin;
 mod cast;
 mod class;
@@ -551,6 +548,7 @@ impl Analyzer<'_, '_> {
                         NormalizeTypeOpts {
                             merge_union_elements: true,
                             preserve_global_this: true,
+                            in_type_or_type_param: true,
                             ..Default::default()
                         },
                     )?
@@ -2420,7 +2418,7 @@ impl Analyzer<'_, '_> {
 
                     // Extra check to handle "has_escape"
                     match (lit, r_lit) {
-                        (&RTsLit::Str(ref l), &RTsLit::Str(ref r)) if l.value == r.value => return Ok(()),
+                        (RTsLit::Str(l), RTsLit::Str(r)) if l.value == r.value => return Ok(()),
                         _ => {}
                     }
 
@@ -2471,184 +2469,12 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Tuple(Tuple { elems: ref lhs_elems, .. }) => {
-                if lhs_elems.is_empty() {
-                    match rhs {
-                        Type::Array(..) | Type::Tuple(..) => return Ok(()),
-                        _ => {}
-                    }
-                }
-
-                match *rhs.normalize() {
-                    Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
-                        if rhs_elems.is_empty() {
-                            fail!()
-                        }
-
-                        if !opts.ignore_tuple_length_difference && lhs_elems.len() < rhs_elems.len() {
-                            if lhs_elems.iter().any(|elem| elem.ty.is_rest()) {
-                                // Type::Rest eats many elements
-                            } else {
-                                return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
-                            }
-                        }
-
-                        if !opts.ignore_tuple_length_difference && lhs_elems.len() > rhs_elems.len() {
-                            let is_len_fine = rhs_elems.iter().any(|elem| elem.ty.is_rest())
-                                || lhs_elems.iter().skip(rhs_elems.len()).all(|l| {
-                                    matches!(
-                                        l.ty.normalize_instance(),
-                                        Type::Keyword(KeywordType {
-                                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                                            ..
-                                        }) | Type::Optional(..)
-                                    )
-                                });
-
-                            if !is_len_fine {
-                                return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
-                            }
-                        }
-
-                        let len = lhs_elems.len().max(rhs_elems.len());
-
-                        let r_max = rhs_elems.len().saturating_sub(get_tuple_subtract_count(lhs_elems));
-
-                        let mut errors = vec![];
-
-                        for index in 0..len {
-                            let li = index;
-                            let ri = min(index, r_max);
-
-                            #[cfg(debug_assertions)]
-                            let _tracing = tracing::error_span!("assign_tuple_to_tuple", li = li, ri = ri).entered();
-
-                            let l_elem_type = self.access_property(
-                                span,
-                                to,
-                                &Key::Num(RNumber {
-                                    span,
-                                    value: li as _,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Type,
-                                AccessPropertyOpts {
-                                    do_not_validate_type_of_computed_prop: true,
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    use_undefined_for_tuple_index_error: true,
-                                    ..Default::default()
-                                },
-                            )?;
-
-                            let r_elem_type = self.access_property(
-                                span,
-                                rhs,
-                                &Key::Num(RNumber {
-                                    span,
-                                    value: ri as _,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Type,
-                                AccessPropertyOpts {
-                                    do_not_validate_type_of_computed_prop: true,
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    use_undefined_for_tuple_index_error: true,
-                                    ..Default::default()
-                                },
-                            )?;
-
-                            errors.extend(
-                                self.assign_inner(
-                                    data,
-                                    &l_elem_type,
-                                    &r_elem_type,
-                                    AssignOpts {
-                                        allow_unknown_rhs: Some(true),
-                                        ..opts
-                                    },
-                                )
-                                .with_context(|| format!("tried to assign {}th tuple element\nli = {},ri = {}", index, li, ri))
-                                .err(),
-                            );
-                        }
-
-                        if !errors.is_empty() {
-                            return Err(ErrorKind::TupleAssignError { span, errors }.into());
-                        }
-
-                        return Ok(());
-                    }
-                    Type::Array(Array {
-                        elem_type: ref rhs_elem_type,
-                        ..
-                    }) => {
-                        if lhs_elems.len() != 1 {
-                            fail!();
-                        }
-
-                        match lhs_elems[0].ty.normalize() {
-                            Type::Rest(RestType { ty: l_ty, .. }) => {
-                                self.assign_inner(
-                                    data,
-                                    l_ty,
-                                    rhs_elem_type,
-                                    AssignOpts {
-                                        allow_unknown_rhs: Some(true),
-                                        ..opts
-                                    },
-                                )?;
-                            }
-                            _ => {
-                                fail!();
-                            }
-                        }
-                    }
-
-                    Type::Index(..)
-                    | Type::Lit(..)
-                    | Type::Interface(..)
-                    | Type::TypeLit(..)
-                    | Type::Keyword(..)
-                    | Type::Class(..)
-                    | Type::ClassDef(..)
-                        if !opts.allow_iterable_on_rhs =>
-                    {
-                        fail!()
-                    }
-
-                    _ => {
-                        // Try to assign by converting rhs to an iterable.
-                        if opts.allow_iterable_on_rhs {
-                            let r = self
-                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
-                                .context("tried to convert a type to an iterator to assign to a tuple")?;
-                            //
-                            for (i, elem) in lhs_elems.iter().enumerate() {
-                                let r_ty = self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&r), i)
-                                    .context("tried to get an element of type to assign to a tuple element")?
-                                    .freezed();
-
-                                self.assign_with_opts(
-                                    data,
-                                    &elem.ty,
-                                    &r_ty,
-                                    AssignOpts {
-                                        allow_iterable_on_rhs: false,
-                                        ..opts
-                                    },
-                                )?;
-                            }
-
-                            return Ok(());
-                        }
-                    }
+            Type::Tuple(l) => {
+                if let Some(()) = self
+                    .assign_to_tuple(data, l, to, rhs, opts)
+                    .context("tried to assign to a tuple type")?
+                {
+                    return Ok(());
                 }
             }
 
@@ -2764,6 +2590,54 @@ impl Analyzer<'_, '_> {
                     .context("tried to assign to a rest type")
             }
 
+            (Type::IndexedAccessType(..), _) | (_, Type::IndexedAccessType(..)) => {
+                fail!()
+            }
+
+            (Type::Function(..) | Type::Unique(..), Type::Lit(..)) => {
+                fail!()
+            }
+
+            (
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsObjectKeyword,
+                    ..
+                }),
+                Type::Array(..) | Type::Tuple(..),
+            ) => return Ok(()),
+
+            (
+                Type::Keyword(KeywordType {
+                    kind:
+                        TsKeywordTypeKind::TsStringKeyword
+                        | TsKeywordTypeKind::TsBigIntKeyword
+                        | TsKeywordTypeKind::TsNumberKeyword
+                        | TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
+                Type::Array(..) | Type::Tuple(..) | Type::Unique(..),
+            ) => fail!(),
+
+            (
+                Type::Optional(..),
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }),
+            ) => return Ok(()),
+
+            (Type::Optional(l_opt), _) => {
+                return self
+                    .assign_inner(data, &l_opt.ty.clone().union_with_undefined(span), rhs, opts)
+                    .context("tried to assign to an optional type")
+            }
+
+            (_, Type::Readonly(r_readonly)) => {
+                return self
+                    .assign_inner(data, to, &r_readonly.ty, opts)
+                    .context("tried to assign a readonly type to another type")
+            }
+
             (
                 _,
                 Type::Keyword(KeywordType {
@@ -2785,95 +2659,132 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only if `to` is not expandable.
-    fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
-        match r {
-            Type::Lit(LitType {
-                lit: RTsLit::Str(value), ..
-            }) => match to.kind {
-                IntrinsicKind::Uppercase => {
-                    if let Some(value) = &value.raw {
-                        if value.to_uppercase() != **value {
-                            return Err(ErrorKind::AssignFailed {
-                                span: r.span(),
-                                left: box Type::StringMapping(to.clone()),
-                                right_ident: None,
-                                right: box r.clone(),
-                                cause: vec![],
-                            }
-                            .into());
-                        }
-                    }
-                }
-                IntrinsicKind::Lowercase => {
-                    if let Some(value) = &value.raw {
-                        if value.to_lowercase() != **value {
-                            return Err(ErrorKind::AssignFailed {
-                                span: r.span(),
-                                left: box Type::StringMapping(to.clone()),
-                                right_ident: None,
-                                right: box r.clone(),
-                                cause: vec![],
-                            }
-                            .into());
-                        }
-                    }
-                }
-                IntrinsicKind::Capitalize => {
-                    if let Some(value) = &value.raw {
-                        let ch = value.chars().next();
-
-                        if let Some(ch) = ch {
-                            if !ch.is_uppercase() {
-                                return Err(ErrorKind::AssignFailed {
-                                    span: r.span(),
-                                    left: box Type::StringMapping(to.clone()),
-                                    right_ident: None,
-                                    right: box r.clone(),
-                                    cause: vec![],
-                                }
-                                .into());
-                            }
-                        }
-                    }
-                }
-                IntrinsicKind::Uncapitalize => {
-                    if let Some(value) = &value.raw {
-                        let ch = value.chars().next();
-
-                        if let Some(ch) = ch {
-                            if !ch.is_lowercase() {
-                                return Err(ErrorKind::AssignFailed {
-                                    span: r.span(),
-                                    left: box Type::StringMapping(to.clone()),
-                                    right_ident: None,
-                                    right: box r.clone(),
-                                    cause: vec![],
-                                }
-                                .into());
-                            }
-                        }
-                    }
-                }
-            },
-            Type::StringMapping(string) => {
-                if string.kind != to.kind {
-                    return Err(ErrorKind::AssignFailed {
-                        span: r.span(),
-                        left: box Type::StringMapping(to.clone()),
-                        right_ident: None,
-                        right: box r.clone(),
-                        cause: vec![],
-                    }
-                    .into());
-                }
-
+    pub(super) fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
+        match r.normalize() {
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                ..
+            })
+            | Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                ..
+            }) => {
                 return Ok(());
             }
-            Type::Tpl(tpl) => match to.kind {
-                IntrinsicKind::Uppercase => {
-                    let is_uppercase = tpl.quasis.iter().all(|s| s.value.chars().all(|c| c.is_uppercase()));
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            }) => {
+                if self.ctx.in_actual_type {
+                    return Ok(());
+                }
 
-                    if !is_uppercase {
+                // declare var x: Uppercase<string>
+                if let PatMode::Decl = self.ctx.pat_mode {
+                    if to.type_args.params[0].is_str() {
+                        return Ok(());
+                    }
+                }
+
+                if self.ctx.in_return_arg {
+                    if to.type_args.params[0].is_str_like() {
+                        return Ok(());
+                    }
+                }
+
+                let span = opts.span.or_else(|| to.span());
+
+                return Err(ErrorKind::AssignFailed {
+                    span,
+                    left: box Type::StringMapping(to.clone()),
+                    right_ident: None,
+                    right: box r.clone(),
+                    cause: vec![],
+                }
+                .into());
+            }
+
+            Type::Lit(LitType {
+                lit: RTsLit::Str(str_lit), ..
+            }) => {
+                let type_param = &to.type_args.params[0];
+
+                if self.ctx.in_actual_type {
+                    return Ok(());
+                }
+
+                match to.kind {
+                    IntrinsicKind::Uppercase => {
+                        if let Some(value) = &str_lit.raw {
+                            if value.to_uppercase() != **value {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: str_lit.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                    IntrinsicKind::Lowercase => {
+                        if let Some(value) = &str_lit.raw {
+                            if value.to_lowercase() != **value {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: str_lit.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                    IntrinsicKind::Capitalize => {
+                        if let Some(value) = &str_lit.raw {
+                            let ch = value.chars().next();
+
+                            if let Some(ch) = ch {
+                                if !ch.is_uppercase() {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: str_lit.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                    }
+                    IntrinsicKind::Uncapitalize => {
+                        if let Some(value) = &str_lit.raw {
+                            let ch = value.chars().next();
+
+                            if let Some(ch) = ch {
+                                if !ch.is_lowercase() {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: str_lit.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Type::Lit(lit_type) => {
+                let ty = match lit_type.lit {
+                    RTsLit::Number(..) | RTsLit::BigInt(..) => TsKeywordTypeKind::TsNumberKeyword,
+                    RTsLit::Bool(..) => TsKeywordTypeKind::TsBooleanKeyword,
+                    _ => {
                         return Err(ErrorKind::AssignFailed {
                             span: r.span(),
                             left: box Type::StringMapping(to.clone()),
@@ -2883,59 +2794,37 @@ impl Analyzer<'_, '_> {
                         }
                         .into());
                     }
+                };
 
+                return Err(ErrorKind::NotSatisfyConstraint {
+                    span: to.type_args.params[0].span(),
+                    left: box Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        span: to.span(),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                    right: box Type::Keyword(KeywordType {
+                        kind: ty,
+                        span: r.span(),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                }
+                .into());
+            }
+            Type::Union(ty) => {
+                // TODO: Maybe change when https://github.com/dudykr/stc/issues/795 is resolved
+                // This handles cases where one of the union elements is any
+                // ex: type A = Uppercase<any | 30> // no error
+                if ty.types.iter().any(|v| v.is_any()) {
                     return Ok(());
                 }
-                IntrinsicKind::Lowercase => {
-                    let is_lowercase = tpl.quasis.iter().all(|s| s.value.chars().all(|c| c.is_lowercase()));
 
-                    if !is_lowercase {
-                        return Err(ErrorKind::AssignFailed {
-                            span: r.span(),
-                            left: box Type::StringMapping(to.clone()),
-                            right_ident: None,
-                            right: box r.clone(),
-                            cause: vec![],
-                        }
-                        .into());
-                    }
-
+                if ty.types.iter().all(|v| v.is_str_like()) {
                     return Ok(());
                 }
-                IntrinsicKind::Capitalize => {
-                    if let Some(c) = tpl.quasis[0].value.chars().into_iter().next() {
-                        if c.is_uppercase() {
-                            return Ok(());
-                        }
-                    }
 
-                    return Err(ErrorKind::AssignFailed {
-                        span: r.span(),
-                        left: box Type::StringMapping(to.clone()),
-                        right_ident: None,
-                        right: box r.clone(),
-                        cause: vec![],
-                    }
-                    .into());
-                }
-                IntrinsicKind::Uncapitalize => {
-                    if let Some(c) = tpl.quasis[0].value.chars().into_iter().next() {
-                        if !c.is_uppercase() {
-                            return Ok(());
-                        }
-                    }
-
-                    return Err(ErrorKind::AssignFailed {
-                        span: r.span(),
-                        left: box Type::StringMapping(to.clone()),
-                        right_ident: None,
-                        right: box r.clone(),
-                        cause: vec![],
-                    }
-                    .into());
-                }
-            },
-            _ => {
                 return Err(ErrorKind::AssignFailed {
                     span: r.span(),
                     left: box Type::StringMapping(to.clone()),
@@ -2945,9 +2834,235 @@ impl Analyzer<'_, '_> {
                 }
                 .into());
             }
+            Type::StringMapping(string) => {
+                if self.ctx.in_actual_type {
+                    return Ok(());
+                }
+
+                if !self.ctx.in_declare && to.kind != string.kind {
+                    return Err(ErrorKind::AssignFailed {
+                        span: opts.span,
+                        left: box Type::StringMapping(to.clone()),
+                        right_ident: None,
+                        right: box r.clone(),
+                        cause: vec![],
+                    }
+                    .into());
+                }
+
+                let mut last_ty = &to.type_args.params[0];
+                let mut last_r_ty = &string.type_args.params[0];
+                loop {
+                    match (last_ty.normalize(), last_r_ty.normalize()) {
+                        (Type::StringMapping(l_map), Type::StringMapping(r_map)) => {
+                            last_ty = &l_map.type_args.params[0];
+                            last_r_ty = &r_map.type_args.params[0];
+                        }
+                        (Type::StringMapping(l_map), _) => {
+                            last_ty = &l_map.type_args.params[0];
+                        }
+                        (_, Type::StringMapping(r_map)) => {
+                            last_r_ty = &r_map.type_args.params[0];
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                }
+
+                // if lhs_param extends rhs_param (or both params) -> error
+                if let (Type::Param(l), Type::Param(rr)) = (last_ty, last_r_ty) {
+                    if let Some(constraint) = &rr.constraint {
+                        let Type::Param(param) = constraint.normalize() else {
+                            return Err(ErrorKind::AssignFailed {
+                                span: opts.span,
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        };
+                        if !param.type_eq(l) {
+                            return Err(ErrorKind::AssignFailed {
+                                span: opts.span,
+                                left: box Type::StringMapping(to.clone()),
+                                right_ident: None,
+                                right: box r.clone(),
+                                cause: vec![],
+                            }
+                            .into());
+                        }
+                    } else {
+                        return Err(ErrorKind::AssignFailed {
+                            span: opts.span,
+                            left: box Type::StringMapping(to.clone()),
+                            right_ident: None,
+                            right: box r.clone(),
+                            cause: vec![],
+                        }
+                        .into());
+                    }
+
+                    // if both params, but rhs_param extends lhs_param -> no error
+                    if let Some(constraint) = &l.constraint {
+                        if let Type::Param(param_l) = constraint.normalize() {
+                            if let Some(box Type::Param(param_r)) = &rr.constraint {
+                                if !param_l.type_eq(param_r) {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: opts.span,
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return Ok(());
+            }
+            Type::Tpl(tpl) => {
+                // Make sure all template-literal types are valid
+                // type X = { x: string }
+                // type A = Uppercase<`hello${X}`> // should error
+                for v in tpl.types.iter() {
+                    match v.normalize() {
+                        Type::Ref(ref_ty) => {
+                            if let Ok(ty) = &self.expand_top_ref(ref_ty.span, Cow::Borrowed(v), Default::default()) {
+                                if !(ty.is_any()
+                                    || ty.is_num_like()
+                                    || ty.is_bool_like()
+                                    || ty.is_str_like()
+                                    || ty.is_bigint_like()
+                                    || ty.is_null()
+                                    || ty.is_undefined())
+                                {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: ref_ty.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                        Type::Param(param) => {
+                            if let Some(constraint) = &param.constraint {
+                                let v = &**constraint;
+
+                                if !(v.is_any()
+                                    || v.is_num_like()
+                                    || v.is_bigint_like()
+                                    || v.is_bool_like()
+                                    || v.is_str_like()
+                                    || v.is_null()
+                                    || v.is_undefined())
+                                {
+                                    return Err(ErrorKind::AssignFailed {
+                                        span: to.span(),
+                                        left: box Type::StringMapping(to.clone()),
+                                        right_ident: None,
+                                        right: box r.clone(),
+                                        cause: vec![],
+                                    }
+                                    .into());
+                                }
+                            }
+                        }
+                        Type::Union(ty) => {
+                            if ty.types.iter().any(|v| v.is_any()) {
+                                return Ok(());
+                            }
+                            // type A = Uppercase<`aB${string | number}`> - valid
+                            // type A = Uppercase<`aB${string | { x: string }}`>; - invalid
+                            let is_valid_union = ty.types.iter().all(|v| {
+                                v.is_num_like()
+                                    || v.is_bigint_like()
+                                    || v.is_bool_like()
+                                    || v.is_str_like()
+                                    || v.is_null()
+                                    || v.is_undefined()
+                            });
+
+                            if !is_valid_union {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: ty.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                        _ => {
+                            if !(v.is_any()
+                                || v.is_num_like()
+                                || v.is_bigint_like()
+                                || v.is_bool_like()
+                                || v.is_str_like()
+                                || v.is_null()
+                                || v.is_undefined())
+                            {
+                                return Err(ErrorKind::AssignFailed {
+                                    span: to.span(),
+                                    left: box Type::StringMapping(to.clone()),
+                                    right_ident: None,
+                                    right: box r.clone(),
+                                    cause: vec![],
+                                }
+                                .into());
+                            }
+                        }
+                    }
+                }
+
+                return Ok(());
+            }
+
+            Type::Param(param) => {
+                if let Some(constraint) = &param.constraint {
+                    if constraint.is_union_type() || constraint.is_type_param() {
+                        return self.assign_to_intrinsic(data, to, constraint, opts);
+                    }
+
+                    if !constraint.is_str_like() && !constraint.is_never() {
+                        let span = to.type_args.span().or_else(|| to.span());
+
+                        return Err(ErrorKind::NotSatisfyConstraint {
+                            // This ideally should be to.type_args.params[0].span()
+                            // but that gives wrong span pos
+                            span,
+                            left: box Type::Keyword(KeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                span: to.span(),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }),
+                            right: constraint.clone(),
+                        }
+                        .into());
+                    }
+                }
+            }
+            _ => {
+                return Err(ErrorKind::AssignFailed {
+                    span: to.span(),
+                    left: box Type::StringMapping(to.clone()),
+                    right_ident: None,
+                    right: box r.clone(),
+                    cause: vec![],
+                }
+                .into());
+            }
         }
 
-        // dump_type_as_string(r));
         Ok(())
     }
 

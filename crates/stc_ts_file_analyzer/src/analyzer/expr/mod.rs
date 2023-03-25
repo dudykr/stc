@@ -22,9 +22,10 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam, Function, Id, Index, Instance,
-    Key, KeywordType, KeywordTypeMetadata, LitType, Method, Module, ModuleTypeData, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata, TypeParamInstantiation,
+    name::Name, replace::replace_type, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, ConstructorSignature, FnParam,
+    Function, Id, Index, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, Method, Module, ModuleTypeData, OptionalType,
+    PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
+    TypeParamInstantiation,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
 use swc_atoms::js_word;
@@ -120,6 +121,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+        }
+
+        if let Some(type_ann) = &type_ann {
+            type_ann.assert_clone_cheap();
         }
 
         let span = e.span();
@@ -270,7 +275,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    self.type_of_member_expr(expr, mode, true)
+                    self.type_of_member_expr(expr, mode, type_args, true)
                 }
 
                 RExpr::SuperProp(ref expr) => self.type_of_super_prop_expr(expr, mode),
@@ -423,7 +428,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         })
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (any_span, ty_of_left.as_ref())
                 }
@@ -431,7 +437,8 @@ impl Analyzer<'_, '_> {
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
                     ty_of_left = e
                         .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (None, ty_of_left.as_ref())
                 }
@@ -513,6 +520,8 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     *params = params[1..].to_vec();
+
+                                    ty.freeze();
                                 }
                             }
 
@@ -537,6 +546,8 @@ impl Analyzer<'_, '_> {
                                         ..params[0].clone()
                                     };
                                 }
+
+                                ty.freeze();
                             }
 
                             e.right
@@ -1062,9 +1073,7 @@ impl Analyzer<'_, '_> {
 
                     let index_ty = &params[0].ty;
 
-                    if (prop_is_num && index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
-                        || (prop_is_str && index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword))
-                    {
+                    if self.index_signature_matches(span, index_ty, &prop_ty)? {
                         if *readonly && type_mode == TypeOfMode::LValue {
                             return Err(ErrorKind::ReadOnly { span }.into());
                         }
@@ -1554,10 +1563,11 @@ impl Analyzer<'_, '_> {
             match &obj {
                 Type::This(..) | Type::StaticThis(..) if self.ctx.is_static() => {
                     // Handle static access to class itself while *declaring* the class.
-                    for (_, member) in self.scope.class_members() {
+                    #[allow(clippy::unnecessary_to_owned)]
+                    for (_, member) in self.scope.class_members().to_vec() {
                         match member {
                             ClassMember::Method(member @ Method { is_static: true, .. }) => {
-                                if member.key.type_eq(prop) {
+                                if self.key_matches(span, &member.key, prop, false) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
@@ -1570,7 +1580,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             ClassMember::Property(property) => {
-                                if property.key.type_eq(prop) {
+                                if self.key_matches(span, &property.key, prop, false) {
                                     return Ok(*property
                                         .value
                                         .clone()
@@ -1613,47 +1623,65 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
+                    // We are currently declaring a class.
+                    #[allow(clippy::unnecessary_to_owned)]
+                    for (_, member) in self.scope.class_members().to_vec() {
+                        match &member {
+                            // No-op, as constructor parameter properties are handled by
+                            // Validate<Class>.
+                            ClassMember::Constructor(_) => {}
+
+                            ClassMember::Method(member @ Method { is_static, .. }) => {
+                                if !is_static && self.key_matches(span, &member.key, prop, false) {
+                                    return Ok(Type::Function(ty::Function {
+                                        span: member.span,
+                                        type_params: member.type_params.clone(),
+                                        params: member.params.clone(),
+                                        ret_ty: member.ret_ty.clone(),
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }));
+                                }
+                            }
+
+                            ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
+                                if !is_static && self.key_matches(span, &member.key, prop, false) {
+                                    let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+
+                                    return Ok(ty);
+                                }
+                            }
+
+                            ClassMember::IndexSignature(index) => {
+                                if index.params.len() == 1 && !prop.is_private() {
+                                    // `[s: string]: boolean` can be indexed with a number.
+
+                                    let index_ty = &index.params[0].ty;
+
+                                    let prop_ty = prop.ty();
+
+                                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
+                                        || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
+
+                                    if indexed {
+                                        return Ok(index
+                                            .type_ann
+                                            .clone()
+                                            .map(|v| *v)
+                                            .unwrap_or_else(|| Type::any(span, Default::default())));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(super_class) = self.scope.get_super_class(false) {
+                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                            return Ok(v);
+                        }
+                    }
+
                     if !computed {
-                        // We are currently declaring a class.
-                        for (_, member) in self.scope.class_members() {
-                            match member {
-                                // No-op, as constructor parameter properties are handled by
-                                // Validate<Class>.
-                                ClassMember::Constructor(_) => {}
-
-                                ClassMember::Method(member @ Method { is_static, .. }) => {
-                                    if !is_static && member.key.type_eq(prop) {
-                                        return Ok(Type::Function(ty::Function {
-                                            span: member.span,
-                                            type_params: member.type_params.clone(),
-                                            params: member.params.clone(),
-                                            ret_ty: member.ret_ty.clone(),
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }));
-                                    }
-                                }
-
-                                ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
-                                    if !is_static && member.key.type_eq(prop) {
-                                        let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
-
-                                        return Ok(ty);
-                                    }
-                                }
-
-                                ClassMember::IndexSignature(_) => {
-                                    unimplemented!("class -> this.foo where an `IndexSignature` exists")
-                                }
-                            }
-                        }
-
-                        if let Some(super_class) = self.scope.get_super_class(false) {
-                            if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
-                                return Ok(v);
-                            }
-                        }
-
                         return Err(ErrorKind::NoSuchPropertyInClass {
                             span,
                             class_name: self.scope.get_this_class_name(),
@@ -1687,10 +1715,11 @@ impl Analyzer<'_, '_> {
 
                 Type::StaticThis(StaticThis { span, metadata, .. }) => {
                     // Handle static access to class itself while *declaring* the class.
-                    for (_, member) in self.scope.class_members() {
+                    #[allow(clippy::unnecessary_to_owned)]
+                    for (_, member) in self.scope.class_members().to_vec() {
                         match member {
                             ClassMember::Method(member @ Method { is_static: true, .. }) => {
-                                if member.key.type_eq(prop) {
+                                if self.key_matches(*span, &member.key, prop, false) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
@@ -1703,7 +1732,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             ClassMember::Property(property) => {
-                                if property.key.type_eq(prop) {
+                                if self.key_matches(*span, &property.key, prop, false) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
                                             *span,
@@ -2495,7 +2524,7 @@ impl Analyzer<'_, '_> {
             Type::Union(ty::Union { types, .. }) => {
                 debug_assert!(!types.is_empty());
 
-                let mut tys = vec![];
+                let mut result_types = vec![];
                 let mut errors = Vec::with_capacity(types.len());
 
                 let has_null = types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
@@ -2542,13 +2571,27 @@ impl Analyzer<'_, '_> {
                     ) {
                         Ok(ty) => {
                             if ty.is_union_type() {
-                                tys.extend(ty.expect_union_type().types);
+                                result_types.extend(ty.expect_union_type().types);
                             } else {
-                                tys.push(ty);
+                                result_types.push(ty);
                             }
                         }
                         Err(err) => errors.push(err),
                     }
+                }
+
+                // Support for declaration merging.
+                // TODO: We need to check if it's created from the declaration merging
+                if !result_types.is_empty()
+                    && !errors.is_empty()
+                    && types.iter().all(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Module(_) | Type::Enum(..) | Type::ClassDef(..) | Type::Namespace(..)
+                        )
+                    })
+                {
+                    errors.retain(|err| !err.is_property_not_found())
                 }
 
                 if type_mode == TypeOfMode::LValue {
@@ -2570,14 +2613,14 @@ impl Analyzer<'_, '_> {
                 } else {
                     if !errors.is_empty() {
                         if is_all_tuple && errors.len() != types.len() {
-                            tys.push(Type::Keyword(KeywordType {
+                            result_types.push(Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }));
-                            tys.dedup_type();
-                            let ty = Type::new_union(span, tys);
+                            result_types.dedup_type();
+                            let ty = Type::new_union(span, result_types);
                             ty.assert_valid();
                             return Ok(ty);
                         }
@@ -2591,10 +2634,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                tys.dedup_type();
+                result_types.dedup_type();
 
                 // TODO(kdy1): Validate that the ty has same type instead of returning union.
-                let ty = Type::new_union(span, tys);
+                let ty = Type::new_union(span, result_types);
                 ty.assert_valid();
                 return Ok(ty);
             }
@@ -3089,7 +3132,18 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         ) {
-                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())));
+                            let mut result_ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
+
+                            replace_type(
+                                &mut result_ty,
+                                |ty| match ty.normalize() {
+                                    Type::Param(ty) => ty.name == m.type_param.name,
+                                    _ => false,
+                                },
+                                |_| Some(index_type.clone()),
+                            );
+
+                            return Ok(result_ty);
                         }
                     }
                 }
@@ -3411,6 +3465,15 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("type_of_var");
 
         let span = i.span();
+
+        if i.sym == js_word!("this") {
+            return Ok(Type::This(ThisType {
+                span,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            }));
+        }
+
         let id: Id = i.into();
         let name: Name = i.into();
 
@@ -4055,7 +4118,7 @@ impl Analyzer<'_, '_> {
             }
             RExpr::OptChain(ROptChainExpr {
                 base:
-                    ROptChainBase::Member(RMemberExpr {
+                    box ROptChainBase::Member(RMemberExpr {
                         obj,
                         prop: RMemberProp::Ident(right),
                         ..
@@ -4093,6 +4156,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         expr: &RMemberExpr,
         type_mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
         include_optional_chaining_undefined: bool,
     ) -> VResult<Type> {
         let RMemberExpr {
@@ -4213,7 +4277,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = if computed {
+        let mut ty = if computed {
             ty
         } else {
             if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
@@ -4246,6 +4310,10 @@ impl Analyzer<'_, '_> {
 
             ty
         };
+
+        if let Some(type_args) = type_args {
+            ty = self.expand_generics_with_type_args(span, ty, type_args)?;
+        }
 
         if should_be_optional && include_optional_chaining_undefined {
             Ok(ty.union_with_undefined(span))

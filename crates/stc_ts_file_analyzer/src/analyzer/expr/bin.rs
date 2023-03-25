@@ -155,7 +155,7 @@ impl Analyzer<'_, '_> {
                             Some(ty) => Some(ty),
                             _ => match op {
                                 op!("||") | op!("??") => {
-                                    truthy_lt = lt.clone().map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty));
+                                    truthy_lt = lt.clone().map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty)).freezed();
                                     truthy_lt.as_ref()
                                 }
                                 _ => lt.as_ref(),
@@ -1154,7 +1154,7 @@ impl Analyzer<'_, '_> {
         fn non_undefined_names(e: &RExpr) -> Vec<Name> {
             match e {
                 RExpr::OptChain(ROptChainExpr {
-                    base: ROptChainBase::Member(me),
+                    base: box ROptChainBase::Member(me),
                     ..
                 }) => {
                     let mut names = non_undefined_names(&me.obj);

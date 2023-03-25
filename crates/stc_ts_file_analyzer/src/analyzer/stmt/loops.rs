@@ -6,11 +6,12 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Ref, RefMetadata, TypeParamInstantiation};
+use stc_ts_types::{Id, Index, KeywordType, KeywordTypeMetadata, Ref, RefMetadata, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
-use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, VarDeclKind};
+use tracing::error;
 
 use super::return_type::LoopBreakerFinder;
 use crate::{
@@ -42,7 +43,15 @@ impl Analyzer<'_, '_> {
         let mut last = false;
         let mut orig_vars = Some(self.scope.vars.clone());
 
+        let mut max = 10;
+
         loop {
+            max -= 1;
+            if max == 0 {
+                error!("Too many iterations");
+                break;
+            }
+
             let mut facts_from_body: CondFacts = self.with_child_with_hook(
                 ScopeKind::LoopBody { last },
                 prev_facts.clone(),
@@ -262,7 +271,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let s = Type::Keyword(KeywordType {
+        let string = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsStringKeyword,
             metadata: KeywordTypeMetadata {
@@ -271,8 +280,32 @@ impl Analyzer<'_, '_> {
             },
             tracker: Default::default(),
         });
+
+        // This is require to handle `(T & object) | (other & object)`.
+        if rhs.iter_union().flat_map(|ty| ty.iter_intersection()).any(|ty| ty.is_type_param()) {
+            return Ok(Type::Ref(Ref {
+                span,
+                type_name: RTsEntityName::Ident(RIdent::new("Extract".into(), span.with_ctxt(SyntaxContext::empty()))),
+                type_args: Some(box TypeParamInstantiation {
+                    span,
+                    params: vec![
+                        Type::Index(Index {
+                            span,
+                            ty: box rhs.into_owned(),
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                        string,
+                    ],
+                }),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            })
+            .freezed());
+        }
+
         if rhs.is_type_lit() {
-            return Ok(s);
+            return Ok(string);
         }
         let n = Type::Keyword(KeywordType {
             span: rhs.span(),
@@ -283,7 +316,7 @@ impl Analyzer<'_, '_> {
             },
             tracker: Default::default(),
         });
-        Ok(Type::new_union(span, vec![s, n]))
+        Ok(Type::new_union(span, vec![string, n]))
     }
 
     #[extra_validator]
@@ -365,7 +398,7 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 
                 ForHeadKind::Of { is_awaited: true } => child
-                    .get_async_iterator_element_type(rhs.span(), Cow::Owned(rty))
+                    .get_async_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
                     .context("tried to get element type of an async iterator")
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
@@ -403,15 +436,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
-        self.check_for_of_in_loop(
-            s.span,
-            &s.left,
-            &s.right,
-            ForHeadKind::Of {
-                is_awaited: s.await_token.is_some(),
-            },
-            &s.body,
-        );
+        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of { is_awaited: s.is_await }, &s.body);
 
         Ok(())
     }

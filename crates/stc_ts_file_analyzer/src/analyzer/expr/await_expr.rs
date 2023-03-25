@@ -52,7 +52,8 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
-            });
+            })
+            .freezed();
 
         self.with(|a: &mut Analyzer| -> VResult<_> {
             let mut arg_ty = e

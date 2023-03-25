@@ -9,16 +9,9 @@
     ],
     "TS2454": [
       3,
-      5
+      3
     ]
   },
-  "extra_errors": {
-    "TS2304": 2
-  },
-  "extra_error_lines": {
-    "TS2304": [
-      1,
-      2
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

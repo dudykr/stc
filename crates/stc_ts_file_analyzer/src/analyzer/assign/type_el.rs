@@ -9,8 +9,8 @@ use stc_ts_errors::{
 };
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassMember, Function, Index, Key, KeywordType, LitType, MethodSignature, PropertySignature, Ref, TplType, Tuple, Type,
-    TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
+    Array, Class, ClassMember, Function, Index, IndexedAccessType, Key, KeywordType, LitType, MethodSignature, PropertySignature, Ref,
+    TplType, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_atoms::js_word;
@@ -773,7 +773,12 @@ impl Analyzer<'_, '_> {
                         opts,
                     );
                 }
-
+                Type::IndexedAccessType(IndexedAccessType { obj_type, .. }) => {
+                    let ty = obj_type.normalize();
+                    return self
+                        .assign_to_type_elements(data, lhs_span, lhs, ty, lhs_metadata, opts)
+                        .context("tried to assign obj_type of indexed access type to type literals");
+                }
                 _ => {
                     return Err(ErrorKind::Unimplemented {
                         span,
@@ -1569,5 +1574,21 @@ impl Analyzer<'_, '_> {
         unhandled_rhs.clear();
 
         Ok(())
+    }
+
+    pub(crate) fn index_signature_matches(&mut self, span: Span, index_ty: &Type, prop_ty: &Type) -> VResult<bool> {
+        if (prop_ty.is_num() && index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+            || (prop_ty.is_str() && index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword))
+        {
+            return Ok(true);
+        }
+
+        if index_ty.is_str() {
+            if prop_ty.iter_union().any(|ty| ty.is_num()) && prop_ty.iter_union().any(|ty| ty.is_str()) {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
     }
 }

@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(value) = &p.value {
             if let Some(object_type) = object_type {
-                if let Ok(type_ann) = self.access_property(
+                if let Ok(mut type_ann) = self.access_property(
                     p.span,
                     object_type,
                     &key,
@@ -172,6 +172,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 ) {
+                    type_ann.freeze();
                     self.apply_type_ann_to_expr(value, &type_ann)?;
                 }
             }
@@ -516,45 +517,44 @@ impl Analyzer<'_, '_> {
         let key = c.key.validate_with(self).map(Key::Private)?;
         let key_span = key.span();
 
-        let (type_params, params, ret_ty) = self.with_child(
-            ScopeKind::Method { is_static: c.is_static },
-            Default::default(),
-            |child: &mut Analyzer| -> VResult<_> {
-                child.ctx.in_static_method = c.is_static;
+        let (type_params, params, ret_ty) =
+            self.with_child(
+                ScopeKind::Method { is_static: c.is_static },
+                Default::default(),
+                |child: &mut Analyzer| -> VResult<_> {
+                    child.ctx.in_static_method = c.is_static;
 
-                let type_params = try_opt!(c.function.type_params.validate_with(child));
-                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
-                }
+                    let type_params = try_opt!(c.function.type_params.validate_with(child));
+                    if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
+                        child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
+                    }
 
-                let params = c.function.params.validate_with(child)?;
+                    let params = c.function.params.validate_with(child)?;
 
-                let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+                    let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
 
-                let span = c.function.span;
-                let is_async = c.function.is_async;
-                let is_generator = c.function.is_generator;
+                    let span = c.function.span;
+                    let is_async = c.function.is_async;
+                    let is_generator = c.function.is_generator;
 
-                let inferred_ret_ty = match c
-                    .function
-                    .body
-                    .as_ref()
-                    .map(|bs| child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts))
-                {
-                    Some(Ok(ty)) => ty,
-                    Some(err) => err?,
-                    None => None,
-                };
+                    let inferred_ret_ty =
+                        match c.function.body.as_ref().map(|bs| {
+                            child.visit_stmts_for_return(span.with_ctxt(SyntaxContext::empty()), is_async, is_generator, &bs.stmts)
+                        }) {
+                            Some(Ok(ty)) => ty,
+                            Some(err) => err?,
+                            None => None,
+                        };
 
-                Ok((
-                    type_params,
-                    params,
-                    box declared_ret_ty
-                        .or(inferred_ret_ty)
-                        .unwrap_or_else(|| Type::any(key_span, Default::default())),
-                ))
-            },
-        )?;
+                    Ok((
+                        type_params,
+                        params,
+                        box declared_ret_ty
+                            .or(inferred_ret_ty)
+                            .unwrap_or_else(|| Type::any(key_span, Default::default())),
+                    ))
+                },
+            )?;
 
         match c.kind {
             MethodKind::Method => Ok(ClassMember::Method(Method {
@@ -633,110 +633,109 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
         let key_span = c.key.span();
 
-        let (params, type_params, declared_ret_ty, inferred_ret_ty) = self.with_child(
-            ScopeKind::Method { is_static: c.is_static },
-            Default::default(),
-            |child: &mut Analyzer| -> VResult<_> {
-                child.ctx.in_declare |= c.function.body.is_none();
-                child.ctx.in_async = c.function.is_async;
-                child.ctx.in_generator = c.function.is_generator;
-                child.ctx.in_static_method = c.is_static;
-                child.ctx.is_fn_param = true;
+        let (params, type_params, declared_ret_ty, inferred_ret_ty) =
+            self.with_child(
+                ScopeKind::Method { is_static: c.is_static },
+                Default::default(),
+                |child: &mut Analyzer| -> VResult<_> {
+                    child.ctx.in_declare |= c.function.body.is_none();
+                    child.ctx.in_async = c.function.is_async;
+                    child.ctx.in_generator = c.function.is_generator;
+                    child.ctx.in_static_method = c.is_static;
+                    child.ctx.is_fn_param = true;
 
-                child.scope.declaring_prop = match &key {
-                    Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
-                    _ => None,
-                };
+                    child.scope.declaring_prop = match &key {
+                        Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
+                        _ => None,
+                    };
 
-                {
-                    // It's error if abstract method has a body
+                    {
+                        // It's error if abstract method has a body
 
-                    if c.is_abstract && c.function.body.is_some() {
-                        child.storage.report(ErrorKind::TS1318 { span: key_span }.into());
+                        if c.is_abstract && c.function.body.is_some() {
+                            child.storage.report(ErrorKind::TS1318 { span: key_span }.into());
+                        }
                     }
-                }
 
-                {
-                    // Validate params
-                    // TODO(kdy1): Move this to parser
-                    let mut has_optional = false;
-                    for p in &c.function.params {
-                        if has_optional {
-                            match p.pat {
-                                RPat::Ident(RBindingIdent {
-                                    id: RIdent { optional: true, .. },
-                                    ..
-                                })
-                                | RPat::Rest(..) => {}
-                                _ => {
-                                    child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
+                    {
+                        // Validate params
+                        // TODO(kdy1): Move this to parser
+                        let mut has_optional = false;
+                        for p in &c.function.params {
+                            if has_optional {
+                                match p.pat {
+                                    RPat::Ident(RBindingIdent {
+                                        id: RIdent { optional: true, .. },
+                                        ..
+                                    })
+                                    | RPat::Rest(..) => {}
+                                    _ => {
+                                        child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
+                                    }
+                                }
+                            }
+
+                            if let RPat::Ident(RBindingIdent {
+                                id: RIdent { optional, .. },
+                                ..
+                            }) = p.pat
+                            {
+                                if optional {
+                                    has_optional = true;
                                 }
                             }
                         }
-
-                        if let RPat::Ident(RBindingIdent {
-                            id: RIdent { optional, .. },
-                            ..
-                        }) = p.pat
-                        {
-                            if optional {
-                                has_optional = true;
-                            }
-                        }
                     }
-                }
 
-                let type_params = try_opt!(c.function.type_params.validate_with(child));
-                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
-                }
+                    let type_params = try_opt!(c.function.type_params.validate_with(child));
+                    if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
+                        child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
+                    }
 
-                let params = {
-                    let prev_len = child.scope.declaring_parameters.len();
-                    let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
-                    child.scope.declaring_parameters.extend(ids);
+                    let params = {
+                        let prev_len = child.scope.declaring_parameters.len();
+                        let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
+                        child.scope.declaring_parameters.extend(ids);
 
-                    let res = c.function.params.validate_with(child);
+                        let res = c.function.params.validate_with(child);
 
-                    child.scope.declaring_parameters.truncate(prev_len);
+                        child.scope.declaring_parameters.truncate(prev_len);
 
-                    res?
-                };
-                child.ctx.is_fn_param = false;
+                        res?
+                    };
+                    child.ctx.is_fn_param = false;
 
-                // c.function.visit_children_with(child);
+                    // c.function.visit_children_with(child);
 
-                // if child.ctx.in_declare && c.function.body.is_some() {
-                //     child.storage.report(Error::TS1183 { span: key_span })
-                // }
+                    // if child.ctx.in_declare && c.function.body.is_some() {
+                    //     child.storage.report(Error::TS1183 { span: key_span })
+                    // }
 
-                if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.storage.report(ErrorKind::TS1095 { span: key_span }.into())
-                }
+                    if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
+                        child.storage.report(ErrorKind::TS1095 { span: key_span }.into())
+                    }
 
-                let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
-                let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
-                child.scope.declared_return_type = declared_ret_ty.clone();
+                    let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+                    let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
+                    child.scope.declared_return_type = declared_ret_ty.clone();
 
-                let span = c.function.span;
-                let is_async = c.function.is_async;
-                let is_generator = c.function.is_generator;
+                    let span = c.function.span;
+                    let is_async = c.function.is_async;
+                    let is_generator = c.function.is_generator;
 
-                child.ctx.in_class_member = true;
-                let inferred_ret_ty = match c
-                    .function
-                    .body
-                    .as_ref()
-                    .map(|bs| child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts))
-                {
-                    Some(Ok(ty)) => ty,
-                    Some(err) => err?,
-                    None => None,
-                };
+                    child.ctx.in_class_member = true;
+                    let inferred_ret_ty =
+                        match c.function.body.as_ref().map(|bs| {
+                            child.visit_stmts_for_return(span.with_ctxt(SyntaxContext::empty()), is_async, is_generator, &bs.stmts)
+                        }) {
+                            Some(Ok(ty)) => ty,
+                            Some(err) => err?,
+                            None => None,
+                        };
 
-                Ok((params, type_params, declared_ret_ty, inferred_ret_ty))
-            },
-        )?;
+                    Ok((params, type_params, declared_ret_ty, inferred_ret_ty))
+                },
+            )?;
 
         if c.kind == MethodKind::Getter && c.function.body.is_some() {
             // Inferred return type.
@@ -852,6 +851,13 @@ impl Analyzer<'_, '_> {
             }
             RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
+            RClassMember::AutoAccessor(auto) => {
+                return Err(ErrorKind::Unimplemented {
+                    span: auto.span,
+                    msg: "auto accessor".into(),
+                }
+                .into())
+            }
         })
     }
 }
@@ -1359,6 +1365,7 @@ impl Analyzer<'_, '_> {
                 let parent = self
                     .type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?
                     .freezed();
+                let parent = self.instantiate_class(parent.span(), &parent)?;
 
                 self.assign_with_opts(
                     &mut Default::default(),
@@ -1791,6 +1798,16 @@ impl Analyzer<'_, '_> {
             let body = {
                 let mut declared_static_keys = vec![];
                 let mut declared_instance_keys = vec![];
+
+                // Handle static properties
+                for (index, node) in c.body.iter().enumerate() {
+                    if let RClassMember::TsIndexSignature(..) = node {
+                        let m = node.validate_with_args(child, type_ann)?;
+                        if let Some(member) = m {
+                            child.scope.this_class_members.push((index, member));
+                        }
+                    }
+                }
 
                 // Handle static properties
                 for (index, node) in c.body.iter().enumerate() {

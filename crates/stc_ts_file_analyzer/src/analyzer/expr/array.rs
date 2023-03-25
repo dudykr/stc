@@ -13,6 +13,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::Freeze,
+    dev_span,
     ext::{SpanExt, TypeVecExt},
 };
 use swc_atoms::js_word;
@@ -75,7 +76,8 @@ impl Analyzer<'_, '_> {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let elem_type_ann = iterator
                         .as_deref()
-                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
+                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok())
+                        .freezed();
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match ty.normalize() {
@@ -408,7 +410,46 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty))
     }
 
-    pub(crate) fn get_async_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
+    fn try_next_method_of_iterator(&mut self, span: Span, iterator: &Type, awaited: bool) -> VResult<Type> {
+        let _tracing = dev_span!("try_next_method_of_iterator");
+
+        let mut item = self
+            .call_property(
+                span,
+                ExtractKind::Call,
+                ReEvalMode::NoReEval,
+                iterator,
+                iterator,
+                &Key::Normal { span, sym: "next".into() },
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                CallOpts { ..Default::default() },
+            )
+            .context("tried to get the type of `next` of an iterator")?;
+
+        if awaited {
+            item = self
+                .get_awaited_type(span, Cow::Owned(item), false)
+                .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?
+                .into_owned()
+        }
+
+        let elem_ty = self
+            .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
+            .context("tried to get element type of an async iterator")?;
+
+        Ok(elem_ty.into_owned())
+    }
+
+    pub(crate) fn get_async_iterator_element_type<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+        try_next_method: bool,
+    ) -> VResult<Cow<'a, Type>> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
@@ -420,6 +461,10 @@ impl Analyzer<'_, '_> {
         if !self.data.checked_for_async_iterator {
             self.data.checked_for_async_iterator = true;
             self.env.get_global_type(span, &"AsyncIterator".into()).report(&mut self.storage);
+        }
+
+        if let Ok(item) = self.try_next_method_of_iterator(span, &ty, true) {
+            return Ok(Cow::Owned(item));
         }
 
         let async_iterator = self
@@ -453,32 +498,7 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned);
 
         if let Ok(async_iterator) = async_iterator {
-            let item_promise = self
-                .call_property(
-                    span,
-                    ExtractKind::Call,
-                    ReEvalMode::NoReEval,
-                    &async_iterator,
-                    &async_iterator,
-                    &Key::Normal { span, sym: "next".into() },
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                    Default::default(),
-                    CallOpts { ..Default::default() },
-                )
-                .context("tried to get the type of `next` of an async iterator")?;
-
-            let item = self
-                .get_awaited_type(span, Cow::Owned(item_promise), false)
-                .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
-
-            let elem_ty = self
-                .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
-                .context("tried to get element type of an async iterator")?;
-
-            return Ok(Cow::Owned(elem_ty.into_owned()));
+            return Ok(Cow::Owned(self.try_next_method_of_iterator(span, &async_iterator, true)?));
         }
 
         let elem_ty = self

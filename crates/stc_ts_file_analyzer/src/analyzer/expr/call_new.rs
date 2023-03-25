@@ -153,6 +153,12 @@ impl Analyzer<'_, '_> {
                 let dep_id = self.loader.module_id(&base, &src);
 
                 if let Some(dep_id) = dep_id {
+                    // We need to update the import map because of code like
+                    //
+                    // declare function bar(): boolean;
+                    // const specify = bar() ? "./0" : undefined;
+                    // let myModule = import(specify);
+
                     if let Some(dep) = self.data.imports.get(&(self.ctx.module_id, dep_id)) {
                         return Ok(Type::Ref(Ref {
                             span,
@@ -165,7 +171,9 @@ impl Analyzer<'_, '_> {
                             tracker: Default::default(),
                         }));
                     } else {
-                        return Err(ErrorKind::ModuleNotFound { span: callee.span }.into());
+                        return self
+                            .load_import_lazily(span, &base, dep_id, &src)
+                            .context("tried to load a dynamic import lazily");
                     }
                 }
 
@@ -1120,12 +1128,12 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn check_type_element_for_call<'a>(
+    fn check_type_element_for_call(
         &mut self,
         span: Span,
         kind: ExtractKind,
         candidates: &mut Vec<CallCandidate>,
-        m: &'a TypeElement,
+        m: &TypeElement,
         prop: &Key,
         opts: CallOpts,
     ) {
@@ -1378,7 +1386,7 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) | Type::Instance(..) => {
-                let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+                let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
                 return self.extract(span, expr, &ty, kind, args, arg_types, spread_arg_types, type_args, type_ann, opts);
             }
 
@@ -3652,6 +3660,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn apply_type_ann_to_expr(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
+        type_ann.assert_clone_cheap();
+
         match arg {
             RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {

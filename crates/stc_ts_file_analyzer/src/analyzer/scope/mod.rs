@@ -2069,11 +2069,7 @@ impl Expander<'_, '_, '_> {
                 }
 
                 if let Some(types) = self.analyzer.find_type(&i.into())? {
-                    info!(
-                        "expand: expanding `{}` using analyzer: {}",
-                        Id::from(i),
-                        types.clone().into_iter().count()
-                    );
+                    info!("expand: expanding `{}` using analyzer: {}", Id::from(i), types.clone().count());
 
                     let mut stored_ref = None;
 
@@ -2138,12 +2134,15 @@ impl Expander<'_, '_, '_> {
                                         &type_params.params,
                                         &[],
                                         &[],
-                                        Some(&Type::TypeLit(TypeLit {
-                                            span,
-                                            members: vec![],
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        })),
+                                        Some(
+                                            &Type::TypeLit(TypeLit {
+                                                span,
+                                                members: vec![],
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })
+                                            .freezed(),
+                                        ),
                                         None,
                                         None,
                                         InferTypeOpts { ..Default::default() },

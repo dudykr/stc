@@ -1,33 +1,19 @@
 {
-  "required_errors": {
-    "TS2695": 3
-  },
-  "required_error_lines": {
-    "TS2695": [
-      22,
-      29,
-      42
-    ]
-  },
+  "required_errors": {},
+  "required_error_lines": {},
   "extra_errors": {
-    "TS2695": 3,
     "TS2304": 8
   },
   "extra_error_lines": {
-    "TS2695": [
-      19,
-      23,
-      39
-    ],
     "TS2304": [
-      23,
-      23,
-      26,
-      26,
-      33,
-      33,
-      39,
-      39
+      22,
+      22,
+      25,
+      25,
+      32,
+      32,
+      38,
+      38
     ]
   }
 }

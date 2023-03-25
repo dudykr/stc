@@ -304,6 +304,8 @@ struct AnalyzerData {
 
     /// Used to check mixed default exports.
     merged_default_exports: AHashSet<Id>,
+
+    jsx_prop_name: Option<Option<JsWord>>,
 }
 
 /// Configuration for the analyzer.
@@ -1014,6 +1016,10 @@ impl Analyzer<'_, '_> {
                     RTsModuleName::Ident(i) => Some(i.into()),
                     RTsModuleName::Str(_) => None,
                 };
+
+                if decl.body.is_none() {
+                    return Ok(Some(Type::any(span, Default::default())));
+                }
 
                 decl.visit_children_with(child);
 

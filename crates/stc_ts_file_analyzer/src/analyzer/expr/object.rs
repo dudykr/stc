@@ -112,6 +112,10 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         let _tracing = dev_span!("append_prop_or_spread_to_type");
 
+        if let Some(object_type) = object_type {
+            object_type.assert_clone_cheap();
+        }
+
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();

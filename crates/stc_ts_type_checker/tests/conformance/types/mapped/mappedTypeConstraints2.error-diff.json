@@ -8,14 +8,6 @@
       20
     ]
   },
-  "extra_errors": {
-    "TS0": 3
-  },
-  "extra_error_lines": {
-    "TS0": [
-      8,
-      14,
-      20
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

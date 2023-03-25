@@ -45,7 +45,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > keyof T
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:8:1]
@@ -56,7 +56,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[keyof T]
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]
@@ -67,7 +67,7 @@ Error:
     `----
 
 Error: 
-  > T[P]
+  > T[keyof T]
 
   x Type
     ,-[$DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:1]

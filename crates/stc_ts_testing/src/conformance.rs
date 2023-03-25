@@ -57,6 +57,7 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
             // https://github.com/microsoft/TypeScript/blob/71b2ba6111e934f2b4ee112bc4d8d2f47ced22f5/src/testRunner/compilerRunner.ts#L118-L148
             if let "filename" = &*meta_data_name {
                 if !sub_filename.is_empty() {
+                    buf = buf.trim().to_string();
                     files.push((sub_filename, take(&mut buf)));
                 }
 
@@ -68,6 +69,7 @@ fn parse_sub_files(source: &str) -> Vec<(String, String)> {
         }
     }
     if !sub_filename.is_empty() {
+        buf = buf.trim().to_string();
         files.push((sub_filename, buf));
     }
 
@@ -81,6 +83,8 @@ pub fn parse_conformance_test(file_name: &Path) -> Result<Vec<TestSpec>> {
 
     let fname = file_name.to_string_lossy();
     ::testing::run_test(false, |cm, handler| {
+        let _tracing = tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default());
+
         let fm = cm.load_file(file_name).expect("failed to read file");
 
         let sub_files = Arc::new(parse_sub_files(&fm.src));
@@ -261,6 +265,11 @@ pub fn parse_conformance_test(file_name: &Path) -> Result<Vec<TestSpec>> {
         libs.sort();
 
         err_shift_n = err_shift_n.min(first_stmt_line);
+
+        if !sub_files.is_empty() {
+            err_shift_n = 0;
+        }
+
         dbg!(err_shift_n);
 
         if targets.len() > 1 {
