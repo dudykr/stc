@@ -18,8 +18,10 @@ async function arrayFromGenerator<T>(gen: AsyncIterable<T>): Promise<T[]> {
 }
 
 async function main() {
-    const files = [...await arrayFromGenerator(walk('./tests/pass-only/')), ...await arrayFromGenerator(walk('./tests/tsc/'))
-    ];
+    const files = [
+        ...await arrayFromGenerator(walk('./tests/pass-only/')),
+        ...await arrayFromGenerator(walk('./tests/tsc/'))
+    ].filter(filepath => path.basename(filepath).startsWith('.'));
 
     console.log(files);
 }
