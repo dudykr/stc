@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
                             if !ty_args.params.is_empty() {
                                 if let RTsEntityName::Ident(id) = &ref_ty.type_name {
                                     if let Ok(Some(ty)) = &self.find_type(&id.into()) {
-                                        let ty_found = &ty.clone().into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
+                                        let ty_found = &ty.clone().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
 
                                         if !ty_found.span().is_dummy() && ty_found.get_type_param_decl().is_none() {
                                             self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
