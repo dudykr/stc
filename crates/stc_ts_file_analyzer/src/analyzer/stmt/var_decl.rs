@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                                 if creates_new_this {
                                     self.scope.this = old_this;
                                 }
-                                ty
+                                ty.freezed()
                             }
                             Err(err) => {
                                 if creates_new_this {
