@@ -83,11 +83,14 @@ async function main() {
             const body = `
                 
     
----
-
-Related test: https://github.com/dudykr/stc/blob/main/crates/stc_ts_file_analyzer/${file}
+Related test input: https://github.com/dudykr/stc/blob/main/crates/stc_ts_file_analyzer/${file}
 
 ${needle}
+
+---
+
+I (\`@kdy1\`) may expand this in the future.
+If you want to work on this issue, please ping \`@kdy1\` in the comment.
 
 ---
 
