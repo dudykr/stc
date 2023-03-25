@@ -1,5 +1,3 @@
-conformance/moduleResolution/scopedPackagesClassic.ts
-conformance/moduleResolution/scopedPackages.ts
 conformance/types/specifyingTypes/typeQueries/typeofThisWithImplicitThis.ts
 conformance/types/literal/literalTypeWidening.ts
 conformance/types/tuple/arityAndOrderCompatibility01.ts
