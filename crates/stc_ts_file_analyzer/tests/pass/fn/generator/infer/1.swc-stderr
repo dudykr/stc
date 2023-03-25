@@ -108,4 +108,4 @@ Error:
    `----
 
 Error: 
-  > () => Generator<(x: string) => number, void, unknown>
+  > () => Generator<((x: string) => number | void), void, unknown>
