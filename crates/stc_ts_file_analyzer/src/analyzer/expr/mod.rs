@@ -123,6 +123,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if let Some(type_ann) = &type_ann {
+            type_ann.assert_clone_cheap();
+        }
+
         let span = e.span();
         let need_type_param_handling = match e {
             RExpr::Member(..) => true,
@@ -424,7 +428,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         })
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (any_span, ty_of_left.as_ref())
                 }
@@ -432,7 +437,8 @@ impl Analyzer<'_, '_> {
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
                     ty_of_left = e
                         .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (None, ty_of_left.as_ref())
                 }
@@ -514,6 +520,8 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     *params = params[1..].to_vec();
+
+                                    ty.freeze();
                                 }
                             }
 
@@ -538,6 +546,8 @@ impl Analyzer<'_, '_> {
                                         ..params[0].clone()
                                     };
                                 }
+
+                                ty.freeze();
                             }
 
                             e.right

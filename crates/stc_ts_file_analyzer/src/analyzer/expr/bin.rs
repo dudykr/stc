@@ -155,7 +155,7 @@ impl Analyzer<'_, '_> {
                             Some(ty) => Some(ty),
                             _ => match op {
                                 op!("||") | op!("??") => {
-                                    truthy_lt = lt.clone().map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty));
+                                    truthy_lt = lt.clone().map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty)).freezed();
                                     truthy_lt.as_ref()
                                 }
                                 _ => lt.as_ref(),

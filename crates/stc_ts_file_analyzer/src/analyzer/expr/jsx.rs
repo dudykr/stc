@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
                                     Default::default(),
                                 );
 
-                                let type_ann = res.ok();
+                                let type_ann = res.ok().freezed();
 
                                 v.validate_with_args(self, type_ann.as_ref())?
                             }

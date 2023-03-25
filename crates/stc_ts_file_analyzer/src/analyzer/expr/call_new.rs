@@ -3660,6 +3660,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn apply_type_ann_to_expr(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
+        type_ann.assert_clone_cheap();
+
         match arg {
             RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {

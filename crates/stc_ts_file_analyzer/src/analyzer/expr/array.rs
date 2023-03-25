@@ -76,7 +76,8 @@ impl Analyzer<'_, '_> {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let elem_type_ann = iterator
                         .as_deref()
-                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
+                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok())
+                        .freezed();
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match ty.normalize() {

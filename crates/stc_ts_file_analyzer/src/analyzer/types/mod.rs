@@ -1417,7 +1417,7 @@ impl Analyzer<'_, '_> {
         };
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
+        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.freezed();
 
         Ok(Some(ty))
     }
