@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
+use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam, TypeParamDecl};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
 use tracing::info;
@@ -114,18 +114,50 @@ impl Analyzer<'_, '_> {
                                 }),
                             );
                         }
+                    } else {
+                        for (idx, b_tp) in b_tps.params.iter().enumerate() {
+                            type_params.insert(
+                                b_tp.name.clone(),
+                                Type::Param(TypeParam {
+                                    span: b_tps.span,
+                                    name: b_tps.params[idx].name.clone(),
+                                    constraint: None,
+                                    default: None,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            );
+                        }
                     }
                 }
-                let b = self.expand_type_params(&type_params, b, Default::default())?.freezed();
+                let b_ty = self.expand_type_params(&type_params, b, Default::default())?.freezed();
 
                 let mut new_members = a.body.clone();
 
-                // Convert to a type literal first.
                 if let Some(b) = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&b_ty))
                     .context("tried to convert an interface to a type literal")?
                 {
                     new_members.extend(b.into_owned().members);
+
+                    if a.type_params.is_none() {
+                        let params = type_params
+                            .values()
+                            .map(|v| v.clone().type_param().unwrap())
+                            .collect::<Vec<TypeParam>>();
+
+                        if !params.is_empty() {
+                            return Ok(Some(Type::Interface(Interface {
+                                body: new_members,
+                                type_params: Some(box TypeParamDecl {
+                                    span: b_ty.clone().span(),
+                                    params,
+                                    tracker: Default::default(),
+                                }),
+                                ..a.clone()
+                            })));
+                        }
+                    }
 
                     return Ok(Some(Type::Interface(Interface {
                         body: new_members,
