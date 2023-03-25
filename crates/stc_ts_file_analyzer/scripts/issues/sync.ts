@@ -45,11 +45,13 @@ const fetchAllIssue = async () => {
             state: 'open',
         });
 
+
+        all.push(...issues.data);
+
         if (issues.data.length < 100) {
             break;
         }
 
-        all.push(...issues.data);
     }
 
     return all
