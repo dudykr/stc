@@ -89,10 +89,7 @@ conformance/types/import/importTypeAmbient.ts
 conformance/types/import/importTypeGenericTypes.ts
 conformance/types/import/importTypeLocal.ts
 conformance/types/keyof/keyofAndIndexedAccess.ts
-conformance/types/literal/literalTypeWidening.ts
 conformance/types/mapped/isomorphicMappedTypeInference.ts
-conformance/types/primitives/number/assignFromNumberInterface2.ts
-conformance/types/primitives/string/assignFromStringInterface2.ts
 conformance/types/specifyingTypes/typeQueries/typeofThisWithImplicitThis.ts
 conformance/types/tuple/arityAndOrderCompatibility01.ts
 conformance/types/tuple/named/namedTupleMembers.ts
