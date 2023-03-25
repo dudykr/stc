@@ -521,6 +521,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     *params = params[1..].to_vec();
                                 }
+                                ty.freeze();
                             }
 
                             e.right
