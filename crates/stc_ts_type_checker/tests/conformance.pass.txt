@@ -1886,6 +1886,8 @@ parser/ecmascript5/Generics/parserGenericConstraint5.ts
 parser/ecmascript5/Generics/parserGenericConstraint6.ts
 parser/ecmascript5/Generics/parserGenericConstraint7.ts
 parser/ecmascript5/Generics/parserGenericsInInterfaceDeclaration1.ts
+parser/ecmascript5/Generics/parserGenericsInTypeContexts1.ts
+parser/ecmascript5/Generics/parserGenericsInTypeContexts2.ts
 parser/ecmascript5/Generics/parserGenericsInVariableDeclaration1.ts
 parser/ecmascript5/Generics/parserGreaterThanTokenAmbiguity1.ts
 parser/ecmascript5/Generics/parserGreaterThanTokenAmbiguity10.ts

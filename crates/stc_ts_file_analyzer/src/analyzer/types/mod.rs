@@ -159,17 +159,15 @@ impl Analyzer<'_, '_> {
                                     if let Ok(Some(ty)) = &self.find_type(&id.into()) {
                                         let ty_found = &ty.clone().into_iter().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
 
-                                        if let Type::Alias(alias) = ty_found.normalize() {
-                                            if alias.type_params.is_none() {
-                                                self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
+                                        if !ty_found.span().is_dummy() && ty_found.get_type_param_decl().is_none() {
+                                            self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
 
-                                                return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                                                    span: span.unwrap_or_else(|| ref_ty.span()),
-                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                })));
-                                            }
+                                            return Ok(Cow::Owned(Type::Keyword(KeywordType {
+                                                span: span.unwrap_or_else(|| ref_ty.span()),
+                                                kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })));
                                         }
                                     }
                                 }
