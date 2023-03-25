@@ -353,11 +353,7 @@ fn pass(file_name: PathBuf) {
 
 #[fixture("tests/pass-only/**/*.ts")]
 fn pass_only(input: PathBuf) {
-    {
-        let _guard = tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default());
-        let types = run_test(input.clone(), false, true).unwrap();
-        println!("Types:\n{}", types);
-    }
+    run_test(input.clone(), false, true).unwrap();
 
     for case in parse_conformance_test(&input).unwrap() {
         testing::run_test2(false, |cm, handler| {
