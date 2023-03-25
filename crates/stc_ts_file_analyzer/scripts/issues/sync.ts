@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import 'dotenv'
 
 async function* walk(dir: string): AsyncGenerator<string> {
     for await (const d of await fs.promises.opendir(dir)) {
