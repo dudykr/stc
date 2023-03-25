@@ -53,3 +53,5 @@ tmp.txt
 *.dot
 # Used by stc
 .stc/
+# Used by scripts
+.env
