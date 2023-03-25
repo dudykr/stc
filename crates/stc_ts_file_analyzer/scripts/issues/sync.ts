@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
-import 'dotenv'
+import * as dotenv from 'dotenv'
+import { Octokit, App } from "octokit";
 
 async function* walk(dir: string): AsyncGenerator<string> {
     for await (const d of await fs.promises.opendir(dir)) {
@@ -17,6 +18,12 @@ async function arrayFromGenerator<T>(gen: AsyncIterable<T>): Promise<T[]> {
     }
     return out
 }
+
+dotenv.config()
+
+if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN not set');
+
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
 async function main() {
     const files = [
