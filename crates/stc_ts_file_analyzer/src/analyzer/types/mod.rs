@@ -1092,7 +1092,7 @@ impl Analyzer<'_, '_> {
                         let result =
                             self.normalize_intersection_types(span, &[other.to_owned(), *another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
-                            // We should perserve `T & {}`
+                            // We should preserve `T & {}`
 
                             if match other.normalize() {
                                 Type::TypeLit(ty) => ty.members.is_empty(),
