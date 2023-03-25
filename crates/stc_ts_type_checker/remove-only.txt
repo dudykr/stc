@@ -13,9 +13,6 @@ conformance/types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 conformance/types/uniqueSymbol/uniqueSymbols.ts
 conformance/types/typeRelationships/typeInference/unionTypeInference.ts
 conformance/types/primitives/string/assignFromStringInterface2.ts
-conformance/types/import/importTypeLocal.ts
-conformance/types/import/importTypeGenericTypes.ts
-conformance/types/import/importTypeAmbient.ts
 conformance/types/keyof/keyofAndIndexedAccess.ts
 conformance/types/mapped/isomorphicMappedTypeInference.ts
 conformance/declarationEmit/typePredicates/declarationEmitThisPredicates01.ts
