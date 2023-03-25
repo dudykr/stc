@@ -75,6 +75,8 @@ async function main() {
         console.group(`Syncing ${file}`)
 
         try {
+            const needle = `Test file name: \`${file}\``;
+
             const title = `Fix unit test:  \`${file}\``;
             const prevIssue = allIssues.find(issue => issue.title.includes(file));
 
@@ -84,6 +86,8 @@ async function main() {
 ---
 
 Related test: https://github.com/dudykr/stc/blob/main/crates/stc_ts_file_analyzer/${file}
+
+${needle}
 
 ---
 
