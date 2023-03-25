@@ -89,6 +89,7 @@ async function main() {
                     issue_number: prevIssue.number,
                     title: `Fix unit test for ${file}`,
                     body,
+                    labels: ['tsc-unit-test']
                 })
             }
         } else {
@@ -97,6 +98,7 @@ async function main() {
                 repo: 'stc',
                 title: `Fix unit test for ${file}`,
                 body,
+                labels: ['tsc-unit-test']
             })
         }
 
