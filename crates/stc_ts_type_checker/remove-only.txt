@@ -12,7 +12,6 @@ conformance/classes/members/privateNames/privateNameStaticFieldClassExpression.t
 conformance/classes/members/privateNames/privateNameStaticFieldDestructuredBinding.ts
 conformance/classes/members/privateNames/privateNameWhenNotUseDefineForClassFieldsInEsNext.ts
 conformance/classes/members/privateNames/privateNamesAndGenericClasses-2.ts
-conformance/classes/members/privateNames/privateNamesAndMethods.ts
 conformance/classes/propertyMemberDeclarations/autoAccessor1.ts
 conformance/classes/propertyMemberDeclarations/autoAccessor10.ts
 conformance/classes/propertyMemberDeclarations/autoAccessor2.ts
