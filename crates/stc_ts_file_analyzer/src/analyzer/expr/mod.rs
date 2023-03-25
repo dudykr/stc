@@ -111,10 +111,6 @@ impl Analyzer<'_, '_> {
             e
         ));
 
-        if let Some(type_ann) = type_ann {
-            type_ann.assert_clone_cheap();
-        }
-
         let mut type_ann = type_ann.map(Cow::Borrowed);
 
         if type_ann.is_none() {
@@ -125,6 +121,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+        }
+
+        if let Some(type_ann) = &type_ann {
+            type_ann.assert_clone_cheap();
         }
 
         let span = e.span();
