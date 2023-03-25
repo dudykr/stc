@@ -42,6 +42,7 @@ const fetchAllIssue = async () => {
             labels: 'tsc-unit-test',
             per_page: 100,
             page: page++,
+            state: 'open',
         });
 
         if (issues.data.length < 100) {
@@ -72,19 +73,19 @@ async function main() {
         console.group(`Syncing ${file}`)
 
         try {
-            const needle = `STC: ${file}`;
-            const prevIssue = allIssues.find(issue => issue.body_text?.includes(needle));
+            const title = `Fix unit test for \`${file}\``;
+            const prevIssue = allIssues.find(issue => issue.title.includes(file));
 
             const body = `
                 
     
-            ---
+---
 
-            ${needle}
+Related test: https://github.com/dudykr/stc/blob/main/crates/stc_ts_file_analyzer/${file}
 
-            ---
+---
 
-            This issue is created by sync script.
+This issue is created by sync script.
         `;
 
             if (prevIssue) {
@@ -95,11 +96,11 @@ async function main() {
                         repo: 'stc',
                         issue_number: prevIssue.number,
                         body,
+                        title,
                         labels: ['tsc-unit-test']
                     })
                 }
             } else {
-                const title = `Fix unit test for ${file}`;
                 const issue = await octokit.rest.issues.create({
                     owner: 'dudykr',
                     repo: 'stc',
