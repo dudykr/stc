@@ -157,7 +157,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
 #[fixture("tests/errors/**/*.ts")]
 fn errors(input: PathBuf) {
-    let stderr = run_test(input, false).unwrap();
+    let stderr = run_test(input, false, false).unwrap();
 
     if stderr.is_empty() {
         panic!("Expected error, but got none");
@@ -196,7 +196,7 @@ fn compare(input: PathBuf) {
         testing::unignore_fixture(&input);
         return;
     }
-    let stderr = run_test(input, false).unwrap();
+    let stderr = run_test(input, false, false).unwrap();
 
     panic!("Wanted {:?}\n{}", expected, stderr)
 }
@@ -220,13 +220,19 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
 }
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
+fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Option<NormalizedOutput> {
     let filename = file_name.display().to_string();
     println!("{}", filename);
 
     for case in parse_conformance_test(&file_name).unwrap() {
         let result = testing::Tester::new()
             .print_errors(|cm, handler| -> Result<(), _> {
+                let _tracing = if disable_logging {
+                    Some(tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default()))
+                } else {
+                    None
+                };
+
                 let handler = Arc::new(handler);
                 let fm = cm.load_file(&file_name).unwrap();
                 let mut libs = vec![];
@@ -294,10 +300,6 @@ fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
                         },
                     );
 
-                    let log_sub = logger(Level::DEBUG);
-
-                    let _guard = tracing::subscriber::set_default(log_sub);
-
                     module.validate_with(&mut analyzer).unwrap();
                 }
 
@@ -330,7 +332,7 @@ fn run_test(file_name: PathBuf, want_error: bool) -> Option<NormalizedOutput> {
 
 #[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    let res = run_test(file_name.clone(), false).unwrap();
+    let res = run_test(file_name.clone(), false, false).unwrap();
     res.compare_to_file(file_name.with_extension("swc-stderr")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
@@ -338,11 +340,10 @@ fn visualize(file_name: PathBuf) {
 
 #[testing::fixture("tests/pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
-    let res = run_test(file_name.clone(), false).unwrap();
+    let res = run_test(file_name.clone(), false, false).unwrap();
 
     {
-        let _guard = tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default());
-        run_test(file_name.clone(), true);
+        run_test(file_name.clone(), true, true);
     }
 
     res.compare_to_file(file_name.with_extension("swc-stderr")).unwrap();
@@ -354,7 +355,7 @@ fn pass(file_name: PathBuf) {
 fn pass_only(input: PathBuf) {
     {
         let _guard = tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default());
-        let types = run_test(input.clone(), false).unwrap();
+        let types = run_test(input.clone(), false, true).unwrap();
         println!("Types:\n{}", types);
     }
 
