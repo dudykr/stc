@@ -83,6 +83,8 @@ pub fn parse_conformance_test(file_name: &Path) -> Result<Vec<TestSpec>> {
 
     let fname = file_name.to_string_lossy();
     ::testing::run_test(false, |cm, handler| {
+        let _tracing = tracing::subscriber::set_default(tracing::subscriber::NoSubscriber::default());
+
         let fm = cm.load_file(file_name).expect("failed to read file");
 
         let sub_files = Arc::new(parse_sub_files(&fm.src));
