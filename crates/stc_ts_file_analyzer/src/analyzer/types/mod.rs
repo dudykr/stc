@@ -1094,11 +1094,11 @@ impl Analyzer<'_, '_> {
                         if let Some(tp) = result {
                             // We should perserve `T & {}`
 
-                            if tp.is_keyword() {
-                                new_types.push(tp);
-                            } else {
+                            if tp.is_interface() || tp.is_type_lit() {
                                 new_types.push(acc_type.clone());
                                 new_types.push(elem.clone());
+                            } else {
+                                new_types.push(tp);
                             }
                         }
                     }
