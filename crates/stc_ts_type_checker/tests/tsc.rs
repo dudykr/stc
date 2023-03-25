@@ -436,7 +436,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         }
     }
 
-    if extra_errors.is_empty() {
+    if expected_errors.is_empty() {
         println!("[REMOVE_ONLY]{}", file_name.display());
     }
 
