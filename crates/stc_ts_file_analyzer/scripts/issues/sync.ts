@@ -66,42 +66,51 @@ async function main() {
     console.log(allIssues)
 
     for (const file of files) {
-        const needle = `STC: ${file}`;
-        const prevIssue = allIssues.find(issue => issue.body_text?.includes(needle));
+        console.group(`Syncing ${file}`)
 
-        const body = `
+        try {
+            const needle = `STC: ${file}`;
+            const prevIssue = allIssues.find(issue => issue.body_text?.includes(needle));
+
+            const body = `
                 
     
-        ---
+            ---
 
-        ${needle}
+            ${needle}
 
-        ---
+            ---
 
-        This issue is created by sync script.
+            This issue is created by sync script.
         `;
 
-        if (prevIssue) {
-            if (prevIssue.body !== body) {
-                await octokit.rest.issues.update({
+            if (prevIssue) {
+                console.log(`Prev issue found: ${prevIssue.number}`)
+                if (prevIssue.body !== body) {
+                    await octokit.rest.issues.update({
+                        owner: 'dudykr',
+                        repo: 'stc',
+                        issue_number: prevIssue.number,
+                        body,
+                        labels: ['tsc-unit-test']
+                    })
+                }
+            } else {
+                const title = `Fix unit test for ${file}`;
+                const issue = await octokit.rest.issues.create({
                     owner: 'dudykr',
                     repo: 'stc',
-                    issue_number: prevIssue.number,
+                    title,
                     body,
                     labels: ['tsc-unit-test']
                 })
             }
-        } else {
-            const title = `Fix unit test for ${file}`;
-            const issue = await octokit.rest.issues.create({
-                owner: 'dudykr',
-                repo: 'stc',
-                title,
-                body,
-                labels: ['tsc-unit-test']
-            })
-        }
 
+
+
+        } finally {
+            console.groupEnd()
+        }
 
     }
 }
