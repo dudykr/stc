@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
                                     if let Ok(Some(ty)) = &self.find_type(&id.into()) {
                                         let ty_found = &ty.clone().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
 
-                                        if !ty_found.span().is_dummy() && ty_found.get_type_param_decl().is_none() {
+                                        if !ty_found.span().is_dummy() && !ty_found.is_any() && ty_found.get_type_param_decl().is_none() {
                                             self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
 
                                             return Ok(Cow::Owned(Type::Keyword(KeywordType {
