@@ -428,7 +428,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         })
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (any_span, ty_of_left.as_ref())
                 }
@@ -436,7 +437,8 @@ impl Analyzer<'_, '_> {
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
                     ty_of_left = e
                         .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (None, ty_of_left.as_ref())
                 }
