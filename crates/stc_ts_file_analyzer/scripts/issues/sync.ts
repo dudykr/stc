@@ -66,6 +66,40 @@ async function main() {
     console.log(allIssues)
 
     for (const file of files) {
+        const needle = `STC: ${file}`;
+        const prevIssue = allIssues.find(issue => issue.body_text?.includes(needle));
+
+        const body = `
+                
+    
+        ---
+
+        ${needle}
+
+        ---
+
+        This issue is created by sync script.
+        `;
+
+        if (prevIssue) {
+            if (prevIssue.body !== body) {
+                await octokit.rest.issues.update({
+                    owner: 'dudykr',
+                    repo: 'stc',
+                    issue_number: prevIssue.number,
+                    title: `Fix unit test for ${file}`,
+                    body,
+                })
+            }
+        } else {
+            const issue = await octokit.rest.issues.create({
+                owner: 'dudykr',
+                repo: 'stc',
+                title: `Fix unit test for ${file}`,
+                body,
+            })
+        }
+
 
     }
 }
