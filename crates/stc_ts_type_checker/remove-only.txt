@@ -152,10 +152,5 @@ conformance/jsx/tsxSpreadAttributesResolution13.tsx
 conformance/controlFlow/controlFlowForStatement.ts
 conformance/controlFlow/controlFlowAliasingCatchVariables.ts
 conformance/controlFlow/controlFlowForOfStatement.ts
-conformance/dynamicImport/importCallExpression4ES2020.ts
-conformance/dynamicImport/importCallExpressionInUMD4.ts
-conformance/dynamicImport/importCallExpressionInAMD4.ts
-conformance/dynamicImport/importCallExpressionInSystem4.ts
-conformance/dynamicImport/importCallExpressionInCJS5.ts
 conformance/interfaces/declarationMerging/mergeTwoInterfaces2.ts
 conformance/interfaces/declarationMerging/mergeThreeInterfaces2.ts
