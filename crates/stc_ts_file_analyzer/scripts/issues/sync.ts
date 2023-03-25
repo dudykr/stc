@@ -33,15 +33,18 @@ type IssueItems = GetResponseTypeFromEndpointMethod<
 
 const fetchAllIssue = async () => {
     const all: IssueItems = [];
+    let page = 0;
     while (true) {
         const issues = await octokit.rest.issues.listForRepo({
             owner: 'dudykr',
             repo: 'stc',
             creator: 'kdy1',
             labels: 'tsc-unit-test',
+            per_page: 100,
+            page: page++,
         });
 
-        if (issues.data.length === 0) {
+        if (issues.data.length < 100) {
             break;
         }
 
