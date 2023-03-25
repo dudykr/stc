@@ -69,7 +69,7 @@ async function main() {
 
     const allIssues = await fetchAllIssue();
 
-    console.log(allIssues)
+    // console.log(allIssues)
 
     for (const file of files) {
         console.group(`Syncing ${file}`)
