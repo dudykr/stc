@@ -75,7 +75,7 @@ async function main() {
         console.group(`Syncing ${file}`)
 
         try {
-            const title = `Fix unit test for \`${file}\``;
+            const title = `Fix unit test:  \`${file}\``;
             const prevIssue = allIssues.find(issue => issue.title.includes(file));
 
             const body = `
