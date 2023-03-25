@@ -1108,7 +1108,7 @@ impl Analyzer<'_, '_> {
                             if match other.normalize() {
                                 Type::TypeLit(ty) => ty.members.is_empty(),
                                 _ => false,
-                            } && (tp.is_interface() || tp.is_type_lit())
+                            } && tp.is_interface()
                             {
                                 new_types.push(acc_type.clone());
                                 new_types.push(elem.clone());
