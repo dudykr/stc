@@ -87,16 +87,16 @@ async function main() {
                     owner: 'dudykr',
                     repo: 'stc',
                     issue_number: prevIssue.number,
-                    title: `Fix unit test for ${file}`,
                     body,
                     labels: ['tsc-unit-test']
                 })
             }
         } else {
+            const title = `Fix unit test for ${file}`;
             const issue = await octokit.rest.issues.create({
                 owner: 'dudykr',
                 repo: 'stc',
-                title: `Fix unit test for ${file}`,
+                title,
                 body,
                 labels: ['tsc-unit-test']
             })
