@@ -1071,10 +1071,8 @@ impl Analyzer<'_, '_> {
                             constraint: Some(another), ..
                         }),
                     ) => {
-                        let other = other.normalize();
-                        let another = another.normalize();
                         let result =
-                            self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
+                            self.normalize_intersection_types(span, &[*other.to_owned(), *another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
                             new_types.push(tp);
                         }
@@ -1091,19 +1089,24 @@ impl Analyzer<'_, '_> {
                             constraint: Some(another), ..
                         }),
                     ) => {
-                        let other = other.normalize();
-                        let another = another.normalize();
                         let result =
-                            self.normalize_intersection_types(span, &vec![other.to_owned(), another.to_owned()], Default::default())?;
+                            self.normalize_intersection_types(span, &[other.to_owned(), *another.to_owned()], Default::default())?;
                         if let Some(tp) = result {
-                            new_types.push(tp);
+                            // We should perserve `T & {}`
+
+                            if tp.is_keyword() {
+                                new_types.push(tp);
+                            } else {
+                                new_types.push(acc_type.clone());
+                                new_types.push(elem.clone());
+                            }
                         }
                     }
                     (Type::Union(Union { types: a_types, .. }), Type::Union(Union { types: b_types, .. })) => {
                         for a_ty in a_types {
                             for b_ty in b_types {
                                 let result =
-                                    self.normalize_intersection_types(span, &vec![a_ty.to_owned(), b_ty.to_owned()], Default::default())?;
+                                    self.normalize_intersection_types(span, &[a_ty.to_owned(), b_ty.to_owned()], Default::default())?;
                                 if let Some(tp) = result {
                                     new_types.push(tp);
                                 }
@@ -1112,8 +1115,7 @@ impl Analyzer<'_, '_> {
                     }
                     (Type::Union(Union { types, .. }), other) | (other, Type::Union(Union { types, .. })) => {
                         for ty in types {
-                            let result =
-                                self.normalize_intersection_types(span, &vec![ty.to_owned(), other.to_owned()], Default::default())?;
+                            let result = self.normalize_intersection_types(span, &[ty.to_owned(), other.to_owned()], Default::default())?;
                             if let Some(tp) = result {
                                 new_types.push(tp);
                             }
