@@ -1418,7 +1418,8 @@ impl Analyzer<'_, '_> {
                 | Type::Intersection(..),
                 Type::Lit(..) | Type::Predicate(..) | Type::Keyword(..),
             )
-            | (_, Type::Param(..))
+            | (_, Type::Param(..) | Type::Unique(..) | Type::IndexedAccessType(..))
+            | (Type::Unique(..), _)
             | (Type::Tuple(..) | Type::Array(..), _) => {
                 warn!(
                     "Cannot infer type with param = {} and arg = {}",
