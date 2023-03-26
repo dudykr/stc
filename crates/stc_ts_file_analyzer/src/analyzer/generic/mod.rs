@@ -1404,7 +1404,7 @@ impl Analyzer<'_, '_> {
 
         // Prevent logging
         match (param.normalize(), arg.normalize()) {
-            (Type::Lit(..), _) => return Ok(()),
+            (Type::Lit(..) | Type::Unique(..), _) | (_, Type::Unique(..)) => return Ok(()),
 
             (
                 Type::Function(..)
@@ -1418,8 +1418,7 @@ impl Analyzer<'_, '_> {
                 | Type::Intersection(..),
                 Type::Lit(..) | Type::Predicate(..) | Type::Keyword(..),
             )
-            | (_, Type::Param(..) | Type::Unique(..) | Type::IndexedAccessType(..))
-            | (Type::Unique(..), _)
+            | (_, Type::Param(..) | Type::IndexedAccessType(..))
             | (Type::Tuple(..) | Type::Array(..), _) => {
                 warn!(
                     "Cannot infer type with param = {} and arg = {}",
