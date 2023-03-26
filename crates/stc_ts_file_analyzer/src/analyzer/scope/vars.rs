@@ -859,7 +859,7 @@ impl Analyzer<'_, '_> {
                                         ErrorKind::NoSuchProperty { span, .. } | ErrorKind::NoSuchPropertyInClass { span, .. }
                                             if !should_use_no_such_property =>
                                         {
-                                            if default_prop_ty.is_none() {
+                                            if default_prop_ty.is_none() && prop.value.is_none() {
                                                 self.storage.report(ErrorKind::NoInitAndNoDefault { span: *span }.into())
                                             }
                                         }
