@@ -1399,8 +1399,14 @@ impl Analyzer<'_, '_> {
 
             (
                 Type::Function(..) | Type::Constructor(..) | Type::TypeLit(..) | Type::Array(..) | Type::Tuple(..),
-                Type::Lit(..) | Type::Predicate(..),
-            ) => {
+                Type::Lit(..) | Type::Predicate(..) | Type::Keyword(..),
+            )
+            | (_, Type::Param(..)) => {
+                warn!(
+                    "Cannot infer type with param = {} and arg = {}",
+                    force_dump_type_as_string(param),
+                    force_dump_type_as_string(arg),
+                );
                 return Ok(());
             }
 
