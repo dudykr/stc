@@ -1406,7 +1406,7 @@ impl Analyzer<'_, '_> {
 
         // Prevent logging
         match (param.normalize(), arg.normalize()) {
-            (Type::Lit(..) | Type::Unique(..), _) | (_, Type::Unique(..)) => return Ok(()),
+            (Type::Lit(..) | Type::Unique(..) | Type::Predicate(..), _) | (_, Type::Unique(..)) => return Ok(()),
 
             (
                 Type::Function(..)
