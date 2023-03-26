@@ -542,8 +542,11 @@ impl Analyzer<'_, '_> {
 
         /// Returns true if we can unconditionally delegate to `infer_type`.
         fn should_delegate(ty: &Type) -> bool {
+            if ty.is_global_this() {
+                return false;
+            }
             match ty.normalize() {
-                Type::Instance(..) => true,
+                Type::Instance(..) | Type::Query(..) => true,
                 Type::IndexedAccessType(t) => matches!(t.index_type.normalize(), Type::Lit(..)),
                 _ => false,
             }
