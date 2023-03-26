@@ -1398,8 +1398,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        // Prevent logging
+        match (param.normalize(), arg.normalize()) {
+            (Type::Function(..) | Type::Constructor(..) | Type::TypeLit(..), Type::Lit(..) | Type::Predicate(..)) => {
+                return Ok(());
+            }
+            _ => {}
+        }
+
         if param.is_predicate() && arg.is_bool() {
-            // Prevent logging
             return Ok(());
         }
 
