@@ -542,8 +542,11 @@ impl Analyzer<'_, '_> {
 
         /// Returns true if we can unconditionally delegate to `infer_type`.
         fn should_delegate(ty: &Type) -> bool {
+            if ty.is_global_this() {
+                return false;
+            }
             match ty.normalize() {
-                Type::Instance(..) => true,
+                Type::Instance(..) | Type::Query(..) => true,
                 Type::IndexedAccessType(t) => matches!(t.index_type.normalize(), Type::Lit(..)),
                 _ => false,
             }
@@ -794,7 +797,9 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(param) => match arg.normalize() {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg, opts)?,
-                Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg, opts),
+                Type::TypeLit(..) | Type::Tuple(..) | Type::Function(..) | Type::Constructor(..) => {
+                    return self.infer_type_using_interface(span, inferred, param, arg, opts)
+                }
                 _ => {}
             },
 
@@ -956,7 +961,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Interface(..) | Type::Alias(..) => {
+                Type::Interface(..)
+                | Type::Alias(..)
+                | Type::Class(..)
+                | Type::ClassDef(..)
+                | Type::Module(..)
+                | Type::Function(..)
+                | Type::Constructor(..) => {
                     if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
@@ -1376,7 +1387,7 @@ impl Analyzer<'_, '_> {
         // Prevent logging
         let ignore = |ty: &Type| {
             matches!(
-                ty,
+                ty.normalize(),
                 Type::Enum(..)
                     | Type::EnumVariant(..)
                     | Type::Keyword(KeywordType {
@@ -1389,24 +1400,47 @@ impl Analyzer<'_, '_> {
                     | Type::Lit(..)
             )
         };
-        if ignore(param_normalized) && ignore(arg_normalized) {
+        if ignore(param) && ignore(arg) {
             return Ok(());
         }
 
-        if param_normalized.is_str_lit() || param_normalized.is_bool_lit() || param_normalized.is_num_lit() {
-            // Prevent logging
-            return Ok(());
+        // Prevent logging
+        match (param.normalize(), arg.normalize()) {
+            (Type::Lit(..) | Type::Unique(..) | Type::Predicate(..), _) | (_, Type::Unique(..)) => return Ok(()),
+
+            (
+                Type::Function(..)
+                | Type::Constructor(..)
+                | Type::TypeLit(..)
+                | Type::Array(..)
+                | Type::Tuple(..)
+                | Type::Interface(..)
+                | Type::IndexedAccessType(..)
+                | Type::Index(..)
+                | Type::Intersection(..),
+                Type::Lit(..) | Type::Predicate(..) | Type::Keyword(..),
+            )
+            | (_, Type::Param(..) | Type::IndexedAccessType(..))
+            | (Type::Tuple(..) | Type::Array(..), _) => {
+                warn!(
+                    "Cannot infer type with param = {} and arg = {}",
+                    force_dump_type_as_string(param),
+                    force_dump_type_as_string(arg),
+                );
+                return Ok(());
+            }
+
+            _ => {}
         }
 
-        if param_normalized.is_predicate() && arg_normalized.is_bool() {
-            // Prevent logging
+        if param.is_predicate() && arg.is_bool() {
             return Ok(());
         }
 
         error!(
             "unimplemented: infer_type\nparam  = {}\narg = {}",
-            force_dump_type_as_string(param_normalized),
-            force_dump_type_as_string(arg_normalized),
+            force_dump_type_as_string(param),
+            force_dump_type_as_string(arg),
         );
         Ok(())
     }
@@ -1454,7 +1488,13 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+            Type::Enum(..)
+            | Type::Alias(..)
+            | Type::Intersection(..)
+            | Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Module(..)
+            | Type::Interface(..) => {
                 let arg = self
                     .convert_type_to_type_lit(span, Cow::Borrowed(arg))
                     .context("tried to convert a type into a type literal to infer mapped type")?
