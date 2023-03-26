@@ -1705,7 +1705,10 @@ impl Analyzer<'_, '_> {
                 if let Some(true) = c.as_union_type().map(|ty| ty.types.iter().any(|ty| ty.type_eq(rhs))) {
                     return Ok(());
                 }
-                fail!()
+
+                if !rhs.is_type_param() {
+                    fail!()
+                }
             }
 
             Type::Param(..) => {
