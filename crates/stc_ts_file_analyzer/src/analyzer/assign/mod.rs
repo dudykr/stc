@@ -1744,6 +1744,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
+                        Type::Param(..) => {}
                         _ => fail!(),
                     };
                 }
