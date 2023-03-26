@@ -1395,11 +1395,14 @@ impl Analyzer<'_, '_> {
 
         // Prevent logging
         match (param.normalize(), arg.normalize()) {
-            (Type::Function(..) | Type::Constructor(..) | Type::TypeLit(..), Type::Lit(..) | Type::Predicate(..)) => {
+            (Type::Lit(..), _) => return Ok(()),
+
+            (
+                Type::Function(..) | Type::Constructor(..) | Type::TypeLit(..) | Type::Array(..) | Type::Tuple(..),
+                Type::Lit(..) | Type::Predicate(..),
+            ) => {
                 return Ok(());
             }
-
-            (Type::Lit(..), _) => return Ok(()),
 
             _ => {}
         }
