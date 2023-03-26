@@ -2343,7 +2343,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
+            Type::TypeLit(TypeLit { ref members, metadata, .. }) if !rhs.is_type_param() => {
                 return self
                     .assign_to_type_elements(
                         data,
