@@ -12,9 +12,13 @@
     ]
   },
   "extra_errors": {
+    "TS2558": 1,
     "TS2345": 1
   },
   "extra_error_lines": {
+    "TS2558": [
+      62
+    ],
     "TS2345": [
       82
     ]
