@@ -1407,7 +1407,9 @@ impl Analyzer<'_, '_> {
                 | Type::Array(..)
                 | Type::Tuple(..)
                 | Type::Interface(..)
-                | Type::IndexedAccessType(..),
+                | Type::IndexedAccessType(..)
+                | Type::Index(..)
+                | Type::Intersection(..),
                 Type::Lit(..) | Type::Predicate(..) | Type::Keyword(..),
             )
             | (_, Type::Param(..))
