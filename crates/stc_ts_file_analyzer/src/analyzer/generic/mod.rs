@@ -797,7 +797,9 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(param) => match arg.normalize() {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg, opts)?,
-                Type::TypeLit(..) | Type::Tuple(..) => return self.infer_type_using_interface(span, inferred, param, arg, opts),
+                Type::TypeLit(..) | Type::Tuple(..) | Type::Function(..) | Type::Constructor(..) => {
+                    return self.infer_type_using_interface(span, inferred, param, arg, opts)
+                }
                 _ => {}
             },
 

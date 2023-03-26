@@ -1076,14 +1076,13 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(arg) => {
                 self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
             }
-            Type::Tuple(..) => {
+            _ => {
                 // Convert to a type literal.
                 if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                     self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
+                } else {
+                    unimplemented!()
                 }
-            }
-            _ => {
-                unimplemented!()
             }
         }
 
