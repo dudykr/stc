@@ -548,6 +548,8 @@ impl Analyzer<'_, '_> {
             .context("tried to get the type of property named `value` to determine the type of an iterator")
             .convert_err(|err| ErrorKind::NextOfIteratorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
+        elem_ty.metadata_mut().implicit = false;
+
         elem_ty.fix();
 
         Ok(elem_ty)
