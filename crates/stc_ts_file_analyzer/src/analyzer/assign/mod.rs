@@ -588,6 +588,10 @@ impl Analyzer<'_, '_> {
             let l = force_dump_type_as_string(left);
             let r = force_dump_type_as_string(right);
 
+            if l == r && !l.contains("symbol") && format!("{:?}", left) == format!("{:?}", right) {
+                unreachable!("Assignment of identical type failed\n{}\n{:?}", l, left);
+            }
+
             let l_final = self.normalize_for_assign(opts.span, left, opts);
             let r_final = self.normalize_for_assign(opts.span, right, opts);
 
@@ -635,6 +639,10 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(());
+        }
+
+        if to.type_eq(rhs) {
             return Ok(());
         }
 
@@ -1662,64 +1670,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
-                match *constraint {
-                    Some(ref c) => {
-                        return self.assign_inner(
-                            data,
-                            to,
-                            c,
-                            AssignOpts {
-                                allow_unknown_rhs: Some(true),
-                                ..opts
-                            },
-                        );
-                    }
-                    None => {
-                        // unknownType1.ts says
-
-                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
-
-                        match to.normalize() {
-                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
-                                if self.rule().strict_null_checks {
-                                    fail!()
-                                } else {
-                                    return Ok(());
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-
-                match to.normalize() {
-                    Type::Union(..) => {}
-                    Type::Mapped(m) => {
-                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
-                            fail!()
-                        }
-                    }
-                    Type::TypeLit(to) => {
-                        // Don't ask why.
-                        //
-                        // See: subtypingWithOptionalProperties.ts
-                        if !self.rule().strict_null_checks
-                            && to.members.iter().all(|el| match el {
-                                TypeElement::Property(p) => p.optional,
-                                _ => false,
-                            })
-                        {
-                            return Ok(());
-                        } else {
-                            fail!()
-                        }
-                    }
-
-                    _ => {
-                        fail!()
-                    }
-                }
             }
 
             Type::Predicate(..) => {
@@ -1755,7 +1705,10 @@ impl Analyzer<'_, '_> {
                 if let Some(true) = c.as_union_type().map(|ty| ty.types.iter().any(|ty| ty.type_eq(rhs))) {
                     return Ok(());
                 }
-                fail!()
+
+                if !rhs.is_type_param() {
+                    fail!()
+                }
             }
 
             Type::Param(..) => {
@@ -1791,6 +1744,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
+                        Type::Param(..) => {}
                         _ => fail!(),
                     };
                 }
@@ -2175,8 +2129,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 ..
                             })
-                            | Type::Lit(..)
-                            | Type::Param(..) => {
+                            | Type::Lit(..) => {
                                 fail!()
                             }
 
@@ -2267,7 +2220,7 @@ impl Analyzer<'_, '_> {
                 ref body,
                 ref extends,
                 ..
-            }) => {
+            }) if !rhs.is_type_param() => {
                 // TODO(kdy1): Optimize handling of unknown rhs
 
                 if name == "Function" {
@@ -2389,7 +2342,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
+            Type::TypeLit(TypeLit { ref members, metadata, .. }) if !rhs.is_type_param() => {
                 return self
                     .assign_to_type_elements(
                         data,
@@ -2645,6 +2598,66 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => fail!(),
+
+            (_, Type::Param(TypeParam { constraint, .. })) => {
+                match *constraint {
+                    Some(ref c) => {
+                        return self.assign_inner(
+                            data,
+                            to,
+                            c,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        );
+                    }
+                    None => {
+                        // unknownType1.ts says
+
+                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
+
+                        match to.normalize() {
+                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
+                                if self.rule().strict_null_checks {
+                                    fail!()
+                                } else {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                match to.normalize() {
+                    Type::Union(..) => {}
+                    Type::Mapped(m) => {
+                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
+                            fail!()
+                        }
+                    }
+                    Type::TypeLit(to) => {
+                        // Don't ask why.
+                        //
+                        // See: subtypingWithOptionalProperties.ts
+                        if !self.rule().strict_null_checks
+                            && to.members.iter().all(|el| match el {
+                                TypeElement::Property(p) => p.optional,
+                                _ => false,
+                            })
+                        {
+                            return Ok(());
+                        } else {
+                            fail!()
+                        }
+                    }
+
+                    _ => {
+                        fail!()
+                    }
+                }
+            }
 
             _ => {}
         }

@@ -2282,7 +2282,8 @@ impl Analyzer<'_, '_> {
                     ) = (*kind, prop.ty.normalize())
                     {
                         if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
-                            self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
+                            self.storage
+                                .report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.context("keyword"));
                         }
 
                         return Ok(Type::any(span, Default::default()));
@@ -2482,7 +2483,8 @@ impl Analyzer<'_, '_> {
 
                 if self.rule().no_implicit_any && opts.is_in_union {
                     if !matches!(prop, Key::Normal { .. }) {
-                        self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
+                        self.storage
+                            .report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.context("union"));
                     }
                 }
 
