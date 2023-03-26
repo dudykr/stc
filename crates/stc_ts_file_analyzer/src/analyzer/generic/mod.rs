@@ -959,7 +959,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Interface(..) | Type::Alias(..) | Type::Class(..) | Type::ClassDef(..) | Type::Module(..) => {
+                Type::Interface(..)
+                | Type::Alias(..)
+                | Type::Class(..)
+                | Type::ClassDef(..)
+                | Type::Module(..)
+                | Type::Function(..)
+                | Type::Constructor(..) => {
                     if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
