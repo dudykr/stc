@@ -1401,7 +1401,7 @@ impl Analyzer<'_, '_> {
             (Type::Lit(..), _) => return Ok(()),
 
             (
-                Type::Function(..) | Type::Constructor(..) | Type::TypeLit(..) | Type::Array(..) | Type::Tuple(..),
+                Type::Function(..) | Type::Constructor(..) | Type::TypeLit(..) | Type::Array(..) | Type::Tuple(..) | Type::Interface(..),
                 Type::Lit(..) | Type::Predicate(..) | Type::Keyword(..),
             )
             | (_, Type::Param(..))
