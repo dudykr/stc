@@ -1376,7 +1376,7 @@ impl Analyzer<'_, '_> {
         // Prevent logging
         let ignore = |ty: &Type| {
             matches!(
-                ty,
+                ty.normalize(),
                 Type::Enum(..)
                     | Type::EnumVariant(..)
                     | Type::Keyword(KeywordType {
@@ -1389,7 +1389,7 @@ impl Analyzer<'_, '_> {
                     | Type::Lit(..)
             )
         };
-        if ignore(param_normalized) && ignore(arg_normalized) {
+        if ignore(param) && ignore(arg) {
             return Ok(());
         }
 
