@@ -2129,8 +2129,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 ..
                             })
-                            | Type::Lit(..)
-                            | Type::Param(..) => {
+                            | Type::Lit(..) => {
                                 fail!()
                             }
 
