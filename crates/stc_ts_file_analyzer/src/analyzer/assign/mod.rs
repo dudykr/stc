@@ -2221,7 +2221,7 @@ impl Analyzer<'_, '_> {
                 ref body,
                 ref extends,
                 ..
-            }) => {
+            }) if !rhs.is_type_param() => {
                 // TODO(kdy1): Optimize handling of unknown rhs
 
                 if name == "Function" {
