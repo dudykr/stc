@@ -1670,64 +1670,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
-                match *constraint {
-                    Some(ref c) => {
-                        return self.assign_inner(
-                            data,
-                            to,
-                            c,
-                            AssignOpts {
-                                allow_unknown_rhs: Some(true),
-                                ..opts
-                            },
-                        );
-                    }
-                    None => {
-                        // unknownType1.ts says
-
-                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
-
-                        match to.normalize() {
-                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
-                                if self.rule().strict_null_checks {
-                                    fail!()
-                                } else {
-                                    return Ok(());
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-
-                match to.normalize() {
-                    Type::Union(..) => {}
-                    Type::Mapped(m) => {
-                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
-                            fail!()
-                        }
-                    }
-                    Type::TypeLit(to) => {
-                        // Don't ask why.
-                        //
-                        // See: subtypingWithOptionalProperties.ts
-                        if !self.rule().strict_null_checks
-                            && to.members.iter().all(|el| match el {
-                                TypeElement::Property(p) => p.optional,
-                                _ => false,
-                            })
-                        {
-                            return Ok(());
-                        } else {
-                            fail!()
-                        }
-                    }
-
-                    _ => {
-                        fail!()
-                    }
-                }
             }
 
             Type::Predicate(..) => {
@@ -2653,6 +2595,66 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => fail!(),
+
+            (_, Type::Param(TypeParam { constraint, .. })) => {
+                match *constraint {
+                    Some(ref c) => {
+                        return self.assign_inner(
+                            data,
+                            to,
+                            c,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        );
+                    }
+                    None => {
+                        // unknownType1.ts says
+
+                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
+
+                        match to.normalize() {
+                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
+                                if self.rule().strict_null_checks {
+                                    fail!()
+                                } else {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                match to.normalize() {
+                    Type::Union(..) => {}
+                    Type::Mapped(m) => {
+                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
+                            fail!()
+                        }
+                    }
+                    Type::TypeLit(to) => {
+                        // Don't ask why.
+                        //
+                        // See: subtypingWithOptionalProperties.ts
+                        if !self.rule().strict_null_checks
+                            && to.members.iter().all(|el| match el {
+                                TypeElement::Property(p) => p.optional,
+                                _ => false,
+                            })
+                        {
+                            return Ok(());
+                        } else {
+                            fail!()
+                        }
+                    }
+
+                    _ => {
+                        fail!()
+                    }
+                }
+            }
 
             _ => {}
         }
