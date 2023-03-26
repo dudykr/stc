@@ -588,6 +588,10 @@ impl Analyzer<'_, '_> {
             let l = force_dump_type_as_string(left);
             let r = force_dump_type_as_string(right);
 
+            if l == r && !l.contains("symbol") && format!("{:?}", left) == format!("{:?}", right) {
+                unreachable!("Assignment of identical type failed\n{}\n{:?}", l, left);
+            }
+
             let l_final = self.normalize_for_assign(opts.span, left, opts);
             let r_final = self.normalize_for_assign(opts.span, right, opts);
 
