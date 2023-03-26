@@ -118,10 +118,10 @@ impl Analyzer<'_, '_> {
             | Type::TypeLit(..)
             | Type::Interface(..)
             | Type::Class(..)
-            | Type::Param(..)
             | Type::ClassDef(..)
             | Type::Function(..)
             | Type::Constructor(..)
+            | Type::Param(_)
             | Type::Module(_) => return Ok(ty),
             _ => {}
         }
@@ -160,16 +160,21 @@ impl Analyzer<'_, '_> {
                                     if let Ok(Some(ty)) = &self.find_type(&id.into()) {
                                         let ty_found = &ty.clone().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
 
-                                        if !ty_found.span().is_dummy() && !ty_found.is_any() && ty_found.get_type_param_decl().is_none() {
-                                            self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
+                                        match ty_found.normalize() {
+                                            Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::Alias(..) => {
+                                                if ty_found.get_type_param_decl().is_none() {
+                                                    self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
 
-                                            return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                                                span: span.unwrap_or_else(|| ref_ty.span()),
-                                                kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            })));
-                                        }
+                                                    return Ok(Cow::Owned(Type::Keyword(KeywordType {
+                                                        span: span.unwrap_or_else(|| ref_ty.span()),
+                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })));
+                                                }
+                                            }
+                                            _ => {}
+                                        };
                                     }
                                 }
                             }
