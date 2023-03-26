@@ -1398,15 +1398,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if param_normalized.is_predicate() && arg_normalized.is_bool() {
+        if param.is_predicate() && arg.is_bool() {
             // Prevent logging
             return Ok(());
         }
 
         error!(
             "unimplemented: infer_type\nparam  = {}\narg = {}",
-            force_dump_type_as_string(param_normalized),
-            force_dump_type_as_string(arg_normalized),
+            force_dump_type_as_string(param),
+            force_dump_type_as_string(arg),
         );
         Ok(())
     }
