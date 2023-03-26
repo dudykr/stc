@@ -14,6 +14,7 @@ disallowed-names = [
   "u32",
   "u64",
   "isize",
+  "union",
   "usize",
 ]
 too-many-arguments-threshold = 20
