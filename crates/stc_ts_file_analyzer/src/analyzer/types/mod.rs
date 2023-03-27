@@ -153,7 +153,33 @@ impl Analyzer<'_, '_> {
 
             {
                 match ty.normalize() {
-                    Type::Ref(_) => {
+                    Type::Ref(ref_ty) => {
+                        if let Some(ty_args) = &ref_ty.type_args {
+                            if !ty_args.params.is_empty() {
+                                if let RTsEntityName::Ident(id) = &ref_ty.type_name {
+                                    if let Ok(Some(ty)) = &self.find_type(&id.into()) {
+                                        let ty_found = &ty.clone().map(|v| v.into_owned()).collect::<Vec<Type>>()[0];
+
+                                        match ty_found.normalize() {
+                                            Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::Alias(..) => {
+                                                if ty_found.get_type_param_decl().is_none() {
+                                                    self.storage.report(ErrorKind::NotGeneric { span: ref_ty.span }.into());
+
+                                                    return Ok(Cow::Owned(Type::Keyword(KeywordType {
+                                                        span: span.unwrap_or_else(|| ref_ty.span()),
+                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })));
+                                                }
+                                            }
+                                            _ => {}
+                                        };
+                                    }
+                                }
+                            }
+                        }
+
                         let mut new_ty = self
                             .expand_top_ref(
                                 actual_span,
