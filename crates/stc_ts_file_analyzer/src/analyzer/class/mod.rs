@@ -4,9 +4,9 @@ use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
-    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
-    RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock, RStmt,
-    RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RAssignPat, RAutoAccessor, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl,
+    RExpr, RFunction, RIdent, RKey, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock,
+    RStmt, RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
@@ -211,6 +211,80 @@ impl Analyzer<'_, '_> {
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
+            accessor: Default::default(),
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RKey) -> VResult<Key> {
+        match p {
+            RKey::Private(p) => Ok(Key::Private(p.validate_with(self)?)),
+            RKey::Public(key) => Ok(key.validate_with(self)?),
+        }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RAutoAccessor, object_type: Option<&Type>) -> VResult<ClassProperty> {
+        let marks = self.marks();
+
+        let key = p.key.validate_with(self)?;
+
+        if let Some(value) = &p.value {
+            if let Some(object_type) = object_type {
+                if let Ok(mut type_ann) = self.access_property(
+                    p.span,
+                    object_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    AccessPropertyOpts {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        ..Default::default()
+                    },
+                ) {
+                    type_ann.freeze();
+                    self.apply_type_ann_to_expr(value, &type_ann)?;
+                }
+            }
+        }
+
+        let value = self
+            .validate_type_of_class_property(p.span, false, p.is_static, &p.type_ann, &p.value)?
+            .map(Box::new)
+            .freezed();
+
+        if p.is_static {
+            value.visit_with(&mut StaticTypeParamValidator {
+                span: p.span,
+                analyzer: self,
+            });
+        }
+
+        match p.accessibility {
+            Some(Accessibility::Private) => {}
+            _ => {
+                if p.type_ann.is_none() {
+                    if let Some(m) = &mut self.mutations {
+                        m.for_class_props.entry(p.node_id).or_default().ty = value.clone().map(|ty| ty.generalize_lit());
+                    }
+                }
+            }
+        }
+
+        Ok(ClassProperty {
+            span: p.span,
+            key,
+            value,
+            is_static: p.is_static,
+            accessibility: p.accessibility,
+            is_abstract: false,
+            is_optional: false,
+            readonly: false,
+            definite: false,
             accessor: Default::default(),
         })
     }
@@ -851,13 +925,7 @@ impl Analyzer<'_, '_> {
             }
             RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
-            RClassMember::AutoAccessor(auto) => {
-                return Err(ErrorKind::Unimplemented {
-                    span: auto.span,
-                    msg: "auto accessor".into(),
-                }
-                .into())
-            }
+            RClassMember::AutoAccessor(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
         })
     }
 }
