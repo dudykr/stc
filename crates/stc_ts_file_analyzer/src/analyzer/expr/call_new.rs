@@ -2464,8 +2464,6 @@ impl Analyzer<'_, '_> {
                     spread_arg_types,
                 );
 
-                dbg!(res);
-
                 (c, res)
             })
             .collect::<Vec<_>>();
@@ -3552,6 +3550,10 @@ impl Analyzer<'_, '_> {
                 //     },
                 //     _ => {}
                 // }
+
+                if matches!(param.pat, RPat::Rest(..)) {
+                    continue;
+                }
 
                 match param.ty.normalize() {
                     Type::Param(..) => {}
