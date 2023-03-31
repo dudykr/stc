@@ -1308,6 +1308,7 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tried to expand ref to handle a spread argument")?;
+
                     match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| TypeOrSpread {
@@ -3541,18 +3542,13 @@ impl Analyzer<'_, '_> {
 
             let mut exact = true;
 
-            for (arg, param) in arg_types.iter().zip(params) {
-                // match arg.ty.normalize() {
-                //     Type::Union(..) => match param.ty.normalize() {
-                //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
-                // {},         _ => {}
-                //     },
-                //     _ => {}
-                // }
+            for (arg, param) in spread_arg_types.iter().zip(params) {
+                if matches!(param.pat, RPat::Rest(..)) && !arg.ty.is_array() {
+                    continue;
+                }
 
-                match param.ty.normalize() {
+                match param.ty.normalize_instance() {
                     Type::Param(..) => {}
-                    Type::Instance(param) if param.ty.is_type_param() => {}
                     _ => {
                         if analyzer
                             .assign_with_opts(
