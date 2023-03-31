@@ -3543,15 +3543,7 @@ impl Analyzer<'_, '_> {
             let mut exact = true;
 
             for (arg, param) in spread_arg_types.iter().zip(params) {
-                // match arg.ty.normalize() {
-                //     Type::Union(..) => match param.ty.normalize() {
-                //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
-                // {},         _ => {}
-                //     },
-                //     _ => {}
-                // }
-
-                if matches!(param.pat, RPat::Rest(..)) {
+                if matches!(param.pat, RPat::Rest(..)) && !arg.ty.is_array() {
                     continue;
                 }
 
