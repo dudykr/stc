@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_dts_mutations::PatMut;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
@@ -906,6 +907,9 @@ impl Analyzer<'_, '_> {
                                 return Err(ErrorKind::RestPropertyNotLast { span: pat.span }.into());
                             }
 
+                            // If there's no type annotation, the default type should be any.
+                            // See objectRest.ts
+
                             let mut rest_ty = ty
                                 .as_ref()
                                 .try_map(|ty| {
@@ -913,6 +917,12 @@ impl Analyzer<'_, '_> {
                                         .context("tried to exclude keys for assignment with a object rest pattern")
                                 })?
                                 .freezed();
+
+                            if let Some(mutations) = &mut self.mutations {
+                                if let Some(PatMut { ty: Some(ty), .. }) = mutations.for_pats.get(&pat.node_id) {
+                                    rest_ty = Some(ty.clone());
+                                }
+                            }
 
                             let mut default = default
                                 .as_ref()
