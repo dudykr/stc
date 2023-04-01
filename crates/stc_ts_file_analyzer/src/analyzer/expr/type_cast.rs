@@ -200,10 +200,19 @@ impl Analyzer<'_, '_> {
                 if castable {
                     Ok(())
                 } else {
-                    Err(ErrorKind::NonOverlappingTypeCast { span }.into())
+                    Err(ErrorKind::NonOverlappingTypeCast {
+                        span,
+                        from: box orig.clone(),
+                        to: box casted.clone(),
+                    }
+                    .into())
                 }
             })
-            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
+            .convert_err(|err| ErrorKind::NonOverlappingTypeCast {
+                span,
+                from: box orig.clone(),
+                to: box casted.clone(),
+            })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
@@ -407,10 +416,17 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let Type::Tpl(to) = to.normalize() {
-            if let Type::Tpl(from) = from.normalize() {
-                return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
+        match to.normalize() {
+            Type::Tpl(to) => {
+                if let Type::Tpl(from) = from.normalize() {
+                    return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
+                }
             }
+
+            Type::Conditional(to) => {
+                return Ok(self.castable(span, from, &to.true_type, opts)? || self.castable(span, from, &to.false_type, opts)?);
+            }
+            _ => (),
         }
 
         // class A {}
