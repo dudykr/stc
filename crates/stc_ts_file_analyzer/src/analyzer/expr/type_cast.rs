@@ -267,8 +267,6 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        dbg!(&from, &to);
-
         // Overlaps with all types.
         if from.is_any() || from.is_kwd(TsKeywordTypeKind::TsNullKeyword) || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(true);
