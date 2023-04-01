@@ -267,6 +267,8 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        dbg!(&from, &to);
+
         // Overlaps with all types.
         if from.is_any() || from.is_kwd(TsKeywordTypeKind::TsNullKeyword) || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(true);
@@ -416,10 +418,17 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if let Type::Tpl(to) = to.normalize() {
-            if let Type::Tpl(from) = from.normalize() {
-                return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
+        match to.normalize() {
+            Type::Tpl(to) => {
+                if let Type::Tpl(from) = from.normalize() {
+                    return Ok(!self.tpl_lit_type_definitely_unrelated(span, from, to)?);
+                }
             }
+
+            Type::Conditional(to) => {
+                return Ok(self.castable(span, from, &to.true_type, opts)? || self.castable(span, from, &to.false_type, opts)?);
+            }
+            _ => (),
         }
 
         // class A {}
