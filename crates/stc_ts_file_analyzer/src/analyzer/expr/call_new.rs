@@ -3308,7 +3308,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
 
-                    let mut p = &param.ty;
+                    let mut p = &param.ty.clone();
                     let binding = &box Type::unknown(param.ty.span(), Default::default());
 
                     if let Type::Param(t) = param.ty.normalize() {
