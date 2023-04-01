@@ -3321,7 +3321,7 @@ impl Analyzer<'_, '_> {
 
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
-                        &p,
+                        p,
                         &arg.ty,
                         AssignOpts {
                             span: arg.span(),
