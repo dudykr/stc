@@ -919,8 +919,14 @@ impl Analyzer<'_, '_> {
                                 .freezed();
 
                             if let Some(mutations) = &mut self.mutations {
-                                if let Some(PatMut { ty: Some(ty), .. }) = mutations.for_pats.get(&pat.node_id) {
-                                    rest_ty = Some(ty.clone());
+                                if let Some(PatMut { ty: Some(mutation_ty), .. }) = mutations.for_pats.get(&pat.node_id) {
+                                    if let Some(ty) = &rest_ty {
+                                        if let Type::TypeLit(ty) = ty.normalize() {
+                                            if ty.members.is_empty() {
+                                                rest_ty = Some(mutation_ty.clone());
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
