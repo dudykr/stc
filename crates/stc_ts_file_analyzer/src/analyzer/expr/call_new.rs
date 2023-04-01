@@ -2606,7 +2606,7 @@ impl Analyzer<'_, '_> {
                     self.validate_arg_count(span, &params, args, arg_types, spread_arg_types)
                         .report(&mut self.storage);
                 } else {
-                    let e = valid_arity_constructors
+                    let errors = valid_arity_constructors
                         .clone()
                         .into_iter()
                         .filter_map(|cn| {
@@ -2618,11 +2618,11 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Vec<stc_ts_errors::Error>>();
 
-                    if e.len() >= valid_arity_constructors.len() {
+                    if errors.len() >= valid_arity_constructors.len() {
                         if valid_arity_constructors.len() > 1 {
                             self.storage.report(ErrorKind::NoMatchingOverload { span }.into());
                         } else {
-                            self.storage.report(e.last().unwrap().clone());
+                            self.storage.report(errors.last().unwrap().clone());
                         }
                     }
                 }
@@ -3309,18 +3309,19 @@ impl Analyzer<'_, '_> {
                     let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
 
                     let mut p = &param.ty;
-                    let a = &box Type::unknown(param.ty.span(), Default::default());
+                    let binding = &box Type::unknown(param.ty.span(), Default::default());
+
                     if let Type::Param(t) = param.ty.normalize() {
                         if let Some(constr) = &t.constraint {
                             p = constr;
                         } else {
-                            p = a;
+                            p = binding;
                         }
                     }
 
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
-                        p,
+                        &p,
                         &arg.ty,
                         AssignOpts {
                             span: arg.span(),
