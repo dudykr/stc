@@ -2905,11 +2905,8 @@ impl Analyzer<'_, '_> {
             }
 
             if passed_arity_checks {
-                if let ReEvalMode::New(..) = expr {
-                } else {
-                    if !is_overload {
-                        self.validate_arg_types(&expanded_param_types, spread_arg_types, true, false)?;
-                    }
+                if !is_overload {
+                    self.validate_arg_types(&expanded_param_types, spread_arg_types, true, false)?;
                 }
             }
 
