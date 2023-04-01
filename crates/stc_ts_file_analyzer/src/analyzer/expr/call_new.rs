@@ -2234,7 +2234,6 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    #[track_caller]
     fn validate_arg_count(
         &mut self,
         span: Span,
@@ -2243,7 +2242,6 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> VResult<()> {
-        // dbg!(&Location::caller());
         /// Count required parameter count.
         fn count_required_pat(p: &RPat) -> usize {
             match p {
@@ -2525,7 +2523,6 @@ impl Analyzer<'_, '_> {
 
     /// Returns the return type of function. This method should be called only
     /// for final step because it emits errors instead of returning them.
-    #[track_caller]
     fn get_return_type(
         &mut self,
         span: Span,
