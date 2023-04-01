@@ -2561,8 +2561,6 @@ impl Fold<Type> for MappedReverser {
         // TODO(kdy1): PERF
         ty.normalize_mut();
 
-        ty = ty.fold_children_with(self);
-
         match ty {
             Type::TypeLit(TypeLit {
                 span, members, metadata, ..
