@@ -1941,7 +1941,7 @@ impl Analyzer<'_, '_> {
 
         if type_params_of_type.is_none()
             && type_args.is_some()
-            && members.into_iter().all(|v| match v {
+            && members.iter().all(|v| match v {
                 TypeElement::Call(c) => c.type_params.is_none(),
                 TypeElement::Constructor(c) => c.type_params.is_none(),
                 TypeElement::Method(met) => met.type_params.is_none(),
