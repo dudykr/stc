@@ -1939,6 +1939,27 @@ impl Analyzer<'_, '_> {
             })
             .collect::<Vec<_>>();
 
+        if type_params_of_type.is_none()
+            && type_args.is_some()
+            && members.iter().all(|v| match v {
+                TypeElement::Call(c) => c.type_params.is_none(),
+                TypeElement::Constructor(c) => c.type_params.is_none(),
+                TypeElement::Method(met) => met.type_params.is_none(),
+                TypeElement::Property(prop) => prop.type_params.is_none(),
+                TypeElement::Index(ind) => true,
+            })
+        {
+            if let Some(type_args) = type_args {
+                return Err(ErrorKind::TypeParameterCountMismatch {
+                    span,
+                    min: 0,
+                    max: 0,
+                    actual: type_args.params.len(),
+                }
+                .into());
+            }
+        }
+
         if let Some(v) = self
             .select_and_invoke(
                 span,
