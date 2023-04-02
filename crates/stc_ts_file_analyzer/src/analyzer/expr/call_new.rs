@@ -1949,13 +1949,15 @@ impl Analyzer<'_, '_> {
                 TypeElement::Index(ind) => true,
             })
         {
-            return Err(ErrorKind::TypeParameterCountMismatch {
-                span,
-                min: 0,
-                max: 0,
-                actual: type_args.unwrap().params.len(),
+            if let Some(type_args) = type_args {
+                return Err(ErrorKind::TypeParameterCountMismatch {
+                    span,
+                    min: 0,
+                    max: 0,
+                    actual: type_args.params.len(),
+                }
+                .into());
             }
-            .into());
         }
 
         if let Some(v) = self
