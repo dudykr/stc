@@ -1,12 +1,11 @@
 {
   "required_errors": {
-    "TS2558": 7
+    "TS2558": 6
   },
   "required_error_lines": {
     "TS2558": [
       5,
       8,
-      11,
       18,
       24,
       31,
