@@ -302,6 +302,7 @@ classes/propertyMemberDeclarations/abstractProperty.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty5.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty8.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty9.ts
+classes/propertyMemberDeclarations/autoAccessor2.ts
 classes/propertyMemberDeclarations/autoAccessor6.ts
 classes/propertyMemberDeclarations/autoAccessor7.ts
 classes/propertyMemberDeclarations/autoAccessor8.ts
