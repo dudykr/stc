@@ -1881,7 +1881,8 @@ impl Analyzer<'_, '_> {
                 for (index, node) in c.body.iter().enumerate() {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
-                        | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
+                        | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. })
+                        | RClassMember::AutoAccessor(RAutoAccessor { is_static: true, .. }) => {
                             let m = node.validate_with_args(child, type_ann)?;
                             if let Some(member) = m {
                                 // Check for duplicate property names.
@@ -2006,7 +2007,8 @@ impl Analyzer<'_, '_> {
                 for (index, member) in c.body.iter().enumerate() {
                     match member {
                         RClassMember::ClassProp(RClassProp { is_static: false, .. })
-                        | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
+                        | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. })
+                        | RClassMember::AutoAccessor(RAutoAccessor { is_static: false, .. }) => {
                             //
                             let class_member = member.validate_with_args(child, type_ann).report(&mut child.storage).flatten();
                             if let Some(member) = class_member {
