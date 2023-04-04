@@ -261,7 +261,7 @@ impl Analyzer<'_, '_> {
 
         // If type is conditional, infer union
         let from = if from.is_conditional() {
-            let value = self.get_conditional_type_means(span, from.normalize());
+            let value = self.get_conditional_type_means(span, &from);
             Cow::Owned(Type::new_union(span, value.freezed()))
         } else {
             from
@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
         let from = from.normalize();
 
         let to = if to.is_conditional() {
-            let value = self.get_conditional_type_means(span, to.normalize());
+            let value = self.get_conditional_type_means(span, &to);
             Cow::Owned(Type::new_union(span, value.freezed()))
         } else {
             to
