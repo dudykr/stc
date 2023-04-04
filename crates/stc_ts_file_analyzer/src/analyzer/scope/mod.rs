@@ -1615,6 +1615,7 @@ impl Analyzer<'_, '_> {
                 e.insert(info);
             }
         }
+
         Ok(ty)
     }
 
