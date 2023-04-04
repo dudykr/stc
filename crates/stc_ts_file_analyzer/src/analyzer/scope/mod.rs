@@ -1615,7 +1615,6 @@ impl Analyzer<'_, '_> {
                 e.insert(info);
             }
         }
-        dbg!(&ty);
         Ok(ty)
     }
 
