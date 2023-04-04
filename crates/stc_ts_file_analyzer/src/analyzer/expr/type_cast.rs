@@ -106,7 +106,6 @@ impl Analyzer<'_, '_> {
         casted_ty.freeze();
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty).report(&mut self.storage);
-
         Ok(casted_ty)
     }
 
@@ -260,7 +259,21 @@ impl Analyzer<'_, '_> {
             )?
             .freezed();
 
+        // If type is conditional, infer union
+        let from = if from.is_conditional() {
+            let value = self.get_conditional_type_means(span, &from);
+            Cow::Owned(Type::new_union(span, value.freezed()))
+        } else {
+            from
+        };
         let from = from.normalize();
+
+        let to = if to.is_conditional() {
+            let value = self.get_conditional_type_means(span, &to);
+            Cow::Owned(Type::new_union(span, value.freezed()))
+        } else {
+            to
+        };
         let to = to.normalize();
 
         if from.type_eq(to) {

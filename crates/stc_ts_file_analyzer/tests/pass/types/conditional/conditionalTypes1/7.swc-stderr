@@ -1,0 +1,132 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                               ^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                        ^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                                                               ^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                                                        ^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > ("" | false)
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > (0 | "" | false)
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > (0 | "" | false)
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:3:1]
+ 3 | function zeroOf<T extends number | string | boolean>(value: T) {
+ 4 |     return <ZeroOf<T>>(typeof value === "number" ? 0 : typeof value === "string" ? "" : false);
+   :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 5 | }
+   `----
+
+Error: 
+  > ZeroOf<T>
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:7:1]
+ 7 | export function f21<T extends number | string>(x: T, y: ZeroOf<T>) {
+ 8 |     let z1: number | string = y;
+   :                               ^
+ 9 |     let z2: 0 | "" = y;
+   `----
+
+Error: 
+  > T extends number ? 0 : ""
+
+  x Type
+    ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/7.ts:8:1]
+  8 |     let z1: number | string = y;
+  9 |     let z2: 0 | "" = y;
+    :                      ^
+ 10 | }
+    `----
+
+Error: 
+  > T extends number ? 0 : ""

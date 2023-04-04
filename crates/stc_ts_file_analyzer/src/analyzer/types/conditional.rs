@@ -225,6 +225,20 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(crate) fn get_conditional_type_means(&mut self, span: Span, ty: &Type) -> Vec<Type> {
+        let mut means_tys = vec![];
+        match ty.normalize() {
+            Type::Conditional(Conditional { true_type, false_type, .. }) => {
+                means_tys.append(&mut self.get_conditional_type_means(span, true_type));
+                means_tys.append(&mut self.get_conditional_type_means(span, false_type));
+            }
+            _ => {
+                means_tys.push(ty.clone());
+            }
+        }
+        means_tys
+    }
+
     pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {
         let _tracing = dev_span!("expand_conditional_type");
 
