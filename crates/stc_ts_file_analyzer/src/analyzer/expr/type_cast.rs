@@ -106,7 +106,6 @@ impl Analyzer<'_, '_> {
         casted_ty.freeze();
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty).report(&mut self.storage);
-        dbg!(&casted_ty);
         Ok(casted_ty)
     }
 
