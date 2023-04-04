@@ -1396,6 +1396,8 @@ pub enum ErrorKind {
 
     NonOverlappingTypeCast {
         span: Span,
+        from: Box<Type>,
+        to: Box<Type>,
     },
 
     InvalidOperatorForLhs {
