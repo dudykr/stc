@@ -1773,6 +1773,24 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                Type::Param(param) => {
+                    let ty = &param.constraint;
+
+                    if let Some(ty) = ty {
+                        let ty = ty.normalize();
+
+                        if let Type::Array(Array {
+                            elem_type: ref rhs_elem_type,
+                            ..
+                        }) = ty
+                        {
+                            return self.assign_inner(data, lhs_elem_type, rhs_elem_type, opts);
+                        } else {
+                            return self.assign_without_wrapping(data, to, ty, opts);
+                        }
+                    }
+                }
+
                 _ => {
                     if let Some(res) = self.try_assign_using_parent(data, to, rhs, opts) {
                         return res;
