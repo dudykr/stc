@@ -2603,6 +2603,7 @@ impl Analyzer<'_, '_> {
 
             if constructors.len() > 1 {
                 is_overload = true;
+
                 let valid_arity_constructors = constructors
                     .iter()
                     .filter_map(|c| {
@@ -2623,7 +2624,7 @@ impl Analyzer<'_, '_> {
 
                 passed_arity_checks = is_type_arg_count_fine && !valid_arity_constructors.is_empty();
 
-                if !passed_arity_checks {
+                if !passed_arity_checks && is_type_arg_count_fine {
                     self.validate_arg_count(span, &params, args, arg_types, spread_arg_types)
                         .report(&mut self.storage);
                 } else {

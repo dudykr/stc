@@ -2825,3 +2825,4 @@ types/union/unionTypeReduction.ts
 types/union/unionTypeWithIndexSignature.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
 types/unknown/unknownType2.ts
+types/unknown/unknownType2.tsSymbols/ES5SymbolProperty4.ts

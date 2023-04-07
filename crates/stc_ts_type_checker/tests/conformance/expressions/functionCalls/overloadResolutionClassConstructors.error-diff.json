@@ -8,13 +8,6 @@
       98
     ]
   },
-  "extra_errors": {
-    "TS2554": 2
-  },
-  "extra_error_lines": {
-    "TS2554": [
-      61,
-      65
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
