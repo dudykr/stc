@@ -682,6 +682,19 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
 
         let key = c.key.validate_with(self)?;
+        if c.is_override {
+            let key_span = key.span();
+            if let Some(super_class) = &self.scope.get_super_class(false) {
+                if self
+                    .access_property(key_span, super_class, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                    .is_err()
+                {
+                    return Err(ErrorKind::NotDeclaredInSuperClass { span: key_span }.into());
+                }
+            } else {
+                return Err(ErrorKind::NotExtendsAnotherClass { span: key_span }.into());
+            }
+        }
 
         if let Some(object_type) = object_type {
             if let Ok(type_ann) = self.access_property(
