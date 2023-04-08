@@ -1813,6 +1813,7 @@ nonjsExtensions/declarationFileForJsonImport.ts
 override/override10.ts
 override/override12.ts
 override/override14.ts
+override/override15.ts
 override/override16.ts
 override/override17.ts
 override/override18.ts
