@@ -614,9 +614,9 @@ impl Visit<RExpr> for LitValidator<'_> {
                 let is_ref = self.decl.members.iter().any(|m| match m.id {
                     RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == i.sym,
                 });
-                if !is_ref {
-                    self.error = true;
-                }
+                // if !is_ref {
+                //     self.error = true;
+                // }
             }
             RExpr::Member(..) => {}
             RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Paren(..) => {
