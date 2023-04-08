@@ -38,6 +38,7 @@ pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
 use crate::{
     analyzer::{
         assign::AssignOpts,
+        control_flow::CondFacts,
         pat::PatMode,
         scope::{ExpandOpts, ScopeKind, VarKind},
         types::NormalizeTypeOpts,
@@ -371,6 +372,7 @@ impl Analyzer<'_, '_> {
 
             let mut left_i = None;
             let ty_of_left;
+            let mut facts_for_rhs: Option<CondFacts> = None;
             let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(RBindingIdent { id: ref i, .. })) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
@@ -381,6 +383,15 @@ impl Analyzer<'_, '_> {
                     };
 
                     left_i = Some(i.clone());
+
+                    if e.op == op!("&&=") {
+                        let mut cond_facts: CondFacts = Default::default();
+                        cond_facts.facts.insert(
+                            i.into(),
+                            TypeFacts::NEUndefined | TypeFacts::NENull | TypeFacts::NEUndefinedOrNull | TypeFacts::Truthy,
+                        );
+                        facts_for_rhs = Some(cond_facts);
+                    }
 
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
@@ -525,9 +536,17 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            e.right
-                                .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
-                                .context("tried to validate rhs an assign expr")
+                            if let Some(facts) = facts_for_rhs {
+                                analyzer.with_child(ScopeKind::Flow, facts, |analyzer| {
+                                    e.right
+                                        .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
+                                        .context("tried to validate rhs an assign expr")
+                                })
+                            } else {
+                                e.right
+                                    .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
+                                    .context("tried to validate rhs an assign expr")
+                            }
                         }
                         Some(ty) if right_function_declared_this => {
                             let mut ty = ty.clone();
