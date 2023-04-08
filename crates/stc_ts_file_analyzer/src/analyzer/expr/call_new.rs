@@ -3328,6 +3328,7 @@ impl Analyzer<'_, '_> {
                             allow_unknown_rhs: Some(allow_unknown_rhs),
                             use_missing_fields_for_class: true,
                             allow_assignment_to_void: false,
+                            do_not_use_single_error_for_tuple_with_rest: true,
                             ..Default::default()
                         },
                     ) {
