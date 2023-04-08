@@ -1680,9 +1680,9 @@ impl ErrorKind {
             // TS2741: Missing properties with comparison-like error message
             2739 | 2740 | 2741 => 2322,
 
-            // TS4112: Cannot have override
+            // TS4113: Cannot have override
             // TS4117: Cannot have override with spelling suggestion
-            4112 | 4117 => 4112,
+            4113 | 4117 => 4112,
 
             _ => code,
         }
