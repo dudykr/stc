@@ -7,6 +7,12 @@
       8
     ]
   },
-  "extra_errors": {},
-  "extra_error_lines": {}
+  "extra_errors": {
+    "TS4113": 1
+  },
+  "extra_error_lines": {
+    "TS4113": [
+      8
+    ]
+  }
 }
