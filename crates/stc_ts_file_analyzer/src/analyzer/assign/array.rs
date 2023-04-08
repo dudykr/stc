@@ -30,12 +30,16 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
+                fail!(vec![])
+            }};
+
+            ($errors:expr) => {{
                 return Err(ErrorKind::AssignFailed {
                     span,
                     left: box l_type.clone(),
                     right: box rhs.clone(),
                     right_ident: opts.right_ident_span,
-                    cause: vec![],
+                    cause: $errors,
                 }
                 .context(format!(
                     "LHS (final): {}\nRHS (final): {}",
@@ -151,6 +155,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
+                    if !opts.do_not_use_single_error_for_tuple_with_rest && l.elems.iter().any(|elem| elem.ty.is_rest()) {
+                        fail!(errors);
+                    }
+
                     return Err(ErrorKind::TupleAssignError { span, errors }.into());
                 }
 

@@ -183,6 +183,8 @@ pub(crate) struct AssignOpts {
 
     /// Use `TS2322` on missing properties.
     pub report_assign_failure_for_missing_properties: Option<bool>,
+
+    pub do_not_use_single_error_for_tuple_with_rest: bool,
 }
 
 #[derive(Default)]
