@@ -3107,7 +3107,7 @@ impl Analyzer<'_, '_> {
         });
         let mut args_iter = spread_arg_types.iter();
 
-        Ok(loop {
+        loop {
             let param = params_iter.next();
             let arg = args_iter.next();
 
@@ -3380,7 +3380,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-        })
+        }
+        Ok(())
     }
 
     /// Note:
