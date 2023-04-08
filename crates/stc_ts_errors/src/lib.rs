@@ -1555,6 +1555,15 @@ pub enum ErrorKind {
         obj: Option<Box<Type>>,
         prop: Option<Box<Key>>,
     },
+
+    /// TS4112
+    NotExtendsAnotherClass {
+        span: Span,
+    },
+    /// TS4113
+    NotDeclaredInSuperClass {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2141,6 +2150,10 @@ impl ErrorKind {
             ErrorKind::UsePropBeforeInit { .. } => 2729,
 
             ErrorKind::NonStringDynamicImport { .. } => 7036,
+
+            ErrorKind::NotExtendsAnotherClass { .. } => 4112,
+
+            ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
 
             _ => 0,
         }
