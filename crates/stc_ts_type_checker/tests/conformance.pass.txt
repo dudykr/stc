@@ -339,6 +339,7 @@ classes/propertyMemberDeclarations/thisInInstanceMemberInitializer.ts
 classes/staticIndexSignature/staticIndexSignature1.ts
 classes/staticIndexSignature/staticIndexSignature6.ts
 constEnums/constEnum1.ts
+constEnums/constEnum2.ts
 constEnums/constEnum3.ts
 constEnums/constEnum4.ts
 constEnums/constEnumPropertyAccess2.ts
