@@ -41,9 +41,34 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<ArcCow<Enum>> {
+    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Type> {
         for m in &e.members {
             self.validate_with(|a| a.validate_enum_member_name(&m.id));
+        }
+
+        let mut errored_with_const = false;
+
+        // Validate const enums
+        if e.is_const {
+            for m in &e.members {
+                if let Some(init) = &m.init {
+                    let mut v = LitValidator {
+                        error: false,
+                        decl: e,
+                        errors: Default::default(),
+                    };
+                    init.visit_with(&mut v);
+                    self.storage.report_all(v.errors);
+                    if v.error {
+                        errored_with_const = true;
+                        self.storage.report(ErrorKind::InvalidInitInConstEnum { span: init.span() }.into())
+                    }
+                }
+            }
+        }
+
+        if errored_with_const {
+            return Ok(Type::any(e.span, Default::default()));
         }
 
         let mut default = 0.0;
@@ -137,7 +162,6 @@ impl Analyzer<'_, '_> {
         let name = Id::from(&e.id);
 
         let stored_ty = ty
-            .clone()
             .map(Type::Enum)
             .map(Type::freezed)
             .report(&mut self.storage)
@@ -146,28 +170,10 @@ impl Analyzer<'_, '_> {
 
         self.register_type(name.clone(), stored_ty.clone());
 
-        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty), None, true, true, false, false)
+        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty.clone()), None, true, true, false, false)
             .report(&mut self.storage);
 
-        // Validate const enums
-        if e.is_const {
-            for m in &e.members {
-                if let Some(init) = &m.init {
-                    let mut v = LitValidator {
-                        error: false,
-                        decl: e,
-                        errors: Default::default(),
-                    };
-                    init.visit_with(&mut v);
-                    self.storage.report_all(v.errors);
-                    if v.error {
-                        self.storage.report(ErrorKind::InvalidInitInConstEnum { span: init.span() }.into())
-                    }
-                }
-            }
-        }
-
-        ty
+        Ok(stored_ty)
     }
 }
 
@@ -614,9 +620,9 @@ impl Visit<RExpr> for LitValidator<'_> {
                 let is_ref = self.decl.members.iter().any(|m| match m.id {
                     RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == i.sym,
                 });
-                if !is_ref {
-                    self.error = true;
-                }
+                // if !is_ref {
+                //     self.error = true;
+                // }
             }
             RExpr::Member(..) => {}
             RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Paren(..) => {
