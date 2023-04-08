@@ -1,13 +1,6 @@
 Stats {
-<<<<<<< HEAD
-    required_error: 3716,
-    matched_error: 6318,
-    extra_error: 761,
+    required_error: 3714,
+    matched_error: 6320,
+    extra_error: 757,
     panic: 106,
-=======
-    required_error: 3860,
-    matched_error: 6141,
-    extra_error: 834,
-    panic: 107,
->>>>>>> 3bac52e6 (Fix 595, by validating rhs in a child scope)
 }
