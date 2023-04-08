@@ -620,12 +620,7 @@ impl LoadFile for TestFileSystem {
         }
 
         for (name, content) in self.files.iter() {
-            if filename.to_string() == *name
-                || format!("{}.ts", filename) == *name
-                || format!("{}.tsx", filename) == *name
-                || format!("{}.ts", filename) == *name
-                || format!("{}.d.ts", filename) == *name
-            {
+            if filename.to_string() == *name {
                 let fm = cm.new_source_file((**filename).clone(), content.clone());
 
                 return Ok((fm, Syntax::Typescript(Default::default())));
