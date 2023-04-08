@@ -1701,12 +1701,15 @@ externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
 externalModules/reexportClassDefinition.ts
 externalModules/topLevelAwait.3.ts
+externalModules/topLevelFileModule.ts
 externalModules/topLevelFileModuleMissing.ts
 externalModules/typeOnly/nestedNamespace.ts
 externalModules/typeOnly/preserveValueImports.ts
 externalModules/typeOnly/preserveValueImports_errors.ts
 externalModules/typeOnlyMerge1.ts
 externalModules/umd2.ts
+externalModules/umd3.ts
+externalModules/umd4.ts
 externalModules/verbatimModuleSyntaxConstEnum.ts
 externalModules/verbatimModuleSyntaxRestrictionsESM.ts
 functions/functionOverloadCompatibilityWithVoid01.ts
