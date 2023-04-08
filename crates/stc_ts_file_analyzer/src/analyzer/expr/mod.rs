@@ -687,6 +687,9 @@ pub(crate) struct AccessPropertyOpts {
 
     /// Used for rest elements or [Type::Rest].
     pub use_last_element_for_tuple_on_out_of_bound: bool,
+
+    /// Only used to determine if the method can be overridden
+    pub allow_access_abstract_method: bool,
 }
 
 #[validator]
@@ -2062,7 +2065,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
-                                if mtd.is_abstract {
+                                if mtd.is_abstract && !opts.allow_access_abstract_method {
                                     self.storage.report(ErrorKind::CannotAccessAbstractMember { span }.into());
                                     return Ok(Type::any(span, Default::default()));
                                 }

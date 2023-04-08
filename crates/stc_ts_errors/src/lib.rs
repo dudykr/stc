@@ -1555,6 +1555,11 @@ pub enum ErrorKind {
         obj: Option<Box<Type>>,
         prop: Option<Box<Key>>,
     },
+
+    /// TS4113
+    NotDeclaredInSuperClass {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1674,6 +1679,10 @@ impl ErrorKind {
             // TS2740: Missing properties with type names
             // TS2741: Missing properties with comparison-like error message
             2739 | 2740 | 2741 => 2322,
+
+            // TS4113: Cannot have override
+            // TS4117: Cannot have override with spelling suggestion
+            4113 | 4117 => 4112,
 
             _ => code,
         }
@@ -2141,6 +2150,8 @@ impl ErrorKind {
             ErrorKind::UsePropBeforeInit { .. } => 2729,
 
             ErrorKind::NonStringDynamicImport { .. } => 7036,
+
+            ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
 
             _ => 0,
         }
