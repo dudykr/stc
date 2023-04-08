@@ -3039,7 +3039,12 @@ impl Analyzer<'_, '_> {
 
         macro_rules! report_err {
             ($err:expr) => {{
-                self.storage.report($err.context("tried to validate an argument"));
+                if is_overload {
+                    return Err($err.into());
+                } else {
+                    self.storage.report($err.context("tried to validate an argument"));
+                }
+
                 if is_generic {
                     return Ok(());
                 }
@@ -3102,7 +3107,7 @@ impl Analyzer<'_, '_> {
         });
         let mut args_iter = spread_arg_types.iter();
 
-        loop {
+        Ok(loop {
             let param = params_iter.next();
             let arg = args_iter.next();
 
@@ -3117,12 +3122,8 @@ impl Analyzer<'_, '_> {
                     let param_ty = match param_ty {
                         Ok(v) => v,
                         Err(err) => {
-                            if is_overload {
-                                return Err(err);
-                            } else {
-                                report_err!(err);
-                                return Ok(());
-                            }
+                            report_err!(err);
+                            return Ok(());
                         }
                     }
                     .freezed();
@@ -3159,12 +3160,8 @@ impl Analyzer<'_, '_> {
                                 match res {
                                     Ok(_) => {}
                                     Err(err) => {
-                                        if is_overload {
-                                            return Err(err);
-                                        } else {
-                                            report_err!(err);
-                                            return Ok(());
-                                        }
+                                        report_err!(err);
+                                        return Ok(());
                                     }
                                 };
 
@@ -3201,12 +3198,8 @@ impl Analyzer<'_, '_> {
                                     match res {
                                         Ok(_) => {}
                                         Err(err) => {
-                                            if is_overload {
-                                                return Err(err);
-                                            } else {
-                                                report_err!(err);
-                                                return Ok(());
-                                            }
+                                            report_err!(err);
+                                            return Ok(());
                                         }
                                     };
                                 }
@@ -3248,13 +3241,8 @@ impl Analyzer<'_, '_> {
                                     inner: box err.into(),
                                 })
                                 .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
-
-                            if is_overload {
-                                return Err(err);
-                            } else {
-                                report_err!(err);
-                                return Ok(());
-                            }
+                            report_err!(err);
+                            return Ok(());
                         }
                         _ => {
                             if let Ok(()) = self.assign_with_opts(
@@ -3284,14 +3272,8 @@ impl Analyzer<'_, '_> {
                         }
                         Err(err) => {
                             if let ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } = &*err {
-                                let err = ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span };
-
-                                if is_overload {
-                                    return Err(err.into());
-                                } else {
-                                    report_err!(err);
-                                    return Ok(());
-                                }
+                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
+                                return Ok(());
                             }
                         }
                     }
@@ -3320,12 +3302,8 @@ impl Analyzer<'_, '_> {
                         })
                         .context("arg is spread");
                     if let Err(err) = res {
-                        if is_overload {
-                            return Err(err);
-                        } else {
-                            report_err!(err);
-                            return Ok(());
-                        }
+                        report_err!(err);
+                        return Ok(());
                     }
                 } else {
                     let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
@@ -3396,18 +3374,12 @@ impl Analyzer<'_, '_> {
                             }
                         });
 
-                        if is_overload {
-                            return Err(err);
-                        } else {
-                            report_err!(err);
-                            return Ok(());
-                        }
+                        report_err!(err);
+                        return Ok(());
                     }
                 }
             }
-        }
-
-        Ok(())
+        })
     }
 
     /// Note:
