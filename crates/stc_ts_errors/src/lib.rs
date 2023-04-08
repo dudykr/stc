@@ -1556,10 +1556,6 @@ pub enum ErrorKind {
         prop: Option<Box<Key>>,
     },
 
-    /// TS4112
-    NotExtendsAnotherClass {
-        span: Span,
-    },
     /// TS4113
     NotDeclaredInSuperClass {
         span: Span,
@@ -2150,8 +2146,6 @@ impl ErrorKind {
             ErrorKind::UsePropBeforeInit { .. } => 2729,
 
             ErrorKind::NonStringDynamicImport { .. } => 7036,
-
-            ErrorKind::NotExtendsAnotherClass { .. } => 4112,
 
             ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
 
