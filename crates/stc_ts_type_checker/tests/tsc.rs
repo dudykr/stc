@@ -631,6 +631,18 @@ impl LoadFile for TestFileSystem {
             return DefaultFileLoader.load_file(cm, filename);
         }
 
+        if let FileName::Real(fname) = &**filename {
+            for (name, content) in self.files.iter() {
+                let name = Path::new(name);
+
+                if fname.file_stem().is_some() && fname.file_stem() == name.file_stem() {
+                    let fm = cm.new_source_file((**filename).clone(), content.clone());
+
+                    return Ok((fm, Syntax::Typescript(Default::default())));
+                }
+            }
+        }
+
         todo!("load_file: {:?} ", filename);
     }
 }
