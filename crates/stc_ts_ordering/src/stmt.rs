@@ -2,9 +2,10 @@
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl,
-    RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs,
-    RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
+    RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RJSXElementName, RJSXMemberExpr, RJSXObject,
+    RMemberExpr, RMemberProp, RModuleDecl, RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt,
+    RTsEntityName, RTsExprWithTypeArgs, RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr,
+    RVarDeclOrPat, RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
@@ -350,6 +351,35 @@ impl Visit<RNamedExport> for DepAnalyzer {
         }
 
         value.visit_children_with(self);
+    }
+}
+
+impl Visit<RJSXElementName> for DepAnalyzer {
+    fn visit(&mut self, n: &RJSXElementName) {
+        n.visit_children_with(self);
+
+        fn left(name: &RJSXObject) -> &RIdent {
+            match name {
+                RJSXObject::Ident(i) => i,
+                RJSXObject::JSXMemberExpr(n) => left(&n.obj),
+            }
+        }
+
+        match n {
+            RJSXElementName::Ident(id) => {
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: id.into(),
+                });
+            }
+            RJSXElementName::JSXMemberExpr(n) => {
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: left(&n.obj).into(),
+                });
+            }
+            RJSXElementName::JSXNamespacedName(_) => {}
+        }
     }
 }
 
