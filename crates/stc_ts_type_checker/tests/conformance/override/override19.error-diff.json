@@ -1,13 +1,10 @@
 {
   "required_errors": {
-    "TS4113": 1,
-    "TS4117": 1
+    "TS4112": 2
   },
   "required_error_lines": {
-    "TS4113": [
-      15
-    ],
-    "TS4117": [
+    "TS4112": [
+      15,
       19
     ]
   },

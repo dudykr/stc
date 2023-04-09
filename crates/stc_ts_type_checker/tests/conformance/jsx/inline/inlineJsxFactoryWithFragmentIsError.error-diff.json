@@ -1,10 +1,15 @@
 {
   "required_errors": {
-    "TS2710": 1
+    "TS2304": 1,
+    "TS17017": 2
   },
   "required_error_lines": {
-    "TS2710": [
-      12
+    "TS2304": [
+      3
+    ],
+    "TS17017": [
+      3,
+      3
     ]
   },
   "extra_errors": {},

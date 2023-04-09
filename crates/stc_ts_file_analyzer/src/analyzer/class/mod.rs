@@ -707,6 +707,27 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
         let key_span = c.key.span();
 
+        if c.is_override {
+            if let Some(super_class) = &self.scope.get_super_class(false) {
+                if self
+                    .access_property(
+                        key_span,
+                        super_class,
+                        &key,
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                        AccessPropertyOpts {
+                            allow_access_abstract_method: true,
+                            ..Default::default()
+                        },
+                    )
+                    .is_err()
+                {
+                    return Err(ErrorKind::NotDeclaredInSuperClass { span: key_span }.into());
+                }
+            }
+        }
+
         let (params, type_params, declared_ret_ty, inferred_ret_ty) =
             self.with_child(
                 ScopeKind::Method { is_static: c.is_static },

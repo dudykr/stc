@@ -599,7 +599,7 @@ impl Resolve for TestFileSystem {
 
         if let Some(filename) = module_specifier.strip_prefix("./") {
             for (name, _) in self.files.iter() {
-                if format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
+                if format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name || format!("{}.d.ts", filename) == *name {
                     return Ok(FileName::Real(name.into()));
                 }
             }
@@ -620,7 +620,7 @@ impl LoadFile for TestFileSystem {
         }
 
         for (name, content) in self.files.iter() {
-            if filename.to_string() == *name || format!("{}.ts", filename) == *name || format!("{}.tsx", filename) == *name {
+            if filename.to_string() == *name {
                 let fm = cm.new_source_file((**filename).clone(), content.clone());
 
                 return Ok((fm, Syntax::Typescript(Default::default())));
@@ -629,6 +629,18 @@ impl LoadFile for TestFileSystem {
 
         if filename.to_string().ends_with(".d.ts") {
             return DefaultFileLoader.load_file(cm, filename);
+        }
+
+        if let FileName::Real(fname) = &**filename {
+            for (name, content) in self.files.iter() {
+                let name = Path::new(name);
+
+                if fname.file_stem().is_some() && fname.file_stem() == name.file_stem() {
+                    let fm = cm.new_source_file((**filename).clone(), content.clone());
+
+                    return Ok((fm, Syntax::Typescript(Default::default())));
+                }
+            }
         }
 
         todo!("load_file: {:?} ", filename);
