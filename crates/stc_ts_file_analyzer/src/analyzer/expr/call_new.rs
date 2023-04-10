@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_backtrace, print_type},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_type},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -1153,7 +1153,6 @@ impl Analyzer<'_, '_> {
 
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(span, &mut Default::default(), &m.key.ty(), &prop.ty()) {
-                    dbg!(m);
                     candidates.push(CallCandidate {
                         type_params: m.type_params.clone(),
                         params: m.params.clone(),
@@ -2430,8 +2429,6 @@ impl Analyzer<'_, '_> {
                 })
                 .unwrap_or(span);
 
-            dbg!(params, args, arg_types, spread_arg_types, min_param, max_param);
-            print_backtrace();
             Err(ErrorKind::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
