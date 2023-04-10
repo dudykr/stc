@@ -6,12 +6,12 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
     RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_type},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -1153,6 +1153,7 @@ impl Analyzer<'_, '_> {
 
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(span, &mut Default::default(), &m.key.ty(), &prop.ty()) {
+                    dbg!(m);
                     candidates.push(CallCandidate {
                         type_params: m.type_params.clone(),
                         params: m.params.clone(),
@@ -1183,12 +1184,29 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(CallCandidate {
-                            // TODO(kdy1): Maybe we need Option<Vec<T>>.
-                            params: Default::default(),
-                            ret_ty: box Type::any(span, Default::default()),
-                            type_params: Default::default(),
-                        }),
+                        }) => {
+                            let rest = FnParam {
+                                span,
+                                required: false,
+                                pat: RPat::Rest(RRestPat {
+                                    node_id: NodeId::invalid(),
+                                    span,
+                                    dot3_token: DUMMY_SP,
+                                    arg: box RPat::Ident(RBindingIdent {
+                                        node_id: NodeId::invalid(),
+                                        id: RIdent::new("args".into(), span.with_ctxt(SyntaxContext::empty())),
+                                        type_ann: Default::default(),
+                                    }),
+                                    type_ann: Default::default(),
+                                }),
+                                ty: box Type::any(span, Default::default()),
+                            };
+                            candidates.push(CallCandidate {
+                                params: vec![rest],
+                                ret_ty: box Type::any(span, Default::default()),
+                                type_params: Default::default(),
+                            });
+                        }
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
@@ -2412,6 +2430,8 @@ impl Analyzer<'_, '_> {
                 })
                 .unwrap_or(span);
 
+            dbg!(params, args, arg_types, spread_arg_types, min_param, max_param);
+            print_backtrace();
             Err(ErrorKind::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
