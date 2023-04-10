@@ -6,7 +6,7 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
     RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
@@ -1183,12 +1183,29 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(CallCandidate {
-                            // TODO(kdy1): Maybe we need Option<Vec<T>>.
-                            params: Default::default(),
-                            ret_ty: box Type::any(span, Default::default()),
-                            type_params: Default::default(),
-                        }),
+                        }) => {
+                            let rest = FnParam {
+                                span,
+                                required: false,
+                                pat: RPat::Rest(RRestPat {
+                                    node_id: NodeId::invalid(),
+                                    span,
+                                    dot3_token: DUMMY_SP,
+                                    arg: box RPat::Ident(RBindingIdent {
+                                        node_id: NodeId::invalid(),
+                                        id: RIdent::new("args".into(), span.with_ctxt(SyntaxContext::empty())),
+                                        type_ann: Default::default(),
+                                    }),
+                                    type_ann: Default::default(),
+                                }),
+                                ty: box Type::any(span, Default::default()),
+                            };
+                            candidates.push(CallCandidate {
+                                params: vec![rest],
+                                ret_ty: box Type::any(span, Default::default()),
+                                type_params: Default::default(),
+                            });
+                        }
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
