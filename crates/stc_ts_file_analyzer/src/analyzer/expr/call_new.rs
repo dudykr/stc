@@ -2333,7 +2333,6 @@ impl Analyzer<'_, '_> {
                             )
                         })),
                 ),
-
                 RPat::Ident(v) => usize::from(!v.id.optional),
                 RPat::Array(v) => usize::from(!v.optional),
                 RPat::Object(v) => usize::from(!v.optional),
@@ -3597,7 +3596,7 @@ impl Analyzer<'_, '_> {
             return ArgCheckResult::WrongArgCount;
         }
 
-        if let Err(e) = self.validate_arg_count(span, params, args, arg_types, spread_arg_types) {
+        if self.validate_arg_count(span, params, args, arg_types, spread_arg_types).is_err() {
             return ArgCheckResult::WrongArgCount;
         }
 
@@ -3986,7 +3985,6 @@ fn test_arg_check_result_order() {
 }
 
 /// TODO(kdy1): Use cow
-#[derive(Debug)]
 pub(super) struct CallCandidate {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
