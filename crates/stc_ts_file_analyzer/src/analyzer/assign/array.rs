@@ -205,6 +205,19 @@ impl Analyzer<'_, '_> {
                                 ..opts
                             },
                         )
+                        .convert_err(|err| match &err {
+                            ErrorKind::Errors { span, errors }
+                                if errors
+                                    .iter()
+                                    .all(|err| matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. })) =>
+                            {
+                                ErrorKind::SimpleAssignFailed {
+                                    span: *span,
+                                    cause: Some(box err.context("unioned errors because we are assigning to tuple")),
+                                }
+                            }
+                            _ => err,
+                        })
                         .context("tried to assign to a type literal created from a tuple")
                         .map(Some);
                 }
