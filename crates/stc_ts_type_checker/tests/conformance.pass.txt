@@ -2300,6 +2300,7 @@ types/any/assignEveryTypeToAny.ts
 types/any/narrowExceptionVariableInCatchClause.ts
 types/any/narrowFromAnyWithInstanceof.ts
 types/conditional/inferTypes2.ts
+types/conditional/inferTypesWithExtends1.ts
 types/conditional/variance.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionAwaitOperand.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionReturnType.ts
