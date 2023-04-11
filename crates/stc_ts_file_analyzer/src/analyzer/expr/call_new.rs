@@ -6,8 +6,8 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
-    RTsTypeParamInstantiation, RTsTypeRef,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit,
+    RTsThisTypeOrIdent, RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -2312,6 +2312,27 @@ impl Analyzer<'_, '_> {
                     id: RIdent { sym: js_word!("this"), .. },
                     ..
                 }) => 0,
+                RPat::Ident(RBindingIdent {
+                    type_ann:
+                        Some(box RTsTypeAnn {
+                            type_ann:
+                                box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType { types, .. })),
+                            ..
+                        }),
+                    id,
+                    ..
+                }) => usize::from(
+                    !(id.optional
+                        || types.iter().any(|p| {
+                            matches!(
+                                *p,
+                                box RTsType::TsKeywordType(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    ..
+                                })
+                            )
+                        })),
+                ),
                 RPat::Ident(v) => usize::from(!v.id.optional),
                 RPat::Array(v) => usize::from(!v.optional),
                 RPat::Object(v) => usize::from(!v.optional),
@@ -2509,6 +2530,13 @@ impl Analyzer<'_, '_> {
 
         if candidates.is_empty() {
             return Ok(None);
+        }
+        if callable.iter().all(|(_, x)| matches!(x, ArgCheckResult::WrongArgCount)) {
+            callable.sort_by_key(|(x, _)| {
+                x.params
+                    .iter()
+                    .fold(0, |acc, param| acc + if let RPat::Rest(..) = param.pat { -1 } else { -10 })
+            });
         }
 
         // Check if all candidates are failed.
