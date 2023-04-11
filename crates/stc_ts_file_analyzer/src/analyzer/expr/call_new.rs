@@ -6,8 +6,8 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsThisTypeOrIdent,
-    RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit,
+    RTsThisTypeOrIdent, RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
