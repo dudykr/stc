@@ -2154,8 +2154,8 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsBooleanKeyword
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Lit(..) | Type::Interface(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
-                        Type::TypeLit(..) => {
+                        Type::Lit(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
+                        Type::TypeLit(..) | Type::Interface(..) => {
                             let left = self.normalize(
                                 Some(span),
                                 Cow::Borrowed(to),
