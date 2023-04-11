@@ -840,7 +840,7 @@ impl Analyzer<'_, '_> {
                         || self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                &arg.clone().into_owned().generalize_lit(),
+                                &arg.clone().into_owned().generalize_lit().freezed(),
                                 &e.get().inferred_type.clone().generalize_lit(),
                                 AssignOpts {
                                     span,
@@ -910,8 +910,8 @@ impl Analyzer<'_, '_> {
                     if self
                         .assign_with_opts(
                             &mut Default::default(),
-                            &e.get().inferred_type.clone().generalize_lit(),
-                            &arg.clone().into_owned().generalize_lit(),
+                            &e.get().inferred_type.clone().generalize_lit().freezed(),
+                            &arg.clone().into_owned().generalize_lit().freezed(),
                             AssignOpts {
                                 span,
                                 ..Default::default()

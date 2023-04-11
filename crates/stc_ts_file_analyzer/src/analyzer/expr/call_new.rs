@@ -6,7 +6,7 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsThisTypeOrIdent,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsThisTypeOrIdent,
     RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_env::MarkExt;
@@ -1183,12 +1183,29 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(CallCandidate {
-                            // TODO(kdy1): Maybe we need Option<Vec<T>>.
-                            params: Default::default(),
-                            ret_ty: box Type::any(span, Default::default()),
-                            type_params: Default::default(),
-                        }),
+                        }) => {
+                            let rest = FnParam {
+                                span,
+                                required: false,
+                                pat: RPat::Rest(RRestPat {
+                                    node_id: NodeId::invalid(),
+                                    span,
+                                    dot3_token: DUMMY_SP,
+                                    arg: box RPat::Ident(RBindingIdent {
+                                        node_id: NodeId::invalid(),
+                                        id: RIdent::new("args".into(), span.with_ctxt(SyntaxContext::empty())),
+                                        type_ann: Default::default(),
+                                    }),
+                                    type_ann: Default::default(),
+                                }),
+                                ty: box Type::any(span, Default::default()),
+                            };
+                            candidates.push(CallCandidate {
+                                params: vec![rest],
+                                ret_ty: box Type::any(span, Default::default()),
+                                type_params: Default::default(),
+                            });
+                        }
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
@@ -1308,6 +1325,7 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tried to expand ref to handle a spread argument")?;
+
                     match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| TypeOrSpread {
@@ -1937,6 +1955,27 @@ impl Analyzer<'_, '_> {
                 _ => None,
             })
             .collect::<Vec<_>>();
+
+        if type_params_of_type.is_none()
+            && type_args.is_some()
+            && members.iter().all(|v| match v {
+                TypeElement::Call(c) => c.type_params.is_none(),
+                TypeElement::Constructor(c) => c.type_params.is_none(),
+                TypeElement::Method(met) => met.type_params.is_none(),
+                TypeElement::Property(prop) => prop.type_params.is_none(),
+                TypeElement::Index(ind) => true,
+            })
+        {
+            if let Some(type_args) = type_args {
+                return Err(ErrorKind::TypeParameterCountMismatch {
+                    span,
+                    min: 0,
+                    max: 0,
+                    actual: type_args.params.len(),
+                }
+                .into());
+            }
+        }
 
         if let Some(v) = self
             .select_and_invoke(
@@ -3230,6 +3269,7 @@ impl Analyzer<'_, '_> {
                             allow_unknown_rhs: Some(allow_unknown_rhs),
                             use_missing_fields_for_class: true,
                             allow_assignment_to_void: false,
+                            do_not_use_single_error_for_tuple_with_rest: true,
                             ..Default::default()
                         },
                     ) {
@@ -3566,18 +3606,13 @@ impl Analyzer<'_, '_> {
 
             let mut exact = true;
 
-            for (arg, param) in arg_types.iter().zip(params) {
-                // match arg.ty.normalize() {
-                //     Type::Union(..) => match param.ty.normalize() {
-                //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
-                // {},         _ => {}
-                //     },
-                //     _ => {}
-                // }
+            for (arg, param) in spread_arg_types.iter().zip(params) {
+                if matches!(param.pat, RPat::Rest(..)) && !arg.ty.is_array() {
+                    continue;
+                }
 
-                match param.ty.normalize() {
+                match param.ty.normalize_instance() {
                     Type::Param(..) => {}
-                    Type::Instance(param) if param.ty.is_type_param() => {}
                     _ => {
                         if analyzer
                             .assign_with_opts(

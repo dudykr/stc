@@ -314,7 +314,9 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<Type> {
         let children = e.children.validate_with_default(self)?;
 
-        self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
+        // See https://github.com/microsoft/TypeScript/issues/50429
+        // The TypeScript does not specify the validation rule for JSXFragment.
+        Ok(Type::any(e.span, Default::default()))
     }
 }
 

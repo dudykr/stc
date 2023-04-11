@@ -8,12 +8,6 @@
       49
     ]
   },
-  "extra_errors": {
-    "TS2532": 1
-  },
-  "extra_error_lines": {
-    "TS2532": [
-      30
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
