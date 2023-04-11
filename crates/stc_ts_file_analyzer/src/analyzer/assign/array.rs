@@ -155,7 +155,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
-                    if !opts.do_not_use_single_error_for_tuple_with_rest && l.elems.iter().any(|elem| elem.ty.is_rest()) {
+                    // We should use single error for tuple with rest in some cases.
+                    if (!opts.do_not_use_single_error_for_tuple_with_rest && l.elems.iter().any(|elem| elem.ty.is_rest()))
+                        || rhs.metadata().resolved_from_var
+                    {
                         fail!(errors);
                     }
 
