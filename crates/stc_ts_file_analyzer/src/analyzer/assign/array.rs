@@ -190,15 +190,17 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Index(..)
-            | Type::Lit(..)
-            | Type::Interface(..)
-            | Type::TypeLit(..)
-            | Type::Keyword(..)
-            | Type::Class(..)
-            | Type::ClassDef(..)
-                if !opts.allow_iterable_on_rhs =>
-            {
+            Type::Interface(..) | Type::TypeLit(..) => {
+                if let Some(tuple) = self.convert_type_to_type_lit(span, Cow::Borrowed(l_type))? {
+                    return self
+                        .assign_to_type_elements(data, tuple.span, &tuple.members, rhs, tuple.metadata, opts)
+                        .context("tried to assign to a type literal created from a tuple")
+                        .map(Some);
+                }
+
+                fail!()
+            }
+            Type::Index(..) | Type::Lit(..) | Type::Keyword(..) | Type::Class(..) | Type::ClassDef(..) if !opts.allow_iterable_on_rhs => {
                 fail!()
             }
 
