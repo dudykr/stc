@@ -6,8 +6,8 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
-    RTsTypeParamInstantiation, RTsTypeRef,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsThisTypeOrIdent,
+    RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -2273,6 +2273,28 @@ impl Analyzer<'_, '_> {
                     id: RIdent { sym: js_word!("this"), .. },
                     ..
                 }) => 0,
+                RPat::Ident(RBindingIdent {
+                    type_ann:
+                        Some(box RTsTypeAnn {
+                            type_ann:
+                                box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType { types, .. })),
+                            ..
+                        }),
+                    id,
+                    ..
+                }) => usize::from(
+                    !(id.optional
+                        || types.iter().any(|p| {
+                            matches!(
+                                *p,
+                                box RTsType::TsKeywordType(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    ..
+                                })
+                            )
+                        })),
+                ),
+
                 RPat::Ident(v) => usize::from(!v.id.optional),
                 RPat::Array(v) => usize::from(!v.optional),
                 RPat::Object(v) => usize::from(!v.optional),
@@ -3528,7 +3550,10 @@ impl Analyzer<'_, '_> {
             return ArgCheckResult::WrongArgCount;
         }
 
-        if self.validate_arg_count(span, params, args, arg_types, spread_arg_types).is_err() {
+        if let Err(e) = self.validate_arg_count(span, params, args, arg_types, spread_arg_types) {
+            if e.code() == 2554 && !params.is_empty() {
+                return ArgCheckResult::NotExactArgCount;
+            }
             return ArgCheckResult::WrongArgCount;
         }
 
@@ -3897,6 +3922,7 @@ enum ArgCheckResult {
     Exact,
     MayBe,
     ArgTypeMismatch,
+    NotExactArgCount,
     WrongArgCount,
 }
 
@@ -3922,6 +3948,7 @@ fn test_arg_check_result_order() {
 }
 
 /// TODO(kdy1): Use cow
+#[derive(Debug)]
 pub(super) struct CallCandidate {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
