@@ -193,7 +193,18 @@ impl Analyzer<'_, '_> {
             Type::Interface(..) | Type::TypeLit(..) => {
                 if let Some(tuple) = self.convert_type_to_type_lit(span, Cow::Borrowed(l_type))? {
                     return self
-                        .assign_to_type_elements(data, tuple.span, &tuple.members, rhs, tuple.metadata, opts)
+                        .assign_to_type_elements(
+                            data,
+                            tuple.span,
+                            &tuple.members,
+                            rhs,
+                            tuple.metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(false),
+                                allow_missing_fields: false,
+                                ..opts
+                            },
+                        )
                         .context("tried to assign to a type literal created from a tuple")
                         .map(Some);
                 }
