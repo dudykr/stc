@@ -1,8 +1,7 @@
 {
   "required_errors": {
     "TS2345": 3,
-    "TS2554": 5,
-    "TS2555": 1
+    "TS2554": 5
   },
   "required_error_lines": {
     "TS2345": [
@@ -16,17 +15,8 @@
       59,
       61,
       73
-    ],
-    "TS2555": [
-      70
     ]
   },
-  "extra_errors": {
-    "TS2554": 1
-  },
-  "extra_error_lines": {
-    "TS2554": [
-      70
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

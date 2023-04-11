@@ -2532,6 +2532,13 @@ impl Analyzer<'_, '_> {
         if candidates.is_empty() {
             return Ok(None);
         }
+        if callable.iter().all(|(_, x)| matches!(x, ArgCheckResult::WrongArgCount)) {
+            callable.sort_by_key(|(x, _)| {
+                x.params
+                    .iter()
+                    .fold(0, |acc, param| acc + if let RPat::Rest(..) = param.pat { -1 } else { -10 })
+            });
+        }
 
         // Check if all candidates are failed.
         if !args.is_empty()
@@ -3591,9 +3598,6 @@ impl Analyzer<'_, '_> {
         }
 
         if let Err(e) = self.validate_arg_count(span, params, args, arg_types, spread_arg_types) {
-            if e.code() == 2554 && !params.is_empty() {
-                return ArgCheckResult::NotExactArgCount;
-            }
             return ArgCheckResult::WrongArgCount;
         }
 
@@ -3957,7 +3961,6 @@ enum ArgCheckResult {
     Exact,
     MayBe,
     ArgTypeMismatch,
-    NotExactArgCount,
     WrongArgCount,
 }
 
