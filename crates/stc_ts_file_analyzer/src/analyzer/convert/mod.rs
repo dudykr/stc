@@ -1483,7 +1483,11 @@ impl Analyzer<'_, '_> {
                         accessor: Default::default(),
                     }))
                 }
-                RObjectPatProp::Rest(..) => {}
+                RObjectPatProp::Rest(p) => {
+                    if let Some(mutations) = &mut self.mutations {
+                        mutations.for_pats.entry(p.node_id).or_default().ty = Some(Type::any(p.span, Default::default()));
+                    }
+                }
             }
         }
 

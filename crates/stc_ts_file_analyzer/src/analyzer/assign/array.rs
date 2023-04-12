@@ -30,12 +30,16 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
+                fail!(vec![])
+            }};
+
+            ($errors:expr) => {{
                 return Err(ErrorKind::AssignFailed {
                     span,
                     left: box l_type.clone(),
                     right: box rhs.clone(),
                     right_ident: opts.right_ident_span,
-                    cause: vec![],
+                    cause: $errors,
                 }
                 .context(format!(
                     "LHS (final): {}\nRHS (final): {}",
@@ -151,6 +155,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
+                    // We should use single error for tuple with rest in some cases.
+                    if (!opts.do_not_use_single_error_for_tuple_with_rest && l.elems.iter().any(|elem| elem.ty.is_rest()))
+                        || rhs.metadata().resolved_from_var
+                    {
+                        fail!(errors);
+                    }
+
                     return Err(ErrorKind::TupleAssignError { span, errors }.into());
                 }
 
@@ -182,15 +193,41 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Index(..)
-            | Type::Lit(..)
-            | Type::Interface(..)
-            | Type::TypeLit(..)
-            | Type::Keyword(..)
-            | Type::Class(..)
-            | Type::ClassDef(..)
-                if !opts.allow_iterable_on_rhs =>
-            {
+            Type::Interface(..) | Type::TypeLit(..) => {
+                if let Some(tuple) = self.convert_type_to_type_lit(span, Cow::Borrowed(l_type))? {
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            tuple.span,
+                            &tuple.members,
+                            rhs,
+                            tuple.metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(false),
+                                allow_missing_fields: false,
+                                ..opts
+                            },
+                        )
+                        .convert_err(|err| match &err {
+                            ErrorKind::Errors { span, errors }
+                                if errors
+                                    .iter()
+                                    .all(|err| matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. })) =>
+                            {
+                                ErrorKind::SimpleAssignFailed {
+                                    span: *span,
+                                    cause: Some(box err.context("union errors because we are assigning to tuple")),
+                                }
+                            }
+                            _ => err,
+                        })
+                        .context("tried to assign to a type literal created from a tuple")
+                        .map(Some);
+                }
+
+                fail!()
+            }
+            Type::Index(..) | Type::Lit(..) | Type::Keyword(..) | Type::Class(..) | Type::ClassDef(..) if !opts.allow_iterable_on_rhs => {
                 fail!()
             }
 

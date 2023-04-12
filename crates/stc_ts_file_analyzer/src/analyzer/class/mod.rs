@@ -707,6 +707,27 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
         let key_span = c.key.span();
 
+        if c.is_override {
+            if let Some(super_class) = &self.scope.get_super_class(false) {
+                if self
+                    .access_property(
+                        key_span,
+                        super_class,
+                        &key,
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                        AccessPropertyOpts {
+                            allow_access_abstract_method: true,
+                            ..Default::default()
+                        },
+                    )
+                    .is_err()
+                {
+                    return Err(ErrorKind::NotDeclaredInSuperClass { span: key_span }.into());
+                }
+            }
+        }
+
         let (params, type_params, declared_ret_ty, inferred_ret_ty) =
             self.with_child(
                 ScopeKind::Method { is_static: c.is_static },
@@ -1881,7 +1902,8 @@ impl Analyzer<'_, '_> {
                 for (index, node) in c.body.iter().enumerate() {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
-                        | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
+                        | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. })
+                        | RClassMember::AutoAccessor(RAutoAccessor { is_static: true, .. }) => {
                             let m = node.validate_with_args(child, type_ann)?;
                             if let Some(member) = m {
                                 // Check for duplicate property names.
@@ -2006,7 +2028,8 @@ impl Analyzer<'_, '_> {
                 for (index, member) in c.body.iter().enumerate() {
                     match member {
                         RClassMember::ClassProp(RClassProp { is_static: false, .. })
-                        | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
+                        | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. })
+                        | RClassMember::AutoAccessor(RAutoAccessor { is_static: false, .. }) => {
                             //
                             let class_member = member.validate_with_args(child, type_ann).report(&mut child.storage).flatten();
                             if let Some(member) = class_member {
