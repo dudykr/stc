@@ -880,6 +880,20 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        // retain default method
+        if !missing_fields.is_empty() {
+            missing_fields.retain(|v| {
+                if let TypeElement::Method(MethodSignature {
+                    key: Key::Normal { sym, .. },
+                    ..
+                }) = v
+                {
+                    &**sym != "toLocaleString" && &**sym != "toString"
+                } else {
+                    true
+                }
+            });
+        }
         if !missing_fields.is_empty() {
             if opts.report_assign_failure_for_missing_properties.unwrap_or_default()
                 && lhs.iter().all(|el| {
