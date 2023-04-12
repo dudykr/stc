@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                             {
                                 ErrorKind::SimpleAssignFailed {
                                     span: *span,
-                                    cause: Some(box err.context("unioned errors because we are assigning to tuple")),
+                                    cause: Some(box err.context("union errors because we are assigning to tuple")),
                                 }
                             }
                             _ => err,
