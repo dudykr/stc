@@ -1684,6 +1684,14 @@ impl ErrorKind {
             // TS4117: Cannot have override with spelling suggestion
             4113 | 4117 => 4112,
 
+            // TS2515: Missing an abstract member
+            // TS18052: Missing all abstract members
+            2515 | 18052 => 2515,
+
+            // TS5101: Deprecated
+            // TS5107: Deprecated with two args
+            5101 | 5107 => 5101,
+
             _ => code,
         }
     }

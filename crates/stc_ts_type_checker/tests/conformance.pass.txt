@@ -2576,6 +2576,7 @@ types/thisType/thisTypeInTuples.ts
 types/thisType/thisTypeInTypePredicate.ts
 types/thisType/thisTypeOptionalCall.ts
 types/thisType/thisTypeSyntacticContext.ts
+types/tuple/arityAndOrderCompatibility01.ts
 types/tuple/castingTuple.ts
 types/tuple/contextualTypeWithTuple.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts
