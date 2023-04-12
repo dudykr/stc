@@ -501,29 +501,6 @@ impl Analyzer<'_, '_> {
         }
 
         match ty {
-            Type::Ref(Ref {
-                span,
-                type_name: RTsEntityName::Ident(type_name),
-                type_args: None,
-                metadata,
-                ..
-            }) => {
-                // TODO(kdy1): Check if ref points global.
-                return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                    span: *span,
-                    kind: match type_name.sym {
-                        js_word!("Boolean") => TsKeywordTypeKind::TsBooleanKeyword,
-                        js_word!("Number") => TsKeywordTypeKind::TsNumberKeyword,
-                        js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
-                        _ => return Ok(Cow::Borrowed(ty)),
-                    },
-                    metadata: KeywordTypeMetadata {
-                        common: metadata.common,
-                        ..Default::default()
-                    },
-                    tracker: Default::default(),
-                })));
-            }
             Type::EnumVariant(e @ EnumVariant { name: Some(..), .. }) => {
                 if opts.ignore_enum_variant_name {
                     return Ok(Cow::Owned(Type::EnumVariant(EnumVariant { name: None, ..e.clone() })));
@@ -1012,6 +989,7 @@ impl Analyzer<'_, '_> {
         if match rhs.normalize_instance() {
             Type::Lit(..) => true,
             Type::Interface(i) => matches!(&**i.name.sym(), "Boolean" | "String" | "Number" | "BigInt"),
+            Type::EnumVariant(..) => true,
             _ => false,
         } {
             // Handle special cases.
@@ -1049,6 +1027,14 @@ impl Analyzer<'_, '_> {
                     {
                         match rhs {
                             Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
+                            Type::EnumVariant(ref e) => {
+                                let e = e.def.normalize();
+                                if (e.has_num && !e.has_str && *interface == "Number")
+                                    || (e.has_str && !e.has_num && *interface == "String")
+                                {
+                                    return Ok(());
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -2154,8 +2140,8 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsBooleanKeyword
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Lit(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
-                        Type::TypeLit(..) | Type::Interface(..) => {
+                        Type::Lit(..) | Type::Function(..) | Type::Constructor(..) | Type::Interface(..) => fail!(),
+                        Type::TypeLit(..) => {
                             let left = self.normalize(
                                 Some(span),
                                 Cow::Borrowed(to),
