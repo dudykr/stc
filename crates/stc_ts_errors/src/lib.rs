@@ -1560,6 +1560,11 @@ pub enum ErrorKind {
     NotDeclaredInSuperClass {
         span: Span,
     },
+
+    /// TS2428
+    InterfaceNonIdenticalTypeParams {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2160,6 +2165,8 @@ impl ErrorKind {
             ErrorKind::NonStringDynamicImport { .. } => 7036,
 
             ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
+
+            ErrorKind::InterfaceNonIdenticalTypeParams { .. } => 2428,
 
             _ => 0,
         }

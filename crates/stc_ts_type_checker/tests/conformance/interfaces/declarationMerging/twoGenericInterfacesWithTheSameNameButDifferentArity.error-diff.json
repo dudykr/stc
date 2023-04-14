@@ -4,8 +4,8 @@
   },
   "required_error_lines": {
     "TS2428": [
-      27,
-      32
+      32,
+      38
     ]
   },
   "extra_errors": {},
