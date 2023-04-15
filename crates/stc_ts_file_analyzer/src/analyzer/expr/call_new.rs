@@ -1,5 +1,5 @@
 //! Handles new expressions and call expressions.
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -18,9 +18,9 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
-    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
-    StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Id, IdCtx, IndexedAccessType,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref, StaticThis, Symbol,
+    TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
@@ -2638,31 +2638,6 @@ impl Analyzer<'_, '_> {
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
 
         if let Some(type_params) = type_params {
-            // Type parameters should default to `unknown`.
-            let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
-
-            if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
-                for at in spread_arg_types {
-                    if let Type::Function(Function {
-                        type_params: Some(type_params),
-                        ..
-                    }) = at.ty.normalize()
-                    {
-                        for tp in type_params.params.iter() {
-                            default_unknown_map.insert(
-                                tp.name.clone(),
-                                Type::Keyword(KeywordType {
-                                    span: tp.span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            );
-                        }
-                    }
-                }
-            }
-
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
@@ -2960,12 +2935,6 @@ impl Analyzer<'_, '_> {
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &ty);
-
-            if type_ann.is_none() {
-                info!("Defaulting type parameters to unknown:\n{}", dump_type_map(&default_unknown_map));
-
-                ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
-            }
 
             ty.reposition(span);
             ty.freeze();
