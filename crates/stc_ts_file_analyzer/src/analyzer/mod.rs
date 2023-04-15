@@ -202,6 +202,12 @@ pub(crate) struct Ctx {
     is_type_ann_for_call_reeval_chosen_from_overload: bool,
 
     is_type_predicate: bool,
+
+    /// True if validating object properties that have get accessors
+    get_accessor_prop: bool,
+
+    /// True if validating object properties that have set accessors
+    set_accessor_prop: bool,
 }
 
 impl Ctx {
@@ -539,6 +545,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 use_properties_of_this_implicitly: false,
                 is_type_ann_for_call_reeval_chosen_from_overload: false,
                 is_type_predicate: false,
+                get_accessor_prop: false,
+                set_accessor_prop: false,
             },
             loader,
             cur_facts: Default::default(),
