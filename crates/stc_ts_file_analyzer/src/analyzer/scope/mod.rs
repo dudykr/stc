@@ -777,6 +777,10 @@ impl Analyzer<'_, '_> {
         let v = self.data.unmergable_type_decls.entry(id.clone()).or_default();
         v.push((span, self.scope.depth()));
 
+        if v.len() < 2 {
+            return;
+        }
+
         let v = v
             .iter()
             .filter(|(_, depth)| {
