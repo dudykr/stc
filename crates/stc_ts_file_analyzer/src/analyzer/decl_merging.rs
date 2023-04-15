@@ -99,6 +99,8 @@ impl Analyzer<'_, '_> {
             (Type::Interface(a), Type::Interface(bi)) => {
                 let mut type_params = FxHashMap::default();
 
+                let is_builtin_type = self.env.get_global_type(a.span, a.name.sym()).is_ok();
+
                 match (&a.type_params, &bi.type_params) {
                     (Some(a_tps), Some(b_tps)) => {
                         if a_tps.params.len() != b_tps.params.len() {
@@ -109,6 +111,15 @@ impl Analyzer<'_, '_> {
                         }
 
                         for (idx, b_tp) in b_tps.params.iter().enumerate() {
+                            if let Some(a_tp) = a_tps.params.get(idx) {
+                                if !is_builtin_type && a_tp.name.sym() != b_tp.name.sym() {
+                                    self.storage
+                                        .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: a.span() }.into());
+                                    self.storage
+                                        .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: b.span() }.into());
+                                }
+                            }
+
                             type_params.insert(
                                 b_tp.name.clone(),
                                 Type::Param(TypeParam {
