@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
 
         c.extends_type = box self
             .normalize(Some(span), Cow::Borrowed(&c.extends_type), Default::default())
-            .context("tried to normalize the `extends` type of a conditional type")?
+            .unwrap_or(Cow::Borrowed(&c.extends_type))
             .freezed()
             .into_owned()
             .freezed();

@@ -1560,6 +1560,11 @@ pub enum ErrorKind {
     NotDeclaredInSuperClass {
         span: Span,
     },
+
+    /// TS2428
+    InterfaceNonIdenticalTypeParams {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1683,6 +1688,14 @@ impl ErrorKind {
             // TS4113: Cannot have override
             // TS4117: Cannot have override with spelling suggestion
             4113 | 4117 => 4112,
+
+            // TS2515: Missing an abstract member
+            // TS18052: Missing all abstract members
+            2515 | 18052 => 2515,
+
+            // TS5101: Deprecated
+            // TS5107: Deprecated with two args
+            5101 | 5107 => 5101,
 
             _ => code,
         }
@@ -2152,6 +2165,8 @@ impl ErrorKind {
             ErrorKind::NonStringDynamicImport { .. } => 7036,
 
             ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
+
+            ErrorKind::InterfaceNonIdenticalTypeParams { .. } => 2428,
 
             _ => 0,
         }

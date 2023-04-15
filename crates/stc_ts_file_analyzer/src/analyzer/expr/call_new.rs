@@ -1,13 +1,13 @@
 //! Handles new expressions and call expressions.
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
-    RTsTypeParamInstantiation, RTsTypeRef,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit,
+    RTsThisTypeOrIdent, RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -19,9 +19,9 @@ use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_storage::ErrorStore;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
-    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
-    StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Id, IdCtx, IndexedAccessType,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref, StaticThis, Symbol,
+    TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
@@ -1184,12 +1184,29 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(CallCandidate {
-                            // TODO(kdy1): Maybe we need Option<Vec<T>>.
-                            params: Default::default(),
-                            ret_ty: box Type::any(span, Default::default()),
-                            type_params: Default::default(),
-                        }),
+                        }) => {
+                            let rest = FnParam {
+                                span,
+                                required: false,
+                                pat: RPat::Rest(RRestPat {
+                                    node_id: NodeId::invalid(),
+                                    span,
+                                    dot3_token: DUMMY_SP,
+                                    arg: box RPat::Ident(RBindingIdent {
+                                        node_id: NodeId::invalid(),
+                                        id: RIdent::new("args".into(), span.with_ctxt(SyntaxContext::empty())),
+                                        type_ann: Default::default(),
+                                    }),
+                                    type_ann: Default::default(),
+                                }),
+                                ty: box Type::any(span, Default::default()),
+                            };
+                            candidates.push(CallCandidate {
+                                params: vec![rest],
+                                ret_ty: box Type::any(span, Default::default()),
+                                type_params: Default::default(),
+                            });
+                        }
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
@@ -2296,6 +2313,27 @@ impl Analyzer<'_, '_> {
                     id: RIdent { sym: js_word!("this"), .. },
                     ..
                 }) => 0,
+                RPat::Ident(RBindingIdent {
+                    type_ann:
+                        Some(box RTsTypeAnn {
+                            type_ann:
+                                box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType { types, .. })),
+                            ..
+                        }),
+                    id,
+                    ..
+                }) => usize::from(
+                    !(id.optional
+                        || types.iter().any(|p| {
+                            matches!(
+                                *p,
+                                box RTsType::TsKeywordType(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    ..
+                                })
+                            )
+                        })),
+                ),
                 RPat::Ident(v) => usize::from(!v.id.optional),
                 RPat::Array(v) => usize::from(!v.optional),
                 RPat::Object(v) => usize::from(!v.optional),
@@ -2494,6 +2532,13 @@ impl Analyzer<'_, '_> {
         if candidates.is_empty() {
             return Ok(None);
         }
+        if callable.iter().all(|(_, x)| matches!(x, ArgCheckResult::WrongArgCount)) {
+            callable.sort_by_key(|(x, _)| {
+                x.params
+                    .iter()
+                    .fold(0, |acc, param| acc + if let RPat::Rest(..) = param.pat { -1 } else { -10 })
+            });
+        }
 
         // Check if all candidates are failed.
         if !args.is_empty()
@@ -2666,31 +2711,6 @@ impl Analyzer<'_, '_> {
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
 
         if let Some(type_params) = type_params {
-            // Type parameters should default to `unknown`.
-            let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
-
-            if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
-                for at in spread_arg_types {
-                    if let Type::Function(Function {
-                        type_params: Some(type_params),
-                        ..
-                    }) = at.ty.normalize()
-                    {
-                        for tp in type_params.params.iter() {
-                            default_unknown_map.insert(
-                                tp.name.clone(),
-                                Type::Keyword(KeywordType {
-                                    span: tp.span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            );
-                        }
-                    }
-                }
-            }
-
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
@@ -2990,12 +3010,6 @@ impl Analyzer<'_, '_> {
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &ty);
-
-            if type_ann.is_none() {
-                info!("Defaulting type parameters to unknown:\n{}", dump_type_map(&default_unknown_map));
-
-                ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
-            }
 
             ty.reposition(span);
             ty.freeze();

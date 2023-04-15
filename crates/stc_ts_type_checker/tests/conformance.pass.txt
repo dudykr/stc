@@ -2300,6 +2300,7 @@ types/any/assignEveryTypeToAny.ts
 types/any/narrowExceptionVariableInCatchClause.ts
 types/any/narrowFromAnyWithInstanceof.ts
 types/conditional/inferTypes2.ts
+types/conditional/inferTypesWithExtends1.ts
 types/conditional/variance.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionAwaitOperand.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionReturnType.ts
@@ -2449,6 +2450,7 @@ types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstrain
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint4.ts
 types/objectTypeLiteral/constructSignatures/constructSignaturesWithIdenticalOverloads.ts
 types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloads.ts
+types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloads2.ts
 types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloadsThatDifferOnlyByReturnType.ts
 types/objectTypeLiteral/indexSignatures/numericIndexingResults.ts
 types/objectTypeLiteral/indexSignatures/stringIndexingResults.ts
@@ -2471,11 +2473,13 @@ types/primitives/enum/validEnumAssignments.ts
 types/primitives/null/directReferenceToNull.ts
 types/primitives/null/validNullAssignments.ts
 types/primitives/number/assignFromNumberInterface.ts
+types/primitives/number/assignFromNumberInterface2.ts
 types/primitives/number/extendNumberInterface.ts
 types/primitives/number/invalidNumberAssignments.ts
 types/primitives/number/numberPropertyAccess.ts
 types/primitives/number/validNumberAssignments.ts
 types/primitives/string/assignFromStringInterface.ts
+types/primitives/string/assignFromStringInterface2.ts
 types/primitives/string/extendStringInterface.ts
 types/primitives/string/invalidStringAssignments.ts
 types/primitives/string/stringPropertyAccess.ts
@@ -2575,6 +2579,7 @@ types/thisType/thisTypeInTuples.ts
 types/thisType/thisTypeInTypePredicate.ts
 types/thisType/thisTypeOptionalCall.ts
 types/thisType/thisTypeSyntacticContext.ts
+types/tuple/arityAndOrderCompatibility01.ts
 types/tuple/castingTuple.ts
 types/tuple/contextualTypeWithTuple.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts

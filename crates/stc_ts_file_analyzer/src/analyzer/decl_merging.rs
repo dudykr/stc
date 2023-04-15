@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use fxhash::FxHashMap;
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam, TypeParamDecl};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
@@ -97,16 +97,23 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Interface(a), Type::Interface(bi)) => {
-                // TODO: Handle the number of type parameters.
                 let mut type_params = FxHashMap::default();
-                if let Some(b_tps) = &bi.type_params {
-                    if let Some(a_tp) = &a.type_params {
+
+                match (&a.type_params, &bi.type_params) {
+                    (Some(a_tps), Some(b_tps)) => {
+                        if a_tps.params.len() != b_tps.params.len() {
+                            self.storage
+                                .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: a.span() }.into());
+                            self.storage
+                                .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: b.span() }.into());
+                        }
+
                         for (idx, b_tp) in b_tps.params.iter().enumerate() {
                             type_params.insert(
                                 b_tp.name.clone(),
                                 Type::Param(TypeParam {
-                                    span: a_tp.span,
-                                    name: a_tp.params[idx].name.clone(),
+                                    span: a_tps.span,
+                                    name: a_tps.params.get(idx).unwrap_or(b_tp).name.clone(),
                                     constraint: None,
                                     default: None,
                                     metadata: Default::default(),
@@ -114,7 +121,13 @@ impl Analyzer<'_, '_> {
                                 }),
                             );
                         }
-                    } else {
+                    }
+                    (None, Some(b_tps)) => {
+                        self.storage
+                            .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: a.span() }.into());
+                        self.storage
+                            .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: b.span() }.into());
+
                         for (idx, b_tp) in b_tps.params.iter().enumerate() {
                             type_params.insert(
                                 b_tp.name.clone(),
@@ -129,7 +142,15 @@ impl Analyzer<'_, '_> {
                             );
                         }
                     }
+                    (Some(a_tps), None) => {
+                        self.storage
+                            .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: a.span() }.into());
+                        self.storage
+                            .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: b.span() }.into());
+                    }
+                    (None, None) => {}
                 }
+
                 let b_ty = self.expand_type_params(&type_params, b, Default::default())?.freezed();
 
                 let mut new_members = a.body.clone();
