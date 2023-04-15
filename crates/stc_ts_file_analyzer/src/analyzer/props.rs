@@ -381,7 +381,10 @@ impl Analyzer<'_, '_> {
             }
 
             RProp::Assign(ref p) => unimplemented!("validate_key(AssignProperty): {:?}", p),
-            RProp::Getter(ref p) => p.validate_with(self)?,
+            RProp::Getter(ref p) => {
+                self.ctx.get_accessor_prop = true;
+                p.validate_with(self)?
+            }
             RProp::Setter(ref p) => {
                 let key = p.key.validate_with(self)?;
                 let computed = matches!(p.key, RPropName::Computed(_));
