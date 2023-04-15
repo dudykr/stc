@@ -127,6 +127,8 @@ impl Analyzer<'_, '_> {
                                  then we should compare type param names if they are identical.
                                  This case is currently _not_ handled by the following code and thus
                                  we're not reporting two 2488 errors as we should.
+
+                                 Related: https://github.com/dudykr/stc/pull/987#discussion_r1167380253
                                 */
                                 if !is_builtin_type && a_tp.name.sym() != b_tp.name.sym() {
                                     self.storage
