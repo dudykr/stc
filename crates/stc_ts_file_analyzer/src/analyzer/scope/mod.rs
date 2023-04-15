@@ -783,7 +783,7 @@ impl Analyzer<'_, '_> {
 
         let v = v
             .iter()
-            .filter(|(_, depth)| {
+            .filter(|(x_span, depth)| {
                 if *depth == self.scope.depth() {
                     if *depth == 0 {
                         true
