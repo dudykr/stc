@@ -1565,6 +1565,10 @@ pub enum ErrorKind {
     InterfaceNonIdenticalTypeParams {
         span: Span,
     },
+    /// TS2784
+    ThisNotAllowedInAccessor {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2167,6 +2171,8 @@ impl ErrorKind {
             ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
 
             ErrorKind::InterfaceNonIdenticalTypeParams { .. } => 2428,
+
+            ErrorKind::ThisNotAllowedInAccessor { .. } => 2784,
 
             _ => 0,
         }
