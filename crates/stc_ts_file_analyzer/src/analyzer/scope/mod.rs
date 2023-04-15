@@ -777,7 +777,22 @@ impl Analyzer<'_, '_> {
         let v = self.data.unmergable_type_decls.entry(id.clone()).or_default();
         v.push((span, self.scope.depth()));
 
-        let v = v.iter().filter(|(_, depth)| *depth == self.scope.depth()).collect::<Vec<_>>();
+        let v = v
+            .iter()
+            .filter(|(_, depth)| {
+                if *depth == self.scope.depth() {
+                    if *depth == 0 {
+                        true
+                    } else if let Some(x) = self.scope.types.get(&id) {
+                        x.span() != span
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            })
+            .collect::<Vec<_>>();
 
         if v.len() >= 2 {
             for (span, _) in v.iter().copied() {
