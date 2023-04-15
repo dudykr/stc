@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_type},
+    debug::{dump_type_as_string, dump_type_map, force_dump_type_as_string, print_backtrace, print_type},
     DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -2623,6 +2623,8 @@ impl Analyzer<'_, '_> {
         ret_ty.fix();
         ret_ty.freeze();
 
+        dbg!(&type_params, &type_args);
+        print_backtrace();
         let is_type_arg_count_fine = {
             let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
 
@@ -2642,25 +2644,26 @@ impl Analyzer<'_, '_> {
             let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
 
             if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
-                for at in spread_arg_types {
-                    if let Type::Function(Function {
-                        type_params: Some(type_params),
-                        ..
-                    }) = at.ty.normalize()
-                    {
-                        for tp in type_params.params.iter() {
-                            default_unknown_map.insert(
-                                tp.name.clone(),
-                                Type::Keyword(KeywordType {
-                                    span: tp.span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            );
-                        }
-                    }
-                }
+                // for at in spread_arg_types {
+                //     if let Type::Function(Function {
+                //         type_params: Some(type_params),
+                //         ..
+                //     }) = at.ty.normalize()
+                //     {
+                //         for tp in type_params.params.iter() {
+                //             default_unknown_map.insert(
+                //                 tp.name.clone(),
+                //                 Type::Keyword(KeywordType {
+                //                     span: tp.span,
+                //                     kind:
+                // TsKeywordTypeKind::TsUnknownKeyword,
+                //                     metadata: Default::default(),
+                //                     tracker: Default::default(),
+                //                 }),
+                //             );
+                //         }
+                //     }
+                // }
             }
 
             for param in type_params {
