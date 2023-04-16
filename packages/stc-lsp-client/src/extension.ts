@@ -1,7 +1,3 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
 import * as path from 'path';
 import {
 	workspace as Workspace, window as Window, ExtensionContext, TextDocument, OutputChannel, WorkspaceFolder, Uri
@@ -50,11 +46,11 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 export function activate(context: ExtensionContext) {
 
 	const module = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
-	const outputChannel: OutputChannel = Window.createOutputChannel('lsp-multi-server-example');
+	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
 
 	function didOpenTextDocument(document: TextDocument): void {
 		// We are only interested in language mode text
-		if (document.languageId !== 'plaintext' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
+		if (document.languageId !== 'typescript' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
 			return;
 		}
 
@@ -67,7 +63,7 @@ export function activate(context: ExtensionContext) {
 			};
 			const clientOptions: LanguageClientOptions = {
 				documentSelector: [
-					{ scheme: 'untitled', language: 'plaintext' }
+					{ scheme: 'untitled', language: 'typescript' }
 				],
 				diagnosticCollectionName: 'lsp-multi-server-example',
 				outputChannel: outputChannel
@@ -107,7 +103,7 @@ export function activate(context: ExtensionContext) {
 	Workspace.onDidOpenTextDocument(didOpenTextDocument);
 	Workspace.textDocuments.forEach(didOpenTextDocument);
 	Workspace.onDidChangeWorkspaceFolders((event) => {
-		for (const folder  of event.removed) {
+		for (const folder of event.removed) {
 			const client = clients.get(folder.uri.toString());
 			if (client) {
 				clients.delete(folder.uri.toString());
