@@ -61,14 +61,18 @@ export function activate(context: ExtensionContext) {
 
 		const serverOptions: ServerOptions = {
 			run: {
-				command: binaryFile, transport: TransportKind.stdio, options: {
+				command: binaryFile,
+				transport: TransportKind.stdio,
+				options: {
 					env: {
 						RUST_LOG: 'TRACE'
 					}
 				}
 			},
 			debug: {
-				command: binaryFile, transport: TransportKind.stdio, options: {
+				command: binaryFile,
+				transport: TransportKind.stdio,
+				options: {
 					env: {
 						RUST_LOG: 'TRACE'
 					}
