@@ -35,10 +35,8 @@ impl LspCommand {
 
             StcLangServer {
                 client,
-                data: Default::default(),
-                stable_env,
-                cm,
-                globals,
+                shared: Arc::new(Shared { stable_env, cm, globals }),
+                projects: Default::default(),
             }
         });
         Server::new(stdin, stdout, socket).serve(service).await;
@@ -51,25 +49,26 @@ pub struct StcLangServer {
     #[allow(unused)]
     client: Client,
 
-    cm: Arc<SourceMap>,
-    globals: Arc<Globals>,
-    stable_env: StableEnv,
+    shared: Arc<Shared>,
 
-    data: Data,
-}
-
-#[derive(Default)]
-struct Data {
     /// dir: [Project]
     projects: DashMap<Arc<FileName>, Project>,
 }
 
+struct Shared {
+    cm: Arc<SourceMap>,
+    globals: Arc<Globals>,
+    stable_env: StableEnv,
+}
+
 /// One directory with `tsconfig.json`.
 struct Project {
+    shared: Arc<Shared>,
+
     module_loader: Arc<ModuleLoader<DefaultFileLoader, NodeResolver>>,
 }
 
-impl StcLangServer {
+impl Project {
     fn new_checker_for(&self, file_path: &TextDocumentItem) -> Checker {
         let env = Env::new();
 
