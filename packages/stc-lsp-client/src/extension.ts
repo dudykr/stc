@@ -49,7 +49,7 @@ const langServerName = 'Language server for stc';
 
 export function activate(context: ExtensionContext) {
 
-	const module = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
+	const binaryFile = context.asAbsolutePath(path.join('target', 'debug', 'examples', 'lsp'));
 	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
 
 	function didOpenTextDocument(document: TextDocument): void {
@@ -59,8 +59,8 @@ export function activate(context: ExtensionContext) {
 		}
 
 		const serverOptions: ServerOptions = {
-			run: { module, transport: TransportKind.ipc },
-			debug: { module, transport: TransportKind.ipc }
+			run: { command: binaryFile, transport: TransportKind.ipc },
+			debug: { command: binaryFile, transport: TransportKind.ipc }
 		};
 		const baseClientOptions: LanguageClientOptions = {
 			diagnosticCollectionName: 'stc-lsp',
