@@ -47,13 +47,6 @@ impl LanguageServer for StcLangServer {
                     }),
                     ..Default::default()
                 }),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(true),
-                    ..Default::default()
-                }),
-                code_lens_provider: Some(CodeLensOptions {
-                    resolve_provider: Some(true),
-                }),
 
                 ..Default::default()
             },
@@ -71,20 +64,6 @@ impl LanguageServer for StcLangServer {
     async fn shutdown(&self) -> jsonrpc::Result<()> {
         dbg!("shutdown");
         Ok(())
-    }
-
-    async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let _ = params;
-        dbg!("Got a textDocument/didOpen notification, but it is not implemented");
-    }
-
-    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
-        let _ = params;
-        dbg!("Got a textDocument/completion request, but it is not implemented");
-        Ok(Some(CompletionResponse::Array(vec![
-            CompletionItem::new_simple("Hello".to_string(), "Some detail".to_string()),
-            CompletionItem::new_simple("Bye".to_string(), "More detail".to_string()),
-        ])))
     }
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
