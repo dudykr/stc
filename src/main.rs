@@ -94,7 +94,7 @@ async fn main() -> Result<(), Error> {
                     handler.clone(),
                     env.clone(),
                     None,
-                    ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
+                    Box::new(ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader)),
                 );
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
@@ -113,7 +113,7 @@ async fn main() -> Result<(), Error> {
                     handler.clone(),
                     env.clone(),
                     None,
-                    ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
+                    Box::new(ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader)),
                 );
 
                 checker.check(Arc::new(FileName::Real(path)));
