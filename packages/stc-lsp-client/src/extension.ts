@@ -60,6 +60,8 @@ export function activate(context: ExtensionContext) {
 			return;
 		}
 
+		clientOutputChannel.appendLine(`Opened document '${document.uri}`)
+
 		const serverOptions: ServerOptions = {
 			run: {
 				command: binaryFile,
