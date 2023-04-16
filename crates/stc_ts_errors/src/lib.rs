@@ -2,6 +2,7 @@
 #![deny(variant_size_differences)]
 #![feature(box_syntax)]
 #![feature(specialization)]
+#![cfg_attr(not(debug_assertions), allow(unused))]
 
 use std::{
     fmt,
