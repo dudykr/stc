@@ -34,8 +34,12 @@ impl LspCommand {
             let stable_env = GLOBALS.set(&globals, StableEnv::new);
 
             StcLangServer {
-                client,
-                shared: Arc::new(Shared { stable_env, cm, globals }),
+                shared: Arc::new(Shared {
+                    client,
+                    stable_env,
+                    cm,
+                    globals,
+                }),
                 projects: Default::default(),
             }
         });
@@ -46,9 +50,6 @@ impl LspCommand {
 }
 
 pub struct StcLangServer {
-    #[allow(unused)]
-    client: Client,
-
     shared: Arc<Shared>,
 
     /// dir: [Project]
@@ -56,6 +57,7 @@ pub struct StcLangServer {
 }
 
 struct Shared {
+    client: Client,
     cm: Arc<SourceMap>,
     globals: Arc<Globals>,
     stable_env: StableEnv,
@@ -73,7 +75,7 @@ impl Project {
         let env = Env::new();
 
         Checker::new(
-            self.cm.clone(),
+            self.shared.cm.clone(),
             handler,
             env.clone(),
             debugger,
