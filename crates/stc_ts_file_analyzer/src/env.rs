@@ -26,71 +26,78 @@ pub trait BuiltInGen: Sized {
     #[allow(clippy::new_ret_no_self)]
     fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
 
-    fn from_ts_libs(env: &StableEnv, libs: &[Lib], no_lib: bool) -> BuiltIn {
+    fn from_ts_libs(env: &StableEnv, libs: &[Lib], no_lib: bool) -> Arc<BuiltIn> {
         static CACHE: Lazy<DashMap<Vec<Lib>, Arc<OnceCell<Arc<BuiltIn>>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         if !no_lib {
             debug_assert_ne!(libs, &[], "No typescript library file is specified");
         }
 
-        // Loading builtin is very slow, so we cache it to a file using serde_json
+        let cell = CACHE.entry(libs.to_vec()).or_default().clone();
 
-        let key = {
-            let mut hasher = Sha1::new();
-            hasher.update(format!("{:?}", libs).as_bytes());
-            let result = hasher.finalize();
+        cell.get_or_init(|| {
+            // Loading builtin is very slow, so we cache it to a file using serde_json
 
-            format!("{:x}", result)
-        };
+            let key = {
+                let mut hasher = Sha1::new();
+                hasher.update(format!("{:?}", libs).as_bytes());
+                let result = hasher.finalize();
 
-        let cache_path = Path::new(".stc").join(".builtin-cache").join(format!("{}.rmp", key));
+                format!("{:x}", result)
+            };
 
-        if cache_path.is_file() {
-            let res = || -> Result<BuiltIn, Box<dyn Error>> {
-                let data = std::fs::read(&cache_path)?;
+            let cache_path = Path::new(".stc").join(".builtin-cache").join(format!("{}.rmp", key));
 
-                let builtin = rmp_serde::decode::from_slice(&data)?;
+            if cache_path.is_file() {
+                let res = || -> Result<BuiltIn, Box<dyn Error>> {
+                    let data = std::fs::read(&cache_path)?;
 
-                Ok(builtin)
-            }();
+                    let builtin = rmp_serde::decode::from_slice(&data)?;
 
-            match res {
-                Ok(builtin) => {
-                    return builtin;
-                }
-                Err(err) => {
-                    warn!("Failed to load builtin from cache: {:?}", err);
+                    Ok(builtin)
+                }();
+
+                match res {
+                    Ok(builtin) => {
+                        return Arc::new(builtin);
+                    }
+                    Err(err) => {
+                        warn!("Failed to load builtin from cache: {:?}", err);
+                    }
                 }
             }
-        }
 
-        let _stack = stack::start(300);
+            let _stack = stack::start(300);
 
-        let mut node_id_gen = NodeIdGenerator::default();
+            let mut node_id_gen = NodeIdGenerator::default();
 
-        info!("Loading typescript builtin: {:?}", libs);
+            info!("Loading typescript builtin: {:?}", libs);
 
-        let modules = stc_ts_builtin_types::load(libs);
+            let modules = stc_ts_builtin_types::load(libs);
 
-        let iter = modules
-            .iter()
-            .flat_map(|module| match &*module.body {
-                TsNamespaceBody::TsModuleBlock(TsModuleBlock { body, .. }) => body,
-                TsNamespaceBody::TsNamespaceDecl(_) => unreachable!(),
-            })
-            .cloned()
-            .map(|orig| RModuleItem::from_orig(&mut node_id_gen, orig));
+            let iter = modules
+                .iter()
+                .flat_map(|module| match &*module.body {
+                    TsNamespaceBody::TsModuleBlock(TsModuleBlock { body, .. }) => body,
+                    TsNamespaceBody::TsNamespaceDecl(_) => unreachable!(),
+                })
+                .cloned()
+                .map(|orig| RModuleItem::from_orig(&mut node_id_gen, orig));
 
-        let builtin = Self::from_module_items(env, iter);
+            let builtin = Self::from_module_items(env, iter);
 
-        let json_data = rmp_serde::encode::to_vec(&builtin).unwrap_or_else(|err| panic!("failed to serialize builtin cache: {:?}", err));
+            let json_data =
+                rmp_serde::encode::to_vec(&builtin).unwrap_or_else(|err| panic!("failed to serialize builtin cache: {:?}", err));
 
-        std::fs::create_dir_all(cache_path.parent().unwrap())
-            .unwrap_or_else(|err| panic!("failed to create directory for builtin cache at {:?}: {:?}", cache_path, err));
+            std::fs::create_dir_all(cache_path.parent().unwrap())
+                .unwrap_or_else(|err| panic!("failed to create directory for builtin cache at {:?}: {:?}", cache_path, err));
 
-        std::fs::write(&cache_path, json_data).unwrap_or_else(|err| panic!("failed to write builtin cache at {:?}: {:?}", cache_path, err));
+            std::fs::write(&cache_path, json_data)
+                .unwrap_or_else(|err| panic!("failed to write builtin cache at {:?}: {:?}", cache_path, err));
 
-        builtin
+            Arc::new(builtin)
+        })
+        .clone()
     }
 
     fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> BuiltIn {
@@ -299,15 +306,7 @@ pub trait EnvFactory {
         libs.sort();
         libs.dedup();
 
-        let cell = CACHE.entry(libs.clone()).or_default().clone();
-
-        let builtin = {
-            let builtin = cell.get_or_init(|| {
-                let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs, rule.no_lib);
-                Arc::new(builtin)
-            });
-            (*builtin).clone()
-        };
+        let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs, rule.no_lib);
 
         Self::new(STABLE_ENV.clone(), rule, target, module, builtin)
     }
