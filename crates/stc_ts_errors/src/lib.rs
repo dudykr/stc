@@ -2,6 +2,7 @@
 #![deny(variant_size_differences)]
 #![feature(box_syntax)]
 #![feature(specialization)]
+#![cfg_attr(not(debug_assertions), allow(unused))]
 
 use std::{
     fmt,
@@ -62,7 +63,7 @@ impl Error {
         return self.context_impl(Location::caller(), context);
     }
 
-    #[cfg_attr(not(debug_assertions), attr)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
         {
@@ -1732,6 +1733,7 @@ impl ErrorKind {
             Self::ObjectAssignFailed { errors, .. } => errors,
             _ => {
                 vec![Error {
+                    #[cfg(debug_assertions)]
                     contexts: Default::default(),
                     inner: box self,
                 }]
