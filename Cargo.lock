@@ -2275,6 +2275,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "dashmap 3.11.10",
  "env_logger",
  "once_cell",
  "serde",
