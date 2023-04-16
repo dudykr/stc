@@ -3,7 +3,7 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "compile",
+			"script": "build",
 			"group": "build",
 			"presentation": {
 				"panel": "dedicated",
@@ -15,7 +15,7 @@
 		},
 		{
 			"type": "npm",
-			"script": "watch",
+			"script": "watch-lsp",
 			"isBackground": true,
 			"group": {
 				"kind": "build",

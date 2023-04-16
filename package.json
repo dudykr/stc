@@ -19,7 +19,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "build": "echo \"Error: not supported yer\" && exit 1",
+    "watch-lsp": "tsc -b packages/stc-lsp-client/tsconfig.json --watch"
   },
   "keywords": [],
   "author": "",
