@@ -4,7 +4,7 @@ import {
 } from 'vscode';
 
 import {
-	LanguageClient, LanguageClientOptions, TransportKind
+	LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
 } from 'vscode-languageclient/node';
 
 let defaultClient: LanguageClient;
@@ -44,6 +44,9 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 	return folder;
 }
 
+const langServerId = 'stc-lsp';
+const langServerName = 'Language server for stc';
+
 export function activate(context: ExtensionContext) {
 
 	const module = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
@@ -55,7 +58,7 @@ export function activate(context: ExtensionContext) {
 			return;
 		}
 
-		const serverOptions = {
+		const serverOptions: ServerOptions = {
 			run: { module, transport: TransportKind.ipc },
 			debug: { module, transport: TransportKind.ipc }
 		};
@@ -75,7 +78,7 @@ export function activate(context: ExtensionContext) {
 					{ scheme: 'untitled', language: 'typescript' }
 				],
 			};
-			defaultClient = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
+			defaultClient = new LanguageClient(langServerId, langServerName, serverOptions, clientOptions);
 			defaultClient.start();
 			return;
 		}
@@ -96,7 +99,7 @@ export function activate(context: ExtensionContext) {
 				],
 				workspaceFolder: folder,
 			};
-			const client = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
+			const client = new LanguageClient(langServerId, langServerName, serverOptions, clientOptions);
 			client.start();
 			clients.set(folder.uri.toString(), client);
 		}
