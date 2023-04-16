@@ -35,6 +35,14 @@ impl LanguageServer for StcLangServer {
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
+                workspace: Some(WorkspaceServerCapabilities {
+                    workspace_folders: Some(WorkspaceFoldersServerCapabilities {
+                        supported: Some(true),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
 
                 ..Default::default()
             },
@@ -50,6 +58,7 @@ impl LanguageServer for StcLangServer {
     }
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
+        dbg!("HOVER!");
         Ok(Some(Hover {
             contents: HoverContents::Scalar(MarkedString::String("hover test".to_string())),
             range: None,
