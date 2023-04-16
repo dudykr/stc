@@ -67,12 +67,14 @@ struct Shared {
 struct Project {
     shared: Arc<Shared>,
 
+    dir: Arc<FileName>,
+
     module_loader: Arc<ModuleLoader<DefaultFileLoader, NodeResolver>>,
 }
 
 impl Project {
     fn new_checker_for(&self, file_path: &TextDocumentItem) -> Checker {
-        let env = Env::new();
+        let env = Env::new(self.shared.stable_env);
 
         Checker::new(
             self.shared.cm.clone(),
