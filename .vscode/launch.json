@@ -7,10 +7,14 @@
 			"request": "launch",
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}" ],
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}"
+			],
 			"autoAttachChildProcesses": true,
 			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/client/out/**/*.js"],
+			"outFiles": [
+				"${workspaceRoot}/pcakges/stc-lsp-client/out/**/*.js"
+			],
 			"preLaunchTask": "npm: watch"
 		}
 	]
