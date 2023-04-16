@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use clap::Args;
 use stc_ts_env::StableEnv;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
@@ -53,7 +55,7 @@ struct Data {
 }
 
 impl StcLangServer {
-    fn checker_for(&self, file_path: &TextDocumentItem) -> Checker<ModuleLoader<DefaultFileLoader, NodeResolver>> {
+    fn checker_for(&self, file_path: &TextDocumentItem) -> Checker {
         Checker::new(self.data.cm.clone(), handler, env, debugger, module_loader)
     }
 }
