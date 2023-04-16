@@ -2279,6 +2279,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_json",
+ "stc_ts_env",
  "stc_ts_file_analyzer",
  "stc_ts_module_loader",
  "stc_ts_testing",
