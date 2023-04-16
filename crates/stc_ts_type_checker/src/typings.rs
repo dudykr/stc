@@ -9,12 +9,9 @@ use rayon::prelude::*;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use swc_common::FileName;
 
-use crate::{loader::LoadModule, Checker};
+use crate::Checker;
 
-impl<L> Checker<L>
-where
-    L: LoadModule,
-{
+impl Checker {
     fn try_loading_typing_of_one_package(&self, dir: &Path) {
         if !dir.is_dir() {
             return;
