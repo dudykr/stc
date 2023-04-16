@@ -51,7 +51,7 @@ export function activate(context: ExtensionContext) {
 	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
 
 	const binaryFile = context.asAbsolutePath(path.join('..', '..', 'target', 'debug', 'examples', 'lsp'));
-	outputChannel.appendLine(`BinaryFile: ${binaryFile}`)
+	outputChannel.appendLine(`Using binary file at '${binaryFile}'`)
 
 	function didOpenTextDocument(document: TextDocument): void {
 		// We are only interested in language mode text
