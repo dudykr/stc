@@ -111,7 +111,7 @@ async fn main() -> Result<(), Error> {
             let mut errors = vec![];
 
             let start = Instant::now();
-            {
+            GLOBALS.set(&globals, || {
                 let mut checker = Checker::new(
                     cm.clone(),
                     handler.clone(),
@@ -123,7 +123,8 @@ async fn main() -> Result<(), Error> {
                 checker.check(Arc::new(FileName::Real(path)));
 
                 errors.extend(checker.take_errors());
-            }
+            });
+
             let end = Instant::now();
 
             log::info!("Checking took {:?}", end - start);
