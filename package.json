@@ -21,7 +21,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky install",
     "build": "echo \"Error: not supported yer\" && exit 1",
-    "watch-lsp": "tsc -b packages/stc-lsp-client/tsconfig.json --watch"
+    "build-dev-lsp": "cargo build -p stc_ts_lang_server --example lsp",
+    "watch-lsp-client": "tsc -b packages/stc-lsp-client/tsconfig.json --watch"
   },
   "keywords": [],
   "author": "",

@@ -28,6 +28,30 @@
 			"problemMatcher": [
 				"$tsc-watch"
 			]
-		}
+		},
+		{
+			"type": "cargo",
+			"label": "Build LSP server in dev mode",
+			"command": "build",
+			"args": [
+				"-p",
+				"stc_ts_lang_server",
+				"--example",
+				"lsp"
+			],
+			"group": {
+				"kind": "build",
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "Build LSP in dev mode",
+			"dependsOn": [
+				"npm: watch-lsp",
+				"Build LSP server in dev mode"
+			]
+		},
 	]
 }
