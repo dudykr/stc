@@ -2,7 +2,8 @@
   "name": "stc-workspace",
   "workspaces": [
     "crates/stc_ts_file_analyzer",
-    "crates/stc_ts_type_checker"
+    "crates/stc_ts_type_checker",
+    "packages/stc-lsp-client"
   ],
   "private": true,
   "version": "0.0.0",
@@ -18,7 +19,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "build": "echo \"Error: not supported yer\" && exit 1",
+    "watch-lsp": "tsc -b packages/stc-lsp-client/tsconfig.json --watch"
   },
   "keywords": [],
   "author": "",
