@@ -55,6 +55,10 @@ export function activate(context: ExtensionContext) {
 			return;
 		}
 
+		const serverOptions = {
+			run: { module, transport: TransportKind.ipc },
+			debug: { module, transport: TransportKind.ipc }
+		};
 		const baseClientOptions: LanguageClientOptions = {
 			diagnosticCollectionName: 'stc-lsp',
 			outputChannel: outputChannel,
@@ -64,10 +68,7 @@ export function activate(context: ExtensionContext) {
 		const uri = document.uri;
 		// Untitled files go to a default client.
 		if (uri.scheme === 'untitled' && !defaultClient) {
-			const serverOptions = {
-				run: { module, transport: TransportKind.ipc },
-				debug: { module, transport: TransportKind.ipc }
-			};
+
 			const clientOptions: LanguageClientOptions = {
 				...baseClientOptions,
 				documentSelector: [
@@ -88,10 +89,6 @@ export function activate(context: ExtensionContext) {
 		folder = getOuterMostWorkspaceFolder(folder);
 
 		if (!clients.has(folder.uri.toString())) {
-			const serverOptions = {
-				run: { module, transport: TransportKind.ipc },
-				debug: { module, transport: TransportKind.ipc }
-			};
 			const clientOptions: LanguageClientOptions = {
 				...baseClientOptions,
 				documentSelector: [
