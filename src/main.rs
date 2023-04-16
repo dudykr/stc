@@ -15,7 +15,7 @@ use stc_ts_type_checker::{
 };
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
-    FileName, SourceMap,
+    FileName, Globals, SourceMap, GLOBALS,
 };
 use swc_ecma_ast::EsVersion;
 use tracing_subscriber::EnvFilter;
@@ -63,88 +63,94 @@ async fn main() -> Result<(), Error> {
         log::info!("Initialization took {:?}", end - start);
     }
 
-    match command {
-        Command::Test(cmd) => {
-            let libs = {
-                let start = Instant::now();
+    let globals = Arc::<Globals>::default();
 
-                let mut libs = match cmd.libs {
-                    Some(libs) => libs.iter().flat_map(|s| Lib::load(s)).collect::<Vec<_>>(),
-                    None => Lib::load("es5"),
-                };
-                libs.sort();
-                libs.dedup();
+    GLOBALS
+        .set(&globals, || async move {
+            match command {
+                Command::Test(cmd) => {
+                    let libs = {
+                        let start = Instant::now();
 
-                let end = Instant::now();
+                        let mut libs = match cmd.libs {
+                            Some(libs) => libs.iter().flat_map(|s| Lib::load(s)).collect::<Vec<_>>(),
+                            None => Lib::load("es5"),
+                        };
+                        libs.sort();
+                        libs.dedup();
 
-                log::info!("Loading builtin libraries took {:?}", end - start);
+                        let end = Instant::now();
 
-                libs
-            };
+                        log::info!("Loading builtin libraries took {:?}", end - start);
 
-            let env = Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs);
+                        libs
+                    };
 
-            let path = PathBuf::from(cmd.file);
+                    let env = Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs);
 
-            {
-                let start = Instant::now();
+                    let path = PathBuf::from(cmd.file);
 
-                let checker = Checker::new(
-                    cm.clone(),
-                    handler.clone(),
-                    env.clone(),
-                    None,
-                    ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
-                );
+                    {
+                        let start = Instant::now();
 
-                checker.load_typings(&path, None, cmd.types.as_deref());
+                        let checker = Checker::new(
+                            cm.clone(),
+                            handler.clone(),
+                            env.clone(),
+                            None,
+                            ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
+                        );
 
-                let end = Instant::now();
+                        checker.load_typings(&path, None, cmd.types.as_deref());
 
-                log::info!("Loading typing libraries took {:?}", end - start);
+                        let end = Instant::now();
+
+                        log::info!("Loading typing libraries took {:?}", end - start);
+                    }
+
+                    let mut errors = vec![];
+
+                    let start = Instant::now();
+                    {
+                        let mut checker = Checker::new(
+                            cm.clone(),
+                            handler.clone(),
+                            env.clone(),
+                            None,
+                            ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
+                        );
+
+                        checker.check(Arc::new(FileName::Real(path)));
+
+                        errors.extend(checker.take_errors());
+                    }
+                    let end = Instant::now();
+
+                    log::info!("Checking took {:?}", end - start);
+
+                    {
+                        let start = Instant::now();
+                        for err in &errors {
+                            err.emit(&handler);
+                        }
+
+                        let end = Instant::now();
+
+                        log::info!("Found {} errors", errors.len());
+
+                        log::info!("Error reporting took {:?}", end - start);
+                    }
+                }
+                Command::Lsp(cmd) => {
+                    cmd.run().await?;
+                }
             }
 
-            let mut errors = vec![];
-
-            let start = Instant::now();
-            {
-                let mut checker = Checker::new(
-                    cm.clone(),
-                    handler.clone(),
-                    env.clone(),
-                    None,
-                    ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
-                );
-
-                checker.check(Arc::new(FileName::Real(path)));
-
-                errors.extend(checker.take_errors());
-            }
             let end = Instant::now();
 
-            log::info!("Checking took {:?}", end - start);
+            log::info!("Done in {:?}", end - start);
 
-            {
-                let start = Instant::now();
-                for err in &errors {
-                    err.emit(&handler);
-                }
-
-                let end = Instant::now();
-
-                log::info!("Found {} errors", errors.len());
-
-                log::info!("Error reporting took {:?}", end - start);
-            }
-        }
-        Command::Lsp(cmd) => {
-            cmd.run().await?;
-        }
-    }
-
-    let end = Instant::now();
-
-    log::info!("Done in {:?}", end - start);
-
-    Ok(())
+            Ok(())
+        })
+        .await
 }
