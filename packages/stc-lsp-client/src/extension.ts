@@ -10,6 +10,7 @@ import {
 let defaultClient: LanguageClient;
 const clients: Map<string, LanguageClient> = new Map();
 
+
 let _sortedWorkspaceFolders: string[] | undefined;
 function sortedWorkspaceFolders(): string[] {
 	if (_sortedWorkspaceFolders === void 0) {
@@ -54,6 +55,12 @@ export function activate(context: ExtensionContext) {
 			return;
 		}
 
+		const baseClientOptions: LanguageClientOptions = {
+			diagnosticCollectionName: 'stc-lsp',
+			outputChannel: outputChannel,
+		};
+
+
 		const uri = document.uri;
 		// Untitled files go to a default client.
 		if (uri.scheme === 'untitled' && !defaultClient) {
@@ -62,11 +69,10 @@ export function activate(context: ExtensionContext) {
 				debug: { module, transport: TransportKind.ipc }
 			};
 			const clientOptions: LanguageClientOptions = {
+				...baseClientOptions,
 				documentSelector: [
 					{ scheme: 'untitled', language: 'typescript' }
 				],
-				diagnosticCollectionName: 'lsp-multi-server-example',
-				outputChannel: outputChannel
 			};
 			defaultClient = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
 			defaultClient.start();
@@ -87,12 +93,11 @@ export function activate(context: ExtensionContext) {
 				debug: { module, transport: TransportKind.ipc }
 			};
 			const clientOptions: LanguageClientOptions = {
+				...baseClientOptions,
 				documentSelector: [
 					{ scheme: 'file', language: 'plaintext', pattern: `${folder.uri.fsPath}/**/*` }
 				],
-				diagnosticCollectionName: 'lsp-multi-server-example',
 				workspaceFolder: folder,
-				outputChannel: outputChannel
 			};
 			const client = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
 			client.start();
