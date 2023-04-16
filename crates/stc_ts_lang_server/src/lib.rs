@@ -35,12 +35,20 @@ impl LanguageServer for StcLangServer {
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
+                text_document_sync: Some(TextDocumentSyncCapability::Options(TextDocumentSyncOptions {
+                    open_close: Some(true),
+                    change: None,
+                    ..Default::default()
+                })),
                 workspace: Some(WorkspaceServerCapabilities {
                     workspace_folders: Some(WorkspaceFoldersServerCapabilities {
                         supported: Some(true),
                         ..Default::default()
                     }),
+                    ..Default::default()
+                }),
+                completion_provider: Some(CompletionOptions {
+                    resolve_provider: Some(true),
                     ..Default::default()
                 }),
 
