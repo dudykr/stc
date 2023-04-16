@@ -2,7 +2,8 @@
   "name": "stc-workspace",
   "workspaces": [
     "crates/stc_ts_file_analyzer",
-    "crates/stc_ts_type_checker"
+    "crates/stc_ts_type_checker",
+    "packages/stc-lsp"
   ],
   "private": true,
   "version": "0.0.0",
