@@ -271,7 +271,7 @@ struct AnalyzerData {
     /// See docs of ModuleItemMut for documentation.
     append_stmts: Vec<RStmt>,
 
-    unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
+    unmergable_type_decls: FxHashMap<Id, Vec<(Span, usize)>>,
 
     /// Used to check mixed exports.
     ///
