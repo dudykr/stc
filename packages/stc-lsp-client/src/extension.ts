@@ -50,7 +50,7 @@ const langServerName = 'Language server for stc';
 export function activate(context: ExtensionContext) {
 	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
 
-	const binaryFile = context.asAbsolutePath(path.join('..', '..', 'target', 'debug', 'examples', 'lsp'));
+	const binaryFile = context.asAbsolutePath(path.join('..', '..', 'target', 'debug', 'examples', 'stc-debug-lsp'));
 	outputChannel.appendLine(`Using binary file at '${binaryFile}'`)
 
 	function didOpenTextDocument(document: TextDocument): void {

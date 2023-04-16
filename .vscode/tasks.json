@@ -37,7 +37,7 @@
 				"-p",
 				"stc_ts_lang_server",
 				"--example",
-				"lsp"
+				"stc-debug-lsp"
 			],
 			"group": {
 				"kind": "build",
