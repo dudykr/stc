@@ -56,7 +56,15 @@ struct Data {
 
 impl StcLangServer {
     fn checker_for(&self, file_path: &TextDocumentItem) -> Checker {
-        Checker::new(self.data.cm.clone(), handler, env, debugger, module_loader)
+        let env = Env::new();
+
+        Checker::new(
+            self.data.cm.clone(),
+            handler,
+            env.clone(),
+            debugger,
+            Box::new(ModuleLoader::new(self.data.cm.clone(), env, resolver, loader)),
+        )
     }
 }
 
