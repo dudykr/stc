@@ -33,7 +33,11 @@ pub struct StcLangServer {
 impl LanguageServer for StcLangServer {
     async fn initialize(&self, _params: InitializeParams) -> jsonrpc::Result<InitializeResult> {
         Ok(InitializeResult {
-            capabilities: ServerCapabilities { ..Default::default() },
+            capabilities: ServerCapabilities {
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
+
+                ..Default::default()
+            },
             server_info: Some(ServerInfo {
                 name: "stc-ts-lsp".to_string(),
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
