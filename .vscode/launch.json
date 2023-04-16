@@ -15,7 +15,8 @@
 			"outFiles": [
 				"${workspaceRoot}/pcakges/stc-lsp-client/out/**/*.js"
 			],
-			"preLaunchTask": "npm: watch-lsp"
+			"preLaunchTask": "npm: watch-lsp",
+			"cwd": "${workspaceRoot}",
 		}
 	]
 }
