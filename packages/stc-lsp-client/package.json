@@ -15,5 +15,8 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.52.0"
-  }
+  },
+  "activationEvents": [
+    "onLanguage:typescript"
+  ]
 }

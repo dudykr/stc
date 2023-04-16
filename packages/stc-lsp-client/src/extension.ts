@@ -48,9 +48,10 @@ const langServerId = 'stc-lsp';
 const langServerName = 'Language server for stc';
 
 export function activate(context: ExtensionContext) {
+	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
 
 	const binaryFile = context.asAbsolutePath(path.join('target', 'debug', 'examples', 'lsp'));
-	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
+	outputChannel.appendLine(`BinaryFile: ${binaryFile}`)
 
 	function didOpenTextDocument(document: TextDocument): void {
 		// We are only interested in language mode text
@@ -95,7 +96,7 @@ export function activate(context: ExtensionContext) {
 			const clientOptions: LanguageClientOptions = {
 				...baseClientOptions,
 				documentSelector: [
-					{ scheme: 'file', language: 'plaintext', pattern: `${folder.uri.fsPath}/**/*` }
+					{ scheme: 'file', language: 'plaintext', pattern: `${folder.uri.fsPath}/**/ * ` }
 				],
 				workspaceFolder: folder,
 			};

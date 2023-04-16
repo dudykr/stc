@@ -9,12 +9,12 @@
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--disable-extensions",
-				"--extensionDevelopmentPath=${workspaceRoot}"
+				"--extensionDevelopmentPath=${workspaceRoot}/packages/stc-lsp-client"
 			],
 			"autoAttachChildProcesses": true,
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceRoot}/pcakges/stc-lsp-client/out/**/*.js"
+				"${workspaceRoot}/packages/stc-lsp-client/out/**/*.js"
 			],
 			"preLaunchTask": "Build LSP in dev mode",
 			"cwd": "${workspaceRoot}",
