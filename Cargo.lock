@@ -2280,6 +2280,7 @@ dependencies = [
  "serde",
  "serde_json",
  "stc_ts_file_analyzer",
+ "stc_ts_module_loader",
  "stc_ts_testing",
  "stc_ts_type_checker",
  "stc_ts_types",
