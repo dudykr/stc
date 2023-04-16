@@ -3,7 +3,9 @@
   "workspaces": [
     "crates/stc_ts_file_analyzer",
     "crates/stc_ts_type_checker",
-    "packages/stc-lsp"
+    "packages/stc-lsp",
+    "packages/stc-lsp/client",
+    "packages/stc-lsp/server"
   ],
   "private": true,
   "version": "0.0.0",
