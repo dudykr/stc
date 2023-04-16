@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
 use clap::Args;
-use stc_ts_env::StableEnv;
+use dashmap::DashMap;
+use stc_ts_env::{Env, StableEnv};
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::{
     loader::{DefaultFileLoader, ModuleLoader},
     Checker,
 };
-use swc_common::{Globals, SourceMap, GLOBALS};
+use swc_common::{FileName, Globals, SourceMap, GLOBALS};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
@@ -26,13 +27,19 @@ impl LspCommand {
         let stdin = tokio::io::stdin();
         let stdout = tokio::io::stdout();
 
-        let (service, socket) = LspService::new(|client| StcLangServer { client });
         let (service, socket) = LspService::new(|client| {
-            let data = Data::default();
+            let cm = Arc::default();
+            let globals = Arc::default();
 
-            let stable_env = GLOBALS.set(&data.globals, StableEnv::new);
+            let stable_env = GLOBALS.set(&globals, StableEnv::new);
 
-            StcLangServer { client, data, stable_env }
+            StcLangServer {
+                client,
+                data: Default::default(),
+                stable_env,
+                cm,
+                globals,
+            }
         });
         Server::new(stdin, stdout, socket).serve(service).await;
 
@@ -44,26 +51,34 @@ pub struct StcLangServer {
     #[allow(unused)]
     client: Client,
 
-    data: Data,
+    cm: Arc<SourceMap>,
+    globals: Arc<Globals>,
     stable_env: StableEnv,
+
+    data: Data,
 }
 
 #[derive(Default)]
 struct Data {
-    cm: Arc<SourceMap>,
-    globals: Arc<Globals>,
+    /// dir: [Project]
+    projects: DashMap<Arc<FileName>, Project>,
+}
+
+/// One directory with `tsconfig.json`.
+struct Project {
+    module_loader: Arc<ModuleLoader<DefaultFileLoader, NodeResolver>>,
 }
 
 impl StcLangServer {
-    fn checker_for(&self, file_path: &TextDocumentItem) -> Checker {
+    fn new_checker_for(&self, file_path: &TextDocumentItem) -> Checker {
         let env = Env::new();
 
         Checker::new(
-            self.data.cm.clone(),
+            self.cm.clone(),
             handler,
             env.clone(),
             debugger,
-            Box::new(ModuleLoader::new(self.data.cm.clone(), env, resolver, loader)),
+            Box::new(self.module_loader.clone()),
         )
     }
 }
