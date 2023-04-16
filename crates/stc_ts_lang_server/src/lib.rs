@@ -1,7 +1,7 @@
 use clap::Args;
 use tower_lsp::{
     async_trait,
-    jsonrpc::{self, Result},
+    jsonrpc::{self},
     lsp_types::*,
     Client, LanguageServer, LspService, Server,
 };
@@ -57,12 +57,7 @@ impl LanguageServer for StcLangServer {
         })
     }
 
-    async fn initialized(&self, params: InitializedParams) {
-        dbg!("initialized", params);
-    }
-
     async fn shutdown(&self) -> jsonrpc::Result<()> {
-        dbg!("shutdown");
         Ok(())
     }
 
