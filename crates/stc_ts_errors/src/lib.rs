@@ -62,7 +62,7 @@ impl Error {
         return self.context_impl(Location::caller(), context);
     }
 
-    #[cfg_attr(not(debug_assertions), attr)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
         {
