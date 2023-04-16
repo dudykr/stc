@@ -1732,6 +1732,7 @@ impl ErrorKind {
             Self::ObjectAssignFailed { errors, .. } => errors,
             _ => {
                 vec![Error {
+                    #[cfg(debug_assertions)]
                     contexts: Default::default(),
                     inner: box self,
                 }]
