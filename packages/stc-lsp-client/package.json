@@ -1,5 +1,6 @@
 {
   "name": "stc-lsp-client",
+  "publisher": "kdy1",
   "license": "MIT",
   "version": "0.0.1",
   "repository": {
@@ -18,5 +19,6 @@
   },
   "activationEvents": [
     "onLanguage:typescript"
-  ]
+  ],
+  "main": "./out/extension"
 }
