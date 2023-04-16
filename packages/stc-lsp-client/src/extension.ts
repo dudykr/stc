@@ -115,7 +115,7 @@ export function activate(context: ExtensionContext) {
 			const clientOptions: LanguageClientOptions = {
 				...baseClientOptions,
 				documentSelector: [
-					{ scheme: 'file', language: 'typescript', pattern: `${folder.uri.fsPath}/**/ * ` }
+					{ scheme: 'file', language: 'typescript', pattern: `${folder.uri.fsPath}/**/*` }
 				],
 				workspaceFolder: folder,
 			};
