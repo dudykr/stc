@@ -28,7 +28,7 @@ fn exec_path() -> PathBuf {
 
         assert!(output.status.success());
 
-        output_dir.join("std-debug-lsp")
+        output_dir.join("stc-debug-lsp")
     });
 
     BIN_PATH.to_path_buf()
