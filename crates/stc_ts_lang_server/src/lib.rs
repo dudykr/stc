@@ -1,7 +1,7 @@
 use clap::Args;
 use tower_lsp::{
     async_trait,
-    jsonrpc::{self},
+    jsonrpc::{self, Result},
     lsp_types::*,
     Client, LanguageServer, LspService, Server,
 };
@@ -51,6 +51,9 @@ impl LanguageServer for StcLangServer {
                     resolve_provider: Some(true),
                     ..Default::default()
                 }),
+                code_lens_provider: Some(CodeLensOptions {
+                    resolve_provider: Some(true),
+                }),
 
                 ..Default::default()
             },
@@ -61,8 +64,24 @@ impl LanguageServer for StcLangServer {
         })
     }
 
+    async fn initialized(&self, params: InitializedParams) {
+        dbg!("initialized", params);
+    }
+
     async fn shutdown(&self) -> jsonrpc::Result<()> {
+        dbg!("shutdown");
         Ok(())
+    }
+
+    async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        let _ = params;
+        dbg!("Got a textDocument/didOpen notification, but it is not implemented");
+    }
+
+    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
+        let _ = params;
+        dbg!("Got a textDocument/completion request, but it is not implemented");
+        Ok(None)
     }
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
