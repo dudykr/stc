@@ -60,8 +60,8 @@ export function activate(context: ExtensionContext) {
 		}
 
 		const serverOptions: ServerOptions = {
-			run: { command: binaryFile, transport: TransportKind.ipc },
-			debug: { command: binaryFile, transport: TransportKind.ipc }
+			run: { command: binaryFile, transport: TransportKind.stdio },
+			debug: { command: binaryFile, transport: TransportKind.stdio }
 		};
 		const baseClientOptions: LanguageClientOptions = {
 			diagnosticCollectionName: 'stc-lsp',
