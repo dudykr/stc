@@ -1,0 +1,6 @@
+.travis.yml
+node_modules/**
+!node_modules/vscode-jsonrpc/**
+!node_modules/vscode-language**
+!node_modules/vscode-languageserver-protocol/**
+!node_modules/vscode-languageserver-types/**
