@@ -44,7 +44,7 @@ fn run_tests_for_types_pkg(module_specifier: &str) {
             handler.clone(),
             env.clone(),
             None,
-            ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
+            Box::new(ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader)),
         );
 
         checker.check(Arc::new(path));

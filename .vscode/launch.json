@@ -8,15 +8,16 @@
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceRoot}"
+				"--disable-extensions",
+				"--extensionDevelopmentPath=${workspaceRoot}/packages/stc-lsp-client",
+				"${workspaceRoot}/crates/stc_ts_type_checker/tests/conformance"
 			],
 			"autoAttachChildProcesses": true,
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceRoot}/pcakges/stc-lsp-client/out/**/*.js"
+				"${workspaceRoot}/packages/stc-lsp-client/out/**/*.js"
 			],
-			"preLaunchTask": "npm: watch-lsp",
-			"cwd": "${workspaceRoot}",
+			"preLaunchTask": "Build LSP in dev mode",
 		}
 	]
 }

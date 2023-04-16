@@ -26,10 +26,7 @@ pub mod loader;
 mod typings;
 
 /// Onc instance per swc::Compiler
-pub struct Checker<L>
-where
-    L: LoadModule,
-{
+pub struct Checker {
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
     /// Cache
@@ -40,7 +37,7 @@ where
     /// Information required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
-    module_loader: L,
+    module_loader: Box<dyn LoadModule>,
 
     /// Modules which are being processed or analyzed.
     started: Arc<DashSet<ModuleId, FxBuildHasher>>,
@@ -52,11 +49,14 @@ where
     debugger: Option<Debugger>,
 }
 
-impl<L> Checker<L>
-where
-    L: LoadModule,
-{
-    pub fn new(cm: Arc<SourceMap>, handler: Arc<Handler>, env: Env, debugger: Option<Debugger>, module_loader: L) -> Self {
+impl Checker {
+    pub fn new(
+        cm: Arc<SourceMap>,
+        handler: Arc<Handler>,
+        env: Env,
+        debugger: Option<Debugger>,
+        module_loader: Box<dyn LoadModule>,
+    ) -> Self {
         Checker {
             env,
             cm,
@@ -72,10 +72,7 @@ where
     }
 }
 
-impl<L> Checker<L>
-where
-    L: LoadModule,
-{
+impl Checker {
     /// Get type information of a module.
     pub fn get_types(&self, id: ModuleId) -> Option<Type> {
         let lock = self.module_types.read();
@@ -87,7 +84,7 @@ where
         self.dts_modules.remove(&id).map(|v| v.1.into_orig())
     }
 
-    pub fn module_loader(&self) -> &L {
+    pub fn module_loader(&self) -> &dyn LoadModule {
         &self.module_loader
     }
 
@@ -347,10 +344,7 @@ where
     }
 }
 
-impl<L> Load for Checker<L>
-where
-    L: LoadModule,
-{
+impl Load for Checker {
     fn module_id(&self, base: &Arc<FileName>, module_specifier: &str) -> Option<ModuleId> {
         if let Some(id) = self.declared_modules.get(module_specifier) {
             return Some(*id);

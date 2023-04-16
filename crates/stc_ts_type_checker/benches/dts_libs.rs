@@ -71,7 +71,7 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
+                Box::new(ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader)),
             );
 
             let id = checker.check(Arc::new(FileName::Real(path.to_path_buf())));

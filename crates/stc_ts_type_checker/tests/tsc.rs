@@ -347,7 +347,7 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
                 handler.clone(),
                 env.clone(),
                 None,
-                ModuleLoader::new(cm, env, fs.clone(), fs),
+                Box::new(ModuleLoader::new(cm, env, fs.clone(), fs)),
             );
 
             // Install a logger
