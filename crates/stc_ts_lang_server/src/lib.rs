@@ -1,4 +1,11 @@
 use clap::Args;
+use stc_ts_env::StableEnv;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
+use stc_ts_type_checker::{
+    loader::{DefaultFileLoader, ModuleLoader},
+    Checker,
+};
+use swc_common::{Globals, SourceMap, GLOBALS};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
@@ -18,6 +25,13 @@ impl LspCommand {
         let stdout = tokio::io::stdout();
 
         let (service, socket) = LspService::new(|client| StcLangServer { client });
+        let (service, socket) = LspService::new(|client| {
+            let data = Data::default();
+
+            let stable_env = GLOBALS.set(&data.globals, StableEnv::new);
+
+            StcLangServer { client, data, stable_env }
+        });
         Server::new(stdin, stdout, socket).serve(service).await;
 
         Ok(())
@@ -27,6 +41,21 @@ impl LspCommand {
 pub struct StcLangServer {
     #[allow(unused)]
     client: Client,
+
+    data: Data,
+    stable_env: StableEnv,
+}
+
+#[derive(Default)]
+struct Data {
+    cm: Arc<SourceMap>,
+    globals: Arc<Globals>,
+}
+
+impl StcLangServer {
+    fn checker_for(&self, file_path: &TextDocumentItem) -> Checker<ModuleLoader<DefaultFileLoader, NodeResolver>> {
+        Checker::new(self.data.cm.clone(), handler, env, debugger, module_loader)
+    }
 }
 
 #[async_trait]
