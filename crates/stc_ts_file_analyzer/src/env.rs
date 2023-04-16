@@ -27,9 +27,11 @@ pub trait BuiltInGen: Sized {
     fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
 
     fn from_ts_libs(env: &StableEnv, libs: &[Lib], no_lib: bool) -> BuiltIn {
+        static CACHE: Lazy<DashMap<Vec<Lib>, Arc<OnceCell<Arc<BuiltIn>>>, ahash::RandomState>> = Lazy::new(Default::default);
+
         if !no_lib {
             debug_assert_ne!(libs, &[], "No typescript library file is specified");
-        };
+        }
 
         // Loading builtin is very slow, so we cache it to a file using serde_json
 
@@ -291,7 +293,6 @@ pub trait EnvFactory {
     fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
     fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, Arc<OnceCell<Arc<BuiltIn>>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         // TODO(kdy1): Include `env` in cache
         let mut libs = libs.to_vec();
