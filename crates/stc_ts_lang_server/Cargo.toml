@@ -20,6 +20,7 @@ tokio = { version = "1.21.2", features = [
 ] }
 tower-lsp = "0.17.0"
 tracing = "0.1.37"
+swc_common = "0.29.37"
 
 stc_ts_file_analyzer = { version = "0.1.0", path = "../stc_ts_file_analyzer" }
 stc_ts_type_checker = { version = "0.1.0", path = "../stc_ts_type_checker" }
