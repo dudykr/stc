@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use swc_common::{util::take::Take, FileName};
 use swc_ecma_ast::{EsVersion, Module, Program};
 use swc_ecma_parser::Syntax;
@@ -14,6 +16,8 @@ pub struct ParserInput {
 
 #[salsa::tracked]
 pub struct ParsedFile {
+    #[no_eq]
+    pub filename: Arc<FileName>,
     /// This is `no_eq` because if the input content is not equal the AST cannot
     /// be equal.
     #[no_eq]
@@ -40,5 +44,5 @@ pub(crate) fn parse_ast(db: &dyn Db, input: ParserInput) -> ParsedFile {
         }
     };
 
-    ParsedFile::new(db, program)
+    ParsedFile::new(db, fm.name.clone().into(), program)
 }

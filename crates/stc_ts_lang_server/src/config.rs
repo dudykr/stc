@@ -15,6 +15,10 @@ pub struct ParsedTsConfig {
 
     #[no_eq]
     pub module: ModuleConfig,
+
+    #[no_eq]
+    #[return_ref]
+    pub raw: Option<tsconfig::CompilerOptions>,
 }
 
 #[salsa::tracked]
@@ -28,7 +32,7 @@ pub(crate) fn parse_ts_config(db: &dyn Db, src: SourceText) -> ParsedTsConfig {
         Ok(v) => v,
         _ => {
             error!("Failed to parse ts config: {:?}", result);
-            return ParsedTsConfig::new(db, Default::default(), Default::default(), Default::default());
+            return ParsedTsConfig::new(db, Default::default(), Default::default(), Default::default(), Default::default());
         }
     };
 
@@ -59,5 +63,6 @@ pub(crate) fn parse_ts_config(db: &dyn Db, src: SourceText) -> ParsedTsConfig {
             .as_ref()
             .and_then(|v| v.module.clone())
             .map_or_else(ModuleConfig::default, ModuleConfig::from),
+        v.compiler_options.clone(),
     )
 }
