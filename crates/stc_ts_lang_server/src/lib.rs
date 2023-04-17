@@ -17,29 +17,6 @@ use tower_lsp::{
 };
 use tracing::info;
 
-#[salsa::jar(db = Db)]
-pub struct Jar();
-
-pub trait Db: salsa::DbWithJar<Jar> {}
-
-impl<DB> Db for DB where DB: ?Sized + salsa::DbWithJar<Jar> {}
-
-#[derive(Default)]
-#[salsa::db(crate::Jar)]
-pub(crate) struct Database {
-    storage: salsa::Storage<Self>,
-}
-
-impl salsa::Database for Database {}
-
-impl salsa::ParallelDatabase for Database {
-    fn snapshot(&self) -> salsa::Snapshot<Self> {
-        salsa::Snapshot::new(Database {
-            storage: self.storage.snapshot(),
-        })
-    }
-}
-
 #[derive(Debug, Args)]
 pub struct LspCommand {}
 
@@ -147,5 +124,28 @@ impl LanguageServer for StcLangServer {
             contents: HoverContents::Scalar(MarkedString::String("hover test".to_string())),
             range: None,
         }))
+    }
+}
+
+#[salsa::jar(db = Db)]
+pub struct Jar();
+
+pub trait Db: salsa::DbWithJar<Jar> {}
+
+impl<DB> Db for DB where DB: ?Sized + salsa::DbWithJar<Jar> {}
+
+#[derive(Default)]
+#[salsa::db(crate::Jar)]
+pub(crate) struct Database {
+    storage: salsa::Storage<Self>,
+}
+
+impl salsa::Database for Database {}
+
+impl salsa::ParallelDatabase for Database {
+    fn snapshot(&self) -> salsa::Snapshot<Self> {
+        salsa::Snapshot::new(Database {
+            storage: self.storage.snapshot(),
+        })
     }
 }
