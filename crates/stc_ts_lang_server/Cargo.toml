@@ -18,7 +18,6 @@ tokio = { version = "1.21.2", features = [
     "io-std",
     "rt-multi-thread",
 ] }
-jsonc-parser = { version = "0.21.0", features = ["serde"] }
 tower-lsp = "0.17.0"
 tracing = "0.1.37"
 swc_common = "0.29.37"
