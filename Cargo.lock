@@ -2376,6 +2376,7 @@ dependencies = [
  "stc_utils",
  "swc_common",
  "swc_ecma_ast",
+ "swc_ecma_parser",
  "testing",
  "tokio",
  "tower-lsp",
