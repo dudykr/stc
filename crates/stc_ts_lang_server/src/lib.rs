@@ -41,6 +41,7 @@ impl LspCommand {
                     stable_env,
                     cm,
                     globals,
+                    comments: Default::default(),
                 }),
                 projects: Default::default(),
             }
@@ -58,11 +59,12 @@ pub struct StcLangServer {
     projects: DashMap<Arc<FileName>, Project>,
 }
 
-struct Shared {
+pub struct Shared {
     client: Client,
     cm: Arc<SourceMap>,
     globals: Arc<Globals>,
     stable_env: StableEnv,
+    comments: StcComments,
 }
 
 /// One directory with `tsconfig.json`.
@@ -126,26 +128,19 @@ pub struct Jar(
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {
-    fn source_map(&self) -> &Arc<SourceMap>;
-    fn comments(&self) -> &StcComments;
+    fn shared(&self) -> &Arc<Shared>;
 }
 
-#[derive(Default)]
 #[salsa::db(crate::Jar)]
 pub(crate) struct Database {
     storage: salsa::Storage<Self>,
 
-    cm: Arc<SourceMap>,
-    comments: StcComments,
+    shared: Arc<Shared>,
 }
 
 impl Db for Database {
-    fn source_map(&self) -> &Arc<SourceMap> {
-        &self.cm
-    }
-
-    fn comments(&self) -> &StcComments {
-        &self.comments
+    fn shared(&self) -> &Arc<Shared> {
+        &self.shared
     }
 }
 
@@ -155,8 +150,7 @@ impl salsa::ParallelDatabase for Database {
     fn snapshot(&self) -> salsa::Snapshot<Self> {
         salsa::Snapshot::new(Database {
             storage: self.storage.snapshot(),
-            cm: self.cm.clone(),
-            comments: self.comments.clone(),
+            shared: self.shared.clone(),
         })
     }
 }

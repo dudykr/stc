@@ -24,12 +24,13 @@ pub struct ParsedFile {
 #[salsa::tracked]
 pub(crate) fn parse_ast(db: &dyn Db, input: ParserInput) -> ParsedFile {
     let fm = db
-        .source_map()
+        .shared()
+        .cm
         .new_source_file(input.filename(db), input.src(db).content(db).to_string());
 
     let mut errors = vec![];
 
-    let program = swc_ecma_parser::parse_file_as_program(&fm, input.syntax(db), input.target(db), Some(db.comments()), &mut errors);
+    let program = swc_ecma_parser::parse_file_as_program(&fm, input.syntax(db), input.target(db), Some(&db.shared().comments), &mut errors);
 
     let program = match program {
         Ok(v) => v,
