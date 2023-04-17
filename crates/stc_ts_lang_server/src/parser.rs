@@ -1,4 +1,13 @@
 use swc_ecma_ast::Program;
+use swc_ecma_parser::Syntax;
+
+use crate::{ir::SourceText, Db};
+
+#[salsa::input]
+pub struct ParserInput {
+    pub content: SourceText,
+    pub syntax: Syntax,
+}
 
 #[salsa::tracked]
 pub struct ParsedFile {
@@ -8,3 +17,6 @@ pub struct ParsedFile {
     #[return_ref]
     pub program: Program,
 }
+
+#[salsa::tracked]
+pub(crate) fn parse_ast(db: &dyn Db, input: ParserInput) -> ParsedFile {}

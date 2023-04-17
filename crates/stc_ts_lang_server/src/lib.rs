@@ -134,7 +134,9 @@ impl LanguageServer for StcLangServer {
 #[salsa::jar(db = Db)]
 pub struct Jar(
     crate::ir::SourceText,
+    crate::parser::ParserInput,
     crate::parser::ParsedFile,
+    crate::parser::parse_ast,
     crate::config::ParsedTsConfig,
     crate::config::parse_ts_config,
 );
