@@ -11,7 +11,7 @@ use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::EsVersion;
-use tsconfig::Module;
+use tsconfig::{CompilerOptions, Jsx, Module};
 
 pub use self::marks::{MarkExt, Marks};
 
@@ -207,6 +207,34 @@ pub struct Rule {
     pub jsx: JsxMode,
 }
 
+impl From<&CompilerOptions> for Rule {
+    fn from(v: &CompilerOptions) -> Self {
+        let strict = v.strict.unwrap_or(true);
+
+        Self {
+            no_implicit_any: v.no_implicit_any.unwrap_or(strict),
+            no_implicit_this: v.no_implicit_this.unwrap_or(strict),
+            always_strict: v.always_strict.unwrap_or(strict),
+            strict_null_checks: v.strict_null_checks.unwrap_or(strict),
+            strict_function_types: v.strict_function_types.unwrap_or(strict),
+
+            allow_unreachable_code: v.allow_unreachable_code.unwrap_or_default(),
+            allow_unused_labels: v.allow_unused_labels.unwrap_or_default(),
+            no_fallthrough_cases_in_switch: v.no_fallthrough_cases_in_switch.unwrap_or_default(),
+            no_implicit_returns: v.no_implicit_returns.unwrap_or_default(),
+            suppress_excess_property_errors: v.suppress_excess_property_errors.unwrap_or_default(),
+            suppress_implicit_any_index_errors: v.suppress_implicit_any_index_errors.unwrap_or_default(),
+            no_strict_generic_checks: v.no_strict_generic_checks.unwrap_or_default(),
+            no_unused_locals: v.no_unused_locals.unwrap_or_default(),
+            no_unused_parameters: v.no_unused_locals.unwrap_or_default(),
+            use_define_property_for_class_fields: v.use_define_for_class_fields.unwrap_or_default(),
+            no_lib: v.no_lib.unwrap_or_default(),
+
+            jsx: v.jsx.map(From::from).unwrap_or_default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub enum JsxMode {
     #[default]
@@ -228,6 +256,18 @@ impl FromStr for JsxMode {
             "react-jsx" => Ok(JsxMode::ReactJsx),
             "react-jsxdev" => Ok(JsxMode::ReactJsxdev),
             _ => Err(()),
+        }
+    }
+}
+
+impl From<Jsx> for JsxMode {
+    fn from(value: Jsx) -> Self {
+        match value {
+            Jsx::React => JsxMode::React,
+            Jsx::ReactJsx => JsxMode::ReactJsx,
+            Jsx::ReactJsxdev => JsxMode::ReactJsxdev,
+            Jsx::ReactNative => JsxMode::ReactNative,
+            Jsx::Preserve => JsxMode::Preserve,
         }
     }
 }
