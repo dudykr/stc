@@ -156,6 +156,7 @@ impl salsa::ParallelDatabase for Database {
         salsa::Snapshot::new(Database {
             storage: self.storage.snapshot(),
             cm: self.cm.clone(),
+            comments: self.comments.clone(),
         })
     }
 }
