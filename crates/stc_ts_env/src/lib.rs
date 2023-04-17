@@ -11,6 +11,7 @@ use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::EsVersion;
+use tsconfig::Module;
 
 pub use self::marks::{MarkExt, Marks};
 
@@ -227,6 +228,23 @@ impl FromStr for JsxMode {
             "react-jsx" => Ok(JsxMode::ReactJsx),
             "react-jsxdev" => Ok(JsxMode::ReactJsxdev),
             _ => Err(()),
+        }
+    }
+}
+
+impl From<Module> for ModuleConfig {
+    fn from(value: Module) -> Self {
+        match value {
+            Module::CommonJs => ModuleConfig::CommonJs,
+            Module::Es6 => ModuleConfig::Es6,
+            Module::Es2015 => ModuleConfig::Es2015,
+            Module::Es2020 => ModuleConfig::Es2020,
+            Module::None => ModuleConfig::None,
+            Module::Umd => ModuleConfig::Umd,
+            Module::Amd => ModuleConfig::Amd,
+            Module::System => ModuleConfig::System,
+            Module::EsNext => ModuleConfig::EsNext,
+            Module::Other(other) => todo!("ModuleConfig::from(Module::Other({:?}))", other),
         }
     }
 }
