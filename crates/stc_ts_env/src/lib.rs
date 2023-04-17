@@ -158,7 +158,7 @@ impl Default for StableEnv {
     }
 }
 
-#[derive(Clone, Copy, StringEnum)]
+#[derive(Clone, Copy, StringEnum, Default)]
 pub enum ModuleConfig {
     /// `commonjs`
     CommonJs,
@@ -171,6 +171,7 @@ pub enum ModuleConfig {
     /// `es2022`
     Es2022,
     /// `none`
+    #[default]
     None,
     /// `umd`
     Umd,
