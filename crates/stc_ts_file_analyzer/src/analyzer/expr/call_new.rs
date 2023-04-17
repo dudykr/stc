@@ -2516,6 +2516,17 @@ impl Analyzer<'_, '_> {
                     }
                     .into());
                 }
+
+                // This is only useful when the rest parameter isn't last in the function
+                // function fn(a: string, ...b: string[], c: string) (this is also an error)
+                if let RPat::Rest(r_pat) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedNArgsButGotM {
+                        span,
+                        min: min_param,
+                        max: max_param,
+                    }
+                    .into());
+                }
             }
         }
 
