@@ -1424,9 +1424,11 @@ pub enum ErrorKind {
         max: Option<usize>,
     },
 
+    /// TS2555
     ExpectedAtLeastNArgsButGotM {
         span: Span,
         min: usize,
+        param_name: JsWord,
     },
 
     ExpectedAtLeastNArgsButGotMOrMore {
