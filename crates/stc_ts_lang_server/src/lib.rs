@@ -17,6 +17,8 @@ use tower_lsp::{
 };
 use tracing::info;
 
+pub mod ir;
+
 #[derive(Debug, Args)]
 pub struct LspCommand {}
 
@@ -128,7 +130,7 @@ impl LanguageServer for StcLangServer {
 }
 
 #[salsa::jar(db = Db)]
-pub struct Jar();
+pub struct Jar(crate::ir::SourceText, crate::ir::ParsedFile);
 
 pub trait Db: salsa::DbWithJar<Jar> {}
 
