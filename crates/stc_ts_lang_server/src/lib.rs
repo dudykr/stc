@@ -5,6 +5,7 @@ use dashmap::DashMap;
 use stc_ts_env::StableEnv;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::loader::{DefaultFileLoader, ModuleLoader};
+use stc_ts_utils::StcComments;
 use swc_common::{FileName, Globals, SourceMap, GLOBALS};
 use tower_lsp::{
     async_trait,
@@ -126,6 +127,7 @@ pub struct Jar(
 
 pub trait Db: salsa::DbWithJar<Jar> {
     fn source_map(&self) -> &Arc<SourceMap>;
+    fn comments(&self) -> &StcComments;
 }
 
 #[derive(Default)]
@@ -134,11 +136,16 @@ pub(crate) struct Database {
     storage: salsa::Storage<Self>,
 
     cm: Arc<SourceMap>,
+    comments: StcComments,
 }
 
 impl Db for Database {
     fn source_map(&self) -> &Arc<SourceMap> {
         &self.cm
+    }
+
+    fn comments(&self) -> &StcComments {
+        &self.comments
     }
 }
 
