@@ -18,6 +18,7 @@ use tracing::info;
 pub mod config;
 pub mod ir;
 pub mod parser;
+pub mod type_checker;
 
 #[derive(Debug, Args)]
 pub struct LspCommand {}
