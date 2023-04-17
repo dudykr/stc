@@ -35,6 +35,7 @@ stc_ts_module_loader = { version = "0.1.0", path = "../stc_ts_module_loader" }
 stc_ts_types = { version = "0.0.0", path = "../stc_ts_types" }
 stc_ts_utils = { version = "0.1.0", path = "../stc_ts_utils" }
 stc_utils = { version = "0.1.0", path = "../stc_utils" }
+stc_ts_builtin_types = { path = "../stc_ts_builtin_types" }
 
 [dev-dependencies]
 env_logger = "0.9.0"
