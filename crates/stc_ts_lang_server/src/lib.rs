@@ -2,12 +2,9 @@ use std::sync::Arc;
 
 use clap::Args;
 use dashmap::DashMap;
-use stc_ts_env::{Env, StableEnv};
+use stc_ts_env::StableEnv;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::{
-    loader::{DefaultFileLoader, ModuleLoader},
-    Checker,
-};
+use stc_ts_type_checker::loader::{DefaultFileLoader, ModuleLoader};
 use swc_common::{FileName, Globals, SourceMap, GLOBALS};
 use tower_lsp::{
     async_trait,
@@ -76,20 +73,6 @@ struct Project {
     module_loader: Arc<ModuleLoader<DefaultFileLoader, NodeResolver>>,
 }
 
-impl Project {
-    fn new_checker_for(&self, file_path: &TextDocumentItem) -> Checker {
-        let env = Env::new(self.shared.stable_env);
-
-        Checker::new(
-            self.shared.cm.clone(),
-            handler,
-            env.clone(),
-            debugger,
-            Box::new(self.module_loader.clone()),
-        )
-    }
-}
-
 #[async_trait]
 impl LanguageServer for StcLangServer {
     async fn initialize(&self, _params: InitializeParams) -> jsonrpc::Result<InitializeResult> {
@@ -141,14 +124,22 @@ pub struct Jar(
     crate::config::parse_ts_config,
 );
 
-pub trait Db: salsa::DbWithJar<Jar> {}
-
-impl<DB> Db for DB where DB: ?Sized + salsa::DbWithJar<Jar> {}
+pub trait Db: salsa::DbWithJar<Jar> {
+    fn source_map(&self) -> &Arc<SourceMap>;
+}
 
 #[derive(Default)]
 #[salsa::db(crate::Jar)]
 pub(crate) struct Database {
     storage: salsa::Storage<Self>,
+
+    cm: Arc<SourceMap>,
+}
+
+impl Db for Database {
+    fn source_map(&self) -> &Arc<SourceMap> {
+        &self.cm
+    }
 }
 
 impl salsa::Database for Database {}
@@ -157,6 +148,7 @@ impl salsa::ParallelDatabase for Database {
     fn snapshot(&self) -> salsa::Snapshot<Self> {
         salsa::Snapshot::new(Database {
             storage: self.storage.snapshot(),
+            cm: self.cm.clone(),
         })
     }
 }
