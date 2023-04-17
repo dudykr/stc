@@ -19,6 +19,7 @@ use tracing::info;
 
 pub mod config;
 pub mod ir;
+pub mod parser;
 
 #[derive(Debug, Args)]
 pub struct LspCommand {}
@@ -133,7 +134,7 @@ impl LanguageServer for StcLangServer {
 #[salsa::jar(db = Db)]
 pub struct Jar(
     crate::ir::SourceText,
-    crate::ir::ParsedFile,
+    crate::parser::ParsedFile,
     crate::config::ParsedTsConfig,
     crate::config::parse_ts_config,
 );
