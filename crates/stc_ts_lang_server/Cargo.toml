@@ -21,6 +21,7 @@ tokio = { version = "1.21.2", features = [
 tower-lsp = "0.17.0"
 tracing = "0.1.37"
 swc_common = "0.29.37"
+swc_ecma_ast = "0.100.2"
 dashmap = "3"
 salsa = { git = "https://github.com/salsa-rs/salsa.git", package = "salsa-2022" }
 
