@@ -19,6 +19,7 @@ use tracing::info;
 
 pub mod config;
 pub mod ir;
+pub mod module_loader;
 pub mod parser;
 pub mod type_checker;
 
@@ -128,12 +129,12 @@ pub struct Jar(
     crate::parser::ParserInput,
     crate::parser::ParsedFile,
     crate::parser::parse_ast,
+    crate::module_loader::ProjectEnv,
+    crate::module_loader::get_module_loader,
     crate::type_checker::TypeCheckInput,
     crate::type_checker::ModuleTypeData,
     crate::type_checker::Diagnostics,
     crate::type_checker::check_type,
-    crate::type_checker::ProjectEnv,
-    crate::type_checker::get_module_loader,
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {
