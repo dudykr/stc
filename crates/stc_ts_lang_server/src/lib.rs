@@ -3,6 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use clap::Args;
+use dashmap::DashMap;
 use stc_ts_env::StableEnv;
 use stc_ts_utils::StcComments;
 use swc_common::{FileName, Globals, SourceMap, GLOBALS};
@@ -47,7 +48,6 @@ impl LspCommand {
             });
 
             StcLangServer {
-                shared: shared.clone(),
                 project: Project::new(shared),
             }
         });
@@ -58,8 +58,6 @@ impl LspCommand {
 }
 
 pub struct StcLangServer {
-    shared: Arc<Shared>,
-
     /// TODO: Per-tsconfig project
     project: Project,
 }
@@ -86,12 +84,23 @@ impl Project {
             let mut db = Database {
                 storage: Default::default(),
                 shared,
+                files: Default::default(),
             };
+
+            let files = db.files.clone();
 
             while let Ok(req) = rx.recv() {
                 match req {
-                    Request::SetFileContent(filename, content) => {}
-                    Request::ValidateFile(filename) => {
+                    Request::SetFileContent { filename, content } => match files.entry(filename.clone()) {
+                        dashmap::mapref::entry::Entry::Occupied(mut e) => {
+                            e.get_mut().set_content(&mut db).to(content);
+                        }
+                        dashmap::mapref::entry::Entry::Vacant(e) => {
+                            e.insert(SourceFile::new(&db, filename, content));
+                        }
+                    },
+
+                    Request::ValidateFile { filename } => {
                         let input = crate::type_checker::prepare_input(&db, &filename);
                         let _module_type = crate::type_checker::check_type(&db, input);
                     }
@@ -107,8 +116,8 @@ impl Project {
 }
 
 enum Request {
-    SetFileContent(Arc<FileName>, String),
-    ValidateFile(Arc<FileName>),
+    SetFileContent { filename: Arc<FileName>, content: String },
+    ValidateFile { filename: Arc<FileName> },
 }
 
 #[async_trait]
@@ -143,12 +152,17 @@ impl LanguageServer for StcLangServer {
         Ok(())
     }
 
-    async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
-        dbg!("HOVER!");
-        Ok(Some(Hover {
-            contents: HoverContents::Scalar(MarkedString::String("hover test".to_string())),
-            range: None,
-        }))
+    async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        self.project.sender.lock().unwrap().send(Request::ValidateFile {
+            filename: Arc::new(FileName::Url(params.text_document.uri)),
+        });
+    }
+
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        self.project.sender.lock().unwrap().send(Request::SetFileContent {
+            filename: Arc::new(FileName::Url(params.text_document.uri)),
+            content: params.content_changes[0].text.clone(),
+        });
     }
 }
 
@@ -181,6 +195,8 @@ pub(crate) struct Database {
     storage: salsa::Storage<Self>,
 
     shared: Arc<Shared>,
+
+    files: Arc<DashMap<Arc<FileName>, SourceFile>>,
 }
 
 impl Db for Database {
@@ -194,12 +210,3 @@ impl Db for Database {
 }
 
 impl salsa::Database for Database {}
-
-impl salsa::ParallelDatabase for Database {
-    fn snapshot(&self) -> salsa::Snapshot<Self> {
-        salsa::Snapshot::new(Database {
-            storage: self.storage.snapshot(),
-            shared: self.shared.clone(),
-        })
-    }
-}

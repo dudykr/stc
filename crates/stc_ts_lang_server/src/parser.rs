@@ -1,3 +1,5 @@
+#![allow(unused)] // TODO: Use this for module loader
+
 use std::sync::Arc;
 
 use swc_common::{util::take::Take, FileName};
