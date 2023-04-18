@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use stc_ts_env::{ModuleConfig, Rule};
-use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use tracing::error;
 use tsconfig::{Target, TsConfig};

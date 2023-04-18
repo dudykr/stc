@@ -12,10 +12,9 @@ use swc_common::{
 };
 
 use crate::{
-    config::{read_tsconfig_file_for, tsconfig_for, ParsedTsConfig},
+    config::{tsconfig_for, ParsedTsConfig},
     ir::SourceFile,
     module_loader::get_module_loader,
-    parser::ParsedFile,
     Db,
 };
 
