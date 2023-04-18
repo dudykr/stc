@@ -76,10 +76,6 @@ pub struct Shared {
 /// One directory with `tsconfig.json`.
 struct Project {
     shared: Arc<Shared>,
-
-    dir: Arc<FileName>,
-
-    module_loader: Arc<ModuleLoader<DefaultFileLoader, NodeResolver>>,
 }
 
 #[async_trait]
@@ -140,6 +136,8 @@ pub struct Jar(
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {
+    fn read_file(&self, path: &Arc<FileName>) -> SourceFile;
+
     fn shared(&self) -> &Arc<Shared>;
 }
 
@@ -153,6 +151,10 @@ pub(crate) struct Database {
 impl Db for Database {
     fn shared(&self) -> &Arc<Shared> {
         &self.shared
+    }
+
+    fn read_file(&self, path: &Arc<FileName>) -> SourceFile {
+        todo!("read_file")
     }
 }
 
