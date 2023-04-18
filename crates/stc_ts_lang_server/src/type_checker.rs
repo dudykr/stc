@@ -39,9 +39,9 @@ pub(crate) struct ProjectEnv {
     tsconfig: ParsedTsConfig,
 
     #[no_eq]
-    pub env: DebugIgnore<Env>,
+    env: DebugIgnore<Env>,
     #[no_eq]
-    pub loader: DebugIgnore<Arc<dyn LoadModule>>,
+    loader: DebugIgnore<Arc<dyn LoadModule>>,
 }
 
 #[salsa::tracked]
@@ -85,13 +85,7 @@ pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
     let project = get_module_loader(db, config);
     let env = project.env(db).0;
 
-    let checker = Checker::new(
-        cm.clone(),
-        handler,
-        env.clone(),
-        None,
-        Box::new(ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader)),
-    );
+    let checker = Checker::new(cm, handler, env, None, Box::new(project.loader(db).0.clone()));
 
     let module_id = checker.check(input.file(db).filename(db));
 
