@@ -1,6 +1,6 @@
 #![allow(clippy::disallowed_names)] // salsa bug (i8)
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use clap::Args;
 use dashmap::DashMap;
@@ -72,8 +72,10 @@ pub struct Shared {
 
 /// One directory with `tsconfig.json`.
 struct Project {
+    #[allow(unused)]
     handle: JoinHandle<()>,
-    sender: Mutex<std::sync::mpsc::Sender<Request>>,
+
+    sender: tokio::sync::Mutex<std::sync::mpsc::Sender<Request>>,
 }
 
 impl Project {
@@ -153,13 +155,13 @@ impl LanguageServer for StcLangServer {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        self.project.sender.lock().unwrap().send(Request::ValidateFile {
+        self.project.sender.lock().await.send(Request::ValidateFile {
             filename: Arc::new(FileName::Url(params.text_document.uri)),
         });
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        self.project.sender.lock().unwrap().send(Request::SetFileContent {
+        self.project.sender.lock().await.send(Request::SetFileContent {
             filename: Arc::new(FileName::Url(params.text_document.uri)),
             content: params.content_changes[0].text.clone(),
         });
