@@ -14,7 +14,7 @@ use tower_lsp::{
     lsp_types::*,
     Client, LanguageServer, LspService, Server,
 };
-use tracing::info;
+use tracing::{error, info};
 
 use crate::ir::SourceFile;
 
@@ -155,13 +155,13 @@ impl LanguageServer for StcLangServer {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        self.project.sender.lock().await.send(Request::ValidateFile {
+        let _ = self.project.sender.lock().await.send(Request::ValidateFile {
             filename: Arc::new(FileName::Url(params.text_document.uri)),
         });
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        self.project.sender.lock().await.send(Request::SetFileContent {
+        let _ = self.project.sender.lock().await.send(Request::SetFileContent {
             filename: Arc::new(FileName::Url(params.text_document.uri)),
             content: params.content_changes[0].text.clone(),
         });
@@ -207,7 +207,14 @@ impl Db for Database {
     }
 
     fn read_file(&self, path: &Arc<FileName>) -> SourceFile {
-        todo!("read_file")
+        match self.files.get(path) {
+            Some(file) => *file,
+            None => {
+                error!("File not found: {:?}", path);
+                // TODO: Error
+                SourceFile::new(self, path.clone(), "".to_string())
+            }
+        }
     }
 }
 
