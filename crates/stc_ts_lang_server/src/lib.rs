@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_names)] // salsa bug (i8)
+
 use std::sync::Arc;
 
 use clap::Args;
