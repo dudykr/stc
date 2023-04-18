@@ -6,13 +6,22 @@ use std::{
 
 use stc_ts_type_checker::Checker;
 use stc_ts_types::Type;
-use swc_common::errors::{Diagnostic, Emitter, Handler};
+use swc_common::{
+    errors::{Diagnostic, Emitter, Handler},
+    FileName,
+};
 
-use crate::{config::ParsedTsConfig, module_loader::get_module_loader, parser::ParsedFile, Db};
+use crate::{
+    config::{read_tsconfig_file_for, tsconfig_for, ParsedTsConfig},
+    ir::SourceFile,
+    module_loader::get_module_loader,
+    parser::ParsedFile,
+    Db,
+};
 
 #[salsa::tracked]
 pub(crate) struct TypeCheckInput {
-    pub file: ParsedFile,
+    pub file: SourceFile,
     pub config: ParsedTsConfig,
 }
 
@@ -23,6 +32,13 @@ pub struct Diagnostics(Diagnostic);
 pub(crate) struct ModuleTypeData {
     #[no_eq]
     pub data: Type,
+}
+
+pub(crate) fn prepare_input(db: &dyn Db, filename: &Arc<FileName>) -> TypeCheckInput {
+    let file = db.read_file(filename);
+    let config = tsconfig_for(db, file);
+
+    TypeCheckInput::new(db, file, config)
 }
 
 #[salsa::tracked]

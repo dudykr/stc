@@ -1,14 +1,12 @@
 #![allow(clippy::disallowed_names)] // salsa bug (i8)
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use clap::Args;
-use dashmap::DashMap;
 use stc_ts_env::StableEnv;
-use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::loader::{DefaultFileLoader, ModuleLoader};
 use stc_ts_utils::StcComments;
 use swc_common::{FileName, Globals, SourceMap, GLOBALS};
+use tokio::task::{spawn_blocking, JoinHandle};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
@@ -40,16 +38,17 @@ impl LspCommand {
             let globals = Arc::default();
 
             let stable_env = GLOBALS.set(&globals, StableEnv::new);
+            let shared = Arc::new(Shared {
+                client,
+                stable_env,
+                cm,
+                globals,
+                comments: Default::default(),
+            });
 
             StcLangServer {
-                shared: Arc::new(Shared {
-                    client,
-                    stable_env,
-                    cm,
-                    globals,
-                    comments: Default::default(),
-                }),
-                projects: Default::default(),
+                shared: shared.clone(),
+                project: Project::new(shared),
             }
         });
         Server::new(stdin, stdout, socket).serve(service).await;
@@ -61,8 +60,8 @@ impl LspCommand {
 pub struct StcLangServer {
     shared: Arc<Shared>,
 
-    /// dir: [Project]
-    projects: DashMap<Arc<FileName>, Project>,
+    /// TODO: Per-tsconfig project
+    project: Project,
 }
 
 pub struct Shared {
@@ -75,7 +74,41 @@ pub struct Shared {
 
 /// One directory with `tsconfig.json`.
 struct Project {
-    shared: Arc<Shared>,
+    handle: JoinHandle<()>,
+    sender: Mutex<std::sync::mpsc::Sender<Request>>,
+}
+
+impl Project {
+    fn new(shared: Arc<Shared>) -> Self {
+        let (tx, rx) = std::sync::mpsc::channel::<Request>();
+
+        let join_handle = spawn_blocking(move || {
+            let mut db = Database {
+                storage: Default::default(),
+                shared,
+            };
+
+            while let Ok(req) = rx.recv() {
+                match req {
+                    Request::SetFileContent(filename, content) => {}
+                    Request::ValidateFile(filename) => {
+                        let input = crate::type_checker::prepare_input(&db, &filename);
+                        let _module_type = crate::type_checker::check_type(&db, input);
+                    }
+                }
+            }
+        });
+
+        Self {
+            handle: join_handle,
+            sender: tx.into(),
+        }
+    }
+}
+
+enum Request {
+    SetFileContent(Arc<FileName>, String),
+    ValidateFile(Arc<FileName>),
 }
 
 #[async_trait]
@@ -122,6 +155,8 @@ impl LanguageServer for StcLangServer {
 #[salsa::jar(db = Db)]
 pub struct Jar(
     crate::config::ParsedTsConfig,
+    crate::config::tsconfig_for,
+    crate::config::read_tsconfig_file_for,
     crate::config::parse_ts_config,
     crate::ir::SourceFile,
     crate::parser::ParserInput,

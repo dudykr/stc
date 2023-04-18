@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use stc_ts_env::{ModuleConfig, Rule};
+use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use tracing::error;
 use tsconfig::{Target, TsConfig};
@@ -19,6 +22,16 @@ pub struct ParsedTsConfig {
     #[no_eq]
     #[return_ref]
     pub raw: Option<tsconfig::CompilerOptions>,
+}
+
+#[salsa::tracked]
+pub(crate) fn read_tsconfig_file_for(db: &dyn Db, filename: SourceFile) -> SourceFile {}
+
+#[salsa::tracked]
+pub(crate) fn tsconfig_for(db: &dyn Db, filename: SourceFile) -> ParsedTsConfig {
+    let content = read_tsconfig_file_for(db, filename);
+
+    parse_ts_config(db, content)
 }
 
 #[salsa::tracked]
