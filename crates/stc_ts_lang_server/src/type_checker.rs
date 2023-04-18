@@ -1,4 +1,5 @@
 use std::{
+    fmt::Debug,
     mem::take,
     sync::{Arc, Mutex},
 };
@@ -8,11 +9,15 @@ use stc_ts_env::{BuiltIn, Env};
 use stc_ts_file_analyzer::env::BuiltInGen;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::{
-    loader::{DefaultFileLoader, ModuleLoader},
+    loader::{DefaultFileLoader, LoadModule, ModuleLoader},
     Checker,
 };
 use stc_ts_types::Type;
-use swc_common::errors::{Diagnostic, Emitter, Handler};
+use stc_utils::DebugIgnore;
+use swc_common::{
+    errors::{Diagnostic, Emitter, Handler},
+    FileName,
+};
 
 use crate::{config::ParsedTsConfig, parser::ParsedFile, Db};
 
@@ -30,6 +35,20 @@ pub(crate) struct ModuleTypeData {
     #[no_eq]
     pub data: Type,
 }
+
+#[salsa::tracked]
+pub(crate) struct ProjectEnv {
+    #[id]
+    tsconfig: ParsedTsConfig,
+
+    #[no_eq]
+    pub env: DebugIgnore<Env>,
+    #[no_eq]
+    pub loader: DebugIgnore<Arc<dyn LoadModule>>,
+}
+
+#[salsa::tracked]
+pub(crate) fn get_module_loader(db: &dyn Db, input: TypeCheckInput) -> ProjectEnv {}
 
 #[salsa::tracked]
 pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {

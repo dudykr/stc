@@ -132,6 +132,8 @@ pub struct Jar(
     crate::type_checker::ModuleTypeData,
     crate::type_checker::Diagnostics,
     crate::type_checker::check_type,
+    crate::type_checker::ProjectEnv,
+    crate::type_checker::get_module_loader,
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {
