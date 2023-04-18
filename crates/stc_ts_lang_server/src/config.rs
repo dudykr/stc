@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use stc_ts_env::{ModuleConfig, Rule};
+use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use tracing::error;
 use tsconfig::{Target, TsConfig};
@@ -22,7 +25,11 @@ pub struct ParsedTsConfig {
 }
 
 #[salsa::tracked]
-pub(crate) fn read_tsconfig_file_for(db: &dyn Db, filename: SourceFile) -> SourceFile {}
+pub(crate) fn read_tsconfig_file_for(db: &dyn Db, _filename: SourceFile) -> SourceFile {
+    // TODO: Use the file systme stored in `db`
+
+    SourceFile::new(db, Arc::new(FileName::Custom("todo.tsconfig.json".into())), "{}".into())
+}
 
 #[salsa::tracked]
 pub(crate) fn tsconfig_for(db: &dyn Db, filename: SourceFile) -> ParsedTsConfig {
@@ -73,6 +80,6 @@ pub(crate) fn parse_ts_config(db: &dyn Db, src: SourceFile) -> ParsedTsConfig {
             .as_ref()
             .and_then(|v| v.module.clone())
             .map_or_else(ModuleConfig::default, ModuleConfig::from),
-        v.compiler_options.clone(),
+        v.compiler_options,
     )
 }
