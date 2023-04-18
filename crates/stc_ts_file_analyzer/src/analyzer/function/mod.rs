@@ -320,6 +320,15 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Handle recursive function
     fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
+        for (i, param) in f.params.clone().into_iter().enumerate() {
+            if let RPat::Rest(r_pam) = param.pat {
+                if i < f.params.len() - 1 {
+                    self.storage
+                        .report(ErrorKind::RestParamMustBeLast { span: r_pam.dot3_token }.into());
+                }
+            }
+        }
+
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 

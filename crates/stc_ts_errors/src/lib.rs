@@ -1424,9 +1424,12 @@ pub enum ErrorKind {
         max: Option<usize>,
     },
 
+    /// TS2555
     ExpectedAtLeastNArgsButGotM {
         span: Span,
         min: usize,
+        // param name needed for error message
+        param_name: JsWord,
     },
 
     ExpectedAtLeastNArgsButGotMOrMore {
@@ -1566,8 +1569,14 @@ pub enum ErrorKind {
     InterfaceNonIdenticalTypeParams {
         span: Span,
     },
+
     /// TS2784
     ThisNotAllowedInAccessor {
+        span: Span,
+    },
+
+    /// TS1014
+    RestParamMustBeLast {
         span: Span,
     },
 }
@@ -2175,6 +2184,8 @@ impl ErrorKind {
             ErrorKind::InterfaceNonIdenticalTypeParams { .. } => 2428,
 
             ErrorKind::ThisNotAllowedInAccessor { .. } => 2784,
+
+            ErrorKind::RestParamMustBeLast { .. } => 1014,
 
             _ => 0,
         }
