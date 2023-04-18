@@ -17,6 +17,8 @@ use tower_lsp::{
 };
 use tracing::info;
 
+use crate::ir::SourceFile;
+
 pub mod config;
 pub mod ir;
 pub mod module_loader;
@@ -125,7 +127,7 @@ impl LanguageServer for StcLangServer {
 pub struct Jar(
     crate::config::ParsedTsConfig,
     crate::config::parse_ts_config,
-    crate::ir::SourceText,
+    crate::ir::SourceFile,
     crate::parser::ParserInput,
     crate::parser::ParsedFile,
     crate::parser::parse_ast,

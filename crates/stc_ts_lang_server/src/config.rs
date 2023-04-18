@@ -3,7 +3,7 @@ use swc_ecma_ast::EsVersion;
 use tracing::error;
 use tsconfig::{Target, TsConfig};
 
-use crate::{ir::SourceText, Db};
+use crate::{ir::SourceFile, Db};
 
 #[salsa::tracked]
 pub struct ParsedTsConfig {
@@ -22,7 +22,7 @@ pub struct ParsedTsConfig {
 }
 
 #[salsa::tracked]
-pub(crate) fn parse_ts_config(db: &dyn Db, src: SourceText) -> ParsedTsConfig {
+pub(crate) fn parse_ts_config(db: &dyn Db, src: SourceFile) -> ParsedTsConfig {
     let s = src.content(db);
 
     // TODO: Use file path to support `extends`

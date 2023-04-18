@@ -4,12 +4,11 @@ use swc_common::{util::take::Take, FileName};
 use swc_ecma_ast::{EsVersion, Module, Program};
 use swc_ecma_parser::Syntax;
 
-use crate::{ir::SourceText, Db};
+use crate::{ir::SourceFile, Db};
 
 #[salsa::input]
 pub struct ParserInput {
-    pub filename: FileName,
-    pub src: SourceText,
+    pub src: SourceFile,
     pub syntax: Syntax,
     pub target: EsVersion,
 }
@@ -27,10 +26,12 @@ pub struct ParsedFile {
 
 #[salsa::tracked]
 pub(crate) fn parse_ast(db: &dyn Db, input: ParserInput) -> ParsedFile {
+    let filename = input.src(db).filename(db);
+
     let fm = db
         .shared()
         .cm
-        .new_source_file(input.filename(db), input.src(db).content(db).to_string());
+        .new_source_file((*filename).clone(), input.src(db).content(db).to_string());
 
     let mut errors = vec![];
 
