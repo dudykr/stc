@@ -14,10 +14,7 @@ use stc_ts_type_checker::{
 };
 use stc_ts_types::Type;
 use stc_utils::DebugIgnore;
-use swc_common::{
-    errors::{Diagnostic, Emitter, Handler},
-    FileName,
-};
+use swc_common::errors::{Diagnostic, Emitter, Handler};
 
 use crate::{config::ParsedTsConfig, parser::ParsedFile, Db};
 
@@ -48,18 +45,9 @@ pub(crate) struct ProjectEnv {
 }
 
 #[salsa::tracked]
-pub(crate) fn get_module_loader(db: &dyn Db, input: TypeCheckInput) -> ProjectEnv {}
-
-#[salsa::tracked]
-pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
-    let emitter = EmitterImpl::default();
-    let errors = emitter.0.clone();
-
+pub(crate) fn get_module_loader(db: &dyn Db, input: TypeCheckInput) -> ProjectEnv {
     let shared = db.shared();
     let cm = shared.cm.clone();
-
-    let handler = Handler::with_emitter(true, false, Box::new(emitter));
-    let handler = Arc::new(handler);
 
     let config = input.config(db);
     let libs = config
@@ -77,6 +65,25 @@ pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
         config.module(db),
         builtin,
     );
+
+    let loader = ModuleLoader::new(cm, env.clone(), NodeResolver, DefaultFileLoader);
+
+    ProjectEnv::new(db, config, DebugIgnore(env), DebugIgnore(Arc::new(loader)))
+}
+
+#[salsa::tracked]
+pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
+    let emitter = EmitterImpl::default();
+    let errors = emitter.0.clone();
+
+    let shared = db.shared();
+    let cm = shared.cm.clone();
+
+    let handler = Handler::with_emitter(true, false, Box::new(emitter));
+    let handler = Arc::new(handler);
+
+    let project = get_module_loader(db, input);
+    let env = project.env(db).0.clone();
 
     let checker = Checker::new(
         cm.clone(),
