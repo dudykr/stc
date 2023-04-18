@@ -8,7 +8,7 @@ use stc_ts_type_checker::Checker;
 use stc_ts_types::Type;
 use swc_common::{
     errors::{Diagnostic, Emitter, Handler},
-    FileName,
+    FileName, GLOBALS,
 };
 
 use crate::{
@@ -55,20 +55,22 @@ pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
     let project = get_module_loader(db, config);
     let env = project.env(db).0;
 
-    let checker = Checker::new(cm, handler, env, None, Box::new(project.loader(db).0.clone()));
+    GLOBALS.set(&shared.globals, || {
+        let checker = Checker::new(cm, handler, env, None, Box::new(project.loader(db).0.clone()));
 
-    let module_id = checker.check(input.file(db).filename(db));
+        let module_id = checker.check(input.file(db).filename(db));
 
-    let errors = take(&mut *errors.lock().unwrap());
-    for err in errors {
-        Diagnostics::push(db, err);
-    }
+        let errors = take(&mut *errors.lock().unwrap());
+        for err in errors {
+            Diagnostics::push(db, err);
+        }
 
-    let data = checker.get_types(module_id);
+        let data = checker.get_types(module_id);
 
-    let ty = data.expect("failed to get type data for the module");
+        let ty = data.expect("failed to get type data for the module");
 
-    ModuleTypeData::new(db, ty)
+        ModuleTypeData::new(db, ty)
+    })
 }
 
 #[derive(Default)]
