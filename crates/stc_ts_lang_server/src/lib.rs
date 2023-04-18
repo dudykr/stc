@@ -155,16 +155,26 @@ impl LanguageServer for StcLangServer {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let _ = self.project.sender.lock().await.send(Request::ValidateFile {
-            filename: Arc::new(FileName::Url(params.text_document.uri)),
-        });
+        self.project
+            .sender
+            .lock()
+            .await
+            .send(Request::ValidateFile {
+                filename: Arc::new(FileName::Url(params.text_document.uri)),
+            })
+            .expect("failed to send request");
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        let _ = self.project.sender.lock().await.send(Request::SetFileContent {
-            filename: Arc::new(FileName::Url(params.text_document.uri)),
-            content: params.content_changes[0].text.clone(),
-        });
+        self.project
+            .sender
+            .lock()
+            .await
+            .send(Request::SetFileContent {
+                filename: Arc::new(FileName::Url(params.text_document.uri)),
+                content: params.content_changes[0].text.clone(),
+            })
+            .expect("failed to send request");
     }
 }
 
