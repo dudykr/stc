@@ -45,11 +45,10 @@ pub(crate) struct ProjectEnv {
 }
 
 #[salsa::tracked]
-pub(crate) fn get_module_loader(db: &dyn Db, input: TypeCheckInput) -> ProjectEnv {
+pub(crate) fn get_module_loader(db: &dyn Db, config: ParsedTsConfig) -> ProjectEnv {
     let shared = db.shared();
     let cm = shared.cm.clone();
 
-    let config = input.config(db);
     let libs = config
         .raw(db)
         .as_ref()
@@ -82,8 +81,9 @@ pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
     let handler = Handler::with_emitter(true, false, Box::new(emitter));
     let handler = Arc::new(handler);
 
-    let project = get_module_loader(db, input);
-    let env = project.env(db).0.clone();
+    let config = input.config(db);
+    let project = get_module_loader(db, config);
+    let env = project.env(db).0;
 
     let checker = Checker::new(
         cm.clone(),
