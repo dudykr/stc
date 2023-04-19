@@ -162,7 +162,7 @@ impl LanguageServer for StcLangServer {
             .lock()
             .await
             .send(Request::ValidateFile {
-                filename: Arc::new(FileName::Url(params.text_document.uri)),
+                filename: to_filename(params.text_document.uri),
             })
             .expect("failed to send request");
     }
@@ -173,7 +173,7 @@ impl LanguageServer for StcLangServer {
             .lock()
             .await
             .send(Request::SetFileContent {
-                filename: Arc::new(FileName::Url(params.text_document.uri)),
+                filename: to_filename(params.text_document.uri),
                 content: params.content_changes[0].text.clone(),
             })
             .expect("failed to send request");
@@ -232,3 +232,10 @@ impl Db for Database {
 }
 
 impl salsa::Database for Database {}
+
+fn to_filename(uri: Url) -> Arc<FileName> {
+    if let Ok(v) = uri.to_file_path() {
+        return Arc::new(FileName::Real(v));
+    }
+    Arc::new(FileName::Custom(uri.to_string()))
+}
