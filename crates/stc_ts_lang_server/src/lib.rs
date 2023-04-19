@@ -63,6 +63,7 @@ pub struct StcLangServer {
 }
 
 pub struct Shared {
+    #[allow(unused)]
     client: Client,
     cm: Arc<SourceMap>,
     globals: Arc<Globals>,
