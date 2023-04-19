@@ -241,5 +241,5 @@ fn to_filename(uri: Url) -> Arc<FileName> {
     if let Ok(v) = uri.to_file_path() {
         return Arc::new(FileName::Real(v));
     }
-    Arc::new(FileName::Custom(uri.to_string()))
+    Arc::new(FileName::Url(uri))
 }
