@@ -56,9 +56,13 @@ pub(crate) fn check_type(db: &dyn Db, input: TypeCheckInput) -> ModuleTypeData {
     let env = project.env(db).0;
 
     GLOBALS.set(&shared.globals, || {
-        let checker = Checker::new(cm, handler, env, None, Box::new(project.loader(db).0.clone()));
+        let mut checker = Checker::new(cm, handler.clone(), env, None, Box::new(project.loader(db).0.clone()));
 
         let module_id = checker.check(input.file(db).filename(db));
+
+        for err in checker.take_errors() {
+            err.emit(&handler);
+        }
 
         let errors = take(&mut *errors.lock().unwrap());
         for err in errors {
