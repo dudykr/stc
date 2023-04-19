@@ -7,7 +7,7 @@ use std::{
 use stc_ts_type_checker::Checker;
 use stc_ts_types::Type;
 use swc_common::{
-    errors::{Diagnostic, Emitter, Handler, HANDLER},
+    errors::{Diagnostic, Emitter, Handler},
     GLOBALS,
 };
 
