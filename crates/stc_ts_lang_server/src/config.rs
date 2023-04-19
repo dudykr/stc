@@ -26,7 +26,7 @@ pub struct ParsedTsConfig {
 
 #[salsa::tracked]
 pub(crate) fn read_tsconfig_file_for(db: &dyn Db, _filename: SourceFile) -> SourceFile {
-    // TODO: Use the file systme stored in `db`
+    // TODO: Use the file system stored in `db`
 
     SourceFile::new(db, Arc::new(FileName::Custom("todo.tsconfig.json".into())), "{}".into())
 }

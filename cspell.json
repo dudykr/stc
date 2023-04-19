@@ -47,6 +47,7 @@
     "libstd",
     "libtest",
     "lvalue",
+    "mapref",
     "michaeleisel",
     "MIMALLOC",
     "multiresult",
