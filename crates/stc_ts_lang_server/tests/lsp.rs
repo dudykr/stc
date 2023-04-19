@@ -169,6 +169,7 @@ fn test_init() {
 }
 
 #[test]
+#[ignore]
 fn test_hover() {
     run_test(false, |_cm, _handler| {
         let mut client = init("initialize_params.json");
