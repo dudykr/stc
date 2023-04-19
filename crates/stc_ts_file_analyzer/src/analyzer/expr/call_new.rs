@@ -2411,7 +2411,7 @@ impl Analyzer<'_, '_> {
         let has_spread = args.iter().any(|arg| arg.spread.is_some());
         if has_spread {
             // TODO: current implementation far from perfect
-            match self.validate_arg_count_spread(args, arg_types, params, min_param) {
+            match self.validate_arg_count_spread(span, args, arg_types, params, min_param, max_param) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err),
             }
@@ -2436,7 +2436,14 @@ impl Analyzer<'_, '_> {
             }
 
             if max_param.is_none() {
-                return Err(ErrorKind::ExpectedAtLeastNArgsButGotM { span, min: min_param }.into());
+                if let RPat::Ident(b_id) = &params[args.len()].pat {
+                    return Err(ErrorKind::ExpectedAtLeastNArgsButGotM {
+                        span,
+                        min: min_param,
+                        param_name: b_id.clone().id.sym,
+                    }
+                    .into());
+                }
             }
 
             // function foo(a) {}
@@ -2461,10 +2468,12 @@ impl Analyzer<'_, '_> {
 
     fn validate_arg_count_spread(
         &mut self,
+        span: Span,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         params: &[FnParam],
         min_param: usize,
+        max_param: Option<usize>,
     ) -> VResult<()> {
         let mut real_idx = 0;
         let has_rest_param = !params.is_empty() && matches!(params[params.len() - 1].pat, RPat::Rest(_));
@@ -2489,6 +2498,38 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        if real_idx < min_param {
+            if max_param.is_some() {
+                return Err(ErrorKind::ExpectedNArgsButGotM {
+                    span,
+                    min: min_param,
+                    max: max_param,
+                }
+                .into());
+            } else {
+                if let RPat::Ident(b_id) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedAtLeastNArgsButGotM {
+                        span,
+                        min: min_param,
+                        param_name: b_id.clone().id.sym,
+                    }
+                    .into());
+                }
+
+                // This is only useful when the rest parameter isn't last in the function
+                // function fn(a: string, ...b: string[], c: string) (this is also an error)
+                if let RPat::Rest(r_pat) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedNArgsButGotM {
+                        span,
+                        min: min_param,
+                        max: max_param,
+                    }
+                    .into());
+                }
+            }
+        }
+
         Ok(())
     }
 

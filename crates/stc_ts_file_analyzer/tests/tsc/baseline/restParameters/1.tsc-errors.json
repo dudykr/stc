@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/baseline/restParameters/1.ts",
+    "line": 3,
+    "col": 37,
+    "code": 1014
+  }
+]
