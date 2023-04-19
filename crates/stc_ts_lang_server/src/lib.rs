@@ -107,6 +107,10 @@ impl Project {
 
                         let input = crate::type_checker::prepare_input(&db, file);
                         let _module_type = crate::type_checker::check_type(&db, input);
+
+                        let diagnostics = crate::type_checker::check_type::accumulated::<crate::type_checker::Diagnostics>(&db, input);
+
+                        dbg!(&diagnostics);
                     }
                 }
             }
