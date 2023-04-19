@@ -1,4 +1,5 @@
 #![allow(clippy::disallowed_names)] // salsa bug (i8)
+#![allow(clippy::redundant_async_block)]
 
 use std::sync::Arc;
 
