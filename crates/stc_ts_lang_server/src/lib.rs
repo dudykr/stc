@@ -103,7 +103,9 @@ impl Project {
                     },
 
                     Request::ValidateFile { filename } => {
-                        let input = crate::type_checker::prepare_input(&db, &filename);
+                        let file = db.read_file(&filename);
+
+                        let input = crate::type_checker::prepare_input(&db, file);
                         let _module_type = crate::type_checker::check_type(&db, input);
                     }
                 }
@@ -194,6 +196,7 @@ pub struct Jar(
     crate::type_checker::ModuleTypeData,
     crate::type_checker::Diagnostics,
     crate::type_checker::check_type,
+    crate::type_checker::prepare_input,
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {

@@ -8,7 +8,7 @@ use stc_ts_type_checker::Checker;
 use stc_ts_types::Type;
 use swc_common::{
     errors::{Diagnostic, Emitter, Handler},
-    FileName, GLOBALS,
+    GLOBALS,
 };
 
 use crate::{
@@ -33,11 +33,11 @@ pub(crate) struct ModuleTypeData {
     pub data: Type,
 }
 
-pub(crate) fn prepare_input(db: &dyn Db, filename: &Arc<FileName>) -> TypeCheckInput {
-    let file = db.read_file(filename);
-    let config = tsconfig_for(db, file);
+#[salsa::tracked]
+pub(crate) fn prepare_input(db: &dyn Db, filename: SourceFile) -> TypeCheckInput {
+    let config = tsconfig_for(db, filename);
 
-    TypeCheckInput::new(db, file, config)
+    TypeCheckInput::new(db, filename, config)
 }
 
 #[salsa::tracked]
