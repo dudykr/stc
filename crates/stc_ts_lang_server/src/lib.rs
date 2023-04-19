@@ -6,12 +6,12 @@ use clap::Args;
 use dashmap::DashMap;
 use stc_ts_env::StableEnv;
 use stc_ts_utils::StcComments;
-use swc_common::{FileName, Globals, SourceMap, GLOBALS};
+use swc_common::{BytePos, FileName, Globals, SourceMap, GLOBALS};
 use tokio::task::{spawn_blocking, JoinHandle};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
-    lsp_types::*,
+    lsp_types::{notification::PublishDiagnostics, *},
     Client, LanguageServer, LspService, Server,
 };
 use tracing::{error, info};
@@ -71,6 +71,17 @@ pub struct Shared {
     comments: StcComments,
 }
 
+impl Shared {
+    fn span_to_pos(&self, pos: BytePos) -> Position {
+        let pos = self.cm.lookup_char_pos(pos);
+
+        Position {
+            line: pos.line as u32 - 1,
+            character: pos.col_display as u32,
+        }
+    }
+}
+
 /// One directory with `tsconfig.json`.
 struct Project {
     #[allow(unused)]
@@ -86,7 +97,7 @@ impl Project {
         let join_handle = spawn_blocking(move || {
             let mut db = Database {
                 storage: Default::default(),
-                shared,
+                shared: shared.clone(),
                 files: Default::default(),
             };
 
@@ -111,7 +122,45 @@ impl Project {
 
                         let diagnostics = crate::type_checker::check_type::accumulated::<crate::type_checker::Diagnostics>(&db, input);
 
-                        dbg!(&diagnostics);
+                        tokio::spawn({
+                            let shared = shared.clone();
+                            async move {
+                                shared
+                                    .client
+                                    .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
+                                        uri: to_uri(&filename),
+                                        diagnostics: diagnostics
+                                            .into_iter()
+                                            .map(|d| {
+                                                let message = d.message();
+
+                                                Diagnostic {
+                                                    range: Range {
+                                                        start: shared.span_to_pos(d.span.primary_span().unwrap().lo),
+                                                        end: shared.span_to_pos(d.span.primary_span().unwrap().hi),
+                                                    },
+                                                    severity: None,
+                                                    code: d
+                                                        .code
+                                                        .map(|v| match v {
+                                                            swc_common::errors::DiagnosticId::Error(s) => s,
+                                                            swc_common::errors::DiagnosticId::Lint(s) => s,
+                                                        })
+                                                        .map(NumberOrString::String),
+                                                    code_description: None,
+                                                    source: None,
+                                                    message,
+                                                    related_information: None,
+                                                    tags: None,
+                                                    data: None,
+                                                }
+                                            })
+                                            .collect(),
+                                        version: None,
+                                    })
+                                    .await
+                            }
+                        });
                     }
                 }
             }
@@ -121,6 +170,14 @@ impl Project {
             handle: join_handle,
             sender: tx.into(),
         }
+    }
+}
+
+fn to_uri(filename: &FileName) -> Url {
+    match filename {
+        FileName::Real(path) => Url::from_file_path(path).unwrap(),
+        FileName::Url(url) => url.clone(),
+        _ => todo!("to_uri: {:?}", filename),
     }
 }
 
