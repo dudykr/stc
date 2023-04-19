@@ -48,16 +48,19 @@ const langServerId = 'stc-lsp';
 const langServerName = 'Language server for stc';
 
 export function activate(context: ExtensionContext) {
-	const outputChannel: OutputChannel = Window.createOutputChannel('stc language server');
+	const serverOutputChannel: OutputChannel = Window.createOutputChannel('stc LS server');
+	const clientOutputChannel: OutputChannel = Window.createOutputChannel('stc LS client');
 
 	const binaryFile = context.asAbsolutePath(path.join('..', '..', 'target', 'debug', 'examples', 'stc-debug-lsp'));
-	outputChannel.appendLine(`Using binary file at '${binaryFile}'`)
+	clientOutputChannel.appendLine(`Using binary file at '${binaryFile}'`)
 
 	function didOpenTextDocument(document: TextDocument): void {
 		// We are only interested in language mode text
 		if (document.languageId !== 'typescript' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
 			return;
 		}
+
+		clientOutputChannel.appendLine(`Opened document '${document.uri}`)
 
 		const serverOptions: ServerOptions = {
 			run: {
@@ -81,7 +84,7 @@ export function activate(context: ExtensionContext) {
 		};
 		const baseClientOptions: LanguageClientOptions = {
 			diagnosticCollectionName: 'stc-lsp',
-			outputChannel: outputChannel,
+			outputChannel: serverOutputChannel,
 		};
 
 
@@ -112,7 +115,7 @@ export function activate(context: ExtensionContext) {
 			const clientOptions: LanguageClientOptions = {
 				...baseClientOptions,
 				documentSelector: [
-					{ scheme: 'file', language: 'plaintext', pattern: `${folder.uri.fsPath}/**/ * ` }
+					{ scheme: 'file', language: 'typescript', pattern: `${folder.uri.fsPath}/**/*` }
 				],
 				workspaceFolder: folder,
 			};
