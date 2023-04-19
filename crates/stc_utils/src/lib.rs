@@ -82,7 +82,7 @@ where
     *v = new;
 }
 
-/// A newtype wrapper that causes the field within to be ignored while printing
+/// A new type wrapper that causes the field within to be ignored while printing
 /// out `Debug` output.
 ///
 /// For more, see the [crate documentation](self).
@@ -99,7 +99,7 @@ impl<T: ?Sized> fmt::Debug for DebugIgnore<T> {
 }
 
 // ---
-// Other trait impls
+// Other trait implementations
 // ---
 
 impl<T> From<T> for DebugIgnore<T> {

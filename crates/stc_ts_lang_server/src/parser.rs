@@ -42,7 +42,7 @@ pub(crate) fn parse_ast(db: &dyn Db, input: ParserInput) -> ParsedFile {
     let program = match program {
         Ok(v) => v,
         Err(err) => {
-            // TODO: Handle errorx
+            // TODO: Handle errors
             Program::Module(Module::dummy())
         }
     };
