@@ -1882,6 +1882,7 @@ impl Analyzer<'_, '_> {
                 | Type::TypeLit(..)
                 | Type::Union(..)
                 | Type::Alias(..)
+                | Type::Tpl(..)
                 | Type::Interface(..)
                 | Type::Intersection(..) = rhs
                 {
@@ -2505,7 +2506,7 @@ impl Analyzer<'_, '_> {
             (Type::Tpl(l), r) => {
                 return self
                     .assign_to_tpl(data, l, r, opts)
-                    .with_context(|| format!("tried to assign to a template type: {}", force_dump_type_as_string(to)))
+                    .with_context(|| format!("tried to assign to a template type: {}", force_dump_type_as_string(to)));
             }
             (
                 Type::Keyword(KeywordType {

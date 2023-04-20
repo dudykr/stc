@@ -8,7 +8,7 @@
    `----
 
 Error: 
-  > `AA${number}${bigint}${boolean}`
+  > `AA${number}${bigint}${(TRUE | FALSE)}`
 
   x Type
    ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/2.ts:7:1]
@@ -19,4 +19,4 @@ Error:
    `----
 
 Error: 
-  > `AA${number}${bigint}${boolean}`
+  > `AA${number}${bigint}${(TRUE | FALSE)}`

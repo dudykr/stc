@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use num_bigint::BigInt;
-use stc_ts_types::{IntrinsicKind, StringMapping, TplElem, TplType, Type};
+use stc_ts_ast_rnode::{RBool, RTsLit};
+use stc_ts_types::{IntrinsicKind, LitType, StringMapping, TplElem, TplType, Type};
 use swc_atoms::Atom;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -106,6 +107,31 @@ impl Analyzer<'_, '_> {
     pub(crate) fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
         if ty.is_any() || ty.is_str() || ty.is_string_mapping() || ty.is_tpl() {
             Cow::Borrowed(ty)
+        } else if ty.is_bool() {
+            let x = Type::new_union(
+                ty.span(),
+                vec![
+                    Type::Lit(LitType {
+                        span: ty.span(),
+                        lit: RTsLit::Bool(RBool {
+                            span: ty.span(),
+                            value: true,
+                        }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                    Type::Lit(LitType {
+                        span: ty.span(),
+                        lit: RTsLit::Bool(RBool {
+                            span: ty.span(),
+                            value: false,
+                        }),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }),
+                ],
+            );
+            Cow::Owned(x)
         } else {
             Cow::Owned(Type::Tpl(TplType {
                 span: ty.span(),

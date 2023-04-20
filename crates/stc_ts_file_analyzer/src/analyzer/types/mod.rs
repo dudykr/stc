@@ -2066,10 +2066,48 @@ impl Analyzer<'_, '_> {
                     })
                     .collect();
 
+                let types: Vec<_> = types
+                    .iter()
+                    .map(|t| {
+                        if t.is_bool() {
+                            let x = apply_string_mapping(&ty.kind, "true");
+                            let y = apply_string_mapping(&ty.kind, "false");
+
+                            Type::new_union(
+                                t.span(),
+                                vec![
+                                    Type::Lit(LitType {
+                                        span: t.span(),
+                                        lit: RTsLit::Str(RStr {
+                                            span: t.span(),
+                                            value: x.to_string().into(),
+                                            raw: Some(x),
+                                        }),
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                    Type::Lit(LitType {
+                                        span: t.span(),
+                                        lit: RTsLit::Str(RStr {
+                                            span: t.span(),
+                                            value: y.to_string().into(),
+                                            raw: Some(y),
+                                        }),
+                                        metadata: Default::default(),
+                                        tracker: Default::default(),
+                                    }),
+                                ],
+                            )
+                        } else {
+                            t.clone()
+                        }
+                    })
+                    .collect();
+
                 Ok(Type::Tpl(TplType {
                     span: *span,
                     quasis,
-                    types: types.clone(),
+                    types,
                     metadata: *metadata,
                     tracker: Default::default(),
                 }))

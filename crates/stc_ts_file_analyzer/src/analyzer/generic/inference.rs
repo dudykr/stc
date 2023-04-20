@@ -635,6 +635,7 @@ impl Analyzer<'_, '_> {
             ($s:expr, $p:expr) => {{
                 let match_type = if $s == seg {
                     let value = source_texts[seg][pos..$p].into();
+
                     Type::Lit(LitType {
                         span,
                         lit: RTsLit::Str(RStr { span, raw: None, value }),
