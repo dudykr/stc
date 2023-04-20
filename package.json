@@ -20,7 +20,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky install",
-    "build": "echo \"Error: not supported yer\" && exit 1",
+    "build": "echo \"Error: not supported yet\" && exit 1",
     "watch-lsp-client": "tsc -b packages/stc-lsp-client/tsconfig.json --watch"
   },
   "keywords": [],
