@@ -33,6 +33,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `isTypeAssignableTo` of `tsc`.
     pub(crate) fn is_type_assignable_to(&mut self, span: Span, source: &Type, target: &Type) -> bool {
+        dbg!(&source, &target);
         self.assign(span, &mut Default::default(), target, source).is_ok()
     }
 

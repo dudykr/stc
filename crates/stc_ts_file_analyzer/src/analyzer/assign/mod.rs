@@ -594,6 +594,7 @@ impl Analyzer<'_, '_> {
     /// Assigns, but does not wrap error with [Error::AssignFailed].
     fn assign_without_wrapping(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
+        dbg!(&to);
 
         if !self.config.is_builtin && span.is_dummy() {
             unreachable!("cannot assign with dummy span")
@@ -857,7 +858,6 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
         }
-
         match to {
             Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(RIdent {

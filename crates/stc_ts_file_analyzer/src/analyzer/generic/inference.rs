@@ -690,10 +690,13 @@ impl Analyzer<'_, '_> {
                 add_match!(s, p as usize);
                 pos += delim.len();
             } else if pos < get_source_text(seg).len() {
+                dbg!("1");
                 add_match!(seg, pos + 1)
             } else if seg < last_source_index {
+                dbg!("11");
                 add_match!(seg + 1, 0)
             } else {
+                dbg!("111");
                 return Ok(None);
             }
         }

@@ -2,9 +2,9 @@
 
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
-use stc_ts_types::{IntrinsicKind, LitType, StringMapping, TplType, Type};
+use stc_ts_types::{Id, IntrinsicKind, LitType, StringMapping, TplElem, TplType, Type, Union};
 use stc_utils::dev_span;
-use swc_common::{Span, TypeEq};
+use swc_common::{Span, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
@@ -30,6 +30,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r_ty = r_ty.normalize();
+        dbg!(&l, &r_ty);
 
         let inference = self.infer_types_from_tpl_lit_type(span, r_ty, l)?;
 
@@ -37,6 +38,8 @@ impl Analyzer<'_, '_> {
             Some(inference) => inference,
             None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("tried to infer")),
         };
+
+        dbg!(&inference);
 
         for (i, ty) in inference.iter().enumerate() {
             if !self.is_valid_type_for_tpl_lit_placeholder(span, ty, &l.types[i])? {
@@ -62,6 +65,7 @@ impl Analyzer<'_, '_> {
         if source.type_eq(target) || target.is_any() || target.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
             return Ok(true);
         }
+        dbg!(&target);
 
         match source.normalize() {
             Type::Lit(LitType {
@@ -95,6 +99,8 @@ impl Analyzer<'_, '_> {
                 if source.quasis.len() == 2 && source.quasis[0].value == "" && source.quasis[1].value == "" {
                     // TODO(kdy1): Return `Ok(self.is_type_assignable_to(span, &source.types[0],
                     // target))` instead
+
+                    // let x = self.get_template_literal_type(span, source.quasis, source.types);
                     if self.is_type_assignable_to(span, &source.types[0], target) {
                         return Ok(true);
                     }
@@ -124,4 +130,157 @@ impl Analyzer<'_, '_> {
         Ok(source_start[0..start_len] != target_start[0..start_len]
             || source_end[(source_end.len() - end_len)..] != target_end[(target_end.len() - end_len)..])
     }
+
+    pub(crate) fn replace_element(&self, types: Vec<Type>, index: usize, value: Type) -> Vec<Type> {
+        let mut v = types.clone();
+        v[index] = value;
+        v
+    }
+
+    // pub crate fn s(&mut self, f: fn(a: Type) -> Type, span: Span, texts:
+    // Vec<TplElem>, types: Vec<Type>) -> fn(a: Type) -> Type  {     return
+    // }
+
+    pub(crate) fn inline_map(
+        &mut self,
+        ty: Type,
+        span: Span,
+        types: Vec<Type>,
+        texts: Vec<TplElem>,
+        index: usize,
+        f: impl Fn(&mut Analyzer, Type) -> Type,
+    ) -> impl Fn(&mut Analyzer, Type) -> Type {
+        let x = self.replace_element(types, index, ty);
+
+        // let f = s()
+
+        return f;
+    }
+
+    pub(crate) fn get_template_literal_type(&mut self, span: Span, texts: Vec<TplElem>, types: Vec<Type>) -> Type {
+        let union_index = types.clone().into_iter().position(|t| t.is_union_type() || t.is_never());
+
+        if let Some(union_index) = union_index {
+            let cross_product_union = self.check_cross_product_union(types.clone());
+            let x = types[union_index].clone();
+            if cross_product_union {
+                return self.map_type(
+                    x,
+                    |child: &mut Analyzer, t: Type| {
+                        child.get_template_literal_type(span, texts.clone(), child.replace_element(types.clone(), union_index, t))
+                    },
+                    false,
+                );
+            }
+        }
+
+        Type::never(DUMMY_SP, Default::default())
+    }
+
+    fn check_cross_product_union(&mut self, types: Vec<Type>) -> bool {
+        let size = self.check_cross_product_union_size(types.clone());
+
+        if size >= 100000 {
+            false
+        } else {
+            true
+        }
+    }
+
+    pub(crate) fn check_cross_product_union_size(&mut self, types: Vec<Type>) -> usize {
+        let mut init: usize = 1;
+
+        for (i, ty) in types.into_iter().enumerate() {
+            if let Type::Union(u) = ty.normalize() {
+                init = init + u.types.len();
+            } else if !ty.is_never() {
+                init = init + i;
+            }
+        }
+
+        init
+    }
+
+    pub(crate) fn map_type(&mut self, ty: Type, mapper: impl Fn(&mut Analyzer, Type) -> Type, no_reductions: bool) -> Type {
+        if ty.is_never() {
+            return ty;
+        }
+        if !ty.is_union_type() {
+            return mapper(self, ty);
+        }
+        let origin = ty.as_union_type().unwrap();
+        let types = &origin.types;
+        let mut mapped_types: Vec<Type> = vec![];
+        let mut changed = false;
+
+        for ty in types.into_iter() {
+            let mapped;
+
+            if ty.is_union_type() {
+                mapped = self.map_type(ty.clone(), &mapper, no_reductions);
+            } else {
+                mapped = mapper(self, ty.clone())
+            }
+
+            if !ty.type_eq(&mapped) {
+                changed = true;
+            }
+
+            mapped_types.push(mapped);
+        }
+
+        if changed {
+            return ty.clone();
+        } else {
+            return ty.clone();
+        }
+
+        ty
+    }
+
+    pub(crate) fn get_union_type(
+        &mut self,
+        types: Vec<Type>,
+        union_reduction: UnionReduction,
+        alias_symbol: Option<Id>,
+        alias_type_args: Option<Vec<Type>>,
+        origin: Option<Type>,
+    ) -> Type {
+        let x = Type::never(DUMMY_SP, Default::default());
+        if types.is_empty() {
+            return x.clone();
+        }
+        if types.len() == 1 {
+            return types[0].clone();
+        }
+
+        let mut type_set: Vec<Type> = vec![];
+        self.add_types_to_union(&mut type_set, types);
+        return x.clone();
+    }
+
+    //  pub(crate) fn add_types_to_union(&mut self, &mut types: Vec<Type>) {
+    //     if let Type::Union(u)
+
+    //     for ty in types {
+    //         types.push(ty);
+    //     }
+    //  }
+
+    pub(crate) fn add_types_to_union(&mut self, type_set: &mut Vec<Type>, types: Vec<Type>) {
+        for ty in types.into_iter() {
+            if let Type::Union(u) = ty.normalize() {
+                self.add_types_to_union(type_set, u.clone().types);
+            }
+
+            if !ty.is_never() {
+                type_set.push(ty);
+            }
+        }
+    }
+}
+pub(crate) enum UnionReduction {
+    None,
+    Literal,
+    Subtype,
 }
