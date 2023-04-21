@@ -162,7 +162,7 @@ fn errors(input: PathBuf) {
     if stderr.is_empty() {
         panic!("Expected error, but got none");
     }
-    stderr.compare_to_file(input.with_extension(".swc-stderr")).unwrap();
+    stderr.compare_to_file(input.with_extension("swc-stderr")).unwrap();
 }
 
 // This invokes `tsc` to get expected result.
