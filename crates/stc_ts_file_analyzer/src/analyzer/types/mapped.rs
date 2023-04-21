@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEnumMemberId, RT
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt,
+    DebugExt, ErrorKind,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
@@ -126,6 +126,16 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })));
+                    } else if constraint.is_ref_type() {
+                        if let Err(error) = stack::track(span) {
+                            return Err(error.into());
+                        }
+
+                        if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(constraint), Default::default()) {
+                            if ty.is_interface() {
+                                self.storage.report(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                            }
+                        }
                     }
                 }
             }
