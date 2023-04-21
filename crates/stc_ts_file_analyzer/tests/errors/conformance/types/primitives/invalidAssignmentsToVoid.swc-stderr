@@ -1,0 +1,331 @@
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = 1;
+  | lhs (normalized) = void;
+  | rhs (normalized) = 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             14,
+  |         ),
+  |         hi: BytePos(
+  |             15,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:1:1]
+ 1 | var x: void;
+ 2 | x = 1;
+   : ^
+ 3 | x = true;
+   `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = true;
+  | lhs (normalized) = void;
+  | rhs (normalized) = true; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): true; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             21,
+  |         ),
+  |         hi: BytePos(
+  |             22,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:2:1]
+ 2 | x = 1;
+ 3 | x = true;
+   : ^
+ 4 | x = '';
+   `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = '';
+  | lhs (normalized) = void;
+  | rhs (normalized) = ''; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): ''; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             31,
+  |         ),
+  |         hi: BytePos(
+  |             32,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:3:1]
+ 3 | x = true;
+ 4 | x = '';
+   : ^
+ 5 | x = {}
+   `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = {
+  | };
+  | lhs (normalized) = void;
+  | rhs (normalized) = {
+  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): {
+  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             39,
+  |         ),
+  |         hi: BytePos(
+  |             40,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:4:1]
+ 4 | x = '';
+ 5 | x = {}
+   : ^
+   `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = typeof C#1;
+  | 
+  | ClassDef(arc: ClassDef { span: Span { lo: BytePos(86), hi: BytePos(87), ctxt: #1 }, is_abstract: false, name: Some(C#1), super_class: None, body: [Property(ClassProperty { span:
+  | Span { lo: BytePos(57), hi: BytePos(69), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None, is_abstract: false, is_optional: false, readonly:
+  | false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata { common: CommonTypeMetadata { implicit:
+  | false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } })
+  | lhs (normalized) = void;
+  | rhs (normalized) = typeof C#1;
+  | 
+  | ClassDef(arc: ClassDef { span: Span { lo: BytePos(86), hi: BytePos(87), ctxt: #1 }, is_abstract: false, name: Some(C#1), super_class: None, body: [Property(ClassProperty { span:
+  | Span { lo: BytePos(57), hi: BytePos(69), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None, is_abstract: false, is_optional: false, readonly:
+  | false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata { common: CommonTypeMetadata { implicit:
+  | false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): typeof C#1;
+  | 
+  | ClassDef(arc: ClassDef { span: Span { lo: BytePos(86), hi: BytePos(87), ctxt: #1 }, is_abstract: false, name: Some(C#1), super_class: None, body: [Property(ClassProperty { span:
+  | Span { lo: BytePos(57), hi: BytePos(69), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None, is_abstract: false, is_optional: false, readonly:
+  | false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata { common: CommonTypeMetadata { implicit:
+  | false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             82,
+  |         ),
+  |         hi: BytePos(
+  |             83,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:8:1]
+  8 | var c: C;
+  9 | x = C;
+    : ^
+ 10 | x = c;
+    `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = C#1;
+  | 
+  | Class(Class { span: Span { lo: BytePos(93), hi: BytePos(94), ctxt: #1 }, def: arc: ClassDef { span: Span { lo: BytePos(47), hi: BytePos(71), ctxt: #0 }, is_abstract: false, name: Some(C#1),
+  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(57), hi: BytePos(69), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
+  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
+  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
+  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
+  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } })
+  | lhs (normalized) = void;
+  | rhs (normalized) = C#1;
+  | 
+  | Class(Class { span: Span { lo: BytePos(93), hi: BytePos(94), ctxt: #1 }, def: arc: ClassDef { span: Span { lo: BytePos(47), hi: BytePos(71), ctxt: #0 }, is_abstract: false, name: Some(C#1),
+  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(57), hi: BytePos(69), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
+  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
+  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
+  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
+  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): C#1;
+  | 
+  | Class(Class { span: Span { lo: BytePos(93), hi: BytePos(94), ctxt: #1 }, def: arc: ClassDef { span: Span { lo: BytePos(47), hi: BytePos(71), ctxt: #0 }, is_abstract: false, name: Some(C#1),
+  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(57), hi: BytePos(69), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
+  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
+  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
+  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
+  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             89,
+  |         ),
+  |         hi: BytePos(
+  |             90,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:9:1]
+  9 | x = C;
+ 10 | x = c;
+    : ^
+    `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = I#1;
+  | Member as {
+  |     foo: string;
+  | };
+  | lhs (normalized) = void;
+  | rhs (normalized) = I#1;
+  | Member as {
+  |     foo: string;
+  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): I#1;
+  | Member as {
+  |     foo: string;
+  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             136,
+  |         ),
+  |         hi: BytePos(
+  |             137,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:13:1]
+ 13 | var i: I;
+ 14 | x = i;
+    : ^
+    `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = Module(module {
+  |   types:
+  |   vars:
+  |     x
+  | })
+  | lhs (normalized) = void;
+  | rhs (normalized) = Module(module {
+  |   types:
+  |   vars:
+  |     x
+  | }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): Module(module {
+  |   types:
+  |   vars:
+  |     x
+  | }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             175,
+  |         ),
+  |         hi: BytePos(
+  |             176,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:16:1]
+ 16 | module M { export var x = 1; }
+ 17 | x = M;
+    : ^
+    `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = T#3#0;
+  | lhs (normalized) = void;
+  | rhs (normalized) = T#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): T#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             209,
+  |         ),
+  |         hi: BytePos(
+  |             210,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:19:1]
+ 19 | function f<T>(a: T) {
+ 20 |     x = a;
+    :     ^
+ 21 | }
+    `----
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = void;
+  | rhs = <T#3#0>(a: T#3) => void;
+  | lhs (normalized) = void;
+  | rhs (normalized) = <T#3#0>(a: T#3) => void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): void;
+  | RHS (final): <T#3#0>(a: T#3) => void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             218,
+  |         ),
+  |         hi: BytePos(
+  |             219,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidAssignmentsToVoid.ts:21:1]
+ 21 | }
+ 22 | x = f;
+    : ^
+    `----

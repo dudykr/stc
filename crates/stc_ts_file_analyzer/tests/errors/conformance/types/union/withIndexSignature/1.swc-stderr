@@ -1,0 +1,25 @@
+TS2540
+
+  x [33mcontext[0m: tried to access property of an object to calculate type of a member expression (at crates/stc_ts_file_analyzer/src/analyzer/expr/mod.rs:4280:14)
+  | [33mcontext[0m: tried to access property of an object (({
+  |     foo: number;
+  | } | {
+  |     readonly [s: string]: string;
+  | });, id_ctx = Var)
+  | Prop=foo (at crates/stc_ts_file_analyzer/src/analyzer/expr/mod.rs:1347:23)
+  | ReadOnly {
+  |     span: Span {
+  |         lo: BytePos(
+  |             100,
+  |         ),
+  |         hi: BytePos(
+  |             106,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  | }
+   ,-[$DIR/tests/errors/conformance/types/union/withIndexSignature/1.ts:4:1]
+ 4 | declare var ro: RO;
+ 5 | ro.foo = "not allowed";
+   : ^^^^^^
+   `----
