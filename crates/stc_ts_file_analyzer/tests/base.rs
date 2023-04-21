@@ -157,7 +157,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
 #[fixture("tests/errors/**/*.ts")]
 fn errors(input: PathBuf) {
-    let stderr = run_test(input.clone(), false, false).unwrap();
+    let stderr = run_test(input.clone(), true, false).unwrap();
 
     if stderr.is_empty() {
         panic!("Expected error, but got none");
