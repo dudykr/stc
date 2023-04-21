@@ -1,10 +1,10 @@
 #![allow(clippy::if_same_then_else)]
 
-use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::{RStr, RTsLit};
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
 use stc_ts_types::{Id, IntrinsicKind, KeywordType, LitType, StringMapping, TplElem, TplType, Type, Union};
 use stc_utils::dev_span;
-use swc_atoms::{js_word, Atom};
+use swc_atoms::{js_word, Atom, JsWordStaticSet};
 use swc_common::{Span, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordType, TsKeywordTypeKind};
 
@@ -158,9 +158,130 @@ impl Analyzer<'_, '_> {
         return f;
     }
 
-    pub(crate) fn get_template_literal_type(&mut self, span: Span, mut texts: Vec<TplElem>, types: Vec<Type>) -> Type {
-        let union_index = types.clone().into_iter().position(|t| t.is_union_type() || t.is_never());
+    pub(crate) fn is_unary_tuple(&mut self, ty: Type) -> bool {
+        if let Type::Tuple(t) = ty.normalize() {
+            t.elems.len() == 1
+        } else {
+            false
+        }
+    }
 
+    // pub(crate) fn get_implied_constraint(&mut self, ty: Type, check_ty: Type,
+    // extends_ty: Type) -> Type {     if self.is_unary_tuple(check_ty) &&
+    // self.is_unary_tuple(extends_ty) {         return
+    // self.get_implied_constraint(             ty,
+    //             check_ty.as_tuple().unwrap().elems[0].ty.normalize().clone(),
+    //             extends_ty.as_tuple().unwrap().elems[0].ty.normalize().clone(),
+    //         );
+    //     } else {
+    //     }
+    // }
+
+    pub(crate) fn get_conditional_flow_type_of_type(&mut self, ty: Type, orig_ty: Type) {
+        let constraints: Vec<Type> = vec![];
+        let mut covariant = true;
+
+        if let Type::Conditional(c) = orig_ty.normalize() {
+            if ty.type_eq(&c.true_type) {}
+        }
+    }
+
+    // TODO(481): getConditionalFlowTypeOfType
+    // function getConditionalFlowTypeOfType(type: Type, node: Node) {
+    //     let constraints: Type[] | undefined;
+    //     let covariant = true;
+    //     while (node && !isStatement(node) && node.kind !== SyntaxKind.JSDoc) {
+    //         const parent = node.parent;
+    //         // only consider variance flipped by parameter locations - `keyof`
+    // types would usually be considered variance inverting, but         //
+    // often get used in indexed accesses where they behave sortof invariantly, but
+    // our checking is lax         if (parent.kind === SyntaxKind.Parameter) {
+    //             covariant = !covariant;
+    //         }
+    //         // Always substitute on type parameters, regardless of variance,
+    // since even         // in contravariant positions, they may rely on
+    // substituted constraints to be valid         if (
+    //             (covariant || type.flags & TypeFlags.TypeVariable) &&
+    //             parent.kind === SyntaxKind.ConditionalType &&
+    //             node === (parent as ConditionalTypeNode).trueType
+    //         ) {
+    //             const constraint = getImpliedConstraint(
+    //                 type,
+    //                 (parent as ConditionalTypeNode).checkType,
+    //                 (parent as ConditionalTypeNode).extendsType
+    //             );
+    //             if (constraint) {
+    //                 constraints = append(constraints, constraint);
+    //             }
+    //         }
+    //         // Given a homomorphic mapped type { [K in keyof T]: XXX }, where T
+    // is constrained to an array or tuple type, in the         // template type
+    // XXX, K has an added constraint of number | `${number}`.         else if (
+    //             type.flags & TypeFlags.TypeParameter &&
+    //             parent.kind === SyntaxKind.MappedType &&
+    //             node === (parent as MappedTypeNode).type
+    //         ) {
+    //             const mappedType = getTypeFromTypeNode(
+    //                 parent as TypeNode
+    //             ) as MappedType;
+    //             if (
+    //                 getTypeParameterFromMappedType(mappedType) ===
+    //                 getActualTypeVariable(type)
+    //             ) {
+    //                 const typeParameter =
+    //                     getHomomorphicTypeVariable(mappedType);
+    //                 if (typeParameter) {
+    //                     const constraint =
+    //                         getConstraintOfTypeParameter(typeParameter);
+    //                     if (
+    //                         constraint &&
+    //                         everyType(constraint, isArrayOrTupleType)
+    //                     ) {
+    //                         constraints = append(
+    //                             constraints,
+    //                             getUnionType([numberType, numericStringType])
+    //                         );
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         node = parent;
+    //     }
+    //     return constraints
+    //         ? getSubstitutionType(type, getIntersectionType(constraints))
+    //         : type;
+    // }
+
+    // TODO(481): getTypeFromTypeNode
+    // function getTypeFromTypeNode(node: TypeNode): Type {
+    //     return getConditionalFlowTypeOfType(
+    //         getTypeFromTypeNodeWorker(node),
+    //         node
+    //     );
+    // }
+
+    // TODO(481): getTypeFromTemplateTypeNode
+    // function getTypeFromTemplateTypeNode(node: TemplateLiteralTypeNode) {
+    //     const links = getNodeLinks(node);
+
+    //     if (!links.resolvedType) {
+    //         links.resolvedType = getTemplateLiteralType(
+    //             [
+    //                 node.head.text,
+    //                 ...map(node.templateSpans, (span) => span.literal.text),
+    //             ],
+    //             map(node.templateSpans, (span) =>
+    //                 getTypeFromTypeNode(span.type)
+    //             )
+    //         );
+    //     }
+
+    //     return links.resolvedType;
+    // }
+
+    pub(crate) fn get_template_literal_type(&mut self, span: Span, texts: Vec<TplElem>, types: Vec<Type>) -> Type {
+        let union_index = types.clone().into_iter().position(|t| t.is_union_type() || t.is_never());
+        dbg!(&union_index);
         if let Some(union_index) = union_index {
             let cross_product_union = self.check_cross_product_union(types.clone());
             let x = types[union_index].clone();
@@ -184,17 +305,38 @@ impl Analyzer<'_, '_> {
         let text = &mut texts[0].clone();
 
         if !self.add_spans(texts.clone(), types.clone(), text, &mut new_texts, &mut new_types) {
-            // return stringType
+            return Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
+                tracker: Default::default(),
+            });
         }
 
         if new_types.is_empty() {
-            // return getStringLiteralType(text);
+            let t = text.clone();
+
+            return Type::Lit(LitType {
+                span,
+                lit: RTsLit::Str(RStr {
+                    span: t.span,
+                    value: t.value.to_string().into(),
+                    raw: Some(t.value),
+                }),
+                metadata: Default::default(),
+                tracker: Default::default(),
+            });
         }
         new_texts.push(text.clone());
 
-        if new_texts.into_iter().all(|v| v.value.is_empty()) {
-            if new_types.into_iter().all(|t| t.is_str()) {
-                // return stringType;
+        if new_texts.clone().into_iter().all(|v| v.value.is_empty()) {
+            if new_types.clone().into_iter().all(|t| t.is_str()) {
+                return Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                });
             }
 
             if new_types.len() == 1 && new_types[0].is_pattern_literal() {
@@ -240,8 +382,17 @@ impl Analyzer<'_, '_> {
                 .into();
 
                 if !is_texts_array {
+                    return true;
+                }
+            } else if ty.is_tpl() {
+                let t = ty.as_tpl().unwrap();
+                text.value = [&*text.value, &*t.quasis[0].value].concat().into();
+
+                if !self.add_spans(t.clone().quasis, t.clone().types, text, new_texts, new_types) {
                     return false;
                 }
+
+                text.value = add_text.clone().value;
             } else if ty.is_generic_index() && ty.is_pattern_literal_placeholder() {
                 new_types.push(ty);
                 new_texts.push(text.clone());
@@ -284,7 +435,7 @@ impl Analyzer<'_, '_> {
 
     fn check_cross_product_union(&mut self, types: Vec<Type>) -> bool {
         let size = self.check_cross_product_union_size(types.clone());
-
+        dbg!(&size);
         if size >= 100000 {
             false
         } else {
@@ -307,6 +458,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn map_type(&mut self, ty: Type, mapper: impl Fn(&mut Analyzer, Type) -> Type, no_reductions: bool) -> Type {
+        dbg!(&ty);
         if ty.is_never() {
             return ty;
         }
@@ -320,9 +472,10 @@ impl Analyzer<'_, '_> {
 
         for ty in types.into_iter() {
             let mapped;
-
+            dbg!(&ty);
             if ty.is_union_type() {
-                mapped = self.map_type(ty.clone(), &mapper, no_reductions);
+                mapped = ty.clone();
+                // mapped = self.map_type(ty.clone(), &mapper, no_reductions);
             } else {
                 mapped = mapper(self, ty.clone())
             }

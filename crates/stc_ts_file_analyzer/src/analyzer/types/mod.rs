@@ -672,6 +672,10 @@ impl Analyzer<'_, '_> {
                     Type::Tuple(tuple) => {}
 
                     Type::Tpl(tpl) => {
+                        dbg!(
+                            &tpl,
+                            &self.get_template_literal_type(span.unwrap(), tpl.quasis.clone(), tpl.types.clone())
+                        );
                         if tpl.quasis.len() == 2
                             && tpl.types.len() == 1
                             && tpl.quasis[0].value.is_empty()
