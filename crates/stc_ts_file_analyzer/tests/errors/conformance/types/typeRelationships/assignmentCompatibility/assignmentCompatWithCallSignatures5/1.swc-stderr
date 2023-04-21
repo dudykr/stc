@@ -1,0 +1,36 @@
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = instanceof  <T#3#0>(x: T#3) => T;
+  | rhs = <T#2#0>(x: T#2) => void;
+  | lhs (normalized) = <T#3#0>(x: T#3) => T;
+  | rhs (normalized) = <T#2#0>(x: T#2) => void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: tried to assign to a function type:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2378:77)
+  | [33mcontext[0m: tried to assign a function to another one (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:438:18)
+  | [33mcontext[0m: tried to assign to a mapped (wrong) function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:212:26)
+  | [33mcontext[0m: tried to assign the return type of a function to the return type of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:394:22)
+  | [33mcontext[0m:
+  | lhs = T#3#0;
+  | rhs = void;
+  | lhs (normalized) = T#3#0;
+  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): T#3#0;
+  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1736:30)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             127,
+  |         ),
+  |         hi: BytePos(
+  |             129,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/assignmentCompatibility/assignmentCompatWithCallSignatures5/1.ts:5:1]
+ 5 | var b3: <T>(x: T) => T;
+ 6 | b3 = a3; // ok
+   : ^^
+ 7 | export { }
+   `----
