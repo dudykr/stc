@@ -2,10 +2,11 @@
 
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
-use stc_ts_types::{Id, IntrinsicKind, LitType, StringMapping, TplElem, TplType, Type, Union};
+use stc_ts_types::{Id, IntrinsicKind, KeywordType, LitType, StringMapping, TplElem, TplType, Type, Union};
 use stc_utils::dev_span;
+use swc_atoms::{js_word, Atom};
 use swc_common::{Span, TypeEq, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{TsKeywordType, TsKeywordTypeKind};
 
 use crate::{
     analyzer::{
@@ -157,7 +158,7 @@ impl Analyzer<'_, '_> {
         return f;
     }
 
-    pub(crate) fn get_template_literal_type(&mut self, span: Span, texts: Vec<TplElem>, types: Vec<Type>) -> Type {
+    pub(crate) fn get_template_literal_type(&mut self, span: Span, mut texts: Vec<TplElem>, types: Vec<Type>) -> Type {
         let union_index = types.clone().into_iter().position(|t| t.is_union_type() || t.is_never());
 
         if let Some(union_index) = union_index {
@@ -174,7 +175,111 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Type::never(DUMMY_SP, Default::default())
+        if types.clone().into_iter().any(|v| v.is_any()) {
+            return Type::any(DUMMY_SP, Default::default());
+        }
+
+        let mut new_types: Vec<Type> = vec![];
+        let mut new_texts: Vec<TplElem> = vec![];
+        let text = &mut texts[0].clone();
+
+        if !self.add_spans(texts.clone(), types.clone(), text, &mut new_texts, &mut new_types) {
+            // return stringType
+        }
+
+        if new_types.is_empty() {
+            // return getStringLiteralType(text);
+        }
+        new_texts.push(text.clone());
+
+        if new_texts.into_iter().all(|v| v.value.is_empty()) {
+            if new_types.into_iter().all(|t| t.is_str()) {
+                // return stringType;
+            }
+
+            if new_types.len() == 1 && new_types[0].is_pattern_literal() {
+                return new_types[0].clone();
+            }
+        }
+
+        Type::Tpl(TplType {
+            span,
+            quasis: new_texts,
+            types: new_types,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        })
+    }
+
+    fn add_spans(
+        &mut self,
+        texts: Vec<TplElem>,
+        types: Vec<Type>,
+        text: &mut TplElem,
+        new_texts: &mut Vec<TplElem>,
+        new_types: &mut Vec<Type>,
+    ) -> bool {
+        let is_texts_array = texts.len() > 1;
+
+        for (i, ty) in types.into_iter().enumerate() {
+            let add_text;
+
+            if is_texts_array {
+                add_text = &texts[i + 1];
+            } else {
+                add_text = &texts[0];
+            }
+
+            if ty.is_lit() || ty.is_null() || ty.is_undefined() {
+                text.value = [
+                    &*text.value,
+                    &*self.get_template_string_for_type(ty).unwrap_or(Atom::new("")),
+                    &*add_text.value,
+                ]
+                .concat()
+                .into();
+
+                if !is_texts_array {
+                    return false;
+                }
+            } else if ty.is_generic_index() && ty.is_pattern_literal_placeholder() {
+                new_types.push(ty);
+                new_texts.push(text.clone());
+
+                text.value = add_text.clone().value;
+            } else if ty.is_intersection() {
+                let added = self.add_spans(
+                    vec![texts[i + 1].clone()],
+                    ty.clone().as_intersection().unwrap().types.clone(),
+                    text,
+                    new_texts,
+                    new_types,
+                );
+
+                if !added {
+                    return false;
+                }
+            } else if !is_texts_array {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    pub(crate) fn get_template_string_for_type(&mut self, ty: Type) -> Option<Atom> {
+        match ty.normalize() {
+            Type::Lit(lit) => match &lit.lit {
+                RTsLit::Str(s) => s.clone().raw,
+                RTsLit::Number(n) => n.clone().raw,
+                RTsLit::BigInt(b) => b.clone().raw,
+                _ => None,
+            },
+            _ => None, /* Type::Keyword(KeywordType {
+                        *     kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        *     ..
+                        * }) => */
+        }
     }
 
     fn check_cross_product_union(&mut self, types: Vec<Type>) -> bool {
@@ -279,6 +384,7 @@ impl Analyzer<'_, '_> {
         }
     }
 }
+
 pub(crate) enum UnionReduction {
     None,
     Literal,

@@ -1880,6 +1880,31 @@ impl Type {
         }
     }
 
+    pub fn is_pattern_literal_placeholder(&self) -> bool {
+        match self.normalize_instance() {
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                ..
+            })
+            | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+            | Type::Lit(LitType {
+                lit: RTsLit::Number(..), ..
+            })
+            | Type::Lit(LitType {
+                lit: RTsLit::BigInt(..), ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_pattern_literal(&self) -> bool {
+        match self.normalize_instance() {
+            Type::Tpl(tpl) => tpl.types.clone().into_iter().all(|t| t.is_pattern_literal_placeholder()),
+            ty @ Type::StringMapping(..) => ty.is_pattern_literal_placeholder(),
+            _ => false,
+        }
+    }
+
     pub fn contains_undefined(&self) -> bool {
         match *self.normalize() {
             Type::Keyword(KeywordType {
@@ -1891,6 +1916,11 @@ impl Type {
 
             _ => false,
         }
+    }
+
+    pub fn is_generic_index(&self) -> bool {
+        // TODO: implement
+        true
     }
 
     /// Returns [Some] if `self` is an array or an readonly array.
