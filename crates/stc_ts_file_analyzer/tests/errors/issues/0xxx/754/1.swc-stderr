@@ -61,7 +61,7 @@ TS2322
   |     a: string;
   |     d: number;
   | };
-  | RHS (final): T#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2640:29)
+  | RHS (final): T#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2658:29)
   | AssignFailed {
   |     span: Span {
   |         lo: BytePos(
@@ -143,7 +143,7 @@ TS2322
   | rhs (normalized) = {
   |     a: string;
   | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   | MissingFields {
   |     span: Span {
   |         lo: BytePos(
@@ -227,7 +227,7 @@ TS2322
   | rhs (normalized) = {
   |     b: number;
   | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   | MissingFields {
   |     span: Span {
   |         lo: BytePos(
@@ -312,7 +312,7 @@ TS2322
   | rhs (normalized) = {
   |     c: boolean;
   | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   | MissingFields {
   |     span: Span {
   |         lo: BytePos(

@@ -23,7 +23,7 @@ TS2322
   |         new <T#5 extends Base>(a: T#5#0): T;
   |     }): any[];
   | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign to a constructor type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2425:22)
+  | [33mcontext[0m: tried to assign to a constructor type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2443:22)
   | AssignFailed {
   |     span: Span {
   |         lo: BytePos(
@@ -60,7 +60,7 @@ TS2322
   |                     new <T#3 extends Base>(a: T#3#0): T;
   |                 };
   |                 rhs (normalized) = (a: T#6#0) => T; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   |                 [33mcontext[0m: tried to assign the converted type to type elements:
   |                 RHS= (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:543:26)
   |                 ObjectAssignFailed {
@@ -112,7 +112,7 @@ TS2322
   |                     new <T#5 extends Base>(a: T#5#0): T;
   |                 };
   |                 rhs (normalized) = (a: T#6#0) => T; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   |                 [33mcontext[0m: tried to assign the converted type to type elements:
   |                 RHS= (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:543:26)
   |                 ObjectAssignFailed {

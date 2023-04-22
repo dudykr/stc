@@ -6,7 +6,7 @@ TS2322
   | rhs = [];
   | lhs (normalized) = [any, any, any];
   | rhs (normalized) = []; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign to a tuple type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2416:22)
+  | [33mcontext[0m: tried to assign to a tuple type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2434:22)
   | [33mcontext[0m: LHS (final): [any, any, any];
   | RHS (final): []; (at crates/stc_ts_file_analyzer/src/analyzer/assign/array.rs:62:21)
   | AssignFailed {

@@ -25,7 +25,7 @@ TS2322
   |     foo: T;
   |     bar: T;
   | }) => Base; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign to a function type:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2378:77)
+  | [33mcontext[0m: tried to assign to a function type:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2396:77)
   | [33mcontext[0m: tried to assign a function to another one (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:438:18)
   | [33mcontext[0m: tried to assign to an expanded callable
   | Map:
@@ -49,7 +49,7 @@ TS2322
   |     foo: U#3#0;
   |     bar: U;
   | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   | ObjectAssignFailed {
   |     span: Span {
   |         lo: BytePos(

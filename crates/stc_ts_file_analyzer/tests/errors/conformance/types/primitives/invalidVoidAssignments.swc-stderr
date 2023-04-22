@@ -7,7 +7,7 @@ TS2322
   | lhs (normalized) = boolean;
   | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
   | [33mcontext[0m: LHS (final): boolean;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1995:25)
+  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2013:25)
   | AssignFailed {
   |     span: Span {
   |         lo: BytePos(
@@ -35,7 +35,7 @@ TS2322
   | lhs (normalized) = string;
   | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
   | [33mcontext[0m: LHS (final): string;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1995:25)
+  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2013:25)
   | AssignFailed {
   |     span: Span {
   |         lo: BytePos(
@@ -63,7 +63,7 @@ TS2322
   | lhs (normalized) = number;
   | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
   | [33mcontext[0m: LHS (final): number;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1995:25)
+  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2013:25)
   | AssignFailed {
   |     span: Span {
   |         lo: BytePos(
@@ -141,7 +141,7 @@ TS2322
   |     bar: string;
   | };
   | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
+  | [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2250:18)
   | AssignFailed {
   |     span: Span {
   |         lo: BytePos(
@@ -184,7 +184,7 @@ TS2322
   |     baz: string;
   | };
   | rhs (normalized) = 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   | [33mcontext[0m: tried to assign a literal as keyword to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:664:26)
   | [33mcontext[0m: tried to assign a keyword as builtin to type elements
   | RHS =  (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:613:26)
@@ -233,7 +233,7 @@ TS2322
   |     0: number;
   | };
   | rhs (normalized) = 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
+  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
   | [33mcontext[0m: tried to assign a literal as keyword to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:664:26)
   | [33mcontext[0m: tried to assign a keyword as builtin to type elements
   | RHS =  (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:613:26)

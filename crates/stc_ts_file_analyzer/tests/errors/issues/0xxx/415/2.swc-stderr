@@ -51,7 +51,7 @@ TS2322
   |                 Member as {
   |                     c: string;
   |                 }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to a union type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1962:67)
+  |                 [33mcontext[0m: tried to assign a type to a union type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1980:67)
   |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
@@ -63,7 +63,7 @@ TS2322
   |                         ctxt: #1,
   |                     },
   |                     errors: [
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
+  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1943:26)
   |                         [33mcontext[0m:
   |                         lhs = A#1;
   |                         Member as {
@@ -81,7 +81,7 @@ TS2322
   |                         Member as {
   |                             c: string;
   |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
+  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2250:18)
   |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
@@ -110,7 +110,7 @@ TS2322
   |                                 },
   |                             ],
   |                         },
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
+  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1943:26)
   |                         [33mcontext[0m:
   |                         lhs = B#1;
   |                         Member as {
@@ -128,7 +128,7 @@ TS2322
   |                         Member as {
   |                             c: string;
   |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
+  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2250:18)
   |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
@@ -171,7 +171,7 @@ TS2322
   |                 Member as {
   |                     d: string;
   |                 }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to a union type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1962:67)
+  |                 [33mcontext[0m: tried to assign a type to a union type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1980:67)
   |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
@@ -183,7 +183,7 @@ TS2322
   |                         ctxt: #1,
   |                     },
   |                     errors: [
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
+  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1943:26)
   |                         [33mcontext[0m:
   |                         lhs = A#1;
   |                         Member as {
@@ -201,7 +201,7 @@ TS2322
   |                         Member as {
   |                             d: string;
   |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
+  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2250:18)
   |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
@@ -230,7 +230,7 @@ TS2322
   |                                 },
   |                             ],
   |                         },
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
+  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1943:26)
   |                         [33mcontext[0m:
   |                         lhs = B#1;
   |                         Member as {
@@ -248,7 +248,7 @@ TS2322
   |                         Member as {
   |                             d: string;
   |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
+  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2250:18)
   |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {

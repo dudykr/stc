@@ -1604,7 +1604,6 @@ impl Analyzer<'_, '_> {
     /// panic) in the case of [Type::Ref].
     pub(crate) fn convert_type_to_type_lit<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
-
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
         let ty = self.normalize(
