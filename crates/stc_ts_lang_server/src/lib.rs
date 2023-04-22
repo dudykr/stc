@@ -117,6 +117,13 @@ impl Project {
 
                     Request::ValidateFile { filename } => {
                         let file = db.read_file(&filename);
+                        let file = match file {
+                            Some(v) => v,
+                            None => {
+                                error!("file not found: {:?}", filename);
+                                return;
+                            }
+                        };
 
                         let input = crate::type_checker::prepare_input(&db, file);
                         let _module_type = crate::type_checker::check_type(&db, input);
@@ -223,16 +230,27 @@ impl LanguageServer for StcLangServer {
         Ok(())
     }
 
-    async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>> {}
+    // async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>>
+    // {}
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        let filename = to_filename(params.text_document.uri);
+
         self.project
             .sender
             .lock()
             .await
-            .send(Request::ValidateFile {
-                filename: to_filename(params.text_document.uri),
+            .send(Request::SetFileContent {
+                filename: filename.clone(),
+                content: params.text_document.text,
             })
+            .expect("failed to send request");
+
+        self.project
+            .sender
+            .lock()
+            .await
+            .send(Request::ValidateFile { filename })
             .expect("failed to send request");
     }
 
@@ -269,7 +287,7 @@ pub struct Jar(
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {
-    fn read_file(&self, path: &Arc<FileName>) -> SourceFile;
+    fn read_file(&self, path: &Arc<FileName>) -> Option<SourceFile>;
 
     fn shared(&self) -> &Arc<Shared>;
 }
@@ -288,13 +306,12 @@ impl Db for Database {
         &self.shared
     }
 
-    fn read_file(&self, path: &Arc<FileName>) -> SourceFile {
+    fn read_file(&self, path: &Arc<FileName>) -> Option<SourceFile> {
         match self.files.get(path) {
-            Some(file) => *file,
+            Some(file) => Some(*file),
             None => {
                 error!("File not found: {:?}", path);
-                // TODO: Error
-                SourceFile::new(self, path.clone(), "".to_string())
+                None
             }
         }
     }
