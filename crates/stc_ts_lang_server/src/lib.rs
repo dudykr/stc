@@ -197,6 +197,11 @@ impl LanguageServer for StcLangServer {
                     change: None,
                     ..Default::default()
                 })),
+                hover_provider: Some(HoverProviderCapability::Options(HoverOptions {
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: Some(false),
+                    },
+                })),
                 workspace: Some(WorkspaceServerCapabilities {
                     workspace_folders: Some(WorkspaceFoldersServerCapabilities {
                         supported: Some(true),
@@ -217,6 +222,8 @@ impl LanguageServer for StcLangServer {
     async fn shutdown(&self) -> jsonrpc::Result<()> {
         Ok(())
     }
+
+    async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>> {}
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         self.project
