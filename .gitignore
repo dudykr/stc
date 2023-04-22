@@ -13,7 +13,6 @@ core
 *.log
 
 !.vscode/settings.json
-.vscode/launch.json
 
 /.idea
 *.iml

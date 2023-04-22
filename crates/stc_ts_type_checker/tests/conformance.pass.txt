@@ -124,7 +124,6 @@ classes/classDeclarations/classAbstractKeyword/classAbstractClinterfaceAssignabi
 classes/classDeclarations/classAbstractKeyword/classAbstractConstructorAssignability.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractExtends.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractFactoryFunction.ts
-classes/classDeclarations/classAbstractKeyword/classAbstractGeneric.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractImportInstantiation.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractInAModule.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractInstantiations1.ts
@@ -492,7 +491,6 @@ es2021/logicalAssignment/logicalAssignment2.ts
 es2021/logicalAssignment/logicalAssignment3.ts
 es2021/logicalAssignment/logicalAssignment8.ts
 es2021/logicalAssignment/logicalAssignment9.ts
-es2022/es2022IntlAPIs.ts
 es2022/es2022SharedMemory.ts
 es6/Symbols/symbolDeclarationEmit1.ts
 es6/Symbols/symbolDeclarationEmit10.ts
@@ -1690,6 +1688,7 @@ externalModules/exportDeclaredModule.ts
 externalModules/exportDefaultClassNameWithObject.ts
 externalModules/exportNonLocalDeclarations.ts
 externalModules/exportNonVisibleType.ts
+externalModules/exportTypeMergedWithExportStarAsNamespace.ts
 externalModules/globalAugmentationModuleResolution.ts
 externalModules/importImportOnlyModule.ts
 externalModules/multipleExportDefault1.ts
@@ -1716,6 +1715,7 @@ externalModules/umd2.ts
 externalModules/umd3.ts
 externalModules/umd4.ts
 externalModules/verbatimModuleSyntaxConstEnum.ts
+externalModules/verbatimModuleSyntaxDeclarationFile.ts
 externalModules/verbatimModuleSyntaxRestrictionsESM.ts
 functions/functionOverloadCompatibilityWithVoid01.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
@@ -2194,6 +2194,7 @@ parser/ecmascript6/Symbols/parserSymbolProperty8.ts
 parser/ecmascript6/Symbols/parserSymbolProperty9.ts
 references/library-reference-14.ts
 references/library-reference-6.ts
+salsa/constructorNameInObjectLiteralAccessor.ts
 salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
 salsa/propertyAssignmentUseParentType3.ts

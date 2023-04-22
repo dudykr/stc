@@ -1,0 +1,132 @@
+TS2304
+
+  x NoSuchVar {
+  |     span: Span {
+  |         lo: BytePos(
+  |             117,
+  |         ),
+  |         hi: BytePos(
+  |             118,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     name: x#1,
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+   :                ^
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   `----
+TS2345
+
+  x [33mcontext[0m: tried to validate an argument (at crates/stc_ts_file_analyzer/src/analyzer/expr/call_new.rs:3433:25)
+  | [33mcontext[0m:
+  | lhs = instanceof  (x: any) => (n: Object) => 1;
+  | rhs = (a2: (z: string) => string) => 2;
+  | lhs (normalized) = (x: any) => (n: Object) => 1;
+  | rhs (normalized) = (a2: (z: string) => string) => 2; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: tried to assign to a function type:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2396:77)
+  | [33mcontext[0m: tried to assign a function to another one (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:438:18)
+  | [33mcontext[0m: tried to assign the return type of a function to the return type of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:394:22)
+  | [33mcontext[0m:
+  | lhs = (n: Object) => 1;
+  | rhs = 2;
+  | lhs (normalized) = (n: Object) => 1;
+  | rhs (normalized) = 2; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): (n: Object) => 1;
+  | RHS (final): 2; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2557:17)
+  | WrongArgType {
+  |     span: Span {
+  |         lo: BytePos(
+  |             169,
+  |         ),
+  |         hi: BytePos(
+  |             201,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     inner: AssignFailed {
+  |         span: Span {
+  |             lo: BytePos(
+  |                 169,
+  |             ),
+  |             hi: BytePos(
+  |                 201,
+  |             ),
+  |             ctxt: #0,
+  |         },
+  |         cause: [],
+  |     },
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+   :                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   `----
+TS2304
+
+  x NoSuchVar {
+  |     span: Span {
+  |         lo: BytePos(
+  |             228,
+  |         ),
+  |         hi: BytePos(
+  |             229,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     name: x#1,
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   :                ^
+   `----
+TS2345
+
+  x [33mcontext[0m: tried to validate an argument (at crates/stc_ts_file_analyzer/src/analyzer/expr/call_new.rs:3433:25)
+  | [33mcontext[0m:
+  | lhs = instanceof  (x: any) => (n: Object) => 1;
+  | rhs = (a2: (z: string) => boolean) => 2;
+  | lhs (normalized) = (x: any) => (n: Object) => 1;
+  | rhs (normalized) = (a2: (z: string) => boolean) => 2; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: tried to assign to a function type:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2396:77)
+  | [33mcontext[0m: tried to assign a function to another one (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:438:18)
+  | [33mcontext[0m: tried to assign the return type of a function to the return type of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:394:22)
+  | [33mcontext[0m:
+  | lhs = (n: Object) => 1;
+  | rhs = 2;
+  | lhs (normalized) = (n: Object) => 1;
+  | rhs (normalized) = 2; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: LHS (final): (n: Object) => 1;
+  | RHS (final): 2; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2557:17)
+  | WrongArgType {
+  |     span: Span {
+  |         lo: BytePos(
+  |             281,
+  |         ),
+  |         hi: BytePos(
+  |             314,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     inner: AssignFailed {
+  |         span: Span {
+  |             lo: BytePos(
+  |                 281,
+  |             ),
+  |             hi: BytePos(
+  |                 314,
+  |             ),
+  |             ctxt: #0,
+  |         },
+  |         cause: [],
+  |     },
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   :                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----

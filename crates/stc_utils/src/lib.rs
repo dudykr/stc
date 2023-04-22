@@ -5,8 +5,10 @@ extern crate swc_node_base;
 
 use std::{
     collections::{HashMap, HashSet},
-    env,
+    env, fmt,
     mem::take,
+    ops::{Deref, DerefMut},
+    str::FromStr,
 };
 
 use once_cell::sync::Lazy;
@@ -78,4 +80,73 @@ where
         .collect::<Vec<_>>();
 
     *v = new;
+}
+
+/// A new type wrapper that causes the field within to be ignored while printing
+/// out `Debug` output.
+///
+/// For more, see the [crate documentation](self).
+#[derive(Copy, Clone, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[repr(transparent)]
+pub struct DebugIgnore<T: ?Sized>(pub T);
+
+/// The point of this struct.
+impl<T: ?Sized> fmt::Debug for DebugIgnore<T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "...")
+    }
+}
+
+// ---
+// Other trait implementations
+// ---
+
+impl<T> From<T> for DebugIgnore<T> {
+    #[inline]
+    fn from(t: T) -> Self {
+        Self(t)
+    }
+}
+
+impl<T: ?Sized> Deref for DebugIgnore<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: ?Sized> DerefMut for DebugIgnore<T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T: FromStr> FromStr for DebugIgnore<T> {
+    type Err = T::Err;
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(DebugIgnore)
+    }
+}
+
+impl<T: ?Sized + fmt::Display> fmt::Display for DebugIgnore<T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<T: ?Sized, Q: ?Sized> AsRef<Q> for DebugIgnore<T>
+where
+    T: AsRef<Q>,
+{
+    #[inline]
+    fn as_ref(&self) -> &Q {
+        self.0.as_ref()
+    }
 }

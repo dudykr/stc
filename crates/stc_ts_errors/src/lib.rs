@@ -2,6 +2,7 @@
 #![deny(variant_size_differences)]
 #![feature(box_syntax)]
 #![feature(specialization)]
+#![cfg_attr(not(debug_assertions), allow(unused))]
 
 use std::{
     fmt,
@@ -62,7 +63,7 @@ impl Error {
         return self.context_impl(Location::caller(), context);
     }
 
-    #[cfg_attr(not(debug_assertions), attr)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
         {
@@ -1423,9 +1424,12 @@ pub enum ErrorKind {
         max: Option<usize>,
     },
 
+    /// TS2555
     ExpectedAtLeastNArgsButGotM {
         span: Span,
         min: usize,
+        // param name needed for error message
+        param_name: JsWord,
     },
 
     ExpectedAtLeastNArgsButGotMOrMore {
@@ -1563,6 +1567,16 @@ pub enum ErrorKind {
 
     /// TS2428
     InterfaceNonIdenticalTypeParams {
+        span: Span,
+    },
+
+    /// TS2784
+    ThisNotAllowedInAccessor {
+        span: Span,
+    },
+
+    /// TS1014
+    RestParamMustBeLast {
         span: Span,
     },
 }
@@ -1728,6 +1742,7 @@ impl ErrorKind {
             Self::ObjectAssignFailed { errors, .. } => errors,
             _ => {
                 vec![Error {
+                    #[cfg(debug_assertions)]
                     contexts: Default::default(),
                     inner: box self,
                 }]
@@ -2167,6 +2182,10 @@ impl ErrorKind {
             ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
 
             ErrorKind::InterfaceNonIdenticalTypeParams { .. } => 2428,
+
+            ErrorKind::ThisNotAllowedInAccessor { .. } => 2784,
+
+            ErrorKind::RestParamMustBeLast { .. } => 1014,
 
             _ => 0,
         }

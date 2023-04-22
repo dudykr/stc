@@ -99,6 +99,8 @@ impl Analyzer<'_, '_> {
             (Type::Interface(a), Type::Interface(bi)) => {
                 let mut type_params = FxHashMap::default();
 
+                let is_builtin_type = self.env.get_global_type(a.span, a.name.sym()).is_ok();
+
                 match (&a.type_params, &bi.type_params) {
                     (Some(a_tps), Some(b_tps)) => {
                         if a_tps.params.len() != b_tps.params.len() {
@@ -109,6 +111,33 @@ impl Analyzer<'_, '_> {
                         }
 
                         for (idx, b_tp) in b_tps.params.iter().enumerate() {
+                            if let Some(a_tp) = a_tps.params.get(idx) {
+                                /*
+                                 we check for is_builtin type because we don't want to compare type param names
+                                 if the user has defined a builtin interface
+                                 ```ts
+                                    interface Array<T> {} // no error
+                                 ```
+
+                                 However, if the user has defined multiple builtin interfaces:
+                                 ```ts
+                                    interface Array<T> {} // should error 2488
+                                    interface Array<U> {} // should error 2488
+                                 ```
+                                 then we should compare type param names if they are identical.
+                                 This case is currently _not_ handled by the following code and thus
+                                 we're not reporting two 2488 errors as we should.
+
+                                 Related: https://github.com/dudykr/stc/pull/987#discussion_r1167380253
+                                */
+                                if !is_builtin_type && a_tp.name.sym() != b_tp.name.sym() {
+                                    self.storage
+                                        .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: a.span() }.into());
+                                    self.storage
+                                        .report(ErrorKind::InterfaceNonIdenticalTypeParams { span: b.span() }.into());
+                                }
+                            }
+
                             type_params.insert(
                                 b_tp.name.clone(),
                                 Type::Param(TypeParam {

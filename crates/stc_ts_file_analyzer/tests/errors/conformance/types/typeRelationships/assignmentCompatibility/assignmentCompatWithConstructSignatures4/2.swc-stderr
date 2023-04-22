@@ -1,0 +1,161 @@
+TS2322
+
+  x [33mcontext[0m:
+  | lhs = instanceof  new <T#6#0>(x: (a: T#6) => T) => any[];
+  | rhs = {
+  |     new(x: {
+  |         new <T#2 extends Derived>(a: T#2#0): T;
+  |         new <T#3 extends Base>(a: T#3#0): T;
+  |     }): any[];
+  |     new(x: {
+  |         new <T#4 extends Derived2>(a: T#4#0): T;
+  |         new <T#5 extends Base>(a: T#5#0): T;
+  |     }): any[];
+  | };
+  | lhs (normalized) = new <T#6#0>(x: (a: T#6) => T) => any[];
+  | rhs (normalized) = {
+  |     new(x: {
+  |         new <T#2 extends Derived>(a: T#2#0): T;
+  |         new <T#3 extends Base>(a: T#3#0): T;
+  |     }): any[];
+  |     new(x: {
+  |         new <T#4 extends Derived2>(a: T#4#0): T;
+  |         new <T#5 extends Base>(a: T#5#0): T;
+  |     }): any[];
+  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  | [33mcontext[0m: tried to assign to a constructor type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2443:22)
+  | AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             449,
+  |         ),
+  |         hi: BytePos(
+  |             452,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [
+  |         SimpleAssignFailedWithCause {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     449,
+  |                 ),
+  |                 hi: BytePos(
+  |                     452,
+  |                 ),
+  |                 ctxt: #1,
+  |             },
+  |             cause: [
+  |                 [33mcontext[0m: tried to assign a constructor to another constructor (0th element) (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:577:30)
+  |                 [33mcontext[0m: tried to assign parameters of a function to parameters of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:377:14)
+  |                 [33mcontext[0m: tried to assign the type of a parameter to another (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:776:26)
+  |                 [33mcontext[0m:
+  |                 lhs = {
+  |                     new <T#2 extends Derived>(a: T#2#0): T;
+  |                     new <T#3 extends Base>(a: T#3#0): T;
+  |                 };
+  |                 rhs = (a: T#6#0) => T;
+  |                 lhs (normalized) = {
+  |                     new <T#2 extends Derived>(a: T#2#0): T;
+  |                     new <T#3 extends Base>(a: T#3#0): T;
+  |                 };
+  |                 rhs (normalized) = (a: T#6#0) => T; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
+  |                 [33mcontext[0m: tried to assign the converted type to type elements:
+  |                 RHS= (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:543:26)
+  |                 ObjectAssignFailed {
+  |                     span: Span {
+  |                         lo: BytePos(
+  |                             449,
+  |                         ),
+  |                         hi: BytePos(
+  |                             452,
+  |                         ),
+  |                         ctxt: #0,
+  |                     },
+  |                     errors: [
+  |                         [33mcontext[0m: tried assignment of a type literal to a type literals
+  |                         LHS={
+  |                             new <T#2 extends Derived>(a: T#2#0): T;
+  |                             new <T#3 extends Base>(a: T#3#0): T;
+  |                         };
+  |                         RHS={
+  |                             (a: T#6#0) : T;
+  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:199:22)
+  |                         [33mcontext[0m: tried to assign to an element (not a key-based) (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1087:18)
+  |                         [33mcontext[0m: failed to assign to a constructor (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1565:92)
+  |                         SimpleAssignFailed {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     449,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     452,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             cause: None,
+  |                         },
+  |                     ],
+  |                 },
+  |                 [33mcontext[0m: tried to assign a constructor to another constructor (1th element) (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:577:30)
+  |                 [33mcontext[0m: tried to assign parameters of a function to parameters of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:377:14)
+  |                 [33mcontext[0m: tried to assign the type of a parameter to another (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:776:26)
+  |                 [33mcontext[0m:
+  |                 lhs = {
+  |                     new <T#4 extends Derived2>(a: T#4#0): T;
+  |                     new <T#5 extends Base>(a: T#5#0): T;
+  |                 };
+  |                 rhs = (a: T#6#0) => T;
+  |                 lhs (normalized) = {
+  |                     new <T#4 extends Derived2>(a: T#4#0): T;
+  |                     new <T#5 extends Base>(a: T#5#0): T;
+  |                 };
+  |                 rhs (normalized) = (a: T#6#0) => T; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
+  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
+  |                 [33mcontext[0m: tried to assign the converted type to type elements:
+  |                 RHS= (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:543:26)
+  |                 ObjectAssignFailed {
+  |                     span: Span {
+  |                         lo: BytePos(
+  |                             449,
+  |                         ),
+  |                         hi: BytePos(
+  |                             452,
+  |                         ),
+  |                         ctxt: #0,
+  |                     },
+  |                     errors: [
+  |                         [33mcontext[0m: tried assignment of a type literal to a type literals
+  |                         LHS={
+  |                             new <T#4 extends Derived2>(a: T#4#0): T;
+  |                             new <T#5 extends Base>(a: T#5#0): T;
+  |                         };
+  |                         RHS={
+  |                             (a: T#6#0) : T;
+  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:199:22)
+  |                         [33mcontext[0m: tried to assign to an element (not a key-based) (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1087:18)
+  |                         [33mcontext[0m: failed to assign to a constructor (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1565:92)
+  |                         SimpleAssignFailed {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     449,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     452,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             cause: None,
+  |                         },
+  |                     ],
+  |                 },
+  |             ],
+  |         },
+  |     ],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/typeRelationships/assignmentCompatibility/assignmentCompatWithConstructSignatures4/2.ts:19:1]
+ 19 | var b17: new <T>(x: (a: T) => T) => any[];
+ 20 | b17 = a17; // error
+    : ^^^
+    `----

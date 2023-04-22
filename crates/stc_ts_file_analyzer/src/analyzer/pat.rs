@@ -257,6 +257,9 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = p
                 {
+                    if self.ctx.set_accessor_prop || self.ctx.get_accessor_prop {
+                        return Err(ErrorKind::ThisNotAllowedInAccessor { span: p.span() }.into());
+                    }
                     if ty.is_some() {
                         self.scope.this = ty.clone();
                     }

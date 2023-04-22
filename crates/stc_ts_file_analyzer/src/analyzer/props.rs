@@ -381,7 +381,10 @@ impl Analyzer<'_, '_> {
             }
 
             RProp::Assign(ref p) => unimplemented!("validate_key(AssignProperty): {:?}", p),
-            RProp::Getter(ref p) => p.validate_with(self)?,
+            RProp::Getter(ref p) => {
+                self.ctx.get_accessor_prop = true;
+                p.validate_with(self)?
+            }
             RProp::Setter(ref p) => {
                 let key = p.key.validate_with(self)?;
                 let computed = matches!(p.key, RPropName::Computed(_));
@@ -391,6 +394,7 @@ impl Analyzer<'_, '_> {
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> VResult<_> {
                         child.ctx.pat_mode = PatMode::Decl;
+                        child.ctx.set_accessor_prop = true;
                         let param = param.validate_with(child)?;
 
                         p.body.visit_with(child);

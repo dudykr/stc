@@ -15,7 +15,7 @@ use stc_ts_type_checker::{
 };
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
-    FileName, SourceMap,
+    FileName, Globals, SourceMap, GLOBALS,
 };
 use swc_ecma_ast::EsVersion;
 use tracing_subscriber::EnvFilter;
@@ -63,6 +63,8 @@ async fn main() -> Result<(), Error> {
         log::info!("Initialization took {:?}", end - start);
     }
 
+    let globals = Arc::<Globals>::default();
+
     match command {
         Command::Test(cmd) => {
             let libs = {
@@ -82,7 +84,9 @@ async fn main() -> Result<(), Error> {
                 libs
             };
 
-            let env = Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs);
+            let env = GLOBALS.set(&globals, || {
+                Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs)
+            });
 
             let path = PathBuf::from(cmd.file);
 
@@ -94,7 +98,7 @@ async fn main() -> Result<(), Error> {
                     handler.clone(),
                     env.clone(),
                     None,
-                    ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader),
+                    Box::new(ModuleLoader::new(cm.clone(), env.clone(), NodeResolver, DefaultFileLoader)),
                 );
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
@@ -107,19 +111,20 @@ async fn main() -> Result<(), Error> {
             let mut errors = vec![];
 
             let start = Instant::now();
-            {
+            GLOBALS.set(&globals, || {
                 let mut checker = Checker::new(
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
                     None,
-                    ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader),
+                    Box::new(ModuleLoader::new(cm, env, NodeResolver, DefaultFileLoader)),
                 );
 
                 checker.check(Arc::new(FileName::Real(path)));
 
                 errors.extend(checker.take_errors());
-            }
+            });
+
             let end = Instant::now();
 
             log::info!("Checking took {:?}", end - start);
