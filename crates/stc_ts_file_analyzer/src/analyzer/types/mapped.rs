@@ -133,7 +133,7 @@ impl Analyzer<'_, '_> {
                             Ok(v) => v,
                             Err(err) => {
                                 // print_backtrace();
-                                return Ok(None);
+                                return Err(err.into());
                             }
                         };
 
