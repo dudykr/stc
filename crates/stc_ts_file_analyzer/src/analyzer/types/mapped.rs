@@ -14,7 +14,8 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    dev_span, stack,
+    dev_span,
+    stack::{self},
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
@@ -126,14 +127,21 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })));
-                    } else if constraint.is_ref_type() {
-                        if let Err(error) = stack::track(span) {
-                            return Err(error.into());
-                        }
+                    } else {
+                        let span = constraint.span();
+                        let _stack = match stack::track(span) {
+                            Ok(v) => v,
+                            Err(err) => {
+                                // print_backtrace();
+                                return Ok(None);
+                            }
+                        };
 
-                        if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(constraint), Default::default()) {
-                            if ty.is_interface() {
-                                self.storage.report(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                        if constraint.is_ref_type() {
+                            if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(constraint), Default::default()) {
+                                if ty.is_interface() {
+                                    self.storage.report(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                                }
                             }
                         }
                     }
