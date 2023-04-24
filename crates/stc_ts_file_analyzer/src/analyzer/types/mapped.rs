@@ -4,7 +4,7 @@ use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
@@ -129,13 +129,7 @@ impl Analyzer<'_, '_> {
                         })));
                     } else {
                         let span = constraint.span();
-                        let _stack = match stack::track(span) {
-                            Ok(v) => v,
-                            Err(err) => {
-                                // print_backtrace();
-                                return Err(err.into());
-                            }
-                        };
+                        let _guard = stack::track(span)?;
 
                         if constraint.is_ref_type() {
                             if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(constraint), Default::default()) {
