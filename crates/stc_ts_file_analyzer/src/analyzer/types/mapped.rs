@@ -127,26 +127,23 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })));
-                        // } else {
-                        //     let span = constraint.span();
-                        //     let _stack = match stack::track(span) {
-                        //         Ok(v) => v,
-                        //         Err(err) => {
-                        //             // print_backtrace();
-                        //             return Ok(None);
-                        //         }
-                        //     };
+                    } else {
+                        let span = constraint.span();
+                        let _stack = match stack::track(span) {
+                            Ok(v) => v,
+                            Err(err) => {
+                                // print_backtrace();
+                                return Ok(None);
+                            }
+                        };
 
-                        //     if constraint.is_ref_type() {
-                        //         if let Ok(ty) = self.normalize(Some(span),
-                        // Cow::Borrowed(constraint), Default::default()) {
-                        //             if ty.is_interface() {
-                        //                 
-                        // self.storage.report(ErrorKind::SimpleAssignFailed {
-                        // span, cause: None }.into());
-                        //             }
-                        //         }
-                        //     }
+                        if constraint.is_ref_type() {
+                            if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(constraint), Default::default()) {
+                                if ty.is_interface() {
+                                    self.storage.report(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
+                                }
+                            }
+                        }
                     }
                 }
             }
