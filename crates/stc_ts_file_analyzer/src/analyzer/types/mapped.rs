@@ -17,7 +17,7 @@ use stc_utils::{
     dev_span,
     stack::{self},
 };
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
 use tracing::{debug, error};
 
@@ -128,14 +128,41 @@ impl Analyzer<'_, '_> {
                             tracker: Default::default(),
                         })));
                     } else {
-                        let span = constraint.span();
-                        let _guard = stack::track(span)?;
-
-                        if constraint.is_ref_type() {
-                            if let Ok(ty) = self.normalize(Some(span), Cow::Borrowed(constraint), Default::default()) {
-                                if ty.is_interface() {
-                                    self.storage.report(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
-                                }
+                        let _guard = stack::track(m.span)?;
+                        if let Ok(ty) = self.normalize(Some(m.span), Cow::Borrowed(constraint), Default::default()) {
+                            if ty.is_interface() {
+                                self.storage.report(
+                                    ErrorKind::AssignFailed {
+                                        span: constraint.span(),
+                                        left: Box::new(ty.into_owned()),
+                                        right_ident: Some(DUMMY_SP),
+                                        right: Box::new(Type::new_union(
+                                            DUMMY_SP,
+                                            vec![
+                                                Type::Keyword(KeywordType {
+                                                    span: DUMMY_SP,
+                                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                Type::Keyword(KeywordType {
+                                                    span: DUMMY_SP,
+                                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                Type::Keyword(KeywordType {
+                                                    span: DUMMY_SP,
+                                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                            ],
+                                        )),
+                                        cause: vec![],
+                                    }
+                                    .into(),
+                                );
                             }
                         }
                     }

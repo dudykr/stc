@@ -1,0 +1,39 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             270,
+  |         ),
+  |         hi: BytePos(
+  |             274,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/custom/1.ts:21:1]
+ 21 | 
+ 22 | type T02 = { [P in Date]: number }; // Error
+    :                    ^^^^
+ 23 | type T03 = Record<Date, number>; // Error
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             314,
+  |         ),
+  |         hi: BytePos(
+  |             318,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/custom/1.ts:22:1]
+ 22 | type T02 = { [P in Date]: number }; // Error
+ 23 | type T03 = Record<Date, number>; // Error
+    :                   ^^^^
+    `----
