@@ -2257,6 +2257,7 @@ dependencies = [
  "derivative",
  "fxhash",
  "rnode",
+ "scoped-tls",
  "static_assertions",
  "stc_ts_ast_rnode",
  "stc_ts_types",
