@@ -15,6 +15,7 @@ use std::{
 use ansi_term::Color::Yellow;
 use derivative::Derivative;
 use fmt::Formatter;
+use scoped_tls::scoped_thread_local;
 use static_assertions::assert_eq_size;
 use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
@@ -29,6 +30,9 @@ pub use self::result_ext::DebugExt;
 
 pub mod debug;
 mod result_ext;
+
+#[cfg(debug_assertions)]
+scoped_thread_local!(pub static DISABLE_ERROR_CONTEXT: ());
 
 /// [ErrorKind] with debug contexts attached.
 #[derive(Clone, PartialEq, Spanned)]
@@ -67,6 +71,10 @@ impl Error {
     pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
         {
+            if DISABLE_ERROR_CONTEXT.is_set() {
+                return self;
+            }
+
             self.contexts
                 .push(format!("{} (at {}:{}:{})", context, loc.file(), loc.line(), loc.column()));
         }
