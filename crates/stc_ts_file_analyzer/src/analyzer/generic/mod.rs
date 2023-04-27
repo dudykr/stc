@@ -565,13 +565,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if should_delegate(param_normalized) {
+        if should_delegate(param) {
             let mut param = self.normalize(Some(span), Cow::Borrowed(param_normalized), Default::default())?;
             param.freeze();
             return self.infer_type(span, inferred, &param, arg, opts);
         }
 
-        if should_delegate(arg_normalized) {
+        if should_delegate(arg) || arg.is_conditional() {
             let mut arg = self.normalize(Some(span), Cow::Borrowed(arg_normalized), Default::default())?;
             arg.freeze();
 
