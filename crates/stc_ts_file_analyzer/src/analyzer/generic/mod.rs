@@ -496,7 +496,11 @@ impl Analyzer<'_, '_> {
             let param_str = force_dump_type_as_string(param);
             let arg_str = force_dump_type_as_string(arg);
 
-            Some(dev_span!("infer_type", param = &*param_str, arg = &*arg_str))
+            Some(dev_span!(
+                "infer_type",
+                param = tracing::field::display(&param_str),
+                arg = tracing::field::display(&arg_str),
+            ))
         } else {
             None
         };
