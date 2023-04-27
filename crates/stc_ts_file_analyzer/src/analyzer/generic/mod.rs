@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.for_fn_assignment {
-            if let Type::Param(arg) = arg_normalized.normalize() {
+            if let Type::Param(arg) = arg.normalize() {
                 if !param_normalized.is_type_param() {
                     self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
                     return Ok(());
@@ -701,6 +701,10 @@ impl Analyzer<'_, '_> {
                     false,
                     opts,
                 )
+            }
+
+            (Type::Tpl(..), Type::Union(..)) => {
+                // Use inference rule for union in arg
             }
 
             (Type::Tpl(target), _) => {
