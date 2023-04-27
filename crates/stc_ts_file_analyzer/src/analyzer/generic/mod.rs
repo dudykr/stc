@@ -375,6 +375,7 @@ impl Analyzer<'_, '_> {
 
         for ty in map.types.values_mut() {
             prevent_generalize(ty);
+            ty.freeze();
         }
 
         Ok(map.types)
