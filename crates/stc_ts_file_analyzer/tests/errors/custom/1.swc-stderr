@@ -1,39 +1,31 @@
-TS2322
+TS2344
 
-  x AssignFailed {
+  x NotSatisfyConstraint {
   |     span: Span {
   |         lo: BytePos(
-  |             270,
+  |             511,
   |         ),
   |         hi: BytePos(
-  |             274,
+  |             536,
   |         ),
   |         ctxt: #0,
   |     },
-  |     cause: [],
+  |     left: Arc(
+  |         Index(Index { span: Span { lo: BytePos(0), hi: BytePos(0), ctxt: #0 }, ty: Keyword(any), metadata: OperatorMetadata { common: CommonTypeMetadata { implicit: false,
+  | infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: false,
+  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }),
+  |     ),
+  |     right: Arc(
+  |         Index(Index { span: Span { lo: BytePos(511), hi: BytePos(536), ctxt: #0 }, ty: Arc(Ref(Ref { span: Span { lo: BytePos(517), hi: BytePos(536), ctxt: #0 }, type_name: Ident(RIdent
+  | { node_id: NodeId(106), span: Span { lo: BytePos(517), hi: BytePos(536), ctxt: #1 }, sym: Atom('RouteComponentProps' type=dynamic), optional: false }), type_args: None, metadata: RefMetadata
+  | { no_expand: true, ignore_no_expand: false, common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type:
+  | false, prevent_complex_simplification: false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } })),
+  | metadata: OperatorMetadata { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false,
+  | prevent_complex_simplification: false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }),
+  |     ),
   | }
-    ,-[$DIR/tests/errors/custom/1.ts:21:1]
- 21 | 
- 22 | type T02 = { [P in Date]: number }; // Error
-    :                    ^^^^
- 23 | type T03 = Record<Date, number>; // Error
-    `----
-TS2322
-
-  x AssignFailed {
-  |     span: Span {
-  |         lo: BytePos(
-  |             314,
-  |         ),
-  |         hi: BytePos(
-  |             318,
-  |         ),
-  |         ctxt: #0,
-  |     },
-  |     cause: [],
-  | }
-    ,-[$DIR/tests/errors/custom/1.ts:22:1]
- 22 | type T02 = { [P in Date]: number }; // Error
- 23 | type T03 = Record<Date, number>; // Error
-    :                   ^^^^
+    ,-[$DIR/tests/errors/custom/1.ts:23:1]
+ 23 |   component: C & ComponentType<P>
+ 24 | ): ComponentClass<Omit<P, keyof RouteComponentProps>>;
+    :                           ^^^^^^^^^^^^^^^^^^^^^^^^^
     `----

@@ -1,23 +1,32 @@
-// @strictNullChecks: true
-// @declaration: true
+// @strict: true
+// @target: esnext
 
-interface Shape {
-  name: string;
-  width: number;
-  height: number;
-  visible: boolean;
+// Repro from #33490
+
+declare class Component<P> {
+  props: P;
 }
 
-interface Named {
-  name: string;
+export type ComponentClass<P> = new (props: P) => Component<P>;
+export type FunctionComponent<P> = (props: P) => null;
+
+export type ComponentType<P> = FunctionComponent<P> | ComponentClass<P>;
+
+export interface RouteComponentProps {
+  route: string;
 }
 
-interface Point {
-  x: number;
-  y: number;
+declare function withRouter<
+  P extends RouteComponentProps,
+  C extends ComponentType<P>
+>(
+  component: C & ComponentType<P>
+): ComponentClass<Omit<P, keyof RouteComponentProps>>;
+
+interface Props extends RouteComponentProps {
+  username: string;
 }
 
-// Constraint checking
+declare const MyComponent: ComponentType<Props>;
 
-type T02 = { [P in Date]: number }; // Error
-type T03 = Record<Date, number>; // Error
+withRouter(MyComponent);

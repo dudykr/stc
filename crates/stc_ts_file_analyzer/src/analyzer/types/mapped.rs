@@ -488,10 +488,9 @@ impl Analyzer<'_, '_> {
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
         let _guard = stack::track(span);
-        let ty = ty.normalize();
 
-        match ty {
-            Type::Ref(..) | Type::Alias(..) | Type::Query(..) => {
+        match ty.normalize() {
+            ty @ (Type::Ref(..) | Type::Alias(..) | Type::Query(..)) => {
                 let ty = self.normalize(
                     Some(span),
                     Cow::Borrowed(ty),
@@ -567,9 +566,22 @@ impl Analyzer<'_, '_> {
                 Ok(Some(keys))
             }
 
+            Type::Conditional(c) => {
+                if let Type::Conditional(Conditional { true_type, false_type, .. }) =
+                    self.expand_conditional_type(span, Type::Conditional(c.clone()))
+                {
+                    return self.convert_type_to_keys_for_mapped_type(
+                        span,
+                        &Type::new_union(span, vec![*true_type, *false_type]),
+                        name_type,
+                    );
+                }
+                error!("unimplemented: convert_type_to_keys: {}", force_dump_type_as_string(ty));
+                Ok(None)
+            }
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => Ok(None),
 
-            _ => {
+            ty => {
                 error!("unimplemented: convert_type_to_keys: {}", force_dump_type_as_string(ty));
                 Ok(None)
             }

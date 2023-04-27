@@ -6,7 +6,7 @@ use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
-    DebugExt,
+    DebugExt, ErrorKind,
 };
 use stc_ts_generics::{
     expander::InferTypeResult,
@@ -35,7 +35,7 @@ use super::{
     expr::{AccessPropertyOpts, TypeOfMode},
 };
 use crate::{
-    analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_builtin_with_single_arg, RemoveTypes},
     VResult,
 };
@@ -105,6 +105,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
         let _tracing = dev_span!("infer_arg_types");
+        let _guard = stack::track(span);
 
         warn!(
             "infer_arg_types: {:?}",
@@ -118,6 +119,20 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
+                if let Some(tp) = &type_param.constraint {
+                    if matches!(self.extends(span, param, tp, Default::default()), Some(false)) {
+                        if !param.span().is_dummy() {
+                            self.storage.report(
+                                ErrorKind::NotSatisfyConstraint {
+                                    span: param.span(),
+                                    left: tp.clone(),
+                                    right: Box::new(param.clone()),
+                                }
+                                .into(),
+                            );
+                        }
+                    }
+                }
                 inferred.type_params.insert(
                     type_param.name.clone(),
                     InferenceInfo {
@@ -527,8 +542,6 @@ impl Analyzer<'_, '_> {
             }
             inferred.dejavu.push((param.clone(), arg.clone()));
         }
-
-        debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
         if param.is_keyword() || param.type_eq(arg) {
             return Ok(());
