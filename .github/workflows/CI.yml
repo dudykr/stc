@@ -99,4 +99,4 @@ jobs:
 
       - name: Run cargo test
         run: |
-          RUST_MIN_STACK=8388608 cargo test --all --features tracing/max_level_off
+          RUST_MIN_STACK=8388608 cargo test --all --features tracing/max_level_off --features no-threading

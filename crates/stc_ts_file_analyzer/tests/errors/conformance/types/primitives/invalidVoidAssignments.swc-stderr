@@ -1,14 +1,6 @@
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = boolean;
-  | rhs = void;
-  | lhs (normalized) = boolean;
-  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): boolean;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2013:25)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             19,
@@ -28,15 +20,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = string;
-  | rhs = void;
-  | lhs (normalized) = string;
-  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): string;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2013:25)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             39,
@@ -56,15 +40,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = number;
-  | rhs = void;
-  | lhs (normalized) = number;
-  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): number;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2013:25)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             58,
@@ -84,23 +60,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = instanceof  C;
-  | rhs = void;
-  | lhs (normalized) = C#1;
-  | 
-  | Class(Class { span: Span { lo: BytePos(135), hi: BytePos(136), ctxt: #0 }, def: arc: ClassDef { span: Span { lo: BytePos(103), hi: BytePos(127), ctxt: #0 }, is_abstract: false, name: Some(C#1),
-  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(113), hi: BytePos(125), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
-  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
-  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
-  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
-  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: false,
-  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } })
-  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to an instance of a class (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1403:26)
-  | [33mcontext[0m: cannot assign literal or keyword to a class (at crates/stc_ts_file_analyzer/src/analyzer/assign/class.rs:268:14)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             132,
@@ -132,17 +92,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = instanceof  I;
-  | rhs = void;
-  | lhs (normalized) = I#1;
-  | Member as {
-  |     bar: string;
-  | };
-  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2250:18)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             176,
@@ -174,21 +124,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = instanceof  {
-  |     baz: string;
-  | };
-  | rhs = 1;
-  | lhs (normalized) = {
-  |     baz: string;
-  | };
-  | rhs (normalized) = 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
-  | [33mcontext[0m: tried to assign a literal as keyword to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:664:26)
-  | [33mcontext[0m: tried to assign a keyword as builtin to type elements
-  | RHS =  (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:613:26)
-  | SimpleAssignFailed {
+  x SimpleAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             191,
@@ -223,21 +159,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m: tried to assign from var decl (at crates/stc_ts_file_analyzer/src/analyzer/stmt/var_decl.rs:345:34)
-  | [33mcontext[0m:
-  | lhs = instanceof  {
-  |     0: number;
-  | };
-  | rhs = 1;
-  | lhs (normalized) = {
-  |     0: number;
-  | };
-  | rhs (normalized) = 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
-  | [33mcontext[0m: tried to assign a literal as keyword to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:664:26)
-  | [33mcontext[0m: tried to assign a keyword as builtin to type elements
-  | RHS =  (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:613:26)
-  | SimpleAssignFailed {
+  x SimpleAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             219,
@@ -271,8 +193,7 @@ TS2322
     `----
 TS2631
 
-  x [33mcontext[0m: tried to get type of lhs of an assignment (at crates/stc_ts_file_analyzer/src/analyzer/expr/mod.rs:398:26)
-  | CannotAssignToNamespace {
+  x CannotAssignToNamespace {
   |     span: Span {
   |         lo: BytePos(
   |             274,
@@ -290,14 +211,7 @@ TS2631
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = T#3#0;
-  | rhs = void;
-  | lhs (normalized) = T#3#0;
-  | rhs (normalized) = void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): T#3#0;
-  | RHS (final): void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1736:30)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             308,
@@ -317,8 +231,7 @@ TS2322
     `----
 TS2630
 
-  x [33mcontext[0m: tried to get type of lhs of an assignment (at crates/stc_ts_file_analyzer/src/analyzer/expr/mod.rs:398:26)
-  | CannotAssignToFunction {
+  x CannotAssignToFunction {
   |     span: Span {
   |         lo: BytePos(
   |             317,
@@ -336,14 +249,7 @@ TS2630
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = E#1;
-  | lhs (normalized) = void;
-  | rhs (normalized) = E#1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): E#1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             338,
@@ -363,14 +269,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = E#1.A;
-  | lhs (normalized) = void;
-  | rhs (normalized) = E#1.A; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): E#1.A; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             345,
@@ -389,20 +288,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = {
-  |     f(): void;
-  | };
-  | lhs (normalized) = void;
-  | rhs (normalized) = {
-  |     f(): void;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): {
-  |     f(): void;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             355,

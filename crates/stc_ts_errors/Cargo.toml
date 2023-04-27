@@ -12,11 +12,9 @@ ansi_term = "0.12.1"
 backtrace = "0.3.60"
 derivative = "2.2.0"
 fxhash = "0.2.1"
-rnode = {path = "../rnode"}
+rnode = { path = "../rnode" }
 static_assertions = "1.1.0"
-stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
-stc_ts_types = {path = "../stc_ts_types"}
-stc_utils = {path = "../stc_utils"}
+scoped-tls = "1.0.0"
 swc_atoms = "0.4.39"
 swc_common = "0.29.37"
 swc_ecma_ast = "0.100.2"
@@ -24,3 +22,7 @@ swc_ecma_codegen = "0.135.6"
 swc_ecma_utils = "0.113.6"
 swc_ecma_visit = "0.86.2"
 tracing = "0.1.37"
+
+stc_ts_ast_rnode = { path = "../stc_ts_ast_rnode" }
+stc_ts_types = { path = "../stc_ts_types" }
+stc_utils = { path = "../stc_utils" }

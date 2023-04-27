@@ -1,30 +1,6 @@
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = instanceof  new <T#2#0>(x: (a: T#2) => T) => T[];
-  | rhs = {
-  |     new(x: {
-  |         new(a: number): number;
-  |         new(a?: number): number;
-  |     }): number[];
-  |     new(x: {
-  |         new(a: boolean): boolean;
-  |         new(a?: boolean): boolean;
-  |     }): boolean[];
-  | };
-  | lhs (normalized) = new <T#2#0>(x: (a: T#2) => T) => T[];
-  | rhs (normalized) = {
-  |     new(x: {
-  |         new(a: number): number;
-  |         new(a?: number): number;
-  |     }): number[];
-  |     new(x: {
-  |         new(a: boolean): boolean;
-  |         new(a?: boolean): boolean;
-  |     }): boolean[];
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign to a constructor type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2443:22)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             377,
@@ -46,23 +22,6 @@ TS2322
   |                 ctxt: #1,
   |             },
   |             cause: [
-  |                 [33mcontext[0m: tried to assign a constructor to another constructor (0th element) (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:577:30)
-  |                 [33mcontext[0m: tried to assign parameters of a function to parameters of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:377:14)
-  |                 [33mcontext[0m: tried to assign the type of a parameter to another (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:776:26)
-  |                 [33mcontext[0m:
-  |                 lhs = {
-  |                     new(a: number): number;
-  |                     new(a?: number): number;
-  |                 };
-  |                 rhs = (a: T#2#0) => T;
-  |                 lhs (normalized) = {
-  |                     new(a: number): number;
-  |                     new(a?: number): number;
-  |                 };
-  |                 rhs (normalized) = (a: T#2#0) => T; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
-  |                 [33mcontext[0m: tried to assign the converted type to type elements:
-  |                 RHS= (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:543:26)
   |                 ObjectAssignFailed {
   |                     span: Span {
   |                         lo: BytePos(
@@ -74,16 +33,6 @@ TS2322
   |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         [33mcontext[0m: tried assignment of a type literal to a type literals
-  |                         LHS={
-  |                             new(a: number): number;
-  |                             new(a?: number): number;
-  |                         };
-  |                         RHS={
-  |                             (a: T#2#0) : T;
-  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:199:22)
-  |                         [33mcontext[0m: tried to assign to an element (not a key-based) (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1087:18)
-  |                         [33mcontext[0m: failed to assign to a constructor (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1565:92)
   |                         SimpleAssignFailed {
   |                             span: Span {
   |                                 lo: BytePos(
@@ -98,23 +47,6 @@ TS2322
   |                         },
   |                     ],
   |                 },
-  |                 [33mcontext[0m: tried to assign a constructor to another constructor (1th element) (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:577:30)
-  |                 [33mcontext[0m: tried to assign parameters of a function to parameters of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:377:14)
-  |                 [33mcontext[0m: tried to assign the type of a parameter to another (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:776:26)
-  |                 [33mcontext[0m:
-  |                 lhs = {
-  |                     new(a: boolean): boolean;
-  |                     new(a?: boolean): boolean;
-  |                 };
-  |                 rhs = (a: T#2#0) => T;
-  |                 lhs (normalized) = {
-  |                     new(a: boolean): boolean;
-  |                     new(a?: boolean): boolean;
-  |                 };
-  |                 rhs (normalized) = (a: T#2#0) => T; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2369:22)
-  |                 [33mcontext[0m: tried to assign the converted type to type elements:
-  |                 RHS= (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:543:26)
   |                 ObjectAssignFailed {
   |                     span: Span {
   |                         lo: BytePos(
@@ -126,16 +58,6 @@ TS2322
   |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         [33mcontext[0m: tried assignment of a type literal to a type literals
-  |                         LHS={
-  |                             new(a: boolean): boolean;
-  |                             new(a?: boolean): boolean;
-  |                         };
-  |                         RHS={
-  |                             (a: T#2#0) : T;
-  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:199:22)
-  |                         [33mcontext[0m: tried to assign to an element (not a key-based) (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1087:18)
-  |                         [33mcontext[0m: failed to assign to a constructor (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1565:92)
   |                         SimpleAssignFailed {
   |                             span: Span {
   |                                 lo: BytePos(
