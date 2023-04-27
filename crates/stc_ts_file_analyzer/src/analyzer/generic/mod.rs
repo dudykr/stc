@@ -120,6 +120,7 @@ impl Analyzer<'_, '_> {
 
         for param in type_params {
             if let Some(constraint) = &param.constraint {
+                constraint.assert_clone_cheap();
                 inferred.constraints.insert(param.name.clone(), *constraint.clone());
             }
         }
