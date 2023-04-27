@@ -805,6 +805,8 @@ impl Analyzer<'_, '_> {
         arg.assert_clone_cheap();
 
         if let Some(constraint) = inferred.constraints.get(&name) {
+            constraint.assert_clone_cheap();
+
             if let Some(false) = self.extends(span, &arg, constraint, Default::default()) {
                 warn!(
                     "Type parameter `{}` is not assignable to `{}`",
