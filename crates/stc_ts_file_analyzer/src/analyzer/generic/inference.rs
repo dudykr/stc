@@ -502,7 +502,11 @@ impl Analyzer<'_, '_> {
         let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
         matches.freeze();
 
-        let _tracing = dev_span!("infer_to_tpl_lit_type", matches = matches.as_ref().map_or(0, |v| v.len()));
+        let _tracing = dev_span!(
+            "infer_to_tpl_lit_type",
+            source = tracing::field::display(dump_type_as_string(source)),
+            matches = matches.as_ref().map_or(0, |v| v.len())
+        );
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
