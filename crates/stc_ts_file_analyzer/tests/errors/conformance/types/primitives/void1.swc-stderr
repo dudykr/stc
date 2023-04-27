@@ -1,13 +1,6 @@
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = E#1;
-  | lhs (normalized) = void;
-  | rhs (normalized) = E#1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): E#1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             80,
@@ -27,14 +20,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = E#1.A;
-  | lhs (normalized) = void;
-  | rhs (normalized) = E#1.A; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): E#1.A; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             87,
