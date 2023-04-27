@@ -31,7 +31,6 @@ pub use self::result_ext::DebugExt;
 pub mod debug;
 mod result_ext;
 
-#[cfg(debug_assertions)]
 scoped_thread_local!(pub static DISABLE_ERROR_CONTEXT: ());
 
 /// [ErrorKind] with debug contexts attached.
