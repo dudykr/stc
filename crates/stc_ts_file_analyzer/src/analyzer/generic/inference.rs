@@ -528,7 +528,7 @@ impl Analyzer<'_, '_> {
                 // variable whose constraint includes one of the
                 // allowed template literal placeholder types, infer from a
                 // literal type corresponding to the constraint.
-                if source.is_str_lit() && target.is_type_param() {
+                if source.is_str_lit() && (target.is_type_param() || target.is_infer()) {
                     // TODO: Implement logic
                     error!("unimplemented: infer_to_tpl_lit_type");
                 }
