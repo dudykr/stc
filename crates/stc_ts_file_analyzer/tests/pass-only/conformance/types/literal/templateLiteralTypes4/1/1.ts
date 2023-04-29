@@ -5,7 +5,7 @@
 
 // Use constrained `infer` in template literal to get ordinal indices as numbers:
 type IndexFor<S extends string> = S extends `${infer N extends number}` ? N : never;
-type IndicesOf<T> = IndexFor<Extract<keyof T, string>>; // ordinal indices as number literals
+type IndicesOf = IndexFor<Extract<keyof TDef, string>>; // ordinal indices as number literals
 
 interface FieldDefinition {
     readonly name: string;
@@ -20,7 +20,7 @@ type FieldType<T extends FieldDefinition["type"]> =
 // Default members
 interface TypedObjectMembers {
     // get/set a field by index
-    getIndex<I extends IndicesOf<TDef>>(index: I): FieldType<Extract<TDef[I], FieldDefinition>["type"]>;
+    getIndex<I extends IndicesOf>(index: I): FieldType<Extract<TDef[I], FieldDefinition>["type"]>;
 }
 
 type TypedObject =
