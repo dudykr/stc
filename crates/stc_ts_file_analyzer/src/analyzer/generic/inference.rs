@@ -14,8 +14,8 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Readonly, Ref,
-    TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, InferType, Interface, KeywordType, KeywordTypeMetadata, LitType,
+    Readonly, Ref, TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
@@ -529,6 +529,30 @@ impl Analyzer<'_, '_> {
                 // allowed template literal placeholder types, infer from a
                 // literal type corresponding to the constraint.
                 if source.is_str_lit() && (target.is_type_param() || target.is_infer()) {
+                    if let Type::Infer(InferType {
+                        type_param:
+                            TypeParam {
+                                constraint: Some(constraint),
+                                ..
+                            },
+                        ..
+                    }) = target.normalize()
+                    {
+                        if !constraint.is_any() {
+                            //
+                            let constraint_types = constraint.iter_union().collect_vec();
+
+                            // If the constraint contains `string`, we don't need to look for a more
+                            // preferred type
+                            if constraint_types.iter().all(|ty| !ty.is_str()) {
+                                let src_str = match source.normalize() {
+                                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
+                                    _ => unreachable!(),
+                                };
+                            }
+                        }
+                    }
+
                     // TODO: Implement logic
                     error!("unimplemented: infer_to_tpl_lit_type");
                 }
