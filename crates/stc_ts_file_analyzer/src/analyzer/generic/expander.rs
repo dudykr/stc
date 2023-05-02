@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use fxhash::FxHashMap;
 use rnode::FoldWith;
 use stc_ts_errors::debug::dump_type_as_string;
@@ -6,8 +8,8 @@ use stc_ts_generics::{
     ExpandGenericOpts,
 };
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Id, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
-use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
+use stc_ts_types::{Id, Index, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -130,6 +132,11 @@ impl Analyzer<'_, '_> {
             None
         };
 
+        let _stack = match stack::track(span) {
+            Ok(v) => v,
+            Err(_) => return None,
+        };
+
         let child = child.normalize();
         let parent = parent.normalize();
 
@@ -155,11 +162,10 @@ impl Analyzer<'_, '_> {
                 return Some(v);
             }
         }
-
         match child {
             Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) | Type::Conditional(..) => return None,
             Type::Ref(..) => {
-                let child = self
+                let mut child = self
                     .expand(
                         child.span(),
                         child.clone(),
@@ -174,8 +180,10 @@ impl Analyzer<'_, '_> {
                     )
                     .unwrap()
                     .freezed();
-                if let Type::Ref(..) = child.normalize() {
-                    return None;
+                if child.is_ref_type() {
+                    if let Ok(ty) = self.normalize(Some(child.span()), Cow::Borrowed(&child), Default::default()) {
+                        child = ty.into_owned();
+                    }
                 }
 
                 return self.extends(span, &child, parent, opts);
@@ -232,6 +240,12 @@ impl Analyzer<'_, '_> {
                 parent.freeze();
 
                 return self.extends(span, child, &parent, opts);
+            }
+            Type::Index(Index { ty, .. }) if child.is_index() => {
+                if ty.is_any() {
+                    return Some(true);
+                } else {
+                }
             }
             _ => {}
         }

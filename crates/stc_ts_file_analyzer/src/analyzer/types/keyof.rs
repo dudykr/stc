@@ -2,13 +2,16 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{
+    debug::{force_dump_type_as_string, print_backtrace},
+    DebugExt, ErrorKind,
+};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref,
     Type, TypeElement, Union,
 };
-use stc_utils::{cache::Freeze, ext::TypeVecExt, try_cache};
+use stc_utils::{cache::Freeze, ext::TypeVecExt, stack, try_cache};
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -44,11 +47,16 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
-
         if !self.config.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
         }
-
+        let _stack = match stack::track(span) {
+            Ok(v) => v,
+            Err(err) => {
+                print_backtrace();
+                return Err(err.into());
+            }
+        };
         let ty = (|| -> VResult<_> {
             let mut ty = self
                 .normalize(
@@ -64,8 +72,8 @@ impl Analyzer<'_, '_> {
             if matches!(ty.normalize(), Type::TypeLit(..)) {
                 ty.freeze()
             }
-
             match ty.normalize() {
+                ty @ Type::Ref(..) => return self.keyof(span, ty),
                 Type::Lit(ty) => {
                     return self
                         .keyof(

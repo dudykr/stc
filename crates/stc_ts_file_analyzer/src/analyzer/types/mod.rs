@@ -109,9 +109,6 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let actual_span = span.unwrap_or_else(|| ty.span());
-        if !self.config.is_builtin {
-            debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
-        }
 
         match ty.normalize() {
             Type::Lit(..)
