@@ -35,7 +35,7 @@ use super::{
     expr::{AccessPropertyOpts, TypeOfMode},
 };
 use crate::{
-    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
+    analyzer::{assign::AssignOpts, pat::PatMode, scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_builtin_with_single_arg, RemoveTypes},
     VResult,
 };
@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
                 if let Some(tp) = &type_param.constraint {
                     if matches!(self.extends(span, param, tp, Default::default()), Some(false)) {
-                        if !param.span().is_dummy() {
+                        if !param.span().is_dummy() && !param.is_type_param() {
                             self.storage.report(
                                 ErrorKind::NotSatisfyConstraint {
                                     span: param.span(),

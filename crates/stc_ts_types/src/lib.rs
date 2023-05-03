@@ -669,7 +669,7 @@ pub struct IndexedAccessType {
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(IndexedAccessType, [u8; 48]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize, Debug)]
 pub struct Ref {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -693,17 +693,17 @@ fn write_entity_name(f: &mut Formatter<'_>, name: &RTsEntityName) -> Result<(), 
     }
 }
 
-impl Debug for Ref {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        write_entity_name(f, &self.type_name)?;
+// impl Debug for Ref {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+//         write_entity_name(f, &self.type_name)?;
 
-        if let Some(type_args) = &self.type_args {
-            write!(f, "{:?}", type_args)?
-        }
+//         if let Some(type_args) = &self.type_args {
+//             write!(f, "{:?}", type_args)?
+//         }
 
-        Ok(())
-    }
-}
+//         Ok(())
+//     }
+// }
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct InferType {
@@ -1518,7 +1518,7 @@ impl Intersection {
 }
 
 /// A type parameter
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize, Debug)]
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
@@ -1529,13 +1529,13 @@ pub struct TypeParam {
     pub tracker: Tracker<"TypeParam">,
 }
 
-impl Debug for TypeParam {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)?;
+// impl Debug for TypeParam {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.name)?;
 
-        Ok(())
-    }
-}
+//         Ok(())
+//     }
+// }
 
 /// FooEnum.A
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]

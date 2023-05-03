@@ -426,7 +426,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         );
-
+        dbg!(&res);
         match res {
             Ok(()) => Some(true),
             _ => Some(false),
