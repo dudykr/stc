@@ -1,23 +1,6 @@
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = instanceof  ((A | B) & (C | D));
-  | rhs = (A#1 & B#1);
-  | lhs (normalized) = ((A#1 | B#1) & (C#1 | D#1));
-  | rhs (normalized) = (A#1 & B#1); (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign to an element of an intersection type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1353:26)
-  | [33mcontext[0m:
-  | lhs = (C#1 | D#1);
-  | rhs = (A#1 & B#1);
-  | lhs (normalized) = (C#1 | D#1);
-  | rhs (normalized) = (A#1 & B#1); (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a normalized intersection type to another type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1526:30)
-  | [33mcontext[0m:
-  | lhs = (C#1 | D#1);
-  | rhs = (A#1 & B#1);
-  | lhs (normalized) = (C#1 | D#1);
-  | rhs (normalized) = (A#1 & B#1); (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | SimpleAssignFailed {
+  x SimpleAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             188,
@@ -39,19 +22,6 @@ TS2322
   |                 ctxt: #1,
   |             },
   |             cause: [
-  |                 [33mcontext[0m: tried to assign an element of an intersection type to another type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1547:26)
-  |                 [33mcontext[0m:
-  |                 lhs = (C#1 | D#1);
-  |                 rhs = A#1;
-  |                 Member as {
-  |                     a: string;
-  |                 };
-  |                 lhs (normalized) = (C#1 | D#1);
-  |                 rhs (normalized) = A#1;
-  |                 Member as {
-  |                     a: string;
-  |                 }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to a union type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1962:67)
   |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
@@ -63,26 +33,6 @@ TS2322
   |                         ctxt: #1,
   |                     },
   |                     errors: [
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
-  |                         [33mcontext[0m:
-  |                         lhs = C#1;
-  |                         Member as {
-  |                             c: string;
-  |                         };
-  |                         rhs = A#1;
-  |                         Member as {
-  |                             a: string;
-  |                         };
-  |                         lhs (normalized) = C#1;
-  |                         Member as {
-  |                             c: string;
-  |                         };
-  |                         rhs (normalized) = A#1;
-  |                         Member as {
-  |                             a: string;
-  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
-  |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
   |                                 lo: BytePos(
@@ -110,26 +60,6 @@ TS2322
   |                                 },
   |                             ],
   |                         },
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
-  |                         [33mcontext[0m:
-  |                         lhs = D#1;
-  |                         Member as {
-  |                             d: string;
-  |                         };
-  |                         rhs = A#1;
-  |                         Member as {
-  |                             a: string;
-  |                         };
-  |                         lhs (normalized) = D#1;
-  |                         Member as {
-  |                             d: string;
-  |                         };
-  |                         rhs (normalized) = A#1;
-  |                         Member as {
-  |                             a: string;
-  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
-  |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
   |                                 lo: BytePos(
@@ -159,19 +89,6 @@ TS2322
   |                         },
   |                     ],
   |                 },
-  |                 [33mcontext[0m: tried to assign an element of an intersection type to another type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1547:26)
-  |                 [33mcontext[0m:
-  |                 lhs = (C#1 | D#1);
-  |                 rhs = B#1;
-  |                 Member as {
-  |                     b: string;
-  |                 };
-  |                 lhs (normalized) = (C#1 | D#1);
-  |                 rhs (normalized) = B#1;
-  |                 Member as {
-  |                     b: string;
-  |                 }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                 [33mcontext[0m: tried to assign a type to a union type (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1962:67)
   |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
@@ -183,26 +100,6 @@ TS2322
   |                         ctxt: #1,
   |                     },
   |                     errors: [
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
-  |                         [33mcontext[0m:
-  |                         lhs = C#1;
-  |                         Member as {
-  |                             c: string;
-  |                         };
-  |                         rhs = B#1;
-  |                         Member as {
-  |                             b: string;
-  |                         };
-  |                         lhs (normalized) = C#1;
-  |                         Member as {
-  |                             c: string;
-  |                         };
-  |                         rhs (normalized) = B#1;
-  |                         Member as {
-  |                             b: string;
-  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
-  |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
   |                                 lo: BytePos(
@@ -230,26 +127,6 @@ TS2322
   |                                 },
   |                             ],
   |                         },
-  |                         [33mcontext[0m: tried to assign a type to a union (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1925:26)
-  |                         [33mcontext[0m:
-  |                         lhs = D#1;
-  |                         Member as {
-  |                             d: string;
-  |                         };
-  |                         rhs = B#1;
-  |                         Member as {
-  |                             b: string;
-  |                         };
-  |                         lhs (normalized) = D#1;
-  |                         Member as {
-  |                             d: string;
-  |                         };
-  |                         rhs (normalized) = B#1;
-  |                         Member as {
-  |                             b: string;
-  |                         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |                         [33mcontext[0m: tried to assign a type to an interface (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2232:18)
-  |                         [33mcontext[0m: tried to assign to type elements by converting rhs to a type literal (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:255:30)
   |                         Errors {
   |                             span: Span {
   |                                 lo: BytePos(

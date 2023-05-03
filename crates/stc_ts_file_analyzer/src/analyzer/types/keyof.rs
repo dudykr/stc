@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RIdent, RNumber, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RIdent, RNumber, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
@@ -272,7 +272,17 @@ impl Analyzer<'_, '_> {
                                 }),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }))
+                            }));
+                            types.push(Type::Lit(LitType {
+                                span,
+                                lit: RTsLit::Str(RStr {
+                                    span,
+                                    value: idx.to_string().into(),
+                                    raw: None,
+                                }),
+                                metadata: Default::default(),
+                                tracker: Default::default(),
+                            }));
                         }
                     }
 

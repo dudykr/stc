@@ -1,13 +1,6 @@
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = 1;
-  | lhs (normalized) = void;
-  | rhs (normalized) = 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): 1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             14,
@@ -27,14 +20,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = "";
-  | lhs (normalized) = void;
-  | rhs (normalized) = ""; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): ""; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             21,
@@ -54,14 +40,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = true;
-  | lhs (normalized) = void;
-  | rhs (normalized) = true; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): true; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             29,
@@ -80,14 +59,7 @@ TS2322
    `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = E#1;
-  | lhs (normalized) = void;
-  | rhs (normalized) = E#1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): E#1; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             56,
@@ -107,14 +79,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = E#1.A;
-  | lhs (normalized) = void;
-  | rhs (normalized) = E#1.A; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): E#1.A; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             63,
@@ -133,38 +98,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = C#1;
-  | 
-  | Class(Class { span: Span { lo: BytePos(114), hi: BytePos(115), ctxt: #1 }, def: arc: ClassDef { span: Span { lo: BytePos(73), hi: BytePos(99), ctxt: #0 }, is_abstract: false, name: Some(C#1),
-  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(85), hi: BytePos(97), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
-  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
-  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
-  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
-  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
-  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } })
-  | lhs (normalized) = void;
-  | rhs (normalized) = C#1;
-  | 
-  | Class(Class { span: Span { lo: BytePos(114), hi: BytePos(115), ctxt: #1 }, def: arc: ClassDef { span: Span { lo: BytePos(73), hi: BytePos(99), ctxt: #0 }, is_abstract: false, name: Some(C#1),
-  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(85), hi: BytePos(97), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
-  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
-  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
-  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
-  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
-  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): C#1;
-  | 
-  | Class(Class { span: Span { lo: BytePos(114), hi: BytePos(115), ctxt: #1 }, def: arc: ClassDef { span: Span { lo: BytePos(73), hi: BytePos(99), ctxt: #0 }, is_abstract: false, name: Some(C#1),
-  | super_class: None, body: [Property(ClassProperty { span: Span { lo: BytePos(85), hi: BytePos(97), ctxt: #0 }, key: foo, value: Some(Keyword(string)), is_static: false, accessibility: None,
-  | is_abstract: false, is_optional: false, readonly: false, definite: false, accessor: Accessor { getter: false, setter: false } })], type_params: None, implements: [], metadata: ClassDefMetadata
-  | { common: CommonTypeMetadata { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification:
-  | false, resolved_from_var: false, prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }, metadata: ClassMetadata { common: CommonTypeMetadata
-  | { implicit: false, infected_by_this_in_object_literal: false, prevent_converting_to_children: false, contains_infer_type: false, prevent_complex_simplification: false, resolved_from_var: true,
-  | prevent_generalization: false, destructure_key: DestructureId(0) } }, tracker: Tracker { _priv: () } }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             110,
@@ -183,23 +117,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = I#1;
-  | Member as {
-  |     foo: string;
-  | };
-  | lhs (normalized) = void;
-  | rhs (normalized) = I#1;
-  | Member as {
-  |     foo: string;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): I#1;
-  | Member as {
-  |     foo: string;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             159,
@@ -218,20 +136,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = {
-  |     f(): void;
-  | };
-  | lhs (normalized) = void;
-  | rhs (normalized) = {
-  |     f(): void;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): {
-  |     f(): void;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             167,
@@ -250,26 +155,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = Module(module {
-  |   types:
-  |   vars:
-  |     x
-  | })
-  | lhs (normalized) = void;
-  | rhs (normalized) = Module(module {
-  |   types:
-  |   vars:
-  |     x
-  | }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): Module(module {
-  |   types:
-  |   vars:
-  |     x
-  | }) (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             217,
@@ -288,14 +174,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = T#4#0;
-  | lhs (normalized) = void;
-  | rhs (normalized) = T#4#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): T#4#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             249,
@@ -315,14 +194,7 @@ TS2322
     `----
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = void;
-  | rhs = <T#4#0>(a: T#4) => void;
-  | lhs (normalized) = void;
-  | rhs (normalized) = <T#4#0>(a: T#4) => void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: LHS (final): void;
-  | RHS (final): <T#4#0>(a: T#4) => void; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1126:17)
-  | AssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             258,

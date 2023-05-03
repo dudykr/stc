@@ -1,56 +1,6 @@
 TS2322
 
-  x [33mcontext[0m:
-  | lhs = instanceof  <T#3#0, U#3#0>(x: {
-  |     foo: T#3;
-  | }, y: {
-  |     foo: U#3;
-  |     bar: U;
-  | }) => Base;
-  | rhs = <T#2#0>(x: {
-  |     foo: T#2;
-  | }, y: {
-  |     foo: T;
-  |     bar: T;
-  | }) => Base;
-  | lhs (normalized) = <T#3#0, U#3#0>(x: {
-  |     foo: T#3;
-  | }, y: {
-  |     foo: U#3;
-  |     bar: U;
-  | }) => Base;
-  | rhs (normalized) = <T#2#0>(x: {
-  |     foo: T#2;
-  | }, y: {
-  |     foo: T;
-  |     bar: T;
-  | }) => Base; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign to a function type:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2378:77)
-  | [33mcontext[0m: tried to assign a function to another one (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:438:18)
-  | [33mcontext[0m: tried to assign to an expanded callable
-  | Map:
-  | T#2:  (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:346:22)
-  | [33mcontext[0m: tried to assign parameters of a function to parameters of another function (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:377:14)
-  | [33mcontext[0m: tried to assign the type of a parameter to another (at crates/stc_ts_file_analyzer/src/analyzer/assign/function.rs:776:26)
-  | [33mcontext[0m:
-  | lhs = {
-  |     foo: T#3#0;
-  |     bar: T;
-  | };
-  | rhs = {
-  |     foo: U#3#0;
-  |     bar: U;
-  | };
-  | lhs (normalized) = {
-  |     foo: T#3#0;
-  |     bar: T;
-  | };
-  | rhs (normalized) = {
-  |     foo: U#3#0;
-  |     bar: U;
-  | }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  | [33mcontext[0m: tried to assign a type to type elements (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:2351:22)
-  | ObjectAssignFailed {
+  x ObjectAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             228,
@@ -61,23 +11,6 @@ TS2322
   |         ctxt: #0,
   |     },
   |     errors: [
-  |         [33mcontext[0m: tried assignment of a type literal to a type literals
-  |         LHS={
-  |             foo: T#3#0;
-  |             bar: T;
-  |         };
-  |         RHS={
-  |             foo: U#3#0;
-  |             bar: U;
-  |         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:199:22)
-  |         [33mcontext[0m: tried to assign to 0th element: Some(foo) (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1049:18)
-  |         [33mcontext[0m:
-  |         lhs = T#3#0;
-  |         rhs = U#3#0;
-  |         lhs (normalized) = T#3#0;
-  |         rhs (normalized) = U#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |         [33mcontext[0m: LHS (final): T#3#0;
-  |         RHS (final): U#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1657:29)
   |         AssignFailed {
   |             span: Span {
   |                 lo: BytePos(
@@ -90,23 +23,6 @@ TS2322
   |             },
   |             cause: [],
   |         },
-  |         [33mcontext[0m: tried assignment of a type literal to a type literals
-  |         LHS={
-  |             foo: T#3#0;
-  |             bar: T;
-  |         };
-  |         RHS={
-  |             foo: U#3#0;
-  |             bar: U;
-  |         }; (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:199:22)
-  |         [33mcontext[0m: tried to assign to 1th element: Some(bar) (at crates/stc_ts_file_analyzer/src/analyzer/assign/type_el.rs:1049:18)
-  |         [33mcontext[0m:
-  |         lhs = T#3#0;
-  |         rhs = U#3#0;
-  |         lhs (normalized) = T#3#0;
-  |         rhs (normalized) = U#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:565:73)
-  |         [33mcontext[0m: LHS (final): T#3#0;
-  |         RHS (final): U#3#0; (at crates/stc_ts_file_analyzer/src/analyzer/assign/mod.rs:1657:29)
   |         AssignFailed {
   |             span: Span {
   |                 lo: BytePos(

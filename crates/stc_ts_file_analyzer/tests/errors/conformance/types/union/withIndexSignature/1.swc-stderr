@@ -1,13 +1,6 @@
 TS2540
 
-  x [33mcontext[0m: tried to access property of an object to calculate type of a member expression (at crates/stc_ts_file_analyzer/src/analyzer/expr/mod.rs:4280:14)
-  | [33mcontext[0m: tried to access property of an object (({
-  |     foo: number;
-  | } | {
-  |     readonly [s: string]: string;
-  | });, id_ctx = Var)
-  | Prop=foo (at crates/stc_ts_file_analyzer/src/analyzer/expr/mod.rs:1347:23)
-  | ReadOnly {
+  x ReadOnly {
   |     span: Span {
   |         lo: BytePos(
   |             100,
