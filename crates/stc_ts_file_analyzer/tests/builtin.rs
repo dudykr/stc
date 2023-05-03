@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{BuiltIn, Env, ModuleConfig, StableEnv};
 use stc_ts_file_analyzer::env::BuiltInGen;
@@ -32,7 +30,7 @@ pub fn builtin() {
             Default::default(),
             swc_ecma_ast::EsVersion::Es2020,
             ModuleConfig::None,
-            Arc::new(data),
+            data,
         );
 
         {
@@ -77,7 +75,7 @@ pub fn intl() {
             Default::default(),
             swc_ecma_ast::EsVersion::Es2020,
             ModuleConfig::None,
-            Arc::new(data),
+            data,
         );
 
         {

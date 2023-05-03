@@ -775,11 +775,38 @@ impl Analyzer<'_, '_> {
         }
 
         let v = self.data.unmergable_type_decls.entry(id.clone()).or_default();
-        v.push(span);
+        v.push((span, self.scope.depth()));
+
+        if v.len() < 2 {
+            return;
+        }
+
+        let v = v
+            .iter()
+            .filter(|(x_span, depth)| {
+                if *depth == self.scope.depth() {
+                    if *depth == 0 {
+                        true
+                    } else if let Some(x) = self.scope.types.get(&id) {
+                        x.span() != span
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            })
+            .collect::<Vec<_>>();
 
         if v.len() >= 2 {
-            for span in v.iter().copied() {
-                self.storage.report(ErrorKind::DuplicateName { span, name: id.clone() }.into())
+            for (span, _) in v.iter().copied() {
+                self.storage.report(
+                    ErrorKind::DuplicateName {
+                        span: *span,
+                        name: id.clone(),
+                    }
+                    .into(),
+                )
             }
         }
     }

@@ -1,0 +1,213 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             14,
+  |         ),
+  |         hi: BytePos(
+  |             15,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:1:1]
+ 1 | var x: void;
+ 2 | x = 1;
+   : ^
+ 3 | x = "";
+   `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             21,
+  |         ),
+  |         hi: BytePos(
+  |             22,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:2:1]
+ 2 | x = 1;
+ 3 | x = "";
+   : ^
+ 4 | x = true;
+   `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             29,
+  |         ),
+  |         hi: BytePos(
+  |             30,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:3:1]
+ 3 | x = "";
+ 4 | x = true;
+   : ^
+   `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             56,
+  |         ),
+  |         hi: BytePos(
+  |             57,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:8:1]
+  8 | }
+  9 | x = E;
+    : ^
+ 10 | x = E.A;
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             63,
+  |         ),
+  |         hi: BytePos(
+  |             64,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:9:1]
+  9 | x = E;
+ 10 | x = E.A;
+    : ^
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             110,
+  |         ),
+  |         hi: BytePos(
+  |             111,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:15:1]
+ 15 | var a: C;
+ 16 | x = a;
+    : ^
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             159,
+  |         ),
+  |         hi: BytePos(
+  |             160,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:21:1]
+ 21 | var b: I;
+ 22 | x = b;
+    : ^
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             167,
+  |         ),
+  |         hi: BytePos(
+  |             168,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:23:1]
+ 23 | 
+ 24 | x = { f() {} };
+    : ^
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             217,
+  |         ),
+  |         hi: BytePos(
+  |             218,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:28:1]
+ 28 | }
+ 29 | x = M;
+    : ^
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             249,
+  |         ),
+  |         hi: BytePos(
+  |             250,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:31:1]
+ 31 | function f<T>(a: T) {
+ 32 |   x = a;
+    :   ^
+ 33 | }
+    `----
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             258,
+  |         ),
+  |         hi: BytePos(
+  |             259,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidValues.ts:33:1]
+ 33 | }
+ 34 | x = f;
+    : ^
+    `----

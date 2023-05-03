@@ -194,3 +194,52 @@ fn parse(content: &str) -> TsNamespaceDecl {
         })),
     }
 }
+
+impl From<&'_ tsconfig::Lib> for Lib {
+    fn from(v: &'_ tsconfig::Lib) -> Self {
+        match v {
+            tsconfig::Lib::Es5 => Self::Es5,
+            tsconfig::Lib::Es2015 => Self::Es2015,
+            tsconfig::Lib::Es6 => Self::Es2015,
+            tsconfig::Lib::Es2016 => Self::Es2016,
+            tsconfig::Lib::Es7 => Self::Es2016,
+            tsconfig::Lib::Es2017 => Self::Es2017,
+            tsconfig::Lib::Es2018 => Self::Es2018,
+            tsconfig::Lib::Es2019 => Self::Es2019,
+            tsconfig::Lib::Es2020 => Self::Es2020,
+            tsconfig::Lib::EsNext => Self::Esnext,
+            tsconfig::Lib::Dom => Self::Dom,
+            tsconfig::Lib::WebWorker => Self::WebworkerGenerated,
+            tsconfig::Lib::ScriptHost => Self::Scripthost,
+            tsconfig::Lib::DomIterable => Self::DomIterable,
+            tsconfig::Lib::Es2015Core => Self::Es2015Core,
+            tsconfig::Lib::Es2015Generator => Self::Es2015Generator,
+            tsconfig::Lib::Es2015Iterable => Self::Es2015Iterable,
+            tsconfig::Lib::Es2015Promise => Self::Es2015Promise,
+            tsconfig::Lib::Es2015Proxy => Self::Es2015Proxy,
+            tsconfig::Lib::Es2015Reflect => Self::Es2015Reflect,
+            tsconfig::Lib::Es2015Symbol => Self::Es2015Symbol,
+            tsconfig::Lib::Es2015SymbolWellKnown => Self::Es2015SymbolWellknown,
+            tsconfig::Lib::Es2016ArrayInclude => Self::Es2016ArrayInclude,
+            tsconfig::Lib::Es2017Object => Self::Es2017Object,
+            tsconfig::Lib::Es2017Intl => Self::Es2017Intl,
+            tsconfig::Lib::Es2017SharedMemory => Self::Es2017Sharedmemory,
+            tsconfig::Lib::Es2017String => Self::Es2017String,
+            tsconfig::Lib::Es2017TypedArrays => Self::Es2017Typedarrays,
+            tsconfig::Lib::Es2018Intl => Self::Es2018Intl,
+            tsconfig::Lib::Es2018Promise => Self::Es2018Promise,
+            tsconfig::Lib::Es2018RegExp => Self::Es2018Regexp,
+            tsconfig::Lib::Es2019Array => Self::Es2019Array,
+            tsconfig::Lib::Es2019Object => Self::Es2019Object,
+            tsconfig::Lib::Es2019String => Self::Es2019String,
+            tsconfig::Lib::Es2019Symbol => Self::Es2019Symbol,
+            tsconfig::Lib::Es2020String => Self::Es2020String,
+            tsconfig::Lib::Es2020SymbolWellknown => Self::Es2020SymbolWellknown,
+            tsconfig::Lib::EsNextAsyncIterable => Self::Es2018Asynciterable,
+            tsconfig::Lib::EsNextArray => Self::Es2023Array,
+            tsconfig::Lib::EsNextIntl => Self::EsnextIntl,
+            tsconfig::Lib::EsNextSymbol => Self::Es2019Symbol,
+            tsconfig::Lib::Other(s) => s.parse().expect("failed to parse lib"),
+        }
+    }
+}

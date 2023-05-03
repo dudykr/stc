@@ -1,5 +1,5 @@
 //! Handles new expressions and call expressions.
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -16,11 +16,12 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_storage::ErrorStore;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
-    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
-    StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Id, IdCtx, IndexedAccessType,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref, StaticThis, Symbol,
+    TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
@@ -2411,7 +2412,7 @@ impl Analyzer<'_, '_> {
         let has_spread = args.iter().any(|arg| arg.spread.is_some());
         if has_spread {
             // TODO: current implementation far from perfect
-            match self.validate_arg_count_spread(args, arg_types, params, min_param) {
+            match self.validate_arg_count_spread(span, args, arg_types, params, min_param, max_param) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err),
             }
@@ -2436,7 +2437,14 @@ impl Analyzer<'_, '_> {
             }
 
             if max_param.is_none() {
-                return Err(ErrorKind::ExpectedAtLeastNArgsButGotM { span, min: min_param }.into());
+                if let RPat::Ident(b_id) = &params[args.len()].pat {
+                    return Err(ErrorKind::ExpectedAtLeastNArgsButGotM {
+                        span,
+                        min: min_param,
+                        param_name: b_id.clone().id.sym,
+                    }
+                    .into());
+                }
             }
 
             // function foo(a) {}
@@ -2461,10 +2469,12 @@ impl Analyzer<'_, '_> {
 
     fn validate_arg_count_spread(
         &mut self,
+        span: Span,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         params: &[FnParam],
         min_param: usize,
+        max_param: Option<usize>,
     ) -> VResult<()> {
         let mut real_idx = 0;
         let has_rest_param = !params.is_empty() && matches!(params[params.len() - 1].pat, RPat::Rest(_));
@@ -2489,6 +2499,38 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        if real_idx < min_param {
+            if max_param.is_some() {
+                return Err(ErrorKind::ExpectedNArgsButGotM {
+                    span,
+                    min: min_param,
+                    max: max_param,
+                }
+                .into());
+            } else {
+                if let RPat::Ident(b_id) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedAtLeastNArgsButGotM {
+                        span,
+                        min: min_param,
+                        param_name: b_id.clone().id.sym,
+                    }
+                    .into());
+                }
+
+                // This is only useful when the rest parameter isn't last in the function
+                // function fn(a: string, ...b: string[], c: string) (this is also an error)
+                if let RPat::Rest(r_pat) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedNArgsButGotM {
+                        span,
+                        min: min_param,
+                        max: max_param,
+                    }
+                    .into());
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -2624,45 +2666,92 @@ impl Analyzer<'_, '_> {
         ret_ty.freeze();
 
         let is_type_arg_count_fine = {
-            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+            let type_arg_check_res;
+
+            if let ReEvalMode::New(..) = expr {
+                if let Type::Class(cls) = ret_ty.normalize() {
+                    type_arg_check_res = self.validate_type_args_count(span, cls.def.type_params.as_ref().map(|v| &*v.params), type_args);
+                } else {
+                    type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+                }
+            } else {
+                type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+            }
 
             type_arg_check_res.report(&mut self.storage) == Some(())
         };
 
-        let passed_arity_checks = is_type_arg_count_fine
-            && self
-                .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
-                .report(&mut self.storage)
-                .is_some();
+        let passed_arity_checks;
+        let mut is_overload = false;
+
+        if let Type::Class(cls) = ret_ty.normalize() {
+            let constructors = &cls.def.body.iter().filter(|m| m.is_constructor()).collect::<Vec<&ClassMember>>();
+
+            if constructors.len() > 1 {
+                is_overload = true;
+
+                let valid_arity_constructors = constructors
+                    .iter()
+                    .filter_map(|c| {
+                        if let ClassMember::Constructor(constr) = c {
+                            if self
+                                .validate_arg_count(constr.span, &constr.params, args, arg_types, spread_arg_types)
+                                .is_ok()
+                            {
+                                Some(constr)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<&ConstructorSignature>>();
+
+                passed_arity_checks = is_type_arg_count_fine && !valid_arity_constructors.is_empty();
+
+                if !passed_arity_checks && is_type_arg_count_fine {
+                    self.validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                        .report(&mut self.storage);
+                } else {
+                    let errors = valid_arity_constructors
+                        .clone()
+                        .into_iter()
+                        .filter_map(|cn| {
+                            if let Err(e) = self.validate_arg_types(&cn.params, spread_arg_types, false, true) {
+                                Some(e)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<stc_ts_errors::Error>>();
+
+                    if errors.len() >= valid_arity_constructors.len() {
+                        if valid_arity_constructors.len() > 1 {
+                            self.storage.report(ErrorKind::NoMatchingOverload { span }.into());
+                        } else {
+                            self.storage.report(errors.last().unwrap().clone());
+                        }
+                    }
+                }
+            } else {
+                passed_arity_checks = is_type_arg_count_fine
+                    && self
+                        .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                        .report(&mut self.storage)
+                        .is_some();
+            }
+        } else {
+            passed_arity_checks = is_type_arg_count_fine
+                && self
+                    .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                    .report(&mut self.storage)
+                    .is_some();
+        }
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
 
         if let Some(type_params) = type_params {
-            // Type parameters should default to `unknown`.
-            let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
-
-            if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
-                for at in spread_arg_types {
-                    if let Type::Function(Function {
-                        type_params: Some(type_params),
-                        ..
-                    }) = at.ty.normalize()
-                    {
-                        for tp in type_params.params.iter() {
-                            default_unknown_map.insert(
-                                tp.name.clone(),
-                                Type::Keyword(KeywordType {
-                                    span: tp.span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            );
-                        }
-                    }
-                }
-            }
-
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
@@ -2899,7 +2988,9 @@ impl Analyzer<'_, '_> {
             }
 
             if passed_arity_checks {
-                self.validate_arg_types(&expanded_param_types, spread_arg_types, true);
+                if !is_overload {
+                    self.validate_arg_types(&expanded_param_types, spread_arg_types, true, false)?;
+                }
             }
 
             if self.ctx.is_instantiating_class {
@@ -2961,12 +3052,6 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, after adding type params", &ty);
 
-            if type_ann.is_none() {
-                info!("Defaulting type parameters to unknown:\n{}", dump_type_map(&default_unknown_map));
-
-                ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
-            }
-
             ty.reposition(span);
             ty.freeze();
 
@@ -2977,8 +3062,8 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        if passed_arity_checks {
-            self.validate_arg_types(&params, spread_arg_types, type_params.is_some());
+        if passed_arity_checks && !is_overload {
+            self.validate_arg_types(&params, spread_arg_types, type_params.is_some(), false)?;
         }
 
         print_type("Return", &ret_ty);
@@ -2998,14 +3083,25 @@ impl Analyzer<'_, '_> {
         Ok(ret_ty)
     }
 
-    fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread], is_generic: bool) {
+    fn validate_arg_types(
+        &mut self,
+        params: &[FnParam],
+        spread_arg_types: &[TypeOrSpread],
+        is_generic: bool,
+        is_overload: bool,
+    ) -> VResult<()> {
         info!("[exprs] Validating arguments");
 
         macro_rules! report_err {
             ($err:expr) => {{
-                self.storage.report($err.context("tried to validate an argument"));
+                if is_overload {
+                    return Err($err.into());
+                } else {
+                    self.storage.report($err.context("tried to validate an argument"));
+                }
+
                 if is_generic {
-                    return;
+                    return Ok(());
                 }
             }};
         }
@@ -3042,12 +3138,12 @@ impl Analyzer<'_, '_> {
                                     span: arg.span(),
                                     min: rest_idx - 1,
                                 });
-                                return;
+                                return Ok(());
                             }
 
                             _ => {
                                 report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() });
-                                return;
+                                return Ok(());
                             }
                         }
                     }
@@ -3082,7 +3178,7 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         Err(err) => {
                             report_err!(err);
-                            return;
+                            return Ok(());
                         }
                     }
                     .freezed();
@@ -3120,7 +3216,7 @@ impl Analyzer<'_, '_> {
                                     Ok(_) => {}
                                     Err(err) => {
                                         report_err!(err);
-                                        return;
+                                        return Ok(());
                                     }
                                 };
 
@@ -3158,7 +3254,7 @@ impl Analyzer<'_, '_> {
                                         Ok(_) => {}
                                         Err(err) => {
                                             report_err!(err);
-                                            return;
+                                            return Ok(());
                                         }
                                     };
                                 }
@@ -3201,7 +3297,7 @@ impl Analyzer<'_, '_> {
                                 })
                                 .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
                             report_err!(err);
-                            return;
+                            return Ok(());
                         }
                         _ => {
                             if let Ok(()) = self.assign_with_opts(
@@ -3232,7 +3328,7 @@ impl Analyzer<'_, '_> {
                         Err(err) => {
                             if let ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } = &*err {
                                 report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
-                                return;
+                                return Ok(());
                             }
                         }
                     }
@@ -3262,13 +3358,25 @@ impl Analyzer<'_, '_> {
                         .context("arg is spread");
                     if let Err(err) = res {
                         report_err!(err);
-                        return;
+                        return Ok(());
                     }
                 } else {
                     let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
+
+                    let mut p = &param.ty.clone();
+                    let binding = &box Type::unknown(param.ty.span(), Default::default());
+
+                    if let Type::Param(t) = param.ty.normalize() {
+                        if let Some(constr) = &t.constraint {
+                            p = constr;
+                        } else {
+                            p = binding;
+                        }
+                    }
+
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
-                        &param.ty,
+                        p,
                         &arg.ty,
                         AssignOpts {
                             span: arg.span(),
@@ -3323,11 +3431,12 @@ impl Analyzer<'_, '_> {
                         });
 
                         report_err!(err);
-                        return;
+                        return Ok(());
                     }
                 }
             }
         }
+        Ok(())
     }
 
     /// Note:
@@ -3526,8 +3635,8 @@ impl Analyzer<'_, '_> {
         type_params: Option<&[TypeParam]>,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<()> {
-        if let Some(type_params) = type_params {
-            if let Some(type_args) = type_args {
+        match (type_params, type_args) {
+            (Some(type_params), Some(type_args)) => {
                 // TODO(kdy1): Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
                     return Err(ErrorKind::TypeParameterCountMismatch {
@@ -3539,7 +3648,17 @@ impl Analyzer<'_, '_> {
                     .into());
                 }
             }
-        }
+            (None, Some(type_args)) => {
+                return Err(ErrorKind::TypeParameterCountMismatch {
+                    span,
+                    max: 0,
+                    min: 0,
+                    actual: type_args.params.len(),
+                }
+                .into());
+            }
+            _ => {}
+        };
 
         Ok(())
     }

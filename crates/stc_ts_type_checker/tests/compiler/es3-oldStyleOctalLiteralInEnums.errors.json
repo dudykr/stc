@@ -1,1 +1,1 @@
-[{"line":0,"column":0,"code":"TS5101"},{"filename":"tests/cases/compiler/es3-oldStyleOctalLiteralInEnums.ts","line":2,"column":7,"code":"TS8018"},{"filename":"tests/cases/compiler/es3-oldStyleOctalLiteralInEnums.ts","line":3,"column":7,"code":"TS8018"}]
+[{"line":0,"column":0,"code":"TS5107"},{"filename":"tests/cases/compiler/es3-oldStyleOctalLiteralInEnums.ts","line":2,"column":7,"code":"TS1121"},{"filename":"tests/cases/compiler/es3-oldStyleOctalLiteralInEnums.ts","line":3,"column":7,"code":"TS1121"}]

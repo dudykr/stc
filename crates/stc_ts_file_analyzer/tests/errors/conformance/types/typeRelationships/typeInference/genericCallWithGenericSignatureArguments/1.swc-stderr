@@ -1,0 +1,100 @@
+TS2304
+
+  x NoSuchVar {
+  |     span: Span {
+  |         lo: BytePos(
+  |             117,
+  |         ),
+  |         hi: BytePos(
+  |             118,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     name: x#1,
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+   :                ^
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   `----
+TS2345
+
+  x WrongArgType {
+  |     span: Span {
+  |         lo: BytePos(
+  |             169,
+  |         ),
+  |         hi: BytePos(
+  |             201,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     inner: AssignFailed {
+  |         span: Span {
+  |             lo: BytePos(
+  |                 169,
+  |             ),
+  |             hi: BytePos(
+  |                 201,
+  |             ),
+  |             ctxt: #0,
+  |         },
+  |         cause: [],
+  |     },
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:5:1]
+ 5 | 
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+   :                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   `----
+TS2304
+
+  x NoSuchVar {
+  |     span: Span {
+  |         lo: BytePos(
+  |             228,
+  |         ),
+  |         hi: BytePos(
+  |             229,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     name: x#1,
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   :                ^
+   `----
+TS2345
+
+  x WrongArgType {
+  |     span: Span {
+  |         lo: BytePos(
+  |             281,
+  |         ),
+  |         hi: BytePos(
+  |             314,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     inner: AssignFailed {
+  |         span: Span {
+  |             lo: BytePos(
+  |                 281,
+  |             ),
+  |             hi: BytePos(
+  |                 314,
+  |             ),
+  |             ctxt: #0,
+  |         },
+  |         cause: [],
+  |     },
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts:6:1]
+ 6 | var r11 = foo2(x, (a1: (y: string) => string) => (n: Object) => 1, (a2: (z: string) => string) => 2); // error
+ 7 | var r12 = foo2(x, (a1: (y: string) => boolean) => (n: Object) => 1, (a2: (z: string) => boolean) => 2); // error
+   :                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----

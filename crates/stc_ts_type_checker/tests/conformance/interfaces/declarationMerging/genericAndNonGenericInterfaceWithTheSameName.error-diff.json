@@ -1,13 +1,9 @@
 {
   "required_errors": {
-    "TS2428": 6
+    "TS2428": 2
   },
   "required_error_lines": {
     "TS2428": [
-      3,
-      7,
-      12,
-      16,
       34,
       40
     ]

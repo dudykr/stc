@@ -1,0 +1,65 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             181,
+  |         ),
+  |         hi: BytePos(
+  |             216,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     cause: [],
+  | }
+   ,-[$DIR/tests/errors/issues/0xxx/754/1.ts:6:1]
+ 6 | function some<T>() {
+ 7 |     let foo: ABC = {} as IntesrectionABC<T>;
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | }
+   `----
+TS2322
+
+  x MissingFields {
+  |     span: Span {
+  |         lo: BytePos(
+  |             181,
+  |         ),
+  |         hi: BytePos(
+  |             216,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     fields: [
+  |         d: Keyword(number),
+  |     ],
+  | }
+   ,-[$DIR/tests/errors/issues/0xxx/754/1.ts:6:1]
+ 6 | function some<T>() {
+ 7 |     let foo: ABC = {} as IntesrectionABC<T>;
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | }
+   `----
+TS2322
+
+  x MissingFields {
+  |     span: Span {
+  |         lo: BytePos(
+  |             181,
+  |         ),
+  |         hi: BytePos(
+  |             216,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     fields: [
+  |         a: Keyword(string),
+  |         d: Keyword(number),
+  |     ],
+  | }
+   ,-[$DIR/tests/errors/issues/0xxx/754/1.ts:6:1]
+ 6 | function some<T>() {
+ 7 |     let foo: ABC = {} as IntesrectionABC<T>;
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | }
+   `----

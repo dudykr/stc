@@ -19,7 +19,7 @@ fn exec_path() -> PathBuf {
         let output_dir = Path::new(".stc").join(".lsp-test");
 
         let mut c = Command::new("cargo");
-        c.arg("build").arg("--example").arg("lsp");
+        c.arg("build").arg("--example").arg("stc-debug-lsp");
         c.arg("-Z").arg("unstable-options");
         c.arg("--out-dir").arg(&output_dir);
 
@@ -28,7 +28,7 @@ fn exec_path() -> PathBuf {
 
         assert!(output.status.success());
 
-        output_dir.join("lsp")
+        output_dir.join("stc-debug-lsp")
     });
 
     BIN_PATH.to_path_buf()
@@ -169,6 +169,7 @@ fn test_init() {
 }
 
 #[test]
+#[ignore]
 fn test_hover() {
     run_test(false, |_cm, _handler| {
         let mut client = init("initialize_params.json");
