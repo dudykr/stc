@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             }
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
-
+                dbg!(&p, &prop, "123", &object_type);
                 match p {
                     TypeElement::Method(..)
                     | TypeElement::Property(PropertySignature {

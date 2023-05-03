@@ -518,7 +518,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> VResult<TypeElement> {
         let key = n.key.validate_with(self)?;
-        let computed = key.is_computed();
+        dbg!(&key);
+        let computed = key.is_computed() || key.is_normal();
 
         let type_ann = self
             .with_child(
@@ -540,7 +541,7 @@ impl Analyzer<'_, '_> {
             )
             .report(&mut self.storage)
             .flatten();
-
+        dbg!(&type_ann);
         Ok(PropertySignature {
             span: n.span(),
             accessibility: None,
