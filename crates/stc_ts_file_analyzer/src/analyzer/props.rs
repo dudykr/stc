@@ -517,8 +517,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> VResult<TypeElement> {
-        let key = n.key.validate_with(self)?;
-        let computed = key.is_computed();
+        let key: Key = n.key.validate_with(self)?;
 
         let type_ann = self
             .with_child(
@@ -540,6 +539,8 @@ impl Analyzer<'_, '_> {
             )
             .report(&mut self.storage)
             .flatten();
+
+        let computed = key.is_computed() | (matches!(type_ann, Some(Type::Lit(..))) && key.is_normal());
 
         Ok(PropertySignature {
             span: n.span(),
