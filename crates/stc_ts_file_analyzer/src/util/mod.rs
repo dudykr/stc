@@ -323,3 +323,15 @@ pub(crate) fn unwrap_builtin_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: 
 
     None
 }
+
+pub(crate) fn reduce_left<T, U, F>(array: Vec<T>, f: F, initial: U)
+where
+    F: FnMut(U, T, usize) -> U,
+{
+    let mut acc = initial;
+    for (idx, item) in array.into_iter().enumerate() {
+        acc = f(acc, item, idx);
+    }
+
+    acc
+}

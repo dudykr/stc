@@ -27,7 +27,7 @@ use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
     ty::TypeExt,
     type_facts::TypeFacts,
-    util::unwrap_builtin_with_single_arg,
+    util::{reduce_left, unwrap_builtin_with_single_arg},
     VResult,
 };
 
@@ -566,7 +566,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            let matching_type = reduce_left(constraint_types, |l, r| {}, Type::never(span, Default::default()));
+                            let matching_type = reduce_left(constraint_types, |l, r, _| {}, Type::never(span, Default::default()));
 
                             if !matching_type.is_never() {
                                 self.infer_from_types(span, inferred, &matching_type, target, opts)?;
