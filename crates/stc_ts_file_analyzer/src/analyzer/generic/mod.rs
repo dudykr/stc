@@ -35,7 +35,7 @@ use super::{
     expr::{AccessPropertyOpts, TypeOfMode},
 };
 use crate::{
-    analyzer::{assign::AssignOpts, pat::PatMode, scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
+    analyzer::{scope::ExpandOpts, Analyzer, Ctx, NormalizeTypeOpts},
     util::{unwrap_builtin_with_single_arg, RemoveTypes},
     VResult,
 };
@@ -981,7 +981,7 @@ impl Analyzer<'_, '_> {
                 | Type::Module(..)
                 | Type::Function(..)
                 | Type::Constructor(..) => {
-                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
+                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg), Default::default())? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
                 }
@@ -1509,7 +1509,7 @@ impl Analyzer<'_, '_> {
             | Type::Module(..)
             | Type::Interface(..) => {
                 let arg = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(arg))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(arg), Default::default())
                     .context("tried to convert a type into a type literal to infer mapped type")?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);

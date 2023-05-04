@@ -1078,7 +1078,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 // Convert to a type literal.
-                if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
+                if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg), Default::default())? {
                     self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
                 } else {
                     unimplemented!()
@@ -1135,8 +1135,8 @@ impl Analyzer<'_, '_> {
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
-                let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p))?;
-                let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a))?;
+                let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p), Default::default())?;
+                let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a), Default::default())?;
                 if let Some(p) = p {
                     if let Some(a) = a {
                         self.infer_type_using_type_elements_and_type_elements(span, inferred, &p.members, &a.members, opts)?;

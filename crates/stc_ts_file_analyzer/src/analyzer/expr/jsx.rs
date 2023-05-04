@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
             )
             .ok()?;
 
-        let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty)).ok()??;
+        let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty), Default::default()).ok()??;
 
         if ty.members.len() == 1 {
             match &ty.members[0] {
