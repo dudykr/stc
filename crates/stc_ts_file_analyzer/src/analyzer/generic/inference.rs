@@ -26,6 +26,7 @@ use tracing::{debug, error, info, warn};
 use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
     ty::TypeExt,
+    type_facts::TypeFacts,
     util::unwrap_builtin_with_single_arg,
     VResult,
 };
@@ -549,12 +550,30 @@ impl Analyzer<'_, '_> {
                                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
                                     _ => unreachable!(),
                                 };
+
+                                let mut type_facts = TypeFacts::None;
+
+                                // If the type contains `number` or a number literal and the string isn't a
+                                // valid number, exclude numbers
+                                if !self.is_valid_num_str(&src_str, true) {
+                                    type_facts |= TypeFacts::TypeofNENumber;
+                                }
+
+                                // If the type contains `bigint` or a bigint literal and the string isn't a
+                                // valid bigint, exclude bigints
+                                if !self.is_valid_big_int_str(&src_str, true) {
+                                    type_facts |= TypeFacts::TypeofNEBigInt;
+                                }
+                            }
+
+                            let matching_type = reduce_left(constraint_types, |l, r| {}, Type::never(span, Default::default()));
+
+                            if !matching_type.is_never() {
+                                self.infer_from_types(span, inferred, &matching_type, target, opts)?;
+                                continue;
                             }
                         }
                     }
-
-                    // TODO: Implement logic
-                    error!("unimplemented: infer_to_tpl_lit_type");
                 }
 
                 self.infer_from_types(span, inferred, &source, target, opts)?;
