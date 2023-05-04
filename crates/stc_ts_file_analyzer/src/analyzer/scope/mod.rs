@@ -2148,8 +2148,7 @@ impl Expander<'_, '_, '_> {
                                     let mut type_args: Option<_> = type_args.cloned().fold_with(self);
                                     type_args.visit_mut_with(&mut ShallowNormalizer { analyzer: self.analyzer });
                                     type_args.freeze();
-                                    dbg!(&type_args);
-                                    dbg!(&ty);
+
                                     if cfg!(debug_assertions) {
                                         info!("expand: expanding type parameters");
                                     }
@@ -2295,7 +2294,6 @@ impl Expander<'_, '_, '_> {
 
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
-        dbg!(&r);
         let Ref {
             span: r_span,
             type_name,
