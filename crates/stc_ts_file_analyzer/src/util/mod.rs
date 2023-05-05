@@ -324,7 +324,7 @@ pub(crate) fn unwrap_builtin_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: 
     None
 }
 
-pub(crate) fn reduce_left<T, U, F>(array: Vec<T>, f: F, initial: U)
+pub(crate) fn reduce_left<T, U, F>(array: Vec<T>, f: F, initial: U) -> U
 where
     F: FnMut(U, T, usize) -> U,
 {
