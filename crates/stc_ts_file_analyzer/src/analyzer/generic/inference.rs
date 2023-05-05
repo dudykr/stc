@@ -590,7 +590,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if r.is_string_mapping() && str == applyStringMapping(right.symbol, str) {
+                                        if r.is_string_mapping() && &*src == applyStringMapping(right.symbol, str) {
                                             return source;
                                         }
 
@@ -598,8 +598,13 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.StringLiteral && right.value == str {
-                                            return right;
+                                        match r.normalize() {
+                                            Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
+                                                if s.value == src {
+                                                    return source;
+                                                }
+                                            }
+                                            _ => {}
                                         }
 
                                         if l.is_num() {
