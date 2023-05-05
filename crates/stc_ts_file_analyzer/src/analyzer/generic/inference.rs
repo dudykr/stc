@@ -9,7 +9,7 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBool, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -606,7 +606,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.Number {
+                                        if r.is_num() {
                                             return getNumberLiteralType(str);
                                         }
 
@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.BigInt {
+                                        if r.is_bigint() {
                                             return parseBigIntLiteralType(str);
                                         }
 
@@ -649,11 +649,28 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_bool() {
-                                            match src {
-                                                "true" => true_type,
-                                                "false" => false_type,
-                                                _ => boolean_type,
-                                            }
+                                            return match &*src {
+                                                "true" => Type::Lit(LitType {
+                                                    span,
+                                                    lit: RTsLit::Bool(RBool { span, value: true }),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                "false" => Type::Lit(LitType {
+                                                    span,
+                                                    lit: RTsLit::Bool(RBool { span, value: false }),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                _ => {
+                                                    return Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                            };
                                         }
 
                                         if l.is_bool_lit() {
