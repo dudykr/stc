@@ -546,7 +546,7 @@ impl Analyzer<'_, '_> {
                             // If the constraint contains `string`, we don't need to look for a more
                             // preferred type
                             if constraint_types.iter().all(|ty| !ty.is_str()) {
-                                let src_str = match source.normalize() {
+                                let src = match source.normalize() {
                                     Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
                                     _ => unreachable!(),
                                 };
@@ -555,18 +555,134 @@ impl Analyzer<'_, '_> {
 
                                 // If the type contains `number` or a number literal and the string isn't a
                                 // valid number, exclude numbers
-                                if !self.is_valid_num_str(&src_str, true) {
+                                if !self.is_valid_num_str(&src, true) {
                                     type_facts |= TypeFacts::TypeofNENumber;
                                 }
 
                                 // If the type contains `bigint` or a bigint literal and the string isn't a
                                 // valid bigint, exclude bigints
-                                if !self.is_valid_big_int_str(&src_str, true) {
+                                if !self.is_valid_big_int_str(&src, true) {
                                     type_facts |= TypeFacts::TypeofNEBigInt;
                                 }
                             }
 
-                            let matching_type = reduce_left(constraint_types, |l, r, _| {}, Type::never(span, Default::default()));
+                            let matching_type = reduce_left(
+                                constraint_types,
+                                |l, r, _| {
+                                    if !(right.flags & allTypeFlags) {
+                                        return left;
+                                    }
+                                    if l.is_str() {
+                                        return left;
+                                    }
+                                    if r.is_str() {
+                                        return source;
+                                    }
+
+                                    if left.flags & TypeFlags.TemplateLiteral {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.TemplateLiteral && isTypeMatchedByTemplateLiteralType(source, right) {
+                                        return source;
+                                    }
+
+                                    if l.is_string_mapping() {
+                                        return left;
+                                    }
+
+                                    if r.is_string_mapping() && str == applyStringMapping(right.symbol, str) {
+                                        return source;
+                                    }
+
+                                    if left.flags & TypeFlags.StringLiteral {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.StringLiteral && right.value == str {
+                                        return right;
+                                    }
+
+                                    if left.flags & TypeFlags.Number {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.Number {
+                                        return getNumberLiteralType(str);
+                                    }
+
+                                    if left.flags & TypeFlags.Enum {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.Enum {
+                                        return getNumberLiteralType(str);
+                                    }
+
+                                    if left.flags & TypeFlags.NumberLiteral {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.NumberLiteral && (right as NumberLiteralType).value == str as f64 {}
+
+                                    if left.flags & TypeFlags.BigInt {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.BigInt {
+                                        return parseBigIntLiteralType(str);
+                                    }
+
+                                    if left.flags & TypeFlags.BigIntLiteral {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.BigIntLiteral
+                                        && pseudoBigIntToString((right as BigIntLiteralType).value) == str
+                                    {
+                                        return right;
+                                    }
+
+                                    if left.flags & TypeFlags.Boolean {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.Boolean {
+                                        match str {
+                                            "true" => true_type,
+                                            "false" => false_type,
+                                            _ => boolean_type,
+                                        }
+                                    }
+
+                                    if left.flags & TypeFlags.BooleanLiteral {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.BooleanLiteral && (right as IntrinsicType).intrinsicName == str {
+                                        return right;
+                                    }
+
+                                    if left.flags & TypeFlags.Undefined {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.Undefined && (right as IntrinsicType).intrinsicName == str {
+                                        return right;
+                                    }
+
+                                    if left.flags & TypeFlags.Null {
+                                        return left;
+                                    }
+
+                                    if right.flags & TypeFlags.Null && (right as IntrinsicType).intrinsicName == str {
+                                        return right;
+                                    }
+
+                                    return left;
+                                },
+                                Type::never(span, Default::default()),
+                            );
 
                             if !matching_type.is_never() {
                                 self.infer_from_types(span, inferred, &matching_type, target, opts)?;
