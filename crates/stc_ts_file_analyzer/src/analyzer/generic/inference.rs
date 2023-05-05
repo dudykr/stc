@@ -569,72 +569,74 @@ impl Analyzer<'_, '_> {
                             let matching_type = reduce_left(
                                 constraint_types,
                                 |l, r, _| {
-                                    if !(right.flags & allTypeFlags) {
-                                        return left;
+                                    if !(r.flags & allTypeFlags) {
+                                        return l;
                                     }
                                     if l.is_str() {
-                                        return left;
+                                        return l;
                                     }
                                     if r.is_str() {
                                         return source;
                                     }
 
-                                    if left.flags & TypeFlags.TemplateLiteral {
-                                        return left;
+                                    if l.is_tpl() {
+                                        return l;
                                     }
 
-                                    if right.flags & TypeFlags.TemplateLiteral && isTypeMatchedByTemplateLiteralType(source, right) {
+                                    if r.flags & TypeFlags.TemplateLiteral && isTypeMatchedByTemplateLiteralType(source, right) {
                                         return source;
                                     }
 
                                     if l.is_string_mapping() {
-                                        return left;
+                                        return l;
                                     }
 
                                     if r.is_string_mapping() && str == applyStringMapping(right.symbol, str) {
                                         return source;
                                     }
 
-                                    if left.flags & TypeFlags.StringLiteral {
-                                        return left;
+                                    if l.is_str_lit() {
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.StringLiteral && right.value == str {
                                         return right;
                                     }
 
-                                    if left.flags & TypeFlags.Number {
-                                        return left;
+                                    if l.is_num() {
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.Number {
                                         return getNumberLiteralType(str);
                                     }
 
-                                    if left.flags & TypeFlags.Enum {
-                                        return left;
+                                    if l.is_enum_type() || l.is_enum_variant() {
+                                        dbg!("I'm not sure if this is correct");
+                                        return l;
                                     }
 
-                                    if right.flags & TypeFlags.Enum {
+                                    if r.is_enum_type() || r.is_enum_variant() {
+                                        dbg!("I'm not sure if this is correct");
                                         return getNumberLiteralType(str);
                                     }
 
-                                    if left.flags & TypeFlags.NumberLiteral {
-                                        return left;
+                                    if l.is_num_lit() {
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.NumberLiteral && (right as NumberLiteralType).value == str as f64 {}
 
-                                    if left.flags & TypeFlags.BigInt {
-                                        return left;
+                                    if l.is_bigint() {
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.BigInt {
                                         return parseBigIntLiteralType(str);
                                     }
 
-                                    if left.flags & TypeFlags.BigIntLiteral {
-                                        return left;
+                                    if l.is_bigint_lit() {
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.BigIntLiteral
@@ -643,11 +645,11 @@ impl Analyzer<'_, '_> {
                                         return right;
                                     }
 
-                                    if left.flags & TypeFlags.Boolean {
-                                        return left;
+                                    if l.is_bool() {
+                                        return l;
                                     }
 
-                                    if right.flags & TypeFlags.Boolean {
+                                    if r.is_bool() {
                                         match str {
                                             "true" => true_type,
                                             "false" => false_type,
@@ -655,8 +657,8 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    if left.flags & TypeFlags.BooleanLiteral {
-                                        return left;
+                                    if l.is_bool_lit() {
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.BooleanLiteral && (right as IntrinsicType).intrinsicName == str {
@@ -664,7 +666,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     if left.flags & TypeFlags.Undefined {
-                                        return left;
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.Undefined && (right as IntrinsicType).intrinsicName == str {
@@ -672,14 +674,14 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     if left.flags & TypeFlags.Null {
-                                        return left;
+                                        return l;
                                     }
 
                                     if right.flags & TypeFlags.Null && (right as IntrinsicType).intrinsicName == str {
                                         return right;
                                     }
 
-                                    return left;
+                                    return l;
                                 },
                                 Type::never(span, Default::default()),
                             );
