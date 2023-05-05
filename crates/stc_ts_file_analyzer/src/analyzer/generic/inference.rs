@@ -646,7 +646,7 @@ impl Analyzer<'_, '_> {
                                         if right.flags & TypeFlags.BigIntLiteral
                                             && pseudoBigIntToString((right as BigIntLiteralType).value) == str
                                         {
-                                            return right;
+                                            return r;
                                         }
 
                                         if l.is_bool() {
@@ -683,7 +683,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if right.flags & TypeFlags.BooleanLiteral && (right as IntrinsicType).intrinsicName == str {
-                                            return right;
+                                            return r;
                                         }
 
                                         if l.is_undefined() {
@@ -691,7 +691,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if right.flags & TypeFlags.Undefined && (right as IntrinsicType).intrinsicName == str {
-                                            return right;
+                                            return r;
                                         }
 
                                         if l.is_null() {
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if right.flags & TypeFlags.Null && (right as IntrinsicType).intrinsicName == str {
-                                            return right;
+                                            return r;
                                         }
 
                                         return l;
