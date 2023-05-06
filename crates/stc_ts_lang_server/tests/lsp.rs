@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use stc_ts_testing::lsp::LspClient;
-use stc_utils::AHashSet;
+use stc_utils::FxHashSet;
 use testing::run_test;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
 use tracing::info;
@@ -129,7 +129,7 @@ impl CollectedDiagnostics {
         // go over the publishes in reverse order in order to get
         // the final messages that will be shown in the editor
         let mut messages = Vec::new();
-        let mut had_specifier = AHashSet::default();
+        let mut had_specifier = FxHashSet::default();
         for message in self.0.iter().rev() {
             if had_specifier.insert(message.uri.clone()) {
                 messages.insert(0, message.clone());

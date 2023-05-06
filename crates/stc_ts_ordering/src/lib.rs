@@ -8,8 +8,8 @@
 use std::cmp;
 
 use either::Either;
+use fxhash::{FxHashMap, FxHashSet};
 use rayon::prelude::*;
-use swc_common::collections::{AHashMap, AHashSet};
 
 use self::types::Sortable;
 use crate::calc::{calc_order, to_graph, Deps};
@@ -44,8 +44,8 @@ where
         })
         .collect::<Vec<_>>();
 
-    let mut declared_by: AHashMap<_, Vec<usize>> = Default::default();
-    let mut used_by_idx: AHashMap<usize, AHashSet<_>> = Default::default();
+    let mut declared_by: FxHashMap<_, Vec<usize>> = Default::default();
+    let mut used_by_idx: FxHashMap<usize, FxHashSet<_>> = Default::default();
 
     let mut precedences = vec![];
     for (idx, (precedence, usage)) in usages.into_iter().enumerate() {
