@@ -8,7 +8,11 @@
     `----
 
 Error: 
-  > any
+  > {
+  |     readonly id: DeepReadonly<Part["id"]>;
+  |     readonly name: DeepReadonly<Part["name"]>;
+  |     readonly subparts: DeepReadonly<Part["subparts"]>;
+  | }
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:27:1]
@@ -63,7 +67,11 @@ Error:
     `----
 
 Error: 
-  > any
+  > {
+  |     readonly id: DeepReadonly<Part["id"]>;
+  |     readonly name: DeepReadonly<Part["name"]>;
+  |     readonly subparts: DeepReadonly<Part["subparts"]>;
+  | }
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:30:1]
@@ -85,7 +93,11 @@ Error:
     `----
 
 Error: 
-  > any
+  > {
+  |     readonly id: DeepReadonly<Part["id"]>;
+  |     readonly name: DeepReadonly<Part["name"]>;
+  |     readonly subparts: DeepReadonly<Part["subparts"]>;
+  | }
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:31:1]
@@ -129,18 +141,11 @@ Error:
     `----
 
 Error: 
-  > any
-
-  x Type
-    ,-[$DIR/tests/visualize/types/conditional/2.ts:32:1]
- 32 |   let id: number = part.subparts[0].id;
- 33 |   part.id = part.id; // Error
-    :   ^^^^^^^
- 34 |   part.updatePart("hello"); // Error
-    `----
-
-Error: 
-  > any
+  > {
+  |     readonly id: DeepReadonly<Part["id"]>;
+  |     readonly name: DeepReadonly<Part["name"]>;
+  |     readonly subparts: DeepReadonly<Part["subparts"]>;
+  | }
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:32:1]
@@ -151,7 +156,11 @@ Error:
     `----
 
 Error: 
-  > any
+  > {
+  |     readonly id: DeepReadonly<Part["id"]>;
+  |     readonly name: DeepReadonly<Part["name"]>;
+  |     readonly subparts: DeepReadonly<Part["subparts"]>;
+  | }
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:32:1]
@@ -162,7 +171,7 @@ Error:
     `----
 
 Error: 
-  > any
+  > number
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:32:1]
@@ -173,7 +182,7 @@ Error:
     `----
 
 Error: 
-  > any
+  > number
 
   x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:33:1]
@@ -184,15 +193,8 @@ Error:
     `----
 
 Error: 
-  > any
-
-  x Type
-    ,-[$DIR/tests/visualize/types/conditional/2.ts:33:1]
- 33 |   part.id = part.id; // Error
- 34 |   part.updatePart("hello"); // Error
-    :   ^^^^^^^^^^^^^^^^^^^^^^^^
- 35 | }
-    `----
-
-Error: 
-  > any
+  > {
+  |     readonly id: DeepReadonly<Part["id"]>;
+  |     readonly name: DeepReadonly<Part["name"]>;
+  |     readonly subparts: DeepReadonly<Part["subparts"]>;
+  | }
