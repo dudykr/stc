@@ -21,7 +21,7 @@ use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, AHashMap, AHashSet};
+use stc_utils::{cache::Freeze, FxHashMap, FxHashSet};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
@@ -286,10 +286,10 @@ struct AnalyzerData {
     /// Filled only once, by `fill_known_type_names`.
     bindings: Bindings,
 
-    unresolved_imports: AHashSet<Id>,
+    unresolved_imports: FxHashSet<Id>,
 
     /// Spans of declared variables.
-    var_spans: AHashMap<Id, Vec<(VarKind, Span)>>,
+    var_spans: FxHashMap<Id, Vec<(VarKind, Span)>>,
 
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,
@@ -309,7 +309,7 @@ struct AnalyzerData {
     checked_for_async_iterator: bool,
 
     /// Used to check mixed default exports.
-    merged_default_exports: AHashSet<Id>,
+    merged_default_exports: FxHashSet<Id>,
 
     jsx_prop_name: Option<Option<JsWord>>,
 }

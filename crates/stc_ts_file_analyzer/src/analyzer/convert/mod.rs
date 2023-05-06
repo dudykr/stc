@@ -22,7 +22,7 @@ use stc_ts_types::{
     TypeParamInstantiation, Union, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, dev_span, AHashSet};
+use stc_utils::{cache::Freeze, dev_span, FxHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -60,7 +60,7 @@ impl Analyzer<'_, '_> {
             {
                 // Check for duplicates
                 let names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
-                let mut found = AHashSet::default();
+                let mut found = FxHashSet::default();
 
                 for name in names {
                     if !found.insert(name.sym.clone()) {

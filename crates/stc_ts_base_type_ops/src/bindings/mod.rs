@@ -4,7 +4,7 @@ use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::*;
 use stc_ts_types::Id;
 use swc_common::{
-    collections::{AHashMap, AHashSet},
+    collections::{FxHashMap, FxHashSet},
     EqIgnoreSpan, TypeEq,
 };
 use swc_ecma_ast::VarDeclKind;
@@ -27,8 +27,8 @@ pub enum BindingKind {
 #[derive(Debug, Default)]
 pub struct Bindings {
     pub collected: bool,
-    pub all: AHashMap<Id, Vec<BindingKind>>,
-    pub types: AHashSet<Id>,
+    pub all: FxHashMap<Id, Vec<BindingKind>>,
+    pub types: FxHashSet<Id>,
 }
 
 pub fn collect_bindings<N>(n: &N) -> Bindings
@@ -37,7 +37,7 @@ where
 {
     let (all, types) = rayon::join(
         || {
-            let mut all = AHashMap::default();
+            let mut all = FxHashMap::default();
 
             n.visit_with(&mut BindingCollector { data: &mut all });
             all
@@ -57,7 +57,7 @@ where
 }
 
 pub struct BindingCollector<'a> {
-    data: &'a mut AHashMap<Id, Vec<BindingKind>>,
+    data: &'a mut FxHashMap<Id, Vec<BindingKind>>,
 }
 
 impl Visit<RTsNamespaceDecl> for BindingCollector<'_> {
@@ -123,7 +123,7 @@ impl Visit<RTsModuleDecl> for BindingCollector<'_> {
 
 #[derive(Default)]
 pub struct KnownTypeVisitor {
-    types: AHashSet<Id>,
+    types: FxHashSet<Id>,
 }
 
 impl KnownTypeVisitor {

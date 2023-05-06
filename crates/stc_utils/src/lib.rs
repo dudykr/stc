@@ -22,9 +22,9 @@ pub mod stack;
 
 pub type ABuilderHasher = ahash::RandomState;
 
-pub type AHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
+pub type FxHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
 
-pub type AHashSet<V> = HashSet<V, ahash::RandomState>;
+pub type FxHashSet<V> = HashSet<V, ahash::RandomState>;
 
 /// Syntax context for builtin modules.
 pub const BUILTIN_CTXT: SyntaxContext = SyntaxContext::empty();

@@ -1,7 +1,7 @@
 use std::hash::Hash;
 
 use petgraph::EdgeDirection::Outgoing;
-use swc_common::collections::{AHashMap, AHashSet};
+use swc_common::collections::{FxHashMap, FxHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 use tracing::{span, trace, Level};
@@ -10,8 +10,8 @@ pub(crate) struct Deps<'a, I>
 where
     I: Eq + Hash,
 {
-    pub declared_by: &'a AHashMap<I, Vec<usize>>,
-    pub used_by_idx: &'a AHashMap<usize, AHashSet<I>>,
+    pub declared_by: &'a FxHashMap<I, Vec<usize>>,
+    pub used_by_idx: &'a FxHashMap<usize, FxHashSet<I>>,
 }
 
 /// Returns `(cycles, graph)`.
@@ -58,7 +58,7 @@ where
 }
 
 pub(crate) fn calc_order(cycles: Vec<Vec<usize>>, graph: &mut FastDiGraphMap<usize, ()>, len: usize) -> Vec<Vec<usize>> {
-    let mut done = AHashSet::default();
+    let mut done = FxHashSet::default();
     let mut orders = vec![];
 
     'outer: loop {
@@ -103,7 +103,7 @@ pub(crate) fn calc_order(cycles: Vec<Vec<usize>>, graph: &mut FastDiGraphMap<usi
     orders
 }
 
-fn calc_one(done: &AHashSet<usize>, cycles: &[Vec<usize>], graph: &mut FastDiGraphMap<usize, ()>, idx: usize) -> Vec<usize> {
+fn calc_one(done: &FxHashSet<usize>, cycles: &[Vec<usize>], graph: &mut FastDiGraphMap<usize, ()>, idx: usize) -> Vec<usize> {
     if cfg!(debug_assertions) && cfg!(feature = "debug") {
         trace!("calc_one(idx = {:?})", idx);
     }
