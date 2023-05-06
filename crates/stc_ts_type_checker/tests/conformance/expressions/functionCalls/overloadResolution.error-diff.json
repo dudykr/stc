@@ -16,6 +16,15 @@
       91
     ]
   },
-  "extra_errors": {},
-  "extra_error_lines": {}
+  "extra_errors": {
+    "TS2345": 4
+  },
+  "extra_error_lines": {
+    "TS2345": [
+      76,
+      77,
+      84,
+      85
+    ]
+  }
 }
