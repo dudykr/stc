@@ -561,7 +561,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 // If the type contains `bigint` or a bigint literal and the string isn't a
-                                // valid bigint, exclude bigints
+                                // valid bigint, exclude big ints
                                 if !self.is_valid_big_int_str(&src, true) {
                                     type_facts |= TypeFacts::TypeofNEBigInt;
                                 }
