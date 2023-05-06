@@ -50,6 +50,8 @@ pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, InferenceInfo>,
 
+    constraints: FxHashMap<Id, Type>,
+
     errored: FxHashSet<Id>,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
@@ -83,6 +85,7 @@ impl Default for InferData {
             skip_generalization: Default::default(),
             priority: InferencePriority::MaxValue,
             contravariant: Default::default(),
+            constraints: Default::default(),
         }
     }
 }
@@ -114,6 +117,13 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         let mut inferred = InferData::default();
+
+        for param in type_params {
+            if let Some(constraint) = &param.constraint {
+                constraint.assert_clone_cheap();
+                inferred.constraints.insert(param.name.clone(), *constraint.clone());
+            }
+        }
 
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
@@ -365,6 +375,7 @@ impl Analyzer<'_, '_> {
 
         for ty in map.types.values_mut() {
             prevent_generalize(ty);
+            ty.freeze();
         }
 
         Ok(map.types)
@@ -487,7 +498,11 @@ impl Analyzer<'_, '_> {
             let param_str = force_dump_type_as_string(param);
             let arg_str = force_dump_type_as_string(arg);
 
-            Some(dev_span!("infer_type", param = &*param_str, arg = &*arg_str))
+            Some(dev_span!(
+                "infer_type",
+                param = tracing::field::display(&param_str),
+                arg = tracing::field::display(&arg_str),
+            ))
         } else {
             None
         };
@@ -552,13 +567,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if should_delegate(param_normalized) {
+        if should_delegate(param) {
             let mut param = self.normalize(Some(span), Cow::Borrowed(param_normalized), Default::default())?;
             param.freeze();
             return self.infer_type(span, inferred, &param, arg, opts);
         }
 
-        if should_delegate(arg_normalized) {
+        if should_delegate(arg) || arg.is_conditional() {
             let mut arg = self.normalize(Some(span), Cow::Borrowed(arg_normalized), Default::default())?;
             arg.freeze();
 
@@ -635,7 +650,7 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.for_fn_assignment {
-            if let Type::Param(arg) = arg_normalized.normalize() {
+            if let Type::Param(arg) = arg.normalize() {
                 if !param_normalized.is_type_param() {
                     self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
                     return Ok(());
@@ -688,6 +703,10 @@ impl Analyzer<'_, '_> {
                     false,
                     opts,
                 )
+            }
+
+            (Type::Tpl(..), Type::Union(..)) => {
+                // Use inference rule for union in arg
             }
 
             (Type::Tpl(target), _) => {

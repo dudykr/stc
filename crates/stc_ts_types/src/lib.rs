@@ -2647,6 +2647,16 @@ impl Type {
         )
     }
 
+    pub fn is_bigint_lit(&self) -> bool {
+        matches!(
+            self.normalize(),
+            Type::Lit(LitType {
+                lit: RTsLit::BigInt(..),
+                ..
+            })
+        )
+    }
+
     pub fn is_num_lit(&self) -> bool {
         matches!(
             self.normalize(),

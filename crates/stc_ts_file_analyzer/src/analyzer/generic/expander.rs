@@ -397,6 +397,13 @@ impl Analyzer<'_, '_> {
             return Some(false);
         }
 
+        // TODO: Implement correct logic
+        if let Type::Index(..) = child.normalize() {
+            if parent.is_str_like() {
+                return Some(true);
+            }
+        }
+
         let res = self.assign_with_opts(
             &mut Default::default(),
             parent,
