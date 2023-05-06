@@ -576,7 +576,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
                                         if r.is_str() {
-                                            return source;
+                                            return source.clone();
                                         }
 
                                         if l.is_tpl() {
@@ -605,7 +605,7 @@ impl Analyzer<'_, '_> {
                                         match r.normalize() {
                                             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                                                 if s.value == src {
-                                                    return source;
+                                                    return source.clone();
                                                 }
                                             }
                                             _ => {}
@@ -727,7 +727,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_undefined() && *src == *"undefined" {
-                                            return r;
+                                            return r.clone();
                                         }
 
                                         if l.is_null() {
@@ -735,7 +735,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_null() && *src == *"null" {
-                                            return r;
+                                            return r.clone();
                                         }
 
                                         return l;
