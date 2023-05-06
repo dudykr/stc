@@ -542,6 +542,7 @@ impl Analyzer<'_, '_> {
                         if !constraint.is_any() {
                             //
                             let constraint_types = constraint.iter_union().collect_vec();
+                            let all_types = Type::new_union(span, constraint_types.iter().cloned().cloned()).freezed();
 
                             // If the constraint contains `string`, we don't need to look for a more
                             // preferred type
@@ -568,7 +569,7 @@ impl Analyzer<'_, '_> {
                                 let matching_type = reduce_left(
                                     constraint_types,
                                     |l, r, _| {
-                                        if !(r.flags & allTypeFlags) {
+                                        if !self.is_type_assignable_to(span, &r, &all_types) {
                                             return l;
                                         }
                                         if l.is_str() {
