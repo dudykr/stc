@@ -583,17 +583,20 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if r.flags & TypeFlags.TemplateLiteral && isTypeMatchedByTemplateLiteralType(source, right) {
-                                            return source;
-                                        }
+                                        // TODO
+                                        // if r.flags & TypeFlags.TemplateLiteral &&
+                                        // isTypeMatchedByTemplateLiteralType(source, right) {
+                                        //     return source;
+                                        // }
 
                                         if l.is_string_mapping() {
                                             return l;
                                         }
 
-                                        if r.is_string_mapping() && &*src == applyStringMapping(right.symbol, str) {
-                                            return source;
-                                        }
+                                        // TODO
+                                        // if r.is_string_mapping() && &*src == applyStringMapping(right.symbol, str) {
+                                        //     return source;
+                                        // }
 
                                         if l.is_str_lit() {
                                             return l;
@@ -648,7 +651,11 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.NumberLiteral && (right as NumberLiteralType).value == str as f64 {}
+                                        // TODO
+                                        // if right.flags & TypeFlags.NumberLiteral && (right as
+                                        // NumberLiteralType).value == str as f64 {
+                                        //     return r.clone();
+                                        // }
 
                                         if l.is_bigint() {
                                             return l;
@@ -671,11 +678,12 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.BigIntLiteral
-                                            && pseudoBigIntToString((right as BigIntLiteralType).value) == str
-                                        {
-                                            return r;
-                                        }
+                                        // TODO
+                                        // if right.flags & TypeFlags.BigIntLiteral
+                                        //     && pseudoBigIntToString((right as BigIntLiteralType).value) == str
+                                        // {
+                                        //     return r;
+                                        // }
 
                                         if l.is_bool() {
                                             return l;
@@ -711,7 +719,7 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_bool_lit() && *src == *"boolean" {
-                                            return r;
+                                            return r.clone();
                                         }
 
                                         if l.is_undefined() {
