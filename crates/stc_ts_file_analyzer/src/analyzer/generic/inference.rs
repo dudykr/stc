@@ -569,7 +569,7 @@ impl Analyzer<'_, '_> {
                                 let matching_type = reduce_left(
                                     constraint_types,
                                     |l, r, _| {
-                                        if !self.is_type_assignable_to(span, &r, &all_types) {
+                                        if !self.is_type_assignable_to(span, r, &all_types) {
                                             return l;
                                         }
                                         if l.is_str() {
@@ -583,32 +583,36 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        // TODO
-                                        // if r.flags & TypeFlags.TemplateLiteral &&
-                                        // isTypeMatchedByTemplateLiteralType(source, right) {
-                                        //     return source;
-                                        // }
+                                        if let Type::Tpl(rt) = r.normalize() {
+                                            error!("unimplemented: Tpl");
+
+                                            // if isTypeMatchedByTemplateLiteralType(source, right){
+                                            //     return source;
+                                            // }
+                                        }
 
                                         if l.is_string_mapping() {
                                             return l;
                                         }
 
-                                        // TODO
-                                        // if r.is_string_mapping() && &*src == applyStringMapping(right.symbol, str) {
-                                        //     return source;
-                                        // }
+                                        if let Type::StringMapping(rs) = r.normalize() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: StringMapping");
+
+                                            // if &*src ==
+                                            // applyStringMapping(right.
+                                            // symbol, str){
+                                            //     return source
+                                            // }
+                                        }
 
                                         if l.is_str_lit() {
                                             return l;
                                         }
 
-                                        match r.normalize() {
-                                            Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                                                if s.value == src {
-                                                    return source.clone();
-                                                }
+                                        if let Type::Lit(LitType { lit: RTsLit::Str(s), .. }) = r.normalize() {
+                                            if s.value == src {
+                                                return source.clone();
                                             }
-                                            _ => {}
                                         }
 
                                         if l.is_num() {
@@ -629,12 +633,12 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if l.is_enum_type() || l.is_enum_variant() {
-                                            dbg!("I'm not sure if this is correct");
+                                            error!("unimplemented: infer_to_tpl_lit_type: enum");
                                             return l;
                                         }
 
                                         if r.is_enum_type() || r.is_enum_variant() {
-                                            dbg!("I'm not sure if this is correct");
+                                            error!("unimplemented: infer_to_tpl_lit_type: enum");
                                             return Type::Lit(LitType {
                                                 span,
                                                 lit: RTsLit::Number(RNumber {
@@ -651,11 +655,16 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        // TODO
-                                        // if right.flags & TypeFlags.NumberLiteral && (right as
-                                        // NumberLiteralType).value == str as f64 {
-                                        //     return r.clone();
-                                        // }
+                                        if r.is_num_lit() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: num_lit");
+
+                                            // TODO
+                                            // if (right as
+                                            // NumberLiteralType).value == str
+                                            // as f64 {
+                                            //     return r.clone();
+                                            // }
+                                        }
 
                                         if l.is_bigint() {
                                             return l;
@@ -678,12 +687,16 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        // TODO
-                                        // if right.flags & TypeFlags.BigIntLiteral
-                                        //     && pseudoBigIntToString((right as BigIntLiteralType).value) == str
-                                        // {
-                                        //     return r;
-                                        // }
+                                        if r.is_bigint_lit() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: bigint_lit");
+
+                                            // TODO
+                                            // if pseudoBigIntToString((right as
+                                            // BigIntLiteralType).value) == str
+                                            // {
+                                            //     return r;
+                                            // }
+                                        }
 
                                         if l.is_bool() {
                                             return l;
@@ -738,7 +751,7 @@ impl Analyzer<'_, '_> {
                                             return r.clone();
                                         }
 
-                                        return l;
+                                        l
                                     },
                                     Type::never(span, Default::default()),
                                 );
