@@ -9,7 +9,7 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RBool, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBigInt, RBool, RNumber, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -613,7 +613,16 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_num() {
-                                            return getNumberLiteralType(str);
+                                            return Type::Lit(LitType {
+                                                span,
+                                                lit: RTsLit::Number(RNumber {
+                                                    span,
+                                                    value: src.parse().unwrap(),
+                                                    raw: None,
+                                                }),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            });
                                         }
 
                                         if l.is_enum_type() || l.is_enum_variant() {
@@ -623,7 +632,16 @@ impl Analyzer<'_, '_> {
 
                                         if r.is_enum_type() || r.is_enum_variant() {
                                             dbg!("I'm not sure if this is correct");
-                                            return getNumberLiteralType(str);
+                                            return Type::Lit(LitType {
+                                                span,
+                                                lit: RTsLit::Number(RNumber {
+                                                    span,
+                                                    value: src.parse().unwrap(),
+                                                    raw: None,
+                                                }),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            });
                                         }
 
                                         if l.is_num_lit() {
@@ -637,7 +655,16 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_bigint() {
-                                            return parseBigIntLiteralType(str);
+                                            return Type::Lit(LitType {
+                                                span,
+                                                lit: RTsLit::BigInt(RBigInt {
+                                                    span,
+                                                    value: Box::new(src.parse().unwrap()),
+                                                    raw: None,
+                                                }),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            });
                                         }
 
                                         if l.is_bigint_lit() {
