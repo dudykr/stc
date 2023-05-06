@@ -682,7 +682,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.BooleanLiteral && (right as IntrinsicType).intrinsicName == str {
+                                        if r.is_bool_lit() && *src == *"boolean" {
                                             return r;
                                         }
 
@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.Undefined && (right as IntrinsicType).intrinsicName == str {
+                                        if r.is_undefined() && *src == *"undefined" {
                                             return r;
                                         }
 
@@ -698,7 +698,7 @@ impl Analyzer<'_, '_> {
                                             return l;
                                         }
 
-                                        if right.flags & TypeFlags.Null && (right as IntrinsicType).intrinsicName == str {
+                                        if r.is_null() && *src == *"null" {
                                             return r;
                                         }
 
