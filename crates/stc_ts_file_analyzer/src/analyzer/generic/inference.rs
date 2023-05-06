@@ -23,6 +23,7 @@ use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, error, info, warn};
 
+use super::ExtendsOpts;
 use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
     ty::TypeExt,
@@ -1039,7 +1040,16 @@ impl Analyzer<'_, '_> {
         if let Some(constraint) = inferred.constraints.get(&name) {
             constraint.assert_clone_cheap();
 
-            if let Some(false) = self.extends(span, &arg, constraint, Default::default()) {
+            if let Some(false) = self.extends(
+                span,
+                &arg,
+                constraint,
+                ExtendsOpts {
+                    allow_missing_fields: true,
+                    allow_type_params: true,
+                    ..Default::default()
+                },
+            ) {
                 warn!(
                     "Type parameter `{}` is not assignable to `{}`",
                     dump_type_as_string(&arg),
