@@ -419,7 +419,6 @@ impl Analyzer<'_, '_> {
                 allow_unknown_rhs_if_expanded: !opts.strict,
                 allow_missing_fields: opts.allow_missing_fields,
                 allow_assignment_to_param: opts.allow_type_params,
-                allow_assignment_of_param: opts.allow_type_params,
                 ..Default::default()
             },
         );
