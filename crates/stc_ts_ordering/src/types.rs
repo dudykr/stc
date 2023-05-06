@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use swc_common::collections::{FxHashMap, FxHashSet};
+use fxhash::{FxHashMap, FxHashSet};
 
 pub trait Sortable: Send + Sync {
     type Id: Eq + Hash + Send + Sync;

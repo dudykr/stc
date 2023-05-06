@@ -21,7 +21,7 @@ use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, FxHashMap, FxHashSet};
+use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;

@@ -3,10 +3,8 @@
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::*;
 use stc_ts_types::Id;
-use swc_common::{
-    collections::{FxHashMap, FxHashSet},
-    EqIgnoreSpan, TypeEq,
-};
+use stc_utils::{FxHashMap, FxHashSet};
+use swc_common::{EqIgnoreSpan, TypeEq};
 use swc_ecma_ast::VarDeclKind;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq)]

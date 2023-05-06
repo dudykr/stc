@@ -1,5 +1,6 @@
 //! Dependency analyzer for statements.
 
+use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RJSXElementName, RJSXObject, RMemberExpr,
@@ -9,7 +10,6 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
-use swc_common::collections::{FxHashMap, FxHashSet};
 
 use crate::types::Sortable;
 

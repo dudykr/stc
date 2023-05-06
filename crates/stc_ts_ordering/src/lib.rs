@@ -8,8 +8,8 @@
 use std::cmp;
 
 use either::Either;
+use fxhash::{FxHashMap, FxHashSet};
 use rayon::prelude::*;
-use swc_common::collections::{FxHashMap, FxHashSet};
 
 use self::types::Sortable;
 use crate::calc::{calc_order, to_graph, Deps};

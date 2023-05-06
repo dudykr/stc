@@ -1,7 +1,7 @@
 use std::hash::Hash;
 
+use fxhash::{FxHashMap, FxHashSet};
 use petgraph::EdgeDirection::Outgoing;
-use swc_common::collections::{FxHashMap, FxHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 use tracing::{span, trace, Level};
