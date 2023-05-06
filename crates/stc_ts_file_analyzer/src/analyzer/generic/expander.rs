@@ -38,6 +38,8 @@ pub(crate) struct ExtendsOpts {
     pub strict: bool,
 
     pub allow_missing_fields: bool,
+
+    pub allow_type_params: bool,
 }
 
 /// Generic expander.
@@ -416,6 +418,7 @@ impl Analyzer<'_, '_> {
                 allow_unknown_rhs: Some(!opts.strict),
                 allow_unknown_rhs_if_expanded: !opts.strict,
                 allow_missing_fields: opts.allow_missing_fields,
+                allow_assignment_to_param: opts.allow_type_params,
                 ..Default::default()
             },
         );
