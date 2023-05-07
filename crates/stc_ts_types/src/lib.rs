@@ -3289,3 +3289,68 @@ impl_freeze!(Key);
 impl_freeze!(Enum);
 impl_freeze!(ClassDef);
 impl_freeze!(Mapped);
+
+#[auto_impl::auto_impl(&)]
+pub trait SpreadLike {
+    fn span(&self) -> Span;
+    fn label(&self) -> Option<&RPat>;
+    fn spread(&self) -> Option<Span>;
+    fn ty(&self) -> &Type;
+}
+
+impl SpreadLike for TupleElement {
+    fn span(&self) -> Span {
+        self.span
+    }
+
+    fn label(&self) -> Option<&RPat> {
+        self.label.as_ref()
+    }
+
+    fn spread(&self) -> Option<Span> {
+        None
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
+}
+
+impl SpreadLike for FnParam {
+    fn span(&self) -> Span {
+        self.span
+    }
+
+    fn label(&self) -> Option<&RPat> {
+        Some(&self.pat)
+    }
+
+    fn spread(&self) -> Option<Span> {
+        match &self.pat {
+            RPat::Rest(p) => Some(p.dot3_token),
+            _ => None,
+        }
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
+}
+
+impl SpreadLike for TypeOrSpread {
+    fn span(&self) -> Span {
+        self.span
+    }
+
+    fn label(&self) -> Option<&RPat> {
+        None
+    }
+
+    fn spread(&self) -> Option<Span> {
+        self.spread
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
+}
