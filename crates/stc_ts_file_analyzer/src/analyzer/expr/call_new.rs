@@ -3162,16 +3162,6 @@ impl Analyzer<'_, '_> {
             )
         });
 
-        {
-            let params = params_iter.clone().collect_vec();
-            self.relate_spread_likes(
-                span,
-                &mut spread_arg_types.iter(),
-                &mut params.iter(),
-                &mut |this, source, target, opts| this.assign_with_opts(&mut Default::default(), target, source, opts),
-            )?;
-        }
-
         let mut args_iter = spread_arg_types.iter();
 
         loop {
