@@ -40,6 +40,7 @@ use crate::{
     VResult,
 };
 
+mod array;
 mod conditional;
 mod index_signature;
 mod keyof;
