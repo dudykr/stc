@@ -1,32 +1,32 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::RPat;
-use stc_ts_types::{FnParam, RestType, TupleElement, Type, TypeOrSpread};
+use stc_ts_types::{FnParam, TupleElement, Type, TypeOrSpread};
 use stc_utils::cache::Freeze;
 use swc_common::Span;
 
 use super::NormalizeTypeOpts;
-use crate::{
-    analyzer::{expr::GetIteratorOpts, Analyzer},
-    VResult,
-};
+use crate::{analyzer::Analyzer, VResult};
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn relate_spread_likes<T, S, F>(&mut self, span: Span, targets: &[T], sources: &[S], relate: F) -> VResult<()>
+    pub(crate) fn relate_spread_likes<T, S, F>(
+        &mut self,
+        span: Span,
+        sources: &mut dyn Iterator<Item = &S>,
+        targets: &mut dyn Iterator<Item = &T>,
+        mut relate: F,
+    ) -> VResult<()>
     where
         T: SpreadLike,
         S: SpreadLike,
-        F: FnMut(&mut Self, &TypeOrSpread, &TypeOrSpread),
+        F: FnMut(&mut Self, &Type, &Type) -> VResult<()>,
     {
-        let mut targets_iter = targets.iter();
-        let mut sources_iter = sources.iter();
-
         loop {
-            let source = match sources_iter.next() {
+            let source = match sources.next() {
                 Some(source) => source,
                 None => break,
             };
-            let target = match targets_iter.next() {
+            let target = match targets.next() {
                 Some(target) => target,
                 None => break,
             };
@@ -47,45 +47,114 @@ impl Analyzer<'_, '_> {
                 )?
                 .freezed();
 
-            if let Some(spread) = target_spread {
-                match target_ty.normalize() {
-                    Type::Tuple(tuple) => {
-                        let expanded = self.expand_spread_likes(tuple.span, &tuple.elems)?;
+            let source_spread = source.spread();
+            let source_ty = source.ty();
 
-                        result.extend(expanded);
-                    }
+            let source_ty = self
+                .normalize(
+                    Some(source.span()),
+                    Cow::Borrowed(&source_ty),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        ..Default::default()
+                    },
+                )?
+                .freezed();
 
-                    _ => {
-                        let e_ty = self.get_iterator_element_type(
-                            span,
-                            Cow::Borrowed(&target_ty),
-                            false,
-                            GetIteratorOpts {
-                                disallow_str: true,
-                                ..Default::default()
-                            },
-                        )?;
+            match (target_spread, source_spread) {
+                (None, None) => {
+                    // Trivial case.
+                    relate(self, &source_ty, &target_ty)?;
+                    continue;
+                }
 
-                        result.push(TypeOrSpread {
-                            span: target_span,
-                            spread: Some(spread),
-                            ty: Box::new(Type::Rest(RestType {
-                                span: spread,
-                                ty: Box::new(target_ty.into_owned()),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })),
-                        });
-                        continue;
+                (Some(target_spread), None) => {
+                    match target_ty.normalize() {
+                        Type::Tuple(target_tuple) if target_tuple.elems.is_empty() => {
+                            // Handle
+                            //
+                            //   param: (...x: [boolean, sting, ...number])
+                            //   arg: (true, 'str')
+                            //      or
+                            //   arg: (true, 'str', 10)
+
+                            let res = self
+                                .assign_with_opts(
+                                    &mut Default::default(),
+                                    &param_ty.elems[0].ty,
+                                    &arg.ty,
+                                    AssignOpts {
+                                        span: arg.span(),
+                                        allow_iterable_on_rhs: true,
+                                        ..Default::default()
+                                    },
+                                )
+                                .map_err(|err| {
+                                    ErrorKind::WrongArgType {
+                                        span: arg.span(),
+                                        inner: box err,
+                                    }
+                                    .into()
+                                })
+                                .context("tried to assign to first element of a tuple type of a parameter");
+
+                            match res {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    report_err!(err);
+                                    return Ok(());
+                                }
+                            };
+
+                            for param_elem in param_ty.elems.iter().skip(1) {
+                                let arg = match args_iter.next() {
+                                    Some(v) => v,
+                                    None => {
+                                        // TODO(kdy1): Argument count
+                                        break;
+                                    }
+                                };
+
+                                // TODO(kdy1): Check if arg.spread is none.
+                                // The logic below is correct only if the arg is not
+                                // spread.
+
+                                let res = self
+                                    .assign_with_opts(
+                                        &mut Default::default(),
+                                        &param_elem.ty,
+                                        &arg.ty,
+                                        AssignOpts {
+                                            span: arg.span(),
+                                            allow_iterable_on_rhs: true,
+                                            ..Default::default()
+                                        },
+                                    )
+                                    .convert_err(|err| ErrorKind::WrongArgType {
+                                        span: arg.span(),
+                                        inner: box err.into(),
+                                    })
+                                    .context("tried to assign to element of a tuple type of a parameter");
+
+                                match res {
+                                    Ok(_) => {}
+                                    Err(err) => {
+                                        report_err!(err);
+                                        return Ok(());
+                                    }
+                                };
+                            }
+
+                            // Skip default type checking logic.
+                            continue;
+                        }
                     }
                 }
-            }
 
-            result.push(TypeOrSpread {
-                span: target_span,
-                spread: None,
-                ty: Box::new(target_ty.into_owned()),
-            });
+                (Some(target_spread), Some(source_spread)) => {}
+
+                (None, Some(source_spread)) => {}
+            }
         }
 
         Ok(())
