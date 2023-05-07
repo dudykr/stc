@@ -24,13 +24,15 @@ impl Analyzer<'_, '_> {
         };
 
         for elem in elems {
-            let e = elem.as_spread_and_type();
+            let elem_span = elem.span();
+            let spread = elem.spread();
             let label = elem.label();
+            let e_ty = elem.ty();
 
             let ty = self
                 .normalize(
-                    Some(e.span),
-                    Cow::Borrowed(&e.ty),
+                    Some(elem_span),
+                    Cow::Borrowed(&e_ty),
                     NormalizeTypeOpts {
                         preserve_global_this: true,
                         ..Default::default()
@@ -38,7 +40,7 @@ impl Analyzer<'_, '_> {
                 )?
                 .freezed();
 
-            if let Some(spread) = e.spread {
+            if let Some(spread) = spread {
                 match ty.normalize() {
                     Type::Tuple(tuple) => {
                         let expanded = self.expand_spread_likes(tuple.span, &tuple.elems)?;
@@ -47,9 +49,9 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
-                        let elem_type = self.get_iterator_element_type(
+                        let e_ty = self.get_iterator_element_type(
                             span,
-                            Cow::Borrowed(&e.ty),
+                            Cow::Borrowed(&e_ty),
                             false,
                             GetIteratorOpts {
                                 disallow_str: true,
@@ -58,8 +60,8 @@ impl Analyzer<'_, '_> {
                         )?;
 
                         result.elems.push(TupleElement {
-                            span: e.span,
-                            label,
+                            span: elem_span,
+                            label: label.cloned(),
                             ty: Box::new(Type::Rest(RestType {
                                 span: spread,
                                 ty: Box::new(ty.into_owned()),
@@ -74,8 +76,8 @@ impl Analyzer<'_, '_> {
             }
 
             result.elems.push(TupleElement {
-                span: e.span,
-                label,
+                span: elem_span,
+                label: label.cloned(),
                 ty: Box::new(ty.into_owned()),
                 tracker: Default::default(),
             });
@@ -86,6 +88,26 @@ impl Analyzer<'_, '_> {
 }
 
 pub(crate) trait SpreadLike {
-    fn label(&self) -> Option<RPat>;
-    fn as_spread_and_type(&self) -> TypeOrSpread;
+    fn span(&self) -> Span;
+    fn label(&self) -> Option<&RPat>;
+    fn spread(&self) -> Option<Span>;
+    fn ty(&self) -> &Type;
+}
+
+impl SpreadLike for TupleElement {
+    fn span(&self) -> Span {
+        self.span
+    }
+
+    fn label(&self) -> Option<&RPat> {
+        self.label.as_ref()
+    }
+
+    fn spread(&self) -> Option<Span> {
+        None
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
 }
