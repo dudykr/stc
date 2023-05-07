@@ -40,7 +40,11 @@ impl Analyzer<'_, '_> {
 
             if let Some(spread) = e.spread {
                 match ty.normalize() {
-                    Type::Tuple(tuple) => {}
+                    Type::Tuple(tuple) => {
+                        let expanded = self.expand_spread_likes(tuple.span, &tuple.elems)?;
+
+                        result.elems.extend(expanded.elems);
+                    }
 
                     _ => {
                         let elem_type = self.get_iterator_element_type(
