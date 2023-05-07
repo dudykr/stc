@@ -2569,6 +2569,7 @@ impl Analyzer<'_, '_> {
             })
             .collect::<Vec<_>>();
         callable.sort_by_key(|(_, res)| *res);
+        dbg!(&callable);
 
         if candidates.is_empty() {
             return Ok(None);
@@ -4104,6 +4105,7 @@ fn test_arg_check_result_order() {
 }
 
 /// TODO(kdy1): Use cow
+#[derive(Debug)]
 pub(super) struct CallCandidate {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
