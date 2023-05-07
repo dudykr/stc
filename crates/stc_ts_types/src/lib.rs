@@ -3291,18 +3291,13 @@ impl_freeze!(ClassDef);
 impl_freeze!(Mapped);
 
 #[auto_impl::auto_impl(&)]
-pub trait SpreadLike {
-    fn span(&self) -> Span;
+pub trait SpreadLike: Spanned {
     fn label(&self) -> Option<&RPat>;
     fn spread(&self) -> Option<Span>;
     fn ty(&self) -> &Type;
 }
 
 impl SpreadLike for TupleElement {
-    fn span(&self) -> Span {
-        self.span
-    }
-
     fn label(&self) -> Option<&RPat> {
         self.label.as_ref()
     }
@@ -3317,10 +3312,6 @@ impl SpreadLike for TupleElement {
 }
 
 impl SpreadLike for FnParam {
-    fn span(&self) -> Span {
-        self.span
-    }
-
     fn label(&self) -> Option<&RPat> {
         Some(&self.pat)
     }
@@ -3338,10 +3329,6 @@ impl SpreadLike for FnParam {
 }
 
 impl SpreadLike for TypeOrSpread {
-    fn span(&self) -> Span {
-        self.span
-    }
-
     fn label(&self) -> Option<&RPat> {
         None
     }
