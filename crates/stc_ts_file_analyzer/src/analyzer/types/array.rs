@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
 
                 (Some(target_spread), Some(source_spread)) => {
                     if relate(self, &source_ty, &target_ty, true).is_ok() {
-                        return Ok(());
+                        continue;
                     }
                 }
 
