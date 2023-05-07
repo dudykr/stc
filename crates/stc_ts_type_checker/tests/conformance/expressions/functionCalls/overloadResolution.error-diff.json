@@ -1,30 +1,16 @@
 {
   "required_errors": {
     "TS2344": 1,
-    "TS2769": 2,
     "TS2339": 1
   },
   "required_error_lines": {
     "TS2344": [
       81
     ],
-    "TS2769": [
-      84,
-      85
-    ],
     "TS2339": [
       91
     ]
   },
-  "extra_errors": {
-    "TS2345": 4
-  },
-  "extra_error_lines": {
-    "TS2345": [
-      76,
-      77,
-      84,
-      85
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
