@@ -3168,18 +3168,7 @@ impl Analyzer<'_, '_> {
                 span,
                 &mut spread_arg_types.iter(),
                 &mut params.iter(),
-                &mut |this, source, target, is_iterator| {
-                    this.assign_with_opts(
-                        &mut Default::default(),
-                        target,
-                        source,
-                        AssignOpts {
-                            span: source.span(),
-                            allow_iterable_on_rhs: is_iterator,
-                            ..Default::default()
-                        },
-                    )
-                },
+                &mut |this, source, target, opts| this.assign_with_opts(&mut Default::default(), target, source, opts),
             )?;
         }
 

@@ -6,10 +6,13 @@ use stc_utils::cache::Freeze;
 use swc_common::Span;
 
 use super::NormalizeTypeOpts;
-use crate::{analyzer::Analyzer, VResult};
+use crate::{
+    analyzer::{assign::AssignOpts, Analyzer},
+    VResult,
+};
 
 impl Analyzer<'_, '_> {
-    /// `(this, source, target, is_iterator)`
+    /// `(this, source, target, opts)`
     pub(crate) fn relate_spread_likes<T, S, F>(
         &mut self,
         span: Span,
@@ -20,7 +23,7 @@ impl Analyzer<'_, '_> {
     where
         T: SpreadLike,
         S: SpreadLike,
-        F: FnMut(&mut Self, &Type, &Type, bool) -> VResult<()>,
+        F: FnMut(&mut Self, &Type, &Type, AssignOpts) -> VResult<()>,
     {
         loop {
             let source = match sources.next() {
@@ -65,11 +68,30 @@ impl Analyzer<'_, '_> {
             match (target_spread, source_spread) {
                 (None, None) => {
                     // Trivial case.
-                    relate(self, &source_ty, &target_ty, false)?;
+                    relate(
+                        self,
+                        &source_ty,
+                        &target_ty,
+                        AssignOpts {
+                            span: source.span(),
+                            ..Default::default()
+                        },
+                    )?;
                 }
 
                 (Some(target_spread), Some(source_spread)) => {
-                    if relate(self, &source_ty, &target_ty, true).is_ok() {
+                    if relate(
+                        self,
+                        &source_ty,
+                        &target_ty,
+                        AssignOpts {
+                            span: source.span(),
+                            allow_iterable_on_rhs: true,
+                            ..Default::default()
+                        },
+                    )
+                    .is_ok()
+                    {
                         continue;
                     }
                 }
