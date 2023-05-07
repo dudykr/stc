@@ -3162,13 +3162,8 @@ impl Analyzer<'_, '_> {
             )
         });
 
-        let params_without_this = params_iter.collect_vec();
-
-        let params = self.expand_spread_likes(span, &params_without_this)?;
-        let args = self.expand_spread_likes(span, &spread_arg_types)?;
-
-        let mut params_iter = params.iter();
-        let mut args_iter = args.iter();
+        let params = params_iter.collect_vec();
+        self.relate_spread_likes(span, &params, spread_arg_types, |this, param, arg| {})?;
 
         loop {
             let param = params_iter.next();

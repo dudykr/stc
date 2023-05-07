@@ -12,22 +12,24 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn expand_spread_likes<T>(&mut self, span: Span, elems: &[T]) -> VResult<Vec<TypeOrSpread>>
+    pub(crate) fn relate_spread_likes<T, S, F>(&mut self, span: Span, targets: &[T], sources: &[S], relate: F) -> VResult<()>
     where
         T: SpreadLike,
+        S: SpreadLike,
+        F: FnMut(&mut Self, &TypeOrSpread, &TypeOrSpread),
     {
         let mut result = vec![];
 
-        for elem in elems {
-            let elem_span = elem.span();
-            let spread = elem.spread();
-            let label = elem.label();
-            let e_ty = elem.ty();
+        for target in targets {
+            let target_span = target.span();
+            let target_spread = target.spread();
+            let target_label = target.label();
+            let target_ty = target.ty();
 
-            let ty = self
+            let target_ty = self
                 .normalize(
-                    Some(elem_span),
-                    Cow::Borrowed(&e_ty),
+                    Some(target_span),
+                    Cow::Borrowed(&target_ty),
                     NormalizeTypeOpts {
                         preserve_global_this: true,
                         ..Default::default()
@@ -35,8 +37,8 @@ impl Analyzer<'_, '_> {
                 )?
                 .freezed();
 
-            if let Some(spread) = spread {
-                match ty.normalize() {
+            if let Some(spread) = target_spread {
+                match target_ty.normalize() {
                     Type::Tuple(tuple) => {
                         let expanded = self.expand_spread_likes(tuple.span, &tuple.elems)?;
 
@@ -46,7 +48,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         let e_ty = self.get_iterator_element_type(
                             span,
-                            Cow::Borrowed(&e_ty),
+                            Cow::Borrowed(&target_ty),
                             false,
                             GetIteratorOpts {
                                 disallow_str: true,
@@ -55,11 +57,11 @@ impl Analyzer<'_, '_> {
                         )?;
 
                         result.push(TypeOrSpread {
-                            span: elem_span,
+                            span: target_span,
                             spread: Some(spread),
                             ty: Box::new(Type::Rest(RestType {
                                 span: spread,
-                                ty: Box::new(ty.into_owned()),
+                                ty: Box::new(target_ty.into_owned()),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })),
@@ -70,9 +72,9 @@ impl Analyzer<'_, '_> {
             }
 
             result.push(TypeOrSpread {
-                span: elem_span,
+                span: target_span,
                 spread: None,
-                ty: Box::new(ty.into_owned()),
+                ty: Box::new(target_ty.into_owned()),
             });
         }
 
