@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
 
             let target_ty = self
                 .normalize(
-                    Some(target_span),
+                    Some(span),
                     Cow::Borrowed(&target_ty),
                     NormalizeTypeOpts {
                         preserve_global_this: true,
@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
 
             let source_ty = self
                 .normalize(
-                    Some(source.span()),
+                    Some(span),
                     Cow::Borrowed(&source_ty),
                     NormalizeTypeOpts {
                         preserve_global_this: true,
