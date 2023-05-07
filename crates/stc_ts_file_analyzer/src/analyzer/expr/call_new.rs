@@ -2718,7 +2718,7 @@ impl Analyzer<'_, '_> {
                         .clone()
                         .into_iter()
                         .filter_map(|cn| {
-                            if let Err(e) = self.validate_arg_types(&cn.params, spread_arg_types, false, true) {
+                            if let Err(e) = self.validate_arg_types(cn.span, &cn.params, spread_arg_types, false, true) {
                                 Some(e)
                             } else {
                                 None
@@ -2989,7 +2989,7 @@ impl Analyzer<'_, '_> {
 
             if passed_arity_checks {
                 if !is_overload {
-                    self.validate_arg_types(&expanded_param_types, spread_arg_types, true, false)?;
+                    self.validate_arg_types(span, &expanded_param_types, spread_arg_types, true, false)?;
                 }
             }
 
@@ -3063,7 +3063,7 @@ impl Analyzer<'_, '_> {
         }
 
         if passed_arity_checks && !is_overload {
-            self.validate_arg_types(&params, spread_arg_types, type_params.is_some(), false)?;
+            self.validate_arg_types(span, &params, spread_arg_types, type_params.is_some(), false)?;
         }
 
         print_type("Return", &ret_ty);
@@ -3085,6 +3085,7 @@ impl Analyzer<'_, '_> {
 
     fn validate_arg_types(
         &mut self,
+        span: Span,
         params: &[FnParam],
         spread_arg_types: &[TypeOrSpread],
         is_generic: bool,
@@ -3160,7 +3161,14 @@ impl Analyzer<'_, '_> {
                 })
             )
         });
-        let mut args_iter = spread_arg_types.iter();
+
+        let params_without_this = params_iter.collect_vec();
+
+        let params = self.expand_spread_likes(span, &params_without_this)?;
+        let args = self.expand_spread_likes(span, &spread_arg_types)?;
+
+        let mut params_iter = params.iter();
+        let mut args_iter = args.iter();
 
         loop {
             let param = params_iter.next();
