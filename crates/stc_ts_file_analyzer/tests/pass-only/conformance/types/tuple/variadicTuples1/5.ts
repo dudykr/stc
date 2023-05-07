@@ -3,6 +3,8 @@
 
 // Last argument is contextually typed
 
+declare const sa: string[];
+
 declare function call<T extends unknown[], R>(...args: [...T, (...args: T) => R]): [T, R];
 
 call('hello', 32, (a, b) => 42);
