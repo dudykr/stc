@@ -64,9 +64,17 @@ impl Analyzer<'_, '_> {
                             })),
                             tracker: Default::default(),
                         });
+                        continue;
                     }
                 }
             }
+
+            result.elems.push(TupleElement {
+                span: e.span,
+                label,
+                ty: Box::new(ty.into_owned()),
+                tracker: Default::default(),
+            });
         }
 
         Ok(result)
