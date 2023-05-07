@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
 
             let source_ty = self
                 .normalize(
-                    Some(span),
+                    Some(source.span()),
                     Cow::Borrowed(&source_ty),
                     NormalizeTypeOpts {
                         preserve_global_this: true,
