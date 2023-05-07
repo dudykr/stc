@@ -2613,6 +2613,7 @@ dependencies = [
 name = "stc_ts_types"
 version = "0.0.0"
 dependencies = [
+ "auto_impl 0.5.0",
  "dashmap 3.11.10",
  "fxhash",
  "is-macro 0.1.9",
