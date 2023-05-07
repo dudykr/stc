@@ -1,5 +1,5 @@
 //! Handles new expressions and call expressions.
-use std::borrow::Cow;
+use std::{borrow::Cow, iter::Peekable};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -20,8 +20,8 @@ use stc_ts_storage::ErrorStore;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Id, IdCtx, IndexedAccessType,
-    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref, StaticThis, Symbol,
-    TypeParamDecl, Union, UnionMetadata,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref, SpreadLike, StaticThis,
+    Symbol, TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
@@ -3439,6 +3439,14 @@ impl Analyzer<'_, '_> {
             }
         }
         Ok(())
+    }
+
+    fn validate_arg_types_inner(
+        &mut self,
+        span: Span,
+        params: &mut Peekable<&mut dyn Iterator<Item = &dyn SpreadLike>>,
+        args: &mut Peekable<&mut dyn Iterator<Item = &dyn SpreadLike>>,
+    ) {
     }
 
     /// Note:
