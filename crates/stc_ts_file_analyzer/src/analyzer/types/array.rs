@@ -18,9 +18,19 @@ impl Analyzer<'_, '_> {
         S: SpreadLike,
         F: FnMut(&mut Self, &TypeOrSpread, &TypeOrSpread),
     {
-        let mut result = vec![];
+        let mut targets_iter = targets.iter();
+        let mut sources_iter = sources.iter();
 
-        for target in targets {
+        loop {
+            let source = match sources_iter.next() {
+                Some(source) => source,
+                None => break,
+            };
+            let target = match targets_iter.next() {
+                Some(target) => target,
+                None => break,
+            };
+
             let target_span = target.span();
             let target_spread = target.spread();
             let target_label = target.label();
@@ -78,7 +88,7 @@ impl Analyzer<'_, '_> {
             });
         }
 
-        Ok(result)
+        Ok(())
     }
 }
 
