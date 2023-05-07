@@ -9,6 +9,7 @@ use super::NormalizeTypeOpts;
 use crate::{analyzer::Analyzer, VResult};
 
 impl Analyzer<'_, '_> {
+    /// `(this, source, target, is_iterator)`
     pub(crate) fn relate_spread_likes<T, S, F>(
         &mut self,
         span: Span,
@@ -19,7 +20,7 @@ impl Analyzer<'_, '_> {
     where
         T: SpreadLike,
         S: SpreadLike,
-        F: FnMut(&mut Self, &Type, &Type) -> VResult<()>,
+        F: FnMut(&mut Self, &Type, &Type, bool) -> VResult<()>,
     {
         loop {
             let source = match sources.next() {
@@ -64,94 +65,29 @@ impl Analyzer<'_, '_> {
             match (target_spread, source_spread) {
                 (None, None) => {
                     // Trivial case.
-                    relate(self, &source_ty, &target_ty)?;
-                    continue;
+                    relate(self, &source_ty, &target_ty, false)?;
                 }
 
-                (Some(target_spread), None) => {
-                    match target_ty.normalize() {
-                        Type::Tuple(target_tuple) if target_tuple.elems.is_empty() => {
-                            // Handle
-                            //
-                            //   param: (...x: [boolean, sting, ...number])
-                            //   arg: (true, 'str')
-                            //      or
-                            //   arg: (true, 'str', 10)
-
-                            let res = self
-                                .assign_with_opts(
-                                    &mut Default::default(),
-                                    &param_ty.elems[0].ty,
-                                    &arg.ty,
-                                    AssignOpts {
-                                        span: arg.span(),
-                                        allow_iterable_on_rhs: true,
-                                        ..Default::default()
-                                    },
-                                )
-                                .map_err(|err| {
-                                    ErrorKind::WrongArgType {
-                                        span: arg.span(),
-                                        inner: box err,
-                                    }
-                                    .into()
-                                })
-                                .context("tried to assign to first element of a tuple type of a parameter");
-
-                            match res {
-                                Ok(_) => {}
-                                Err(err) => {
-                                    report_err!(err);
-                                    return Ok(());
-                                }
-                            };
-
-                            for param_elem in param_ty.elems.iter().skip(1) {
-                                let arg = match args_iter.next() {
-                                    Some(v) => v,
-                                    None => {
-                                        // TODO(kdy1): Argument count
-                                        break;
-                                    }
-                                };
-
-                                // TODO(kdy1): Check if arg.spread is none.
-                                // The logic below is correct only if the arg is not
-                                // spread.
-
-                                let res = self
-                                    .assign_with_opts(
-                                        &mut Default::default(),
-                                        &param_elem.ty,
-                                        &arg.ty,
-                                        AssignOpts {
-                                            span: arg.span(),
-                                            allow_iterable_on_rhs: true,
-                                            ..Default::default()
-                                        },
-                                    )
-                                    .convert_err(|err| ErrorKind::WrongArgType {
-                                        span: arg.span(),
-                                        inner: box err.into(),
-                                    })
-                                    .context("tried to assign to element of a tuple type of a parameter");
-
-                                match res {
-                                    Ok(_) => {}
-                                    Err(err) => {
-                                        report_err!(err);
-                                        return Ok(());
-                                    }
-                                };
-                            }
-
-                            // Skip default type checking logic.
-                            continue;
-                        }
+                (Some(target_spread), Some(source_spread)) => {
+                    if relate(self, &source_ty, &target_ty, true).is_ok() {
+                        return Ok(());
                     }
                 }
 
-                (Some(target_spread), Some(source_spread)) => {}
+                (Some(target_spread), None) => {
+                    if let Type::Tuple(target_tuple) = target_ty.normalize() {
+                        // Handle
+                        //
+                        //   param: (...x: [boolean, sting, ...number])
+                        //   arg: (true, 'str')
+                        //      or
+                        //   arg: (true, 'str', 10)
+
+                        // Consume `sources`
+                        self.relate_spread_likes(span, sources, &mut target_tuple.elems.iter(), relate)?;
+                        continue;
+                    }
+                }
 
                 (None, Some(source_spread)) => {}
             }

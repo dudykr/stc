@@ -3163,25 +3163,15 @@ impl Analyzer<'_, '_> {
         });
 
         let params = params_iter.collect_vec();
-        self.relate_spread_likes(span, &mut spread_arg_types.iter(), &mut params.iter(), |this, param, arg| {})?;
+        self.relate_spread_likes(
+            span,
+            &mut spread_arg_types.iter(),
+            &mut params.iter(),
+            |this, param, arg, is_iterator| {},
+        )?;
 
         loop {
             if let RPat::Rest(..) = &param.pat {
-                if arg.spread.is_some() {
-                    if let Ok(()) = self.assign_with_opts(
-                        &mut Default::default(),
-                        &param.ty,
-                        &arg.ty,
-                        AssignOpts {
-                            span: arg.span(),
-                            allow_iterable_on_rhs: true,
-                            ..Default::default()
-                        },
-                    ) {
-                        continue;
-                    }
-                }
-
                 match param_ty.normalize() {
                     Type::Array(arr) => {
                         // We should change type if the parameter is a rest parameter.
