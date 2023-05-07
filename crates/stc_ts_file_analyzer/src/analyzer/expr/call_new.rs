@@ -3734,31 +3734,26 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match param.ty.normalize_instance() {
-                    Type::Param(..) => {}
-                    _ => {
-                        if analyzer
-                            .assign_with_opts(
-                                &mut Default::default(),
-                                &param.ty,
-                                &arg.ty,
-                                AssignOpts {
-                                    span,
-                                    allow_unknown_rhs: Some(true),
-                                    allow_assignment_to_param: true,
-                                    allow_assignment_to_param_constraint: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .is_err()
-                        {
-                            return ArgCheckResult::ArgTypeMismatch;
-                        }
+                if analyzer
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        &param.ty,
+                        &arg.ty,
+                        AssignOpts {
+                            span,
+                            allow_unknown_rhs: Some(true),
+                            allow_assignment_to_param: true,
+                            allow_assignment_to_param_constraint: true,
+                            ..Default::default()
+                        },
+                    )
+                    .is_err()
+                {
+                    return ArgCheckResult::ArgTypeMismatch;
+                }
 
-                        if !analyzer.is_subtype_in_fn_call(span, &arg.ty, &param.ty) {
-                            exact = false;
-                        }
-                    }
+                if !analyzer.is_subtype_in_fn_call(span, &arg.ty, &param.ty) {
+                    exact = false;
                 }
             }
 
