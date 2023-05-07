@@ -15,7 +15,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         sources: &mut dyn Iterator<Item = &S>,
         targets: &mut dyn Iterator<Item = &T>,
-        mut relate: F,
+        relate: &mut F,
     ) -> VResult<()>
     where
         T: SpreadLike,
