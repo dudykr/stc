@@ -3447,6 +3447,13 @@ impl Analyzer<'_, '_> {
         params: &mut Peekable<&mut dyn Iterator<Item = &dyn SpreadLike>>,
         args: &mut Peekable<&mut dyn Iterator<Item = &dyn SpreadLike>>,
     ) {
+        while let (Some(param), Some(arg)) = (params.peek(), args.peek()) {
+            // Consume iterator
+            params.next();
+            args.next();
+
+            //
+        }
     }
 
     /// Note:
