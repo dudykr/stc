@@ -449,6 +449,8 @@ impl Analyzer<'_, '_> {
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
 
+        let _stack = stack::track(span)?;
+
         let ty = ty.normalize();
 
         match ty {
