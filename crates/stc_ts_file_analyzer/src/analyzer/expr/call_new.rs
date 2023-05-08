@@ -3164,7 +3164,7 @@ impl Analyzer<'_, '_> {
 
         let mut args_iter = spread_arg_types.iter();
 
-        self.validate_arg_types_inner(span, &mut params_iter, &mut args_iter)
+        self.validate_arg_types_inner(span, &mut params_iter, &mut args_iter, is_generic, is_overload)
     }
 
     fn validate_arg_types_inner(
@@ -3172,7 +3172,23 @@ impl Analyzer<'_, '_> {
         span: Span,
         params: &mut Peekable<&mut dyn Iterator<Item = &dyn SpreadLike>>,
         args: &mut Peekable<&mut dyn Iterator<Item = &dyn SpreadLike>>,
+        is_generic: bool,
+        is_overload: bool,
     ) -> VResult<()> {
+        macro_rules! report_err {
+            ($err:expr) => {{
+                if is_overload {
+                    return Err($err.into());
+                } else {
+                    self.storage.report($err.context("tried to validate an argument"));
+                }
+
+                if is_generic {
+                    return Ok(());
+                }
+            }};
+        }
+
         while let (Some(param), Some(arg)) = (params.peek(), args.peek()) {
             // Consume iterator
             params.next();
