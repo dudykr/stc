@@ -190,6 +190,9 @@ pub fn parse_conformance_test(file_name: &Path) -> Result<Vec<TestSpec>> {
                 } else if s.starts_with("noImplicitReturns:") {
                     let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
                     rule.no_implicit_returns = v;
+                } else if s.starts_with("noUncheckedIndexedAccess:") {
+                    let v = s["noUncheckedIndexedAccess:".len()..].trim().parse().unwrap();
+                    rule.no_unchecked_indexed_access = v;
                 } else if s.starts_with("declaration") {
                 } else if s.starts_with("stripInternal:") {
                     // TODO(kdy1): Handle
