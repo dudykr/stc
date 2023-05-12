@@ -40,6 +40,8 @@ pub(crate) struct ExtendsOpts {
     pub strict: bool,
 
     pub allow_missing_fields: bool,
+
+    pub allow_type_params: bool,
 }
 
 /// Generic expander.
@@ -411,6 +413,13 @@ impl Analyzer<'_, '_> {
             return Some(false);
         }
 
+        // TODO: Implement correct logic
+        if let Type::Index(..) = child.normalize() {
+            if parent.is_str_like() {
+                return Some(true);
+            }
+        }
+
         let res = self.assign_with_opts(
             &mut Default::default(),
             parent,
@@ -423,6 +432,7 @@ impl Analyzer<'_, '_> {
                 allow_unknown_rhs: Some(!opts.strict),
                 allow_unknown_rhs_if_expanded: !opts.strict,
                 allow_missing_fields: opts.allow_missing_fields,
+                allow_assignment_to_param: opts.allow_type_params,
                 ..Default::default()
             },
         );

@@ -487,10 +487,12 @@ impl Analyzer<'_, '_> {
     /// Used for types like `'foo' | 'bar'` or alias of them.
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
-        let _guard = stack::track(span);
+        let _guard = stack::track(span)?;
 
-        match ty.normalize() {
-            ty @ (Type::Ref(..) | Type::Alias(..) | Type::Query(..)) => {
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(..) | Type::Alias(..) | Type::Query(..) => {
                 let ty = self.normalize(
                     Some(span),
                     Cow::Borrowed(ty),

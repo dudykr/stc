@@ -17,7 +17,7 @@ use stc_ts_types::{
     Intersection, Key, KeywordType, Method, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type, Unique,
 };
 use stc_ts_utils::find_ids_in_pat;
-use stc_utils::{cache::Freeze, AHashSet};
+use stc_utils::{cache::Freeze, FxHashSet};
 use swc_atoms::js_word;
 use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -965,8 +965,8 @@ impl Analyzer<'_, '_> {
 
         let mut keys = vec![];
         let mut private_keys = vec![];
-        let mut is_props = AHashSet::default();
-        let mut is_private_props = AHashSet::default();
+        let mut is_props = FxHashSet::default();
+        let mut is_private_props = FxHashSet::default();
 
         for member in &c.body {
             match member {
