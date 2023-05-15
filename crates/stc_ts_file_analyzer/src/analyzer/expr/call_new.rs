@@ -3042,6 +3042,12 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, simplified again", &ty);
 
+            if type_ann.is_none() && (ty.is_class() || ty.is_class_def()) {
+                ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
+
+                print_type("Return, generalized", &ty);
+            }
+
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &ty);
