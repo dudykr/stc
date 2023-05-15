@@ -1,5 +1,14 @@
 
   x Type
+   ,-[$DIR/tests/pass/fn/overloading/union-1.ts:1:1]
+ 1 | type Kind = "A" | "B"
+   :      ^^^^
+   `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
     ,-[$DIR/tests/pass/fn/overloading/union-1.ts:20:1]
  20 | function hasKind(entity: Entity, kind: Kind): boolean {
  21 |     return entity.kind === kind;

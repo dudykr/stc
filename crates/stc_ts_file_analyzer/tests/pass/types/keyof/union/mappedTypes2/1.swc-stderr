@@ -1,5 +1,18 @@
 
   x Type
+    ,-[$DIR/tests/pass/types/keyof/union/mappedTypes2/1.ts:8:1]
+  8 | 
+  9 | type K = keyof (Shape | {
+    :      ^
+ 10 |     name: "circle";
+    `----
+
+Error: 
+  > keyof (Shape | {
+  |     name: "circle";
+  | })
+
+  x Type
     ,-[$DIR/tests/pass/types/keyof/union/mappedTypes2/1.ts:15:1]
  15 | 
  16 | k

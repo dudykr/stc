@@ -1,5 +1,19 @@
 
   x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:3:1]
+ 3 | 
+ 4 | type Thing = { foo: string | number, bar(): number, baz: object };
+   :      ^^^^^
+   `----
+
+Error: 
+  > {
+  |     foo: (string | number);
+  |     bar(): number;
+  |     baz: object;
+  | }
+
+  x Type
    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:6:1]
  6 | function f41(o: Thing | undefined) {
  7 |     switch (typeof o?.foo) {

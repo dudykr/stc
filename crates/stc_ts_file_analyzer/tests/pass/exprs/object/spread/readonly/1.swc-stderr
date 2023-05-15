@@ -1,5 +1,20 @@
 
   x Type
+   ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:1:1]
+ 1 | // #23734
+ 2 | export type ObjType = {
+   :             ^^^^^^^
+ 3 |     foo: string
+   `----
+
+Error: 
+  > {
+  |     foo: string;
+  |     baz: string;
+  |     quux: string;
+  | }
+
+  x Type
     ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:7:1]
   7 |     
   8 | ,-> export const obj: Readonly<ObjType> = {

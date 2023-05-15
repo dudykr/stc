@@ -1,5 +1,22 @@
 
   x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:2:1]
+ 2 | 
+ 3 | type ReducerArgs =
+   :      ^^^^^^^^^^^
+ 4 |   | ["add", { a: number; b: number }]
+   `----
+
+Error: 
+  > (["add", {
+  |         a: number;
+  |         b: number;
+  |     }] | ["concat", {
+  |         firstArr: any[];
+  |         secondArr: any[];
+  |     }])
+
+  x Type
    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/5.ts:7:1]
  7 | const reducer: (...args: ReducerArgs) => void = (op, args) => {
  8 |   switch (op) {
