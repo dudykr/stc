@@ -1,0 +1,21 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/wierd/1.ts:1:1]
+ 1 | export type Weird1 = (<U extends boolean>(a: U) => never) extends
+   :             ^^^^^^
+ 2 |     (<U extends true>(a: U) => never) ? never : never;
+   `----
+
+Error: 
+  > <U extends boolean>(a: U) => never extends <U extends true>(a: U) => never ? never : never
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/wierd/1.ts:3:1]
+ 3 | 
+ 4 | export type Weird2 = (<U extends boolean>(a: U) => U) extends
+   :             ^^^^^^
+ 5 |     (<U extends true>(a: U) => infer T) ? T : never;
+   `----
+
+Error: 
+  > <U extends boolean>(a: U) => U extends <U extends true>(a: U) => infer T ? T : never

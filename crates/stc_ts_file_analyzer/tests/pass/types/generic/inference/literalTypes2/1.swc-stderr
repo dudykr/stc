@@ -88,6 +88,16 @@ Error:
   > T[]
 
   x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:11:1]
+ 11 | 
+ 12 | type Bit = 0 | 1;
+    :      ^^^
+    `----
+
+Error: 
+  > (0 | 1)
+
+  x Type
     ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:13:1]
  13 | 
  14 | let aa = makeArray<Bit>(0);

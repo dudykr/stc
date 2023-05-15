@@ -1,5 +1,18 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:2:1]
+ 2 | 
+ 3 | type Container<Type extends string> = {
+   :      ^^^^^^^^^
+ 4 |     type: Type;
+   `----
+
+Error: 
+  > {
+  |     type: Type;
+  | }
+
+  x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:6:1]
  6 | 
  7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;

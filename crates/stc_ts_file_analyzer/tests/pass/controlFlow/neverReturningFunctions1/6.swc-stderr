@@ -1,5 +1,27 @@
 
   x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:41:1]
+ 41 | 
+ 42 | export type ComponentDefinition<T extends object = object> = T &
+    :             ^^^^^^^^^^^^^^^^^^^
+ 43 |   Partial<Component> &
+    `----
+
+Error: 
+  > (T & Partial<Component> & ThisType<(T & Component)>)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:44:1]
+ 44 |   ThisType<T & Component>;
+ 45 | export type Some = ComponentDefinition<object>;
+    :             ^^^^
+ 46 | const Component = registerComponent("test-component", {
+    `----
+
+Error: 
+  > ComponentDefinition<object>
+
+  x Type
     ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/6.ts:45:1]
  45 | export type Some = ComponentDefinition<object>;
  46 | const Component = registerComponent("test-component", {

@@ -1,5 +1,22 @@
 
   x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:2:1]
+ 2 | // https://github.com/microsoft/TypeScript/issues/35484
+ 3 | type D = { done: true, value: 1 } | { done: false, value: 2 };
+   :      ^
+ 4 | declare function fn(): D;
+   `----
+
+Error: 
+  > ({
+  |     done: true;
+  |     value: 1;
+  | } | {
+  |     done: false;
+  |     value: 2;
+  | })
+
+  x Type
    ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:5:1]
  5 | let o: D;
  6 | if ((o = fn()).done) {

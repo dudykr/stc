@@ -1,5 +1,36 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:4:1]
+ 4 | namespace Example1 {
+ 5 |     type S = { done: boolean, value: number };
+   :          ^
+ 6 |     type T =
+   `----
+
+Error: 
+  > {
+  |     done: boolean;
+  |     value: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:5:1]
+ 5 |     type S = { done: boolean, value: number };
+ 6 |     type T =
+   :          ^
+ 7 |         | { done: true, value: number }     // T0
+   `----
+
+Error: 
+  > ({
+  |     done: true;
+  |     value: number;
+  | } | {
+  |     done: false;
+  |     value: number;
+  | })
+
+  x Type
     ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/1.ts:14:1]
  14 |     // S is assignable to T1 when S["done"] is false
  15 |     t = s;

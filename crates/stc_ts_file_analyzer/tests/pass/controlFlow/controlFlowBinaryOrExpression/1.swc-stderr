@@ -1,5 +1,17 @@
 
   x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:11:1]
+ 11 | 
+ 12 | type EventTargetLike = { a: string } | I2 | I1;
+    :      ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ({
+  |     a: string;
+  | } | I2 | I1)
+
+  x Type
     ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:13:1]
  13 | 
  14 | var sourceObj: EventTargetLike = <any>undefined;

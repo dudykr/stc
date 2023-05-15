@@ -1,5 +1,16 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:1:1]
+ 1 | type Guid = string & { $Guid };          // Tagged string type
+   :      ^^^^
+   `----
+
+Error: 
+  > (string & {
+  |     $Guid: any;
+  | })
+
+  x Type
    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:3:1]
  3 | function createGuid() {
  4 |     return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
