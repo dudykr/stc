@@ -1,5 +1,15 @@
 
   x Type
+   ,-[$DIR/tests/pass/controlFlow/guard/assertions/8.ts:6:1]
+ 6 | 
+ 7 | export type Optional<a> = Some<a> | None;
+   :             ^^^^^^^^
+   `----
+
+Error: 
+  > (Some<a> | None)
+
+  x Type
     ,-[$DIR/tests/pass/controlFlow/guard/assertions/8.ts:11:1]
  11 | 
  12 | export const none: None = { none: '' };

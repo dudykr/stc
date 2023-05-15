@@ -1,5 +1,25 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/keyof/object/never.ts:1:1]
+ 1 | type A = object
+   :      ^
+ 2 | export type Keys = keyof A
+   `----
+
+Error: 
+  > object
+
+  x Type
+   ,-[$DIR/tests/pass/types/keyof/object/never.ts:1:1]
+ 1 | type A = object
+ 2 | export type Keys = keyof A
+   :             ^^^^
+   `----
+
+Error: 
+  > keyof A
+
+  x Type
    ,-[$DIR/tests/pass/types/keyof/object/never.ts:5:1]
  5 | 
  6 | keys

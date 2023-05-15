@@ -968,6 +968,16 @@ Error:
   > string
 
   x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:65:1]
+ 65 | 
+ 66 | type T0 = string | `${number}px`;
+    :      ^^
+    `----
+
+Error: 
+  > (string | `${number}px`)
+
+  x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:68:1]
  68 | function ft14(t: `foo${number}`) {
  69 |     let x1: string = t;
@@ -1293,6 +1303,16 @@ Error:
 
 Error: 
   > ('abc' | 'def' | 'ghi')
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:104:1]
+ 104 | 
+ 105 | type PixelValueType = `${number}px`;
+     :      ^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > `${number}px`
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:106:1]

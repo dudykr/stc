@@ -1,5 +1,18 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:2:1]
+ 2 | 
+ 3 | type Container<Type extends string> = {
+   :      ^^^^^^^^^
+ 4 |   type: Type;
+   `----
+
+Error: 
+  > {
+  |     type: Type;
+  | }
+
+  x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:8:1]
  8 |   t: Container<"a"> | (Container<"b"> & Container<"c">)
  9 | ): Container<"a"> => t;

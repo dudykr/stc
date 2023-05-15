@@ -1,5 +1,36 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:4:1]
+ 4 | namespace GH14865 {
+ 5 |     type Style1 = {
+   :          ^^^^^^
+ 6 |         type: "A";
+   `----
+
+Error: 
+  > ({
+  |     type: "A";
+  |     data: string;
+  | } | {
+  |     type: "B";
+  |     data: string;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:12:1]
+ 12 | 
+ 13 |     type Style2 = {
+    :          ^^^^^^
+ 14 |         type: "A" | "B";
+    `----
+
+Error: 
+  > {
+  |     type: ("A" | "B");
+  |     data: string;
+  | }
+
+  x Type
     ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:17:1]
  17 | 
  18 |     const a: Style2 = { type: "A", data: "whatevs" };

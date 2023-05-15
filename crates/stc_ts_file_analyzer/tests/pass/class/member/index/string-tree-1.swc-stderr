@@ -10,6 +10,16 @@ Error:
   > typeof StringTreeCollectionBase
 
   x Type
+   ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:1:1]
+ 1 | type StringTree = string | StringTreeCollection;
+   :      ^^^^^^^^^^
+ 2 | class StringTreeCollectionBase {
+   `----
+
+Error: 
+  > (string | StringTreeCollection)
+
+  x Type
     ,-[$DIR/tests/pass/class/member/index/string-tree-1.ts:8:1]
   8 | var x: StringTree;
   9 | if (typeof x !== "string") {

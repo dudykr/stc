@@ -1,5 +1,30 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/mapped/7-1.ts:2:1]
+ 2 | 
+ 3 | type Computed<T> = {
+   :      ^^^^^^^^
+ 4 |     get?(): T;
+   `----
+
+Error: 
+  > {
+  |     get?(): T;
+  |     set?(value: T): void;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/7-1.ts:1:1]
+ 1 | type Accessors<T> = { [K in keyof T]: (() => T[K]) | Computed<T[K]> };
+   :      ^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     [K in keyof T]: (() => T[K] | Computed<T[K]>);
+  | }
+
+  x Type
     ,-[$DIR/tests/pass/types/mapped/7-1.ts:9:1]
   9 | 
  10 | let vue = new Vue({

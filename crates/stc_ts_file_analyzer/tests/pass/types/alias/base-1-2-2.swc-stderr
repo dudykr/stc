@@ -1,5 +1,16 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:1:1]
+ 1 | interface I13 { x: string };
+ 2 | type T13 = I13;
+   :      ^^^
+ 3 | var x13_1: I13;
+   `----
+
+Error: 
+  > I13
+
+  x Type
    ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:5:1]
  5 | 
  6 | x13_1.x
@@ -124,6 +135,27 @@ Error:
 
 Error: 
   > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:12:1]
+ 12 | 
+ 13 | type T14 = string;
+    :      ^^^
+ 14 | var x14: T14;
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:20:1]
+ 20 | 
+ 21 | type Meters = number
+    :      ^^^^^^
+    `----
+
+Error: 
+  > number
 
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:26:1]
@@ -174,6 +206,17 @@ Error:
 
 Error: 
   > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:28:1]
+ 28 | 
+ 29 | type StringAndBoolean = [string, boolean]
+    :      ^^^^^^^^^^^^^^^^
+ 30 | declare function f16(s: StringAndBoolean): string;
+    `----
+
+Error: 
+  > [string, boolean]
 
   x Type
     ,-[$DIR/tests/pass/types/alias/base-1-2-2.ts:31:1]

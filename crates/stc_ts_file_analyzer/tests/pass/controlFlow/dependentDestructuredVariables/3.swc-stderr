@@ -1,5 +1,15 @@
 
   x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:2:1]
+ 2 | 
+ 3 | type Args = ["A", number] | ["B", string];
+   :      ^^^^
+   `----
+
+Error: 
+  > (["A", number] | ["B", string])
+
+  x Type
    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:5:1]
  5 | function f40(...[kind, data]: Args) {
  6 |   if (kind === "A") {
