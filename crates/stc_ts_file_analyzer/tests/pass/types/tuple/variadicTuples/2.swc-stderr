@@ -1,5 +1,14 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:1:1]
+ 1 | type A = readonly string[] extends unknown[] ? string : never;
+   :      ^
+   `----
+
+Error: 
+  > readonly string[] extends unknown[] ? string : never
+
+  x Type
    ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:2:1]
  2 | 
  3 | let a: A = "1" as never;
@@ -21,6 +30,17 @@ Error:
   > never
 
   x Type
+   ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:5:1]
+ 5 | 
+ 6 | type B = string[] extends readonly unknown[] ? string : never;
+   :      ^
+ 7 | let b: B = "1" as string;
+   `----
+
+Error: 
+  > string[] extends readonly unknown[] ? string : never
+
+  x Type
    ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:6:1]
  6 | type B = string[] extends readonly unknown[] ? string : never;
  7 | let b: B = "1" as string;
@@ -40,6 +60,17 @@ Error:
 
 Error: 
   > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:9:1]
+  9 | 
+ 10 | type C = readonly string[] extends readonly unknown[] ? string : never;
+    :      ^
+ 11 | let c: C = "1" as string;
+    `----
+
+Error: 
+  > readonly string[] extends readonly unknown[] ? string : never
 
   x Type
     ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:10:1]
