@@ -301,7 +301,7 @@ impl Analyzer<'_, '_> {
 
         // Exclude literals
         if !span.is_dummy() {
-            self.dump_type(span, &alias);
+            self.dump_type(d.id.span, &alias);
         }
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
