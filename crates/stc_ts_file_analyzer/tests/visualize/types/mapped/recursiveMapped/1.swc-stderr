@@ -1,5 +1,40 @@
 
   x Type
+   ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:2:1]
+ 2 | 
+ 3 | type NonOptionalKeys<T> = {
+   :      ^^^^^^^^^^^^^^^
+ 4 |   [P in keyof T]: undefined extends T[P] ? never : P;
+   `----
+
+Error: 
+  > {
+  |     [P in keyof T]: undefined extends T[P] ? never : P;
+  | }[keyof T]
+
+  x Type
+   ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:5:1]
+ 5 | }[keyof T];
+ 6 | type Child<T> = { [P in NonOptionalKeys<T>]: T[P] };
+   :      ^^^^^
+   `----
+
+Error: 
+  > {
+  |     [P in NonOptionalKeys<T>]: T[P];
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:15:1]
+ 15 | 
+ 16 | type ListChild = Child<ListWidget>;
+    :      ^^^^^^^^^
+    `----
+
+Error: 
+  > Child<ListWidget>
+
+  x Type
     ,-[$DIR/tests/visualize/types/mapped/recursiveMapped/1.ts:18:1]
  18 | declare let x: ListChild;
  19 | x.type;

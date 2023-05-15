@@ -1,5 +1,26 @@
 
   x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:8:1]
+  8 | 
+  9 |     type IAxis = ILinearAxis | ICategoricalAxis;
+    :          ^^^^^
+ 10 |     type IAxisType = "linear" | "categorical";
+    `----
+
+Error: 
+  > (ILinearAxis | ICategoricalAxis)
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:9:1]
+  9 |     type IAxis = ILinearAxis | ICategoricalAxis;
+ 10 |     type IAxisType = "linear" | "categorical";
+    :          ^^^^^^^^^
+    `----
+
+Error: 
+  > ("linear" | "categorical")
+
+  x Type
     ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:12:1]
  12 |     function getAxisType(): IAxisType {
  13 |         if (1 == 1) {

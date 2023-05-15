@@ -1,5 +1,21 @@
 
   x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:2:1]
+ 2 | 
+ 3 | type Action = { kind: "A"; payload: number } | { kind: "B"; payload: string };
+   :      ^^^^^^
+   `----
+
+Error: 
+  > ({
+  |     kind: "A";
+  |     payload: number;
+  | } | {
+  |     kind: "B";
+  |     payload: string;
+  | })
+
+  x Type
    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/1.ts:5:1]
  5 | function f13<T extends Action>({ kind, payload }: T) {
  6 |   if (kind === "A") {

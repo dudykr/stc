@@ -1,5 +1,46 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:2:1]
+ 2 | 
+ 3 | type A = { kind: 'a', foo: string };
+   :      ^
+ 4 | type B = { kind: 'b', foo: number };
+   `----
+
+Error: 
+  > {
+  |     kind: 'a';
+  |     foo: string;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:3:1]
+ 3 | type A = { kind: 'a', foo: string };
+ 4 | type B = { kind: 'b', foo: number };
+   :      ^
+ 5 | type C = { kind: 'c', foo: number };
+   `----
+
+Error: 
+  > {
+  |     kind: 'b';
+  |     foo: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:4:1]
+ 4 | type B = { kind: 'b', foo: number };
+ 5 | type C = { kind: 'c', foo: number };
+   :      ^
+   `----
+
+Error: 
+  > {
+  |     kind: 'c';
+  |     foo: number;
+  | }
+
+  x Type
    ,-[$DIR/tests/pass/types/intersection/intersectionReduction/1.ts:7:1]
  7 | declare let x: A | (B & C);  // A
  8 | export let a: A = x;
