@@ -1,0 +1,63 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:2:1]
+ 2 | 
+ 3 | let a: A = "1" as never;
+   :            ^^^^^^^^^^^^
+ 4 | a; // never;
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:3:1]
+ 3 | let a: A = "1" as never;
+ 4 | a; // never;
+   : ^
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:6:1]
+ 6 | type B = string[] extends readonly unknown[] ? string : never;
+ 7 | let b: B = "1" as string;
+   :            ^^^^^^^^^^^^^
+ 8 | b; // string
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:7:1]
+ 7 | let b: B = "1" as string;
+ 8 | b; // string
+   : ^
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:10:1]
+ 10 | type C = readonly string[] extends readonly unknown[] ? string : never;
+ 11 | let c: C = "1" as string;
+    :            ^^^^^^^^^^^^^
+ 12 | c; // string
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/tuple/variadicTuples/2.ts:11:1]
+ 11 | let c: C = "1" as string;
+ 12 | c; // string
+    : ^
+    `----
+
+Error: 
+  > string
