@@ -48,4 +48,4 @@ Error:
    `----
 
 Error: 
-  > (x: string) => string
+  > (x: '') => ''

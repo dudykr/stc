@@ -10,6 +10,8 @@ use stc_ts_generics::{
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Index, Interface, KeywordType, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
+use stc_ts_types::{Id, Interface, KeywordType, Readonly, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -216,6 +218,13 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..
             }) => return Some(true),
+            Type::Readonly(Readonly { span, ty, .. }) => {
+                if let Type::Readonly(parent) = parent {
+                    return self.extends(child.span(), ty, &parent.ty, opts);
+                } else {
+                    return Some(false);
+                }
+            }
             _ => {}
         }
 

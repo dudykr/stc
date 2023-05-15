@@ -42,4 +42,4 @@ Error:
    `----
 
 Error: 
-  > Map<string, boolean>
+  > Map<("" | "hello"), true>
