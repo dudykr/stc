@@ -3042,12 +3042,6 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, simplified again", &ty);
 
-            if self.ctx.is_type_ann_for_call_reeval_chosen_from_overload || type_ann.is_none() {
-                ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
-
-                print_type("Return, generalized", &ty);
-            }
-
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &ty);

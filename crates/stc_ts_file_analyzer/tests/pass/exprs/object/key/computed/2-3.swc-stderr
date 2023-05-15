@@ -45,7 +45,7 @@ Error:
    `----
 
 Error: 
-  > string
+  > ""
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/key/computed/2-3.ts:6:1]
@@ -55,4 +55,4 @@ Error:
    `----
 
 Error: 
-  > string
+  > ""

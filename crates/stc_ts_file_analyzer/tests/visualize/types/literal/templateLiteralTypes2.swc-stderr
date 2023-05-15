@@ -789,7 +789,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:1]
@@ -855,7 +855,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > ('a' | `foo${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:1]
@@ -899,7 +899,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:1]
@@ -965,7 +965,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > ('a' | `foo${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:65:1]
@@ -1074,7 +1074,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `xyz-${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:1]
@@ -1118,7 +1118,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `xyz-${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:87:1]

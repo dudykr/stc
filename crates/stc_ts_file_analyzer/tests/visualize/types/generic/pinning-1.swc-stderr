@@ -120,6 +120,6 @@ Error:
 
 Error: 
   > {
-  |     length: number;
+  |     length: 3;
   |     charAt: (x: number) => void;
   | }

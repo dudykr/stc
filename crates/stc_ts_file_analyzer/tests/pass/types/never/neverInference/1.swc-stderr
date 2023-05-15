@@ -37,7 +37,7 @@ Error:
    `----
 
 Error: 
-  > number[]
+  > 0[]
 
   x Type
    ,-[$DIR/tests/pass/types/never/neverInference/1.ts:1:1]

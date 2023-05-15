@@ -1,6 +1,6 @@
 Stats {
     required_error: 3646,
     matched_error: 6389,
-    extra_error: 767,
+    extra_error: 770,
     panic: 75,
 }
