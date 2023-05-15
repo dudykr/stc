@@ -1,5 +1,15 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/keyof/3.ts:8:1]
+ 8 | 
+ 9 | export type Keys = keyof (A | any)
+   :             ^^^^
+   `----
+
+Error: 
+  > keyof (A | any)
+
+  x Type
     ,-[$DIR/tests/pass/types/keyof/3.ts:14:1]
  14 | 
  15 | foo = keys

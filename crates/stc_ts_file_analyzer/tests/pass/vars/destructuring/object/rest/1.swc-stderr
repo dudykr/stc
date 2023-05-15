@@ -1,5 +1,19 @@
 
   x Type
+   ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:1:1]
+ 1 | type ObjType = {
+   :      ^^^^^^^
+ 2 |     foo: string
+   `----
+
+Error: 
+  > {
+  |     foo: string;
+  |     baz: string;
+  |     quux: string;
+  | }
+
+  x Type
     ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:6:1]
   6 |     
   7 | ,-> const obj: Readonly<ObjType> = {
