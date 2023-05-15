@@ -299,6 +299,11 @@ impl Analyzer<'_, '_> {
 
         self.register_type(d.id.clone().into(), alias.clone());
 
+        // Exclude literals
+        if !span.is_dummy() {
+            self.dump_type(span, &alias);
+        }
+
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 
         Ok(alias)
