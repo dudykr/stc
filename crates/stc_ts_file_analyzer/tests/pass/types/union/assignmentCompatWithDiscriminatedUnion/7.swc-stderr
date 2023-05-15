@@ -1,5 +1,19 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:5:1]
+ 5 | namespace GH15907 {
+ 6 |     type Action = { type: 'activate' } | { type: 'disactivate' };
+   :          ^^^^^^
+   `----
+
+Error: 
+  > ({
+  |     type: 'activate';
+  | } | {
+  |     type: 'disactivate';
+  | })
+
+  x Type
     ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:13:1]
  13 | 
  14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });

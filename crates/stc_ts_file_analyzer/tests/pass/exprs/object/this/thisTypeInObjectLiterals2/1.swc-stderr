@@ -1,5 +1,21 @@
 
   x Type
+   ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:1:1]
+ 1 | 
+ 2 | type Point = {
+   :      ^^^^^
+ 3 |     x: number;
+   `----
+
+Error: 
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
+
+  x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
  13 |     moveBy(dx, dy, dz) {
  14 |         this.x += dx;

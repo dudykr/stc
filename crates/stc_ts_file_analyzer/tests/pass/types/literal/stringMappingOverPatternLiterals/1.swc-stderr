@@ -1,5 +1,26 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:2:1]
+ 2 | 
+ 3 | type NonStringPat = Uppercase<`aA${number}${bigint}${boolean}`>;
+   :      ^^^^^^^^^^^^
+ 4 | type EquivalentNonStringPat = `AA${Uppercase<`${number}`>}${Uppercase<`${bigint}`>}${Uppercase<`${boolean}`>}`;
+   `----
+
+Error: 
+  > intrinsic
+
+  x Type
+   ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:3:1]
+ 3 | type NonStringPat = Uppercase<`aA${number}${bigint}${boolean}`>;
+ 4 | type EquivalentNonStringPat = `AA${Uppercase<`${number}`>}${Uppercase<`${bigint}`>}${Uppercase<`${boolean}`>}`;
+   :      ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > `AA${Uppercase<`${number}`>}${Uppercase<`${bigint}`>}${Uppercase<`${boolean}`>}`
+
+  x Type
    ,-[$DIR/tests/pass/types/literal/stringMappingOverPatternLiterals/1.ts:7:1]
  7 |     // Should both work
  8 |     x1 = x2;

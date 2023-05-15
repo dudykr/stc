@@ -1,5 +1,29 @@
 
   x Type
+    ,-[$DIR/tests/visualize/types/conditional/2.ts:9:1]
+  9 | }
+ 10 | type NonFunctionPropertyNames<T> = {
+    :      ^^^^^^^^^^^^^^^^^^^^^^^^
+ 11 |   [K in keyof T]: T[K] extends Function ? never : K;
+    `----
+
+Error: 
+  > {
+  |     [K in keyof T]: T[K] extends Function ? never : K;
+  | }[keyof T]
+
+  x Type
+    ,-[$DIR/tests/visualize/types/conditional/2.ts:13:1]
+ 13 | 
+ 14 | type DeepReadonly<T> = T extends any[]
+    :      ^^^^^^^^^^^^
+ 15 |   ? DeepReadonlyArray<T[number]>
+    `----
+
+Error: 
+  > T extends any[] ? DeepReadonlyArray<T[number]> : T extends object ? DeepReadonlyObject<T> : T
+
+  x Type
     ,-[$DIR/tests/visualize/types/conditional/2.ts:26:1]
  26 | function f10(part: DeepReadonly<Part>) {
  27 |   let a = part;
@@ -196,3 +220,16 @@ Error:
 
 Error: 
   > any
+
+  x Type
+    ,-[$DIR/tests/visualize/types/conditional/2.ts:21:1]
+ 21 | 
+ 22 | type DeepReadonlyObject<T> = {
+    :      ^^^^^^^^^^^^^^^^^^
+ 23 |   readonly [P in NonFunctionPropertyNames<T>]: DeepReadonly<T[P]>;
+    `----
+
+Error: 
+  > {
+  |     readonly [P in NonFunctionPropertyNames<T>]: DeepReadonly<T[P]>;
+  | }
