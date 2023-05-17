@@ -164,7 +164,6 @@ impl Analyzer<'_, '_> {
                 return Some(v);
             }
         }
-        dbg!(&child, &parent);
         match child {
             Type::Param(..) | Type::Infer(..) | Type::IndexedAccessType(..) | Type::Conditional(..) => return None,
             Type::Ref(..) => {
@@ -190,7 +189,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 if child.is_class() && parent.is_ref_type() {
-                    dbg!(&child, &parent);
                     if let Ok(parent) = self.normalize(Some(child.span()), Cow::Borrowed(&child), Default::default()) {
                         if let Ok(..) = self.assign_with_opts(
                             &mut Default::default(),
