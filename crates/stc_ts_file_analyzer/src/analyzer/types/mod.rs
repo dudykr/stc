@@ -1898,8 +1898,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Readonly(Readonly { span, ty, .. }) => {
                 let mut members = vec![];
-                let result =
-                    self.convert_type_to_type_lit(span.clone(), Cow::Borrowed(&*ty), ConvertTypeToLitOpts { is_readonly: true })?;
+                let result = self.convert_type_to_type_lit(*span, Cow::Borrowed(ty), ConvertTypeToLitOpts { is_readonly: true })?;
                 members.extend(result.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
 
                 Cow::Owned(TypeLit {
