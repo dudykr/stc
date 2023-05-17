@@ -318,9 +318,9 @@ fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Opti
         })
         .unwrap_err();
 
-    // if want_error && result.trim().is_empty() {
-    //     return None;
-    // }
+    if want_error && result.trim().is_empty() {
+        return None;
+    }
 
     Some(result)
 }

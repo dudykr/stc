@@ -2572,7 +2572,7 @@ impl Analyzer<'_, '_> {
             })
             .collect::<Vec<_>>();
         callable.sort_by_key(|(_, res)| *res);
-        dbg!(&callable);
+
         if candidates.is_empty() {
             return Ok(None);
         }
