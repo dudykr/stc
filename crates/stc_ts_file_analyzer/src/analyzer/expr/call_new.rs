@@ -3726,7 +3726,7 @@ impl Analyzer<'_, '_> {
                 for (t_arg, t_param) in arg.params.iter().zip(param) {
                     if let Some(t_param) = &t_param.constraint {
                         if !analyzer.is_subtype_in_fn_call(span, t_arg, t_param) {
-                            return ArgCheckResult::TypeParamExact;
+                            return ArgCheckResult::TypeParamMismatch;
                         }
                     }
                 }
@@ -4077,7 +4077,7 @@ enum ArgCheckResult {
     Exact,
     MayBe,
     ArgTypeMismatch,
-    TypeParamExact,
+    TypeParamMismatch,
     WrongArgCount,
 }
 
@@ -4094,7 +4094,7 @@ fn test_arg_check_result_order() {
         ArgCheckResult::Exact,
         ArgCheckResult::MayBe,
         ArgCheckResult::ArgTypeMismatch,
-        ArgCheckResult::TypeParamExact,
+        ArgCheckResult::TypeParamMismatch,
         ArgCheckResult::WrongArgCount,
     ];
     let expected = v.clone();
