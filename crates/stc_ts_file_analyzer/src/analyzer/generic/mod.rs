@@ -118,7 +118,7 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         let mut inferred = InferData::default();
-
+        print_backtrace();
         for param in type_params {
             if let Some(constraint) = &param.constraint {
                 constraint.assert_clone_cheap();
@@ -130,6 +130,7 @@ impl Analyzer<'_, '_> {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
                 if let Some(tp) = &type_param.constraint {
+                    dbg!(&param, &type_param);
                     if matches!(self.extends(span, param, tp, Default::default()), Some(false)) {
                         if !param.span().is_dummy() && !param.is_type_param() {
                             self.storage.report(
@@ -140,6 +141,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .into(),
                             );
+                            break;
                         }
                     }
                 }
