@@ -709,9 +709,6 @@ impl Analyzer<'_, '_> {
     pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
         let _tracing = dev_span!("expand");
 
-        if !self.config.is_builtin {
-            debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
-        }
         let span = span.with_ctxt(SyntaxContext::empty());
 
         ty.assert_valid();
@@ -2304,7 +2301,6 @@ impl Expander<'_, '_, '_> {
             ..
         } = r;
         let span = self.span;
-
         if !trying_primitive_expansion && (!self.full || self.opts.preserve_ref) {
             return Ok(None);
         }

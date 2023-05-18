@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
+                    .convert_type_to_type_lit(span, Cow::Owned(b), Default::default())
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 if let Some(b) = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(&b_ty))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&b_ty), Default::default())
                     .context("tried to convert an interface to a type literal")?
                 {
                     new_members.extend(b.into_owned().members);

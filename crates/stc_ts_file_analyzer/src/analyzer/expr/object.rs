@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
         match rhs.normalize() {
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
-                if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {
+                if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs), Default::default())? {
                     return self.append_type(span, to, Type::TypeLit(rhs.into_owned()), opts);
                 }
             }
