@@ -889,7 +889,11 @@ impl Analyzer<'_, '_> {
 
         if opts.ensure_params_length {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("argument count mismatch"));
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
+                    "required argument count mismatch: l = {}; r = {}",
+                    required_li.clone().count(),
+                    required_ri.clone().count(),
+                )));
             }
         }
 
