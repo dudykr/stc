@@ -83,6 +83,11 @@ pub(crate) struct NormalizeTypeOpts {
     pub in_type_or_type_param: bool,
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct ConvertTypeToLitOpts {
+    pub is_readonly: bool,
+}
+
 impl Analyzer<'_, '_> {
     /// This methods normalizes a type.
     ///
@@ -1602,7 +1607,12 @@ impl Analyzer<'_, '_> {
 
     /// Note: `span` is only used while expanding type (to prevent
     /// panic) in the case of [Type::Ref].
-    pub(crate) fn convert_type_to_type_lit<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Option<Cow<'a, TypeLit>>> {
+    pub(crate) fn convert_type_to_type_lit<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+        opts: ConvertTypeToLitOpts,
+    ) -> VResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
