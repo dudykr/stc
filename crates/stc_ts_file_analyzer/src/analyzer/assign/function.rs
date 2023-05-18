@@ -359,7 +359,7 @@ impl Analyzer<'_, '_> {
                     r_params,
                     l_params,
                     AssignOpts {
-                        ensure_params_length: false,
+                        ensure_params_length: true,
                         ..opts
                     },
                 )
