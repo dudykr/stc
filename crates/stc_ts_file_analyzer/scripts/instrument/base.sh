@@ -10,4 +10,4 @@ export RUST_MIN_STACK=$((8 * 1024 * 1024))
 
 export STC_SKIP_EXEC=1
 
-cargo profile instruments -t time --features swc_common/concurrent --features tracing/max_level_off --test base $@ -- -Zunstable-options --report-time
+cargo profile instruments -t time --features swc_common/concurrent --features tracing/max_level_off --features no-threading --test base $@ -- -Zunstable-options --report-time

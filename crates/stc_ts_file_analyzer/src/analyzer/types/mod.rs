@@ -114,6 +114,9 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let actual_span = span.unwrap_or_else(|| ty.span());
+        if !self.config.is_builtin {
+            debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
+        }
 
         match ty.normalize() {
             Type::Lit(..)
@@ -1608,7 +1611,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
-        opt: ConvertTypeToLitOpts,
+        opts: ConvertTypeToLitOpts,
     ) -> VResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
@@ -1648,7 +1651,7 @@ impl Analyzer<'_, '_> {
                     .freezed();
                 let parent = self.instantiate_class(span, &parent)?;
 
-                let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent), Default::default())?;
+                let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent), opts)?;
 
                 members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
             }
@@ -1690,7 +1693,7 @@ impl Analyzer<'_, '_> {
                             },
                             tracker: Default::default(),
                         })),
-                        Default::default(),
+                        opts,
                     )
                     .context("tried to convert a literal to type literal")?
                     .map(Cow::into_owned);
@@ -1718,7 +1721,7 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })),
-                        Default::default(),
+                        opts,
                     )?
                     .map(Cow::into_owned)
                     .map(Cow::Owned));
@@ -1730,7 +1733,7 @@ impl Analyzer<'_, '_> {
                 let mut members = vec![];
                 if let Some(super_class) = &c.def.super_class {
                     let super_class = self.instantiate_class(span, super_class)?;
-                    let super_els = self.convert_type_to_type_lit(span, Cow::Owned(super_class), Default::default())?;
+                    let super_els = self.convert_type_to_type_lit(span, Cow::Owned(super_class), opts)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1751,7 +1754,7 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(c) => {
                 let mut members = vec![];
                 if let Some(super_class) = &c.super_class {
-                    let super_els = self.convert_type_to_type_lit(span, Cow::Borrowed(super_class), Default::default())?;
+                    let super_els = self.convert_type_to_type_lit(span, Cow::Borrowed(super_class), opts)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1772,7 +1775,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(t) => {
                 let mut members = vec![];
                 for ty in &t.types {
-                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(ty), Default::default())?;
+                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(ty), opts)?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
@@ -1792,11 +1795,11 @@ impl Analyzer<'_, '_> {
                 let mut members = vec![];
                 {
                     let ty = self.overwrite_conditional(span, t);
-                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty), Default::default())?;
+                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty), opts)?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
                 {
-                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(&t.false_type), Default::default())?;
+                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(&t.false_type), opts)?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
                 Cow::Owned(TypeLit {
@@ -1846,7 +1849,7 @@ impl Analyzer<'_, '_> {
                     members.push(TypeElement::Property(PropertySignature {
                         span: e.span.with_ctxt(SyntaxContext::empty()),
                         accessibility: None,
-                        readonly: opt.is_readonly,
+                        readonly: opts.is_readonly,
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
@@ -1896,6 +1899,7 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 })
             }
+
             Type::Readonly(Readonly { span, ty, .. }) => {
                 let mut members = vec![];
                 let result = self.convert_type_to_type_lit(*span, Cow::Borrowed(ty), ConvertTypeToLitOpts { is_readonly: true })?;
