@@ -715,6 +715,14 @@ impl Analyzer<'_, '_> {
             }) => {
                 let constraint = constraint.as_ref().map(|ty| ty.normalize());
                 if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inference {
+                    if constraint.is_none() && arg.is_lit() {
+                        if let Some(prev) = inferred.type_params.get_mut(name) {
+                            if prev.inferred_type.is_num_lit() && arg.is_num_lit() {
+                                prev.inferred_type = Type::new_union(span, vec![prev.inferred_type.clone(), arg.clone()]);
+                                return Ok(());
+                            }
+                        }
+                    }
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
                             skip_identical_while_inference: true,
