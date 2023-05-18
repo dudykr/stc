@@ -18,8 +18,8 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, FnParam, Id, IdCtx, Index, IndexSignature, IndexedAccessType, Instance, InstanceMetadata,
     Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, PropertySignature,
-    QueryExpr, QueryType, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParam, TypeParamInstantiation, Union,
+    QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, ThisTypeMetadata, TplElem, TplType, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -1894,6 +1894,19 @@ impl Analyzer<'_, '_> {
 
                 Cow::Owned(TypeLit {
                     span: ty.span,
+                    members,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                })
+            }
+
+            Type::Readonly(Readonly { span, ty, .. }) => {
+                let mut members = vec![];
+                let result = self.convert_type_to_type_lit(*span, Cow::Borrowed(ty), ConvertTypeToLitOpts { is_readonly: true })?;
+                members.extend(result.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
+
+                Cow::Owned(TypeLit {
+                    span: *span,
                     members,
                     metadata: Default::default(),
                     tracker: Default::default(),
