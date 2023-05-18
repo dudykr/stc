@@ -859,10 +859,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        print_backtrace();
-        dbg!(li.clone().count());
-        dbg!(required_li.clone().count());
-        dbg!(required_ri.clone().count());
         // Don't ask why.
         if li.clone().count() < required_ri.clone().count() {
             if !l_has_rest && required_non_void_li.clone().count() < required_non_void_ri.clone().count() {
