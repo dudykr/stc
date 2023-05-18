@@ -1849,7 +1849,7 @@ impl Analyzer<'_, '_> {
                     members.push(TypeElement::Property(PropertySignature {
                         span: e.span.with_ctxt(SyntaxContext::empty()),
                         accessibility: None,
-                        readonly: false,
+                        readonly: opts.is_readonly,
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
