@@ -194,7 +194,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(..) | Type::TypeLit(..) => {
-                if let Some(tuple) = self.convert_type_to_type_lit(span, Cow::Borrowed(l_type))? {
+                if let Some(tuple) = self.convert_type_to_type_lit(span, Cow::Borrowed(l_type), Default::default())? {
                     return self
                         .assign_to_type_elements(
                             data,

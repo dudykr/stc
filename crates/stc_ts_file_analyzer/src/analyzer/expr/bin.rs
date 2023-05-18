@@ -1374,7 +1374,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Interface(..) | Type::TypeLit(..) => {
                 // Find constructor signature
-                if let Some(ty) = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))? {
+                if let Some(ty) = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty), Default::default())? {
                     for m in &ty.members {
                         if let TypeElement::Constructor(c) = m {
                             if let Some(ret_ty) = &c.ret_ty {
@@ -2297,7 +2297,7 @@ impl Analyzer<'_, '_> {
             for ty in types {
                 match ty.normalize() {
                     Type::Interface(interface) => {
-                        if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(ty)) {
+                        if let Ok(Some(tl)) = self.convert_type_to_type_lit(span, Cow::Borrowed(ty), Default::default()) {
                             let tl = tl.into_owned();
                             self.get_additional_exclude_target_for_type_lit(
                                 span,
