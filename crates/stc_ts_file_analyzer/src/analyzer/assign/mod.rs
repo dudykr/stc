@@ -1318,7 +1318,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
 
                 // This is required to handle intersections of function-like types.
-                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to), Default::default())? {
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
                     if self
                         .assign_to_type_elements(
                             data,
@@ -1364,7 +1364,7 @@ impl Analyzer<'_, '_> {
                 let rhs_requires_unknown_property_check = !matches!(rhs.normalize(), Type::Keyword(..));
 
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
-                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to), Default::default())?;
+                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, AssignOpts { ..opts })
@@ -1551,7 +1551,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs), Default::default()) {
+                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs)) {
                     if self.assign_inner(data, to, &Type::TypeLit(rhs.into_owned()), opts).is_ok() {
                         return Ok(());
                     }
@@ -1784,7 +1784,7 @@ impl Analyzer<'_, '_> {
                         return res;
                     }
 
-                    let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())?;
+                    let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs))?;
                     if let Some(r) = r {
                         for m in &r.members {
                             if let TypeElement::Index(m) = m {
@@ -2321,7 +2321,7 @@ impl Analyzer<'_, '_> {
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
                 if !opts.allow_unknown_rhs.unwrap_or_default() && !opts.allow_unknown_rhs_if_expanded {
-                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to), Default::default())?;
+                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, span, &lhs.members, rhs, Default::default(), opts)
                             .with_context(|| {
@@ -3125,7 +3125,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = self
-                .convert_type_to_type_lit(span, Cow::Borrowed(ty), Default::default())?
+                .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
                 .map(Cow::into_owned)
                 .map(Type::TypeLit)
             {
@@ -3182,7 +3182,7 @@ impl Analyzer<'_, '_> {
             match r.normalize() {
                 Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
                     if let Some(r) = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(&r), Default::default())?
+                        .convert_type_to_type_lit(span, Cow::Borrowed(&r))?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {

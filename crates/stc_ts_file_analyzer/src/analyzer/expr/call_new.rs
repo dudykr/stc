@@ -2116,10 +2116,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(..) => {
-                let callee = self
-                    .convert_type_to_type_lit(span, callee, Default::default())?
-                    .map(Cow::into_owned)
-                    .map(Type::TypeLit);
+                let callee = self.convert_type_to_type_lit(span, callee)?.map(Cow::into_owned).map(Type::TypeLit);
                 if let Some(callee) = callee {
                     return self.extract_callee_candidates(span, kind, &callee);
                 }
@@ -3722,16 +3719,6 @@ impl Analyzer<'_, '_> {
 
             let mut exact = true;
 
-            if let (Some(arg), Some(param)) = (type_args, type_params) {
-                for (t_arg, t_param) in arg.params.iter().zip(param) {
-                    if let Some(t_param) = &t_param.constraint {
-                        if !analyzer.is_subtype_in_fn_call(span, t_arg, t_param) {
-                            return ArgCheckResult::TypeParamMismatch;
-                        }
-                    }
-                }
-            }
-
             for (arg, param) in spread_arg_types.iter().zip(params) {
                 if matches!(param.pat, RPat::Rest(..)) && !arg.ty.is_array() {
                     continue;
@@ -3763,6 +3750,7 @@ impl Analyzer<'_, '_> {
             if analyzer.scope.is_call_arg_count_unknown || !exact {
                 return ArgCheckResult::MayBe;
             }
+
             ArgCheckResult::Exact
         })
     }
@@ -4077,7 +4065,6 @@ enum ArgCheckResult {
     Exact,
     MayBe,
     ArgTypeMismatch,
-    TypeParamMismatch,
     WrongArgCount,
 }
 
@@ -4094,7 +4081,6 @@ fn test_arg_check_result_order() {
         ArgCheckResult::Exact,
         ArgCheckResult::MayBe,
         ArgCheckResult::ArgTypeMismatch,
-        ArgCheckResult::TypeParamMismatch,
         ArgCheckResult::WrongArgCount,
     ];
     let expected = v.clone();

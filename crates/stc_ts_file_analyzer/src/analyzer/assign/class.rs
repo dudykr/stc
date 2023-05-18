@@ -88,9 +88,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
-                let rhs = self
-                    .convert_type_to_type_lit(opts.span, Cow::Borrowed(&*r), Default::default())?
-                    .unwrap();
+                let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(&*r))?.unwrap();
 
                 let lhs_members = l
                     .body
