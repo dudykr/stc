@@ -571,6 +571,7 @@ impl Analyzer<'_, '_> {
                                 rc.ret_ty.as_deref(),
                                 AssignOpts {
                                     allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                    ensure_params_length: true,
                                     ..opts
                                 },
                             )
@@ -855,6 +856,9 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        dbg!(li.clone().count());
+        dbg!(required_li.clone().count());
+        dbg!(required_ri.clone().count());
         // Don't ask why.
         if li.clone().count() < required_ri.clone().count() {
             if !l_has_rest && required_non_void_li.clone().count() < required_non_void_ri.clone().count() {
@@ -869,6 +873,12 @@ impl Analyzer<'_, '_> {
                     required_non_void_li.collect_vec(),
                     required_non_void_ri.collect_vec()
                 )));
+            }
+        }
+
+        if opts.ensure_params_length {
+            if required_li.clone().count() > required_ri.clone().count() {
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("argument count mismatch"));
             }
         }
 
