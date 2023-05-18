@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEnumMemberId, RT
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt,
+    DebugExt, ErrorKind,
 };
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
@@ -14,9 +14,10 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    dev_span, stack,
+    dev_span,
+    stack::{self},
 };
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind};
 use tracing::{debug, error};
 
@@ -126,6 +127,44 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })));
+                    } else {
+                        let _guard = stack::track(m.span)?;
+                        if let Ok(ty) = self.normalize(Some(m.span), Cow::Borrowed(constraint), Default::default()) {
+                            if ty.is_interface() {
+                                self.storage.report(
+                                    ErrorKind::AssignFailed {
+                                        span: constraint.span(),
+                                        left: Box::new(ty.into_owned()),
+                                        right_ident: Some(DUMMY_SP),
+                                        right: Box::new(Type::new_union(
+                                            DUMMY_SP,
+                                            vec![
+                                                Type::Keyword(KeywordType {
+                                                    span: DUMMY_SP,
+                                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                Type::Keyword(KeywordType {
+                                                    span: DUMMY_SP,
+                                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                Type::Keyword(KeywordType {
+                                                    span: DUMMY_SP,
+                                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                            ],
+                                        )),
+                                        cause: vec![],
+                                    }
+                                    .into(),
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -151,7 +190,7 @@ impl Analyzer<'_, '_> {
             // Special case, but many usages can be handled with this check.
             if (*keyof_operand).type_eq(mapped_ty) {
                 let new_type = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand), Default::default())
                     .context("tried to convert a type to type literal to expand mapped type")?
                     .map(Cow::into_owned);
 
@@ -448,8 +487,7 @@ impl Analyzer<'_, '_> {
     /// Used for types like `'foo' | 'bar'` or alias of them.
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
-
-        let _stack = stack::track(span)?;
+        let _guard = stack::track(span)?;
 
         let ty = ty.normalize();
 
@@ -530,9 +568,22 @@ impl Analyzer<'_, '_> {
                 Ok(Some(keys))
             }
 
+            Type::Conditional(c) => {
+                if let Type::Conditional(Conditional { true_type, false_type, .. }) =
+                    self.expand_conditional_type(span, Type::Conditional(c.clone()))
+                {
+                    return self.convert_type_to_keys_for_mapped_type(
+                        span,
+                        &Type::new_union(span, vec![*true_type, *false_type]),
+                        name_type,
+                    );
+                }
+                error!("unimplemented: convert_type_to_keys: {}", force_dump_type_as_string(ty));
+                Ok(None)
+            }
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => Ok(None),
 
-            _ => {
+            ty => {
                 error!("unimplemented: convert_type_to_keys: {}", force_dump_type_as_string(ty));
                 Ok(None)
             }
@@ -881,7 +932,9 @@ impl Analyzer<'_, '_> {
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
     ) -> VResult<Type> {
-        let type_lit = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))?.map(Cow::into_owned);
+        let type_lit = self
+            .convert_type_to_type_lit(span, Cow::Borrowed(&ty), Default::default())?
+            .map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {
                 apply_mapped_flags(m, optional, readonly);

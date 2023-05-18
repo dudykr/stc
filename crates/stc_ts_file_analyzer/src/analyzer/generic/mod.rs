@@ -6,7 +6,7 @@ use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
-    DebugExt,
+    DebugExt, ErrorKind,
 };
 use stc_ts_generics::{
     expander::InferTypeResult,
@@ -108,6 +108,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
         let _tracing = dev_span!("infer_arg_types");
+        let _guard = stack::track(span);
 
         warn!(
             "infer_arg_types: {:?}",
@@ -117,7 +118,6 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         let mut inferred = InferData::default();
-
         for param in type_params {
             if let Some(constraint) = &param.constraint {
                 constraint.assert_clone_cheap();
@@ -128,6 +128,21 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
+                if let Some(tp) = &type_param.constraint {
+                    if matches!(self.extends(span, param, tp, Default::default()), Some(false)) {
+                        if !param.span().is_dummy() && !param.is_type_param() {
+                            self.storage.report(
+                                ErrorKind::NotSatisfyConstraint {
+                                    span: param.span(),
+                                    left: tp.clone(),
+                                    right: Box::new(param.clone()),
+                                }
+                                .into(),
+                            );
+                            break;
+                        }
+                    }
+                }
                 inferred.type_params.insert(
                     type_param.name.clone(),
                     InferenceInfo {
@@ -542,8 +557,6 @@ impl Analyzer<'_, '_> {
             }
             inferred.dejavu.push((param.clone(), arg.clone()));
         }
-
-        debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
         if param.is_keyword() || param.type_eq(arg) {
             return Ok(());
@@ -975,7 +988,7 @@ impl Analyzer<'_, '_> {
                 | Type::Module(..)
                 | Type::Function(..)
                 | Type::Constructor(..) => {
-                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
+                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg), Default::default())? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
                 }
@@ -1503,7 +1516,7 @@ impl Analyzer<'_, '_> {
             | Type::Module(..)
             | Type::Interface(..) => {
                 let arg = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(arg))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(arg), Default::default())
                     .context("tried to convert a type into a type literal to infer mapped type")?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
