@@ -4,7 +4,7 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_map, force_dump_type_as_string},
+    debug::{dump_type_map, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
@@ -544,7 +544,10 @@ impl Analyzer<'_, '_> {
                     rc.type_params.as_ref(),
                     &rc.params,
                     Some(&rc.type_ann),
-                    opts,
+                    AssignOpts {
+                        ensure_params_length: true,
+                        ..opts
+                    },
                 )
                 .context("tried to assign a constructor to another one")?;
 
@@ -856,6 +859,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        print_backtrace();
         dbg!(li.clone().count());
         dbg!(required_li.clone().count());
         dbg!(required_ri.clone().count());
