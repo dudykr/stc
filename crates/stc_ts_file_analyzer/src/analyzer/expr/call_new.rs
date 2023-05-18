@@ -2116,7 +2116,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(..) => {
-                let callee = self.convert_type_to_type_lit(span, callee)?.map(Cow::into_owned).map(Type::TypeLit);
+                let callee = self
+                    .convert_type_to_type_lit(span, callee, Default::default())?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
                 if let Some(callee) = callee {
                     return self.extract_callee_candidates(span, kind, &callee);
                 }

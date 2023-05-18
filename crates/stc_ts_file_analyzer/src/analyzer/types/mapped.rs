@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
             // Special case, but many usages can be handled with this check.
             if (*keyof_operand).type_eq(mapped_ty) {
                 let new_type = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand), Default::default())
                     .context("tried to convert a type to type literal to expand mapped type")?
                     .map(Cow::into_owned);
 
@@ -881,7 +881,9 @@ impl Analyzer<'_, '_> {
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
     ) -> VResult<Type> {
-        let type_lit = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))?.map(Cow::into_owned);
+        let type_lit = self
+            .convert_type_to_type_lit(span, Cow::Borrowed(&ty), Default::default())?
+            .map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {
                 apply_mapped_flags(m, optional, readonly);
