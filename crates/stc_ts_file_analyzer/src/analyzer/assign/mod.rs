@@ -186,6 +186,8 @@ pub(crate) struct AssignOpts {
 
     pub do_not_use_single_error_for_tuple_with_rest: bool,
 
+    /// If true, `assign` will fail if the params of the LHS is longer than the
+    /// RHS.
     pub ensure_params_length: bool,
 }
 
