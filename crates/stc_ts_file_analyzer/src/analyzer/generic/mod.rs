@@ -730,18 +730,16 @@ impl Analyzer<'_, '_> {
                 if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inference {
                     if constraint.is_none() && arg.is_lit() {
                         if let Some(prev) = inferred.type_params.get_mut(name) {
-                            if prev.inferred_type.is_lit() {
-                                if let (Type::Lit(arg_lit), Type::Lit(prev_arg)) = (arg.normalize(), prev.inferred_type.normalize()) {
-                                    if matches!(
-                                        (&arg_lit.lit, &prev_arg.lit),
-                                        (RTsLit::Str(..), RTsLit::Str(..))
-                                            | (RTsLit::Number(..), RTsLit::Number(..))
-                                            | (RTsLit::BigInt(..), RTsLit::BigInt(..))
-                                            | (RTsLit::Bool(..), RTsLit::Bool(..))
-                                    ) {
-                                        prev.inferred_type = Type::new_union(span, vec![prev.inferred_type.clone(), arg.clone()]).freezed();
-                                        return Ok(());
-                                    }
+                            if let (Type::Lit(arg_lit), Type::Lit(prev_arg)) = (arg.normalize(), prev.inferred_type.normalize()) {
+                                if matches!(
+                                    (&arg_lit.lit, &prev_arg.lit),
+                                    (RTsLit::Str(..), RTsLit::Str(..))
+                                        | (RTsLit::Number(..), RTsLit::Number(..))
+                                        | (RTsLit::BigInt(..), RTsLit::BigInt(..))
+                                        | (RTsLit::Bool(..), RTsLit::Bool(..))
+                                ) {
+                                    prev.inferred_type = Type::new_union(span, vec![prev.inferred_type.clone(), arg.clone()]).freezed();
+                                    return Ok(());
                                 }
                             }
                         }
