@@ -9,9 +9,6 @@ use stc_ts_types::{
     Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam, Union,
-    Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType, Mapped,
-    PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
