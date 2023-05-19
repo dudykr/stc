@@ -613,7 +613,7 @@ impl Analyzer<'_, '_> {
         };
 
         // It's valid to assign any to everything.
-        if rhs.is_any() || to.is_any() {
+        if rhs.is_any() {
             return Ok(());
         }
 
@@ -628,7 +628,9 @@ impl Analyzer<'_, '_> {
         if to.type_eq(rhs) {
             return Ok(());
         }
-
+        if to.is_any() {
+            return Ok(());
+        }
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let mut to = self.normalize_for_assign(span, to, opts).context("tried to normalize lhs")?;
         to.freeze();
