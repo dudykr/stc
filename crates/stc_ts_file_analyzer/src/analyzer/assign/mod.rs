@@ -628,7 +628,9 @@ impl Analyzer<'_, '_> {
         if to.type_eq(rhs) {
             return Ok(());
         }
-
+        if to.is_any() {
+            return Ok(());
+        }
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let mut to = self.normalize_for_assign(span, to, opts).context("tried to normalize lhs")?;
         to.freeze();

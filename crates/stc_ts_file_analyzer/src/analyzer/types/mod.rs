@@ -462,13 +462,6 @@ impl Analyzer<'_, '_> {
                                     )));
                                 }
 
-                                if expanded_ty.is_query() {
-                                    unreachable!(
-                                        "normalize: resolve_typeof returned a query type: {}",
-                                        dump_type_as_string(&expanded_ty)
-                                    )
-                                }
-
                                 return self
                                     .normalize(span, Cow::Owned(expanded_ty), opts)
                                     .context("tried to normalize the type returned from typeof");
