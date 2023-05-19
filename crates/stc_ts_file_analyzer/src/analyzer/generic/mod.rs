@@ -3,10 +3,10 @@ use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take, time::
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
-    DebugExt, ErrorKind,
+    DebugExt,
 };
 use stc_ts_generics::{
     expander::InferTypeResult,
@@ -108,7 +108,6 @@ impl Analyzer<'_, '_> {
     ) -> VResult<InferTypeResult> {
         #[cfg(debug_assertions)]
         let _tracing = dev_span!("infer_arg_types");
-        let _guard = stack::track(span);
 
         warn!(
             "infer_arg_types: {:?}",
@@ -118,6 +117,7 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         let mut inferred = InferData::default();
+
         for param in type_params {
             if let Some(constraint) = &param.constraint {
                 constraint.assert_clone_cheap();
@@ -128,21 +128,6 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
-                if let Some(tp) = &type_param.constraint {
-                    if matches!(self.extends(span, param, tp, Default::default()), Some(false)) {
-                        if !param.span().is_dummy() && !param.is_type_param() {
-                            self.storage.report(
-                                ErrorKind::NotSatisfyConstraint {
-                                    span: param.span(),
-                                    left: tp.clone(),
-                                    right: Box::new(param.clone()),
-                                }
-                                .into(),
-                            );
-                            break;
-                        }
-                    }
-                }
                 inferred.type_params.insert(
                     type_param.name.clone(),
                     InferenceInfo {
@@ -558,6 +543,8 @@ impl Analyzer<'_, '_> {
             inferred.dejavu.push((param.clone(), arg.clone()));
         }
 
+        debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
+
         if param.is_keyword() || param.type_eq(arg) {
             return Ok(());
         }
@@ -730,12 +717,21 @@ impl Analyzer<'_, '_> {
                 if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inference {
                     if constraint.is_none() && arg.is_lit() {
                         if let Some(prev) = inferred.type_params.get_mut(name) {
-                            if prev.inferred_type.is_num_lit() && arg.is_num_lit() {
-                                prev.inferred_type = Type::new_union(span, vec![prev.inferred_type.clone(), arg.clone()]);
-                                return Ok(());
+                            if let (Type::Lit(arg_lit), Type::Lit(prev_arg)) = (arg.normalize(), prev.inferred_type.normalize()) {
+                                if matches!(
+                                    (&arg_lit.lit, &prev_arg.lit),
+                                    (RTsLit::Str(..), RTsLit::Str(..))
+                                        | (RTsLit::Number(..), RTsLit::Number(..))
+                                        | (RTsLit::BigInt(..), RTsLit::BigInt(..))
+                                        | (RTsLit::Bool(..), RTsLit::Bool(..))
+                                ) {
+                                    prev.inferred_type = Type::new_union(span, vec![prev.inferred_type.clone(), arg.clone()]).freezed();
+                                    return Ok(());
+                                }
                             }
                         }
                     }
+
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
                             skip_identical_while_inference: true,

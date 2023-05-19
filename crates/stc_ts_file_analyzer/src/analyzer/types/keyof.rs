@@ -44,10 +44,12 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
+
         if !self.config.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
         }
         let _stack = stack::track(span)?;
+
         let ty = (|| -> VResult<_> {
             let mut ty = self
                 .normalize(
@@ -63,8 +65,8 @@ impl Analyzer<'_, '_> {
             if matches!(ty.normalize(), Type::TypeLit(..)) {
                 ty.freeze()
             }
+
             match ty.normalize() {
-                ty @ Type::Ref(..) => return self.keyof(span, ty),
                 Type::Lit(ty) => {
                     return self
                         .keyof(

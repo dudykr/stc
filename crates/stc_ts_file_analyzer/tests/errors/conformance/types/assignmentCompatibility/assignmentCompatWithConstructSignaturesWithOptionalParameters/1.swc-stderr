@@ -1,0 +1,32 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             414,
+  |         ),
+  |         hi: BytePos(
+  |             415,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [
+  |         SimpleAssignFailed {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     414,
+  |                 ),
+  |                 hi: BytePos(
+  |                     415,
+  |                 ),
+  |                 ctxt: #1,
+  |             },
+  |             cause: None,
+  |         },
+  |     ],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/assignmentCompatibility/assignmentCompatWithConstructSignaturesWithOptionalParameters/1.ts:13:1]
+ 13 | declare var a: new () => number;
+ 14 | a = b.a4; // error
+    : ^
+    `----
