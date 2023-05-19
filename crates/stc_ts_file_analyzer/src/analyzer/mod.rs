@@ -21,7 +21,7 @@ use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{type_id::DestructureId, Id, IdCtx, Key, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, AHashMap, AHashSet};
+use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
@@ -199,9 +199,13 @@ pub(crate) struct Ctx {
 
     use_properties_of_this_implicitly: bool,
 
-    is_type_ann_for_call_reeval_chosen_from_overload: bool,
-
     is_type_predicate: bool,
+
+    /// True if validating object properties that have get accessors
+    get_accessor_prop: bool,
+
+    /// True if validating object properties that have set accessors
+    set_accessor_prop: bool,
 }
 
 impl Ctx {
@@ -265,7 +269,7 @@ struct AnalyzerData {
     /// See docs of ModuleItemMut for documentation.
     append_stmts: Vec<RStmt>,
 
-    unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
+    unmergable_type_decls: FxHashMap<Id, Vec<(Span, usize)>>,
 
     /// Used to check mixed exports.
     ///
@@ -280,10 +284,10 @@ struct AnalyzerData {
     /// Filled only once, by `fill_known_type_names`.
     bindings: Bindings,
 
-    unresolved_imports: AHashSet<Id>,
+    unresolved_imports: FxHashSet<Id>,
 
     /// Spans of declared variables.
-    var_spans: AHashMap<Id, Vec<(VarKind, Span)>>,
+    var_spans: FxHashMap<Id, Vec<(VarKind, Span)>>,
 
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,
@@ -303,7 +307,7 @@ struct AnalyzerData {
     checked_for_async_iterator: bool,
 
     /// Used to check mixed default exports.
-    merged_default_exports: AHashSet<Id>,
+    merged_default_exports: FxHashSet<Id>,
 
     jsx_prop_name: Option<Option<JsWord>>,
 }
@@ -537,8 +541,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 checking_switch_discriminant_as_bin: false,
                 obj_is_super: false,
                 use_properties_of_this_implicitly: false,
-                is_type_ann_for_call_reeval_chosen_from_overload: false,
                 is_type_predicate: false,
+                get_accessor_prop: false,
+                set_accessor_prop: false,
             },
             loader,
             cur_facts: Default::default(),
@@ -1016,6 +1021,10 @@ impl Analyzer<'_, '_> {
                     RTsModuleName::Ident(i) => Some(i.into()),
                     RTsModuleName::Str(_) => None,
                 };
+
+                if decl.body.is_none() {
+                    return Ok(Some(Type::any(span, Default::default())));
+                }
 
                 decl.visit_children_with(child);
 

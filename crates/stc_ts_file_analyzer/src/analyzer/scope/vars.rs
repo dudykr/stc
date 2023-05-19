@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_dts_mutations::PatMut;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind,
@@ -859,7 +860,7 @@ impl Analyzer<'_, '_> {
                                         ErrorKind::NoSuchProperty { span, .. } | ErrorKind::NoSuchPropertyInClass { span, .. }
                                             if !should_use_no_such_property =>
                                         {
-                                            if default_prop_ty.is_none() {
+                                            if default_prop_ty.is_none() && prop.value.is_none() {
                                                 self.storage.report(ErrorKind::NoInitAndNoDefault { span: *span }.into())
                                             }
                                         }
@@ -906,6 +907,9 @@ impl Analyzer<'_, '_> {
                                 return Err(ErrorKind::RestPropertyNotLast { span: pat.span }.into());
                             }
 
+                            // If there's no type annotation, the default type should be any.
+                            // See objectRest.ts
+
                             let mut rest_ty = ty
                                 .as_ref()
                                 .try_map(|ty| {
@@ -913,6 +917,18 @@ impl Analyzer<'_, '_> {
                                         .context("tried to exclude keys for assignment with a object rest pattern")
                                 })?
                                 .freezed();
+
+                            if let Some(mutations) = &mut self.mutations {
+                                if let Some(PatMut { ty: Some(mutation_ty), .. }) = mutations.for_pats.get(&pat.node_id) {
+                                    if let Some(ty) = &rest_ty {
+                                        if let Type::TypeLit(ty) = ty.normalize() {
+                                            if ty.members.is_empty() {
+                                                rest_ty = Some(mutation_ty.clone());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
                             let mut default = default
                                 .as_ref()
@@ -1019,7 +1035,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
                     let ty = self
-                        .convert_type_to_type_lit(ty.span(), Cow::Borrowed(&ty))?
+                        .convert_type_to_type_lit(ty.span(), Cow::Borrowed(&ty), Default::default())?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit);
                     if let Some(ty) = ty {

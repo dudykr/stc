@@ -1,0 +1,19 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             158,
+  |         ),
+  |         hi: BytePos(
+  |             160,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/typeRelationships/assignmentCompatibility/assignmentCompatWithCallSignatures6/1.ts:9:1]
+  9 | var b3: <T>(x: T) => T;
+ 10 | b3 = x.a3;
+    : ^^
+    `----

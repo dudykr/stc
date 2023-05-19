@@ -112,6 +112,10 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         let _tracing = dev_span!("append_prop_or_spread_to_type");
 
+        if let Some(object_type) = object_type {
+            object_type.assert_clone_cheap();
+        }
+
         match prop {
             RPropOrSpread::Spread(RSpreadElement { dot3_token, expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
@@ -134,7 +138,6 @@ impl Analyzer<'_, '_> {
             }
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
-
                 match p {
                     TypeElement::Method(..)
                     | TypeElement::Property(PropertySignature {
@@ -243,7 +246,7 @@ impl Analyzer<'_, '_> {
         match rhs.normalize() {
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
-                if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {
+                if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs), Default::default())? {
                     return self.append_type(span, to, Type::TypeLit(rhs.into_owned()), opts);
                 }
             }

@@ -1,0 +1,83 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             449,
+  |         ),
+  |         hi: BytePos(
+  |             452,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [
+  |         SimpleAssignFailedWithCause {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     449,
+  |                 ),
+  |                 hi: BytePos(
+  |                     452,
+  |                 ),
+  |                 ctxt: #1,
+  |             },
+  |             cause: [
+  |                 ObjectAssignFailed {
+  |                     span: Span {
+  |                         lo: BytePos(
+  |                             449,
+  |                         ),
+  |                         hi: BytePos(
+  |                             452,
+  |                         ),
+  |                         ctxt: #0,
+  |                     },
+  |                     errors: [
+  |                         SimpleAssignFailed {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     449,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     452,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             cause: None,
+  |                         },
+  |                     ],
+  |                 },
+  |                 ObjectAssignFailed {
+  |                     span: Span {
+  |                         lo: BytePos(
+  |                             449,
+  |                         ),
+  |                         hi: BytePos(
+  |                             452,
+  |                         ),
+  |                         ctxt: #0,
+  |                     },
+  |                     errors: [
+  |                         SimpleAssignFailed {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     449,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     452,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             cause: None,
+  |                         },
+  |                     ],
+  |                 },
+  |             ],
+  |         },
+  |     ],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/typeRelationships/assignmentCompatibility/assignmentCompatWithConstructSignatures4/2.ts:19:1]
+ 19 | var b17: new <T>(x: (a: T) => T) => any[];
+ 20 | b17 = a17; // error
+    : ^^^
+    `----

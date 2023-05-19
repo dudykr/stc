@@ -1,5 +1,71 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/alias/base-1-1.ts:2:1]
+ 2 | 
+ 3 | type T1 = number;
+   :      ^^
+ 4 | var x1: number;
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/base-1-1.ts:6:1]
+ 6 | 
+ 7 | type T2 = string;
+   :      ^^
+ 8 | var x2: string;
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:10:1]
+ 10 | 
+ 11 | type T3 = boolean;
+    :      ^^
+ 12 | var x3: boolean;
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:14:1]
+ 14 | 
+ 15 | type T4 = void;
+    :      ^^
+ 16 | var x4: void;
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:18:1]
+ 18 | 
+ 19 | type T5 = any;
+    :      ^^
+ 20 | var x5: any;
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-1.ts:23:1]
+ 23 | interface I6 { x: string }
+ 24 | type T6 = I6;
+    :      ^^
+ 25 | var x6: I6;
+    `----
+
+Error: 
+  > I6
+
+  x Type
     ,-[$DIR/tests/pass/types/alias/base-1-1.ts:27:1]
  27 | 
  28 | x6.x

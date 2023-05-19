@@ -218,7 +218,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(..) | Type::Intersection(..) => {
                     if let Some(mut rty) = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(rhs) = self
-                                .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
+                                .convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())?
                                 .map(Cow::into_owned)
                                 .map(Type::TypeLit)
                             {
@@ -400,7 +400,7 @@ impl Analyzer<'_, '_> {
 
                 Type::ClassDef(rhs_cls) => {
                     let rhs = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())
                         .context("tried to convert a class definition into a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -450,7 +450,7 @@ impl Analyzer<'_, '_> {
                     // }
 
                     let rhs = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())
                         .context("tried to convert a class into type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -520,7 +520,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Function(..) | Type::Constructor(..) => {
                     let mut rhs = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())
                         .context("tried to convert a function to a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -880,6 +880,20 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        // retain default method
+        if !missing_fields.is_empty() {
+            missing_fields.retain(|v| {
+                if let TypeElement::Method(MethodSignature {
+                    key: Key::Normal { sym, .. },
+                    ..
+                }) = v
+                {
+                    &**sym != "toLocaleString" && &**sym != "toString"
+                } else {
+                    true
+                }
+            });
+        }
         if !missing_fields.is_empty() {
             if opts.report_assign_failure_for_missing_properties.unwrap_or_default()
                 && lhs.iter().all(|el| {
@@ -951,7 +965,7 @@ impl Analyzer<'_, '_> {
                 .count()
                 == 0
         {
-            if let Ok(Some(rhs)) = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs)) {
+            if let Ok(Some(rhs)) = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default()) {
                 let rhs_call_count = rhs
                     .members
                     .iter()

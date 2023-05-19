@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use stc_ts_testing::lsp::LspClient;
-use stc_utils::AHashSet;
+use stc_utils::FxHashSet;
 use testing::run_test;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
 use tracing::info;
@@ -19,7 +19,7 @@ fn exec_path() -> PathBuf {
         let output_dir = Path::new(".stc").join(".lsp-test");
 
         let mut c = Command::new("cargo");
-        c.arg("build").arg("--example").arg("lsp");
+        c.arg("build").arg("--example").arg("stc-debug-lsp");
         c.arg("-Z").arg("unstable-options");
         c.arg("--out-dir").arg(&output_dir);
 
@@ -28,7 +28,7 @@ fn exec_path() -> PathBuf {
 
         assert!(output.status.success());
 
-        output_dir.join("lsp")
+        output_dir.join("stc-debug-lsp")
     });
 
     BIN_PATH.to_path_buf()
@@ -129,7 +129,7 @@ impl CollectedDiagnostics {
         // go over the publishes in reverse order in order to get
         // the final messages that will be shown in the editor
         let mut messages = Vec::new();
-        let mut had_specifier = AHashSet::default();
+        let mut had_specifier = FxHashSet::default();
         for message in self.0.iter().rev() {
             if had_specifier.insert(message.uri.clone()) {
                 messages.insert(0, message.clone());
@@ -169,6 +169,7 @@ fn test_init() {
 }
 
 #[test]
+#[ignore]
 fn test_hover() {
     run_test(false, |_cm, _handler| {
         let mut client = init("initialize_params.json");

@@ -52,7 +52,7 @@ Error:
    `----
 
 Error: 
-  > (x: string) => string
+  > (x: '') => ''
 
   x Type
    ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:6:1]
@@ -96,7 +96,7 @@ Error:
    `----
 
 Error: 
-  > (x: any) => string
+  > (x: any) => ''
 
   x Type
    ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:7:1]
@@ -136,4 +136,4 @@ Error:
    `----
 
 Error: 
-  > (x: string) => string
+  > (x: string) => ''

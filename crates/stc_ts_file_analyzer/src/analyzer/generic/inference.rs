@@ -9,24 +9,26 @@ use std::{
 use bitflags::bitflags;
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBigInt, RBool, RNumber, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Readonly, Ref,
-    TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, InferType, Interface, KeywordType, KeywordTypeMetadata, LitType,
+    Readonly, Ref, TplElem, TplType, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use stc_utils::{cache::Freeze, dev_span};
 use swc_atoms::Atom;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
+use super::ExtendsOpts;
 use crate::{
     analyzer::{assign::AssignOpts, generic::InferData, Analyzer},
     ty::TypeExt,
-    util::unwrap_builtin_with_single_arg,
+    type_facts::TypeFacts,
+    util::{reduce_left, unwrap_builtin_with_single_arg},
     VResult,
 };
 
@@ -502,7 +504,11 @@ impl Analyzer<'_, '_> {
         let mut matches = self.infer_types_from_tpl_lit_type(span, source, target)?;
         matches.freeze();
 
-        let _tracing = dev_span!("infer_to_tpl_lit_type", matches = matches.as_ref().map_or(0, |v| v.len()));
+        let _tracing = dev_span!(
+            "infer_to_tpl_lit_type",
+            source = tracing::field::display(dump_type_as_string(source)),
+            matches = matches.as_ref().map_or(0, |v| v.len())
+        );
 
         // When the target template literal contains only placeholders (meaning that
         // inference is intended to extract single characters and remainder
@@ -524,9 +530,240 @@ impl Analyzer<'_, '_> {
                 // variable whose constraint includes one of the
                 // allowed template literal placeholder types, infer from a
                 // literal type corresponding to the constraint.
-                if source.is_str_lit() && target.is_type_param() {
-                    // TODO: Implement logic
-                    error!("unimplemented: infer_to_tpl_lit_type");
+                if source.is_str_lit() && (target.is_type_param() || target.is_infer()) {
+                    if let Type::Infer(InferType {
+                        type_param:
+                            TypeParam {
+                                constraint: Some(constraint),
+                                ..
+                            },
+                        ..
+                    }) = target.normalize()
+                    {
+                        if !constraint.is_any() {
+                            //
+                            let constraint_types = constraint.iter_union().collect_vec();
+                            let all_types = Type::new_union(span, constraint_types.iter().cloned().cloned()).freezed();
+
+                            // If the constraint contains `string`, we don't need to look for a more
+                            // preferred type
+                            if constraint_types.iter().all(|ty| !ty.is_str()) {
+                                let src = match source.normalize() {
+                                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.value.clone(),
+                                    _ => unreachable!(),
+                                };
+
+                                let mut type_facts = TypeFacts::None;
+
+                                // If the type contains `number` or a number literal and the string isn't a
+                                // valid number, exclude numbers
+                                if !self.is_valid_num_str(&src, true) {
+                                    type_facts |= TypeFacts::TypeofNENumber;
+                                }
+
+                                // If the type contains `bigint` or a bigint literal and the string isn't a
+                                // valid bigint, exclude big ints
+                                if !self.is_valid_big_int_str(&src, true) {
+                                    type_facts |= TypeFacts::TypeofNEBigInt;
+                                }
+
+                                let matching_type = reduce_left(
+                                    constraint_types,
+                                    |l, r, _| {
+                                        if !self.is_type_assignable_to(span, r, &all_types) {
+                                            return l;
+                                        }
+                                        if l.is_str() {
+                                            return l;
+                                        }
+                                        if r.is_str() {
+                                            return source.clone();
+                                        }
+
+                                        if l.is_tpl() {
+                                            return l;
+                                        }
+
+                                        if let Type::Tpl(rt) = r.normalize() {
+                                            error!("unimplemented: Tpl");
+
+                                            // if isTypeMatchedByTemplateLiteralType(source, right){
+                                            //     return source;
+                                            // }
+                                        }
+
+                                        if l.is_string_mapping() {
+                                            return l;
+                                        }
+
+                                        if let Type::StringMapping(rs) = r.normalize() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: StringMapping");
+
+                                            // if &*src ==
+                                            // applyStringMapping(right.
+                                            // symbol, str){
+                                            //     return source
+                                            // }
+                                        }
+
+                                        if l.is_str_lit() {
+                                            return l;
+                                        }
+
+                                        if let Type::Lit(LitType { lit: RTsLit::Str(s), .. }) = r.normalize() {
+                                            if s.value == src {
+                                                return source.clone();
+                                            }
+                                        }
+
+                                        if l.is_num() {
+                                            return l;
+                                        }
+
+                                        if r.is_num() {
+                                            return Type::Lit(LitType {
+                                                span,
+                                                lit: RTsLit::Number(RNumber {
+                                                    span,
+                                                    value: src.parse().unwrap(),
+                                                    raw: None,
+                                                }),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+
+                                        if l.is_enum_type() || l.is_enum_variant() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: enum");
+                                            return l;
+                                        }
+
+                                        if r.is_enum_type() || r.is_enum_variant() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: enum");
+                                            return Type::Lit(LitType {
+                                                span,
+                                                lit: RTsLit::Number(RNumber {
+                                                    span,
+                                                    value: src.parse().unwrap(),
+                                                    raw: None,
+                                                }),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+
+                                        if l.is_num_lit() {
+                                            return l;
+                                        }
+
+                                        if r.is_num_lit() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: num_lit");
+
+                                            // TODO
+                                            // if (right as
+                                            // NumberLiteralType).value == str
+                                            // as f64 {
+                                            //     return r.clone();
+                                            // }
+                                        }
+
+                                        if l.is_bigint() {
+                                            return l;
+                                        }
+
+                                        if r.is_bigint() {
+                                            return Type::Lit(LitType {
+                                                span,
+                                                lit: RTsLit::BigInt(RBigInt {
+                                                    span,
+                                                    value: Box::new(src.parse().unwrap()),
+                                                    raw: None,
+                                                }),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            });
+                                        }
+
+                                        if l.is_bigint_lit() {
+                                            return l;
+                                        }
+
+                                        if r.is_bigint_lit() {
+                                            error!("unimplemented: infer_to_tpl_lit_type: bigint_lit");
+
+                                            // TODO
+                                            // if pseudoBigIntToString((right as
+                                            // BigIntLiteralType).value) == str
+                                            // {
+                                            //     return r;
+                                            // }
+                                        }
+
+                                        if l.is_bool() {
+                                            return l;
+                                        }
+
+                                        if r.is_bool() {
+                                            return match &*src {
+                                                "true" => Type::Lit(LitType {
+                                                    span,
+                                                    lit: RTsLit::Bool(RBool { span, value: true }),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                "false" => Type::Lit(LitType {
+                                                    span,
+                                                    lit: RTsLit::Bool(RBool { span, value: false }),
+                                                    metadata: Default::default(),
+                                                    tracker: Default::default(),
+                                                }),
+                                                _ => {
+                                                    return Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                            };
+                                        }
+
+                                        if l.is_bool_lit() {
+                                            return l;
+                                        }
+
+                                        if r.is_bool_lit() && *src == *"boolean" {
+                                            return r.clone();
+                                        }
+
+                                        if l.is_undefined() {
+                                            return l;
+                                        }
+
+                                        if r.is_undefined() && *src == *"undefined" {
+                                            return r.clone();
+                                        }
+
+                                        if l.is_null() {
+                                            return l;
+                                        }
+
+                                        if r.is_null() && *src == *"null" {
+                                            return r.clone();
+                                        }
+
+                                        l
+                                    },
+                                    Type::never(span, Default::default()),
+                                );
+
+                                if !matching_type.is_never() {
+                                    self.infer_from_types(span, inferred, &matching_type, target, opts)?;
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 self.infer_from_types(span, inferred, &source, target, opts)?;
@@ -800,6 +1037,28 @@ impl Analyzer<'_, '_> {
         };
         arg.assert_clone_cheap();
 
+        if let Some(constraint) = inferred.constraints.get(&name) {
+            constraint.assert_clone_cheap();
+
+            if let Some(false) = self.extends(
+                span,
+                &arg,
+                constraint,
+                ExtendsOpts {
+                    allow_missing_fields: true,
+                    allow_type_params: true,
+                    ..Default::default()
+                },
+            ) {
+                warn!(
+                    "Type parameter `{}` is not assignable to `{}`",
+                    dump_type_as_string(&arg),
+                    dump_type_as_string(constraint)
+                );
+                return Ok(());
+            }
+        }
+
         // TODO(kdy1): Verify if this is correct
         if let Type::Param(arg) = arg.normalize() {
             if let Some(inverse) = inferred.type_params.get(&arg.name) {
@@ -840,7 +1099,7 @@ impl Analyzer<'_, '_> {
                         || self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                &arg.clone().into_owned().generalize_lit(),
+                                &arg.clone().into_owned().generalize_lit().freezed(),
                                 &e.get().inferred_type.clone().generalize_lit(),
                                 AssignOpts {
                                     span,
@@ -910,8 +1169,8 @@ impl Analyzer<'_, '_> {
                     if self
                         .assign_with_opts(
                             &mut Default::default(),
-                            &e.get().inferred_type.clone().generalize_lit(),
-                            &arg.clone().into_owned().generalize_lit(),
+                            &e.get().inferred_type.clone().generalize_lit().freezed(),
+                            &arg.clone().into_owned().generalize_lit().freezed(),
                             AssignOpts {
                                 span,
                                 ..Default::default()
@@ -1076,14 +1335,13 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(arg) => {
                 self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
             }
-            Type::Tuple(..) => {
-                // Convert to a type literal.
-                if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
-                    self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
-                }
-            }
             _ => {
-                unimplemented!()
+                // Convert to a type literal.
+                if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg), Default::default())? {
+                    self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
+                } else {
+                    unimplemented!()
+                }
             }
         }
 
@@ -1136,8 +1394,8 @@ impl Analyzer<'_, '_> {
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
-                let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p))?;
-                let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a))?;
+                let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p), Default::default())?;
+                let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a), Default::default())?;
                 if let Some(p) = p {
                     if let Some(a) = a {
                         self.infer_type_using_type_elements_and_type_elements(span, inferred, &p.members, &a.members, opts)?;

@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
             )
             .ok()?;
 
-        let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty)).ok()??;
+        let ty = self.convert_type_to_type_lit(span, Cow::Owned(ty), Default::default()).ok()??;
 
         if ty.members.len() == 1 {
             match &ty.members[0] {
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
                                     Default::default(),
                                 );
 
-                                let type_ann = res.ok();
+                                let type_ann = res.ok().freezed();
 
                                 v.validate_with_args(self, type_ann.as_ref())?
                             }
@@ -314,7 +314,9 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RJSXFragment, type_ann: Option<&Type>) -> VResult<Type> {
         let children = e.children.validate_with_default(self)?;
 
-        self.get_jsx_intrinsic_element(e.span, &"Fragment".into())
+        // See https://github.com/microsoft/TypeScript/issues/50429
+        // The TypeScript does not specify the validation rule for JSXFragment.
+        Ok(Type::any(e.span, Default::default()))
     }
 }
 

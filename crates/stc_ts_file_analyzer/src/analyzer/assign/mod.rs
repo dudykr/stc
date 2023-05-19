@@ -9,6 +9,9 @@ use stc_ts_types::{
     Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeParam, Union,
+    Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType, Mapped,
+    PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit,
+    TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -183,6 +186,12 @@ pub(crate) struct AssignOpts {
 
     /// Use `TS2322` on missing properties.
     pub report_assign_failure_for_missing_properties: Option<bool>,
+
+    pub do_not_use_single_error_for_tuple_with_rest: bool,
+
+    /// If true, `assign` will fail if the params of the LHS is longer than the
+    /// RHS.
+    pub ensure_params_length: bool,
 }
 
 #[derive(Default)]
@@ -501,29 +510,6 @@ impl Analyzer<'_, '_> {
         }
 
         match ty {
-            Type::Ref(Ref {
-                span,
-                type_name: RTsEntityName::Ident(type_name),
-                type_args: None,
-                metadata,
-                ..
-            }) => {
-                // TODO(kdy1): Check if ref points global.
-                return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                    span: *span,
-                    kind: match type_name.sym {
-                        js_word!("Boolean") => TsKeywordTypeKind::TsBooleanKeyword,
-                        js_word!("Number") => TsKeywordTypeKind::TsNumberKeyword,
-                        js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
-                        _ => return Ok(Cow::Borrowed(ty)),
-                    },
-                    metadata: KeywordTypeMetadata {
-                        common: metadata.common,
-                        ..Default::default()
-                    },
-                    tracker: Default::default(),
-                })));
-            }
             Type::EnumVariant(e @ EnumVariant { name: Some(..), .. }) => {
                 if opts.ignore_enum_variant_name {
                     return Ok(Cow::Owned(Type::EnumVariant(EnumVariant { name: None, ..e.clone() })));
@@ -588,6 +574,10 @@ impl Analyzer<'_, '_> {
             let l = force_dump_type_as_string(left);
             let r = force_dump_type_as_string(right);
 
+            if l == r && !l.contains("symbol") && format!("{:?}", left) == format!("{:?}", right) {
+                unreachable!("Assignment of identical type failed\n{}\n{:?}", l, left);
+            }
+
             let l_final = self.normalize_for_assign(opts.span, left, opts);
             let r_final = self.normalize_for_assign(opts.span, right, opts);
 
@@ -635,6 +625,10 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(());
+        }
+
+        if to.type_eq(rhs) {
             return Ok(());
         }
 
@@ -1004,6 +998,7 @@ impl Analyzer<'_, '_> {
         if match rhs.normalize_instance() {
             Type::Lit(..) => true,
             Type::Interface(i) => matches!(&**i.name.sym(), "Boolean" | "String" | "Number" | "BigInt"),
+            Type::EnumVariant(..) => true,
             _ => false,
         } {
             // Handle special cases.
@@ -1041,6 +1036,14 @@ impl Analyzer<'_, '_> {
                     {
                         match rhs {
                             Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
+                            Type::EnumVariant(ref e) => {
+                                let e = e.def.normalize();
+                                if (e.has_num && !e.has_str && *interface == "Number")
+                                    || (e.has_str && !e.has_num && *interface == "String")
+                                {
+                                    return Ok(());
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -1340,7 +1343,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
 
                 // This is required to handle intersections of function-like types.
-                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to))? {
+                if let Some(l_type_lit) = self.convert_type_to_type_lit(span, Cow::Borrowed(to), Default::default())? {
                     if self
                         .assign_to_type_elements(
                             data,
@@ -1386,7 +1389,7 @@ impl Analyzer<'_, '_> {
                 let rhs_requires_unknown_property_check = !matches!(rhs.normalize(), Type::Keyword(..));
 
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
-                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
+                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to), Default::default())?;
 
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, AssignOpts { ..opts })
@@ -1572,7 +1575,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs)) {
+                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs), Default::default()) {
                     if self.assign_inner(data, to, &Type::TypeLit(rhs.into_owned()), opts).is_ok() {
                         return Ok(());
                     }
@@ -1679,64 +1682,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-
-                match *constraint {
-                    Some(ref c) => {
-                        return self.assign_inner(
-                            data,
-                            to,
-                            c,
-                            AssignOpts {
-                                allow_unknown_rhs: Some(true),
-                                ..opts
-                            },
-                        );
-                    }
-                    None => {
-                        // unknownType1.ts says
-
-                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
-
-                        match to.normalize() {
-                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
-                                if self.rule().strict_null_checks {
-                                    fail!()
-                                } else {
-                                    return Ok(());
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-
-                match to.normalize() {
-                    Type::Union(..) => {}
-                    Type::Mapped(m) => {
-                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
-                            fail!()
-                        }
-                    }
-                    Type::TypeLit(to) => {
-                        // Don't ask why.
-                        //
-                        // See: subtypingWithOptionalProperties.ts
-                        if !self.rule().strict_null_checks
-                            && to.members.iter().all(|el| match el {
-                                TypeElement::Property(p) => p.optional,
-                                _ => false,
-                            })
-                        {
-                            return Ok(());
-                        } else {
-                            fail!()
-                        }
-                    }
-
-                    _ => {
-                        fail!()
-                    }
-                }
             }
 
             Type::Predicate(..) => {
@@ -1772,7 +1717,10 @@ impl Analyzer<'_, '_> {
                 if let Some(true) = c.as_union_type().map(|ty| ty.types.iter().any(|ty| ty.type_eq(rhs))) {
                     return Ok(());
                 }
-                fail!()
+
+                if !rhs.is_type_param() {
+                    fail!()
+                }
             }
 
             Type::Param(..) => {
@@ -1808,6 +1756,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
+                        Type::Param(..) => {}
                         _ => fail!(),
                     };
                 }
@@ -1836,12 +1785,30 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                Type::Param(param) => {
+                    let ty = &param.constraint;
+
+                    if let Some(ty) = ty {
+                        let ty = ty.normalize();
+
+                        if let Type::Array(Array {
+                            elem_type: ref rhs_elem_type,
+                            ..
+                        }) = ty
+                        {
+                            return self.assign_inner(data, lhs_elem_type, rhs_elem_type, opts);
+                        } else {
+                            return self.assign_without_wrapping(data, to, ty, opts);
+                        }
+                    }
+                }
+
                 _ => {
                     if let Some(res) = self.try_assign_using_parent(data, to, rhs, opts) {
                         return res;
                     }
 
-                    let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs))?;
+                    let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs), Default::default())?;
                     if let Some(r) = r {
                         for m in &r.members {
                             if let TypeElement::Index(m) = m {
@@ -2192,8 +2159,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 ..
                             })
-                            | Type::Lit(..)
-                            | Type::Param(..) => {
+                            | Type::Lit(..) => {
                                 fail!()
                             }
 
@@ -2218,7 +2184,7 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsBooleanKeyword
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Lit(..) | Type::Interface(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
+                        Type::Lit(..) | Type::Function(..) | Type::Constructor(..) | Type::Interface(..) => fail!(),
                         Type::TypeLit(..) => {
                             let left = self.normalize(
                                 Some(span),
@@ -2284,7 +2250,7 @@ impl Analyzer<'_, '_> {
                 ref body,
                 ref extends,
                 ..
-            }) => {
+            }) if !rhs.is_type_param() => {
                 // TODO(kdy1): Optimize handling of unknown rhs
 
                 if name == "Function" {
@@ -2379,7 +2345,7 @@ impl Analyzer<'_, '_> {
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
                 if !opts.allow_unknown_rhs.unwrap_or_default() && !opts.allow_unknown_rhs_if_expanded {
-                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
+                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to), Default::default())?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, span, &lhs.members, rhs, Default::default(), opts)
                             .with_context(|| {
@@ -2406,7 +2372,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
+            Type::TypeLit(TypeLit { ref members, metadata, .. }) if !rhs.is_type_param() => {
                 return self
                     .assign_to_type_elements(
                         data,
@@ -2662,6 +2628,66 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => fail!(),
+
+            (_, Type::Param(TypeParam { constraint, .. })) => {
+                match *constraint {
+                    Some(ref c) => {
+                        return self.assign_inner(
+                            data,
+                            to,
+                            c,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        );
+                    }
+                    None => {
+                        // unknownType1.ts says
+
+                        // Type parameter with explicit 'unknown' constraint not assignable to '{}'
+
+                        match to.normalize() {
+                            Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
+                                if self.rule().strict_null_checks {
+                                    fail!()
+                                } else {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                match to.normalize() {
+                    Type::Union(..) => {}
+                    Type::Mapped(m) => {
+                        if let Err(err) = self.assign_to_mapped(data, m, rhs, opts) {
+                            fail!()
+                        }
+                    }
+                    Type::TypeLit(to) => {
+                        // Don't ask why.
+                        //
+                        // See: subtypingWithOptionalProperties.ts
+                        if !self.rule().strict_null_checks
+                            && to.members.iter().all(|el| match el {
+                                TypeElement::Property(p) => p.optional,
+                                _ => false,
+                            })
+                        {
+                            return Ok(());
+                        } else {
+                            fail!()
+                        }
+                    }
+
+                    _ => {
+                        fail!()
+                    }
+                }
+            }
 
             _ => {}
         }
@@ -3123,7 +3149,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = self
-                .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
+                .convert_type_to_type_lit(span, Cow::Borrowed(ty), Default::default())?
                 .map(Cow::into_owned)
                 .map(Type::TypeLit)
             {
@@ -3180,7 +3206,7 @@ impl Analyzer<'_, '_> {
             match r.normalize() {
                 Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
                     if let Some(r) = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(&r))?
+                        .convert_type_to_type_lit(span, Cow::Borrowed(&r), Default::default())?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {

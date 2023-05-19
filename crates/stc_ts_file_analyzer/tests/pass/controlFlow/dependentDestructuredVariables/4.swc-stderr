@@ -1,5 +1,15 @@
 
   x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:2:1]
+ 2 | 
+ 3 | type Func = <T extends ["a", number] | ["b", string]>(...args: T) => void;
+   :      ^^^^
+   `----
+
+Error: 
+  > <T extends (["a", number] | ["b", string])>(...args: T) => void
+
+  x Type
    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/4.ts:5:1]
  5 | const f60: Func = (kind, payload) => {
  6 |   if (kind === "a") {

@@ -360,6 +360,7 @@ impl Analyzer<'_, '_> {
                 let type_ann = object_type.and_then(|obj| {
                     self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
+                        .freezed()
                 });
 
                 let ty = kv.value.validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))?;
@@ -380,7 +381,10 @@ impl Analyzer<'_, '_> {
             }
 
             RProp::Assign(ref p) => unimplemented!("validate_key(AssignProperty): {:?}", p),
-            RProp::Getter(ref p) => p.validate_with(self)?,
+            RProp::Getter(ref p) => {
+                self.ctx.get_accessor_prop = true;
+                p.validate_with(self)?
+            }
             RProp::Setter(ref p) => {
                 let key = p.key.validate_with(self)?;
                 let computed = matches!(p.key, RPropName::Computed(_));
@@ -390,6 +394,7 @@ impl Analyzer<'_, '_> {
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> VResult<_> {
                         child.ctx.pat_mode = PatMode::Decl;
+                        child.ctx.set_accessor_prop = true;
                         let param = param.validate_with(child)?;
 
                         p.body.visit_with(child);
@@ -512,8 +517,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> VResult<TypeElement> {
-        let key = n.key.validate_with(self)?;
-        let computed = key.is_computed();
+        let key: Key = n.key.validate_with(self)?;
 
         let type_ann = self
             .with_child(
@@ -535,6 +539,8 @@ impl Analyzer<'_, '_> {
             )
             .report(&mut self.storage)
             .flatten();
+
+        let computed = key.is_computed() | (matches!(type_ann, Some(Type::Lit(..))) && key.is_normal());
 
         Ok(PropertySignature {
             span: n.span(),

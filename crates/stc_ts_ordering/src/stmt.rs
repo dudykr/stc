@@ -1,14 +1,15 @@
 //! Dependency analyzer for statements.
 
+use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl,
-    RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs,
-    RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
+    RBindingIdent, RDecl, RExportNamedSpecifier, RExpr, RForInStmt, RForOfStmt, RIdent, RJSXElementName, RJSXObject, RMemberExpr,
+    RMemberProp, RModuleDecl, RModuleExportName, RModuleItem, RNamedExport, ROptChainBase, ROptChainExpr, RProp, RStmt, RTsEntityName,
+    RTsExprWithTypeArgs, RTsFnType, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat,
+    RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
-use swc_common::collections::{AHashMap, AHashSet};
 
 use crate::types::Sortable;
 
@@ -28,11 +29,11 @@ impl Sortable for RStmt {
         }
     }
 
-    fn get_decls(&self) -> AHashMap<Self::Id, AHashSet<Self::Id>> {
+    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
         ids_declared_by(self)
     }
 
-    fn uses(&self) -> AHashSet<Self::Id> {
+    fn uses(&self) -> FxHashSet<Self::Id> {
         deps_of(self)
     }
 }
@@ -47,16 +48,16 @@ impl Sortable for RModuleItem {
         }
     }
 
-    fn get_decls(&self) -> AHashMap<Self::Id, AHashSet<Self::Id>> {
+    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
         ids_declared_by(self)
     }
 
-    fn uses(&self) -> AHashSet<Self::Id> {
+    fn uses(&self) -> FxHashSet<Self::Id> {
         deps_of(self)
     }
 }
 
-fn deps_of<T>(e: &T) -> AHashSet<TypedId>
+fn deps_of<T>(e: &T) -> FxHashSet<TypedId>
 where
     T: VisitWith<DepAnalyzer>,
 {
@@ -65,8 +66,8 @@ where
     v.used
 }
 
-fn vars_declared_by_var_decl(v: &RVarDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
-    let mut map = AHashMap::<_, AHashSet<_>>::default();
+fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
+    let mut map = FxHashMap::<_, FxHashSet<_>>::default();
     for decl in &v.decls {
         let vars = find_ids_in_pat(&decl.name);
 
@@ -95,8 +96,8 @@ fn vars_declared_by_var_decl(v: &RVarDecl) -> AHashMap<TypedId, AHashSet<TypedId
     map
 }
 
-fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
-    let mut map = AHashMap::default();
+fn ids_declared_by_decl(d: &RDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
+    let mut map = FxHashMap::default();
     match d {
         RDecl::Class(c) => {
             let used_ids = deps_of(&c.class);
@@ -189,7 +190,7 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
     }
 }
 
-fn ids_declared_by<T>(node: &T) -> AHashMap<TypedId, AHashSet<TypedId>>
+fn ids_declared_by<T>(node: &T) -> FxHashMap<TypedId, FxHashSet<TypedId>>
 where
     T: AsModuleDecl,
 {
@@ -250,7 +251,7 @@ where
 
 #[derive(Default)]
 struct DepAnalyzer {
-    used: AHashSet<TypedId>,
+    used: FxHashSet<TypedId>,
     in_var_decl: bool,
 }
 
@@ -350,6 +351,35 @@ impl Visit<RNamedExport> for DepAnalyzer {
         }
 
         value.visit_children_with(self);
+    }
+}
+
+impl Visit<RJSXElementName> for DepAnalyzer {
+    fn visit(&mut self, n: &RJSXElementName) {
+        n.visit_children_with(self);
+
+        fn left(name: &RJSXObject) -> &RIdent {
+            match name {
+                RJSXObject::Ident(i) => i,
+                RJSXObject::JSXMemberExpr(n) => left(&n.obj),
+            }
+        }
+
+        match n {
+            RJSXElementName::Ident(id) => {
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: id.into(),
+                });
+            }
+            RJSXElementName::JSXMemberExpr(n) => {
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: left(&n.obj).into(),
+                });
+            }
+            RJSXElementName::JSXNamespacedName(_) => {}
+        }
     }
 }
 

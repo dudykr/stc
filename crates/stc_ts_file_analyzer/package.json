@@ -14,7 +14,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@octokit/types": "^9.0.0",
+    "add": "^2.0.6",
     "csstype": "^3.0.8",
-    "typescript": "^4.4.2"
+    "dotenv": "^16.0.3",
+    "octokit": "^2.0.14",
+    "typescript": "^4.4.2",
+    "yarn": "^1.22.19"
   }
 }

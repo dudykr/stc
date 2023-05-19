@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
             // Special case, but many usages can be handled with this check.
             if (*keyof_operand).type_eq(mapped_ty) {
                 let new_type = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand), Default::default())
                     .context("tried to convert a type to type literal to expand mapped type")?
                     .map(Cow::into_owned);
 
@@ -448,6 +448,8 @@ impl Analyzer<'_, '_> {
     /// Used for types like `'foo' | 'bar'` or alias of them.
     fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
+
+        let _stack = stack::track(span)?;
 
         let ty = ty.normalize();
 
@@ -879,7 +881,9 @@ impl Analyzer<'_, '_> {
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
     ) -> VResult<Type> {
-        let type_lit = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))?.map(Cow::into_owned);
+        let type_lit = self
+            .convert_type_to_type_lit(span, Cow::Borrowed(&ty), Default::default())?
+            .map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {
                 apply_mapped_flags(m, optional, readonly);

@@ -1,5 +1,24 @@
 
   x Type
+   ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:1:1]
+ 1 | export type Item =
+   :             ^^^^
+ 2 |     { kind: 0, a: string } |
+   `----
+
+Error: 
+  > ({
+  |     kind: 0;
+  |     a: string;
+  | } | {
+  |     kind: 1;
+  |     b: string;
+  | } | {
+  |     kind: 2;
+  |     c: string;
+  | })
+
+  x Type
    ,-[$DIR/tests/pass/types/facts/field/literal-union-1.ts:7:1]
  7 | export function f20(x: Item) {
  8 |     switch (x.kind) {

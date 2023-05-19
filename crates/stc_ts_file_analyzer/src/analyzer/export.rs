@@ -235,11 +235,13 @@ impl Analyzer<'_, '_> {
         };
 
         let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.freezed()).collect::<Vec<_>>();
-        for ty in iter {
-            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
-        }
 
-        self.storage.export_stored_type(span, self.ctx.module_id, name, orig_name);
+        self.storage.export_type(
+            span,
+            self.ctx.module_id,
+            name.sym().clone(),
+            Type::new_intersection(span, iter).freezed(),
+        );
     }
 
     /// Exports a variable.
@@ -371,6 +373,11 @@ impl Analyzer<'_, '_> {
         let (dep, data) = self.get_imported_items(span, &node.src.value);
 
         if ctxt != dep {
+            if data.is_any() {
+                // TODO: Make this module `any`
+                return Ok(());
+            }
+
             match data.normalize() {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
@@ -382,6 +389,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+
                 _ => {
                     unreachable!()
                 }

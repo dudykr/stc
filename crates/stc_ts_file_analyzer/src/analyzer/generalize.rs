@@ -72,14 +72,14 @@ impl Simplifier<'_> {
 }
 
 impl Fold<Union> for Simplifier<'_> {
-    fn fold(&mut self, mut union: Union) -> Union {
-        let should_remove_null_and_undefined = union
+    fn fold(&mut self, mut u: Union) -> Union {
+        let should_remove_null_and_undefined = u
             .types
             .iter()
             .any(|ty| matches!(ty.normalize(), Type::Ref(..) | Type::Function(..)));
 
         if should_remove_null_and_undefined {
-            union.types.retain(|ty| {
+            u.types.retain(|ty| {
                 if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
                     return false;
                 }
@@ -88,19 +88,19 @@ impl Fold<Union> for Simplifier<'_> {
             });
         }
 
-        let has_array = union.types.iter().any(|ty| matches!(ty.normalize(), Type::Array(..)));
+        let has_array = u.types.iter().any(|ty| matches!(ty.normalize(), Type::Array(..)));
 
         // Remove empty tuple
         if has_array {
-            union.types.retain(|ty| match ty.normalize() {
+            u.types.retain(|ty| match ty.normalize() {
                 Type::Tuple(tuple) => !tuple.elems.is_empty(),
                 _ => true,
             });
         }
 
-        union.types.dedup_type();
+        u.types.dedup_type();
 
-        union
+        u
     }
 }
 

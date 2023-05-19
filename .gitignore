@@ -13,7 +13,6 @@ core
 *.log
 
 !.vscode/settings.json
-.vscode/launch.json
 
 /.idea
 *.iml
@@ -53,3 +52,5 @@ tmp.txt
 *.dot
 # Used by stc
 .stc/
+# Used by scripts
+.env

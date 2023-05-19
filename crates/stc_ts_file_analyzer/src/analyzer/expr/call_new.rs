@@ -1,13 +1,13 @@
 //! Handles new expressions and call expressions.
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
-    RTsTypeParamInstantiation, RTsTypeRef,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit,
+    RTsThisTypeOrIdent, RTsType, RTsTypeAnn, RTsTypeParamInstantiation, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -16,11 +16,12 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_storage::ErrorStore;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Function, Id, IdCtx,
-    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref,
-    StaticThis, Symbol, TypeParamDecl, Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, Id, IdCtx, IndexedAccessType,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, QueryExpr, QueryType, Ref, StaticThis, Symbol,
+    TypeParamDecl, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
@@ -1183,12 +1184,29 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(CallCandidate {
-                            // TODO(kdy1): Maybe we need Option<Vec<T>>.
-                            params: Default::default(),
-                            ret_ty: box Type::any(span, Default::default()),
-                            type_params: Default::default(),
-                        }),
+                        }) => {
+                            let rest = FnParam {
+                                span,
+                                required: false,
+                                pat: RPat::Rest(RRestPat {
+                                    node_id: NodeId::invalid(),
+                                    span,
+                                    dot3_token: DUMMY_SP,
+                                    arg: box RPat::Ident(RBindingIdent {
+                                        node_id: NodeId::invalid(),
+                                        id: RIdent::new("args".into(), span.with_ctxt(SyntaxContext::empty())),
+                                        type_ann: Default::default(),
+                                    }),
+                                    type_ann: Default::default(),
+                                }),
+                                ty: box Type::any(span, Default::default()),
+                            };
+                            candidates.push(CallCandidate {
+                                params: vec![rest],
+                                ret_ty: box Type::any(span, Default::default()),
+                                type_params: Default::default(),
+                            });
+                        }
 
                         Type::Function(f) if kind == ExtractKind::Call => {
                             candidates.push(CallCandidate {
@@ -1308,6 +1326,7 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tried to expand ref to handle a spread argument")?;
+
                     match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| TypeOrSpread {
@@ -1938,6 +1957,27 @@ impl Analyzer<'_, '_> {
             })
             .collect::<Vec<_>>();
 
+        if type_params_of_type.is_none()
+            && type_args.is_some()
+            && members.iter().all(|v| match v {
+                TypeElement::Call(c) => c.type_params.is_none(),
+                TypeElement::Constructor(c) => c.type_params.is_none(),
+                TypeElement::Method(met) => met.type_params.is_none(),
+                TypeElement::Property(prop) => prop.type_params.is_none(),
+                TypeElement::Index(ind) => true,
+            })
+        {
+            if let Some(type_args) = type_args {
+                return Err(ErrorKind::TypeParameterCountMismatch {
+                    span,
+                    min: 0,
+                    max: 0,
+                    actual: type_args.params.len(),
+                }
+                .into());
+            }
+        }
+
         if let Some(v) = self
             .select_and_invoke(
                 span,
@@ -2076,7 +2116,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(..) => {
-                let callee = self.convert_type_to_type_lit(span, callee)?.map(Cow::into_owned).map(Type::TypeLit);
+                let callee = self
+                    .convert_type_to_type_lit(span, callee, Default::default())?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
                 if let Some(callee) = callee {
                     return self.extract_callee_candidates(span, kind, &callee);
                 }
@@ -2273,6 +2316,27 @@ impl Analyzer<'_, '_> {
                     id: RIdent { sym: js_word!("this"), .. },
                     ..
                 }) => 0,
+                RPat::Ident(RBindingIdent {
+                    type_ann:
+                        Some(box RTsTypeAnn {
+                            type_ann:
+                                box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType { types, .. })),
+                            ..
+                        }),
+                    id,
+                    ..
+                }) => usize::from(
+                    !(id.optional
+                        || types.iter().any(|p| {
+                            matches!(
+                                *p,
+                                box RTsType::TsKeywordType(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    ..
+                                })
+                            )
+                        })),
+                ),
                 RPat::Ident(v) => usize::from(!v.id.optional),
                 RPat::Array(v) => usize::from(!v.optional),
                 RPat::Object(v) => usize::from(!v.optional),
@@ -2351,7 +2415,7 @@ impl Analyzer<'_, '_> {
         let has_spread = args.iter().any(|arg| arg.spread.is_some());
         if has_spread {
             // TODO: current implementation far from perfect
-            match self.validate_arg_count_spread(args, arg_types, params, min_param) {
+            match self.validate_arg_count_spread(span, args, arg_types, params, min_param, max_param) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err),
             }
@@ -2376,7 +2440,14 @@ impl Analyzer<'_, '_> {
             }
 
             if max_param.is_none() {
-                return Err(ErrorKind::ExpectedAtLeastNArgsButGotM { span, min: min_param }.into());
+                if let RPat::Ident(b_id) = &params[args.len()].pat {
+                    return Err(ErrorKind::ExpectedAtLeastNArgsButGotM {
+                        span,
+                        min: min_param,
+                        param_name: b_id.clone().id.sym,
+                    }
+                    .into());
+                }
             }
 
             // function foo(a) {}
@@ -2401,10 +2472,12 @@ impl Analyzer<'_, '_> {
 
     fn validate_arg_count_spread(
         &mut self,
+        span: Span,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         params: &[FnParam],
         min_param: usize,
+        max_param: Option<usize>,
     ) -> VResult<()> {
         let mut real_idx = 0;
         let has_rest_param = !params.is_empty() && matches!(params[params.len() - 1].pat, RPat::Rest(_));
@@ -2429,6 +2502,38 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        if real_idx < min_param {
+            if max_param.is_some() {
+                return Err(ErrorKind::ExpectedNArgsButGotM {
+                    span,
+                    min: min_param,
+                    max: max_param,
+                }
+                .into());
+            } else {
+                if let RPat::Ident(b_id) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedAtLeastNArgsButGotM {
+                        span,
+                        min: min_param,
+                        param_name: b_id.clone().id.sym,
+                    }
+                    .into());
+                }
+
+                // This is only useful when the rest parameter isn't last in the function
+                // function fn(a: string, ...b: string[], c: string) (this is also an error)
+                if let RPat::Rest(r_pat) = &params[real_idx].pat {
+                    return Err(ErrorKind::ExpectedNArgsButGotM {
+                        span,
+                        min: min_param,
+                        max: max_param,
+                    }
+                    .into());
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -2470,6 +2575,13 @@ impl Analyzer<'_, '_> {
 
         if candidates.is_empty() {
             return Ok(None);
+        }
+        if callable.iter().all(|(_, x)| matches!(x, ArgCheckResult::WrongArgCount)) {
+            callable.sort_by_key(|(x, _)| {
+                x.params
+                    .iter()
+                    .fold(0, |acc, param| acc + if let RPat::Rest(..) = param.pat { -1 } else { -10 })
+            });
         }
 
         // Check if all candidates are failed.
@@ -2557,45 +2669,92 @@ impl Analyzer<'_, '_> {
         ret_ty.freeze();
 
         let is_type_arg_count_fine = {
-            let type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+            let type_arg_check_res;
+
+            if let ReEvalMode::New(..) = expr {
+                if let Type::Class(cls) = ret_ty.normalize() {
+                    type_arg_check_res = self.validate_type_args_count(span, cls.def.type_params.as_ref().map(|v| &*v.params), type_args);
+                } else {
+                    type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+                }
+            } else {
+                type_arg_check_res = self.validate_type_args_count(span, type_params, type_args);
+            }
 
             type_arg_check_res.report(&mut self.storage) == Some(())
         };
 
-        let passed_arity_checks = is_type_arg_count_fine
-            && self
-                .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
-                .report(&mut self.storage)
-                .is_some();
+        let passed_arity_checks;
+        let mut is_overload = false;
+
+        if let Type::Class(cls) = ret_ty.normalize() {
+            let constructors = &cls.def.body.iter().filter(|m| m.is_constructor()).collect::<Vec<&ClassMember>>();
+
+            if constructors.len() > 1 {
+                is_overload = true;
+
+                let valid_arity_constructors = constructors
+                    .iter()
+                    .filter_map(|c| {
+                        if let ClassMember::Constructor(constr) = c {
+                            if self
+                                .validate_arg_count(constr.span, &constr.params, args, arg_types, spread_arg_types)
+                                .is_ok()
+                            {
+                                Some(constr)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<&ConstructorSignature>>();
+
+                passed_arity_checks = is_type_arg_count_fine && !valid_arity_constructors.is_empty();
+
+                if !passed_arity_checks && is_type_arg_count_fine {
+                    self.validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                        .report(&mut self.storage);
+                } else {
+                    let errors = valid_arity_constructors
+                        .clone()
+                        .into_iter()
+                        .filter_map(|cn| {
+                            if let Err(e) = self.validate_arg_types(&cn.params, spread_arg_types, false, true) {
+                                Some(e)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<stc_ts_errors::Error>>();
+
+                    if errors.len() >= valid_arity_constructors.len() {
+                        if valid_arity_constructors.len() > 1 {
+                            self.storage.report(ErrorKind::NoMatchingOverload { span }.into());
+                        } else {
+                            self.storage.report(errors.last().unwrap().clone());
+                        }
+                    }
+                }
+            } else {
+                passed_arity_checks = is_type_arg_count_fine
+                    && self
+                        .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                        .report(&mut self.storage)
+                        .is_some();
+            }
+        } else {
+            passed_arity_checks = is_type_arg_count_fine
+                && self
+                    .validate_arg_count(span, &params, args, arg_types, spread_arg_types)
+                    .report(&mut self.storage)
+                    .is_some();
+        }
 
         debug!("get_return_type: \ntype_params = {:?}\nret_ty = {:?}", type_params, ret_ty);
 
         if let Some(type_params) = type_params {
-            // Type parameters should default to `unknown`.
-            let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
-
-            if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
-                for at in spread_arg_types {
-                    if let Type::Function(Function {
-                        type_params: Some(type_params),
-                        ..
-                    }) = at.ty.normalize()
-                    {
-                        for tp in type_params.params.iter() {
-                            default_unknown_map.insert(
-                                tp.name.clone(),
-                                Type::Keyword(KeywordType {
-                                    span: tp.span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            );
-                        }
-                    }
-                }
-            }
-
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
@@ -2832,7 +2991,9 @@ impl Analyzer<'_, '_> {
             }
 
             if passed_arity_checks {
-                self.validate_arg_types(&expanded_param_types, spread_arg_types, true);
+                if !is_overload {
+                    self.validate_arg_types(&expanded_param_types, spread_arg_types, true, false)?;
+                }
             }
 
             if self.ctx.is_instantiating_class {
@@ -2884,7 +3045,7 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, simplified again", &ty);
 
-            if self.ctx.is_type_ann_for_call_reeval_chosen_from_overload || type_ann.is_none() {
+            if type_ann.is_none() && (ty.is_class() || ty.is_class_def()) {
                 ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
                 print_type("Return, generalized", &ty);
@@ -2893,12 +3054,6 @@ impl Analyzer<'_, '_> {
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &ty);
-
-            if type_ann.is_none() {
-                info!("Defaulting type parameters to unknown:\n{}", dump_type_map(&default_unknown_map));
-
-                ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
-            }
 
             ty.reposition(span);
             ty.freeze();
@@ -2910,8 +3065,8 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        if passed_arity_checks {
-            self.validate_arg_types(&params, spread_arg_types, type_params.is_some());
+        if passed_arity_checks && !is_overload {
+            self.validate_arg_types(&params, spread_arg_types, type_params.is_some(), false)?;
         }
 
         print_type("Return", &ret_ty);
@@ -2931,14 +3086,25 @@ impl Analyzer<'_, '_> {
         Ok(ret_ty)
     }
 
-    fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread], is_generic: bool) {
+    fn validate_arg_types(
+        &mut self,
+        params: &[FnParam],
+        spread_arg_types: &[TypeOrSpread],
+        is_generic: bool,
+        is_overload: bool,
+    ) -> VResult<()> {
         info!("[exprs] Validating arguments");
 
         macro_rules! report_err {
             ($err:expr) => {{
-                self.storage.report($err.context("tried to validate an argument"));
+                if is_overload {
+                    return Err($err.into());
+                } else {
+                    self.storage.report($err.context("tried to validate an argument"));
+                }
+
                 if is_generic {
-                    return;
+                    return Ok(());
                 }
             }};
         }
@@ -2975,12 +3141,12 @@ impl Analyzer<'_, '_> {
                                     span: arg.span(),
                                     min: rest_idx - 1,
                                 });
-                                return;
+                                return Ok(());
                             }
 
                             _ => {
                                 report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() });
-                                return;
+                                return Ok(());
                             }
                         }
                     }
@@ -2999,40 +3165,73 @@ impl Analyzer<'_, '_> {
         });
         let mut args_iter = spread_arg_types.iter();
 
-        loop {
-            let param = params_iter.next();
-            let arg = args_iter.next();
+        while let (Some(param), Some(arg)) = (params_iter.next(), args_iter.next()) {
+            if let RPat::Rest(..) = &param.pat {
+                let param_ty = self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
 
-            if param.is_none() || arg.is_none() {
-                break;
-            }
-
-            if let (Some(param), Some(arg)) = (param, arg) {
-                if let RPat::Rest(..) = &param.pat {
-                    let param_ty = self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
-
-                    let param_ty = match param_ty {
-                        Ok(v) => v,
-                        Err(err) => {
-                            report_err!(err);
-                            return;
-                        }
+                let param_ty = match param_ty {
+                    Ok(v) => v,
+                    Err(err) => {
+                        report_err!(err);
+                        return Ok(());
                     }
-                    .freezed();
+                }
+                .freezed();
 
-                    // Handle
-                    //
-                    //   param: (...x: [boolean, sting, ...number])
-                    //   arg: (true, 'str')
-                    //      or
-                    //   arg: (true, 'str', 10)
-                    if arg.spread.is_none() {
-                        match param_ty.normalize() {
-                            Type::Tuple(param_ty) if !param_ty.elems.is_empty() => {
+                // Handle
+                //
+                //   param: (...x: [boolean, sting, ...number])
+                //   arg: (true, 'str')
+                //      or
+                //   arg: (true, 'str', 10)
+                if arg.spread.is_none() {
+                    match param_ty.normalize() {
+                        Type::Tuple(param_ty) if !param_ty.elems.is_empty() => {
+                            let res = self
+                                .assign_with_opts(
+                                    &mut Default::default(),
+                                    &param_ty.elems[0].ty,
+                                    &arg.ty,
+                                    AssignOpts {
+                                        span: arg.span(),
+                                        allow_iterable_on_rhs: true,
+                                        ..Default::default()
+                                    },
+                                )
+                                .map_err(|err| {
+                                    ErrorKind::WrongArgType {
+                                        span: arg.span(),
+                                        inner: box err,
+                                    }
+                                    .into()
+                                })
+                                .context("tried to assign to first element of a tuple type of a parameter");
+
+                            match res {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    report_err!(err);
+                                    return Ok(());
+                                }
+                            };
+
+                            for param_elem in param_ty.elems.iter().skip(1) {
+                                let arg = match args_iter.next() {
+                                    Some(v) => v,
+                                    None => {
+                                        // TODO(kdy1): Argument count
+                                        break;
+                                    }
+                                };
+
+                                // TODO(kdy1): Check if arg.spread is none.
+                                // The logic below is correct only if the arg is not
+                                // spread.
+
                                 let res = self
                                     .assign_with_opts(
                                         &mut Default::default(),
-                                        &param_ty.elems[0].ty,
+                                        &param_elem.ty,
                                         &arg.ty,
                                         AssignOpts {
                                             span: arg.span(),
@@ -3040,70 +3239,62 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
-                                    .map_err(|err| {
-                                        ErrorKind::WrongArgType {
-                                            span: arg.span(),
-                                            inner: box err,
-                                        }
-                                        .into()
+                                    .convert_err(|err| ErrorKind::WrongArgType {
+                                        span: arg.span(),
+                                        inner: box err.into(),
                                     })
-                                    .context("tried to assign to first element of a tuple type of a parameter");
+                                    .context("tried to assign to element of a tuple type of a parameter");
 
                                 match res {
                                     Ok(_) => {}
                                     Err(err) => {
                                         report_err!(err);
-                                        return;
+                                        return Ok(());
                                     }
                                 };
-
-                                for param_elem in param_ty.elems.iter().skip(1) {
-                                    let arg = match args_iter.next() {
-                                        Some(v) => v,
-                                        None => {
-                                            // TODO(kdy1): Argument count
-                                            break;
-                                        }
-                                    };
-
-                                    // TODO(kdy1): Check if arg.spread is none.
-                                    // The logic below is correct only if the arg is not
-                                    // spread.
-
-                                    let res = self
-                                        .assign_with_opts(
-                                            &mut Default::default(),
-                                            &param_elem.ty,
-                                            &arg.ty,
-                                            AssignOpts {
-                                                span: arg.span(),
-                                                allow_iterable_on_rhs: true,
-                                                ..Default::default()
-                                            },
-                                        )
-                                        .convert_err(|err| ErrorKind::WrongArgType {
-                                            span: arg.span(),
-                                            inner: box err.into(),
-                                        })
-                                        .context("tried to assign to element of a tuple type of a parameter");
-
-                                    match res {
-                                        Ok(_) => {}
-                                        Err(err) => {
-                                            report_err!(err);
-                                            return;
-                                        }
-                                    };
-                                }
-
-                                // Skip default type checking logic.
-                                continue;
                             }
-                            _ => {}
-                        }
-                    }
 
-                    if arg.spread.is_some() {
+                            // Skip default type checking logic.
+                            continue;
+                        }
+                        _ => {}
+                    }
+                }
+
+                if arg.spread.is_some() {
+                    if let Ok(()) = self.assign_with_opts(
+                        &mut Default::default(),
+                        &param.ty,
+                        &arg.ty,
+                        AssignOpts {
+                            span: arg.span(),
+                            allow_iterable_on_rhs: true,
+                            ..Default::default()
+                        },
+                    ) {
+                        continue;
+                    }
+                }
+
+                match param_ty.normalize() {
+                    Type::Array(arr) => {
+                        // We should change type if the parameter is a rest parameter.
+                        let res = self.assign(arg.span(), &mut Default::default(), &arr.elem_type, &arg.ty);
+                        let err = match res {
+                            Ok(()) => continue,
+                            Err(err) => err,
+                        };
+
+                        let err = err
+                            .convert(|err| ErrorKind::WrongArgType {
+                                span: arg.span(),
+                                inner: box err.into(),
+                            })
+                            .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
+                        report_err!(err);
+                        return Ok(());
+                    }
+                    _ => {
                         if let Ok(()) = self.assign_with_opts(
                             &mut Default::default(),
                             &param.ty,
@@ -3117,149 +3308,129 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     }
+                }
+            }
 
-                    match param_ty.normalize() {
-                        Type::Array(arr) => {
-                            // We should change type if the parameter is a rest parameter.
-                            let res = self.assign(arg.span(), &mut Default::default(), &arr.elem_type, &arg.ty);
-                            let err = match res {
-                                Ok(()) => continue,
-                                Err(err) => err,
-                            };
-
-                            let err = err
-                                .convert(|err| ErrorKind::WrongArgType {
-                                    span: arg.span(),
-                                    inner: box err.into(),
-                                })
-                                .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
-                            report_err!(err);
-                            return;
+            if arg.spread.is_some() {
+                let res = self.get_iterator_element_type(arg.span(), Cow::Borrowed(&arg.ty), false, Default::default());
+                match res {
+                    Ok(arg_elem_ty) => {
+                        // We should change type if the parameter is a rest parameter.
+                        if let Ok(()) = self.assign(arg.span(), &mut Default::default(), &param.ty, &arg_elem_ty) {
+                            continue;
                         }
-                        _ => {
-                            if let Ok(()) = self.assign_with_opts(
-                                &mut Default::default(),
-                                &param.ty,
-                                &arg.ty,
-                                AssignOpts {
-                                    span: arg.span(),
-                                    allow_iterable_on_rhs: true,
-                                    ..Default::default()
-                                },
-                            ) {
-                                continue;
-                            }
+                    }
+                    Err(err) => {
+                        if let ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } = &*err {
+                            report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
+                            return Ok(());
                         }
                     }
                 }
 
-                if arg.spread.is_some() {
-                    let res = self.get_iterator_element_type(arg.span(), Cow::Borrowed(&arg.ty), false, Default::default());
-                    match res {
-                        Ok(arg_elem_ty) => {
-                            // We should change type if the parameter is a rest parameter.
-                            if let Ok(()) = self.assign(arg.span(), &mut Default::default(), &param.ty, &arg_elem_ty) {
-                                continue;
-                            }
-                        }
-                        Err(err) => {
-                            if let ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } = &*err {
-                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
-                                return;
-                            }
-                        }
-                    }
-
-                    let res = self
-                        .assign_with_opts(
-                            &mut Default::default(),
-                            &param.ty,
-                            &arg.ty,
-                            AssignOpts {
-                                span: arg.span(),
-                                ..Default::default()
-                            },
-                        )
-                        .convert_err(|err| {
-                            // Once a param is not required no further params are required
-                            // Which means you just need to type check the spread
-                            if matches!(param.pat, RPat::Rest(..)) || !param.required {
-                                ErrorKind::WrongArgType {
-                                    span: arg.span(),
-                                    inner: box err.into(),
-                                }
-                            } else {
-                                ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() }
-                            }
-                        })
-                        .context("arg is spread");
-                    if let Err(err) = res {
-                        report_err!(err);
-                        return;
-                    }
-                } else {
-                    let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
-                    if let Err(err) = self.assign_with_opts(
+                let res = self
+                    .assign_with_opts(
                         &mut Default::default(),
                         &param.ty,
                         &arg.ty,
                         AssignOpts {
                             span: arg.span(),
-                            allow_unknown_rhs: Some(allow_unknown_rhs),
-                            use_missing_fields_for_class: true,
-                            allow_assignment_to_void: false,
                             ..Default::default()
                         },
-                    ) {
-                        let err = err.convert(|err| {
-                            match err {
-                                ErrorKind::TupleAssignError { span, errors } if !arg.ty.metadata().resolved_from_var => {
-                                    return ErrorKind::Errors { span, errors }
-                                }
-                                ErrorKind::ObjectAssignFailed { span, errors } if !arg.ty.metadata().resolved_from_var => {
-                                    return ErrorKind::Errors { span, errors }
-                                }
-                                ErrorKind::Errors { span, ref errors } => {
-                                    if errors
-                                        .iter()
-                                        .all(|err| matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { span }))
-                                    {
-                                        return ErrorKind::Errors {
-                                            span,
-                                            errors: errors
-                                                .iter()
-                                                .map(|err| {
-                                                    ErrorKind::WrongArgType {
-                                                        span: err.span(),
-                                                        inner: box err.clone(),
-                                                    }
-                                                    .into()
-                                                })
-                                                .collect(),
-                                        };
-                                    }
-                                }
-                                _ => {}
-                            }
-
-                            if let RPat::Array(array_pat) = &param.pat {
-                                if param.ty.is_array() && array_pat.type_ann.is_none() && !arg.ty.is_array() {
-                                    return ErrorKind::NotArrayType { span: param.span() };
-                                }
-                            }
-
+                    )
+                    .convert_err(|err| {
+                        // Once a param is not required no further params are required
+                        // Which means you just need to type check the spread
+                        if matches!(param.pat, RPat::Rest(..)) || !param.required {
                             ErrorKind::WrongArgType {
                                 span: arg.span(),
                                 inner: box err.into(),
                             }
-                        });
+                        } else {
+                            ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() }
+                        }
+                    })
+                    .context("arg is spread");
+                if let Err(err) = res {
+                    report_err!(err);
+                    return Ok(());
+                }
+            } else {
+                let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
 
-                        report_err!(err);
-                        return;
+                let mut p = &param.ty.clone();
+                let binding = &box Type::unknown(param.ty.span(), Default::default());
+
+                if let Type::Param(t) = param.ty.normalize() {
+                    if let Some(constr) = &t.constraint {
+                        p = constr;
+                    } else {
+                        p = binding;
                     }
+                }
+
+                if let Err(err) = self.assign_with_opts(
+                    &mut Default::default(),
+                    p,
+                    &arg.ty,
+                    AssignOpts {
+                        span: arg.span(),
+                        allow_unknown_rhs: Some(allow_unknown_rhs),
+                        use_missing_fields_for_class: true,
+                        allow_assignment_to_void: false,
+                        do_not_use_single_error_for_tuple_with_rest: true,
+                        ..Default::default()
+                    },
+                ) {
+                    let err = err.convert(|err| {
+                        match err {
+                            ErrorKind::TupleAssignError { span, errors } if !arg.ty.metadata().resolved_from_var => {
+                                return ErrorKind::Errors { span, errors }
+                            }
+                            ErrorKind::ObjectAssignFailed { span, errors } if !arg.ty.metadata().resolved_from_var => {
+                                return ErrorKind::Errors { span, errors }
+                            }
+                            ErrorKind::Errors { span, ref errors } => {
+                                if errors
+                                    .iter()
+                                    .all(|err| matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { span }))
+                                {
+                                    return ErrorKind::Errors {
+                                        span,
+                                        errors: errors
+                                            .iter()
+                                            .map(|err| {
+                                                ErrorKind::WrongArgType {
+                                                    span: err.span(),
+                                                    inner: box err.clone(),
+                                                }
+                                                .into()
+                                            })
+                                            .collect(),
+                                    };
+                                }
+                            }
+                            _ => {}
+                        }
+
+                        if let RPat::Array(array_pat) = &param.pat {
+                            if param.ty.is_array() && array_pat.type_ann.is_none() && !arg.ty.is_array() {
+                                return ErrorKind::NotArrayType { span: param.span() };
+                            }
+                        }
+
+                        ErrorKind::WrongArgType {
+                            span: arg.span(),
+                            inner: box err.into(),
+                        }
+                    });
+
+                    report_err!(err);
+                    return Ok(());
                 }
             }
         }
+        Ok(())
     }
 
     /// Note:
@@ -3458,8 +3629,8 @@ impl Analyzer<'_, '_> {
         type_params: Option<&[TypeParam]>,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<()> {
-        if let Some(type_params) = type_params {
-            if let Some(type_args) = type_args {
+        match (type_params, type_args) {
+            (Some(type_params), Some(type_args)) => {
                 // TODO(kdy1): Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
                     return Err(ErrorKind::TypeParameterCountMismatch {
@@ -3471,7 +3642,17 @@ impl Analyzer<'_, '_> {
                     .into());
                 }
             }
-        }
+            (None, Some(type_args)) => {
+                return Err(ErrorKind::TypeParameterCountMismatch {
+                    span,
+                    max: 0,
+                    min: 0,
+                    actual: type_args.params.len(),
+                }
+                .into());
+            }
+            _ => {}
+        };
 
         Ok(())
     }
@@ -3541,48 +3722,47 @@ impl Analyzer<'_, '_> {
 
             let mut exact = true;
 
-            for (arg, param) in arg_types.iter().zip(params) {
-                // match arg.ty.normalize() {
-                //     Type::Union(..) => match param.ty.normalize() {
-                //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
-                // {},         _ => {}
-                //     },
-                //     _ => {}
-                // }
-
-                match param.ty.normalize() {
-                    Type::Param(..) => {}
-                    Type::Instance(param) if param.ty.is_type_param() => {}
-                    _ => {
-                        if analyzer
-                            .assign_with_opts(
-                                &mut Default::default(),
-                                &param.ty,
-                                &arg.ty,
-                                AssignOpts {
-                                    span,
-                                    allow_unknown_rhs: Some(true),
-                                    allow_assignment_to_param: true,
-                                    allow_assignment_to_param_constraint: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .is_err()
-                        {
-                            return ArgCheckResult::ArgTypeMismatch;
-                        }
-
-                        if !analyzer.is_subtype_in_fn_call(span, &arg.ty, &param.ty) {
-                            exact = false;
+            if let (Some(arg), Some(param)) = (type_args, type_params) {
+                for (t_arg, t_param) in arg.params.iter().zip(param) {
+                    if let Some(t_param) = &t_param.constraint {
+                        if !analyzer.is_subtype_in_fn_call(span, t_arg, t_param) {
+                            return ArgCheckResult::TypeParamMismatch;
                         }
                     }
+                }
+            }
+
+            for (arg, param) in spread_arg_types.iter().zip(params) {
+                if matches!(param.pat, RPat::Rest(..)) && !arg.ty.is_array() {
+                    continue;
+                }
+
+                if analyzer
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        &param.ty,
+                        &arg.ty,
+                        AssignOpts {
+                            span,
+                            allow_unknown_rhs: Some(true),
+                            allow_assignment_to_param: true,
+                            allow_assignment_to_param_constraint: true,
+                            ..Default::default()
+                        },
+                    )
+                    .is_err()
+                {
+                    return ArgCheckResult::ArgTypeMismatch;
+                }
+
+                if !analyzer.is_subtype_in_fn_call(span, &arg.ty, &param.ty) {
+                    exact = false;
                 }
             }
 
             if analyzer.scope.is_call_arg_count_unknown || !exact {
                 return ArgCheckResult::MayBe;
             }
-
             ArgCheckResult::Exact
         })
     }
@@ -3660,6 +3840,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn apply_type_ann_to_expr(&mut self, arg: &RExpr, type_ann: &Type) -> VResult<()> {
+        type_ann.assert_clone_cheap();
+
         match arg {
             RExpr::Paren(arg) => return self.apply_type_ann_to_expr(&arg.expr, type_ann),
             RExpr::Fn(arg) => {
@@ -3895,6 +4077,7 @@ enum ArgCheckResult {
     Exact,
     MayBe,
     ArgTypeMismatch,
+    TypeParamMismatch,
     WrongArgCount,
 }
 
@@ -3911,6 +4094,7 @@ fn test_arg_check_result_order() {
         ArgCheckResult::Exact,
         ArgCheckResult::MayBe,
         ArgCheckResult::ArgTypeMismatch,
+        ArgCheckResult::TypeParamMismatch,
         ArgCheckResult::WrongArgCount,
     ];
     let expected = v.clone();
@@ -3920,6 +4104,7 @@ fn test_arg_check_result_order() {
 }
 
 /// TODO(kdy1): Use cow
+#[derive(Debug)]
 pub(super) struct CallCandidate {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,

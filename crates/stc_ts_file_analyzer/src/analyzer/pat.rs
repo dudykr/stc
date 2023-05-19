@@ -134,7 +134,11 @@ impl Analyzer<'_, '_> {
                                 accessor: Default::default(),
                             }))
                         }
-                        RObjectPatProp::Rest(..) => {}
+                        RObjectPatProp::Rest(p) => {
+                            if let Some(mutations) = &mut self.mutations {
+                                mutations.for_pats.entry(p.node_id).or_default().ty = Some(Type::any(p.span, Default::default()));
+                            }
+                        }
                     }
                 }
 
@@ -253,6 +257,9 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = p
                 {
+                    if self.ctx.set_accessor_prop || self.ctx.get_accessor_prop {
+                        return Err(ErrorKind::ThisNotAllowedInAccessor { span: p.span() }.into());
+                    }
                     if ty.is_some() {
                         self.scope.this = ty.clone();
                     }

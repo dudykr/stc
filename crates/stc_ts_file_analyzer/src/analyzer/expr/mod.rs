@@ -38,6 +38,7 @@ pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
 use crate::{
     analyzer::{
         assign::AssignOpts,
+        control_flow::CondFacts,
         pat::PatMode,
         scope::{ExpandOpts, ScopeKind, VarKind},
         types::NormalizeTypeOpts,
@@ -121,6 +122,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+        }
+
+        if let Some(type_ann) = &type_ann {
+            type_ann.assert_clone_cheap();
         }
 
         let span = e.span();
@@ -367,6 +372,7 @@ impl Analyzer<'_, '_> {
 
             let mut left_i = None;
             let ty_of_left;
+            let mut facts_for_rhs: Option<CondFacts> = None;
             let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(RBindingIdent { id: ref i, .. })) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
@@ -377,6 +383,15 @@ impl Analyzer<'_, '_> {
                     };
 
                     left_i = Some(i.clone());
+
+                    if e.op == op!("&&=") {
+                        let mut cond_facts: CondFacts = Default::default();
+                        cond_facts.facts.insert(
+                            i.into(),
+                            TypeFacts::NEUndefined | TypeFacts::NENull | TypeFacts::NEUndefinedOrNull | TypeFacts::Truthy,
+                        );
+                        facts_for_rhs = Some(cond_facts);
+                    }
 
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
@@ -424,7 +439,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         })
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (any_span, ty_of_left.as_ref())
                 }
@@ -432,7 +448,8 @@ impl Analyzer<'_, '_> {
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
                     ty_of_left = e
                         .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
-                        .report(&mut analyzer.storage);
+                        .report(&mut analyzer.storage)
+                        .freezed();
 
                     (None, ty_of_left.as_ref())
                 }
@@ -514,12 +531,22 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     *params = params[1..].to_vec();
+
+                                    ty.freeze();
                                 }
                             }
 
-                            e.right
-                                .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
-                                .context("tried to validate rhs an assign expr")
+                            if let Some(facts) = facts_for_rhs {
+                                analyzer.with_child(ScopeKind::Flow, facts, |analyzer| {
+                                    e.right
+                                        .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
+                                        .context("tried to validate rhs an assign expr")
+                                })
+                            } else {
+                                e.right
+                                    .validate_with_args(&mut *analyzer, (mode, None, Some(&ty)))
+                                    .context("tried to validate rhs an assign expr")
+                            }
                         }
                         Some(ty) if right_function_declared_this => {
                             let mut ty = ty.clone();
@@ -538,6 +565,8 @@ impl Analyzer<'_, '_> {
                                         ..params[0].clone()
                                     };
                                 }
+
+                                ty.freeze();
                             }
 
                             e.right
@@ -658,6 +687,9 @@ pub(crate) struct AccessPropertyOpts {
 
     /// Used for rest elements or [Type::Rest].
     pub use_last_element_for_tuple_on_out_of_bound: bool,
+
+    /// Only used to determine if the method can be overridden
+    pub allow_access_abstract_method: bool,
 }
 
 #[validator]
@@ -2033,7 +2065,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
-                                if mtd.is_abstract {
+                                if mtd.is_abstract && !opts.allow_access_abstract_method {
                                     self.storage.report(ErrorKind::CannotAccessAbstractMember { span }.into());
                                     return Ok(Type::any(span, Default::default()));
                                 }
@@ -2272,7 +2304,8 @@ impl Analyzer<'_, '_> {
                     ) = (*kind, prop.ty.normalize())
                     {
                         if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
-                            self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
+                            self.storage
+                                .report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.context("keyword"));
                         }
 
                         return Ok(Type::any(span, Default::default()));
@@ -2472,7 +2505,8 @@ impl Analyzer<'_, '_> {
 
                 if self.rule().no_implicit_any && opts.is_in_union {
                     if !matches!(prop, Key::Normal { .. }) {
-                        self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
+                        self.storage
+                            .report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.context("union"));
                     }
                 }
 

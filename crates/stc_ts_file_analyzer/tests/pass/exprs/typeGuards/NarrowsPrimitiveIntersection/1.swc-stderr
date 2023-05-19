@@ -1,5 +1,17 @@
 
   x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:1:1]
+ 1 | type Tag = { __tag: any };
+   :      ^^^
+ 2 | declare function isNonBlank(value: string): value is string & Tag;
+   `----
+
+Error: 
+  > {
+  |     __tag: any;
+  | }
+
+  x Type
    ,-[$DIR/tests/pass/exprs/typeGuards/NarrowsPrimitiveIntersection/1.ts:5:1]
  5 | let value: string = "asdf";
  6 | if (isNonBlank(value)) {

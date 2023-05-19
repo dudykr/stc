@@ -63,7 +63,7 @@ Error:
     `----
 
 Error: 
-  > boolean
+  > true
 
   x Type
     ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:16:1]
@@ -107,7 +107,7 @@ Error:
     `----
 
 Error: 
-  > boolean
+  > true
 
   x Type
     ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:18:1]

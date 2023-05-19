@@ -22,7 +22,7 @@ use stc_ts_types::{
     TypeParamInstantiation, Union, Unique,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, dev_span, AHashSet};
+use stc_utils::{cache::Freeze, dev_span, FxHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -60,7 +60,7 @@ impl Analyzer<'_, '_> {
             {
                 // Check for duplicates
                 let names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
-                let mut found = AHashSet::default();
+                let mut found = FxHashSet::default();
 
                 for name in names {
                     if !found.insert(name.sym.clone()) {
@@ -298,6 +298,11 @@ impl Analyzer<'_, '_> {
         };
 
         self.register_type(d.id.clone().into(), alias.clone());
+
+        // Exclude literals
+        if !span.is_dummy() {
+            self.dump_type(d.id.span, &alias);
+        }
 
         self.store_unmergable_type_span(d.id.clone().into(), d.id.span);
 
@@ -1483,7 +1488,11 @@ impl Analyzer<'_, '_> {
                         accessor: Default::default(),
                     }))
                 }
-                RObjectPatProp::Rest(..) => {}
+                RObjectPatProp::Rest(p) => {
+                    if let Some(mutations) = &mut self.mutations {
+                        mutations.for_pats.entry(p.node_id).or_default().ty = Some(Type::any(p.span, Default::default()));
+                    }
+                }
             }
         }
 

@@ -178,7 +178,7 @@ Error:
 Error: 
   > {
   |     y: string;
-  |     x: string;
+  |     x: 'a string';
   | }[]
 
   x Type
@@ -192,7 +192,7 @@ Error:
 Error: 
   > {
   |     y: string;
-  |     x: string;
+  |     x: 'a string';
   | }
 
   x Type
@@ -204,7 +204,7 @@ Error:
    `----
 
 Error: 
-  > string
+  > 'a string'
 
   x Type
    ,-[$DIR/tests/pass/vars/forOf/rest/2.ts:7:1]
@@ -217,7 +217,7 @@ Error:
 Error: 
   > {
   |     y: string;
-  |     x: string;
+  |     x: 'a string';
   | }
 
   x Type
@@ -240,4 +240,4 @@ Error:
    `----
 
 Error: 
-  > [string, string]
+  > ['a string', string]

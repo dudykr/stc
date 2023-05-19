@@ -4,9 +4,9 @@ use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_arc_cow::ArcCow;
 use stc_ts_ast_rnode::{
-    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
-    RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock, RStmt,
-    RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RAssignPat, RAutoAccessor, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl,
+    RExpr, RFunction, RIdent, RKey, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStaticBlock,
+    RStmt, RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
@@ -17,7 +17,7 @@ use stc_ts_types::{
     Intersection, Key, KeywordType, Method, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type, Unique,
 };
 use stc_ts_utils::find_ids_in_pat;
-use stc_utils::{cache::Freeze, AHashSet};
+use stc_utils::{cache::Freeze, FxHashSet};
 use swc_atoms::js_word;
 use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(value) = &p.value {
             if let Some(object_type) = object_type {
-                if let Ok(type_ann) = self.access_property(
+                if let Ok(mut type_ann) = self.access_property(
                     p.span,
                     object_type,
                     &key,
@@ -172,6 +172,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 ) {
+                    type_ann.freeze();
                     self.apply_type_ann_to_expr(value, &type_ann)?;
                 }
             }
@@ -210,6 +211,80 @@ impl Analyzer<'_, '_> {
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
+            accessor: Default::default(),
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RKey) -> VResult<Key> {
+        match p {
+            RKey::Private(p) => Ok(Key::Private(p.validate_with(self)?)),
+            RKey::Public(key) => Ok(key.validate_with(self)?),
+        }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RAutoAccessor, object_type: Option<&Type>) -> VResult<ClassProperty> {
+        let marks = self.marks();
+
+        let key = p.key.validate_with(self)?;
+
+        if let Some(value) = &p.value {
+            if let Some(object_type) = object_type {
+                if let Ok(mut type_ann) = self.access_property(
+                    p.span,
+                    object_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    AccessPropertyOpts {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        ..Default::default()
+                    },
+                ) {
+                    type_ann.freeze();
+                    self.apply_type_ann_to_expr(value, &type_ann)?;
+                }
+            }
+        }
+
+        let value = self
+            .validate_type_of_class_property(p.span, false, p.is_static, &p.type_ann, &p.value)?
+            .map(Box::new)
+            .freezed();
+
+        if p.is_static {
+            value.visit_with(&mut StaticTypeParamValidator {
+                span: p.span,
+                analyzer: self,
+            });
+        }
+
+        match p.accessibility {
+            Some(Accessibility::Private) => {}
+            _ => {
+                if p.type_ann.is_none() {
+                    if let Some(m) = &mut self.mutations {
+                        m.for_class_props.entry(p.node_id).or_default().ty = value.clone().map(|ty| ty.generalize_lit());
+                    }
+                }
+            }
+        }
+
+        Ok(ClassProperty {
+            span: p.span,
+            key,
+            value,
+            is_static: p.is_static,
+            accessibility: p.accessibility,
+            is_abstract: false,
+            is_optional: false,
+            readonly: false,
+            definite: false,
             accessor: Default::default(),
         })
     }
@@ -632,6 +707,27 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
         let key_span = c.key.span();
 
+        if c.is_override {
+            if let Some(super_class) = &self.scope.get_super_class(false) {
+                if self
+                    .access_property(
+                        key_span,
+                        super_class,
+                        &key,
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                        AccessPropertyOpts {
+                            allow_access_abstract_method: true,
+                            ..Default::default()
+                        },
+                    )
+                    .is_err()
+                {
+                    return Err(ErrorKind::NotDeclaredInSuperClass { span: key_span }.into());
+                }
+            }
+        }
+
         let (params, type_params, declared_ret_ty, inferred_ret_ty) =
             self.with_child(
                 ScopeKind::Method { is_static: c.is_static },
@@ -850,13 +946,7 @@ impl Analyzer<'_, '_> {
             }
             RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
             RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
-            RClassMember::AutoAccessor(auto) => {
-                return Err(ErrorKind::Unimplemented {
-                    span: auto.span,
-                    msg: "auto accessor".into(),
-                }
-                .into())
-            }
+            RClassMember::AutoAccessor(v) => Some(ClassMember::Property(v.validate_with_args(self, object_type)?)),
         })
     }
 }
@@ -875,8 +965,8 @@ impl Analyzer<'_, '_> {
 
         let mut keys = vec![];
         let mut private_keys = vec![];
-        let mut is_props = AHashSet::default();
-        let mut is_private_props = AHashSet::default();
+        let mut is_props = FxHashSet::default();
+        let mut is_private_props = FxHashSet::default();
 
         for member in &c.body {
             match member {
@@ -1812,7 +1902,8 @@ impl Analyzer<'_, '_> {
                 for (index, node) in c.body.iter().enumerate() {
                     match node {
                         RClassMember::ClassProp(RClassProp { is_static: true, .. })
-                        | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
+                        | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. })
+                        | RClassMember::AutoAccessor(RAutoAccessor { is_static: true, .. }) => {
                             let m = node.validate_with_args(child, type_ann)?;
                             if let Some(member) = m {
                                 // Check for duplicate property names.
@@ -1937,7 +2028,8 @@ impl Analyzer<'_, '_> {
                 for (index, member) in c.body.iter().enumerate() {
                     match member {
                         RClassMember::ClassProp(RClassProp { is_static: false, .. })
-                        | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
+                        | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. })
+                        | RClassMember::AutoAccessor(RAutoAccessor { is_static: false, .. }) => {
                             //
                             let class_member = member.validate_with_args(child, type_ann).report(&mut child.storage).flatten();
                             if let Some(member) = class_member {

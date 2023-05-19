@@ -353,7 +353,18 @@ impl Analyzer<'_, '_> {
 
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
-            if self.assign_params(data, r_params, l_params, opts).is_ok() {
+            if self
+                .assign_params(
+                    data,
+                    r_params,
+                    l_params,
+                    AssignOpts {
+                        ensure_params_length: true,
+                        ..opts
+                    },
+                )
+                .is_ok()
+            {
                 params_done = true;
             }
         }
@@ -465,7 +476,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(..) => {
                 let ty = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(r))?
+                    .convert_type_to_type_lit(span, Cow::Borrowed(r), Default::default())?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
@@ -544,7 +555,10 @@ impl Analyzer<'_, '_> {
                     rc.type_params.as_ref(),
                     &rc.params,
                     Some(&rc.type_ann),
-                    opts,
+                    AssignOpts {
+                        ensure_params_length: true,
+                        ..opts
+                    },
                 )
                 .context("tried to assign a constructor to another one")?;
 
@@ -571,6 +585,7 @@ impl Analyzer<'_, '_> {
                                 rc.ret_ty.as_deref(),
                                 AssignOpts {
                                     allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                    ensure_params_length: true,
                                     ..opts
                                 },
                             )
@@ -590,7 +605,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Interface(..) => {
                 let ty = self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(r))?
+                    .convert_type_to_type_lit(span, Cow::Borrowed(r), Default::default())?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
@@ -868,6 +883,16 @@ impl Analyzer<'_, '_> {
                     "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
                     required_non_void_li.collect_vec(),
                     required_non_void_ri.collect_vec()
+                )));
+            }
+        }
+
+        if opts.ensure_params_length {
+            if required_li.clone().count() > required_ri.clone().count() {
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
+                    "required argument count mismatch: l = {}; r = {}",
+                    required_li.clone().count(),
+                    required_ri.clone().count(),
                 )));
             }
         }

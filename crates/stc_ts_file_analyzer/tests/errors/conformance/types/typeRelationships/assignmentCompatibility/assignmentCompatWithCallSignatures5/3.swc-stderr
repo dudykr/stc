@@ -1,0 +1,32 @@
+TS2322
+
+  x ObjectAssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             190,
+  |         ),
+  |         hi: BytePos(
+  |             193,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     errors: [
+  |         AssignFailed {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     190,
+  |                 ),
+  |                 hi: BytePos(
+  |                     193,
+  |                 ),
+  |                 ctxt: #1,
+  |             },
+  |             cause: [],
+  |         },
+  |     ],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/typeRelationships/assignmentCompatibility/assignmentCompatWithCallSignatures5/3.ts:8:1]
+ 8 | var b15: <U, V>(x: { a: U; b: V; }) => U[];
+ 9 | b15 = a15; // ok
+   : ^^^
+   `----

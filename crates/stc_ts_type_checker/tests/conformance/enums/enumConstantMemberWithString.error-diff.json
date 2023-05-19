@@ -11,14 +11,6 @@
       5
     ]
   },
-  "extra_errors": {
-    "TS2553": 3
-  },
-  "extra_error_lines": {
-    "TS2553": [
-      5,
-      6,
-      18
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

@@ -2,6 +2,7 @@
 #![deny(variant_size_differences)]
 #![feature(box_syntax)]
 #![feature(specialization)]
+#![cfg_attr(not(debug_assertions), allow(unused))]
 
 use std::{
     fmt,
@@ -14,6 +15,7 @@ use std::{
 use ansi_term::Color::Yellow;
 use derivative::Derivative;
 use fmt::Formatter;
+use scoped_tls::scoped_thread_local;
 use static_assertions::assert_eq_size;
 use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
@@ -28,6 +30,8 @@ pub use self::result_ext::DebugExt;
 
 pub mod debug;
 mod result_ext;
+
+scoped_thread_local!(pub static DISABLE_ERROR_CONTEXT: ());
 
 /// [ErrorKind] with debug contexts attached.
 #[derive(Clone, PartialEq, Spanned)]
@@ -62,10 +66,14 @@ impl Error {
         return self.context_impl(Location::caller(), context);
     }
 
-    #[cfg_attr(not(debug_assertions), attr)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     pub(crate) fn context_impl(mut self, loc: &'static Location, context: impl Display) -> Error {
         #[cfg(debug_assertions)]
         {
+            if DISABLE_ERROR_CONTEXT.is_set() {
+                return self;
+            }
+
             self.contexts
                 .push(format!("{} (at {}:{}:{})", context, loc.file(), loc.line(), loc.column()));
         }
@@ -1396,6 +1404,8 @@ pub enum ErrorKind {
 
     NonOverlappingTypeCast {
         span: Span,
+        from: Box<Type>,
+        to: Box<Type>,
     },
 
     InvalidOperatorForLhs {
@@ -1421,9 +1431,12 @@ pub enum ErrorKind {
         max: Option<usize>,
     },
 
+    /// TS2555
     ExpectedAtLeastNArgsButGotM {
         span: Span,
         min: usize,
+        // param name needed for error message
+        param_name: JsWord,
     },
 
     ExpectedAtLeastNArgsButGotMOrMore {
@@ -1553,6 +1566,26 @@ pub enum ErrorKind {
         obj: Option<Box<Type>>,
         prop: Option<Box<Key>>,
     },
+
+    /// TS4113
+    NotDeclaredInSuperClass {
+        span: Span,
+    },
+
+    /// TS2428
+    InterfaceNonIdenticalTypeParams {
+        span: Span,
+    },
+
+    /// TS2784
+    ThisNotAllowedInAccessor {
+        span: Span,
+    },
+
+    /// TS1014
+    RestParamMustBeLast {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1673,6 +1706,18 @@ impl ErrorKind {
             // TS2741: Missing properties with comparison-like error message
             2739 | 2740 | 2741 => 2322,
 
+            // TS4113: Cannot have override
+            // TS4117: Cannot have override with spelling suggestion
+            4113 | 4117 => 4112,
+
+            // TS2515: Missing an abstract member
+            // TS18052: Missing all abstract members
+            2515 | 18052 => 2515,
+
+            // TS5101: Deprecated
+            // TS5107: Deprecated with two args
+            5101 | 5107 => 5101,
+
             _ => code,
         }
     }
@@ -1704,6 +1749,7 @@ impl ErrorKind {
             Self::ObjectAssignFailed { errors, .. } => errors,
             _ => {
                 vec![Error {
+                    #[cfg(debug_assertions)]
                     contexts: Default::default(),
                     inner: box self,
                 }]
@@ -2139,6 +2185,14 @@ impl ErrorKind {
             ErrorKind::UsePropBeforeInit { .. } => 2729,
 
             ErrorKind::NonStringDynamicImport { .. } => 7036,
+
+            ErrorKind::NotDeclaredInSuperClass { .. } => 4113,
+
+            ErrorKind::InterfaceNonIdenticalTypeParams { .. } => 2428,
+
+            ErrorKind::ThisNotAllowedInAccessor { .. } => 2784,
+
+            ErrorKind::RestParamMustBeLast { .. } => 1014,
 
             _ => 0,
         }
