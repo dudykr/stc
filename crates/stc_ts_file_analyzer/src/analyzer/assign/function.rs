@@ -937,9 +937,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 (RPat::Rest(..), _) => {
+                    if opts.disallow_rest_pat_in_left {
+                        // TODO(kdy1): Implement correct logic
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("l is rest but r is not"));
+                    }
                     dbg!();
-                    // TODO(kdy1): Implement correct logic
-                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("l is rest but r is not"));
+
+                    return Ok(());
                 }
 
                 (_, RPat::Rest(..)) => {
