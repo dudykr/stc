@@ -1007,6 +1007,9 @@ impl Analyzer<'_, '_> {
 
                     true
                 });
+                if u.types.len() == 1 {
+                    return Ok(u.types.first().unwrap().clone());
+                }
             }
 
             Ok(ty)

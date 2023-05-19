@@ -609,7 +609,7 @@ impl Analyzer<'_, '_> {
         };
 
         // It's valid to assign any to everything.
-        if rhs.is_any() {
+        if rhs.is_any() || to.is_any() {
             return Ok(());
         }
 
