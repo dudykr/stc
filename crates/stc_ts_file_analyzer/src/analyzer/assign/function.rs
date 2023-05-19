@@ -854,6 +854,9 @@ impl Analyzer<'_, '_> {
             )
         });
 
+        let l_count = li.clone().count();
+        let r_count = ri.clone().count();
+
         let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
         // TODO(kdy1): Consider optional parameters.
@@ -931,7 +934,6 @@ impl Analyzer<'_, '_> {
 
                 (RPat::Rest(..), _) => {
                     // TODO(kdy1): Implement correct logic
-
                     return Ok(());
                 }
 
@@ -939,7 +941,7 @@ impl Analyzer<'_, '_> {
                     // If r is an iterator, we should assign each element to l.
                     if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
                         if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
-                            for idx in 0..max(li.clone().count(), ri.clone().count()) {
+                            for idx in 0..max(l_count, r_count) {
                                 let le = self.access_property(
                                     span,
                                     &l_iter,
