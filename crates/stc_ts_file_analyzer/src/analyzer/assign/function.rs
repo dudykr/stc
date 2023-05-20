@@ -382,6 +382,7 @@ impl Analyzer<'_, '_> {
                 r_params,
                 AssignOpts {
                     is_params_of_method_definition: false,
+                    disallow_rest_pat_in_left: true,
                     ..opts
                 },
             )
@@ -836,6 +837,12 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("assign_params");
 
         let span = opts.span;
+        let disallow_rest_in_lhs = opts.disallow_rest_pat_in_left;
+
+        let opts = AssignOpts {
+            disallow_rest_pat_in_left: false,
+            ..opts
+        };
 
         let mut li = l.iter().filter(|p| {
             !matches!(
@@ -937,11 +944,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 (RPat::Rest(..), _) => {
-                    if opts.disallow_rest_pat_in_left {
+                    if disallow_rest_in_lhs {
+                        dbg!();
+                        print_backtrace();
                         // TODO(kdy1): Implement correct logic
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("l is rest but r is not"));
                     }
-                    dbg!();
 
                     return Ok(());
                 }
@@ -993,8 +1001,6 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )?;
-
-                                print_backtrace();
 
                                 dbg!(self.assign_param_type(data, &le, &re, opts).with_context(|| {
                                     format!(
