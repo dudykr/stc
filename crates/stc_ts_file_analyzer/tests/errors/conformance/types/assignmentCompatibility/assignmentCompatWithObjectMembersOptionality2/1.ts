@@ -2,88 +2,24 @@
 // N is optional and T contains no property with the same name as N
 
 class Base { foo: string; }
-class Derived extends Base { bar: string; }
-class Derived2 extends Derived { baz: string; }
 
-module TargetHasOptional {
-    // targets
-    interface C {
-        opt?: Base
-    }
-    var c: C;
+// targets
+interface C {
+    opt?: Base
+}
+var c: C;
 
-    var a: { opt?: Base; }
-    var b: typeof a = { opt: new Base() }
 
-    // sources
-    interface D {
-        other: Base;
-    }
-    interface E {
-        other: Derived;
-    }
-    interface F {
-        other?: Derived;
-    }
-    var d: D;
-    var e: E;
-    var f: F;
-
-    // disallowed by weak type checking
-    c = d;
-    c = e;
-    c = f;
-    a = d;
-    a = e;
-    a = f;
-    b = d;
-    b = e;
-    b = f;
-
-    // ok
-    c = a;
-    a = c;
-    b = a;
-    b = c;
+// sources
+interface D {
+    other: Base;
 }
 
-module SourceHasOptional {
-    // targets
-    interface C {
-        opt: Base
-    }
-    var c: C;
 
-    var a: { opt: Base; }
-    var b = { opt: new Base() }
+var d: D;
 
-    // sources
-    interface D {
-        other?: Base;
-    }
-    interface E {
-        other?: Derived;
-    }
-    interface F {
-        other: Derived;
-    }
-    var d: D;
-    var e: E;
-    var f: F;
+// disallowed by weak type checking
+c = d;
 
-    c = d; // error
-    c = e; // error
-    c = f; // error
-    c = a; // ok
 
-    a = d; // error
-    a = e; // error
-    a = f; // error
-    a = c; // ok
-
-    b = d; // error
-    b = e; // error
-    b = f; // error
-    b = a; // ok
-    b = c; // ok
-}
+export { }
