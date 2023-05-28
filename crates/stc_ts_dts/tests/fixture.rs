@@ -1,5 +1,4 @@
 #![recursion_limit = "256"]
-#![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
 #![allow(clippy::vec_box)]
@@ -112,7 +111,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mut mutations;
         {
-            let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), Box::new(&mut storage), &NoopLoader, None);
             module.validate_with(&mut analyzer).unwrap();
 
             mutations = analyzer.mutations.unwrap()
@@ -130,7 +129,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     cfg: Default::default(),
                     comments: None,
                     cm: cm.clone(),
-                    wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
+                    wr: Box::new(JsWriter::new(cm.clone(), "\n", &mut buf, None)),
                 };
 
                 emitter
@@ -151,7 +150,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     cfg: Default::default(),
                     comments: None,
                     cm: cm.clone(),
-                    wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
+                    wr: Box::new(JsWriter::new(cm.clone(), "\n", &mut buf, None)),
                 };
 
                 emitter
@@ -170,7 +169,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                         cfg: Default::default(),
                         comments: None,
                         cm: cm.clone(),
-                        wr: box JsWriter::new(cm, "\n", &mut buf, None),
+                        wr: Box::new(JsWriter::new(cm, "\n", &mut buf, None)),
                     };
 
                     emitter

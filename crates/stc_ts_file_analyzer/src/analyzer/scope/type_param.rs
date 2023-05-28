@@ -60,10 +60,10 @@ impl Analyzer<'_, '_> {
                 return true;
             }
 
-            if let Some(..) = s.facts.types.get(name) {
+            if s.facts.types.get(name).is_some() {
                 return false;
             }
-            if let Some(..) = s.types.get(name) {
+            if s.types.get(name).is_some() {
                 return false;
             }
 

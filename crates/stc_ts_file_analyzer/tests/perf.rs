@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
@@ -57,7 +55,7 @@ fn profile_file(name: &str, path: &Path) {
         };
 
         {
-            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm, Default::default(), Box::new(&mut storage), &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 

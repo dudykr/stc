@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
             // quality) to what we would infer for a naked type parameter.
 
             for t in targets {
-                if let Some(..) = self.get_inference_info_for_type(inferred, t) {
+                if self.get_inference_info_for_type(inferred, t).is_some() {
                     naked_type_var = Some(t.clone());
                     type_var_count += 1;
                 } else {
@@ -385,7 +385,7 @@ impl Analyzer<'_, '_> {
             type_var_count > 0
         } {
             for t in targets {
-                if let Some(..) = self.get_inference_info_for_type(inferred, t) {
+                if self.get_inference_info_for_type(inferred, t).is_some() {
                     self.infer_with_priority(span, inferred, source, t, InferencePriority::NakedTypeVariable, opts)?;
                 }
             }

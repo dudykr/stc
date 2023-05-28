@@ -405,8 +405,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::InvalidOpAssign {
                             span,
                             op,
-                            lhs: Box::new(l.into_owned().clone()),
-                            rhs: Box::new(r.into_owned().clone()),
+                            lhs: Box::new(l.into_owned()),
+                            rhs: Box::new(r.into_owned()),
                         }
                         .into());
                     }
@@ -429,8 +429,8 @@ impl Analyzer<'_, '_> {
                     .convert_err(|err| ErrorKind::InvalidOpAssign {
                         span,
                         op,
-                        lhs: Box::new(l.into_owned().clone()),
-                        rhs: Box::new(r.into_owned().clone()),
+                        lhs: Box::new(l.into_owned()),
+                        rhs: Box::new(r.into_owned()),
                     });
             }
             _ => {}
@@ -1066,7 +1066,7 @@ impl Analyzer<'_, '_> {
 
         if let (Type::Conditional(lc), Type::Conditional(rc)) = (to, rhs) {
             if lc.extends_type.type_eq(&rc.extends_type) {
-                if let Ok(..) = self.assign_with_opts(data, &rc.check_type, &lc.check_type, opts) {
+                if self.assign_with_opts(data, &rc.check_type, &lc.check_type, opts).is_ok() {
                     self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
                         .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 

@@ -2126,7 +2126,7 @@ impl Expander<'_, '_, '_> {
                             }
 
                             ty @ Type::Enum(..) => {
-                                if let Some(..) = type_args {
+                                if type_args.is_some() {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
                                 verify!(ty);
@@ -2134,7 +2134,7 @@ impl Expander<'_, '_, '_> {
                             }
 
                             ty @ Type::Param(..) => {
-                                if let Some(..) = type_args {
+                                if type_args.is_some() {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
 

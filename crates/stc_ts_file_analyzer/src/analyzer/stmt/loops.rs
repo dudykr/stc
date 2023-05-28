@@ -266,7 +266,7 @@ impl Analyzer<'_, '_> {
             }
 
             // { [P in K]: T[P]; }
-            if let Some(..) = m.type_param.constraint.as_deref() {
+            if m.type_param.constraint.as_deref().is_some() {
                 return Ok(Type::Param(m.type_param.clone()));
             }
         }

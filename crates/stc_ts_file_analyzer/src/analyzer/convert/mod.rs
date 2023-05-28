@@ -874,7 +874,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !self.config.is_builtin && !found && self.ctx.in_actual_type {
-                        if let Some(..) = self.scope.get_var(&i.into()) {
+                        if self.scope.get_var(&i.into()).is_some() {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
@@ -882,7 +882,7 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !self.config.is_builtin && self.ctx.in_actual_type {
-                        if let Some(..) = self.scope.get_var(&i.into()) {
+                        if self.scope.get_var(&i.into()).is_some() {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;

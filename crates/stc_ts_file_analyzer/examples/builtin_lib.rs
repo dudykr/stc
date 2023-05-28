@@ -1,4 +1,3 @@
-#![feature(box_syntax)]
 #![feature(test)]
 
 use std::hint::black_box;

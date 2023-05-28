@@ -1802,18 +1802,21 @@ impl Analyzer<'_, '_> {
             //
             // Ok if it's assignable to `Function`.
             Type::TypeLit(..) | Type::Interface(..) => {
-                if let Err(..) = self.assign(
-                    span,
-                    &mut Default::default(),
-                    &Type::Ref(Ref {
+                if self
+                    .assign(
                         span,
-                        type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
-                        type_args: None,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                    &ty,
-                ) {
+                        &mut Default::default(),
+                        &Type::Ref(Ref {
+                            span,
+                            type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
+                            type_args: None,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                        &ty,
+                    )
+                    .is_err()
+                {
                     self.storage.report(
                         ErrorKind::InvalidRhsInInstanceOf {
                             span,

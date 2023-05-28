@@ -2130,7 +2130,7 @@ impl Analyzer<'_, '_> {
                         )
                         .ok()
                         .map(|value| value.freezed())
-                        .map(|value| Box::new(value)),
+                        .map(Box::new),
                     Type::Union(Union {
                         types,
                         span: union_span,

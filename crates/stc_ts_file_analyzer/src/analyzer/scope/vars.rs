@@ -709,7 +709,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             .flatten()
-                            .map(|v| Box::new(v));
+                            .map(Box::new);
 
                             real = self.append_type_element(
                                 real,
@@ -898,7 +898,7 @@ impl Analyzer<'_, '_> {
                                     key,
                                     optional,
                                     params: Vec::new(),
-                                    type_ann: real_property_type.flatten().map(|v| Box::new(v)),
+                                    type_ann: real_property_type.flatten().map(Box::new),
                                     type_params: None,
                                     metadata: Default::default(),
                                     accessor: Default::default(),
@@ -1123,14 +1123,17 @@ impl Analyzer<'_, '_> {
 
     fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<Type> {
         run(|| {
-            if let Ok(..) = self.get_iterator(
-                span,
-                Cow::Borrowed(&ty),
-                GetIteratorOpts {
-                    disallow_str: true,
-                    ..Default::default()
-                },
-            ) {
+            if self
+                .get_iterator(
+                    span,
+                    Cow::Borrowed(&ty),
+                    GetIteratorOpts {
+                        disallow_str: true,
+                        ..Default::default()
+                    },
+                )
+                .is_ok()
+            {
                 return Ok(ty.freezed());
             }
 
