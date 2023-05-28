@@ -42,7 +42,7 @@ TS2322
    `----
 TS2322
 
-  x MissingFields {
+  x ObjectAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             181,
@@ -52,9 +52,18 @@ TS2322
   |         ),
   |         ctxt: #0,
   |     },
-  |     fields: [
-  |         a: Keyword(string),
-  |         d: Keyword(number),
+  |     errors: [
+  |         NoCommonProperty {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     181,
+  |                 ),
+  |                 hi: BytePos(
+  |                     216,
+  |                 ),
+  |                 ctxt: #0,
+  |             },
+  |         },
   |     ],
   | }
    ,-[$DIR/tests/errors/issues/0xxx/754/1.ts:6:1]

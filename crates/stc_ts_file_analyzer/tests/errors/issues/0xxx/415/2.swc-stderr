@@ -1,6 +1,6 @@
 TS2322
 
-  x SimpleAssignFailed {
+  x AssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             188,
@@ -10,8 +10,8 @@ TS2322
   |         ),
   |         ctxt: #1,
   |     },
-  |     cause: Some(
-  |         AssignFailed {
+  |     cause: [
+  |         SimpleAssignFailed {
   |             span: Span {
   |                 lo: BytePos(
   |                     188,
@@ -19,10 +19,10 @@ TS2322
   |                 hi: BytePos(
   |                     189,
   |                 ),
-  |                 ctxt: #1,
+  |                 ctxt: #0,
   |             },
-  |             cause: [
-  |                 Errors {
+  |             cause: Some(
+  |                 ObjectAssignFailed {
   |                     span: Span {
   |                         lo: BytePos(
   |                             188,
@@ -30,10 +30,10 @@ TS2322
   |                         hi: BytePos(
   |                             189,
   |                         ),
-  |                         ctxt: #1,
+  |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         Errors {
+  |                         NoCommonProperty {
   |                             span: Span {
   |                                 lo: BytePos(
   |                                     188,
@@ -41,124 +41,14 @@ TS2322
   |                                 hi: BytePos(
   |                                     189,
   |                                 ),
-  |                                 ctxt: #0,
+  |                                 ctxt: #1,
   |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             189,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         a: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
-  |                         },
-  |                         Errors {
-  |                             span: Span {
-  |                                 lo: BytePos(
-  |                                     188,
-  |                                 ),
-  |                                 hi: BytePos(
-  |                                     189,
-  |                                 ),
-  |                                 ctxt: #0,
-  |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             189,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         b: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
   |                         },
   |                     ],
   |                 },
-  |                 Errors {
-  |                     span: Span {
-  |                         lo: BytePos(
-  |                             188,
-  |                         ),
-  |                         hi: BytePos(
-  |                             189,
-  |                         ),
-  |                         ctxt: #1,
-  |                     },
-  |                     errors: [
-  |                         Errors {
-  |                             span: Span {
-  |                                 lo: BytePos(
-  |                                     188,
-  |                                 ),
-  |                                 hi: BytePos(
-  |                                     189,
-  |                                 ),
-  |                                 ctxt: #0,
-  |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             189,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         a: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
-  |                         },
-  |                         Errors {
-  |                             span: Span {
-  |                                 lo: BytePos(
-  |                                     188,
-  |                                 ),
-  |                                 hi: BytePos(
-  |                                     189,
-  |                                 ),
-  |                                 ctxt: #0,
-  |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             189,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         b: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
-  |                         },
-  |                     ],
-  |                 },
-  |             ],
+  |             ),
   |         },
-  |     ),
+  |     ],
   | }
     ,-[$DIR/tests/errors/issues/0xxx/415/2.ts:18:1]
  18 | 

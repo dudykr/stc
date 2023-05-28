@@ -1,0 +1,31 @@
+TS2322
+
+  x ObjectAssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             358,
+  |         ),
+  |         hi: BytePos(
+  |             359,
+  |         ),
+  |         ctxt: #0,
+  |     },
+  |     errors: [
+  |         NoCommonProperty {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     358,
+  |                 ),
+  |                 hi: BytePos(
+  |                     359,
+  |                 ),
+  |                 ctxt: #1,
+  |             },
+  |         },
+  |     ],
+  | }
+    ,-[$DIR/tests/errors/conformance/types/assignmentCompatibility/assignmentCompatWithObjectMembersOptionality2/9.ts:16:1]
+ 16 | // disallowed by weak type checking
+ 17 | b = f;
+    : ^
+    `----
