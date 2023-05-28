@@ -10,11 +10,6 @@ module TargetIsPublic {
         foo: string;
     }
 
-    // sources
-    class D {
-        public foo: string;
-    }
-
     class E {
         private foo: string;
     }
@@ -33,15 +28,10 @@ module TargetIsPublic {
     var i: I;
 
     // sources
-    class D {
-        public foo: string;
-    }
-
     class E {
         private foo: string;
     }
 
-    var d: D;
     var e: E;
 
     e = i; // errror
