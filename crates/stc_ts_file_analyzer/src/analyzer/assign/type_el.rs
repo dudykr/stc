@@ -193,6 +193,7 @@ impl Analyzer<'_, '_> {
                         &rhs_members,
                         AssignOpts {
                             allow_unknown_rhs: Some(allow_unknown_rhs),
+                            enable_do_not_use_return_type_while_inference: false,
                             ..opts
                         },
                     )

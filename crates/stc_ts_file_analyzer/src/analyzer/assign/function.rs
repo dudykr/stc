@@ -249,6 +249,7 @@ impl Analyzer<'_, '_> {
                     &rf,
                     InferTypeOpts {
                         for_fn_assignment: true,
+                        do_not_use_return_type: opts.enable_do_not_use_return_type_while_inference,
                         ..Default::default()
                     },
                 )?;
@@ -305,6 +306,7 @@ impl Analyzer<'_, '_> {
                     &lf,
                     InferTypeOpts {
                         for_fn_assignment: true,
+                        do_not_use_return_type: opts.enable_do_not_use_return_type_while_inference,
                         ..Default::default()
                     },
                 )?;
