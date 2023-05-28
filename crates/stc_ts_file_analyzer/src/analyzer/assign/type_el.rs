@@ -1102,7 +1102,7 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Errors { span, errors }.into());
         }
 
-        if opts.check_for_common_properties.unwrap_or_default() {
+        if opts.check_for_common_properties.unwrap_or_default() && !lhs.is_empty() {
             // TS2559: If lhs and rhs has no properties in common, it's an assignment error.
             let mut has_common = false;
             'outer: for l in lhs {
