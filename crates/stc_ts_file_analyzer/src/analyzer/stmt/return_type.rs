@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
                             RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
                         }
                     },
-                    type_args: Some(box TypeParamInstantiation {
+                    type_args: Some(Box::new(TypeParamInstantiation {
                         span,
                         params: vec![
                             yield_ty,
@@ -239,7 +239,7 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             }),
                         ],
-                    }),
+                    })),
                     metadata: RefMetadata {
                         common: metadata,
                         ..Default::default()
@@ -258,10 +258,10 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(Type::Ref(Ref {
                     span,
                     type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
-                    type_args: Some(box TypeParamInstantiation {
+                    type_args: Some(Box::new(TypeParamInstantiation {
                         span,
                         params: vec![ret_ty],
-                    }),
+                    })),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })));
@@ -314,14 +314,14 @@ impl Analyzer<'_, '_> {
             } else if let Some(ret_ty) = &ret_ty {
                 let declared = Type::Instance(Instance {
                     span: declared.span(),
-                    ty: box declared,
+                    ty: Box::new(declared),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
 
                 let ret_ty = Type::Instance(Instance {
                     span: ret_ty.span(),
-                    ty: box ret_ty.clone(),
+                    ty: Box::new(ret_ty.clone()),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             let declared = Type::Instance(Instance {
                 span: declared.span(),
-                ty: box declared,
+                ty: Box::new(declared),
                 metadata: Default::default(),
                 tracker: Default::default(),
             });
@@ -391,10 +391,10 @@ impl Analyzer<'_, '_> {
                         &Type::Ref(Ref {
                             span: node.span,
                             type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
-                            type_args: Some(box TypeParamInstantiation {
+                            type_args: Some(Box::new(TypeParamInstantiation {
                                 span: node.span,
                                 params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
-                            }),
+                            })),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }),
@@ -444,10 +444,10 @@ impl Analyzer<'_, '_> {
                         &Type::Ref(Ref {
                             span: node.span,
                             type_name: RTsEntityName::Ident(RIdent::new(name.into(), node.span)),
-                            type_args: Some(box TypeParamInstantiation {
+                            type_args: Some(Box::new(TypeParamInstantiation {
                                 span: node.span,
                                 params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
-                            }),
+                            })),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }),
@@ -524,7 +524,7 @@ impl Analyzer<'_, '_> {
                     Ok(declared) => {
                         let declared = Type::Instance(Instance {
                             span: declared.span(),
-                            ty: box declared,
+                            ty: Box::new(declared),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         });
@@ -552,7 +552,7 @@ impl Analyzer<'_, '_> {
                         self.storage.report(
                             ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err),
+                                cause: Some(Box::new(err)),
                             }
                             .into(),
                         );
@@ -756,7 +756,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         span,
                         readonly,
                         obj_type: obj_type.clone(),
-                        index_type: box Type::new_union(span, types),
+                        index_type: Box::new(Type::new_union(span, types)),
                         metadata,
                         tracker: Default::default(),
                     });

@@ -78,7 +78,7 @@ impl GenericExpander<'_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: box type_args.as_ref().and_then(|args| args.params.first().cloned()).unwrap_or_else(|| {
+                        elem_type: Box::new(type_args.as_ref().and_then(|args| args.params.first().cloned()).unwrap_or_else(|| {
                             Type::any(
                                 span,
                                 KeywordTypeMetadata {
@@ -86,7 +86,7 @@ impl GenericExpander<'_> {
                                     ..Default::default()
                                 },
                             )
-                        }),
+                        })),
                         metadata: ArrayMetadata {
                             common: metadata.common,
                             ..Default::default()
@@ -171,7 +171,7 @@ impl GenericExpander<'_> {
                                                         prop_ty: &p
                                                             .type_ann
                                                             .clone()
-                                                            .unwrap_or_else(|| box Type::any(p.span, Default::default())),
+                                                            .unwrap_or_else(|| Box::new(Type::any(p.span, Default::default()))),
                                                     }),
                                                     ..p.clone()
                                                 })),
@@ -192,7 +192,7 @@ impl GenericExpander<'_> {
                                                             ret_ty: method
                                                                 .ret_ty
                                                                 .clone()
-                                                                .unwrap_or_else(|| box Type::any(method.span, Default::default())),
+                                                                .unwrap_or_else(|| Box::new(Type::any(method.span, Default::default()))),
                                                             metadata: Default::default(),
                                                             tracker: Default::default(),
                                                         }),
@@ -308,14 +308,14 @@ impl GenericExpander<'_> {
                                 });
                             }
 
-                            _ => Some(box Type::IndexedAccessType(IndexedAccessType {
+                            _ => Some(Box::new(Type::IndexedAccessType(IndexedAccessType {
                                 span,
                                 readonly,
                                 obj_type,
                                 index_type,
                                 metadata,
                                 tracker: Default::default(),
-                            })),
+                            }))),
                         }
                     }
                     _ => m.ty,
@@ -410,7 +410,7 @@ impl GenericExpander<'_> {
                         ..
                     }) => Some(Key::Computed(ComputedKey {
                         span: ty.index_type.span(),
-                        expr: box RExpr::Invalid(RInvalid { span: DUMMY_SP }),
+                        expr: Box::new(RExpr::Invalid(RInvalid { span: DUMMY_SP })),
                         ty: ty.index_type.clone(),
                     })),
                     _ => None,

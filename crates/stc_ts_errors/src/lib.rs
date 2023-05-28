@@ -1,6 +1,5 @@
 #![allow(incomplete_features)]
 #![deny(variant_size_differences)]
-#![feature(box_syntax)]
 #![feature(specialization)]
 #![cfg_attr(not(debug_assertions), allow(unused))]
 
@@ -1600,7 +1599,7 @@ impl Error {
     where
         F: FnOnce(ErrorKind) -> ErrorKind,
     {
-        self.inner = box op(*self.inner);
+        self.inner = Box::new(op(*self.inner));
         self
     }
 
@@ -1756,7 +1755,7 @@ impl ErrorKind {
                 vec![Error {
                     #[cfg(debug_assertions)]
                     contexts: Default::default(),
-                    inner: box self,
+                    inner: Box::new(self),
                 }]
             }
         }

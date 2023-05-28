@@ -62,8 +62,13 @@ impl Analyzer<'_, '_> {
             };
 
             if let Err(err) = res {
-                self.storage
-                    .report(ErrorKind::InvalidInterfaceInheritance { span, cause: box err }.into());
+                self.storage.report(
+                    ErrorKind::InvalidInterfaceInheritance {
+                        span,
+                        cause: Box::new(err),
+                    }
+                    .into(),
+                );
                 return;
             }
         }

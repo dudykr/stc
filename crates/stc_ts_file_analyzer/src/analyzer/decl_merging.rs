@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
                 is_optional: m.optional,
                 type_params: m.type_params.clone(),
                 params: m.params.clone(),
-                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(m.span, Default::default()))),
             }))),
             TypeElement::Index(i) => Ok(Some(ClassMember::IndexSignature(i.clone()))),
         }
@@ -199,11 +199,11 @@ impl Analyzer<'_, '_> {
                         if !params.is_empty() {
                             return Ok(Some(Type::Interface(Interface {
                                 body: new_members,
-                                type_params: Some(box TypeParamDecl {
+                                type_params: Some(Box::new(TypeParamDecl {
                                     span: b_ty.clone().span(),
                                     params,
                                     tracker: Default::default(),
-                                }),
+                                })),
                                 ..a.clone()
                             })));
                         }

@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
 
         Err(ErrorKind::NoNewSignature {
             span,
-            callee: box callee.clone(),
+            callee: Box::new(callee.clone()),
         }
         .into())
     }
@@ -173,7 +173,7 @@ impl Analyzer<'_, '_> {
 
         Err(ErrorKind::NoNewSignature {
             span,
-            callee: box ty.clone(),
+            callee: Box::new(ty.clone()),
         }
         .into())
     }
@@ -192,7 +192,7 @@ pub(crate) fn make_instance_type(ty: Type) -> Type {
                 .cloned()
                 .map(|mut element| {
                     // TODO(kdy1): Remove clone
-                    element.ty = box make_instance_type(*element.ty);
+                    element.ty = Box::new(make_instance_type(*element.ty));
                     element
                 })
                 .collect(),

@@ -36,8 +36,8 @@ impl Analyzer<'_, '_> {
             ($errors:expr) => {{
                 return Err(ErrorKind::AssignFailed {
                     span,
-                    left: box l_type.clone(),
-                    right: box rhs.clone(),
+                    left: Box::new(l_type.clone()),
+                    right: Box::new(rhs.clone()),
                     right_ident: opts.right_ident_span,
                     cause: $errors,
                 }
@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                             {
                                 ErrorKind::SimpleAssignFailed {
                                     span: *span,
-                                    cause: Some(box err.context("union errors because we are assigning to tuple")),
+                                    cause: Some(Box::new(err.context("union errors because we are assigning to tuple"))),
                                 }
                             }
                             _ => err,

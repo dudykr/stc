@@ -352,7 +352,7 @@ fn negate(ty: Type) -> Type {
             RTsLit::BigInt(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::BigInt(RBigInt {
-                        value: box -(*v.value.clone()),
+                        value: Box::new(-(*v.value.clone())),
                         span: v.span,
                         raw: None,
                     }),

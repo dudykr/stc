@@ -37,8 +37,8 @@ impl Analyzer<'_, '_> {
             debug!("normalize: conditional: {}", ty)
         });
 
-        c.check_type = box self
-            .normalize(
+        c.check_type = Box::new(
+            self.normalize(
                 Some(span),
                 Cow::Borrowed(&c.check_type),
                 NormalizeTypeOpts {
@@ -49,14 +49,16 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize the `check` type of a conditional type")?
             .freezed()
             .into_owned()
-            .freezed();
+            .freezed(),
+        );
 
-        c.extends_type = box self
-            .normalize(Some(span), Cow::Borrowed(&c.extends_type), Default::default())
-            .unwrap_or(Cow::Borrowed(&c.extends_type))
-            .freezed()
-            .into_owned()
-            .freezed();
+        c.extends_type = Box::new(
+            self.normalize(Some(span), Cow::Borrowed(&c.extends_type), Default::default())
+                .unwrap_or(Cow::Borrowed(&c.extends_type))
+                .freezed()
+                .into_owned()
+                .freezed(),
+        );
 
         if let Some(v) = self.extends(span, &c.check_type, &c.extends_type, Default::default()) {
             info!("normalize: conditional: check_type extends extends_type: {:?}", v);
@@ -259,11 +261,11 @@ impl Analyzer<'_, '_> {
                 .ok();
 
             if let Some(type_params) = type_params {
-                check_type = box self.expand_type_params(&type_params, *check_type, Default::default()).unwrap();
-                extends_type = box self.expand_type_params(&type_params, *extends_type, Default::default()).unwrap();
+                check_type = Box::new(self.expand_type_params(&type_params, *check_type, Default::default()).unwrap());
+                extends_type = Box::new(self.expand_type_params(&type_params, *extends_type, Default::default()).unwrap());
 
-                true_type = box self.expand_type_params(&type_params, *true_type, Default::default()).unwrap();
-                false_type = box self.expand_type_params(&type_params, *false_type, Default::default()).unwrap();
+                true_type = Box::new(self.expand_type_params(&type_params, *true_type, Default::default()).unwrap());
+                false_type = Box::new(self.expand_type_params(&type_params, *false_type, Default::default()).unwrap());
             }
 
             if check_type.is_class() {

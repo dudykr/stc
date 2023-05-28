@@ -1,5 +1,4 @@
 #![allow(incomplete_features)]
-#![feature(box_syntax)]
 #![feature(specialization)]
 
 use std::{fmt::Debug, hash::Hash, ops::Deref};
@@ -221,7 +220,7 @@ where
                 let data = Arc::make_unique(&mut v.0);
                 let data = (**data).take();
 
-                *self = ArcCow::Owned(box data);
+                *self = ArcCow::Owned(Box::new(data));
                 match self {
                     ArcCow::Owned(v) => &mut *v,
                     _ => unreachable!(),
@@ -274,7 +273,7 @@ where
 {
     #[inline(always)]
     fn from(data: T) -> Self {
-        ArcCow::Owned(box data)
+        ArcCow::Owned(Box::new(data))
     }
 }
 

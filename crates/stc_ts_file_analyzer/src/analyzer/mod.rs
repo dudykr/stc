@@ -342,7 +342,7 @@ fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> t
     ty::Module {
         span,
         name,
-        exports: box exports,
+        exports: Box::new(exports),
         metadata: Default::default(),
         tracker: Default::default(),
     }
@@ -433,7 +433,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             Env::new(env, Default::default(), EsVersion::latest(), ModuleConfig::None, Default::default()),
             Arc::new(SourceMap::default()),
             Default::default(),
-            box storage,
+            Box::new(storage),
             None,
             &NoopLoader,
             Scope::root(),
@@ -990,7 +990,7 @@ impl Analyzer<'_, '_> {
                 let ty = Namespace {
                     name: decl.id.clone().into(),
                     span,
-                    exports: box exports,
+                    exports: Box::new(exports),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 };
@@ -1054,7 +1054,7 @@ impl Analyzer<'_, '_> {
                     let ty = ty::Module {
                         name: decl.id.clone(),
                         span,
-                        exports: box exports,
+                        exports: Box::new(exports),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     };

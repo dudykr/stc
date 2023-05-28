@@ -36,7 +36,7 @@ pub fn normalize_tuples(ty: &mut Type) {
 
                 return Some(Type::Array(Array {
                     span,
-                    elem_type: box Type::new_union(span, types),
+                    elem_type: Box::new(Type::new_union(span, types)),
                     metadata: ArrayMetadata {
                         common: common_metadata,
                         ..Default::default()

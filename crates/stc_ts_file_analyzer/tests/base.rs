@@ -1,4 +1,3 @@
-#![feature(box_syntax)]
 #![allow(clippy::manual_strip)]
 
 use std::{
@@ -111,7 +110,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env, cm, Default::default(), Box::new(&mut storage), &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 
@@ -290,7 +289,7 @@ fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Opti
                     env,
                     cm.clone(),
                     Default::default(),
-                    box &mut storage,
+                    Box::new(&mut storage),
                     &NoopLoader,
                     if want_error {
                         None
@@ -389,7 +388,7 @@ fn pass_only(input: PathBuf) {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env, cm, Default::default(), Box::new(&mut storage), &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 

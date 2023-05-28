@@ -78,21 +78,21 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     dot3_token: DUMMY_SP,
                     node_id: NodeId::invalid(),
-                    arg: box RPat::Ident(RBindingIdent {
+                    arg: Box::new(RPat::Ident(RBindingIdent {
                         node_id: NodeId::invalid(),
                         id: RIdent::new("args".into(), DUMMY_SP),
                         type_ann: None,
-                    }),
+                    })),
                     type_ann: None,
                 }),
-                ty: box Type::any(DUMMY_SP, Default::default()),
+                ty: Box::new(Type::any(DUMMY_SP, Default::default())),
                 required: false,
             };
             let fn_type = Type::Function(Function {
                 span: DUMMY_SP,
                 type_params: None,
                 params: vec![param],
-                ret_ty: box Type::any(DUMMY_SP, Default::default()),
+                ret_ty: Box::new(Type::any(DUMMY_SP, Default::default())),
                 metadata: Default::default(),
                 tracker: Default::default(),
             });

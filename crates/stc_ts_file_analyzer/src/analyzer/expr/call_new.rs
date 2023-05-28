@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
         Ok(TypeOrSpread {
             span,
             spread: node.spread,
-            ty: box node.expr.validate_with_default(self)?,
+            ty: Box::new(node.expr.validate_with_default(self)?),
         })
     }
 }
@@ -138,10 +138,10 @@ impl Analyzer<'_, '_> {
                             return Ok(Type::Ref(Ref {
                                 span,
                                 type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), span.with_ctxt(SyntaxContext::empty()))),
-                                type_args: Some(box TypeParamInstantiation {
+                                type_args: Some(Box::new(TypeParamInstantiation {
                                     span,
                                     params: vec![Type::any(span, Default::default())],
-                                }),
+                                })),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }));
@@ -164,10 +164,10 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Ref(Ref {
                             span,
                             type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), span.with_ctxt(SyntaxContext::empty()))),
-                            type_args: Some(box TypeParamInstantiation {
+                            type_args: Some(Box::new(TypeParamInstantiation {
                                 span,
                                 params: vec![dep.clone()],
-                            }),
+                            })),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }));
@@ -245,17 +245,17 @@ impl Analyzer<'_, '_> {
             let span = span.with_ctxt(SyntaxContext::empty());
             RExprOrSpread {
                 spread: None,
-                expr: box RExpr::TsAs(RTsAsExpr {
+                expr: Box::new(RExpr::TsAs(RTsAsExpr {
                     node_id: NodeId::invalid(),
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span: DUMMY_SP }),
-                    type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+                    expr: Box::new(RExpr::Invalid(RInvalid { span: DUMMY_SP })),
+                    type_ann: Box::new(RTsType::TsTypeRef(RTsTypeRef {
                         node_id: NodeId::invalid(),
                         span,
                         type_name: RTsEntityName::Ident(RIdent::new("TemplateStringsArray".into(), span)),
                         type_params: None,
-                    }),
-                }),
+                    })),
+                })),
             }
         };
         let mut args = vec![tpl_str_arg];
@@ -649,10 +649,10 @@ impl Analyzer<'_, '_> {
                             "Array".into(),
                             span.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
                         )),
-                        type_args: Some(box TypeParamInstantiation {
+                        type_args: Some(Box::new(TypeParamInstantiation {
                             span,
                             params: vec![*obj.elem_type.clone()],
-                        }),
+                        })),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     });
@@ -702,14 +702,14 @@ impl Analyzer<'_, '_> {
                         if kind == ExtractKind::Call {
                             return Err(ErrorKind::NoCallablePropertyWithName {
                                 span,
-                                obj: box obj_type.clone(),
-                                key: box prop.clone(),
+                                obj: Box::new(obj_type.clone()),
+                                key: Box::new(prop.clone()),
                             }
                             .into());
                         } else {
                             return Err(ErrorKind::NoSuchConstructor {
                                 span,
-                                key: box prop.clone(),
+                                key: Box::new(prop.clone()),
                             }
                             .into());
                         }
@@ -876,13 +876,13 @@ impl Analyzer<'_, '_> {
                 return Err(match kind {
                     ExtractKind::Call => ErrorKind::NoCallablePropertyWithName {
                         span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
+                        obj: Box::new(obj_type.clone()),
+                        key: Box::new(prop.clone()),
                     }
                     .into(),
                     ExtractKind::New => ErrorKind::NoSuchConstructor {
                         span,
-                        key: box prop.clone(),
+                        key: Box::new(prop.clone()),
                     }
                     .into(),
                 });
@@ -938,21 +938,21 @@ impl Analyzer<'_, '_> {
                 if obj_type.is_type_param() {
                     return ErrorKind::NoSuchProperty {
                         span,
-                        obj: Some(box obj_type.clone()),
-                        prop: Some(box prop.clone()),
+                        obj: Some(Box::new(obj_type.clone())),
+                        prop: Some(Box::new(prop.clone())),
                     };
                 }
 
                 match err {
                     ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
                         span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
+                        obj: Box::new(obj_type.clone()),
+                        key: Box::new(prop.clone()),
                     },
                     ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
                         span,
-                        obj: box obj_type.clone(),
-                        key: box prop.clone(),
+                        obj: Box::new(obj_type.clone()),
+                        key: Box::new(prop.clone()),
                     },
                     _ => err,
                 }
@@ -1157,7 +1157,7 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.clone(),
                         params: m.params.clone(),
-                        ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                        ret_ty: m.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(m.span, Default::default()))),
                     });
                 }
             }
@@ -1171,7 +1171,7 @@ impl Analyzer<'_, '_> {
 
                 if self.key_matches(span, &p.key, prop, false) {
                     // TODO(kdy1): Remove useless clone
-                    let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span(), Default::default()));
+                    let ty = *p.type_ann.clone().unwrap_or(Box::new(Type::any(m.span(), Default::default())));
                     let mut ty = self
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
@@ -1192,18 +1192,18 @@ impl Analyzer<'_, '_> {
                                     node_id: NodeId::invalid(),
                                     span,
                                     dot3_token: DUMMY_SP,
-                                    arg: box RPat::Ident(RBindingIdent {
+                                    arg: Box::new(RPat::Ident(RBindingIdent {
                                         node_id: NodeId::invalid(),
                                         id: RIdent::new("args".into(), span.with_ctxt(SyntaxContext::empty())),
                                         type_ann: Default::default(),
-                                    }),
+                                    })),
                                     type_ann: Default::default(),
                                 }),
-                                ty: box Type::any(span, Default::default()),
+                                ty: Box::new(Type::any(span, Default::default())),
                             };
                             candidates.push(CallCandidate {
                                 params: vec![rest],
-                                ret_ty: box Type::any(span, Default::default()),
+                                ret_ty: Box::new(Type::any(span, Default::default())),
                                 type_params: Default::default(),
                             });
                         }
@@ -1302,8 +1302,8 @@ impl Analyzer<'_, '_> {
 
         Err(ErrorKind::NoSuchProperty {
             span,
-            obj: Some(box obj.clone()),
-            prop: Some(box prop.clone()),
+            obj: Some(Box::new(obj.clone())),
+            prop: Some(Box::new(prop.clone())),
         }
         .context("failed to call property of type elements"))
     }
@@ -1345,7 +1345,7 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(TypeOrSpread {
                                 span: *span,
                                 spread: None,
-                                ty: box arg_ty.clone().into_owned(),
+                                ty: Box::new(arg_ty.clone().into_owned()),
                             });
                         }
 
@@ -1368,7 +1368,7 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(TypeOrSpread {
                                 span: arg.span(),
                                 spread: arg.spread,
-                                ty: box elem_type.into_owned(),
+                                ty: Box::new(elem_type.into_owned()),
                             });
                         }
                     }
@@ -1442,7 +1442,7 @@ impl Analyzer<'_, '_> {
                         if opts.disallow_invoking_implicit_constructors {
                             return Err(ErrorKind::NoNewSignature {
                                 span,
-                                callee: box ty.clone(),
+                                callee: Box::new(ty.clone()),
                             }
                             .into());
                         }
@@ -1478,7 +1478,7 @@ impl Analyzer<'_, '_> {
                                             return Err(ErrorKind::NotSatisfyConstraint {
                                                 span,
                                                 left: constraint.clone(),
-                                                right: box type_arg.clone(),
+                                                right: Box::new(type_arg.clone()),
                                             }
                                             .into());
                                         }
@@ -1580,7 +1580,7 @@ impl Analyzer<'_, '_> {
                     if opts.disallow_invoking_implicit_constructors {
                         return Err(ErrorKind::NoNewSignature {
                             span,
-                            callee: box ty.clone(),
+                            callee: Box::new(ty.clone()),
                         }
                         .into());
                     }
@@ -1632,23 +1632,23 @@ impl Analyzer<'_, '_> {
                     if let Some(class_name) = self.scope.this_class_name() {
                         return Ok(Type::Instance(Instance {
                             span,
-                            ty: box Type::Query(QueryType {
+                            ty: Box::new(Type::Query(QueryType {
                                 span,
-                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(class_name.into())),
+                                expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(class_name.into()))),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }),
+                            })),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }));
                     }
                     return Ok(Type::Instance(Instance {
                         span,
-                        ty: box Type::StaticThis(StaticThis {
+                        ty: Box::new(Type::StaticThis(StaticThis {
                             span,
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -1669,14 +1669,14 @@ impl Analyzer<'_, '_> {
                     ExtractKind::Call => {
                         return Err(ErrorKind::NoCallSignature {
                             span,
-                            callee: box ty.clone(),
+                            callee: Box::new(ty.clone()),
                         }
                         .into())
                     }
                     ExtractKind::New => {
                         return Err(ErrorKind::NoNewSignature {
                             span,
-                            callee: box ty.clone(),
+                            callee: Box::new(ty.clone()),
                         }
                         .into())
                     }
@@ -1795,7 +1795,7 @@ impl Analyzer<'_, '_> {
                         if type_args.params.len() == 1 {
                             return Ok(Type::Array(Array {
                                 span,
-                                elem_type: box type_args.params.first().cloned().unwrap(),
+                                elem_type: Box::new(type_args.params.first().cloned().unwrap()),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             }));
@@ -1940,7 +1940,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::Call => Some(CallCandidate {
                     params: params.clone(),
                     type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
-                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(*span, Default::default()))),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1951,7 +1951,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::New => Some(CallCandidate {
                     params: params.clone(),
                     type_params: type_params.clone().or_else(|| type_params_of_type.cloned()),
-                    ret_ty: ret_ty.clone().unwrap_or_else(|| box Type::any(*span, Default::default())),
+                    ret_ty: ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(*span, Default::default()))),
                 }),
                 _ => None,
             })
@@ -2007,12 +2007,12 @@ impl Analyzer<'_, '_> {
         match kind {
             ExtractKind::Call => Err(ErrorKind::NoCallSignature {
                 span,
-                callee: box callee_ty.clone(),
+                callee: Box::new(callee_ty.clone()),
             }
             .context("failed to select the element to invoke")),
             ExtractKind::New => Err(ErrorKind::NoNewSignature {
                 span,
-                callee: box callee_ty.clone(),
+                callee: Box::new(callee_ty.clone()),
             }
             .context("failed to select the element to invoke")),
         }
@@ -2086,7 +2086,7 @@ impl Analyzer<'_, '_> {
                 let candidate = CallCandidate {
                     type_params: f.type_params.clone(),
                     params: f.params.clone(),
-                    ret_ty: box Type::any(span, Default::default()),
+                    ret_ty: Box::new(Type::any(span, Default::default())),
                 };
                 return Ok(vec![candidate]);
             }
@@ -2134,7 +2134,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(m.span, Default::default()))),
                             });
                         }
 
@@ -2142,7 +2142,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(m.span, Default::default()))),
                             });
                         }
                         _ => {}
@@ -2164,12 +2164,12 @@ impl Analyzer<'_, '_> {
                             type_params: c.type_params.clone(),
                             params: c.params.clone(),
                             ret_ty: c.ret_ty.clone().unwrap_or_else(|| {
-                                box Type::Class(Class {
+                                Box::new(Type::Class(Class {
                                     span,
                                     def: cls.clone(),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                })
+                                }))
                             }),
                         });
                     }
@@ -2185,12 +2185,12 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: Default::default(),
                         params: Default::default(),
-                        ret_ty: box Type::Class(Class {
+                        ret_ty: Box::new(Type::Class(Class {
                             span,
                             def: cls.clone(),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })),
                     });
                 }
 
@@ -2270,9 +2270,17 @@ impl Analyzer<'_, '_> {
         }
 
         Err(if kind == ExtractKind::Call {
-            ErrorKind::NoCallSignature { span, callee: box callee }.context("tried to calculate return type")
+            ErrorKind::NoCallSignature {
+                span,
+                callee: Box::new(callee),
+            }
+            .context("tried to calculate return type")
         } else {
-            ErrorKind::NoNewSignature { span, callee: box callee }.context("tried to calculate return type")
+            ErrorKind::NoNewSignature {
+                span,
+                callee: Box::new(callee),
+            }
+            .context("tried to calculate return type")
         })
     }
 
@@ -2792,7 +2800,7 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> VResult<_> {
-                    let ty = box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
+                    let ty = Box::new(self.expand_type_params(&inferred.types, *v.ty, Default::default())?);
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2882,7 +2890,7 @@ impl Analyzer<'_, '_> {
 
                         info!("Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
-                        let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
+                        let mut ty = Box::new(Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?));
                         self.add_required_type_params(&mut ty);
                         ty
                     }
@@ -2892,11 +2900,11 @@ impl Analyzer<'_, '_> {
                         }
 
                         info!("Inferring type of function expr with updated type");
-                        let mut ty = box Type::Function(
+                        let mut ty = Box::new(Type::Function(
                             fn_expr
                                 .function
                                 .validate_with_args(&mut *self.with_ctx(ctx), fn_expr.ident.as_ref())?,
-                        );
+                        ));
                         self.add_required_type_params(&mut ty);
                         ty
                     }
@@ -3201,7 +3209,7 @@ impl Analyzer<'_, '_> {
                                 .map_err(|err| {
                                     ErrorKind::WrongArgType {
                                         span: arg.span(),
-                                        inner: box err,
+                                        inner: Box::new(err),
                                     }
                                     .into()
                                 })
@@ -3241,7 +3249,7 @@ impl Analyzer<'_, '_> {
                                     )
                                     .convert_err(|err| ErrorKind::WrongArgType {
                                         span: arg.span(),
-                                        inner: box err.into(),
+                                        inner: Box::new(err.into()),
                                     })
                                     .context("tried to assign to element of a tuple type of a parameter");
 
@@ -3288,7 +3296,7 @@ impl Analyzer<'_, '_> {
                         let err = err
                             .convert(|err| ErrorKind::WrongArgType {
                                 span: arg.span(),
-                                inner: box err.into(),
+                                inner: Box::new(err.into()),
                             })
                             .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
                         report_err!(err);
@@ -3344,7 +3352,7 @@ impl Analyzer<'_, '_> {
                         if matches!(param.pat, RPat::Rest(..)) || !param.required {
                             ErrorKind::WrongArgType {
                                 span: arg.span(),
-                                inner: box err.into(),
+                                inner: Box::new(err.into()),
                             }
                         } else {
                             ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() }
@@ -3359,7 +3367,7 @@ impl Analyzer<'_, '_> {
                 let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
 
                 let mut p = &param.ty.clone();
-                let binding = &box Type::unknown(param.ty.span(), Default::default());
+                let binding = &Box::new(Type::unknown(param.ty.span(), Default::default()));
 
                 if let Type::Param(t) = param.ty.normalize() {
                     if let Some(constr) = &t.constraint {
@@ -3402,7 +3410,7 @@ impl Analyzer<'_, '_> {
                                             .map(|err| {
                                                 ErrorKind::WrongArgType {
                                                     span: err.span(),
-                                                    inner: box err.clone(),
+                                                    inner: Box::new(err.clone()),
                                                 }
                                                 .into()
                                             })
@@ -3421,7 +3429,7 @@ impl Analyzer<'_, '_> {
 
                         ErrorKind::WrongArgType {
                             span: arg.span(),
-                            inner: box err.into(),
+                            inner: Box::new(err.into()),
                         }
                     });
 
@@ -3884,7 +3892,7 @@ impl Analyzer<'_, '_> {
                     arg.validate_with(this).report(&mut this.storage).unwrap_or_else(|| TypeOrSpread {
                         span: arg.span(),
                         spread: arg.spread,
-                        ty: box Type::any(arg.expr.span(), Default::default()),
+                        ty: Box::new(Type::any(arg.expr.span(), Default::default())),
                     })
                 })
                 .collect();
@@ -4040,10 +4048,10 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                     types.push(Type::Ref(Ref {
                                         span: *span,
                                         type_name: RTsEntityName::Ident(i.clone()),
-                                        type_args: Some(box TypeParamInstantiation {
+                                        type_args: Some(Box::new(TypeParamInstantiation {
                                             span: type_args.span,
                                             params: vec![ty.clone()],
-                                        }),
+                                        })),
                                         metadata: *metadata,
                                         tracker: Default::default(),
                                     }))

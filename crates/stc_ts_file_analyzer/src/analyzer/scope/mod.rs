@@ -1573,7 +1573,7 @@ impl Analyzer<'_, '_> {
                                             .context("tried to validate a var declared multiple times")
                                             .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                                                 span: err.span(),
-                                                cause: box err.into(),
+                                                cause: Box::new(err.into()),
                                             });
 
                                         if let Err(err) = res {
@@ -1675,7 +1675,7 @@ impl Analyzer<'_, '_> {
                         )
                         .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                             span: err.span(),
-                            cause: box err.into(),
+                            cause: Box::new(err.into()),
                         })
                         .context("tried to validate signatures of overloaded functions")?;
                     }
@@ -1696,7 +1696,7 @@ impl Analyzer<'_, '_> {
                         )
                         .convert_err(|err| ErrorKind::IncompatibleFnOverload {
                             span: orig.span(),
-                            cause: box err.into(),
+                            cause: Box::new(err.into()),
                         })
                         .context("tried to validate signatures of overloaded functions")?;
                     }
@@ -2126,7 +2126,7 @@ impl Expander<'_, '_, '_> {
                             }
 
                             ty @ Type::Enum(..) => {
-                                if let Some(..) = type_args {
+                                if type_args.is_some() {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
                                 verify!(ty);
@@ -2134,7 +2134,7 @@ impl Expander<'_, '_, '_> {
                             }
 
                             ty @ Type::Param(..) => {
-                                if let Some(..) = type_args {
+                                if type_args.is_some() {
                                     Err(ErrorKind::NotGeneric { span })?;
                                 }
 
@@ -2419,7 +2419,7 @@ impl Expander<'_, '_, '_> {
                         let ctxt = self.analyzer.ctx.module_id;
                         //
                         if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
-                            cond_ty.check_type = box ty.into_owned();
+                            cond_ty.check_type = Box::new(ty.into_owned());
                         } else {
                             error!("Failed to find variable named {:?}", id);
                         }
@@ -2579,7 +2579,7 @@ impl Expander<'_, '_, '_> {
                                         ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();
                                     }
 
-                                    element.ty = box ty;
+                                    element.ty = Box::new(ty);
                                 }
 
                                 element
@@ -2634,7 +2634,7 @@ impl Expander<'_, '_, '_> {
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
                     // TODO(kdy1): PERF
-                    let ret_ty = box ret_ty.foldable().fold_with(self);
+                    let ret_ty = Box::new(ret_ty.foldable().fold_with(self));
 
                     return Type::Function(ty::Function {
                         span,

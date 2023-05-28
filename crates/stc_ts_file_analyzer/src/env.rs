@@ -161,7 +161,7 @@ pub trait BuiltInGen: Sized {
                                                     .class
                                                     .type_params
                                                     .validate_with(analyzer)
-                                                    .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
+                                                    .map(|opt| Box::new(opt.expect("builtin: failed to parse type params of a class"))),
                                                 implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
@@ -204,12 +204,12 @@ pub trait BuiltInGen: Sized {
                                             Type::Module(stc_ts_types::Module {
                                                 span: DUMMY_SP,
                                                 name: RTsModuleName::Ident(RIdent::new(id.clone(), DUMMY_SP)),
-                                                exports: box ModuleTypeData {
+                                                exports: Box::new(ModuleTypeData {
                                                     private_vars: Default::default(),
                                                     vars: data.vars,
                                                     private_types: Default::default(),
                                                     types: data.types,
-                                                },
+                                                }),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
                                             })

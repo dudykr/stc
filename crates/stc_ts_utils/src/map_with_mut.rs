@@ -85,13 +85,13 @@ impl MapWithMut for RPropName {
 
 impl MapWithMut for RDecl {
     fn dummy() -> Self {
-        RDecl::Var(box RVarDecl {
+        RDecl::Var(Box::new(RVarDecl {
             node_id: NodeId::invalid(),
             span: DUMMY_SP,
             kind: VarDeclKind::Var,
             declare: false,
             decls: vec![],
-        })
+        }))
     }
 }
 

@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 extern crate proc_macro;
 
 use std::todo;
@@ -382,14 +380,14 @@ fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Id
         .parse(),
         guard: None,
         fat_arrow_token: variant_name.span().as_token(),
-        body: box Expr::Block(ExprBlock {
+        body: Box::new(Expr::Block(ExprBlock {
             attrs: Default::default(),
             label: Default::default(),
             block: Block {
                 brace_token: variant_name.span().as_token(),
                 stmts: from_orig_body,
             },
-        }),
+        })),
         comma: Some(variant_name.span().as_token()),
     };
     let to_orig_arm = Arm {
@@ -404,14 +402,14 @@ fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Id
         .parse(),
         guard: None,
         fat_arrow_token: variant_name.span().as_token(),
-        body: box Expr::Block(ExprBlock {
+        body: Box::new(Expr::Block(ExprBlock {
             attrs: Default::default(),
             label: Default::default(),
             block: Block {
                 brace_token: variant_name.span().as_token(),
                 stmts: to_orig_body,
             },
-        }),
+        })),
         comma: Some(variant_name.span().as_token()),
     };
 
@@ -546,14 +544,14 @@ fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct
         .parse(),
         guard: None,
         fat_arrow_token: struct_name.span().as_token(),
-        body: box Expr::Block(ExprBlock {
+        body: Box::new(Expr::Block(ExprBlock {
             attrs: Default::default(),
             label: Default::default(),
             block: Block {
                 brace_token: struct_name.span().as_token(),
                 stmts: from_orig_body,
             },
-        }),
+        })),
         comma: Some(struct_name.span().as_token()),
     };
     let new_struct_name = struct_name.new_ident_with(|s| format!("R{}", s));
@@ -569,14 +567,14 @@ fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct
         .parse(),
         guard: None,
         fat_arrow_token: struct_name.span().as_token(),
-        body: box Expr::Block(ExprBlock {
+        body: Box::new(Expr::Block(ExprBlock {
             attrs: Default::default(),
             label: Default::default(),
             block: Block {
                 brace_token: struct_name.span().as_token(),
                 stmts: to_orig_body,
             },
-        }),
+        })),
         comma: Some(struct_name.span().as_token()),
     };
 

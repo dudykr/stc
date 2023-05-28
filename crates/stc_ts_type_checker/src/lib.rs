@@ -1,5 +1,4 @@
 //! Full type checker with dependency support.
-#![feature(box_syntax)]
 
 use std::{mem::take, sync::Arc, time::Instant};
 
@@ -172,7 +171,7 @@ impl Checker {
                         self.env.clone(),
                         self.cm.clone(),
                         modules_in_group.comments.clone(),
-                        box &mut storage,
+                        Box::new(&mut storage),
                         self,
                         self.debugger.clone(),
                     );
@@ -189,7 +188,7 @@ impl Checker {
                     }
 
                     // TODO(kdy1): Prevent duplicate work.
-                    if let Some(..) = self.dts_modules.insert(record.id, dts_module) {
+                    if self.dts_modules.insert(record.id, dts_module).is_some() {
                         warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                     }
                 }
@@ -208,7 +207,7 @@ impl Checker {
                                 value: format!("{:?}", module_id).into(),
                                 raw: None,
                             }),
-                            exports: box data,
+                            exports: Box::new(data),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         })
@@ -293,7 +292,7 @@ impl Checker {
                 self.env.clone(),
                 self.cm.clone(),
                 records.comments,
-                box &mut storage,
+                Box::new(&mut storage),
                 self,
                 self.debugger.clone(),
             );
@@ -329,7 +328,7 @@ impl Checker {
                 value: format!("{:?}", module_id).into(),
                 raw: None,
             }),
-            exports: box storage.info.exports,
+            exports: Box::new(storage.info.exports),
             metadata: Default::default(),
             tracker: Default::default(),
         })

@@ -205,7 +205,7 @@ impl Fold<Type> for Simplifier<'_> {
                                 return Type::IndexedAccessType(IndexedAccessType {
                                     span,
                                     readonly,
-                                    obj_type: box Type::Keyword(k),
+                                    obj_type: Box::new(Type::Keyword(k)),
                                     index_type,
                                     metadata: IndexedAccessTypeMetadata {
                                         common: metadata.common,
@@ -224,7 +224,7 @@ impl Fold<Type> for Simplifier<'_> {
                         return Type::IndexedAccessType(IndexedAccessType {
                             span,
                             readonly,
-                            obj_type: box Type::Keyword(k),
+                            obj_type: Box::new(Type::Keyword(k)),
                             index_type,
                             metadata,
                             tracker: Default::default(),
@@ -253,7 +253,7 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly,
-                    obj_type: box obj_type,
+                    obj_type: Box::new(obj_type),
                     index_type,
                     metadata,
                     tracker: Default::default(),
@@ -393,7 +393,7 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly,
-                    obj_type: box Type::TypeLit(TypeLit {
+                    obj_type: Box::new(Type::TypeLit(TypeLit {
                         span,
                         members,
                         metadata: TypeLitMetadata {
@@ -401,7 +401,7 @@ impl Fold<Type> for Simplifier<'_> {
                             ..Default::default()
                         },
                         tracker: Default::default(),
-                    }),
+                    })),
                     index_type,
                     metadata,
                     tracker: Default::default(),
