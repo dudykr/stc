@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 
 use auto_impl::auto_impl;
@@ -131,7 +129,7 @@ impl TypeStore for Single<'_> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&orig_name).cloned() {
-            Some(ty) => if let Some(..) = self.info.exports.vars.insert(id.sym().clone(), ty) {},
+            Some(ty) => if self.info.exports.vars.insert(id.sym().clone(), ty).is_some() {},
             None => self.report(ErrorKind::NoSuchVar { span, name: id }.into()),
         }
     }
@@ -209,14 +207,14 @@ impl<'a> Mode for Single<'a> {
     }
 
     fn subscope(&self) -> Storage {
-        box Single {
+        Box::new(Single {
             parent: Some(self),
             id: self.id,
             top_level_ctxt: self.top_level_ctxt,
             path: self.path.clone(),
             is_dts: self.is_dts,
             info: Default::default(),
-        }
+        })
     }
 }
 
@@ -377,12 +375,12 @@ impl Mode for Group<'_> {
     }
 
     fn subscope(&self) -> Storage {
-        box Group {
+        Box::new(Group {
             parent: Some(self),
             files: self.files.clone(),
             errors: Default::default(),
             info: Default::default(),
-        }
+        })
     }
 }
 
@@ -471,7 +469,7 @@ impl Mode for Builtin {
     }
 
     fn subscope(&self) -> Storage {
-        box Builtin::default()
+        Box::<Builtin>::default()
     }
 }
 

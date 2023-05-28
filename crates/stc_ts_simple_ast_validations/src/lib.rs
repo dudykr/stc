@@ -2,7 +2,6 @@
 //!
 //! Used to reduce compile time.
 
-#![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
 #![allow(incomplete_features)]
