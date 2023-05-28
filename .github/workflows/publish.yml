@@ -452,13 +452,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  publish-wasm-node:
+  publish-wasm:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
 
-    name: Publisg Wasm for node.js
-    needs:
-      - test-all
+    name: Publisg Wasm for ${{ matrix.target }}
+    # needs:
+    #   - test-all
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [nodejs, web]
+
     steps:
       - uses: actions/checkout@v3
 
@@ -473,7 +477,7 @@ jobs:
           path: |
             ~/.cargo/
             **/target/
-          key: ${{ runner.os }}-publish-integration
+          key: ${{ runner.os }}-publish-wasm
 
       - name: Install node dependencies
         run: yarn
@@ -484,52 +488,8 @@ jobs:
       - name: Build
         working-directory: crates/binding-wasm
         run: |
-          wasm-pack build --out-name wasm --release --scope=swc --target nodejs
-          sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm"/g' pkg/package.json
-
-      - name: Publish
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: |
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          (cd crates/binding-wasm/pkg && npm publish --access public)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  publish-wasm-web:
-    if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
-
-    name: Publish Wasm for web
-    needs:
-      - test-all
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/
-            **/target/
-          key: ${{ runner.os }}-publish-integration
-
-      - name: Install node dependencies
-        run: yarn
-
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Build
-        working-directory: crates/binding-wasm
-        run: |
-          wasm-pack build --out-name wasm --release --scope=swc --target nodejs
-          sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm"/g' pkg/package.json
+          wasm-pack build --out-name wasm --release --scope=swc --target ${{ matrix.target }}
+          sed -i -e 's/"name": "@swc\/binding-wasm"/"name": "@swc\/stc-wasm-${{ matrix.target }}"/g' pkg/package.json
 
       - name: Publish
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
