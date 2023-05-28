@@ -1,5 +1,4 @@
 #![allow(incomplete_features)]
-#![feature(box_syntax)]
 #![feature(specialization)]
 
 use rnode::IntoRNode;

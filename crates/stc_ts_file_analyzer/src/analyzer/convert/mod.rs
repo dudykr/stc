@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
                 }
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
-                    ty: box ty,
+                    ty: Box::new(ty),
                     type_params,
                     metadata: AliasMetadata {
                         common: CommonTypeMetadata {
@@ -515,14 +515,14 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        Some(box ty)
+                        Some(Box::new(ty))
                     }
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span, Default::default()))
+                        Some(Box::new(Type::any(d.span, Default::default())))
                     }
                 },
-                None => Some(box Type::any(d.span, Default::default())),
+                None => Some(Box::new(Type::any(d.span, Default::default()))),
             }
         };
 
@@ -548,10 +548,10 @@ impl Analyzer<'_, '_> {
         let type_ann = {
             match d.type_ann.validate_with(self) {
                 Some(v) => match v {
-                    Ok(ty) => Some(box ty),
+                    Ok(ty) => Some(Box::new(ty)),
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span, Default::default()))
+                        Some(Box::new(Type::any(d.span, Default::default())))
                     }
                 },
                 None => Some(box Type::any(d.span, Default::default())),

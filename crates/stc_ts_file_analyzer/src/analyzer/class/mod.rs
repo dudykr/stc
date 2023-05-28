@@ -124,12 +124,12 @@ impl Analyzer<'_, '_> {
         Ok(ty.or(value_ty).map(|ty| match ty {
             Type::Symbol(..) if readonly && is_static => Type::Unique(Unique {
                 span: ty.span(),
-                ty: box Type::Keyword(KeywordType {
+                ty: Box::new(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }),
+                })),
                 metadata: OperatorMetadata { common: ty.metadata() },
                 tracker: Default::default(),
             }),
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
+                    ty: Box::new(ty.unwrap_or_else(|| Type::any(i.id.span, Default::default()))),
                 })
             }
             RTsParamPropParam::Assign(RAssignPat {
@@ -517,7 +517,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
+                    ty: Box::new(ty.unwrap_or_else(|| Type::any(i.id.span, Default::default()))),
                 })
             }
             _ => unreachable!(),
@@ -539,14 +539,14 @@ impl Analyzer<'_, '_> {
                     .flatten()
                     .flatten()
                 {
-                    Some(ty) => box ty,
+                    Some(ty) => Box::new(ty),
                     None => {
                         let e: Option<_> = $e.validate_with(self).transpose()?;
-                        box e.unwrap_or_else(|| {
+                        Box::new(e.unwrap_or_else(|| {
                             let mut ty = Type::any(span, Default::default());
                             self.mark_as_implicitly_typed(&mut ty);
                             ty
-                        })
+                        }))
                     }
                 }
             }};
@@ -623,9 +623,11 @@ impl Analyzer<'_, '_> {
                     Ok((
                         type_params,
                         params,
-                        box declared_ret_ty
-                            .or(inferred_ret_ty)
-                            .unwrap_or_else(|| Type::any(key_span, Default::default())),
+                        Box::new(
+                            declared_ret_ty
+                                .or(inferred_ret_ty)
+                                .unwrap_or_else(|| Type::any(key_span, Default::default())),
+                        ),
                     ))
                 },
             )?;
@@ -841,7 +843,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
+        let ret_ty = Box::new(declared_ret_ty.unwrap_or_else(|| {
             inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
                 Type::Keyword(KeywordType {
                     span: c_span,
@@ -854,7 +856,7 @@ impl Analyzer<'_, '_> {
                     tracker: Default::default(),
                 })
             })
-        });
+        }));
 
         if c.kind != MethodKind::Setter {
             let node_id = c.function.node_id;
@@ -903,7 +905,7 @@ impl Analyzer<'_, '_> {
                     params.get(0).map(|p| p.ty.clone())
                 } else {
                     // TODO: Should emit TS1049 error here
-                    Some(box Type::any(key_span, Default::default()))
+                    Some(Box::new(Type::any(key_span, Default::default())))
                 },
                 is_static: c.is_static,
                 accessibility: c.accessibility,
@@ -1384,8 +1386,7 @@ impl Analyzer<'_, '_> {
             *key,
             RExpr::Member(RMemberExpr {
                 obj: box RExpr::Ident(RIdent {
-                    sym: js_word!("Symbol"),
-                    ..
+                    sym: js_word!("Symbol"), ..
                 }),
                 ..
             })
@@ -1483,7 +1484,7 @@ impl Analyzer<'_, '_> {
                                                 ErrorKind::AssignFailed { left, .. } => left.span(),
                                                 _ => err.span(),
                                             },
-                                            cause: box err,
+                                            cause: Box::new(err),
                                         }
                                         .into()
                                     })
@@ -1611,7 +1612,7 @@ impl Analyzer<'_, '_> {
                         errors.push(
                             ErrorKind::ClassDoesNotImplementMember {
                                 span,
-                                key: box key.into_owned(),
+                                key: Box::new(key.into_owned()),
                             }
                             .into(),
                         );
@@ -1739,7 +1740,7 @@ impl Analyzer<'_, '_> {
                                 // We should add it at same level as class
                                 types_to_register.push((new_ty.clone().into(), super_ty.clone()));
 
-                                let super_ty = box Type::Intersection(Intersection {
+                                let super_ty = Box::new(Type::Intersection(Intersection {
                                     types: i
                                         .types
                                         .iter()
@@ -1754,7 +1755,7 @@ impl Analyzer<'_, '_> {
                                                     .map(|id| {
                                                         Type::Query(QueryType {
                                                             span: c.span,
-                                                            expr: box QueryExpr::TsEntityName(id.clone().into()),
+                                                            expr: Box::new(QueryExpr::TsEntityName(id.clone().into())),
                                                             metadata: QueryTypeMetadata {
                                                                 common: c.metadata.common,
                                                                 ..Default::default()
@@ -1769,10 +1770,10 @@ impl Analyzer<'_, '_> {
                                         })
                                         .collect(),
                                     ..i.clone()
-                                });
+                                }));
 
                                 if has_class_in_super {
-                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(Box::new(RVarDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
@@ -1782,41 +1783,44 @@ impl Analyzer<'_, '_> {
                                             span: i.span,
                                             name: RPat::Ident(RBindingIdent {
                                                 node_id: NodeId::invalid(),
-                                                type_ann: Some(box RTsTypeAnn {
+                                                type_ann: Some(Box::new(RTsTypeAnn {
                                                     node_id: NodeId::invalid(),
                                                     span: DUMMY_SP,
-                                                    type_ann: box super_ty.into(),
-                                                }),
+                                                    type_ann: Box::new(super_ty.into()),
+                                                })),
                                                 id: new_ty.clone(),
                                             }),
                                             init: None,
                                             definite: false,
                                         }],
-                                    })));
+                                    }))));
                                 } else {
-                                    child.data.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
-                                        node_id: NodeId::invalid(),
-                                        span: DUMMY_SP,
-                                        declare: false,
-                                        id: new_ty.clone(),
-                                        // TODO(kdy1): Handle type parameters
-                                        type_params: None,
-                                        type_ann: box super_ty.into(),
-                                    })));
+                                    child
+                                        .data
+                                        .prepend_stmts
+                                        .push(RStmt::Decl(RDecl::TsTypeAlias(Box::new(RTsTypeAliasDecl {
+                                            node_id: NodeId::invalid(),
+                                            span: DUMMY_SP,
+                                            declare: false,
+                                            id: new_ty.clone(),
+                                            // TODO(kdy1): Handle type parameters
+                                            type_params: None,
+                                            type_ann: Box::new(super_ty.into()),
+                                        }))));
                                 }
 
                                 if let Some(m) = &mut child.mutations {
                                     let node_id = c.node_id;
-                                    m.for_classes.entry(node_id).or_default().super_class = Some(box RExpr::Ident(new_ty.clone()));
+                                    m.for_classes.entry(node_id).or_default().super_class = Some(Box::new(RExpr::Ident(new_ty.clone())));
                                 }
-                                Some(box Type::Ref(Ref {
+                                Some(Box::new(Type::Ref(Ref {
                                     span: DUMMY_SP,
                                     type_name: RTsEntityName::Ident(new_ty),
                                     // TODO(kdy1): Handle type parameters
                                     type_args: None,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }))
+                                })))
                             }
                             Type::ClassDef(cls) => {
                                 // check if the constructor of the super class is private.
@@ -1829,9 +1833,9 @@ impl Analyzer<'_, '_> {
                                         };
                                     }
                                 }
-                                Some(box super_ty)
+                                Some(Box::new(super_ty))
                             }
-                            _ => Some(box super_ty),
+                            _ => Some(Box::new(super_ty)),
                         }
                     }
 

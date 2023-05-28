@@ -12,7 +12,6 @@
 #![deny(unreachable_patterns)]
 #![deny(irrefutable_let_patterns)]
 #![feature(box_patterns)]
-#![feature(box_syntax)]
 #![feature(try_blocks)]
 #![feature(specialization)]
 #![recursion_limit = "1024"]
