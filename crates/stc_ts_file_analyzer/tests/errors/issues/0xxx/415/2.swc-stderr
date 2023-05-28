@@ -1,6 +1,6 @@
 TS2322
 
-  x AssignFailed {
+  x SimpleAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             188,
@@ -10,8 +10,8 @@ TS2322
   |         ),
   |         ctxt: #1,
   |     },
-  |     cause: [
-  |         SimpleAssignFailed {
+  |     cause: Some(
+  |         AssignFailed {
   |             span: Span {
   |                 lo: BytePos(
   |                     188,
@@ -19,9 +19,9 @@ TS2322
   |                 hi: BytePos(
   |                     189,
   |                 ),
-  |                 ctxt: #0,
+  |                 ctxt: #1,
   |             },
-  |             cause: Some(
+  |             cause: [
   |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
@@ -30,10 +30,10 @@ TS2322
   |                         hi: BytePos(
   |                             189,
   |                         ),
-  |                         ctxt: #0,
+  |                         ctxt: #1,
   |                     },
   |                     errors: [
-  |                         NoCommonProperty {
+  |                         Errors {
   |                             span: Span {
   |                                 lo: BytePos(
   |                                     188,
@@ -41,14 +41,112 @@ TS2322
   |                                 hi: BytePos(
   |                                     189,
   |                                 ),
-  |                                 ctxt: #1,
+  |                                 ctxt: #0,
   |                             },
+  |                             errors: [
+  |                                 NoCommonProperty {
+  |                                     span: Span {
+  |                                         lo: BytePos(
+  |                                             188,
+  |                                         ),
+  |                                         hi: BytePos(
+  |                                             189,
+  |                                         ),
+  |                                         ctxt: #1,
+  |                                     },
+  |                                 },
+  |                             ],
+  |                         },
+  |                         Errors {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     188,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     189,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             errors: [
+  |                                 NoCommonProperty {
+  |                                     span: Span {
+  |                                         lo: BytePos(
+  |                                             188,
+  |                                         ),
+  |                                         hi: BytePos(
+  |                                             189,
+  |                                         ),
+  |                                         ctxt: #1,
+  |                                     },
+  |                                 },
+  |                             ],
   |                         },
   |                     ],
   |                 },
-  |             ),
+  |                 Errors {
+  |                     span: Span {
+  |                         lo: BytePos(
+  |                             188,
+  |                         ),
+  |                         hi: BytePos(
+  |                             189,
+  |                         ),
+  |                         ctxt: #1,
+  |                     },
+  |                     errors: [
+  |                         Errors {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     188,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     189,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             errors: [
+  |                                 NoCommonProperty {
+  |                                     span: Span {
+  |                                         lo: BytePos(
+  |                                             188,
+  |                                         ),
+  |                                         hi: BytePos(
+  |                                             189,
+  |                                         ),
+  |                                         ctxt: #1,
+  |                                     },
+  |                                 },
+  |                             ],
+  |                         },
+  |                         Errors {
+  |                             span: Span {
+  |                                 lo: BytePos(
+  |                                     188,
+  |                                 ),
+  |                                 hi: BytePos(
+  |                                     189,
+  |                                 ),
+  |                                 ctxt: #0,
+  |                             },
+  |                             errors: [
+  |                                 NoCommonProperty {
+  |                                     span: Span {
+  |                                         lo: BytePos(
+  |                                             188,
+  |                                         ),
+  |                                         hi: BytePos(
+  |                                             189,
+  |                                         ),
+  |                                         ctxt: #1,
+  |                                     },
+  |                                 },
+  |                             ],
+  |                         },
+  |                     ],
+  |                 },
+  |             ],
   |         },
-  |     ],
+  |     ),
   | }
     ,-[$DIR/tests/errors/issues/0xxx/415/2.ts:18:1]
  18 | 
