@@ -124,7 +124,7 @@ TS2322
     `----
 TS2322
 
-  x ObjectAssignFailed {
+  x SimpleAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             191,
@@ -134,8 +134,8 @@ TS2322
   |         ),
   |         ctxt: #0,
   |     },
-  |     errors: [
-  |         NoCommonProperty {
+  |     cause: Some(
+  |         MissingFields {
   |             span: Span {
   |                 lo: BytePos(
   |                     191,
@@ -145,8 +145,11 @@ TS2322
   |                 ),
   |                 ctxt: #0,
   |             },
+  |             fields: [
+  |                 baz: Keyword(string),
+  |             ],
   |         },
-  |     ],
+  |     ),
   | }
     ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidAssignments.ts:13:1]
  13 | 
@@ -156,7 +159,7 @@ TS2322
     `----
 TS2322
 
-  x ObjectAssignFailed {
+  x SimpleAssignFailed {
   |     span: Span {
   |         lo: BytePos(
   |             219,
@@ -166,8 +169,8 @@ TS2322
   |         ),
   |         ctxt: #0,
   |     },
-  |     errors: [
-  |         NoCommonProperty {
+  |     cause: Some(
+  |         MissingFields {
   |             span: Span {
   |                 lo: BytePos(
   |                     219,
@@ -177,8 +180,11 @@ TS2322
   |                 ),
   |                 ctxt: #0,
   |             },
+  |             fields: [
+  |                 0: Keyword(number),
+  |             ],
   |         },
-  |     ],
+  |     ),
   | }
     ,-[$DIR/tests/errors/conformance/types/primitives/invalidVoidAssignments.ts:14:1]
  14 | var g: { baz: string } = 1;
