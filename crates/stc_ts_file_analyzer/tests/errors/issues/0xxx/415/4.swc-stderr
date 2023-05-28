@@ -33,7 +33,7 @@ TS2322
   |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         ObjectAssignFailed {
+  |                         NoCommonProperty {
   |                             span: Span {
   |                                 lo: BytePos(
   |                                     188,
@@ -41,24 +41,8 @@ TS2322
   |                                 hi: BytePos(
   |                                     191,
   |                                 ),
-  |                                 ctxt: #0,
+  |                                 ctxt: #1,
   |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             191,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         a: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
   |                         },
   |                     ],
   |                 },
@@ -73,7 +57,7 @@ TS2322
   |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         ObjectAssignFailed {
+  |                         NoCommonProperty {
   |                             span: Span {
   |                                 lo: BytePos(
   |                                     188,
@@ -81,24 +65,8 @@ TS2322
   |                                 hi: BytePos(
   |                                     191,
   |                                 ),
-  |                                 ctxt: #0,
+  |                                 ctxt: #1,
   |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             191,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         b: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
   |                         },
   |                     ],
   |                 },
@@ -126,7 +94,7 @@ TS2322
   |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         ObjectAssignFailed {
+  |                         NoCommonProperty {
   |                             span: Span {
   |                                 lo: BytePos(
   |                                     188,
@@ -134,24 +102,8 @@ TS2322
   |                                 hi: BytePos(
   |                                     191,
   |                                 ),
-  |                                 ctxt: #0,
+  |                                 ctxt: #1,
   |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             191,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         a: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
   |                         },
   |                     ],
   |                 },
@@ -166,7 +118,7 @@ TS2322
   |                         ctxt: #0,
   |                     },
   |                     errors: [
-  |                         ObjectAssignFailed {
+  |                         NoCommonProperty {
   |                             span: Span {
   |                                 lo: BytePos(
   |                                     188,
@@ -174,24 +126,8 @@ TS2322
   |                                 hi: BytePos(
   |                                     191,
   |                                 ),
-  |                                 ctxt: #0,
+  |                                 ctxt: #1,
   |                             },
-  |                             errors: [
-  |                                 MissingFields {
-  |                                     span: Span {
-  |                                         lo: BytePos(
-  |                                             188,
-  |                                         ),
-  |                                         hi: BytePos(
-  |                                             191,
-  |                                         ),
-  |                                         ctxt: #0,
-  |                                     },
-  |                                     fields: [
-  |                                         b: Keyword(string),
-  |                                     ],
-  |                                 },
-  |                             ],
   |                         },
   |                     ],
   |                 },

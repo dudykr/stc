@@ -1,0 +1,18 @@
+TS2322
+
+  x NoCommonProperty {
+  |     span: Span {
+  |         lo: BytePos(
+  |             320,
+  |         ),
+  |         hi: BytePos(
+  |             321,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  | }
+    ,-[$DIR/tests/errors/conformance/types/assignmentCompatibility/assignmentCompatWithObjectMembersOptionality2/6.ts:15:1]
+ 15 | // disallowed by weak type checking
+ 16 | a = f;
+    : ^
+    `----

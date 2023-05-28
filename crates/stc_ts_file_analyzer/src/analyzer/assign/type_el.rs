@@ -231,6 +231,9 @@ impl Analyzer<'_, '_> {
                                 &rty,
                                 lhs_metadata,
                                 AssignOpts {
+                                    check_for_common_properties: Some(
+                                        opts.check_for_common_properties.unwrap_or(opts.may_check_for_common_properties),
+                                    ),
                                     report_assign_failure_for_missing_properties: opts
                                         .report_assign_failure_for_missing_properties
                                         .or_else(|| {
@@ -597,6 +600,8 @@ impl Analyzer<'_, '_> {
                             lhs_metadata,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
+                                check_for_common_properties: Some(false),
+                                may_check_for_common_properties: false,
                                 ..opts
                             },
                         )
@@ -789,6 +794,10 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
+                if errors.iter().all(|err| matches!(&**err, ErrorKind::NoCommonProperty { .. })) {
+                    return Err(ErrorKind::Errors { span, errors }.into());
+                }
+
                 return Err(ErrorKind::ObjectAssignFailed {
                     span,
                     errors: ErrorKind::flatten(errors),
@@ -1093,6 +1102,33 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Errors { span, errors }.into());
         }
 
+        if opts.check_for_common_properties.unwrap_or_default() && !lhs.is_empty() {
+            // TS2559: If lhs and rhs has no properties in common, it's an assignment error.
+            let mut has_common = false;
+            'outer: for l in lhs {
+                for r in rhs {
+                    if let Some(l_key) = l.key() {
+                        if let Some(r_key) = r.key() {
+                            if l_key.type_eq(r_key) {
+                                has_common = true;
+                                break 'outer;
+                            }
+                        } else {
+                            has_common = true;
+                            break 'outer;
+                        }
+                    } else {
+                        has_common = true;
+                        break 'outer;
+                    }
+                }
+            }
+
+            if !has_common {
+                let err = ErrorKind::NoCommonProperty { span };
+                return Err(err.context("no common property"));
+            }
+        }
         Ok(())
     }
 

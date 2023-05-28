@@ -44,7 +44,7 @@ TS2322
   |                                 ctxt: #0,
   |                             },
   |                             errors: [
-  |                                 MissingFields {
+  |                                 NoCommonProperty {
   |                                     span: Span {
   |                                         lo: BytePos(
   |                                             188,
@@ -52,11 +52,8 @@ TS2322
   |                                         hi: BytePos(
   |                                             189,
   |                                         ),
-  |                                         ctxt: #0,
+  |                                         ctxt: #1,
   |                                     },
-  |                                     fields: [
-  |                                         c: Keyword(string),
-  |                                     ],
   |                                 },
   |                             ],
   |                         },
@@ -71,7 +68,7 @@ TS2322
   |                                 ctxt: #0,
   |                             },
   |                             errors: [
-  |                                 MissingFields {
+  |                                 NoCommonProperty {
   |                                     span: Span {
   |                                         lo: BytePos(
   |                                             188,
@@ -79,11 +76,8 @@ TS2322
   |                                         hi: BytePos(
   |                                             189,
   |                                         ),
-  |                                         ctxt: #0,
+  |                                         ctxt: #1,
   |                                     },
-  |                                     fields: [
-  |                                         d: Keyword(string),
-  |                                     ],
   |                                 },
   |                             ],
   |                         },
@@ -111,7 +105,7 @@ TS2322
   |                                 ctxt: #0,
   |                             },
   |                             errors: [
-  |                                 MissingFields {
+  |                                 NoCommonProperty {
   |                                     span: Span {
   |                                         lo: BytePos(
   |                                             188,
@@ -119,11 +113,8 @@ TS2322
   |                                         hi: BytePos(
   |                                             189,
   |                                         ),
-  |                                         ctxt: #0,
+  |                                         ctxt: #1,
   |                                     },
-  |                                     fields: [
-  |                                         c: Keyword(string),
-  |                                     ],
   |                                 },
   |                             ],
   |                         },
@@ -138,7 +129,7 @@ TS2322
   |                                 ctxt: #0,
   |                             },
   |                             errors: [
-  |                                 MissingFields {
+  |                                 NoCommonProperty {
   |                                     span: Span {
   |                                         lo: BytePos(
   |                                             188,
@@ -146,11 +137,8 @@ TS2322
   |                                         hi: BytePos(
   |                                             189,
   |                                         ),
-  |                                         ctxt: #0,
+  |                                         ctxt: #1,
   |                                     },
-  |                                     fields: [
-  |                                         d: Keyword(string),
-  |                                     ],
   |                                 },
   |                             ],
   |                         },

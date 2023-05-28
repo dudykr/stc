@@ -332,6 +332,7 @@ impl Analyzer<'_, '_> {
 
                         let opts = AssignOpts {
                             span: v_span,
+                            may_check_for_common_properties: true,
                             allow_unknown_rhs: match &**init {
                                 RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) | RExpr::Call(..) => Some(true),
                                 _ => None,

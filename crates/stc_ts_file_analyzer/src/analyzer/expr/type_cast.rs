@@ -444,6 +444,7 @@ impl Analyzer<'_, '_> {
                 disallow_special_assignment_to_empty_class: opts.disallow_special_assignment_to_empty_class,
                 allow_unknown_rhs: Some(true),
                 for_castablity: true,
+                check_for_common_properties: Some(false),
                 ..Default::default()
             },
         ) {
