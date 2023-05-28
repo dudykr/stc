@@ -554,7 +554,7 @@ impl Analyzer<'_, '_> {
                         Some(Box::new(Type::any(d.span, Default::default())))
                     }
                 },
-                None => Some(box Type::any(d.span, Default::default())),
+                None => Some(Box::new(Type::any(d.span, Default::default()))),
             }
         };
         Ok(PropertySignature {
@@ -650,7 +650,7 @@ impl Analyzer<'_, '_> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
-            ty: box node.ty.validate_with(self)?,
+            ty: Box::new(node.ty.validate_with(self)?),
             tracker: Default::default(),
         })
     }
@@ -660,10 +660,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConditionalType) -> VResult<Conditional> {
-        let check_type = box t.check_type.validate_with(self)?;
-        let extends_type = box t.extends_type.validate_with(self)?;
-        let true_type = box t.true_type.validate_with(self)?;
-        let false_type = box t.false_type.validate_with(self)?;
+        let check_type = Box::new(t.check_type.validate_with(self)?);
+        let extends_type = Box::new(t.extends_type.validate_with(self)?);
+        let true_type = Box::new(t.true_type.validate_with(self)?);
+        let false_type = Box::new(t.false_type.validate_with(self)?);
 
         Ok(Conditional {
             span: t.span,
@@ -701,19 +701,19 @@ impl Analyzer<'_, '_> {
         match ty.op {
             TsTypeOperatorOp::KeyOf => Ok(Type::Index(Index {
                 span: ty.span,
-                ty: box ty.type_ann.validate_with(self)?,
+                ty: Box::new(ty.type_ann.validate_with(self)?),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })),
             TsTypeOperatorOp::Unique => Ok(Type::Unique(Unique {
                 span: ty.span,
-                ty: box ty.type_ann.validate_with(self)?,
+                ty: Box::new(ty.type_ann.validate_with(self)?),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })),
             TsTypeOperatorOp::ReadOnly => Ok(Type::Readonly(Readonly {
                 span: ty.span,
-                ty: box ty.type_ann.validate_with(self)?,
+                ty: Box::new(ty.type_ann.validate_with(self)?),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })),
@@ -726,7 +726,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsArrayType) -> VResult<Array> {
         Ok(Array {
             span: node.span,
-            elem_type: box node.elem_type.validate_with(self)?,
+            elem_type: Box::new(node.elem_type.validate_with(self)?),
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -768,7 +768,7 @@ impl Analyzer<'_, '_> {
             let mut params: Vec<_> = t.params.validate_with(child)?;
             params.freeze();
 
-            let mut ret_ty = box t.type_ann.validate_with(child)?;
+            let mut ret_ty = Box::new(t.type_ann.validate_with(child)?);
 
             if !child.config.is_builtin {
                 for param in params.iter() {
@@ -834,7 +834,7 @@ impl Analyzer<'_, '_> {
                 if type_args.as_ref().unwrap().params.len() == 1 {
                     return Ok(Type::Array(Array {
                         span: t.span,
-                        elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                        elem_type: Box::new(type_args.unwrap().params.into_iter().next().unwrap()),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -844,12 +844,12 @@ impl Analyzer<'_, '_> {
                 if type_args.as_ref().unwrap().params.len() == 1 {
                     return Ok(Type::Readonly(Readonly {
                         span,
-                        ty: box Type::Array(Array {
+                        ty: Box::new(Type::Array(Array {
                             span: t.span,
-                            elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                            elem_type: Box::new(type_args.unwrap().params.into_iter().next().unwrap()),
                             metadata: Default::default(),
                             tracker: Default::default(),
-                        }),
+                        })),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsRestType) -> VResult<RestType> {
         Ok(RestType {
             span: t.span,
-            ty: box t.type_ann.validate_with(self)?,
+            ty: Box::new(t.type_ann.validate_with(self)?),
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -982,7 +982,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsOptionalType) -> VResult<OptionalType> {
         Ok(OptionalType {
             span: t.span,
-            ty: box t.type_ann.validate_with(self)?,
+            ty: Box::new(t.type_ann.validate_with(self)?),
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -994,7 +994,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeQuery) -> VResult<QueryType> {
         Ok(QueryType {
             span: t.span,
-            expr: box t.expr_name.validate_with(self)?,
+            expr: Box::new(t.expr_name.validate_with(self)?),
             metadata: Default::default(),
             tracker: Default::default(),
         })
@@ -1039,8 +1039,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
         let span = t.span;
 
-        let obj_type = box t.obj_type.validate_with(self)?;
-        let index_type = box t.index_type.validate_with(self)?.freezed();
+        let obj_type = Box::new(t.obj_type.validate_with(self)?);
+        let index_type = Box::new(t.index_type.validate_with(self)?.freezed());
 
         if index_type.is_undefined() || index_type.is_bool() || index_type.is_void() {
             return Err(ErrorKind::CannotUseTypeAsIndexIndex { span: index_type.span() }.into());
@@ -1053,7 +1053,7 @@ impl Analyzer<'_, '_> {
             };
             let prop = Key::Computed(ComputedKey {
                 span,
-                expr: box RExpr::Invalid(RInvalid { span }),
+                expr: Box::new(RExpr::Invalid(RInvalid { span })),
                 ty: index_type.clone(),
             });
             let prop_ty = self
@@ -1073,7 +1073,7 @@ impl Analyzer<'_, '_> {
                     if err.is_property_not_found() && !is_valid_index_type(&prop.ty()) {
                         ErrorKind::TypeCannotBeUsedForIndex {
                             span,
-                            prop: box prop.clone(),
+                            prop: Box::new(prop.clone()),
                         }
                     } else {
                         err
@@ -1402,7 +1402,7 @@ impl Analyzer<'_, '_> {
                             };
                             Type::Rest(RestType {
                                 span,
-                                ty: box elem_ty,
+                                ty: Box::new(elem_ty),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
@@ -1415,7 +1415,7 @@ impl Analyzer<'_, '_> {
                         span,
                         // TODO?
                         label: None,
-                        ty: box ty,
+                        ty: Box::new(ty),
                         tracker: Default::default(),
                     }
                 })
