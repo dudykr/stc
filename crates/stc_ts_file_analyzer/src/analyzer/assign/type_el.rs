@@ -1104,7 +1104,13 @@ impl Analyzer<'_, '_> {
                                 has_common = true;
                                 break 'outer;
                             }
+                        } else {
+                            has_common = true;
+                            break 'outer;
                         }
+                    } else {
+                        has_common = true;
+                        break 'outer;
                     }
                 }
             }
