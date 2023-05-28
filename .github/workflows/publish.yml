@@ -1,11 +1,11 @@
-name: Publish (node)
+name: Publish
 
 env:
   DEBUG: napi:*
   APP_NAME: stc
   MACOSX_DEPLOYMENT_TARGET: "10.13"
   CARGO_INCREMENTAL: 0
-  CARGO_PROFILE_RELEASE_LTO: true
+  CARGO_PROFILE_RELEASE_LTO: "fat"
   CI: "1"
 
 on:
@@ -381,8 +381,9 @@ jobs:
           run: |
             set -e
             ls -la
-  publish:
-    name: npm
+
+  test-all:
+    name: Ok to publish
     runs-on: ubuntu-latest
     needs:
       - test-linux-x64-gnu-binding
@@ -390,6 +391,14 @@ jobs:
       - test-linux-arm-gnueabihf-binding
       - test-macOS-windows-binding
       - test-linux-aarch64-musl-binding
+    steps:
+      - run: echo true
+
+  publish-npm:
+    name: npm
+    runs-on: ubuntu-latest
+    needs:
+      - test-all
     steps:
       - uses: actions/checkout@v3
 
@@ -439,6 +448,54 @@ jobs:
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
           npm publish --access public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-wasm:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
+
+    name: Publisg Wasm for ${{ matrix.target }}
+    # needs:
+    #   - test-all
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [nodejs, web]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/
+            **/target/
+          key: ${{ runner.os }}-publish-wasm
+
+      - name: Install node dependencies
+        run: yarn
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build
+        working-directory: crates/binding_wasm
+        run: |
+          wasm-pack build --out-name wasm --release --scope=swc --target ${{ matrix.target }}
+          sed -i -e 's/"name": "@swc\/binding_wasm"/"name": "@swc\/stc-wasm-${{ matrix.target }}"/g' pkg/package.json
+
+      - name: Publish
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          (cd crates/binding_wasm/pkg && npm publish --access public)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
