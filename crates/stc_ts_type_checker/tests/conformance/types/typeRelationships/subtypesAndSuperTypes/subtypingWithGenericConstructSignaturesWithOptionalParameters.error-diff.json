@@ -1,25 +1,6 @@
 {
-  "required_errors": {
-    "TS2430": 14
-  },
-  "required_error_lines": {
-    "TS2430": [
-      100,
-      104,
-      113,
-      117,
-      121,
-      130,
-      134,
-      147,
-      151,
-      155,
-      160,
-      164,
-      168,
-      172
-    ]
-  },
+  "required_errors": {},
+  "required_error_lines": {},
   "extra_errors": {
     "TS2430": 4
   },
