@@ -487,6 +487,7 @@ jobs:
           sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm"/g' pkg/package.json
 
       - name: Publish
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
           (cd pkg && npm publish --access public)
@@ -529,6 +530,7 @@ jobs:
           sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm"/g' pkg/package.json
 
       - name: Publish
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
           (cd pkg && npm publish --access public)
