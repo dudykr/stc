@@ -1150,7 +1150,7 @@ impl Analyzer<'_, '_> {
                                 prev.metadata.prevent_tuple_to_array = true;
 
                                 let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
-                                new_elem.ty = box new_elem.ty.generalize_lit();
+                                new_elem.ty = Box::new(new_elem.ty.generalize_lit());
                                 prev.elems.push(new_elem);
 
                                 Type::Tuple(prev).freezed()
@@ -1280,7 +1280,7 @@ impl Analyzer<'_, '_> {
                 inferred,
                 &Type::Array(Array {
                     span: param.span(),
-                    elem_type: box elem_type.clone(),
+                    elem_type: Box::new(elem_type.clone()),
                     metadata: ArrayMetadata {
                         common: param.metadata(),
                         ..Default::default()
@@ -1460,7 +1460,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default()))),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
@@ -1484,7 +1484,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default()))),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })

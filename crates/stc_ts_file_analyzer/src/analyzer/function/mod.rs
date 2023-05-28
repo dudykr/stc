@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
                 span: f.span,
                 type_params,
                 params,
-                ret_ty: box declared_ret_ty.unwrap_or(inferred_return_type),
+                ret_ty: Box::new(declared_ret_ty.unwrap_or(inferred_return_type)),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -391,13 +391,13 @@ impl Analyzer<'_, '_> {
                     //    });
                     //}
 
-                    element.ty = box Type::any(
+                    element.ty = Box::new(Type::any(
                         span,
                         KeywordTypeMetadata {
                             common: element.ty.metadata(),
                             ..Default::default()
                         },
-                    );
+                    ));
                 }
             };
 

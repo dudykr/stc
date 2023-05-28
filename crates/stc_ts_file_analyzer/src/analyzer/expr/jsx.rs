@@ -210,7 +210,7 @@ impl Analyzer<'_, '_> {
                                     },
                                     optional: false,
                                     params: Default::default(),
-                                    type_ann: Some(box value),
+                                    type_ann: Some(Box::new(value)),
                                     type_params: None,
                                     metadata: Default::default(),
                                     accessor: Default::default(),

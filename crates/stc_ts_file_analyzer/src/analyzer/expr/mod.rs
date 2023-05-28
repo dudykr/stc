@@ -1668,7 +1668,10 @@ impl Analyzer<'_, '_> {
 
                             ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
                                 if !is_static && self.key_matches(span, &member.key, prop, false) {
-                                    let ty = *member.value.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default())));
+                                    let ty = *member
+                                        .value
+                                        .clone()
+                                        .unwrap_or_else(|| Box::new(Type::any(span, Default::default())));
 
                                     return Ok(ty);
                                 }
@@ -4252,8 +4255,8 @@ impl Analyzer<'_, '_> {
                 let span = prop.span().with_ctxt(SyntaxContext::empty());
                 Key::Computed(ComputedKey {
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::any(span, Default::default()),
+                    expr: Box::new(RExpr::Invalid(RInvalid { span })),
+                    ty: Box::new(Type::any(span, Default::default())),
                 })
             });
         prop.freeze();
@@ -4392,8 +4395,8 @@ impl Analyzer<'_, '_> {
                 let span = prop.span().with_ctxt(SyntaxContext::empty());
                 Key::Computed(ComputedKey {
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::any(span, Default::default()),
+                    expr: Box::new(RExpr::Invalid(RInvalid { span })),
+                    ty: Box::new(Type::any(span, Default::default())),
                 })
             });
         prop.freeze();

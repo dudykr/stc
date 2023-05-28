@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 // TODO?
                                 label: None,
-                                ty: box ty,
+                                ty: Box::new(ty),
                                 tracker: Default::default(),
                             })
                         })
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     return Ok(Type::Rest(RestType {
                         span,
-                        ty: box self.default_type_for_pat(&r.arg)?,
+                        ty: Box::new(self.default_type_for_pat(&r.arg)?),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
                     match props {
                         RObjectPatProp::KeyValue(p) => {
                             let key = p.key.validate_with(self)?;
-                            let ty = box self.default_type_for_pat(&p.value)?;
+                            let ty = Box::new(self.default_type_for_pat(&p.value)?);
 
                             members.push(TypeElement::Property(PropertySignature {
                                 span: DUMMY_SP,
@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
                             }
                             Type::Instance(Instance {
                                 span,
-                                ty: box ty,
+                                ty: Box::new(ty),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })
@@ -371,7 +371,7 @@ impl Analyzer<'_, '_> {
 
                                     ty = Type::Array(Array {
                                         span: tuple.span,
-                                        elem_type: box Type::new_union(tuple.span, types),
+                                        elem_type: Box::new(Type::new_union(tuple.span, types)),
                                         metadata: ArrayMetadata {
                                             common: tuple.metadata.common,
                                             ..Default::default()
@@ -447,7 +447,7 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => false,
                 _ => true,
             },
-            ty: box ty,
+            ty: Box::new(ty),
         })
     }
 }
