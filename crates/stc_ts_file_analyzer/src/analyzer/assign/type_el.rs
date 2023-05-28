@@ -794,7 +794,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
-                if errors.iter().any(|err| matches!(&**err, ErrorKind::NoCommonProperty { .. })) {
+                if errors.iter().all(|err| matches!(&**err, ErrorKind::NoCommonProperty { .. })) {
                     return Err(ErrorKind::Errors { span, errors }.into());
                 }
 
