@@ -189,6 +189,8 @@ pub(crate) struct AssignOpts {
     /// If true, `assign` will fail if the params of the LHS is longer than the
     /// RHS.
     pub ensure_params_length: bool,
+
+    pub check_for_common_properties: bool,
 }
 
 #[derive(Default)]

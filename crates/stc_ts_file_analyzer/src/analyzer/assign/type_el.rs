@@ -231,6 +231,7 @@ impl Analyzer<'_, '_> {
                                 &rty,
                                 lhs_metadata,
                                 AssignOpts {
+                                    check_for_common_properties: true,
                                     report_assign_failure_for_missing_properties: opts
                                         .report_assign_failure_for_missing_properties
                                         .or_else(|| {
@@ -1093,7 +1094,7 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Errors { span, errors }.into());
         }
 
-        if !opts.allow_missing_fields {
+        if opts.check_for_common_properties {
             // TS2559: If lhs and rhs has no properties in common, it's an assignment error.
             let mut has_common = false;
             'outer: for l in lhs {
