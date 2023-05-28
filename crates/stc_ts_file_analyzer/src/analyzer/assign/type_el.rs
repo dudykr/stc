@@ -1121,8 +1121,8 @@ impl Analyzer<'_, '_> {
             }
 
             if !has_common {
-                let err = ErrorKind::NoCommonProperty { span }.into();
-                return Err(ErrorKind::Errors { span, errors: vec![err] }.context("no common property"));
+                let err = ErrorKind::NoCommonProperty { span };
+                return Err(err.context("no common property"));
             }
         } else {
             print_backtrace();
