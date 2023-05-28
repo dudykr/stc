@@ -188,7 +188,7 @@ impl Checker {
                     }
 
                     // TODO(kdy1): Prevent duplicate work.
-                    if let Some(..) = self.dts_modules.insert(record.id, dts_module) {
+                    if self.dts_modules.insert(record.id, dts_module).is_some() {
                         warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                     }
                 }

@@ -1,5 +1,4 @@
 #![recursion_limit = "256"]
-#![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
 #![allow(clippy::if_same_then_else)]
@@ -214,7 +213,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() -> Result<(), String> +
     })
     .ok()??;
 
-    Some(box move || {
+    Some(Box::new(move || {
         let mut last = None;
         for spec in specs {
             let res = catch_unwind(|| {
@@ -230,7 +229,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() -> Result<(), String> +
         }
 
         Ok(())
-    })
+    }))
 }
 
 /// If `spec` is [Some], it's use to construct filename.
@@ -692,7 +691,7 @@ where
         let test_fn = op(entry.path().to_path_buf());
         let (test_fn, ignore) = match test_fn {
             Some(v) => (v, false),
-            None => ((box || Ok(())) as Box<dyn FnOnce() -> Result<(), String> + Send + Sync>, true),
+            None => ((Box::new(|| Ok(()))) as Box<dyn FnOnce() -> Result<(), String> + Send + Sync>, true),
         };
         let ignore = ignore || test_name.starts_with('.') || test_name.contains("::.");
 
@@ -705,12 +704,17 @@ where
                 compile_fail: Default::default(),
                 no_run: Default::default(),
                 ignore_message: Default::default(),
+                source_file: "",
+                start_line: 0,
+                start_col: 0,
+                end_line: 0,
+                end_col: 0,
             },
-            testfn: DynTestFn(box move || {
+            testfn: DynTestFn(Box::new(move || {
                 eprintln!("\n\n========== Running test {}\nSource:\n{}\n", file_name, input);
 
                 test_fn()
-            }),
+            })),
         });
     }
 
