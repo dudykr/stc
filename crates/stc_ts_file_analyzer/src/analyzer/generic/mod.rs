@@ -889,16 +889,19 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )?;
-                    self.infer_type(
-                        span,
-                        inferred,
-                        &p.ret_ty,
-                        &a.ret_ty,
-                        InferTypeOpts {
-                            ignore_builtin_object_interface: true,
-                            ..opts
-                        },
-                    )?;
+
+                    if !opts.do_not_use_return_type {
+                        self.infer_type(
+                            span,
+                            inferred,
+                            &p.ret_ty,
+                            &a.ret_ty,
+                            InferTypeOpts {
+                                ignore_builtin_object_interface: true,
+                                ..opts
+                            },
+                        )?;
+                    }
 
                     if !opts.for_fn_assignment {
                         if let Some(arg_type_params) = &a.type_params {

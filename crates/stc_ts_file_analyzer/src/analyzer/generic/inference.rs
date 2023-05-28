@@ -110,6 +110,8 @@ pub(crate) struct InferTypeOpts {
     /// differently, to avoid inferring `([...T], [...T])` & `(['a', 'b'], ['c',
     /// ['d'])`  as a tuple with 4 elements.
     pub rest_type_index: Option<usize>,
+
+    pub do_not_use_return_type: bool,
 }
 
 bitflags! {
