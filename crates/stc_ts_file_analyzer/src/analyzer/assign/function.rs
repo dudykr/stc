@@ -4,7 +4,7 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_map, force_dump_type_as_string},
+    debug::{dump_type_map, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
@@ -382,10 +382,13 @@ impl Analyzer<'_, '_> {
                 r_params,
                 AssignOpts {
                     is_params_of_method_definition: false,
+                    disallow_rest_pat_in_left: true,
                     ..opts
                 },
             )
             .context("tried to assign parameters of a function to parameters of another function")?;
+
+            dbg!(&l_params, &r_params);
         }
 
         if let Some(l_ret_ty) = l_ret_ty {
@@ -834,6 +837,12 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("assign_params");
 
         let span = opts.span;
+        let disallow_rest_in_lhs = opts.disallow_rest_pat_in_left;
+
+        let opts = AssignOpts {
+            disallow_rest_pat_in_left: false,
+            ..opts
+        };
 
         let mut li = l.iter().filter(|p| {
             !matches!(
@@ -853,6 +862,9 @@ impl Analyzer<'_, '_> {
                 })
             )
         });
+
+        let l_count = li.clone().count();
+        let r_count = ri.clone().count();
 
         let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
@@ -917,6 +929,7 @@ impl Analyzer<'_, '_> {
                         ..opts
                     },
                 ) {
+                    dbg!();
                     continue;
                 }
             }
@@ -924,22 +937,32 @@ impl Analyzer<'_, '_> {
             // A rest pattern is always the last
             match (&l.pat, &r.pat) {
                 (RPat::Rest(..), RPat::Rest(..)) => {
+                    dbg!();
                     self.assign_param(data, l, r, opts)
                         .with_context(|| "tried to assign a rest parameter to another rest parameter".to_string())?;
                     break;
                 }
 
                 (RPat::Rest(..), _) => {
-                    // TODO(kdy1): Implement correct logic
+                    if disallow_rest_in_lhs {
+                        dbg!();
+                        print_backtrace();
+                        // TODO(kdy1): Implement correct logic
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("l is rest but r is not"));
+                    }
 
                     return Ok(());
                 }
 
                 (_, RPat::Rest(..)) => {
+                    dbg!();
                     // If r is an iterator, we should assign each element to l.
                     if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
+                        dbg!();
                         if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
-                            for idx in 0..max(li.clone().count(), ri.clone().count()) {
+                            dbg!();
+                            for idx in 0..max(l_count, r_count) {
+                                dbg!();
                                 let le = self.access_property(
                                     span,
                                     &l_iter,
@@ -979,30 +1002,34 @@ impl Analyzer<'_, '_> {
                                     },
                                 )?;
 
-                                self.assign_param_type(data, &le, &re, opts).with_context(|| {
+                                dbg!(self.assign_param_type(data, &le, &re, opts).with_context(|| {
                                     format!(
                                         "tried to assign a rest parameter to parameters; r_ty = {}",
                                         force_dump_type_as_string(&r.ty)
                                     )
-                                })?;
+                                }))?;
                             }
                         }
 
-                        return Ok(());
+                        continue;
                     }
 
+                    dbg!();
                     self.assign_param(data, l, r, opts)
                         .context("tried to assign a rest parameter to parameters where r-ty is not a tuple")?;
 
                     for l in li {
+                        dbg!();
                         self.assign_param(data, l, r, opts)
                             .context("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)")?;
                     }
+                    dbg!();
 
                     return Ok(());
                 }
 
                 _ => {
+                    dbg!();
                     self.assign_param(
                         data,
                         l,
@@ -1012,6 +1039,7 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )?;
+                    dbg!();
                 }
             }
         }

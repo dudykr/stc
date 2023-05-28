@@ -1,0 +1,32 @@
+TS2322
+
+  x AssignFailed {
+  |     span: Span {
+  |         lo: BytePos(
+  |             199,
+  |         ),
+  |         hi: BytePos(
+  |             200,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: [
+  |         SimpleAssignFailed {
+  |             span: Span {
+  |                 lo: BytePos(
+  |                     199,
+  |                 ),
+  |                 hi: BytePos(
+  |                     200,
+  |                 ),
+  |                 ctxt: #1,
+  |             },
+  |             cause: None,
+  |         },
+  |     ],
+  | }
+   ,-[$DIR/tests/errors/conformance/types/assignmentCompatibility/assignmentCompatWithCallSignaturesWithRestParameters/1.ts:3:1]
+ 3 | declare var a: (...args: number[]) => number; // ok, same number of required params
+ 4 | a = (x?: string) => 1; // error, incompatible type
+   : ^
+   `----
