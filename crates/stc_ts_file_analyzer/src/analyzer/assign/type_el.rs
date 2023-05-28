@@ -1093,6 +1093,27 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Errors { span, errors }.into());
         }
 
+        {
+            // TS2559: If lhs and rhs has no properties in common, it's an assignment error.
+            let mut has_common = false;
+            'outer: for l in lhs {
+                for r in rhs {
+                    if let Some(l_key) = l.key() {
+                        if let Some(r_key) = r.key() {
+                            if l_key.type_eq(r_key) {
+                                has_common = true;
+                                break 'outer;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !has_common {
+                let err = ErrorKind::NoCommonProperty { span }.into();
+                return Err(ErrorKind::Errors { span, errors: vec![err] }.context("no common property"));
+            }
+        }
         Ok(())
     }
 

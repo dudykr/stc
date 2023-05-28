@@ -137,6 +137,10 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS2559
+    NoCommonProperty {
+        span: Span,
+    },
     /// TS7026
     ImplicitAnyBecauseThereIsNoJsxInterface {
         span: Span,
@@ -2165,6 +2169,8 @@ impl ErrorKind {
             ErrorKind::TypeCannotBeUsedForIndex { .. } => 2538,
 
             ErrorKind::ImplicitAnyBecauseThereIsNoJsxInterface { .. } => 7026,
+
+            ErrorKind::NoCommonProperty { .. } => 2559,
 
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 
