@@ -1,6 +1,6 @@
-TS2322
+TS2559
 
-  x ObjectAssignFailed {
+  x NoCommonProperty {
   |     span: Span {
   |         lo: BytePos(
   |             283,
@@ -8,21 +8,8 @@ TS2322
   |         hi: BytePos(
   |             284,
   |         ),
-  |         ctxt: #0,
+  |         ctxt: #1,
   |     },
-  |     errors: [
-  |         NoCommonProperty {
-  |             span: Span {
-  |                 lo: BytePos(
-  |                     283,
-  |                 ),
-  |                 hi: BytePos(
-  |                     284,
-  |                 ),
-  |                 ctxt: #1,
-  |             },
-  |         },
-  |     ],
   | }
     ,-[$DIR/tests/errors/conformance/types/assignmentCompatibility/assignmentCompatWithObjectMembersOptionality2/4.ts:15:1]
  15 | // disallowed by weak type checking

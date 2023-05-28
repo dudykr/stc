@@ -22,7 +22,7 @@ TS2322
   |                 ctxt: #1,
   |             },
   |             errors: [
-  |                 ObjectAssignFailed {
+  |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
   |                             188,
@@ -46,7 +46,7 @@ TS2322
   |                         },
   |                     ],
   |                 },
-  |                 ObjectAssignFailed {
+  |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
   |                             188,
@@ -83,7 +83,7 @@ TS2322
   |                 ctxt: #1,
   |             },
   |             errors: [
-  |                 ObjectAssignFailed {
+  |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
   |                             188,
@@ -107,7 +107,7 @@ TS2322
   |                         },
   |                     ],
   |                 },
-  |                 ObjectAssignFailed {
+  |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
   |                             188,

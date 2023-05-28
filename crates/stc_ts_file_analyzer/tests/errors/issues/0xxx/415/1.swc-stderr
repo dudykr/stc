@@ -22,7 +22,7 @@ TS2322
   |                 ctxt: #0,
   |             },
   |             cause: Some(
-  |                 ObjectAssignFailed {
+  |                 Errors {
   |                     span: Span {
   |                         lo: BytePos(
   |                             188,
