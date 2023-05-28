@@ -486,16 +486,16 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build
-        working-directory: crates/binding-wasm
+        working-directory: crates/binding_wasm
         run: |
           wasm-pack build --out-name wasm --release --scope=swc --target ${{ matrix.target }}
-          sed -i -e 's/"name": "@swc\/binding-wasm"/"name": "@swc\/stc-wasm-${{ matrix.target }}"/g' pkg/package.json
+          sed -i -e 's/"name": "@swc\/binding_wasm"/"name": "@swc\/stc-wasm-${{ matrix.target }}"/g' pkg/package.json
 
       - name: Publish
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          (cd crates/binding-wasm/pkg && npm publish --access public)
+          (cd crates/binding_wasm/pkg && npm publish --access public)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
