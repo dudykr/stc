@@ -4,7 +4,7 @@ use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
+    debug::{dump_type_as_string, force_dump_type_as_string},
     DebugExt, ErrorKind, Errors,
 };
 use stc_ts_type_ops::Fix;
@@ -1128,8 +1128,6 @@ impl Analyzer<'_, '_> {
                 let err = ErrorKind::NoCommonProperty { span };
                 return Err(err.context("no common property"));
             }
-        } else {
-            print_backtrace();
         }
         Ok(())
     }
