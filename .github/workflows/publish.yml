@@ -482,7 +482,6 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build
-        working-directory: bindings/binding_core_wasm
         run: |
           wasm-pack build --out-name wasm --release --scope=swc --target nodejs
           sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm"/g' pkg/package.json
@@ -490,7 +489,7 @@ jobs:
       - name: Publish
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          (cd bindings/binding_core_wasm/pkg && npm publish --access public)
+          (cd pkg && npm publish --access public)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -525,15 +524,14 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build
-        working-directory: bindings/binding_core_wasm
         run: |
-          wasm-pack build --out-name wasm-web --release --scope=swc --target web
-          sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm-web"/g' pkg/package.json
+          wasm-pack build --out-name wasm --release --scope=swc --target nodejs
+          sed -i -e 's/"name": "@swc\/binding_core_wasm"/"name": "@swc\/wasm"/g' pkg/package.json
 
       - name: Publish
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          (cd bindings/binding_core_wasm/pkg && npm publish --access public)
+          (cd pkg && npm publish --access public)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
