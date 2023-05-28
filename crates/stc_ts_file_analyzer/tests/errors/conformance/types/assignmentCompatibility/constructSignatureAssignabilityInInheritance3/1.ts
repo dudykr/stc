@@ -8,12 +8,10 @@ class Derived2 extends Derived { baz: string; }
 
 // base type with non-generic call signatures
 interface A {
-    a7: new (x: (arg: Base) => Derived) => (r: Base) => Derived2;
+    a2: new (x: number) => string[];
 }
 
 
-export interface I3 extends A {
-    // valid, no inferences for V so it defaults to Derived2
-    a7: new <T extends Base, U extends Derived, V extends Derived2>(x: (arg: T) => U) => (r: T) => V;
+export interface I2<T, U> extends A {
+    a2: new (x: T) => U[]; // error, no contextual signature instantiation since I2.a2 is not generic
 }
-
