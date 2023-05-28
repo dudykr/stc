@@ -84,7 +84,7 @@ impl Analyzer<'_, '_> {
 
                     return Some(Err(ErrorKind::NoCallSignature {
                         span: opts.span,
-                        callee: box r.clone(),
+                        callee: Box::new(r.clone()),
                     }
                     .into()));
                 }
@@ -122,7 +122,7 @@ impl Analyzer<'_, '_> {
 
                     return Some(Err(ErrorKind::NoCallSignature {
                         span: opts.span,
-                        callee: box r.clone(),
+                        callee: Box::new(r.clone()),
                     }
                     .into()));
                 }
@@ -168,7 +168,7 @@ impl Analyzer<'_, '_> {
                     l,
                     &Type::Array(Array {
                         span: r.span(),
-                        elem_type: box r_elem.clone(),
+                        elem_type: Box::new(r_elem.clone()),
                         metadata: ArrayMetadata { common: r.metadata() },
                         tracker: Default::default(),
                     }),

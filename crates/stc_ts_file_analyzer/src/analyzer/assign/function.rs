@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: Box::new(l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default()))),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: Box::new(r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default()))),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: Box::new(l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default()))),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: Box::new(r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default()))),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })
@@ -796,13 +796,13 @@ impl Analyzer<'_, '_> {
         res.convert_err(|err| match err {
             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                 span,
-                cause: Some(box err.into()),
+                cause: Some(Box::new(err.into())),
             },
             ErrorKind::Errors { ref errors, .. } => {
                 if errors.iter().all(|err| matches!(&**err, ErrorKind::MissingFields { .. })) {
                     ErrorKind::SimpleAssignFailed {
                         span,
-                        cause: Some(box err.into()),
+                        cause: Some(Box::new(err.into())),
                     }
                 } else {
                     err
