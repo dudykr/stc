@@ -378,22 +378,23 @@ impl Analyzer<'_, '_> {
                                 if let Some(r_pat) = left_element {
                                     match r_pat {
                                         RPat::Assign(p) => {
-                                            let elem_ty = box p
-                                                .right
-                                                .validate_with_default(self)?
-                                                .fold_with(&mut Widen { tuple_to_array: false })
-                                                .union_with_undefined(span)
-                                                .freezed();
+                                            let elem_ty = Box::new(
+                                                p.right
+                                                    .validate_with_default(self)?
+                                                    .fold_with(&mut Widen { tuple_to_array: false })
+                                                    .union_with_undefined(span)
+                                                    .freezed(),
+                                            );
 
                                             left_elems.push(TupleElement {
                                                 span,
                                                 label: None,
-                                                ty: box Type::Optional(OptionalType {
+                                                ty: Box::new(Type::Optional(OptionalType {
                                                     span,
                                                     ty: elem_ty,
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
-                                                }),
+                                                })),
                                                 tracker: Default::default(),
                                             });
                                         }
@@ -401,12 +402,12 @@ impl Analyzer<'_, '_> {
                                             left_elems.push(TupleElement {
                                                 span,
                                                 label: None,
-                                                ty: box Type::Optional(OptionalType {
+                                                ty: Box::new(Type::Optional(OptionalType {
                                                     span,
-                                                    ty: box Type::any(span, Default::default()),
+                                                    ty: Box::new(Type::any(span, Default::default())),
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),
-                                                }),
+                                                })),
                                                 tracker: Default::default(),
                                             });
                                         }
@@ -482,13 +483,15 @@ impl Analyzer<'_, '_> {
                                     elems.push(TupleElement {
                                         span: elem.span(),
                                         label: Some(*elem.arg.clone()),
-                                        ty: box Type::Rest(RestType {
-                                            span: elem.span,
-                                            ty: box rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        })
-                                        .freezed(),
+                                        ty: Box::new(
+                                            Type::Rest(RestType {
+                                                span: elem.span,
+                                                ty: Box::new(rest_ty.unwrap_or_else(|| Type::any(elem.span, Default::default()))),
+                                                metadata: Default::default(),
+                                                tracker: Default::default(),
+                                            })
+                                            .freezed(),
+                                        ),
                                         tracker: Default::default(),
                                     });
 
@@ -550,7 +553,7 @@ impl Analyzer<'_, '_> {
                                 elems.push(TupleElement {
                                     span: elem.span(),
                                     label: Some(elem.clone()),
-                                    ty: box elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed(),
+                                    ty: Box::new(elem_ty.unwrap_or_else(|| Type::any(elem.span(), Default::default())).freezed()),
                                     tracker: Default::default(),
                                 });
                             }
@@ -706,7 +709,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             .flatten()
-                            .map(|v| box v);
+                            .map(|v| Box::new(v));
 
                             real = self.append_type_element(
                                 real,
@@ -895,7 +898,7 @@ impl Analyzer<'_, '_> {
                                     key,
                                     optional,
                                     params: Vec::new(),
-                                    type_ann: real_property_type.flatten().map(|v| box v),
+                                    type_ann: real_property_type.flatten().map(|v| Box::new(v)),
                                     type_params: None,
                                     metadata: Default::default(),
                                     accessor: Default::default(),
@@ -1097,10 +1100,10 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Ref(Ref {
                         span,
                         type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
-                        type_args: Some(box TypeParamInstantiation {
+                        type_args: Some(Box::new(TypeParamInstantiation {
                             span,
                             params: vec![ty.clone().into_owned(), keys],
-                        }),
+                        })),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -1133,7 +1136,7 @@ impl Analyzer<'_, '_> {
 
             Ok(Type::Array(Array {
                 span,
-                elem_type: box ty,
+                elem_type: Box::new(ty),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })

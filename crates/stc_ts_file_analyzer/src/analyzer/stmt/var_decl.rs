@@ -148,10 +148,10 @@ impl Analyzer<'_, '_> {
                 let is_symbol_call = matches!(
                     &**init,
                     RExpr::Call(RCallExpr {
-                        callee: RCallee::Expr(box RExpr::Ident(RIdent {
-                            sym: js_word!("Symbol"),
-                            ..
-                        })),
+                        callee:
+                            RCallee::Expr(box RExpr::Ident(RIdent {
+                                sym: js_word!("Symbol"), ..
+                            })),
                         ..
                     })
                 );
@@ -254,7 +254,7 @@ impl Analyzer<'_, '_> {
                             Type::Instance(Instance {
                                 span: ty.span(),
                                 metadata: InstanceMetadata { common: ty.metadata() },
-                                ty: box ty,
+                                ty: Box::new(ty),
                                 tracker: Default::default(),
                             })
                         })();
@@ -266,10 +266,11 @@ impl Analyzer<'_, '_> {
                             if matches!(
                                 ty.normalize(),
                                 Type::Query(QueryType {
-                                    expr: box QueryExpr::TsEntityName(RTsEntityName::TsQualifiedName(box RTsQualifiedName {
-                                        left: RTsEntityName::Ident(RIdent { sym: js_word!("this"), .. }),
-                                        ..
-                                    })),
+                                    expr:
+                                        box QueryExpr::TsEntityName(RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                                            left: RTsEntityName::Ident(RIdent { sym: js_word!("this"), .. }),
+                                            ..
+                                        })),
                                     ..
                                 })
                             ) || self.ctx.in_class_member
@@ -285,10 +286,10 @@ impl Analyzer<'_, '_> {
                                         // ```
                                         Type::Query(QueryType {
                                             span,
-                                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                                            expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
                                                 "globalThis".into(),
                                                 span.with_ctxt(SyntaxContext::empty()),
-                                            ))),
+                                            )))),
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         })
@@ -438,7 +439,7 @@ impl Analyzer<'_, '_> {
                             ty.freeze();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
-                                    let ret_ty = box f.ret_ty.clone().generalize_lit();
+                                    let ret_ty = Box::new(f.ret_ty.clone().generalize_lit());
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 
@@ -509,7 +510,7 @@ impl Analyzer<'_, '_> {
                                             // It's `unique symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => Type::Unique(Unique {
                                                 span: *span,
-                                                ty: box Type::Keyword(KeywordType {
+                                                ty: Box::new(Type::Keyword(KeywordType {
                                                     span: *span,
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                                     metadata: KeywordTypeMetadata {
@@ -517,7 +518,7 @@ impl Analyzer<'_, '_> {
                                                         ..Default::default()
                                                     },
                                                     tracker: Default::default(),
-                                                }),
+                                                })),
                                                 metadata: OperatorMetadata {
                                                     common: *common,
                                                     ..Default::default()
@@ -554,7 +555,7 @@ impl Analyzer<'_, '_> {
                                             elem_type: match constraint {
                                                 Some(_constraint) => {
                                                     // TODO(kdy1): We need something smarter
-                                                    box Type::Keyword(KeywordType {
+                                                    Box::new(Type::Keyword(KeywordType {
                                                         span: *elem_span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                                         metadata: KeywordTypeMetadata {
@@ -562,9 +563,9 @@ impl Analyzer<'_, '_> {
                                                             ..Default::default()
                                                         },
                                                         tracker: Default::default(),
-                                                    })
+                                                    }))
                                                 }
-                                                None => box Type::Keyword(KeywordType {
+                                                None => Box::new(Type::Keyword(KeywordType {
                                                     span: *elem_span,
                                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                                     metadata: KeywordTypeMetadata {
@@ -572,7 +573,7 @@ impl Analyzer<'_, '_> {
                                                         ..Default::default()
                                                     },
                                                     tracker: Default::default(),
-                                                }),
+                                                })),
                                             },
                                             metadata: *metadata,
                                             tracker: Default::default(),
@@ -601,7 +602,7 @@ impl Analyzer<'_, '_> {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(i.node_id).or_default().ty = Some(Type::Query(QueryType {
                                             span,
-                                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
+                                            expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone()))),
                                             metadata: Default::default(),
                                             tracker: Default::default(),
                                         }));
@@ -658,13 +659,13 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     // Widen tuple types
-                                    element.ty = box Type::any(
+                                    element.ty = Box::new(Type::any(
                                         span,
                                         KeywordTypeMetadata {
                                             common: element.ty.metadata(),
                                             ..Default::default()
                                         },
-                                    );
+                                    ));
 
                                     if self.rule().no_implicit_any {
                                         match v.name {
@@ -734,7 +735,7 @@ impl Analyzer<'_, '_> {
 
                             Type::Instance(Instance {
                                 span: i.id.span,
-                                ty: box ty,
+                                ty: Box::new(ty),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             })

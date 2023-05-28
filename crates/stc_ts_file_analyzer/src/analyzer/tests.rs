@@ -55,7 +55,14 @@ where
 
         let handler = Arc::new(handler);
         swc_common::GLOBALS.set(&crate::tests::GLOBALS, || {
-            let analyzer = Analyzer::root(ENV.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let analyzer = Analyzer::root(
+                ENV.clone(),
+                cm.clone(),
+                Default::default(),
+                Box::new(&mut storage),
+                &NoopLoader,
+                None,
+            );
             let mut tester = Tester {
                 cm: cm.clone(),
                 analyzer,
@@ -148,7 +155,7 @@ where
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm, Default::default(), Box::new(&mut storage), &NoopLoader, None);
             module.visit_with(&mut analyzer);
 
             let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);

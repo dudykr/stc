@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
         if rhs.is_bool() || rhs.is_str() || rhs.is_num() || rhs.is_never() || rhs.is_symbol() {
             return Err(ErrorKind::RightHandSideMustBeObject {
                 span,
-                ty: box rhs.clone().into_owned(),
+                ty: Box::new(rhs.clone().into_owned()),
             }
             .into());
         }
@@ -242,7 +242,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Ref(Ref {
                     span: m.span,
                     type_name: RTsEntityName::Ident(RIdent::new("Extract".into(), DUMMY_SP)),
-                    type_args: Some(box TypeParamInstantiation {
+                    type_args: Some(Box::new(TypeParamInstantiation {
                         span: DUMMY_SP,
                         params: vec![
                             constraint.clone(),
@@ -256,7 +256,7 @@ impl Analyzer<'_, '_> {
                                 tracker: Default::default(),
                             }),
                         ],
-                    }),
+                    })),
                     metadata: RefMetadata {
                         common: m.metadata.common,
                         ..Default::default()
@@ -286,18 +286,18 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(RIdent::new("Extract".into(), span.with_ctxt(SyntaxContext::empty()))),
-                type_args: Some(box TypeParamInstantiation {
+                type_args: Some(Box::new(TypeParamInstantiation {
                     span,
                     params: vec![
                         Type::Index(Index {
                             span,
-                            ty: box rhs.into_owned(),
+                            ty: Box::new(rhs.into_owned()),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }),
                         string,
                     ],
-                }),
+                })),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -335,8 +335,7 @@ impl Analyzer<'_, '_> {
             child.ctx.allow_ref_declaring = matches!(
                 left,
                 RVarDeclOrPat::VarDecl(box RVarDecl {
-                    kind: VarDeclKind::Var,
-                    ..
+                    kind: VarDeclKind::Var, ..
                 })
             );
 

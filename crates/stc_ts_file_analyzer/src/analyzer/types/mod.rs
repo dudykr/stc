@@ -268,10 +268,11 @@ impl Analyzer<'_, '_> {
                     // Leaf types.
                     Type::Array(arr) => {
                         // TODO(kdy1): Optimize
-                        let elem_type = box self
-                            .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
-                            .context("tried to normalize the type of the element of an array type")?
-                            .into_owned();
+                        let elem_type = Box::new(
+                            self.normalize(span, Cow::Borrowed(&arr.elem_type), opts)
+                                .context("tried to normalize the type of the element of an array type")?
+                                .into_owned(),
+                        );
 
                         elem_type.assert_valid();
 
@@ -437,7 +438,7 @@ impl Analyzer<'_, '_> {
                                         if opts.preserve_global_this {
                                             return Ok(Cow::Owned(Type::Query(QueryType {
                                                 span: actual_span,
-                                                expr: box QueryExpr::TsEntityName(e.clone()),
+                                                expr: Box::new(QueryExpr::TsEntityName(e.clone())),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
                                             })));
@@ -537,16 +538,18 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::IndexedAccessType(iat) => {
-                        let obj_ty = box self
-                            .normalize(span, Cow::Borrowed(&iat.obj_type), opts)
-                            .context("tried to normalize object type")?
-                            .into_owned();
+                        let obj_ty = Box::new(
+                            self.normalize(span, Cow::Borrowed(&iat.obj_type), opts)
+                                .context("tried to normalize object type")?
+                                .into_owned(),
+                        );
 
-                        let index_ty = box self
-                            .normalize(span, Cow::Borrowed(&iat.index_type), opts)
-                            .context("tried to normalize index type")?
-                            .into_owned()
-                            .freezed();
+                        let index_ty = Box::new(
+                            self.normalize(span, Cow::Borrowed(&iat.index_type), opts)
+                                .context("tried to normalize index type")?
+                                .into_owned()
+                                .freezed(),
+                        );
 
                         let ctx = Ctx {
                             disallow_unknown_object_property: true,
@@ -557,7 +560,7 @@ impl Analyzer<'_, '_> {
                             &obj_ty,
                             &Key::Computed(ComputedKey {
                                 span: actual_span,
-                                expr: box RExpr::Invalid(RInvalid { span: actual_span }),
+                                expr: Box::new(RExpr::Invalid(RInvalid { span: actual_span })),
                                 ty: index_ty.clone(),
                             }),
                             TypeOfMode::RValue,
@@ -636,17 +639,17 @@ impl Analyzer<'_, '_> {
                                     },
                                     type_ann: None,
                                 }),
-                                ty: box Type::Keyword(KeywordType {
+                                ty: Box::new(Type::Keyword(KeywordType {
                                     span: e.span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })),
                             };
                             let index = TypeElement::Index(IndexSignature {
                                 span: actual_span,
                                 params: vec![index_param],
-                                type_ann: Some(box Type::new_union(actual_span, vec![string, variant])),
+                                type_ann: Some(Box::new(Type::new_union(actual_span, vec![string, variant]))),
                                 readonly: false,
                                 is_static: false,
                             });
@@ -782,10 +785,10 @@ impl Analyzer<'_, '_> {
         if worked {
             Ok(Some(Type::Conditional(Conditional {
                 span,
-                check_type: box check_type.clone(),
-                extends_type: box extends_type.clone(),
-                true_type: box true_type.into_owned(),
-                false_type: box false_type.into_owned(),
+                check_type: Box::new(check_type.clone()),
+                extends_type: Box::new(extends_type.clone()),
+                true_type: Box::new(true_type.into_owned()),
+                false_type: Box::new(false_type.into_owned()),
                 metadata,
                 tracker: Default::default(),
             })))
@@ -1234,7 +1237,7 @@ impl Analyzer<'_, '_> {
                                 if new.is_never() {
                                     return never!();
                                 }
-                                prev.type_ann = Some(box new);
+                                prev.type_ann = Some(Box::new(new));
                                 continue 'outer;
                             }
                         }
@@ -1279,7 +1282,7 @@ impl Analyzer<'_, '_> {
             // For self-references in classes, we preserve `instanceof` type.
             Type::Ref(..) | Type::Query(..) => Type::Instance(Instance {
                 span: actual_span,
-                ty: box ty,
+                ty: Box::new(ty),
                 metadata: InstanceMetadata {
                     common: metadata,
                     ..Default::default()
@@ -1385,7 +1388,7 @@ impl Analyzer<'_, '_> {
                 }
                 Err(ErrorKind::ObjectIsPossiblyUndefinedWithType {
                     span,
-                    ty: box ty.into_owned(),
+                    ty: Box::new(ty.into_owned()),
                 }
                 .into())
             }
@@ -1868,7 +1871,7 @@ impl Analyzer<'_, '_> {
                     },
                     optional: false,
                     params: Default::default(),
-                    type_ann: Some(box Type::Keyword(KeywordType {
+                    type_ann: Some(Box::new(Type::Keyword(KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         metadata: KeywordTypeMetadata {
@@ -1876,7 +1879,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                         tracker: Default::default(),
-                    })),
+                    }))),
                     type_params: Default::default(),
                     metadata: Default::default(),
                     accessor: Accessor {
@@ -1972,8 +1975,8 @@ impl Analyzer<'_, '_> {
             (TypeElement::Property(to), TypeElement::Property(from)) => {
                 if let Some(to_type) = &to.type_ann {
                     if let Some(from_type) = from.type_ann {
-                        to.type_ann = Some(
-                            box Type::Intersection(Intersection {
+                        to.type_ann = Some(Box::new(
+                            Type::Intersection(Intersection {
                                 span: to_type.span(),
                                 types: vec![*to_type.clone(), *from_type],
                                 metadata: Default::default(),
@@ -1981,7 +1984,7 @@ impl Analyzer<'_, '_> {
                             })
                             .fixed()
                             .freezed(),
-                        );
+                        ));
                     }
                 }
 
@@ -1991,8 +1994,8 @@ impl Analyzer<'_, '_> {
             (TypeElement::Index(to), TypeElement::Index(from)) => {
                 if let Some(to_type) = &to.type_ann {
                     if let Some(from_type) = from.type_ann {
-                        to.type_ann = Some(
-                            box Type::Intersection(Intersection {
+                        to.type_ann = Some(Box::new(
+                            Type::Intersection(Intersection {
                                 span: to_type.span(),
                                 types: vec![*to_type.clone(), *from_type],
                                 metadata: Default::default(),
@@ -2000,7 +2003,7 @@ impl Analyzer<'_, '_> {
                             })
                             .fixed()
                             .freezed(),
-                        );
+                        ));
                     }
                 }
 
@@ -2127,14 +2130,14 @@ impl Analyzer<'_, '_> {
                         )
                         .ok()
                         .map(|value| value.freezed())
-                        .map(|value| box value),
+                        .map(|value| Box::new(value)),
                     Type::Union(Union {
                         types,
                         span: union_span,
                         metadata,
                         tracker,
-                    }) => Some(
-                        box Type::Union(Union {
+                    }) => Some(Box::new(
+                        Type::Union(Union {
                             types: types
                                 .iter()
                                 .map(|inner_ty| {
@@ -2160,7 +2163,7 @@ impl Analyzer<'_, '_> {
                             tracker: *tracker,
                         })
                         .freezed(),
-                    ),
+                    )),
                     _ => None,
                 };
 
@@ -2176,7 +2179,7 @@ impl Analyzer<'_, '_> {
                 let arg = Type::Param(TypeParam {
                     span: *param_span,
                     name: name.clone(),
-                    constraint: Some(box constraint),
+                    constraint: Some(Box::new(constraint)),
                     default: default.clone(),
                     metadata: *metadata,
                     tracker: Default::default(),
@@ -2284,7 +2287,7 @@ impl Analyzer<'_, '_> {
 
                 Err(ErrorKind::NamespaceNotFound {
                     span,
-                    name: box name,
+                    name: Box::new(name),
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
                 }
@@ -2293,7 +2296,7 @@ impl Analyzer<'_, '_> {
             RExpr::Ident(i) if &*i.sym == "globalThis" => Ok(()),
             RExpr::Ident(_) => Err(ErrorKind::TypeNotFound {
                 span,
-                name: box name,
+                name: Box::new(name),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }

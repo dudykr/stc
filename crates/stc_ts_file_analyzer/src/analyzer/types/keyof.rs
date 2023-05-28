@@ -361,7 +361,7 @@ impl Analyzer<'_, '_> {
                 Type::Param(..) => {
                     return Ok(Type::Index(Index {
                         span,
-                        ty: box ty.into_owned(),
+                        ty: Box::new(ty.into_owned()),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
