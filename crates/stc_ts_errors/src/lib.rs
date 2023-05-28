@@ -1708,7 +1708,8 @@ impl ErrorKind {
             // TS2739: Missing properties with a type name
             // TS2740: Missing properties with type names
             // TS2741: Missing properties with comparison-like error message
-            2739 | 2740 | 2741 => 2322,
+            // TS2559: No common properties
+            2739 | 2740 | 2741 | 2559 => 2322,
 
             // TS4113: Cannot have override
             // TS4117: Cannot have override with spelling suggestion
