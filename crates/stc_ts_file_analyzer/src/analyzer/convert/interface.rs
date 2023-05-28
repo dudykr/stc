@@ -55,6 +55,7 @@ impl Analyzer<'_, '_> {
                         allow_missing_fields: true,
                         skip_call_and_constructor_elem: true,
                         treat_array_as_interfaces: true,
+                        enable_do_not_use_return_type_while_inference: true,
                         ..Default::default()
                     },
                 )?;

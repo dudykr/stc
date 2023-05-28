@@ -192,6 +192,8 @@ pub(crate) struct AssignOpts {
 
     pub check_for_common_properties: Option<bool>,
     pub may_check_for_common_properties: bool,
+
+    pub enable_do_not_use_return_type_while_inference: bool,
 }
 
 #[derive(Default)]
