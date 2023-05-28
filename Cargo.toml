@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/binding-wasm"]
+members = ["crates/binding_wasm"]
 
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
