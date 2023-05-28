@@ -2,7 +2,6 @@
 //!
 //! This crate is used to reduce compile time.
 #![feature(box_patterns)]
-#![feature(box_syntax)]
 #![feature(specialization)]
 #![allow(incomplete_features)]
 #![allow(clippy::needless_update)]
