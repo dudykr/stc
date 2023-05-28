@@ -207,11 +207,11 @@ impl From<Predicate> for RTsType {
 impl From<IndexedAccessType> for RTsType {
     fn from(t: IndexedAccessType) -> Self {
         let obj_type = match t.obj_type.normalize() {
-            Type::Intersection(..) | Type::Union(..) => box RTsType::TsParenthesizedType(RTsParenthesizedType {
+            Type::Intersection(..) | Type::Union(..) => Box::new(RTsType::TsParenthesizedType(RTsParenthesizedType {
                 node_id: NodeId::invalid(),
                 span: t.obj_type.span(),
                 type_ann: t.obj_type.into(),
-            }),
+            })),
             _ => t.obj_type.into(),
         };
 
@@ -251,10 +251,10 @@ impl From<Conditional> for RTsType {
         RTsType::TsConditionalType(RTsConditionalType {
             node_id: NodeId::invalid(),
             span: t.span,
-            check_type: box (*t.check_type).into(),
-            extends_type: box (*t.extends_type).into(),
-            true_type: box (*t.true_type).into(),
-            false_type: box (*t.false_type).into(),
+            check_type: Box::new((*t.check_type).into()),
+            extends_type: Box::new((*t.extends_type).into()),
+            true_type: Box::new((*t.true_type).into()),
+            false_type: Box::new((*t.false_type).into()),
         })
     }
 }
@@ -287,11 +287,11 @@ impl From<Array> for RTsType {
                 return RTsType::TsArrayType(RTsArrayType {
                     node_id: NodeId::invalid(),
                     span: t.span,
-                    elem_type: box RTsType::TsParenthesizedType(RTsParenthesizedType {
+                    elem_type: Box::new(RTsType::TsParenthesizedType(RTsParenthesizedType {
                         node_id: NodeId::invalid(),
                         span: t.elem_type.span(),
-                        type_ann: box t.elem_type.into(),
-                    }),
+                        type_ann: Box::new(t.elem_type.into()),
+                    })),
                 })
             }
             _ => {}
@@ -299,7 +299,7 @@ impl From<Array> for RTsType {
         RTsType::TsArrayType(RTsArrayType {
             node_id: NodeId::invalid(),
             span: t.span,
-            elem_type: box (*t.elem_type).into(),
+            elem_type: Box::new((*t.elem_type).into()),
         })
     }
 }
@@ -309,11 +309,11 @@ impl From<Union> for RTsType {
         RTsType::TsParenthesizedType(RTsParenthesizedType {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_ann: box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
+            type_ann: Box::new(RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
                 node_id: NodeId::invalid(),
                 span: t.span,
                 types: t.types.into_iter().map(From::from).collect(),
-            })),
+            }))),
         })
     }
 }
@@ -323,11 +323,11 @@ impl From<Intersection> for RTsType {
         RTsType::TsParenthesizedType(RTsParenthesizedType {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_ann: box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(RTsIntersectionType {
+            type_ann: Box::new(RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(RTsIntersectionType {
                 node_id: NodeId::invalid(),
                 span: t.span,
                 types: t.types.into_iter().map(From::from).collect(),
-            })),
+            }))),
         })
     }
 }
@@ -339,7 +339,7 @@ impl From<Function> for RTsType {
             span: t.span,
             params: t.params.into_iter().map(From::from).collect(),
             type_params: t.type_params.map(From::from).map(Box::new),
-            type_ann: box t.ret_ty.into(),
+            type_ann: Box::new(t.ret_ty.into()),
         }))
     }
 }
@@ -351,7 +351,7 @@ impl From<super::Constructor> for RTsType {
             span: t.span,
             params: t.params.into_iter().map(From::from).collect(),
             type_params: t.type_params.map(From::from).map(Box::new),
-            type_ann: box t.type_ann.into(),
+            type_ann: Box::new(t.type_ann.into()),
             is_abstract: t.is_abstract,
         }))
     }
@@ -372,7 +372,7 @@ impl From<Type> for RTsTypeAnn {
         RTsTypeAnn {
             node_id: NodeId::invalid(),
             span: t.span(),
-            type_ann: box t.into(),
+            type_ann: Box::new(t.into()),
         }
     }
 }
@@ -385,7 +385,7 @@ impl From<Box<Type>> for RTsTypeAnn {
 
 impl From<Box<Type>> for Box<RTsType> {
     fn from(t: Box<Type>) -> Self {
-        box (*t).into()
+        Box::new((*t).into())
     }
 }
 
@@ -461,11 +461,11 @@ impl From<EnumVariant> for RTsType {
             Some(name) => RTsType::TsTypeRef(RTsTypeRef {
                 node_id: NodeId::invalid(),
                 span: t.span,
-                type_name: RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                type_name: RTsEntityName::TsQualifiedName(Box::new(RTsQualifiedName {
                     node_id: NodeId::invalid(),
                     left: t.def.id.clone().into(),
                     right: RIdent::new(name, DUMMY_SP),
-                }),
+                })),
                 type_params: None,
             }),
             None => RTsType::TsTypeRef(RTsTypeRef {
