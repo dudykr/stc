@@ -381,7 +381,7 @@ jobs:
           run: |
             set -e
             ls -la
-  publish:
+  publish-npm:
     name: npm
     runs-on: ubuntu-latest
     needs:
