@@ -15,6 +15,20 @@
       41
     ]
   },
-  "extra_errors": {},
-  "extra_error_lines": {}
+  "extra_errors": {
+    "TS2322": 9
+  },
+  "extra_error_lines": {
+    "TS2322": [
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41
+    ]
+  }
 }
