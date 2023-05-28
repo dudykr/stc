@@ -50,7 +50,7 @@ impl VisitMut<RBlockStmt> for DceForDts<'_> {
 }
 
 impl VisitMut<RFunction> for DceForDts<'_> {
-    fn visit_mut(&mut self, mut node: &mut RFunction) {
+    fn visit_mut(&mut self, node: &mut RFunction) {
         node.is_generator = false;
         node.is_async = false;
 
@@ -72,10 +72,10 @@ impl VisitMut<RVarDecl> for DceForDts<'_> {
             node.decls.iter_mut().for_each(|node| {
                 if let Some(box RExpr::Lit(RLit::Num(..))) = node.init {
                     node.init = None;
-                    node.name.set_ty(Some(box RTsType::TsKeywordType(RTsKeywordType {
+                    node.name.set_ty(Some(Box::new(RTsType::TsKeywordType(RTsKeywordType {
                         span: DUMMY_SP,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
-                    })))
+                    }))))
                 }
             });
         }
@@ -113,11 +113,11 @@ impl VisitMut<RVarDeclarator> for DceForDts<'_> {
         if let RPat::Ident(ref mut i) = node.name {
             if i.type_ann.is_none() {
                 if let Some(ty) = self.info.private_vars.get(&i.id.clone().into()) {
-                    i.type_ann = Some(box RTsTypeAnn {
+                    i.type_ann = Some(Box::new(RTsTypeAnn {
                         node_id: NodeId::invalid(),
                         span: DUMMY_SP,
-                        type_ann: box ty.clone().into(),
-                    });
+                        type_ann: Box::new(ty.clone().into()),
+                    }));
                 }
             }
         }
@@ -149,7 +149,7 @@ impl VisitMut<RFnDecl> for DceForDts<'_> {
         }
 
         node.function.return_type = self.get_mapped(&node.ident.clone().into(), |ty| match ty {
-            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(box RTsTypeAnn::from((**ret_ty).clone())),
+            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(Box::new(RTsTypeAnn::from((**ret_ty).clone()))),
             _ => None,
         });
     }
