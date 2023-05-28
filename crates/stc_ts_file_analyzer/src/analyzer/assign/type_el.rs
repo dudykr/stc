@@ -4,7 +4,7 @@ use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{
-    debug::{dump_type_as_string, force_dump_type_as_string},
+    debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace},
     DebugExt, ErrorKind, Errors,
 };
 use stc_ts_type_ops::Fix;
@@ -231,7 +231,9 @@ impl Analyzer<'_, '_> {
                                 &rty,
                                 lhs_metadata,
                                 AssignOpts {
-                                    check_for_common_properties: Some(opts.check_for_common_properties.unwrap_or(true)),
+                                    check_for_common_properties: Some(
+                                        opts.check_for_common_properties.unwrap_or(opts.may_check_for_common_properties),
+                                    ),
                                     report_assign_failure_for_missing_properties: opts
                                         .report_assign_failure_for_missing_properties
                                         .or_else(|| {
@@ -1120,6 +1122,8 @@ impl Analyzer<'_, '_> {
                 let err = ErrorKind::NoCommonProperty { span }.into();
                 return Err(ErrorKind::Errors { span, errors: vec![err] }.context("no common property"));
             }
+        } else {
+            print_backtrace();
         }
         Ok(())
     }

@@ -191,6 +191,7 @@ pub(crate) struct AssignOpts {
     pub ensure_params_length: bool,
 
     pub check_for_common_properties: Option<bool>,
+    pub may_check_for_common_properties: bool,
 }
 
 #[derive(Default)]

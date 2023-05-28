@@ -894,6 +894,7 @@ impl Analyzer<'_, '_> {
                             ty,
                             AssignOpts {
                                 span: i.id.span,
+                                may_check_for_common_properties: true,
                                 ..opts.assign
                             },
                         )?;
