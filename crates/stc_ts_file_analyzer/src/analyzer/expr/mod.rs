@@ -177,10 +177,10 @@ impl Analyzer<'_, '_> {
                     if !self.scope.is_this_defined() {
                         return Ok(Type::Query(QueryType {
                             span,
-                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                            expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
                                 "globalThis".into(),
                                 span.with_ctxt(SyntaxContext::empty()),
-                            ))),
+                            )))),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }));
@@ -787,8 +787,8 @@ impl Analyzer<'_, '_> {
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
                     span: prop.span(),
-                    ty: box ty,
-                    expr: box prop.clone(),
+                    ty: Box::new(ty),
+                    expr: Box::new(prop.clone()),
                 })
                 .map(Key::Computed)
         } else {
@@ -994,7 +994,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default()))),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             });
@@ -1171,8 +1171,8 @@ impl Analyzer<'_, '_> {
                 warn!("Creating a indexed access type from a type literal");
                 let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
-                    obj_type: box obj.clone(),
-                    index_type: box prop.ty().into_owned(),
+                    obj_type: Box::new(obj.clone()),
+                    index_type: Box::new(prop.ty().into_owned()),
                     readonly: false,
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -1449,8 +1449,8 @@ impl Analyzer<'_, '_> {
                             let res = if sym == "name" {
                                 Err(ErrorKind::NoSuchProperty {
                                     span,
-                                    obj: Some(box obj.clone()),
-                                    prop: Some(box Key::Normal { span, sym: sym.clone() }),
+                                    obj: Some(Box::new(obj.clone())),
+                                    prop: Some(Box::new(Key::Normal { span, sym: sym.clone() })),
                                 }
                                 .into())
                             } else {
@@ -1467,11 +1467,11 @@ impl Analyzer<'_, '_> {
                             return res.convert_err(|err| match err {
                                 ErrorKind::NoSuchVar { span, name } => ErrorKind::NoSuchProperty {
                                     span,
-                                    obj: Some(box obj.clone()),
-                                    prop: Some(box Key::Normal {
+                                    obj: Some(Box::new(obj.clone())),
+                                    prop: Some(Box::new(Key::Normal {
                                         span,
                                         sym: name.sym().clone(),
-                                    }),
+                                    })),
                                 },
                                 _ => err,
                             });
@@ -1484,11 +1484,11 @@ impl Analyzer<'_, '_> {
                                 .convert_err(|err| match err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
                                         span,
-                                        obj: Some(box obj.clone()),
-                                        prop: Some(box Key::Normal {
+                                        obj: Some(Box::new(obj.clone())),
+                                        prop: Some(Box::new(Key::Normal {
                                             span,
                                             sym: name.sym().clone(),
-                                        }),
+                                        })),
                                     },
                                     _ => err,
                                 });
@@ -1606,7 +1606,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(*property
                                         .value
                                         .clone()
-                                        .unwrap_or_else(|| box Type::any(span, KeywordTypeMetadata { ..Default::default() })));
+                                        .unwrap_or_else(|| Box::new(Type::any(span, KeywordTypeMetadata { ..Default::default() }))));
                                 }
                             }
 
@@ -1622,8 +1622,8 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::UsePropBeforeInit {
                         span,
-                        obj: Some(box obj.clone()),
-                        prop: Some(box prop.clone()),
+                        obj: Some(Box::new(obj.clone())),
+                        prop: Some(Box::new(prop.clone())),
                     }
                     .context("tried to access this in a static class member"));
                 }
@@ -1668,7 +1668,7 @@ impl Analyzer<'_, '_> {
 
                             ClassMember::Property(member @ ClassProperty { is_static, .. }) => {
                                 if !is_static && self.key_matches(span, &member.key, prop, false) {
-                                    let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+                                    let ty = *member.value.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default())));
 
                                     return Ok(ty);
                                 }
@@ -1728,7 +1728,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly: false,
-                        obj_type: box Type::This(this.clone()),
+                        obj_type: Box::new(Type::This(this.clone())),
                         index_type: prop_ty,
                         metadata: Default::default(),
                         tracker: Default::default(),
@@ -1756,13 +1756,13 @@ impl Analyzer<'_, '_> {
                             ClassMember::Property(property) => {
                                 if self.key_matches(*span, &property.key, prop, false) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
-                                        box Type::any(
+                                        Box::new(Type::any(
                                             *span,
                                             KeywordTypeMetadata {
                                                 common: metadata.common,
                                                 ..Default::default()
                                             },
-                                        )
+                                        ))
                                     }));
                                 }
                             }
@@ -1781,8 +1781,8 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::NoSuchProperty {
                         span: *span,
-                        obj: Some(box obj.clone()),
-                        prop: Some(box prop.clone()),
+                        obj: Some(Box::new(obj.clone())),
+                        prop: Some(Box::new(prop.clone())),
                     }
                     .into());
                 }
@@ -1805,8 +1805,8 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::NoSuchProperty {
                         span,
-                        obj: Some(box obj.clone()),
-                        prop: Some(box prop.clone()),
+                        obj: Some(Box::new(obj.clone())),
+                        prop: Some(Box::new(prop.clone())),
                     }
                     .context("tried to access property of `this`"));
                 }
@@ -1919,8 +1919,8 @@ impl Analyzer<'_, '_> {
             Type::Symbol(..) => {
                 return Err(ErrorKind::NoSuchProperty {
                     span,
-                    obj: Some(box obj.clone()),
-                    prop: Some(box prop.clone()),
+                    obj: Some(Box::new(obj.clone())),
+                    prop: Some(Box::new(prop.clone())),
                 }
                 .into())
             }
@@ -2087,7 +2087,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
-                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
+                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| Box::new(obj.clone())),
                                     is_abstract: false,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
@@ -2186,7 +2186,7 @@ impl Analyzer<'_, '_> {
 
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
-                    Key::Normal { span, sym } => box Type::Lit(LitType {
+                    Key::Normal { span, sym } => Box::new(Type::Lit(LitType {
                         span: span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Str(RStr {
                             span: *span,
@@ -2195,19 +2195,19 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::Num(n) => box Type::Lit(LitType {
+                    })),
+                    Key::Num(n) => Box::new(Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::BigInt(n) => box Type::Lit(LitType {
+                    })),
+                    Key::BigInt(n) => Box::new(Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })),
                     Key::Private(..) => {
                         unreachable!()
                     }
@@ -2222,7 +2222,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box obj,
+                    obj_type: Box::new(obj),
                     index_type: prop_ty,
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -2232,7 +2232,7 @@ impl Analyzer<'_, '_> {
             Type::Infer(..) => {
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
-                    Key::Normal { span, sym } => box Type::Lit(LitType {
+                    Key::Normal { span, sym } => Box::new(Type::Lit(LitType {
                         span: span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Str(RStr {
                             span: *span,
@@ -2241,19 +2241,19 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::Num(n) => box Type::Lit(LitType {
+                    })),
+                    Key::Num(n) => Box::new(Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    Key::BigInt(n) => box Type::Lit(LitType {
+                    })),
+                    Key::BigInt(n) => Box::new(Type::Lit(LitType {
                         span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })),
                     Key::Private(..) => {
                         unreachable!()
                     }
@@ -2266,7 +2266,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box obj,
+                    obj_type: Box::new(obj),
                     index_type: prop_ty,
                     metadata: Default::default(),
                     tracker: Default::default(),
@@ -2322,8 +2322,8 @@ impl Analyzer<'_, '_> {
                     _ => {
                         return Err(ErrorKind::NoSuchProperty {
                             span: prop.span(),
-                            obj: Some(box obj),
-                            prop: Some(box prop.clone()),
+                            obj: Some(Box::new(obj)),
+                            prop: Some(Box::new(prop.clone())),
                         }
                         .into());
                     }
@@ -2472,8 +2472,8 @@ impl Analyzer<'_, '_> {
 
                 return Err(ErrorKind::NoSuchProperty {
                     span,
-                    obj: Some(box obj),
-                    prop: Some(box prop.clone()),
+                    obj: Some(Box::new(obj)),
+                    prop: Some(Box::new(prop.clone())),
                 }
                 .into());
             }
@@ -2539,8 +2539,8 @@ impl Analyzer<'_, '_> {
 
                 return Err(ErrorKind::NoSuchProperty {
                     span,
-                    obj: Some(box obj),
-                    prop: Some(box prop.clone()),
+                    obj: Some(Box::new(obj)),
+                    prop: Some(Box::new(prop.clone())),
                 }
                 .into());
             }
@@ -2622,8 +2622,8 @@ impl Analyzer<'_, '_> {
                     if errors.iter().any(|err| err.is_property_not_found()) {
                         return Err(ErrorKind::NoSuchProperty {
                             span,
-                            obj: Some(box obj.clone()),
-                            prop: Some(box prop.clone()),
+                            obj: Some(Box::new(obj.clone())),
+                            prop: Some(Box::new(prop.clone())),
                         }
                         .into());
                     }
@@ -2651,8 +2651,8 @@ impl Analyzer<'_, '_> {
 
                         return Err(ErrorKind::NoSuchProperty {
                             span,
-                            obj: Some(box obj),
-                            prop: Some(box prop.clone()),
+                            obj: Some(Box::new(obj)),
+                            prop: Some(Box::new(prop.clone())),
                         }
                         .into());
                     }
@@ -2815,7 +2815,7 @@ impl Analyzer<'_, '_> {
                 types.dedup_type();
                 let obj = Type::Array(Array {
                     span,
-                    elem_type: box Type::new_union(span, types),
+                    elem_type: Box::new(Type::new_union(span, types)),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });
@@ -3011,7 +3011,7 @@ impl Analyzer<'_, '_> {
                 // No property found
                 return Err(ErrorKind::NoSuchPropertyInModule {
                     span,
-                    name: box prop.clone(),
+                    name: Box::new(prop.clone()),
                 }
                 .into());
             }
@@ -3177,8 +3177,8 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box obj,
-                    index_type: box prop.ty().into_owned(),
+                    obj_type: Box::new(obj),
+                    index_type: Box::new(prop.ty().into_owned()),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }));
@@ -3195,7 +3195,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::IndexedAccessType(IndexedAccessType {
                             span,
                             readonly: false,
-                            obj_type: box obj,
+                            obj_type: Box::new(obj),
                             index_type,
                             metadata: Default::default(),
                             tracker: Default::default(),
@@ -3241,7 +3241,7 @@ impl Analyzer<'_, '_> {
                 let index_type = match prop {
                     Key::Computed(c) => c.ty.clone(),
                     _ => {
-                        let mut prop_ty = box prop.ty().into_owned();
+                        let mut prop_ty = Box::new(prop.ty().into_owned());
                         prevent_generalize(&mut prop_ty);
 
                         prop_ty
@@ -3250,7 +3250,7 @@ impl Analyzer<'_, '_> {
 
                 let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
-                    obj_type: box obj,
+                    obj_type: Box::new(obj),
                     readonly: false,
                     index_type,
                     metadata: Default::default(),
@@ -3367,7 +3367,7 @@ impl Analyzer<'_, '_> {
                     // We should return typeof function name
                     return Type::Query(QueryType {
                         span,
-                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
+                        expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone()))),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     });
@@ -3507,7 +3507,7 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Query(QueryType {
                 // TODO(kdy1): This is a regression.
                 span: span.with_ctxt(SyntaxContext::empty()),
-                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
+                expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(id.into()))),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }));
@@ -3526,7 +3526,7 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::NotVariable {
                 span,
                 left: span,
-                ty: Some(box ty.clone()),
+                ty: Some(Box::new(ty.clone())),
             }
             .into());
         }
@@ -3561,7 +3561,7 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::NotVariable {
                             span,
                             left: span,
-                            ty: Some(box ty.normalize().clone()),
+                            ty: Some(Box::new(ty.normalize().clone())),
                         }
                         .into());
                     }
@@ -3942,7 +3942,7 @@ impl Analyzer<'_, '_> {
                 {
                     return Ok(Type::Query(QueryType {
                         span,
-                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
+                        expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone()))),
                         metadata: QueryTypeMetadata {
                             common: CommonTypeMetadata {
                                 resolved_from_var: true,
@@ -3957,10 +3957,10 @@ impl Analyzer<'_, '_> {
             if &*i.sym == "globalThis" {
                 return Ok(Type::Query(QueryType {
                     span,
-                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                    expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
                         "globalThis".into(),
                         span.with_ctxt(SyntaxContext::empty()),
-                    ))),
+                    )))),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }));
@@ -3971,10 +3971,10 @@ impl Analyzer<'_, '_> {
                 if i.sym == js_word!("Symbol") {
                     return Ok(Type::Query(QueryType {
                         span: DUMMY_SP,
-                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                        expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
                             js_word!("Symbol"),
                             span.with_ctxt(SyntaxContext::empty()),
-                        ))),
+                        )))),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }));
@@ -4035,7 +4035,7 @@ impl Analyzer<'_, '_> {
                             span,
                             // TODO(kdy1): Check length (After implementing error recovery for the
                             // parser)
-                            elem_type: box type_args.clone().params.into_iter().next().unwrap(),
+                            elem_type: Box::new(type_args.clone().params.into_iter().next().unwrap()),
                             metadata: Default::default(),
                             tracker: Default::default(),
                         }));
