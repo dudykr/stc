@@ -1,4 +1,3 @@
-#![feature(box_syntax)]
 #![allow(clippy::derive_partial_eq_without_eq)]
 
 use rnode::{define_rnode, NodeId};
@@ -46,7 +45,7 @@ impl From<RTsEntityName> for RExpr {
             RTsEntityName::TsQualifiedName(v) => RExpr::Member(RMemberExpr {
                 node_id: NodeId::invalid(),
                 span: v.span(),
-                obj: box v.left.into(),
+                obj: Box::new(v.left.into()),
                 prop: RMemberProp::Ident(v.right),
             }),
         }
@@ -57,14 +56,14 @@ impl From<Box<RExpr>> for RTsEntityName {
     fn from(v: Box<RExpr>) -> Self {
         match *v {
             RExpr::Ident(v) => RTsEntityName::Ident(v),
-            RExpr::Member(RMemberExpr { obj, prop, .. }) => RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+            RExpr::Member(RMemberExpr { obj, prop, .. }) => RTsEntityName::TsQualifiedName(Box::new(RTsQualifiedName {
                 node_id: NodeId::invalid(),
                 left: obj.into(),
                 right: match prop {
                     RMemberProp::Ident(v) => v,
                     _ => unreachable!("invalid member expression"),
                 },
-            }),
+            })),
             _ => unreachable!("invalid expression"),
         }
     }

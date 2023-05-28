@@ -166,7 +166,7 @@ impl Visit<Deep> for Visitor {
         let key = v as *const Deep as *const ();
 
         dbg!(key);
-        if let Some(..) = FOUND.get_copied(key) {
+        if FOUND.get_copied(key).is_some() {
             dbg!("cached");
             return;
         }
