@@ -452,10 +452,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  publish-node-wasm:
+  publish-wasm-node:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
 
-    name: Build - wasm for node.js
+    name: Publisg Wasm for node.js
     needs:
       - test-all
     runs-on: ubuntu-latest
@@ -494,10 +494,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  publish-web-wasm:
+  publish-wasm-web:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
 
-    name: Build - wasm for web
+    name: Publish Wasm for web
     needs:
       - test-all
     runs-on: ubuntu-latest
