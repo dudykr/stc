@@ -600,6 +600,8 @@ impl Analyzer<'_, '_> {
                             lhs_metadata,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
+                                check_for_common_properties: Some(false),
+                                may_check_for_common_properties: false,
                                 ..opts
                             },
                         )
