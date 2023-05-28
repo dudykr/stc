@@ -11,9 +11,6 @@ interface I extends Base {
 var i: I;
 
 // sources
-class D {
-    public foo: string;
-}
 
 class E {
 }
