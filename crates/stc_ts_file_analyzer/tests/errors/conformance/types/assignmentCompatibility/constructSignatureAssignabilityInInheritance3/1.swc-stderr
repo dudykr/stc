@@ -1,0 +1,44 @@
+TS2430
+
+  x InvalidInterfaceInheritance {
+  |     span: Span {
+  |         lo: BytePos(
+  |             358,
+  |         ),
+  |         hi: BytePos(
+  |             360,
+  |         ),
+  |         ctxt: #1,
+  |     },
+  |     cause: ObjectAssignFailed {
+  |         span: Span {
+  |             lo: BytePos(
+  |                 358,
+  |             ),
+  |             hi: BytePos(
+  |                 360,
+  |             ),
+  |             ctxt: #0,
+  |         },
+  |         errors: [
+  |             AssignFailed {
+  |                 span: Span {
+  |                     lo: BytePos(
+  |                         358,
+  |                     ),
+  |                     hi: BytePos(
+  |                         360,
+  |                     ),
+  |                     ctxt: #1,
+  |                 },
+  |                 cause: [],
+  |             },
+  |         ],
+  |     },
+  | }
+    ,-[$DIR/tests/errors/conformance/types/assignmentCompatibility/constructSignatureAssignabilityInInheritance3/1.ts:14:1]
+ 14 | 
+ 15 | export interface I2<T, U> extends A {
+    :                  ^^
+ 16 |     a2: new (x: T) => U[]; // error, no contextual signature instantiation since I2.a2 is not generic
+    `----
