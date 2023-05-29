@@ -194,6 +194,8 @@ pub(crate) struct AssignOpts {
     pub may_check_for_common_properties: bool,
 
     pub enable_do_not_use_return_type_while_inference: bool,
+
+    pub is_validating_super_class_inheritance: bool,
 }
 
 #[derive(Default)]

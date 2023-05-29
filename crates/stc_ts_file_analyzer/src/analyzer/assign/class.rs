@@ -28,7 +28,7 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span }.into());
                 }
 
-                if !rc.is_abstract {
+                if !opts.is_validating_super_class_inheritance && !rc.is_abstract {
                     // class Child extends Parent
                     // let c: Child;
                     // let p: Parent;

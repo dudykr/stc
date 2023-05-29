@@ -1546,6 +1546,7 @@ impl Analyzer<'_, '_> {
                 AssignOpts {
                     span,
                     allow_assignment_to_param_constraint: true,
+                    is_validating_super_class_inheritance: true,
                     ..Default::default()
                 },
             )
