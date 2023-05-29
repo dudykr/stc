@@ -7,11 +7,11 @@ class Derived extends Base { bar: string; }
 
 interface A { // T
     // M's
-    a4: new <T, U>(x: T, y: U) => string;
+    a4: new <B, C>(x: B, y: C) => string;
 }
 
-export interface I4<T> extends A {
-    a4: new <U>(x: T, y: U) => string;
+export interface I4<D> extends A {
+    a4: new <E>(x: D, y: E) => string;
 }
 
 
