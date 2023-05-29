@@ -1533,7 +1533,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &Type, super_ty: &Type) {
+    fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, class_type: &Type, super_ty: &Type) {
         let _tracing = dev_span!("report_error_for_wrong_super_class_inheritance");
 
         let mut errors = Errors::default();
@@ -1542,7 +1542,7 @@ impl Analyzer<'_, '_> {
             self.assign_with_opts(
                 &mut Default::default(),
                 super_ty,
-                members,
+                class_type,
                 AssignOpts {
                     span,
                     allow_assignment_to_param_constraint: true,
