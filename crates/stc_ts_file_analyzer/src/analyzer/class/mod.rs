@@ -1545,6 +1545,7 @@ impl Analyzer<'_, '_> {
                 members,
                 AssignOpts {
                     span,
+                    allow_assignment_to_param_constraint: true,
                     ..Default::default()
                 },
             )
