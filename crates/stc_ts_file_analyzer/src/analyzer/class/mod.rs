@@ -17,7 +17,7 @@ use stc_ts_types::{
     Intersection, Key, KeywordType, Method, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type, Unique,
 };
 use stc_ts_utils::find_ids_in_pat;
-use stc_utils::{cache::Freeze, FxHashSet};
+use stc_utils::{cache::Freeze, dev_span, FxHashSet};
 use swc_atoms::js_word;
 use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -1515,6 +1515,8 @@ impl Analyzer<'_, '_> {
 
     /// Should be called only from `Validate<Class>`.
     fn validate_inherited_members_from_super_class(&mut self, name: Option<Span>, class: &ArcCow<ClassDef>) {
+        let _tracing = dev_span!("validate_inherited_members_from_super_class");
+
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -1532,6 +1534,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &Type, super_ty: &Type) {
+        let _tracing = dev_span!("report_error_for_wrong_super_class_inheritance");
+
         let mut errors = Errors::default();
 
         errors.extend(
