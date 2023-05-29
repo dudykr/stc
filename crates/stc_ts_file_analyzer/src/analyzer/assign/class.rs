@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let new_body;
-                let r_body = if rc.super_class.is_some() {
+                let r_body = if !opts.is_validating_super_class_inheritance && rc.super_class.is_some() {
                     if let Some(members) = self.collect_class_members(&[], &r)? {
                         new_body = members;
                         &*new_body
