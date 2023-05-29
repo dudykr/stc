@@ -7,12 +7,12 @@ class Derived extends Base { bar: string; }
 
 interface A { // T
     // M's
-    a5: new <T, U>(x: (arg: T) => U) => T;
+    a5: new <C, D>(x: (arg: C) => D) => C;
 }
 
 
-export interface I5<T> extends A {
-    a5: new <U>(x: (arg: T) => U) => T;
+export interface I5<E> extends A {
+    a5: new <F>(x: (arg: E) => F) => E;
 }
 
 
