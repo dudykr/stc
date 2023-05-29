@@ -1655,7 +1655,8 @@ impl ErrorKind {
             // TS2339: Property not found.
             // TS2550: Property not found with a suggestion to change `lib`.
             // TS2551: Property not found with a suggestion.
-            2550 | 2551 => 2339,
+            // TS7022: Property not found with a private name.
+            2550 | 2551 | 7022 => 2339,
 
             // TS2304: Variable not found
             // TS2585: Variable not found, but with a suggestion to change 'lib',
