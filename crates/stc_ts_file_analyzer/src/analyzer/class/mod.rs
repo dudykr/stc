@@ -1514,7 +1514,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only from `Validate<Class>`.
-    fn validate_inherited_members_from_super_class(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn validate_inherited_members_from_super_class(&mut self, name: Option<Span>, class: &ArcCow<ClassDef>) {
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -1527,111 +1527,25 @@ impl Analyzer<'_, '_> {
         if let Some(super_ty) = &class.super_class {
             self.validate_super_class(span, super_ty);
 
-            self.report_error_for_wrong_super_class_inheritance(span, &class.body, super_ty)
+            self.report_error_for_wrong_super_class_inheritance(span, &Type::ClassDef(class.cheap_clone()), super_ty)
         }
     }
 
-    fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
-        let super_ty = self.normalize(Some(span), Cow::Borrowed(super_ty), Default::default());
-        let super_ty = match super_ty {
-            Ok(v) => v,
-            Err(err) => {
-                self.storage.report(err);
-                return;
-            }
-        };
-
+    fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &Type, super_ty: &Type) {
         let mut errors = Errors::default();
-        let mut new_members = vec![];
 
-        let res: VResult<()> = try {
-            if let Type::ClassDef(sc) = super_ty.normalize() {
-                'outer: for sm in &sc.body {
-                    match sm {
-                        ClassMember::Property(super_property) => {
-                            for m in members {
-                                if let ClassMember::Property(ref p) = m {
-                                    if !&p.key.type_eq(&super_property.key) {
-                                        continue;
-                                    }
-
-                                    if !p.is_static
-                                        && !super_property.is_static
-                                        && p.accessor != super_property.accessor
-                                        && (super_property.accessor.getter || super_property.accessor.setter)
-                                    {
-                                        self.storage
-                                            .report(ErrorKind::DefinedWithAccessorInSuper { span: p.key.span() }.into())
-                                    }
-
-                                    if super_property.accessibility == Some(Accessibility::Private)
-                                        && p.accessibility != Some(Accessibility::Private)
-                                    {
-                                        self.storage
-                                            .report(ErrorKind::PrivatePropertyIsDifferent { span: super_ty.span() }.into())
-                                    }
-
-                                    continue 'outer;
-                                }
-                            }
-
-                            continue 'outer;
-                        }
-                        ClassMember::Method(super_method) => {
-                            if !super_method.is_abstract {
-                                new_members.push(sm.clone());
-                                continue 'outer;
-                            }
-                            if super_method.is_optional {
-                                // TODO(kdy1): Validate parameters
-
-                                // TODO(kdy1): Validate return type
-                                continue 'outer;
-                            }
-
-                            for m in members {
-                                if let ClassMember::Method(ref m) = m {
-                                    if !&m.key.type_eq(&super_method.key) {
-                                        continue;
-                                    }
-
-                                    // TODO(kdy1): Validate parameters
-
-                                    // TODO(kdy1): Validate return type
-                                    continue 'outer;
-                                }
-                            }
-                        }
-                        _ => {
-                            // TODO(kdy1): Verify
-                            continue 'outer;
-                        }
-                    }
-
-                    if let Some(key) = sm.key() {
-                        errors.push(
-                            ErrorKind::ClassDoesNotImplementMember {
-                                span,
-                                key: Box::new(key.into_owned()),
-                            }
-                            .into(),
-                        );
-                    }
-                }
-
-                if sc.is_abstract {
-                    // Check super class of super class
-                    if let Some(super_ty) = &sc.super_class {
-                        new_members.extend(members.to_vec());
-                        self.report_error_for_wrong_super_class_inheritance(span, &new_members, super_ty);
-                    }
-                }
-            }
-        };
-
-        if let Err(err) = res {
-            errors.push(err);
-        }
+        errors.extend(
+            self.assign_with_opts(
+                &mut Default::default(),
+                super_ty,
+                members,
+                AssignOpts {
+                    span,
+                    ..Default::default()
+                },
+            )
+            .err(),
+        );
 
         self.storage.report_all(errors);
     }
