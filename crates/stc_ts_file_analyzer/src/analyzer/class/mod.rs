@@ -1548,6 +1548,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )
+            .context("tried to assign a class to its super class")
             .err(),
         );
 
