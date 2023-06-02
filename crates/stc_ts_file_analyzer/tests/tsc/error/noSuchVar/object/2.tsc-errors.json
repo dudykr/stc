@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/error/noSuchVar/object/2.ts",
+    "line": 5,
+    "col": 16,
+    "code": 2304
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/types/builtin/generator/bad/1.ts",
+    "line": 2,
+    "col": 24,
+    "code": 2322
+  }
+]
