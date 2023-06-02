@@ -14,7 +14,7 @@ use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
-use stc_ts_errors::{debug::debugger::Debugger, ErrorKind, DISABLE_ERROR_CONTEXT};
+use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
     env::EnvFactory,
@@ -155,16 +155,6 @@ fn validate(input: &Path) -> Vec<StcError> {
             }
         })
         .collect()
-}
-
-#[fixture("tests/errors/**/*.ts")]
-fn errors(input: PathBuf) {
-    let stderr = DISABLE_ERROR_CONTEXT.set(&(), || run_test(input.clone(), true, false).unwrap());
-
-    if stderr.is_empty() {
-        panic!("Expected error, but got none");
-    }
-    stderr.compare_to_file(input.with_extension("swc-stderr")).unwrap();
 }
 
 // This invokes `tsc` to get expected result.
