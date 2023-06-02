@@ -1,0 +1,80 @@
+[
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 3,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 4,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 5,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 9,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 12,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 14,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 15,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 18,
+    "col": 1,
+    "code": 2631
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 21,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 23,
+    "col": 1,
+    "code": 2630
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 26,
+    "col": 1,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 27,
+    "col": 1,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/invalidVoidAssignments.ts",
+    "line": 29,
+    "col": 1,
+    "code": 2322
+  }
+]
