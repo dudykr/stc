@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/conformance/types/assignmentCompatibility/assignmentCompatWithConstructSignaturesWithOptionalParameters/1.ts",
+    "line": 14,
+    "col": 1,
+    "code": 2322
+  }
+]
