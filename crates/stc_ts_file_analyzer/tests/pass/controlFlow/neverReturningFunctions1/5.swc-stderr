@@ -1,0 +1,121 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:4:1]
+ 4 | export function f43() {
+ 5 |     const fail = (): never => { throw new Error(); };
+   :                                           ^^^^^
+ 6 |     const f = [fail];
+   `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:4:1]
+ 4 | export function f43() {
+ 5 |     const fail = (): never => { throw new Error(); };
+   :                                       ^^^^^^^^^^^
+ 6 |     const f = [fail];
+   `----
+
+Error: 
+  > Error
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:4:1]
+ 4 | export function f43() {
+ 5 |     const fail = (): never => { throw new Error(); };
+   :                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 |     const f = [fail];
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:5:1]
+ 5 |     const fail = (): never => { throw new Error(); };
+ 6 |     const f = [fail];
+   :                ^^^^
+ 7 |     fail();  // No effect (missing type annotation)
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:5:1]
+ 5 |     const fail = (): never => { throw new Error(); };
+ 6 |     const f = [fail];
+   :               ^^^^^^
+ 7 |     fail();  // No effect (missing type annotation)
+   `----
+
+Error: 
+  > () => never[]
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:6:1]
+ 6 |     const f = [fail];
+ 7 |     fail();  // No effect (missing type annotation)
+   :     ^^^^
+ 8 |     f[0]();  // No effect (not a dotted name)
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:6:1]
+ 6 |     const f = [fail];
+ 7 |     fail();  // No effect (missing type annotation)
+   :     ^^^^^^
+ 8 |     f[0]();  // No effect (not a dotted name)
+   `----
+
+Error: 
+  > never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:7:1]
+ 7 |     fail();  // No effect (missing type annotation)
+ 8 |     f[0]();  // No effect (not a dotted name)
+   :     ^
+ 9 |     f;
+   `----
+
+Error: 
+  > () => never[]
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:7:1]
+ 7 |     fail();  // No effect (missing type annotation)
+ 8 |     f[0]();  // No effect (not a dotted name)
+   :     ^^^^
+ 9 |     f;
+   `----
+
+Error: 
+  > () => never
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:7:1]
+ 7 |     fail();  // No effect (missing type annotation)
+ 8 |     f[0]();  // No effect (not a dotted name)
+   :     ^^^^^^
+ 9 |     f;
+   `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/5.ts:8:1]
+  8 |     f[0]();  // No effect (not a dotted name)
+  9 |     f;
+    :     ^
+ 10 | }
+    `----
+
+Error: 
+  > () => never[]

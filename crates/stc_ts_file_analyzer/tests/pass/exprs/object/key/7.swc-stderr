@@ -1,0 +1,13 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/7.ts:4:1]
+ 4 |     var a: any;
+ 5 | ,-> var v = {
+ 6 | |       get [0]() { return 0; },
+ 7 | `-> }
+   `----
+
+Error: 
+  > {
+  |     readonly [0]: 0;
+  | }

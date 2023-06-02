@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/class.ts:6:1]
+ 6 | 
+ 7 | foo(1, null as any as C, true) // C
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/class.ts:6:1]
+ 6 | 
+ 7 | foo(1, null as any as C, true) // C
+   :        ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/class.ts:6:1]
+ 6 | 
+ 7 | foo(1, null as any as C, true) // C
+   :        ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > C
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/class.ts:6:1]
+ 6 | 
+ 7 | foo(1, null as any as C, true) // C
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > C

@@ -1,0 +1,81 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/5.ts:5:1]
+ 5 | export class Form<T> {
+ 6 |     values: { [P in keyof T]?: T[P] } = {}
+   :                                         ^^
+ 7 | }
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/5.ts:15:1]
+ 15 | 
+ 16 | form.values.email
+    : ^^^^
+ 17 | form.values.password
+    `----
+
+Error: 
+  > Form
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/5.ts:15:1]
+ 15 | 
+ 16 | form.values.email
+    : ^^^^^^^^^^^
+ 17 | form.values.password
+    `----
+
+Error: 
+  > {
+  |     email?: Fields["email"];
+  |     password?: Fields["password"];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/5.ts:15:1]
+ 15 | 
+ 16 | form.values.email
+    : ^^^^^^^^^^^^^^^^^
+ 17 | form.values.password
+    `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+ 16 | form.values.email
+ 17 | form.values.password
+    : ^^^^
+    `----
+
+Error: 
+  > Form
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+ 16 | form.values.email
+ 17 | form.values.password
+    : ^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     email?: Fields["email"];
+  |     password?: Fields["password"];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/5.ts:16:1]
+ 16 | form.values.email
+ 17 | form.values.password
+    : ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | undefined)

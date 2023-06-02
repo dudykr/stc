@@ -1,0 +1,139 @@
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:2:1]
+ 2 |     var r: (x: T) => U;
+ 3 |     return r;
+   :            ^
+ 4 | }
+   `----
+
+Error: 
+  > (x: T) => U
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:5:1]
+ 5 | 
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+   :          ^^^^
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   `----
+
+Error: 
+  > <T, U>(x: T, a: (x: T) => U, b: (x: T) => U) => (x: T) => U
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:5:1]
+ 5 | 
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+   :                   ^^^^^^^^^
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:5:1]
+ 5 | 
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+   :                              ^^^^^^^^^^^
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   `----
+
+Error: 
+  > (x: any) => null
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:5:1]
+ 5 | 
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   `----
+
+Error: 
+  > (x: '') => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:6:1]
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   :          ^^^^
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   `----
+
+Error: 
+  > <T, U>(x: T, a: (x: T) => U, b: (x: T) => U) => (x: T) => U
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:6:1]
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   :                     ^^^^^^^^^
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:6:1]
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   :                                ^^^^^^^^^
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:6:1]
+ 6 | var r8 = foo2('', (x) => '', (x) => null); // string => string | null
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:7:1]
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   :           ^^^^
+   `----
+
+Error: 
+  > <T, U>(x: T, a: (x: T) => U, b: (x: T) => U) => (x: T) => U
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:7:1]
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   :                      ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: Object) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:7:1]
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   :                                         ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: string) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/3.ts:7:1]
+ 7 | var r9 = foo2(null, (x) => '', (x) => ''); // null => string
+ 8 | var r10 = foo2(null, (x: Object) => '', (x: string) => ''); // string => string
+   :           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: string) => ''

@@ -1,0 +1,33 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/5.ts:3:1]
+ 3 | 
+ 4 | c2({});         // Implied type is {z?: number}
+   : ^^
+   `----
+
+Error: 
+  > ({ z =10  }: {
+  |     z?: any;
+  | }) => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/5.ts:3:1]
+ 3 | 
+ 4 | c2({});         // Implied type is {z?: number}
+   :    ^^
+   `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/5.ts:3:1]
+ 3 | 
+ 4 | c2({});         // Implied type is {z?: number}
+   : ^^^^^^
+   `----
+
+Error: 
+  > void

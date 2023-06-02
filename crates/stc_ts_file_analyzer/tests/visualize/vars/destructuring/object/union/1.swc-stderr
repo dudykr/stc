@@ -1,0 +1,22 @@
+
+  x Type
+    ,-[$DIR/tests/visualize/vars/destructuring/object/union/1.ts:12:1]
+ 12 | 
+ 13 | const { a } = obj
+    :               ^^^
+ 14 | a;
+    `----
+
+Error: 
+  > (A | B)
+
+  x Type
+    ,-[$DIR/tests/visualize/vars/destructuring/object/union/1.ts:13:1]
+ 13 | const { a } = obj
+ 14 | a;
+    : ^
+ 15 | export { }
+    `----
+
+Error: 
+  > any

@@ -1,0 +1,77 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:6:1]
+ 6 | export function inParenthesizedExpression(x: A | B) {
+ 7 |     if ("a" in (x)) {
+   :                 ^
+ 8 |         let y: string = x.a;
+   `----
+
+Error: 
+  > (A | B)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:6:1]
+ 6 | export function inParenthesizedExpression(x: A | B) {
+ 7 |     if ("a" in (x)) {
+   :                ^^^
+ 8 |         let y: string = x.a;
+   `----
+
+Error: 
+  > (A | B)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:6:1]
+ 6 | export function inParenthesizedExpression(x: A | B) {
+ 7 |     if ("a" in (x)) {
+   :         ^^^^^^^^^^
+ 8 |         let y: string = x.a;
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:7:1]
+ 7 |     if ("a" in (x)) {
+ 8 |         let y: string = x.a;
+   :                         ^
+ 9 |     } else {
+   `----
+
+Error: 
+  > A
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:7:1]
+ 7 |     if ("a" in (x)) {
+ 8 |         let y: string = x.a;
+   :                         ^^^
+ 9 |     } else {
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:9:1]
+  9 |     } else {
+ 10 |         let z: number = x.b;
+    :                         ^
+ 11 |     }
+    `----
+
+Error: 
+  > B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/4.ts:9:1]
+  9 |     } else {
+ 10 |         let z: number = x.b;
+    :                         ^^^
+ 11 |     }
+    `----
+
+Error: 
+  > number

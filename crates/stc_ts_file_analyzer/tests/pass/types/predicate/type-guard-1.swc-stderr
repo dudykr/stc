@@ -1,0 +1,55 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:4:1]
+ 4 | 
+ 5 | export class C extends A {
+   :                        ^
+ 6 |     propC: number;
+   `----
+
+Error: 
+  > typeof A
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:13:1]
+ 13 | declare function isC_multipleParams(p1: any, p2: any): p1 is C;
+ 14 | if (isC_multipleParams(a, 0)) {
+    :     ^^^^^^^^^^^^^^^^^^
+ 15 |     a;
+    `----
+
+Error: 
+  > (p1: any, p2: any) => p1 is C
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:13:1]
+ 13 | declare function isC_multipleParams(p1: any, p2: any): p1 is C;
+ 14 | if (isC_multipleParams(a, 0)) {
+    :                        ^
+ 15 |     a;
+    `----
+
+Error: 
+  > A
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:13:1]
+ 13 | declare function isC_multipleParams(p1: any, p2: any): p1 is C;
+ 14 | if (isC_multipleParams(a, 0)) {
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^
+ 15 |     a;
+    `----
+
+Error: 
+  > p1 is C
+
+  x Type
+    ,-[$DIR/tests/pass/types/predicate/type-guard-1.ts:14:1]
+ 14 | if (isC_multipleParams(a, 0)) {
+ 15 |     a;
+    :     ^
+ 16 | }
+    `----
+
+Error: 
+  > C

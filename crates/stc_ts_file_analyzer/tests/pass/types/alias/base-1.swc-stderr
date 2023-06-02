@@ -1,0 +1,373 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/base-1.ts:2:1]
+ 2 | 
+ 3 | type T1 = number;
+   :      ^^
+ 4 | var x1: number;
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/base-1.ts:6:1]
+ 6 | 
+ 7 | type T2 = string;
+   :      ^^
+ 8 | var x2: string;
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:10:1]
+ 10 | 
+ 11 | type T3 = boolean;
+    :      ^^
+ 12 | var x3: boolean;
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:14:1]
+ 14 | 
+ 15 | type T4 = void;
+    :      ^^
+ 16 | var x4: void;
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:18:1]
+ 18 | 
+ 19 | type T5 = any;
+    :      ^^
+ 20 | var x5: any;
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:23:1]
+ 23 | interface I6 { x: string }
+ 24 | type T6 = I6;
+    :      ^^
+ 25 | var x6: I6;
+    `----
+
+Error: 
+  > I6
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:28:1]
+ 28 | class C7 { x: boolean }
+ 29 | type T7 = C7;
+    :      ^^
+ 30 | var x7: C7;
+    `----
+
+Error: 
+  > C7
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:32:1]
+ 32 | 
+ 33 | type T8 = string | boolean;
+    :      ^^
+ 34 | var x8: string | boolean;
+    `----
+
+Error: 
+  > (string | boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:36:1]
+ 36 | 
+ 37 | type T9 = () => string;
+    :      ^^
+ 38 | var x9: () => string;
+    `----
+
+Error: 
+  > () => string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:40:1]
+ 40 | 
+ 41 | type T10 = { x: number };
+    :      ^^^
+ 42 | var x10: { x: number };
+    `----
+
+Error: 
+  > {
+  |     x: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:44:1]
+ 44 | 
+ 45 | type T11 = { new(): boolean };
+    :      ^^^
+ 46 | var x11: { new(): boolean };
+    `----
+
+Error: 
+  > {
+  |     new(): boolean;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:49:1]
+ 49 | interface I13 { x: string };
+ 50 | type T13 = I13;
+    :      ^^^
+ 51 | var x13_1: I13;
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:54:1]
+ 54 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
+ 55 | foo13(x13_1, x13_2);
+    : ^^^^^
+ 56 | foo13(x13_2, x13_1);
+    `----
+
+Error: 
+  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:54:1]
+ 54 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
+ 55 | foo13(x13_1, x13_2);
+    :       ^^^^^
+ 56 | foo13(x13_2, x13_1);
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:54:1]
+ 54 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
+ 55 | foo13(x13_1, x13_2);
+    :              ^^^^^
+ 56 | foo13(x13_2, x13_1);
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:54:1]
+ 54 | declare function foo13<T1 extends I13, T2 extends T13>(t1: T1, t2: T13): void;
+ 55 | foo13(x13_1, x13_2);
+    : ^^^^^^^^^^^^^^^^^^^
+ 56 | foo13(x13_2, x13_1);
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+ 56 | foo13(x13_2, x13_1);
+    : ^^^^^
+    `----
+
+Error: 
+  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+ 56 | foo13(x13_2, x13_1);
+    :       ^^^^^
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+ 56 | foo13(x13_2, x13_1);
+    :              ^^^^^
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+ 56 | foo13(x13_2, x13_1);
+    : ^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:57:1]
+ 57 | 
+ 58 | type T14 = string;
+    :      ^^^
+ 59 | var x14: T14;
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:65:1]
+ 65 | 
+ 66 | type Meters = number
+    :      ^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:71:1]
+ 71 | declare function f15(a: Meters): string;
+ 72 | f15(E.x).toLowerCase();
+    : ^^^
+    `----
+
+Error: 
+  > ((a: string) => boolean | (a: Meters) => string)
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:71:1]
+ 71 | declare function f15(a: Meters): string;
+ 72 | f15(E.x).toLowerCase();
+    :     ^
+    `----
+
+Error: 
+  > E
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:71:1]
+ 71 | declare function f15(a: Meters): string;
+ 72 | f15(E.x).toLowerCase();
+    :     ^^^
+    `----
+
+Error: 
+  > E.x
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:71:1]
+ 71 | declare function f15(a: Meters): string;
+ 72 | f15(E.x).toLowerCase();
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:71:1]
+ 71 | declare function f15(a: Meters): string;
+ 72 | f15(E.x).toLowerCase();
+    : ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:73:1]
+ 73 | 
+ 74 | type StringAndBoolean = [string, boolean]
+    :      ^^^^^^^^^^^^^^^^
+ 75 | declare function f16(s: StringAndBoolean): string;
+    `----
+
+Error: 
+  > [string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:76:1]
+ 76 | var x: [string, boolean];
+ 77 | f16(x);
+    : ^^^
+    `----
+
+Error: 
+  > (s: StringAndBoolean) => string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:76:1]
+ 76 | var x: [string, boolean];
+ 77 | f16(x);
+    :     ^
+    `----
+
+Error: 
+  > [string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:76:1]
+ 76 | var x: [string, boolean];
+ 77 | f16(x);
+    : ^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:78:1]
+ 78 | 
+ 79 | var y: StringAndBoolean = ["1", false];
+    :                           ^^^^^^^^^^^^
+ 80 | y[0].toLowerCase();
+    `----
+
+Error: 
+  > ["1", false]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:79:1]
+ 79 | var y: StringAndBoolean = ["1", false];
+ 80 | y[0].toLowerCase();
+    : ^
+    `----
+
+Error: 
+  > [string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:79:1]
+ 79 | var y: StringAndBoolean = ["1", false];
+ 80 | y[0].toLowerCase();
+    : ^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:79:1]
+ 79 | var y: StringAndBoolean = ["1", false];
+ 80 | y[0].toLowerCase();
+    : ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string

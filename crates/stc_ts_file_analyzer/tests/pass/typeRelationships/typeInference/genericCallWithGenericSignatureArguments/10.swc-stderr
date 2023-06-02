@@ -1,0 +1,66 @@
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/10.ts:4:1]
+ 4 | declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T): T;
+ 5 | var r4 = foo(0 as any as unknown, (x) => '', (x) => ''); // unknown
+   :          ^^^
+ 6 | export { }
+   `----
+
+Error: 
+  > <T>(x: T, a: (x: T) => T, b: (x: T) => T) => T
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/10.ts:4:1]
+ 4 | declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T): T;
+ 5 | var r4 = foo(0 as any as unknown, (x) => '', (x) => ''); // unknown
+   :              ^^^^^^^^
+ 6 | export { }
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/10.ts:4:1]
+ 4 | declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T): T;
+ 5 | var r4 = foo(0 as any as unknown, (x) => '', (x) => ''); // unknown
+   :              ^^^^^^^^^^^^^^^^^^^
+ 6 | export { }
+   `----
+
+Error: 
+  > unknown
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/10.ts:4:1]
+ 4 | declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T): T;
+ 5 | var r4 = foo(0 as any as unknown, (x) => '', (x) => ''); // unknown
+   :                                   ^^^^^^^^^
+ 6 | export { }
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/10.ts:4:1]
+ 4 | declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T): T;
+ 5 | var r4 = foo(0 as any as unknown, (x) => '', (x) => ''); // unknown
+   :                                              ^^^^^^^^^
+ 6 | export { }
+   `----
+
+Error: 
+  > (x: any) => ''
+
+  x Type
+   ,-[$DIR/tests/pass/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/10.ts:4:1]
+ 4 | declare function foo<T>(x: T, a: (x: T) => T, b: (x: T) => T): T;
+ 5 | var r4 = foo(0 as any as unknown, (x) => '', (x) => ''); // unknown
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 | export { }
+   `----
+
+Error: 
+  > unknown

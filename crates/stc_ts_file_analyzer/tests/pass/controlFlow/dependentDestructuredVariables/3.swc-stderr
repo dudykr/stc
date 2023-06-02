@@ -1,0 +1,98 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:2:1]
+ 2 | 
+ 3 | type Args = ["A", number] | ["B", string];
+   :      ^^^^
+   `----
+
+Error: 
+  > (["A", number] | ["B", string])
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:5:1]
+ 5 | function f40(...[kind, data]: Args) {
+ 6 |   if (kind === "A") {
+   :       ^^^^
+ 7 |     data.toFixed();
+   `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:5:1]
+ 5 | function f40(...[kind, data]: Args) {
+ 6 |   if (kind === "A") {
+   :       ^^^^^^^^^^^^
+ 7 |     data.toFixed();
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:6:1]
+ 6 |   if (kind === "A") {
+ 7 |     data.toFixed();
+   :     ^^^^
+ 8 |   }
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:6:1]
+ 6 |   if (kind === "A") {
+ 7 |     data.toFixed();
+   :     ^^^^^^^^^^^^^^
+ 8 |   }
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:8:1]
+  8 |   }
+  9 |   if (kind === "B") {
+    :       ^^^^
+ 10 |     data.toUpperCase();
+    `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:8:1]
+  8 |   }
+  9 |   if (kind === "B") {
+    :       ^^^^^^^^^^^^
+ 10 |     data.toUpperCase();
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:9:1]
+  9 |   if (kind === "B") {
+ 10 |     data.toUpperCase();
+    :     ^^^^
+ 11 |   }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/dependentDestructuredVariables/3.ts:9:1]
+  9 |   if (kind === "B") {
+ 10 |     data.toUpperCase();
+    :     ^^^^^^^^^^^^^^^^^^
+ 11 |   }
+    `----
+
+Error: 
+  > string

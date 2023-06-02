@@ -1,0 +1,60 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/object/normalized-1.ts:1:1]
+ 1 | var x = [() => 1, () => { }];
+   :          ^^^^^^^
+ 2 | export var r2 = x[0]();
+   `----
+
+Error: 
+  > () => number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/object/normalized-1.ts:1:1]
+ 1 | var x = [() => 1, () => { }];
+   :                   ^^^^^^^^^
+ 2 | export var r2 = x[0]();
+   `----
+
+Error: 
+  > () => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/object/normalized-1.ts:1:1]
+ 1 | var x = [() => 1, () => { }];
+   :         ^^^^^^^^^^^^^^^^^^^^
+ 2 | export var r2 = x[0]();
+   `----
+
+Error: 
+  > () => void[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/object/normalized-1.ts:1:1]
+ 1 | var x = [() => 1, () => { }];
+ 2 | export var r2 = x[0]();
+   :                 ^
+   `----
+
+Error: 
+  > () => void[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/object/normalized-1.ts:1:1]
+ 1 | var x = [() => 1, () => { }];
+ 2 | export var r2 = x[0]();
+   :                 ^^^^
+   `----
+
+Error: 
+  > () => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/object/normalized-1.ts:1:1]
+ 1 | var x = [() => 1, () => { }];
+ 2 | export var r2 = x[0]();
+   :                 ^^^^^^
+   `----
+
+Error: 
+  > void

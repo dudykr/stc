@@ -1,0 +1,300 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:4:1]
+ 4 | 
+ 5 | if (typeof config['works'] !== 'boolean') {
+   :            ^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
+   `----
+
+Error: 
+  > {
+  |     [key: string]: (boolean | {
+  |         prop: string;
+  |     });
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:4:1]
+ 4 | 
+ 5 | if (typeof config['works'] !== 'boolean') {
+   :            ^^^^^^^^^^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
+   `----
+
+Error: 
+  > (boolean | {
+  |     prop: string;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:4:1]
+ 4 | 
+ 5 | if (typeof config['works'] !== 'boolean') {
+   :     ^^^^^^^^^^^^^^^^^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:4:1]
+ 4 | 
+ 5 | if (typeof config['works'] !== 'boolean') {
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 6 |     config.works.prop = 'test'; // ok
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   `----
+
+Error: 
+  > {
+  |     [key: string]: (boolean | {
+  |         prop: string;
+  |     });
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   `----
+
+Error: 
+  > {
+  |     prop: string;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^^^^^^^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:5:1]
+ 5 | if (typeof config['works'] !== 'boolean') {
+ 6 |     config.works.prop = 'test'; // ok
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   `----
+
+Error: 
+  > 'test'
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^
+ 8 | }
+   `----
+
+Error: 
+  > {
+  |     [key: string]: (boolean | {
+  |         prop: string;
+  |     });
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^^^^^^^^^^
+ 8 | }
+   `----
+
+Error: 
+  > {
+  |     prop: string;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^^^^^^^^^^^^^^^
+ 8 | }
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:6:1]
+ 6 |     config.works.prop = 'test'; // ok
+ 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | }
+   `----
+
+Error: 
+  > 'test'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:8:1]
+  8 | }
+  9 | if (typeof config.works !== 'boolean') {
+    :            ^^^^^^
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    `----
+
+Error: 
+  > {
+  |     [key: string]: (boolean | {
+  |         prop: string;
+  |     });
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:8:1]
+  8 | }
+  9 | if (typeof config.works !== 'boolean') {
+    :            ^^^^^^^^^^^^
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    `----
+
+Error: 
+  > (boolean | {
+  |     prop: string;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:8:1]
+  8 | }
+  9 | if (typeof config.works !== 'boolean') {
+    :     ^^^^^^^^^^^^^^^^^^^
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:8:1]
+  8 | }
+  9 | if (typeof config.works !== 'boolean') {
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:9:1]
+  9 | if (typeof config.works !== 'boolean') {
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    :     ^^^^^^
+ 11 |     config.works.prop = 'test'; // ok
+    `----
+
+Error: 
+  > {
+  |     [key: string]: (boolean | {
+  |         prop: string;
+  |     });
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:9:1]
+  9 | if (typeof config.works !== 'boolean') {
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    :     ^^^^^^^^^^^^^^^
+ 11 |     config.works.prop = 'test'; // ok
+    `----
+
+Error: 
+  > {
+  |     prop: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:9:1]
+  9 | if (typeof config.works !== 'boolean') {
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    :     ^^^^^^^^^^^^^^^^^^^^
+ 11 |     config.works.prop = 'test'; // ok
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:9:1]
+  9 | if (typeof config.works !== 'boolean') {
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 11 |     config.works.prop = 'test'; // ok
+    `----
+
+Error: 
+  > 'test'
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:10:1]
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+ 11 |     config.works.prop = 'test'; // ok
+    :     ^^^^^^
+ 12 | }
+    `----
+
+Error: 
+  > {
+  |     [key: string]: (boolean | {
+  |         prop: string;
+  |     });
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:10:1]
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+ 11 |     config.works.prop = 'test'; // ok
+    :     ^^^^^^^^^^^^
+ 12 | }
+    `----
+
+Error: 
+  > {
+  |     prop: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:10:1]
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+ 11 |     config.works.prop = 'test'; // ok
+    :     ^^^^^^^^^^^^^^^^^
+ 12 | }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/element-access-1.ts:10:1]
+ 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+ 11 |     config.works.prop = 'test'; // ok
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 12 | }
+    `----
+
+Error: 
+  > 'test'

@@ -1,0 +1,45 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                        ^^^
+   `----
+
+Error: 
+  > MapConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                             ^^^^^^^^^^
+   `----
+
+Error: 
+  > ["", true]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                                         ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ["hello", true]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [["", true], ["hello", true]]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Map<("" | "hello"), true>

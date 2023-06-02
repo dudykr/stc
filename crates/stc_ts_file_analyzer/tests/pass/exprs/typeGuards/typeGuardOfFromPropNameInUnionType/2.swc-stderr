@@ -1,0 +1,66 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/2.ts:6:1]
+ 6 | export function multipleClasses(x: A | B | C | D) {
+ 7 |     if ("a" in x) {
+   :                ^
+ 8 |         let y: string | Date = x.a;
+   `----
+
+Error: 
+  > (A | B | C | D)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/2.ts:6:1]
+ 6 | export function multipleClasses(x: A | B | C | D) {
+ 7 |     if ("a" in x) {
+   :         ^^^^^^^^
+ 8 |         let y: string | Date = x.a;
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/2.ts:7:1]
+ 7 |     if ("a" in x) {
+ 8 |         let y: string | Date = x.a;
+   :                                ^
+ 9 |     } else {
+   `----
+
+Error: 
+  > (A | D)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/2.ts:7:1]
+ 7 |     if ("a" in x) {
+ 8 |         let y: string | Date = x.a;
+   :                                ^^^
+ 9 |     } else {
+   `----
+
+Error: 
+  > (string | Date)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/2.ts:9:1]
+  9 |     } else {
+ 10 |         let z: number | Object = x.b;
+    :                                  ^
+ 11 |     }
+    `----
+
+Error: 
+  > (B | C)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardOfFromPropNameInUnionType/2.ts:9:1]
+  9 |     } else {
+ 10 |         let z: number | Object = x.b;
+    :                                  ^^^
+ 11 |     }
+    `----
+
+Error: 
+  > (number | Object)

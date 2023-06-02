@@ -1,0 +1,54 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:2:1]
+ 2 | 
+ 3 | type A = { kind: "a"; foo: string };
+   :      ^
+ 4 | type B = { kind: "b"; foo: number };
+   `----
+
+Error: 
+  > {
+  |     kind: "a";
+  |     foo: string;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:3:1]
+ 3 | type A = { kind: "a"; foo: string };
+ 4 | type B = { kind: "b"; foo: number };
+   :      ^
+ 5 | type C = { kind: "c"; foo: number };
+   `----
+
+Error: 
+  > {
+  |     kind: "b";
+  |     foo: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:4:1]
+ 4 | type B = { kind: "b"; foo: number };
+ 5 | type C = { kind: "c"; foo: number };
+   :      ^
+   `----
+
+Error: 
+  > {
+  |     kind: "c";
+  |     foo: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/1.ts:8:1]
+ 8 | 
+ 9 | let a: A = x;
+   :            ^
+   `----
+
+Error: 
+  > {
+  |     kind: "a";
+  |     foo: string;
+  | }

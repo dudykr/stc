@@ -1,0 +1,112 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:1:1]
+ 1 | class C7 { x: boolean }
+ 2 | type T7 = C7;
+   :      ^^
+ 3 | var x7: C7;
+   `----
+
+Error: 
+  > C7
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:5:1]
+ 5 | 
+ 6 | type T8 = string | boolean;
+   :      ^^
+ 7 | var x8: string | boolean;
+   `----
+
+Error: 
+  > (string | boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:9:1]
+  9 | 
+ 10 | type T9 = () => string;
+    :      ^^
+ 11 | var x9: () => string;
+    `----
+
+Error: 
+  > () => string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:13:1]
+ 13 | 
+ 14 | type T10 = { x: number };
+    :      ^^^
+ 15 | var x10: { x: number };
+    `----
+
+Error: 
+  > {
+  |     x: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:17:1]
+ 17 | 
+ 18 | type T11 = { new(): boolean };
+    :      ^^^
+ 19 | var x11: { new(): boolean };
+    `----
+
+Error: 
+  > {
+  |     new(): boolean;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:22:1]
+ 22 | interface I13 { x: string };
+ 23 | type T13 = I13;
+    :      ^^^
+ 24 | var x13_1: I13;
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:26:1]
+ 26 | 
+ 27 | x13_1.x
+    : ^^^^^
+ 28 | x13_2.x
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:26:1]
+ 26 | 
+ 27 | x13_1.x
+    : ^^^^^^^
+ 28 | x13_2.x
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:27:1]
+ 27 | x13_1.x
+ 28 | x13_2.x
+    : ^^^^^
+    `----
+
+Error: 
+  > I13
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:27:1]
+ 27 | x13_1.x
+ 28 | x13_2.x
+    : ^^^^^^^
+    `----
+
+Error: 
+  > string

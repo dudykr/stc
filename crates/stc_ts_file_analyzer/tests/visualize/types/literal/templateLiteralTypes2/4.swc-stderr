@@ -1,0 +1,52 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/4.ts:7:1]
+ 7 | 
+ 8 | const id4 = `foo.bar.${someString}`;
+   :                        ^^^^^^^^^^
+ 9 | export const t4 = takesLiteral(id4);  // unknown
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/4.ts:7:1]
+ 7 | 
+ 8 | const id4 = `foo.bar.${someString}`;
+   :             ^^^^^^^^^^^^^^^^^^^^^^^
+ 9 | export const t4 = takesLiteral(id4);  // unknown
+   `----
+
+Error: 
+  > `foo.bar.${string}`
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/4.ts:8:1]
+ 8 | const id4 = `foo.bar.${someString}`;
+ 9 | export const t4 = takesLiteral(id4);  // unknown
+   :                   ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/4.ts:8:1]
+ 8 | const id4 = `foo.bar.${someString}`;
+ 9 | export const t4 = takesLiteral(id4);  // unknown
+   :                                ^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/4.ts:8:1]
+ 8 | const id4 = `foo.bar.${someString}`;
+ 9 | export const t4 = takesLiteral(id4);  // unknown
+   :                   ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > unknown

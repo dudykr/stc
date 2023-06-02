@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/builtin-object-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo((t: Object) => t, 'a', 'a') // Object
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: (t: T) => T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/builtin-object-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo((t: Object) => t, 'a', 'a') // Object
+   :                    ^
+   `----
+
+Error: 
+  > Object
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/builtin-object-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo((t: Object) => t, 'a', 'a') // Object
+   :     ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: Object) => Object
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/builtin-object-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo((t: Object) => t, 'a', 'a') // Object
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Object

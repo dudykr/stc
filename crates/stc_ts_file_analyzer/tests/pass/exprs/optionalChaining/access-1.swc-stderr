@@ -1,0 +1,22 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:1:1]
+ 1 | declare const o1: undefined | { b: string };
+ 2 | o1?.["b"];
+   : ^^
+   `----
+
+Error: 
+  > (undefined | {
+  |     b: string;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:1:1]
+ 1 | declare const o1: undefined | { b: string };
+ 2 | o1?.["b"];
+   : ^^^^^^^^^
+   `----
+
+Error: 
+  > (string | undefined)

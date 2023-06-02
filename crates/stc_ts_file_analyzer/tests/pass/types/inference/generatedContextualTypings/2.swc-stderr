@@ -1,0 +1,150 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:1:1]
+ 1 | class Base { private p; }
+ 2 | class Derived1 extends Base { private m; }
+   :                        ^^^^
+ 3 | class Derived2 extends Base { private n; }
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:2:1]
+ 2 | class Derived1 extends Base { private m; }
+ 3 | class Derived2 extends Base { private n; }
+   :                        ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :             ^^^^
+ 6 | interface Genric<T> { func(n: T[]); }
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :         ^^^^^^^^^^
+ 6 | interface Genric<T> { func(n: T[]); }
+   `----
+
+Error: 
+  > Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                              ^^^^^^^^
+ 6 | interface Genric<T> { func(n: T[]); }
+   `----
+
+Error: 
+  > typeof Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                          ^^^^^^^^^^^^^^
+ 6 | interface Genric<T> { func(n: T[]); }
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                                   ^^^^^^^^
+ 6 | interface Genric<T> { func(n: T[]); }
+   `----
+
+Error: 
+  > typeof Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                               ^^^^^^^^^^^^^^
+ 6 | interface Genric<T> { func(n: T[]); }
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:8:1]
+  8 | 
+  9 | export class x95 { constructor(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { } }
+    :                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 10 | export class x96 { constructor(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { } }
+    `----
+
+Error: 
+  > (n: Base[]) => any
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:9:1]
+  9 | export class x95 { constructor(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { } }
+ 10 | export class x96 { constructor(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { } }
+    :                                                                            ^^
+    `----
+
+Error: 
+  > Derived1
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:9:1]
+  9 | export class x95 { constructor(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { } }
+ 10 | export class x96 { constructor(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { } }
+    :                                                                                ^^
+    `----
+
+Error: 
+  > Derived2
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:9:1]
+  9 | export class x95 { constructor(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { } }
+ 10 | export class x96 { constructor(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { } }
+    :                                                                           ^^^^^^^^
+    `----
+
+Error: 
+  > [Derived1, Derived2]
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:9:1]
+  9 | export class x95 { constructor(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { } }
+ 10 | export class x96 { constructor(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { } }
+    :                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (n: Base[]) => [Derived1, Derived2]
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/2.ts:9:1]
+  9 | export class x95 { constructor(parm: (s: Base[]) => any = n => { var n: Base[]; return null; }) { } }
+ 10 | export class x96 { constructor(parm: Genric<Base> = { func: n => { return [d1, d2]; } }) { } }
+    :                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     func: (n: Base[]) => [Derived1, Derived2];
+  | }

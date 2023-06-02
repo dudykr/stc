@@ -1,0 +1,123 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:1:1]
+ 1 | type Kind = "A" | "B"
+   :      ^^^^
+   `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :            ^^^^^^
+ 22 | }
+    `----
+
+Error: 
+  > Entity
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :            ^^^^^^^^^^^
+ 22 | }
+    `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :                            ^^^^
+ 22 | }
+    `----
+
+Error: 
+  > ("A" | "B")
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:20:1]
+ 20 | function hasKind(entity: Entity, kind: Kind): boolean {
+ 21 |     return entity.kind === kind;
+    :            ^^^^^^^^^^^^^^^^^^^^
+ 22 | }
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:23:1]
+ 23 |     
+ 24 | ,-> let x: A = {
+ 25 | |       kind: "A",
+ 26 | |       a: 100,
+ 27 | `-> }
+    `----
+
+Error: 
+  > {
+  |     kind: "A";
+  |     a: 100;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:28:1]
+ 28 | 
+ 29 | if (!hasKind(x, "B")) {
+    :      ^^^^^^^
+ 30 |     let c = x;
+    `----
+
+Error: 
+  > ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:28:1]
+ 28 | 
+ 29 | if (!hasKind(x, "B")) {
+    :              ^
+ 30 |     let c = x;
+    `----
+
+Error: 
+  > A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:28:1]
+ 28 | 
+ 29 | if (!hasKind(x, "B")) {
+    :      ^^^^^^^^^^^^^^^
+ 30 |     let c = x;
+    `----
+
+Error: 
+  > entity is B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:28:1]
+ 28 | 
+ 29 | if (!hasKind(x, "B")) {
+    :     ^^^^^^^^^^^^^^^^
+ 30 |     let c = x;
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
+ 29 | if (!hasKind(x, "B")) {
+ 30 |     let c = x;
+    :             ^
+ 31 | }
+    `----
+
+Error: 
+  > A

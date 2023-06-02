@@ -1,0 +1,75 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:2:1]
+ 2 | declare const o2: undefined | { b: { c: string } };
+ 3 | o2?.["b"].c;
+   : ^^
+ 4 | o2?.b["c"];
+   `----
+
+Error: 
+  > (undefined | {
+  |     b: {
+  |         c: string;
+  |     };
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:2:1]
+ 2 | declare const o2: undefined | { b: { c: string } };
+ 3 | o2?.["b"].c;
+   : ^^^^^^^^^
+ 4 | o2?.b["c"];
+   `----
+
+Error: 
+  > ({
+  |     c: string;
+  | } | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:2:1]
+ 2 | declare const o2: undefined | { b: { c: string } };
+ 3 | o2?.["b"].c;
+   : ^^^^^^^^^^^
+ 4 | o2?.b["c"];
+   `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:3:1]
+ 3 | o2?.["b"].c;
+ 4 | o2?.b["c"];
+   : ^^
+   `----
+
+Error: 
+  > (undefined | {
+  |     b: {
+  |         c: string;
+  |     };
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:3:1]
+ 3 | o2?.["b"].c;
+ 4 | o2?.b["c"];
+   : ^^^^^
+   `----
+
+Error: 
+  > ({
+  |     c: string;
+  | } | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-2.ts:3:1]
+ 3 | o2?.["b"].c;
+ 4 | o2?.b["c"];
+   : ^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | undefined)

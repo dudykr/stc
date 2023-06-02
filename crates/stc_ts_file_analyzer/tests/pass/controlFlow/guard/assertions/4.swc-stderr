@@ -1,0 +1,112 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:6:1]
+ 6 | 
+ 7 | export type Optional<a> = Some<a> | None;
+   :             ^^^^^^^^
+   `----
+
+Error: 
+  > (Some<a> | None)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:11:1]
+ 11 | 
+ 12 | export const none: None = { none: '' };
+    :                           ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     none: '';
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:14:1]
+ 14 | export function isSome<a>(value: Optional<a>): value is Some<a> {
+ 15 |     return 'some' in value;
+    :                      ^^^^^
+ 16 | }
+    `----
+
+Error: 
+  > (Some | None)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:14:1]
+ 14 | export function isSome<a>(value: Optional<a>): value is Some<a> {
+ 15 |     return 'some' in value;
+    :            ^^^^^^^^^^^^^^^
+ 16 | }
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:18:1]
+ 18 | function someFrom<a>(some: a) {
+ 19 |     return { some };
+    :            ^^^^^^^^
+ 20 | }
+    `----
+
+Error: 
+  > {
+  |     some: a;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:24:1]
+ 24 | function f1() {
+ 25 |     let x: string | number | undefined = undefined;
+    :                                          ^^^^^^^^^
+ 26 |     x;  // undefined
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:25:1]
+ 25 |     let x: string | number | undefined = undefined;
+ 26 |     x;  // undefined
+    :     ^
+ 27 |     if (x) {
+    `----
+
+Error: 
+  > (string | number | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:26:1]
+ 26 |     x;  // undefined
+ 27 |     if (x) {
+    :         ^
+ 28 |         x;  // string | number (guard as assertion)
+    `----
+
+Error: 
+  > (string | number | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:27:1]
+ 27 |     if (x) {
+ 28 |         x;  // string | number (guard as assertion)
+    :         ^
+ 29 |     }
+    `----
+
+Error: 
+  > (string | number)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/4.ts:29:1]
+ 29 |     }
+ 30 |     x;  // string | number | undefined
+    :     ^
+ 31 | }
+    `----
+
+Error: 
+  > (string | number | undefined)

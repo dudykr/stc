@@ -1,0 +1,235 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:1:1]
+ 1 | 
+ 2 | type Point = {
+   :      ^^^^^
+ 3 |     x: number;
+   `----
+
+Error: 
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :         ^^^^
+ 15 |         this.y += dy;
+    `----
+
+Error: 
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :         ^^^^^^
+ 15 |         this.y += dy;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :                   ^^
+ 15 |         this.y += dy;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:13:1]
+ 13 |     moveBy(dx, dy, dz) {
+ 14 |         this.x += dx;
+    :         ^^^^^^^^^^^^
+ 15 |         this.y += dy;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :         ^^^^
+ 16 |         if (this.z && dz) {
+    `----
+
+Error: 
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :         ^^^^^^
+ 16 |         if (this.z && dz) {
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :                   ^^
+ 16 |         if (this.z && dz) {
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:1]
+ 14 |         this.x += dx;
+ 15 |         this.y += dy;
+    :         ^^^^^^^^^^^^
+ 16 |         if (this.z && dz) {
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :             ^^^^
+ 17 |             this.z += dz;
+    `----
+
+Error: 
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :             ^^^^^^
+ 17 |             this.z += dz;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :                       ^^
+ 17 |             this.z += dz;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:1]
+ 15 |         this.y += dy;
+ 16 |         if (this.z && dz) {
+    :             ^^^^^^^^^^^^
+ 17 |             this.z += dz;
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :             ^^^^
+ 18 |         }
+    `----
+
+Error: 
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :             ^^^^^^
+ 18 |         }
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :                       ^^
+ 18 |         }
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:1]
+ 16 |         if (this.z && dz) {
+ 17 |             this.z += dz;
+    :             ^^^^^^^^^^^^
+ 18 |         }
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:9:1]
+  9 |     
+ 10 | ,-> export let p1: Point = {
+ 11 | |       x: 10,
+ 12 | |       y: 20,
+ 13 | |       moveBy(dx, dy, dz) {
+ 14 | |           this.x += dx;
+ 15 | |           this.y += dy;
+ 16 | |           if (this.z && dz) {
+ 17 | |               this.z += dz;
+ 18 | |           }
+ 19 | |       }
+ 20 | `-> };
+    `----
+
+Error: 
+  > {
+  |     x: 10;
+  |     y: 20;
+  |     moveBy(dx: number, dy: number, dz: number): void;
+  | }

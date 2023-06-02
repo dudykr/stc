@@ -1,0 +1,24 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/8.ts:5:1]
+ 5 | var v = {
+ 6 |     set [a](v) { },
+   :          ^
+ 7 | }
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/8.ts:4:1]
+ 4 |     var a: any;
+ 5 | ,-> var v = {
+ 6 | |       set [a](v) { },
+ 7 | `-> }
+   `----
+
+Error: 
+  > {
+  |     [a]: any;
+  | }

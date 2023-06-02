@@ -1,0 +1,57 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/1.ts:9:1]
+  9 | function foo4(cb: typeof a) {
+ 10 |     return cb;
+    :            ^^
+ 11 | }
+    `----
+
+Error: 
+  > typeof a
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/1.ts:12:1]
+ 12 | 
+ 13 | var r = foo4(a);
+    :         ^^^^
+ 14 | r
+    `----
+
+Error: 
+  > (cb: typeof a) => typeof a
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/1.ts:12:1]
+ 12 | 
+ 13 | var r = foo4(a);
+    :              ^
+ 14 | r
+    `----
+
+Error: 
+  > {
+  |     (x: boolean) : boolean;
+  |     (x: string) : string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/1.ts:12:1]
+ 12 | 
+ 13 | var r = foo4(a);
+    :         ^^^^^^^
+ 14 | r
+    `----
+
+Error: 
+  > typeof a
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/1.ts:13:1]
+ 13 | var r = foo4(a);
+ 14 | r
+    : ^
+    `----
+
+Error: 
+  > typeof a

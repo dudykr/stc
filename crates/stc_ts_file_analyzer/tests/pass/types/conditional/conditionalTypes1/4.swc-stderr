@@ -1,0 +1,33 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/4.ts:1:1]
+ 1 | export function f2<T extends string | undefined>(x: T, y: NonNullable<T>) {
+ 2 |     x = y;
+   :         ^
+ 3 |     let s2: string = y;
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/4.ts:1:1]
+ 1 | export function f2<T extends string | undefined>(x: T, y: NonNullable<T>) {
+ 2 |     x = y;
+   :     ^^^^^
+ 3 |     let s2: string = y;
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/4.ts:2:1]
+ 2 |     x = y;
+ 3 |     let s2: string = y;
+   :                      ^
+ 4 | }
+   `----
+
+Error: 
+  > string

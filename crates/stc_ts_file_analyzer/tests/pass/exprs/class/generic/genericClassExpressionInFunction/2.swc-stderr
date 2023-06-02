@@ -1,0 +1,96 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:5:1]
+ 5 |     // class expression can use T
+ 6 |     return class extends A<U> { }
+   :                          ^
+ 7 | }
+   `----
+
+Error: 
+  > typeof A
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:5:1]
+ 5 |     // class expression can use T
+ 6 |     return class extends A<U> { }
+   :            ^^^^^^^^^^^^^^^^^^^^^^
+ 7 | }
+   `----
+
+Error: 
+  > typeof anonymous class
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:8:1]
+  8 | // extends can call B
+  9 | class K extends B1<number>() {
+    :                 ^^
+ 10 |     namae: string;
+    `----
+
+Error: 
+  > <U>() => typeof anonymous class
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:8:1]
+  8 | // extends can call B
+  9 | class K extends B1<number>() {
+    :                 ^^^^^^^^^^^^
+ 10 |     namae: string;
+    `----
+
+Error: 
+  > typeof anonymous class
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:11:1]
+ 11 | }
+ 12 | var k = new K();
+    :             ^
+ 13 | k.genericVar = 12;
+    `----
+
+Error: 
+  > typeof K
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:11:1]
+ 11 | }
+ 12 | var k = new K();
+    :         ^^^^^^^
+ 13 | k.genericVar = 12;
+    `----
+
+Error: 
+  > K
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:1]
+ 12 | var k = new K();
+ 13 | k.genericVar = 12;
+    : ^
+    `----
+
+Error: 
+  > K
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:1]
+ 12 | var k = new K();
+ 13 | k.genericVar = 12;
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:1]
+ 12 | var k = new K();
+ 13 | k.genericVar = 12;
+    : ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > 12

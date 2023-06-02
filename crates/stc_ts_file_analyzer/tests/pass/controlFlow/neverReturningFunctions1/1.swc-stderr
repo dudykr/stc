@@ -1,0 +1,110 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:4:1]
+ 4 | function fail(message?: string): never {
+ 5 |     throw new Error(message);
+   :               ^^^^^
+ 6 | }
+   `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:4:1]
+ 4 | function fail(message?: string): never {
+ 5 |     throw new Error(message);
+   :                     ^^^^^^^
+ 6 | }
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:4:1]
+ 4 | function fail(message?: string): never {
+ 5 |     throw new Error(message);
+   :           ^^^^^^^^^^^^^^^^^^
+ 6 | }
+   `----
+
+Error: 
+  > Error
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:8:1]
+  8 | function f01(x: string | undefined) {
+  9 |     if (x === undefined) fail("undefined argument");
+    :         ^
+ 10 |     x.length;  // number
+    `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:8:1]
+  8 | function f01(x: string | undefined) {
+  9 |     if (x === undefined) fail("undefined argument");
+    :               ^^^^^^^^^
+ 10 |     x.length;  // number
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:8:1]
+  8 | function f01(x: string | undefined) {
+  9 |     if (x === undefined) fail("undefined argument");
+    :         ^^^^^^^^^^^^^^^
+ 10 |     x.length;  // number
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:8:1]
+  8 | function f01(x: string | undefined) {
+  9 |     if (x === undefined) fail("undefined argument");
+    :                          ^^^^
+ 10 |     x.length;  // number
+    `----
+
+Error: 
+  > (message?: string) => never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:8:1]
+  8 | function f01(x: string | undefined) {
+  9 |     if (x === undefined) fail("undefined argument");
+    :                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 10 |     x.length;  // number
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:9:1]
+  9 |     if (x === undefined) fail("undefined argument");
+ 10 |     x.length;  // number
+    :     ^
+ 11 | }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/1.ts:9:1]
+  9 |     if (x === undefined) fail("undefined argument");
+ 10 |     x.length;  // number
+    :     ^^^^^^^^
+ 11 | }
+    `----
+
+Error: 
+  > number

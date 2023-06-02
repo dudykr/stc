@@ -1,0 +1,51 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:1:1]
+ 1 | var temp = ["s", "t", "r"];
+   :            ^^^^^^^^^^^^^^^
+ 2 | var temp1 = [1, 2, 3];
+   `----
+
+Error: 
+  > ["s", "t", "r"]
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:1:1]
+ 1 | var temp = ["s", "t", "r"];
+ 2 | var temp1 = [1, 2, 3];
+   :             ^^^^^^^^^
+ 3 | interface myArray extends Array<Number> { }
+   `----
+
+Error: 
+  > [1, 2, 3]
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:4:1]
+ 4 | 
+ 5 | var c2: myArray = [...temp1, ...temp];
+   :                       ^^^^^
+   `----
+
+Error: 
+  > number[]
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:4:1]
+ 4 | 
+ 5 | var c2: myArray = [...temp1, ...temp];
+   :                                 ^^^^
+   `----
+
+Error: 
+  > string[]
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:4:1]
+ 4 | 
+ 5 | var c2: myArray = [...temp1, ...temp];
+   :                   ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ((number | string))[]

@@ -1,0 +1,55 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/normalization-3.ts:1:1]
+ 1 | var o = { x: ["string", 1], y: { c: true, d: "world", e: 3 } };
+   :              ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ["string", 1]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/normalization-3.ts:1:1]
+ 1 | var o = { x: ["string", 1], y: { c: true, d: "world", e: 3 } };
+   :                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     c: true;
+  |     d: "world";
+  |     e: 3;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/normalization-3.ts:1:1]
+ 1 | var o = { x: ["string", 1], y: { c: true, d: "world", e: 3 } };
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: ["string", 1];
+  |     y: {
+  |         c: true;
+  |         d: "world";
+  |         e: 3;
+  |     };
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/normalization-3.ts:2:1]
+ 2 | 
+ 3 | o;
+   : ^
+   `----
+
+Error: 
+  > {
+  |     x: ((string | number))[];
+  |     y: {
+  |         c: boolean;
+  |         d: string;
+  |         e: number;
+  |     };
+  | }

@@ -1,0 +1,44 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as ({ a: string } & { b: number }), true) // 1
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as ({ a: string } & { b: number }), true) // 1
+   :        ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as ({ a: string } & { b: number }), true) // 1
+   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ({
+  |     a: string;
+  | } & {
+  |     b: number;
+  | })
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/intersection.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as ({ a: string } & { b: number }), true) // 1
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 1

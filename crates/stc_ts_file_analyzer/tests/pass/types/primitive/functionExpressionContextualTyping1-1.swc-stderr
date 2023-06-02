@@ -1,0 +1,101 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:6:1]
+ 6 | var b6: ((s: string, w: boolean) => void) | ((n: number) => number);
+ 7 | b6 = (k) => { k.toLowerCase() };
+   :               ^
+ 8 | b6 = (i) => {
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:6:1]
+ 6 | var b6: ((s: string, w: boolean) => void) | ((n: number) => number);
+ 7 | b6 = (k) => { k.toLowerCase() };
+   :               ^^^^^^^^^^^^^^^
+ 8 | b6 = (i) => {
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:6:1]
+ 6 | var b6: ((s: string, w: boolean) => void) | ((n: number) => number);
+ 7 | b6 = (k) => { k.toLowerCase() };
+   :      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | b6 = (i) => {
+   `----
+
+Error: 
+  > (k: any) => void
+
+  x Type
+   ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:6:1]
+ 6 | var b6: ((s: string, w: boolean) => void) | ((n: number) => number);
+ 7 | b6 = (k) => { k.toLowerCase() };
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | b6 = (i) => {
+   `----
+
+Error: 
+  > (k: any) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:8:1]
+  8 | b6 = (i) => {
+  9 |     i.toExponential();
+    :     ^
+ 10 |     return i;
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:8:1]
+  8 | b6 = (i) => {
+  9 |     i.toExponential();
+    :     ^^^^^^^^^^^^^^^^^
+ 10 |     return i;
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:9:1]
+  9 |     i.toExponential();
+ 10 |     return i;
+    :            ^
+ 11 | };                   // Per spec, no contextual signature can be extracted in this case. (Otherwise clause)
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:7:1]
+  7 |     b6 = (k) => { k.toLowerCase() };
+  8 | ,-> b6 = (i) => {
+  9 | |       i.toExponential();
+ 10 | |       return i;
+ 11 | `-> };                   // Per spec, no contextual signature can be extracted in this case. (Otherwise clause)
+    `----
+
+Error: 
+  > (i: any) => any
+
+  x Type
+    ,-[$DIR/tests/pass/types/primitive/functionExpressionContextualTyping1-1.ts:7:1]
+  7 |     b6 = (k) => { k.toLowerCase() };
+  8 | ,-> b6 = (i) => {
+  9 | |       i.toExponential();
+ 10 | |       return i;
+ 11 | `-> };                   // Per spec, no contextual signature can be extracted in this case. (Otherwise clause)
+    `----
+
+Error: 
+  > (i: any) => any

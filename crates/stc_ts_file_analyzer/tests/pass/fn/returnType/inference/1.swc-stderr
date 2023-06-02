@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/1.ts:1:1]
+ 1 | export var v: void = function () { }();
+   :                      ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/1.ts:1:1]
+ 1 | export var v: void = function () { }();
+   :                      ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void

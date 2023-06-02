@@ -1,0 +1,69 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-of-intersections-assignable.ts:4:1]
+ 4 | 
+ 5 | foo({ a: '', b: 1 }, null as any as ({ a: string } & { b: number }) | ({ c: bigint } & { d: boolean }), true) // union of intersections
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-of-intersections-assignable.ts:4:1]
+ 4 | 
+ 5 | foo({ a: '', b: 1 }, null as any as ({ a: string } & { b: number }) | ({ c: bigint } & { d: boolean }), true) // union of intersections
+   :     ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     a: '';
+  |     b: 1;
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-of-intersections-assignable.ts:4:1]
+ 4 | 
+ 5 | foo({ a: '', b: 1 }, null as any as ({ a: string } & { b: number }) | ({ c: bigint } & { d: boolean }), true) // union of intersections
+   :                      ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-of-intersections-assignable.ts:4:1]
+ 4 | 
+ 5 | foo({ a: '', b: 1 }, null as any as ({ a: string } & { b: number }) | ({ c: bigint } & { d: boolean }), true) // union of intersections
+   :                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (({
+  |     a: string;
+  | } & {
+  |     b: number;
+  | }) | ({
+  |     c: bigint;
+  | } & {
+  |     d: boolean;
+  | }))
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-of-intersections-assignable.ts:4:1]
+ 4 | 
+ 5 | foo({ a: '', b: 1 }, null as any as ({ a: string } & { b: number }) | ({ c: bigint } & { d: boolean }), true) // union of intersections
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (({
+  |     a: string;
+  | } & {
+  |     b: number;
+  | }) | ({
+  |     c: bigint;
+  | } & {
+  |     d: boolean;
+  | }))

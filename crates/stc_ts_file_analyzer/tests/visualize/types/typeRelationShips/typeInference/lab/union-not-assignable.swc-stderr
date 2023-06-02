@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-not-assignable.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as string | boolean, true) // 1
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-not-assignable.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as string | boolean, true) // 1
+   :        ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-not-assignable.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as string | boolean, true) // 1
+   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | boolean)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/union-not-assignable.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as string | boolean, true) // 1
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 1

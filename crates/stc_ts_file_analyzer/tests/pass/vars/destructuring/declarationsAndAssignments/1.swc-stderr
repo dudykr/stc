@@ -1,0 +1,132 @@
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:8:1]
+  8 |     var a3: [];
+  9 |     var [...a0] = v;
+    :                   ^
+ 10 |     var [x, ...a1] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:9:1]
+  9 |     var [...a0] = v;
+ 10 |     var [x, ...a1] = v;
+    :                      ^
+ 11 |     var [x, y, ...a2] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:10:1]
+ 10 |     var [x, ...a1] = v;
+ 11 |     var [x, y, ...a2] = v;
+    :                         ^
+ 12 |     var [x, y, z, ...a3] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:11:1]
+ 11 |     var [x, y, ...a2] = v;
+ 12 |     var [x, y, z, ...a3] = v;
+    :                            ^
+ 13 |     [...a0] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:12:1]
+ 12 |     var [x, y, z, ...a3] = v;
+ 13 |     [...a0] = v;
+    :               ^
+ 14 |     [x, ...a1] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:12:1]
+ 12 |     var [x, y, z, ...a3] = v;
+ 13 |     [...a0] = v;
+    :     ^^^^^^^^^^^
+ 14 |     [x, ...a1] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:13:1]
+ 13 |     [...a0] = v;
+ 14 |     [x, ...a1] = v;
+    :                  ^
+ 15 |     [x, y, ...a2] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:13:1]
+ 13 |     [...a0] = v;
+ 14 |     [x, ...a1] = v;
+    :     ^^^^^^^^^^^^^^
+ 15 |     [x, y, ...a2] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:14:1]
+ 14 |     [x, ...a1] = v;
+ 15 |     [x, y, ...a2] = v;
+    :                     ^
+ 16 |     [x, y, z, ...a3] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:14:1]
+ 14 |     [x, ...a1] = v;
+ 15 |     [x, y, ...a2] = v;
+    :     ^^^^^^^^^^^^^^^^^
+ 16 |     [x, y, z, ...a3] = v;
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:15:1]
+ 15 |     [x, y, ...a2] = v;
+ 16 |     [x, y, z, ...a3] = v;
+    :                        ^
+ 17 | }
+    `----
+
+Error: 
+  > [number, string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/vars/destructuring/declarationsAndAssignments/1.ts:15:1]
+ 15 |     [x, y, ...a2] = v;
+ 16 |     [x, y, z, ...a3] = v;
+    :     ^^^^^^^^^^^^^^^^^^^^
+ 17 | }
+    `----
+
+Error: 
+  > [number, string, boolean]

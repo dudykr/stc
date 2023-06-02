@@ -1,0 +1,27 @@
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/count/iife/1.ts:1:1]
+ 1 | (function (a, b) { }())
+   :  ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (a: any, b: any) => void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/count/iife/1.ts:1:1]
+ 1 | (function (a, b) { }())
+   :  ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/args/count/iife/1.ts:1:1]
+ 1 | (function (a, b) { }())
+   : ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void

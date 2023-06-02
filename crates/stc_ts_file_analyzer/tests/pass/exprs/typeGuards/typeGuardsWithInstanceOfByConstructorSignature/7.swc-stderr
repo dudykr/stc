@@ -1,0 +1,66 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/7.ts:14:1]
+ 14 | var obj14: any;
+ 15 | if (obj14 instanceof G) {
+    :     ^^^^^
+ 16 |   obj14; // G1
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/7.ts:14:1]
+ 14 | var obj14: any;
+ 15 | if (obj14 instanceof G) {
+    :                      ^
+ 16 |   obj14; // G1
+    `----
+
+Error: 
+  > GConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/7.ts:14:1]
+ 14 | var obj14: any;
+ 15 | if (obj14 instanceof G) {
+    :     ^^^^^^^^^^^^^^^^^^
+ 16 |   obj14; // G1
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/7.ts:15:1]
+ 15 | if (obj14 instanceof G) {
+ 16 |   obj14; // G1
+    :   ^^^^^
+ 17 |   obj14.foo1;
+    `----
+
+Error: 
+  > G1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/7.ts:16:1]
+ 16 |   obj14; // G1
+ 17 |   obj14.foo1;
+    :   ^^^^^
+ 18 | }
+    `----
+
+Error: 
+  > G1
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/7.ts:16:1]
+ 16 |   obj14; // G1
+ 17 |   obj14.foo1;
+    :   ^^^^^^^^^^
+ 18 | }
+    `----
+
+Error: 
+  > number

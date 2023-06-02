@@ -1,0 +1,77 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:8:1]
+  8 | function f21(x: string | undefined) {
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+    :         ^
+ 10 |     x.length;  // string
+    `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:8:1]
+  8 | function f21(x: string | undefined) {
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+    :               ^^^^^^^^^
+ 10 |     x.length;  // string
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:8:1]
+  8 | function f21(x: string | undefined) {
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+    :         ^^^^^^^^^^^^^^^
+ 10 |     x.length;  // string
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:8:1]
+  8 | function f21(x: string | undefined) {
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+    :                          ^^^^^
+ 10 |     x.length;  // string
+    `----
+
+Error: 
+  > Debug
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:8:1]
+  8 | function f21(x: string | undefined) {
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+    :                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 10 |     x.length;  // string
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:9:1]
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+ 10 |     x.length;  // string
+    :     ^
+ 11 | }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/neverReturningFunctions1/3.ts:9:1]
+  9 |     if (x === undefined) Debug.fail("undefined argument");
+ 10 |     x.length;  // string
+    :     ^^^^^^^^
+ 11 | }
+    `----
+
+Error: 
+  > number

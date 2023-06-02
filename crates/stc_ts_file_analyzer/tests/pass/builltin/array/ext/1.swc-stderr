@@ -1,0 +1,32 @@
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:7:1]
+ 7 | 
+ 8 | let x = a.equalsShallow(b);
+   :         ^
+   `----
+
+Error: 
+  > (((string | number))[] | null[] | undefined[] | {
+  | }[])
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:7:1]
+ 7 | 
+ 8 | let x = a.equalsShallow(b);
+   :                         ^
+   `----
+
+Error: 
+  > (((string | number))[] | null[] | undefined[] | {
+  | }[])
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:7:1]
+ 7 | 
+ 8 | let x = a.equalsShallow(b);
+   :         ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean

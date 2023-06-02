@@ -1,0 +1,72 @@
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                    ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [1, '2', 3, 4, 5]
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                                                 ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                                                ^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                                               ^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                                          ^^^^^^^^
+   `----
+
+Error: 
+  > (v: any) => boolean
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                                                 ^
+   `----
+
+Error: 
+  > (number | string)
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                                          ^^^^^^^^
+   `----
+
+Error: 
+  > (v: (number | string)) => boolean
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/map/simple.ts:1:1]
+ 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+   :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean[]

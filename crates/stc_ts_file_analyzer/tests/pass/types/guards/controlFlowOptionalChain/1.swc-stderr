@@ -1,0 +1,122 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:1:1]
+ 1 | type Feature = {
+   :      ^^^^^^^
+ 2 |     id: string;
+   `----
+
+Error: 
+  > {
+  |     id: string;
+  |     geometry?: {
+  |         type: string;
+  |         coordinates: number[];
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^
+ 12 |         return [];
+    `----
+
+Error: 
+  > {
+  |     id: string;
+  |     geometry?: {
+  |         type: string;
+  |         coordinates: number[];
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^^^^^^^^^^
+ 12 |         return [];
+    `----
+
+Error: 
+  > ({
+  |     type: string;
+  |     coordinates: number[];
+  | } | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^^^^^^^^^^^^^^^^
+ 12 |         return [];
+    `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:10:1]
+ 10 | function extractCoordinates(f: Feature): number[] {
+ 11 |     if (f.geometry?.type !== 'test') {
+    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 12 |         return [];
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:11:1]
+ 11 |     if (f.geometry?.type !== 'test') {
+ 12 |         return [];
+    :                ^^
+ 13 |     }
+    `----
+
+Error: 
+  > []
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:13:1]
+ 13 |     }
+ 14 |     return f.geometry.coordinates;
+    :            ^
+ 15 | }
+    `----
+
+Error: 
+  > {
+  |     id: string;
+  |     geometry?: {
+  |         type: string;
+  |         coordinates: number[];
+  |     };
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:13:1]
+ 13 |     }
+ 14 |     return f.geometry.coordinates;
+    :            ^^^^^^^^^^
+ 15 | }
+    `----
+
+Error: 
+  > {
+  |     type: string;
+  |     coordinates: number[];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:13:1]
+ 13 |     }
+ 14 |     return f.geometry.coordinates;
+    :            ^^^^^^^^^^^^^^^^^^^^^^
+ 15 | }
+    `----
+
+Error: 
+  > number[]

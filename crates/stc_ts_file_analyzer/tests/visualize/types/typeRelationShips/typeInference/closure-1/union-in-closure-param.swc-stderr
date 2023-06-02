@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/union-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo('a', (t: string | number) => t, 'a') // string | number
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: (t: T) => T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/union-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo('a', (t: string | number) => t, 'a') // string | number
+   :                                  ^
+   `----
+
+Error: 
+  > (string | number)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/union-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo('a', (t: string | number) => t, 'a') // string | number
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: (string | number)) => (string | number)
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-1/union-in-closure-param.ts:5:1]
+ 5 | 
+ 6 | foo('a', (t: string | number) => t, 'a') // string | number
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (string | number)

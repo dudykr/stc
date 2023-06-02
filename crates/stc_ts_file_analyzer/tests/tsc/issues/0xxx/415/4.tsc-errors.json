@@ -1,0 +1,14 @@
+[
+  {
+    "file": "tests/tsc/issues/0xxx/415/4.ts",
+    "line": 19,
+    "col": 1,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/issues/0xxx/415/4.ts",
+    "line": 19,
+    "col": 7,
+    "code": 2454
+  }
+]

@@ -1,0 +1,30 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/2.ts:6:1]
+ 6 | const id2 = "foo.bar.baz";
+ 7 | export const t2 = takesLiteral(id2); // "baz"
+   :                   ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/2.ts:6:1]
+ 6 | const id2 = "foo.bar.baz";
+ 7 | export const t2 = takesLiteral(id2); // "baz"
+   :                                ^^^
+   `----
+
+Error: 
+  > "foo.bar.baz"
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2/2.ts:6:1]
+ 6 | const id2 = "foo.bar.baz";
+ 7 | export const t2 = takesLiteral(id2); // "baz"
+   :                   ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > "baz"

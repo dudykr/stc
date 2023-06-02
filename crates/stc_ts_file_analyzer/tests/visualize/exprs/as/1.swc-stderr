@@ -1,0 +1,36 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/as/1.ts:1:1]
+ 1 | export var x = (v => v) as (x: number) => string;
+   :                      ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/as/1.ts:1:1]
+ 1 | export var x = (v => v) as (x: number) => string;
+   :                 ^^^^^^
+   `----
+
+Error: 
+  > (v: number) => number
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/as/1.ts:1:1]
+ 1 | export var x = (v => v) as (x: number) => string;
+   :                ^^^^^^^^
+   `----
+
+Error: 
+  > (v: number) => number
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/as/1.ts:1:1]
+ 1 | export var x = (v => v) as (x: number) => string;
+   :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: number) => string

@@ -1,0 +1,68 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:10:1]
+ 10 | let d: number;
+ 11 | o?.x(d = 1);
+    : ^
+ 12 | d.toString();
+    `----
+
+Error: 
+  > (undefined | {
+  |     [key: string]: any;
+  |     [key: number]: any;
+  |     (...args: any[]) : any;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:10:1]
+ 10 | let d: number;
+ 11 | o?.x(d = 1);
+    : ^^^^
+ 12 | d.toString();
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:10:1]
+ 10 | let d: number;
+ 11 | o?.x(d = 1);
+    :      ^^^^^
+ 12 | d.toString();
+    `----
+
+Error: 
+  > 1
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:10:1]
+ 10 | let d: number;
+ 11 | o?.x(d = 1);
+    : ^^^^^^^^^^^
+ 12 | d.toString();
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+ 12 | d.toString();
+    : ^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+ 12 | d.toString();
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string

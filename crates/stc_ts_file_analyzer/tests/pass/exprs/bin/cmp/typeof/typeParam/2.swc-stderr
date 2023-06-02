@@ -1,0 +1,77 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:9:1]
+  9 | export function f2<T>(x: T) {
+ 10 |     if (typeof x === "string") {
+    :                ^
+ 11 |         let v1: T = x;
+    `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:9:1]
+  9 | export function f2<T>(x: T) {
+ 10 |     if (typeof x === "string") {
+    :         ^^^^^^^^
+ 11 |         let v1: T = x;
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:9:1]
+  9 | export function f2<T>(x: T) {
+ 10 |     if (typeof x === "string") {
+    :         ^^^^^^^^^^^^^^^^^^^^^
+ 11 |         let v1: T = x;
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:10:1]
+ 10 |     if (typeof x === "string") {
+ 11 |         let v1: T = x;
+    :                     ^
+ 12 |         let v2: string = x;
+    `----
+
+Error: 
+  > (T & string)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:11:1]
+ 11 |         let v1: T = x;
+ 12 |         let v2: string = x;
+    :                          ^
+ 13 |         x.length;
+    `----
+
+Error: 
+  > (T & string)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:12:1]
+ 12 |         let v2: string = x;
+ 13 |         x.length;
+    :         ^
+ 14 |     }
+    `----
+
+Error: 
+  > (T & string)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/2.ts:12:1]
+ 12 |         let v2: string = x;
+ 13 |         x.length;
+    :         ^^^^^^^^
+ 14 |     }
+    `----
+
+Error: 
+  > number

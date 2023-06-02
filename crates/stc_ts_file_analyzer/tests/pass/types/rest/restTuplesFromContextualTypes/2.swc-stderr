@@ -1,0 +1,43 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:2:1]
+ 2 | 
+ 3 | type ArgsUnion = [number, string] | [number, Error];
+   :      ^^^^^^^^^
+ 4 | type TupleUnionFunc = (...params: ArgsUnion) => number;
+   `----
+
+Error: 
+  > ([number, string] | [number, Error])
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:3:1]
+ 3 | type ArgsUnion = [number, string] | [number, Error];
+ 4 | type TupleUnionFunc = (...params: ArgsUnion) => number;
+   :      ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (...params: ArgsUnion) => number
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:6:1]
+ 6 | const funcUnionTupleNoRest: TupleUnionFunc = (num, strOrErr) => {
+ 7 |   return num;
+   :          ^^^
+ 8 | };
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/2.ts:5:1]
+ 5 |     
+ 6 | ,-> const funcUnionTupleNoRest: TupleUnionFunc = (num, strOrErr) => {
+ 7 | |     return num;
+ 8 | `-> };
+   `----
+
+Error: 
+  > (num: number, strOrErr: (string | Error)) => number

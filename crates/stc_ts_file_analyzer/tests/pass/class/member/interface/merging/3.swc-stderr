@@ -1,0 +1,53 @@
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:14:1]
+ 14 | 
+ 15 | class Child extends BaseClass {
+    :                     ^^^^^^^^^
+ 16 |     classNumber: number;
+    `----
+
+Error: 
+  > typeof BaseClass
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:25:1]
+ 25 | declare var a: IChild;
+ 26 | a.baseNumber
+    : ^
+ 27 | a.classNumber
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:25:1]
+ 25 | declare var a: IChild;
+ 26 | a.baseNumber
+    : ^^^^^^^^^^^^
+ 27 | a.classNumber
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:26:1]
+ 26 | a.baseNumber
+ 27 | a.classNumber
+    : ^
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:26:1]
+ 26 | a.baseNumber
+ 27 | a.classNumber
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number

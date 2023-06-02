@@ -1,0 +1,62 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:4:1]
+ 4 | namespace Example2 {
+ 5 |     type S = { a: 0 | 2, b: 4 };
+   :          ^
+ 6 |     type T = { a: 0, b: 1 | 4 }     // T0
+   `----
+
+Error: 
+  > {
+  |     a: (0 | 2);
+  |     b: 4;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:5:1]
+ 5 |     type S = { a: 0 | 2, b: 4 };
+ 6 |     type T = { a: 0, b: 1 | 4 }     // T0
+   :          ^
+ 7 |         | { a: 1, b: 2 }         // T1
+   `----
+
+Error: 
+  > ({
+  |     a: 0;
+  |     b: (1 | 4);
+  | } | {
+  |     a: 1;
+  |     b: 2;
+  | } | {
+  |     a: 2;
+  |     b: (3 | 4);
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:13:1]
+ 13 |     // S is assignable to T2 when S["a"] is 2
+ 14 |     t = s;
+    :         ^
+ 15 | }
+    `----
+
+Error: 
+  > {
+  |     a: (0 | 2);
+  |     b: 4;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:13:1]
+ 13 |     // S is assignable to T2 when S["a"] is 2
+ 14 |     t = s;
+    :     ^^^^^
+ 15 | }
+    `----
+
+Error: 
+  > {
+  |     a: (0 | 2);
+  |     b: 4;
+  | }

@@ -1,0 +1,23 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/1.ts:1:1]
+ 1 | export var o = {
+ 2 |     ["" || 0]: 0
+   :      ^^^^^^^
+ 3 | };
+   `----
+
+Error: 
+  > (string | number)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/1.ts:1:1]
+ 1 | ,-> export var o = {
+ 2 | |       ["" || 0]: 0
+ 3 | `-> };
+   `----
+
+Error: 
+  > {
+  |     ["" || 0]: 0;
+  | }

@@ -1,0 +1,146 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:2:1]
+ 2 | 
+ 3 | type A = {
+   :      ^
+ 4 |     f(): void;
+   `----
+
+Error: 
+  > {
+  |     f(): void;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:6:1]
+ 6 | 
+ 7 | type B = {
+   :      ^
+ 8 |     f(x?: string): void;
+   `----
+
+Error: 
+  > {
+  |     f(x?: string): void;
+  |     g(): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :              ^^^^^
+ 14 |     z.f();
+    `----
+
+Error: 
+  > false
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :             ^^^^^^
+ 14 |     z.f();
+    `----
+
+Error: 
+  > true
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :                      ^
+ 14 |     z.f();
+    `----
+
+Error: 
+  > {
+  |     f(): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :                          ^
+ 14 |     z.f();
+    `----
+
+Error: 
+  > {
+  |     f(x?: string): void;
+  |     g(): void;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:12:1]
+ 12 | export function f11(a: A, b: B) {
+ 13 |     let z = !!true ? a : b;  // A | B
+    :             ^^^^^^^^^^^^^^
+ 14 |     z.f();
+    `----
+
+Error: 
+  > ({
+  |     f(): void;
+  | } | {
+  |     f(x?: string): void;
+  |     g(): void;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:1]
+ 13 |     let z = !!true ? a : b;  // A | B
+ 14 |     z.f();
+    :     ^
+ 15 |     z.f('hello');
+    `----
+
+Error: 
+  > ({
+  |     f(): void;
+  | } | {
+  |     f(x?: string): void;
+  |     g(): void;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:13:1]
+ 13 |     let z = !!true ? a : b;  // A | B
+ 14 |     z.f();
+    :     ^^^^^
+ 15 |     z.f('hello');
+    `----
+
+Error: 
+  > void
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:14:1]
+ 14 |     z.f();
+ 15 |     z.f('hello');
+    :     ^
+ 16 | }
+    `----
+
+Error: 
+  > ({
+  |     f(): void;
+  | } | {
+  |     f(x?: string): void;
+  |     g(): void;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/unionTypeReduction2/6.ts:14:1]
+ 14 |     z.f();
+ 15 |     z.f('hello');
+    :     ^^^^^^^^^^^^
+ 16 | }
+    `----
+
+Error: 
+  > void

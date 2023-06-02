@@ -1,0 +1,30 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/from.ts:5:1]
+ 5 | 
+ 6 | export const c1 = Array.from(a)
+   :                   ^^^^^
+   `----
+
+Error: 
+  > ArrayConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/from.ts:5:1]
+ 5 | 
+ 6 | export const c1 = Array.from(a)
+   :                              ^
+   `----
+
+Error: 
+  > Set
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/from.ts:5:1]
+ 5 | 
+ 6 | export const c1 = Array.from(a)
+   :                   ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > A[]

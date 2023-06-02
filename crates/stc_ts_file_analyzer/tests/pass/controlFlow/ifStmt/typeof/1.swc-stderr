@@ -1,0 +1,55 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/1.ts:4:1]
+ 4 | 
+ 5 | if (typeof a === 'string') {
+   :            ^
+ 6 |     a
+   `----
+
+Error: 
+  > (string | number | boolean)
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/1.ts:4:1]
+ 4 | 
+ 5 | if (typeof a === 'string') {
+   :     ^^^^^^^^
+ 6 |     a
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/1.ts:4:1]
+ 4 | 
+ 5 | if (typeof a === 'string') {
+   :     ^^^^^^^^^^^^^^^^^^^^^
+ 6 |     a
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/1.ts:5:1]
+ 5 | if (typeof a === 'string') {
+ 6 |     a
+   :     ^
+ 7 | } else {
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/1.ts:7:1]
+ 7 | } else {
+ 8 |     a
+   :     ^
+ 9 | }
+   `----
+
+Error: 
+  > (number | boolean)

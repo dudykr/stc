@@ -1,0 +1,53 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/9.ts:10:1]
+ 10 | 
+ 11 | s1 = Tag1.b;
+    :      ^^^^
+ 12 | s2 = s1;
+    `----
+
+Error: 
+  > Tag1
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/9.ts:10:1]
+ 10 | 
+ 11 | s1 = Tag1.b;
+    :      ^^^^^^
+ 12 | s2 = s1;
+    `----
+
+Error: 
+  > Tag1.b
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/9.ts:10:1]
+ 10 | 
+ 11 | s1 = Tag1.b;
+    : ^^^^^^^^^^^
+ 12 | s2 = s1;
+    `----
+
+Error: 
+  > Tag1.b
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/9.ts:11:1]
+ 11 | s1 = Tag1.b;
+ 12 | s2 = s1;
+    :      ^^
+    `----
+
+Error: 
+  > Tag1.b
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/9.ts:11:1]
+ 11 | s1 = Tag1.b;
+ 12 | s2 = s1;
+    : ^^^^^^^
+    `----
+
+Error: 
+  > Tag1.b

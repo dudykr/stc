@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/builtin-object.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as Object, true) // Object
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/builtin-object.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as Object, true) // Object
+   :        ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/builtin-object.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as Object, true) // Object
+   :        ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Object
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/lab/builtin-object.ts:4:1]
+ 4 | 
+ 5 | foo(1, null as any as Object, true) // Object
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Object

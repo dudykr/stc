@@ -1,0 +1,66 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/5.ts:15:1]
+ 15 | var obj10: any;
+ 16 | if (obj10 instanceof E) {
+    :     ^^^^^
+ 17 |   obj10; // E1 | E2
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/5.ts:15:1]
+ 15 | var obj10: any;
+ 16 | if (obj10 instanceof E) {
+    :                      ^
+ 17 |   obj10; // E1 | E2
+    `----
+
+Error: 
+  > EConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/5.ts:15:1]
+ 15 | var obj10: any;
+ 16 | if (obj10 instanceof E) {
+    :     ^^^^^^^^^^^^^^^^^^
+ 17 |   obj10; // E1 | E2
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/5.ts:16:1]
+ 16 | if (obj10 instanceof E) {
+ 17 |   obj10; // E1 | E2
+    :   ^^^^^
+ 18 |   obj10.foo;
+    `----
+
+Error: 
+  > (E1 | E2)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/5.ts:17:1]
+ 17 |   obj10; // E1 | E2
+ 18 |   obj10.foo;
+    :   ^^^^^
+ 19 | }
+    `----
+
+Error: 
+  > (E1 | E2)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeGuards/typeGuardsWithInstanceOfByConstructorSignature/5.ts:17:1]
+ 17 |   obj10; // E1 | E2
+ 18 |   obj10.foo;
+    :   ^^^^^^^^^
+ 19 | }
+    `----
+
+Error: 
+  > string

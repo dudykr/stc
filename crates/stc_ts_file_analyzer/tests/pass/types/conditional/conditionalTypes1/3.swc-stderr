@@ -1,0 +1,24 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/3.ts:1:1]
+ 1 | export function f1<T>(x: T, y: NonNullable<T>) {
+ 2 |     x = y;
+   :         ^
+ 3 | }
+   `----
+
+Error: 
+  > (T & {
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/3.ts:1:1]
+ 1 | export function f1<T>(x: T, y: NonNullable<T>) {
+ 2 |     x = y;
+   :     ^^^^^
+ 3 | }
+   `----
+
+Error: 
+  > (T & {
+  | })

@@ -1,0 +1,33 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/3.ts:1:1]
+ 1 | function f3<T, K1 extends keyof T, K2 extends keyof T>(obj: T, k1: K1, k2: K2) {
+ 2 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                                         ^^^
+ 3 | }
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/3.ts:1:1]
+ 1 | function f3<T, K1 extends keyof T, K2 extends keyof T>(obj: T, k1: K1, k2: K2) {
+ 2 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :            ^^
+ 3 | }
+   `----
+
+Error: 
+  > K1
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/3.ts:1:1]
+ 1 | function f3<T, K1 extends keyof T, K2 extends keyof T>(obj: T, k1: K1, k2: K2) {
+ 2 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                      ^^
+ 3 | }
+   `----
+
+Error: 
+  > K2

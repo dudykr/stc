@@ -1,0 +1,67 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:2:1]
+ 2 | 
+ 3 | type ArgsUnion = [number, string] | [number, Error];
+   :      ^^^^^^^^^
+ 4 | type TupleUnionFunc = (...params: ArgsUnion) => number;
+   `----
+
+Error: 
+  > ([number, string] | [number, Error])
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:3:1]
+ 3 | type ArgsUnion = [number, string] | [number, Error];
+ 4 | type TupleUnionFunc = (...params: ArgsUnion) => number;
+   :      ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (...params: ArgsUnion) => number
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:6:1]
+ 6 | const funcUnionTupleRest: TupleUnionFunc = (...params) => {
+ 7 |   const [num, strOrErr] = params;
+   :                           ^^^^^^
+ 8 |   strOrErr;
+   `----
+
+Error: 
+  > [...([number, string] | [number, Error])]
+
+  x Type
+   ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:7:1]
+ 7 |   const [num, strOrErr] = params;
+ 8 |   strOrErr;
+   :   ^^^^^^^^
+ 9 |   return num;
+   `----
+
+Error: 
+  > (string | Error)
+
+  x Type
+    ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:8:1]
+  8 |   strOrErr;
+  9 |   return num;
+    :          ^^^
+ 10 | };
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:5:1]
+  5 |     
+  6 | ,-> const funcUnionTupleRest: TupleUnionFunc = (...params) => {
+  7 | |     const [num, strOrErr] = params;
+  8 | |     strOrErr;
+  9 | |     return num;
+ 10 | `-> };
+    `----
+
+Error: 
+  > (...params: [...ArgsUnion]) => number

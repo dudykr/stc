@@ -1,0 +1,165 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:1:1]
+ 1 | class Base { private p; }
+ 2 | class Derived1 extends Base { private m; }
+   :                        ^^^^
+ 3 | class Derived2 extends Base { private n; }
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:2:1]
+ 2 | class Derived1 extends Base { private m; }
+ 3 | class Derived2 extends Base { private n; }
+   :                        ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :             ^^^^
+   `----
+
+Error: 
+  > typeof Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :         ^^^^^^^^^^
+   `----
+
+Error: 
+  > Base
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                              ^^^^^^^^
+   `----
+
+Error: 
+  > typeof Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                          ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                                   ^^^^^^^^
+   `----
+
+Error: 
+  > typeof Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:4:1]
+ 4 | 
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                               ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:6:1]
+ 6 | 
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+   :                                                                      ^^
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:6:1]
+ 6 | 
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+   :                                                                          ^^
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:6:1]
+ 6 | 
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+   :                                                                     ^^^^^^^^
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   `----
+
+Error: 
+  > [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:6:1]
+ 6 | 
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+   :                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   `----
+
+Error: 
+  > () => [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:7:1]
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   :                                                                         ^^
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:7:1]
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   :                                                                             ^^
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:7:1]
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   :                                                                        ^^^^^^^^
+   `----
+
+Error: 
+  > [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/3.ts:7:1]
+ 7 | export function x123(parm: () => Base[] = function named() { return [d1, d2] }) { }
+ 8 | export function x126(parm: { (): Base[]; } = function named() { return [d1, d2] }) { }
+   :                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => [Derived1, Derived2]

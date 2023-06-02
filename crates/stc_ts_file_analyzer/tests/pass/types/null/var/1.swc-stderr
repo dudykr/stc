@@ -1,0 +1,32 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/null/var/1.ts:1:1]
+ 1 | var nil: null;
+ 2 | nil;
+   : ^^^
+ 3 | nil = null;
+   `----
+
+Error: 
+  > null
+
+  x Type
+   ,-[$DIR/tests/pass/types/null/var/1.ts:2:1]
+ 2 | nil;
+ 3 | nil = null;
+   : ^^^^^^^^^^
+ 4 | nil;
+   `----
+
+Error: 
+  > null
+
+  x Type
+   ,-[$DIR/tests/pass/types/null/var/1.ts:3:1]
+ 3 | nil = null;
+ 4 | nil;
+   : ^^^
+   `----
+
+Error: 
+  > null

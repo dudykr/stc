@@ -1,0 +1,40 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/any-in-closure-return.ts:5:1]
+ 5 | 
+ 6 | foo((t) => null as any, 'a', 'a') // string
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x: (t: T) => T, a: T, b: T) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/any-in-closure-return.ts:5:1]
+ 5 | 
+ 6 | foo((t) => null as any, 'a', 'a') // string
+   :            ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/any-in-closure-return.ts:5:1]
+ 5 | 
+ 6 | foo((t) => null as any, 'a', 'a') // string
+   :     ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: any) => any
+
+  x Type
+   ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/closure-first/any-in-closure-return.ts:5:1]
+ 5 | 
+ 6 | foo((t) => null as any, 'a', 'a') // string
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 'a'

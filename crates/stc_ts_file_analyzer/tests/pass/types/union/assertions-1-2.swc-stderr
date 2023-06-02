@@ -1,0 +1,47 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assertions-1-2.ts:8:1]
+  8 | 
+  9 | export var x = { p1: 10, p2: 20 };
+    :                ^^^^^^^^^^^^^^^^^^
+ 10 | export var y: number | I2 = x;
+    `----
+
+Error: 
+  > {
+  |     p1: 10;
+  |     p2: 20;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assertions-1-2.ts:9:1]
+  9 | export var x = { p1: 10, p2: 20 };
+ 10 | export var y: number | I2 = x;
+    :                             ^
+    `----
+
+Error: 
+  > {
+  |     p1: number;
+  |     p2: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assertions-1-2.ts:12:1]
+ 12 | 
+ 13 | export var d = <I1>y;
+    :                    ^
+    `----
+
+Error: 
+  > I2
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assertions-1-2.ts:12:1]
+ 12 | 
+ 13 | export var d = <I1>y;
+    :                ^^^^^
+    `----
+
+Error: 
+  > I1

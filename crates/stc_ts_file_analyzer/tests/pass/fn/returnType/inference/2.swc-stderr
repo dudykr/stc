@@ -1,0 +1,22 @@
+
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/2.ts:2:1]
+ 2 | export var a: any = function f() {
+ 3 |     return f;
+   :            ^
+ 4 | };
+   `----
+
+Error: 
+  > typeof f
+
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/2.ts:1:1]
+ 1 |     // FunctionExpression f with no return type annotation and directly references f in its body returns any
+ 2 | ,-> export var a: any = function f() {
+ 3 | |       return f;
+ 4 | `-> };
+   `----
+
+Error: 
+  > () => typeof f

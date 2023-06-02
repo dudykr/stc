@@ -1,0 +1,26 @@
+[
+  {
+    "file": "tests/tsc/conformance/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts",
+    "line": 6,
+    "col": 16,
+    "code": 2304
+  },
+  {
+    "file": "tests/tsc/conformance/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts",
+    "line": 6,
+    "col": 68,
+    "code": 2345
+  },
+  {
+    "file": "tests/tsc/conformance/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts",
+    "line": 7,
+    "col": 16,
+    "code": 2304
+  },
+  {
+    "file": "tests/tsc/conformance/typeRelationships/typeInference/genericCallWithGenericSignatureArguments/1.ts",
+    "line": 7,
+    "col": 69,
+    "code": 2345
+  }
+]

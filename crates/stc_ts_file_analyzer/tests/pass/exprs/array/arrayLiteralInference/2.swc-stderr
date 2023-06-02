@@ -1,0 +1,48 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:3:1]
+ 3 | declare function foo<T>(...args: T[]): T[];
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                   ^^^
+   `----
+
+Error: 
+  > <T>(...args: T[]) => T[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:3:1]
+ 3 | declare function foo<T>(...args: T[]): T[];
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                       ^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: true;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:3:1]
+ 3 | declare function foo<T>(...args: T[]): T[];
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                                    ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: false;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:3:1]
+ 3 | declare function foo<T>(...args: T[]): T[];
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (({
+  |     x: true;
+  | } | {
+  |     x: false;
+  | }))[]

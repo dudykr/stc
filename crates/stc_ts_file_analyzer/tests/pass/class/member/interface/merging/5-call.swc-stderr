@@ -1,0 +1,75 @@
+
+  x Type
+   ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:5:1]
+ 5 | 
+ 6 | class Child extends BaseClass {
+   :                     ^^^^^^^^^
+ 7 |     classNumber: number;
+   `----
+
+Error: 
+  > typeof BaseClass
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:16:1]
+ 16 | declare var a: IChild;
+ 17 | a.baseNumber
+    : ^
+ 18 | a.classNumber
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:16:1]
+ 16 | declare var a: IChild;
+ 17 | a.baseNumber
+    : ^^^^^^^^^^^^
+ 18 | a.classNumber
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:17:1]
+ 17 | a.baseNumber
+ 18 | a.classNumber
+    : ^
+ 19 | a()
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:17:1]
+ 17 | a.baseNumber
+ 18 | a.classNumber
+    : ^^^^^^^^^^^^^
+ 19 | a()
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:18:1]
+ 18 | a.classNumber
+ 19 | a()
+    : ^
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:18:1]
+ 18 | a.classNumber
+ 19 | a()
+    : ^^^
+    `----
+
+Error: 
+  > string

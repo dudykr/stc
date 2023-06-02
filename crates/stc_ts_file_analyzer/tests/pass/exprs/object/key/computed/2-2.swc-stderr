@@ -1,0 +1,59 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:4:1]
+ 4 | 
+ 5 | extractIndexer({
+   : ^^^^^^^^^^^^^^
+ 6 |     [E.x]: ""
+   `----
+
+Error: 
+  > <T>(p: {
+  |     [n: number]: T;
+  | }) => T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:5:1]
+ 5 | extractIndexer({
+ 6 |     [E.x]: ""
+   :      ^
+ 7 | }); // Should return string
+   `----
+
+Error: 
+  > E
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:5:1]
+ 5 | extractIndexer({
+ 6 |     [E.x]: ""
+   :      ^^^
+ 7 | }); // Should return string
+   `----
+
+Error: 
+  > E.x
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:4:1]
+ 4 |     
+ 5 | ,-> extractIndexer({
+ 6 | |       [E.x]: ""
+ 7 | `-> }); // Should return string
+   `----
+
+Error: 
+  > {
+  |     [E.x]: "";
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/computed/2-2.ts:4:1]
+ 4 |     
+ 5 | ,-> extractIndexer({
+ 6 | |       [E.x]: ""
+ 7 | `-> }); // Should return string
+   `----
+
+Error: 
+  > ""

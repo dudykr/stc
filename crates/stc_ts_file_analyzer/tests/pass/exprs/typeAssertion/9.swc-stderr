@@ -1,0 +1,33 @@
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:8:1]
+  8 |     let x: string;
+  9 |     x!.slice();
+    :     ^
+ 10 | }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:8:1]
+  8 |     let x: string;
+  9 |     x!.slice();
+    :     ^^
+ 10 | }
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:8:1]
+  8 |     let x: string;
+  9 |     x!.slice();
+    :     ^^^^^^^^^^
+ 10 | }
+    `----
+
+Error: 
+  > string

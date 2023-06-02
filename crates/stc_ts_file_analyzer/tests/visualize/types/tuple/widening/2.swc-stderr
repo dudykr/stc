@@ -1,0 +1,20 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/widening/2.ts:1:1]
+ 1 | //@noImplicitAny: true
+ 2 | export var [a, b] = [undefined, null];
+   :                      ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/widening/2.ts:1:1]
+ 1 | //@noImplicitAny: true
+ 2 | export var [a, b] = [undefined, null];
+   :                     ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [undefined, null]

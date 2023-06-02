@@ -1,0 +1,68 @@
+
+  x Type
+   ,-[$DIR/tests/pass/union/indexSignature/1.ts:6:1]
+ 6 | var unionOfDifferentReturnType: { [a: string]: number; } | { [a: string]: Date; };
+ 7 | numOrDate = unionOfDifferentReturnType[10]; // number | Date
+   :             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ({
+  |     [a: string]: number;
+  | } | {
+  |     [a: string]: Date;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/union/indexSignature/1.ts:6:1]
+ 6 | var unionOfDifferentReturnType: { [a: string]: number; } | { [a: string]: Date; };
+ 7 | numOrDate = unionOfDifferentReturnType[10]; // number | Date
+   :             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (number | Date)
+
+  x Type
+   ,-[$DIR/tests/pass/union/indexSignature/1.ts:6:1]
+ 6 | var unionOfDifferentReturnType: { [a: string]: number; } | { [a: string]: Date; };
+ 7 | numOrDate = unionOfDifferentReturnType[10]; // number | Date
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (number | Date)
+
+  x Type
+    ,-[$DIR/tests/pass/union/indexSignature/1.ts:11:1]
+ 11 | var unionOfDifferentReturnType1: { [a: number]: number; } | { [a: number]: Date; };
+ 12 | numOrDate = unionOfDifferentReturnType1["hello"]; // any
+    :             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ({
+  |     [a: number]: number;
+  | } | {
+  |     [a: number]: Date;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/union/indexSignature/1.ts:11:1]
+ 11 | var unionOfDifferentReturnType1: { [a: number]: number; } | { [a: number]: Date; };
+ 12 | numOrDate = unionOfDifferentReturnType1["hello"]; // any
+    :             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/union/indexSignature/1.ts:11:1]
+ 11 | var unionOfDifferentReturnType1: { [a: number]: number; } | { [a: number]: Date; };
+ 12 | numOrDate = unionOfDifferentReturnType1["hello"]; // any
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any

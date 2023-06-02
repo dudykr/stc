@@ -1,0 +1,57 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/3.ts:1:1]
+ 1 | function b2(z = null, o = { x: 0, y: undefined }) { }
+   :                                      ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/3.ts:1:1]
+ 1 | function b2(z = null, o = { x: 0, y: undefined }) { }
+   :                           ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: 0;
+  |     y: undefined;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/3.ts:2:1]
+ 2 | 
+ 3 | b2("string", { x: 200, y: true });
+   : ^^
+   `----
+
+Error: 
+  > (z?: any, o?: {
+  |     x?: number;
+  |     y?: any;
+  | }) => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/3.ts:2:1]
+ 2 | 
+ 3 | b2("string", { x: 200, y: true });
+   :              ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: 200;
+  |     y: true;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/3.ts:2:1]
+ 2 | 
+ 3 | b2("string", { x: 200, y: true });
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void

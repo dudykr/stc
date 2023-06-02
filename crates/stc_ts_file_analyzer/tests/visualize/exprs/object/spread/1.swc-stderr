@@ -1,0 +1,23 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/spread/1.ts:1:1]
+ 1 | function f1<T extends number>(arg: T) {
+ 2 |     return { ...arg };
+   :                 ^^^
+ 3 | }
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/spread/1.ts:1:1]
+ 1 | function f1<T extends number>(arg: T) {
+ 2 |     return { ...arg };
+   :            ^^^^^^^^^^
+ 3 | }
+   `----
+
+Error: 
+  > ({
+  | } & T)

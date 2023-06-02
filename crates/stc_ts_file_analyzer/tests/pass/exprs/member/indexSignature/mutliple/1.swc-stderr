@@ -1,0 +1,125 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:1:1]
+ 1 | function foo<T>(x: T) {
+ 2 |     return x;
+   :            ^
+ 3 | }
+   `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b);
+    :              ^^^
+ 11 |     var d = r2[1];
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b);
+    :                  ^
+ 11 |     var d = r2[1];
+    `----
+
+Error: 
+  > {
+  |     [x: string]: Object;
+  |     [x: number]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:9:1]
+  9 |     };
+ 10 |     var r2 = foo(b);
+    :              ^^^^^^
+ 11 |     var d = r2[1];
+    `----
+
+Error: 
+  > {
+  |     [x: string]: Object;
+  |     [x: number]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:1]
+ 10 |     var r2 = foo(b);
+ 11 |     var d = r2[1];
+    :             ^^
+ 12 |     var e = r2['1'];
+    `----
+
+Error: 
+  > {
+  |     [x: string]: Object;
+  |     [x: number]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:10:1]
+ 10 |     var r2 = foo(b);
+ 11 |     var d = r2[1];
+    :             ^^^^^
+ 12 |     var e = r2['1'];
+    `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:11:1]
+ 11 |     var d = r2[1];
+ 12 |     var e = r2['1'];
+    :             ^^
+ 13 |     var u: U = r2[1]; // ok
+    `----
+
+Error: 
+  > {
+  |     [x: string]: Object;
+  |     [x: number]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:11:1]
+ 11 |     var d = r2[1];
+ 12 |     var e = r2['1'];
+    :             ^^^^^^^
+ 13 |     var u: U = r2[1]; // ok
+    `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:12:1]
+ 12 |     var e = r2['1'];
+ 13 |     var u: U = r2[1]; // ok
+    :                ^^
+ 14 | }
+    `----
+
+Error: 
+  > {
+  |     [x: string]: Object;
+  |     [x: number]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:12:1]
+ 12 |     var e = r2['1'];
+ 13 |     var u: U = r2[1]; // ok
+    :                ^^^^^
+ 14 | }
+    `----
+
+Error: 
+  > T

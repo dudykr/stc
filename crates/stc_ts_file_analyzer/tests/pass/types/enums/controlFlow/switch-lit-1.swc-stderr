@@ -1,0 +1,161 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:2:1]
+ 2 | 
+ 3 | type Item =
+   :      ^^^^
+ 4 |     { kind: Choice.Yes, a: string } |
+   `----
+
+Error: 
+  > ({
+  |     kind: Choice.Yes;
+  |     a: string;
+  | } | {
+  |     kind: Choice.No;
+  |     b: string;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     switch (x.kind) {
+   :             ^
+ 9 |         case Choice.Yes: return x.a;
+   `----
+
+Error: 
+  > ({
+  |     kind: Choice.Yes;
+  |     a: string;
+  | } | {
+  |     kind: Choice.No;
+  |     b: string;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:7:1]
+ 7 | function f20(x: Item) {
+ 8 |     switch (x.kind) {
+   :             ^^^^^^
+ 9 |         case Choice.Yes: return x.a;
+   `----
+
+Error: 
+  > (Choice.Yes | Choice.No)
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case Choice.Yes: return x.a;
+    :              ^^^^^^
+ 10 |         case Choice.No: return x.b;
+    `----
+
+Error: 
+  > Choice
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case Choice.Yes: return x.a;
+    :              ^^^^^^^^^^
+ 10 |         case Choice.No: return x.b;
+    `----
+
+Error: 
+  > Choice.Yes
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:1]
+  9 |         case Choice.Yes: return x.a;
+ 10 |         case Choice.No: return x.b;
+    :              ^^^^^^
+ 11 |     }
+    `----
+
+Error: 
+  > Choice
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:1]
+  9 |         case Choice.Yes: return x.a;
+ 10 |         case Choice.No: return x.b;
+    :              ^^^^^^^^^
+ 11 |     }
+    `----
+
+Error: 
+  > Choice.No
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case Choice.Yes: return x.a;
+    :              ^^^^^^^^^^
+ 10 |         case Choice.No: return x.b;
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case Choice.Yes: return x.a;
+    :                                 ^
+ 10 |         case Choice.No: return x.b;
+    `----
+
+Error: 
+  > {
+  |     kind: Choice.Yes;
+  |     a: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:1]
+  8 |     switch (x.kind) {
+  9 |         case Choice.Yes: return x.a;
+    :                                 ^^^
+ 10 |         case Choice.No: return x.b;
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:1]
+  9 |         case Choice.Yes: return x.a;
+ 10 |         case Choice.No: return x.b;
+    :              ^^^^^^^^^
+ 11 |     }
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:1]
+  9 |         case Choice.Yes: return x.a;
+ 10 |         case Choice.No: return x.b;
+    :                                ^
+ 11 |     }
+    `----
+
+Error: 
+  > {
+  |     kind: Choice.No;
+  |     b: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:1]
+  9 |         case Choice.Yes: return x.a;
+ 10 |         case Choice.No: return x.b;
+    :                                ^^^
+ 11 |     }
+    `----
+
+Error: 
+  > string
