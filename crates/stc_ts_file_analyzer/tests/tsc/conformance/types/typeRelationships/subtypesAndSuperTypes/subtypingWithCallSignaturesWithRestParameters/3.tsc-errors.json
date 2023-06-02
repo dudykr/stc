@@ -1,0 +1,8 @@
+[
+  {
+    "file": "tests/tsc/conformance/types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignaturesWithRestParameters/3.ts",
+    "line": 36,
+    "col": 18,
+    "code": 2430
+  }
+]
