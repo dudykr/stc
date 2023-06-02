@@ -21,7 +21,10 @@ use stc_ts_file_analyzer::{
     validator::ValidateWith,
 };
 use stc_ts_storage::{ErrorStore, Single};
-use stc_ts_testing::{conformance::parse_conformance_test, tsc::TscError};
+use stc_ts_testing::{
+    conformance::{parse_conformance_test, TestSpec},
+    tsc::TscError,
+};
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext};
@@ -202,15 +205,14 @@ fn compare(input: PathBuf) {
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
-    let output = Command::new("npx")
-        .arg("tsc")
-        .arg("--pretty")
-        .arg("--noEmit")
-        .arg("--lib")
-        .arg("es2020")
-        .arg(input)
-        .output()
-        .expect("failed to invoke tsc");
+    let cases = parse_conformance_test(input).unwrap();
+    assert!(cases.len() == 1, "tsc mode only supports single test case");
+
+    let mut cmd = Command::new("npx");
+    cmd.arg("tsc").arg("--pretty").arg("--noEmit");
+    tsc_args(&mut cmd, &cases[0]);
+
+    let output = cmd.arg("--lib").arg("es2020").arg(input).output().expect("failed to invoke tsc");
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
 
@@ -218,6 +220,8 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
 
     TscError::parse_all(&stdout)
 }
+
+fn tsc_args(c: &mut Command, spec: &TestSpec) {}
 
 /// If `for_error` is false, this function will run as type dump mode.
 fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Option<NormalizedOutput> {
