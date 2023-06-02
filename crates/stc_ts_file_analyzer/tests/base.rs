@@ -212,7 +212,7 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
     cmd.arg("tsc").arg("--pretty").arg("--noEmit");
     tsc_args(&mut cmd, &cases[0]);
 
-    let output = cmd.arg("--lib").arg("es2020").arg(input).output().expect("failed to invoke tsc");
+    let output = cmd.arg(input).output().expect("failed to invoke tsc");
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
 
@@ -221,7 +221,21 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
     TscError::parse_all(&stdout)
 }
 
-fn tsc_args(c: &mut Command, spec: &TestSpec) {}
+fn tsc_args(c: &mut Command, spec: &TestSpec) {
+    c.arg("--lib").arg(match spec.target {
+        EsVersion::Es3 => "es3",
+        EsVersion::Es5 => "es5",
+        EsVersion::Es2015 => "es2015",
+        EsVersion::Es2016 => "es2016",
+        EsVersion::Es2017 => "es2017",
+        EsVersion::Es2018 => "es2018",
+        EsVersion::Es2019 => "es2019",
+        EsVersion::Es2020 => "es2020",
+        EsVersion::Es2021 => "es2021",
+        EsVersion::Es2022 => "es2022",
+        EsVersion::EsNext => "esnext",
+    });
+}
 
 /// If `for_error` is false, this function will run as type dump mode.
 fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Option<NormalizedOutput> {
