@@ -1,8 +1,0 @@
-[
-  {
-    "file": "tests/tsc/types/typeParameters/typeArgumentLists/instantiateNonGenericTypeWithTypeArguments/1.ts",
-    "line": 6,
-    "col": 23,
-    "code": 2558
-  }
-]
