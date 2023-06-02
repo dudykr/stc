@@ -1,5 +1,5 @@
 [build]
-rustflags = ["-Z", "thinlto=no"]
+rustflags = ["-Z", "thinlto=no", "-Z", "share-generics=y"]
 
 [net]
 git-fetch-with-cli = true
