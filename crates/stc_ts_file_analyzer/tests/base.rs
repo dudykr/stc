@@ -235,6 +235,14 @@ fn tsc_args(c: &mut Command, spec: &TestSpec) {
         EsVersion::Es2022 => "es2022",
         EsVersion::EsNext => "esnext",
     });
+
+    if spec.rule.strict_function_types {
+        c.arg("--strictFunctionTypes");
+    }
+
+    if spec.rule.strict_null_checks {
+        c.arg("--strictNullChecks");
+    }
 }
 
 /// If `for_error` is false, this function will run as type dump mode.
