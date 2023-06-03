@@ -490,7 +490,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty.into_owned()))
     }
 
-    pub(crate) fn get_value_type_from_iterator_result(&mut self, span: Span, iterator_result: &Type) -> VResult<Type> {
+    pub(crate) fn get_value_type_from_iterator_result(&self, span: Span, iterator_result: &Type) -> VResult<Type> {
         let iterator_result = self.normalize(
             Some(span),
             Cow::Borrowed(iterator_result),
@@ -869,7 +869,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns the type of `iterator.next().value`.
-    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> VResult<Type> {
+    fn get_next_value_type_of_iterator(&self, span: Span, iterator: Cow<Type>) -> VResult<Type> {
         let next_ret_ty = self
             .call_property(
                 span,
