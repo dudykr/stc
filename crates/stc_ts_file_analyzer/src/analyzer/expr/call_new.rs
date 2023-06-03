@@ -588,7 +588,7 @@ impl Analyzer<'_, '_> {
     ///  - `expr`: Can be default if argument does not include an arrow
     ///    expression nor a function expression.
     pub(super) fn call_property(
-        &self,
+        &mut self,
         span: Span,
         kind: ExtractKind,
         expr: ReEvalMode,
@@ -1230,7 +1230,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn call_property_of_type_elements(
-        &self,
+        &mut self,
         kind: ExtractKind,
         expr: ReEvalMode,
         span: Span,

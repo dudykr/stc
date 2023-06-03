@@ -80,9 +80,9 @@ impl Analyzer<'_, '_> {
 
     /// Expand `this` contained in `ty`.
     pub(crate) fn expand_this_in_type(&mut self, ty: &mut Type) {
-        let this_ty = self.scope.borrow().this();
+        let this_ty = self.scope.borrow().this().map(Cow::into_owned);
 
-        if let Some(this) = this_ty.map(Cow::into_owned) {
+        if let Some(this) = this_ty {
             ty.visit_mut_with(&mut ThisReplacer {
                 this_ty: this,
                 analyzer: self,

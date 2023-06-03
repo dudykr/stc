@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Await(e) => e.validate_with_args(self, type_ann.as_deref()),
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
-                    self.scope.borrow().this_class_name = ident.as_ref().map(|i| i.into());
+                    self.scope.borrow_mut().this_class_name = ident.as_ref().map(|i| i.into());
                     Ok(class.validate_with_args(self, type_ann.as_deref())?.into())
                 }
 

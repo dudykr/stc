@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_async_iterator_element_type<'a>(
-        &mut self,
+        &self,
         span: Span,
         ty: Cow<'a, Type>,
         try_next_method: bool,
@@ -432,7 +432,7 @@ impl Analyzer<'_, '_> {
 
         if !self.data.checked_for_async_iterator {
             self.data.checked_for_async_iterator = true;
-            self.env.get_global_type(span, &"AsyncIterator".into()).report(&mut self.storage);
+            self.env.get_global_type(span, &"AsyncIterator".into()).report(&self.storage);
         }
 
         if let Ok(item) = self.try_next_method_of_iterator(span, &ty, true) {

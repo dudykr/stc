@@ -97,7 +97,7 @@ impl Analyzer<'_, '_> {
             let params = {
                 let prev_len = child.scope.borrow().declaring_parameters.len();
                 let ids: Vec<Id> = find_ids_in_pat(&f.params);
-                child.scope.borrow().declaring_parameters.extend(ids);
+                child.scope.borrow_mut().declaring_parameters.extend(ids);
 
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
@@ -108,7 +108,7 @@ impl Analyzer<'_, '_> {
                 };
                 let res = f.params.validate_with(&mut *child.with_ctx(ctx));
 
-                child.scope.borrow().declaring_parameters.truncate(prev_len);
+                child.scope.borrow_mut().declaring_parameters.truncate(prev_len);
 
                 res?
             };

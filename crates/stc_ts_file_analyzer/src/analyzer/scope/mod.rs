@@ -1286,7 +1286,7 @@ impl Analyzer<'_, '_> {
             ty.assert_clone_cheap();
         }
 
-        op(self.scope.borrow().vars.entry(name).or_insert_with(|| VarInfo {
+        op(self.scope.get_mut().vars.entry(name).or_insert_with(|| VarInfo {
             kind: VarKind::Error,
             initialized: true,
             ty: ty.clone(),

@@ -210,7 +210,8 @@ impl Analyzer<'_, '_> {
         debug_assert!(self.ctx.in_computed_prop_name);
 
         for used in used_type_params {
-            let scope = self.scope.borrow().first_kind(|kind| match kind {
+            let b = self.scope.borrow();
+            let scope = b.first_kind(|kind| match kind {
                 ScopeKind::Fn
                 | ScopeKind::Method { .. }
                 | ScopeKind::Module
