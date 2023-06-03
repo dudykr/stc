@@ -10,7 +10,7 @@ use stc_ts_errors::{
 use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeOrSpread, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
-use swc_common::{Spanned, SyntaxContext, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
@@ -818,6 +818,7 @@ impl Analyzer<'_, '_> {
 
     fn relate_spread_likes<'l, 'r, LI, RI>(
         &mut self,
+        span: Span,
         li: &mut Peekable<LI>,
         ri: &mut Peekable<RI>,
         relate: &mut dyn FnMut(&mut Self, &Type, &Type) -> VResult<()>,
@@ -827,19 +828,137 @@ impl Analyzer<'_, '_> {
         RI: Iterator<Item = &'r TypeOrSpread> + Clone,
     {
         let _tracing = dev_span!("relate_spread_likes");
+        let li_count = li.clone().count();
+        let ri_count = ri.clone().count();
 
         while let (Some(..), Some(..)) = (li.peek(), ri.peek()) {
-            let le = li.next().unwrap();
-            let re = ri.next().unwrap();
+            let l = li.next().unwrap();
+            let r = ri.next().unwrap();
 
-            match (le.spread, re.spread) {
-                (Some(..), Some(..)) => {}
-                (Some(..), None) => {}
-                (None, Some(_)) => {}
-                (None, None) => {
-                    relate(self, &le.ty, &re.ty).context("failed to relate a non-spread item")?;
+            match (l.spread, r.spread) {
+                (Some(..), Some(..)) => {
+                    relate(self, &l.ty, &r.ty).context("failed to relate a spread item to another one")?;
+                }
+                (Some(..), None) => {
+                    for idx in 0..max(li_count, ri_count) {
+                        let le = self
+                            .access_property(
+                                span,
+                                &l.ty,
+                                &Key::Num(RNumber {
+                                    span: l.span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    use_last_element_for_tuple_on_out_of_bound: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| *l.ty.clone());
+
+                        let re = self
+                            .access_property(
+                                span,
+                                &r.ty,
+                                &Key::Num(RNumber {
+                                    span: r.span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| *r.ty.clone());
+
+                        relate(self, &le, &re).with_context(|| {
+                            format!(
+                                "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
+                                idx,
+                                force_dump_type_as_string(&l.ty),
+                                force_dump_type_as_string(&r.ty),
+                                force_dump_type_as_string(&le),
+                                force_dump_type_as_string(&re)
+                            )
+                        })?;
+                    }
 
                     return Ok(());
+                }
+                (None, Some(_)) => {
+                    for idx in 0..max(li_count, ri_count) {
+                        let le = self
+                            .access_property(
+                                span,
+                                &l.ty,
+                                &Key::Num(RNumber {
+                                    span: l.span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| *l.ty.clone());
+
+                        let re = self
+                            .access_property(
+                                span,
+                                &r.ty,
+                                &Key::Num(RNumber {
+                                    span: r.span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    use_last_element_for_tuple_on_out_of_bound: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| *r.ty.clone());
+
+                        relate(self, &le, &re).with_context(|| {
+                            format!(
+                                "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
+                                idx,
+                                force_dump_type_as_string(&l.ty),
+                                force_dump_type_as_string(&r.ty),
+                                force_dump_type_as_string(&le),
+                                force_dump_type_as_string(&re)
+                            )
+                        })?;
+                    }
+
+                    return Ok(());
+                }
+                (None, None) => {
+                    relate(self, &l.ty, &r.ty).context("failed to relate a non-spread item")?;
                 }
             }
         }
@@ -933,120 +1052,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        loop {
-            let l = li.next();
-            let r = ri.next();
-
-            let (Some(l), Some(r)) = (l, r) else {
-                break
-            };
-
-            match (&l.pat, &r.pat) {
-                (RPat::Rest(..), RPat::Rest(..)) => {}
-
-                (RPat::Rest(..), _) | (_, RPat::Rest(..)) => {
-                    // If r is an iterator, we should assign each element to l.
-                    for idx in 0..max(li_count, ri_count) {
-                        let le = self
-                            .access_property(
-                                span,
-                                &l.ty,
-                                &Key::Num(RNumber {
-                                    span: l.span,
-                                    value: idx as f64,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                                AccessPropertyOpts {
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    disallow_inexact: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .unwrap_or_else(|_| *l.ty.clone());
-
-                        let re = self
-                            .access_property(
-                                span,
-                                &r.ty,
-                                &Key::Num(RNumber {
-                                    span: r.span,
-                                    value: idx as f64,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                                AccessPropertyOpts {
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    disallow_inexact: true,
-                                    use_last_element_for_tuple_on_out_of_bound: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .unwrap_or_else(|_| *r.ty.clone());
-
-                        self.assign_param_type(data, &le, &re, opts).with_context(|| {
-                            format!(
-                                "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
-                                idx,
-                                force_dump_type_as_string(&l.ty),
-                                force_dump_type_as_string(&r.ty),
-                                force_dump_type_as_string(&le),
-                                force_dump_type_as_string(&re)
-                            )
-                        })?;
-                    }
-
-                    return Ok(());
-                }
-
-                _ => {}
-            }
-
-            // A rest pattern is always the last
-            match (&l.pat, &r.pat) {
-                (RPat::Rest(..), RPat::Rest(..)) => {
-                    self.assign_param(data, l, r, opts)
-                        .with_context(|| "tried to assign a rest parameter to another rest parameter".to_string())?;
-                    break;
-                }
-
-                (RPat::Rest(..), _) => {
-                    // TODO(kdy1): Implement correct logic
-
-                    return Ok(());
-                }
-
-                (_, RPat::Rest(..)) => {
-                    self.assign_param(data, l, r, opts)
-                        .context("tried to assign a rest parameter to parameters where r-ty is not a tuple")?;
-
-                    for l in li {
-                        self.assign_param(data, l, r, opts)
-                            .context("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)")?;
-                    }
-
-                    return Ok(());
-                }
-
-                _ => {
-                    self.assign_param(
-                        data,
-                        l,
-                        r,
-                        AssignOpts {
-                            allow_unknown_type: true,
-                            ..opts
-                        },
-                    )?;
-                }
-            }
-        }
+        self.relate_spread_likes(span, li, ri, |thid, l, r| {
+            //
+            self.assign_param_type(data, &le, &re, opts)
+        })?;
 
         Ok(())
     }
