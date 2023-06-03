@@ -530,7 +530,7 @@ impl Analyzer<'_, '_> {
     /// b18 = a18; // ok
     /// ```
     pub(super) fn assign_to_constructor(
-        &mut self,
+        &self,
         data: &mut AssignData,
         lt: &Type,
         l: &Constructor,

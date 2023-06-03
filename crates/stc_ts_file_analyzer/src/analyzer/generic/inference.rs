@@ -777,7 +777,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
-    pub(crate) fn infer_types_from_tpl_lit_type(&mut self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
+    pub(crate) fn infer_types_from_tpl_lit_type(&self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
         match source.normalize() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
@@ -837,7 +837,7 @@ impl Analyzer<'_, '_> {
     #[allow(unused_assignments)]
     #[allow(clippy::needless_range_loop)]
     fn infer_from_lit_parts_to_tpl_lit(
-        &mut self,
+        &self,
         span: Span,
         source_texts: &[Atom],
         source_types: &[Type],
@@ -944,7 +944,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn insert_inferred(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         tp: &TypeParam,
@@ -1246,7 +1246,7 @@ impl Analyzer<'_, '_> {
     /// Handle some special builtin types
 
     pub(super) fn infer_builtin(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Type,
@@ -1352,7 +1352,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_interface_and_interface(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Interface,
@@ -1366,7 +1366,7 @@ impl Analyzer<'_, '_> {
 
     /// Compare fields.
     pub(super) fn infer_type_using_type_lit_and_type_lit(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &TypeLit,
@@ -1378,7 +1378,7 @@ impl Analyzer<'_, '_> {
 
     /// Returns `Ok(true)` if this method know how to infer types.
     pub(super) fn infer_type_by_converting_to_type_lit(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Type,
@@ -1406,7 +1406,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_type_elements_and_type_elements(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &[TypeElement],

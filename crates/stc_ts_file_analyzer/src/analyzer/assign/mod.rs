@@ -2703,7 +2703,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only if `to` is not expandable.
-    pub(super) fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(super) fn assign_to_intrinsic(&self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
         match r.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,

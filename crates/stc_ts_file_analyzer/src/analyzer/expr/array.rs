@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
-    pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_element_from_iterator<'a>(&self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
         debug!("Calculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
@@ -382,7 +382,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(value_ty))
     }
 
-    fn try_next_method_of_iterator(&mut self, span: Span, iterator: &Type, awaited: bool) -> VResult<Type> {
+    fn try_next_method_of_iterator(&self, span: Span, iterator: &Type, awaited: bool) -> VResult<Type> {
         let _tracing = dev_span!("try_next_method_of_iterator");
 
         let mut item = self

@@ -487,7 +487,7 @@ impl Analyzer<'_, '_> {
     /// arr([1, u]) // Ok
     /// arr([{}, u]) // Ok
     /// ```
-    fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type(&self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
