@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
 
 struct TypeFactsHandler<'a, 'b, 'c> {
     /// Used to expand references.
-    analyzer: &'a mut Analyzer<'b, 'c>,
+    analyzer: &'a Analyzer<'b, 'c>,
     facts: TypeFacts,
 }
 

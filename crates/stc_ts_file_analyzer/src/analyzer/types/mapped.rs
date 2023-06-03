@@ -541,7 +541,7 @@ impl Analyzer<'_, '_> {
 
     /// Get keys of `ty` as a property name.
     pub(crate) fn get_property_names_for_mapped_type(
-        &mut self,
+        &self,
         span: Span,
         ty: &Type,
         type_param: &TypeParam,

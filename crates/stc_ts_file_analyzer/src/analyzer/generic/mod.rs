@@ -520,7 +520,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Optimize
-    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type_inner(&self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -2310,7 +2310,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_of_fn_params(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         params: &[FnParam],
