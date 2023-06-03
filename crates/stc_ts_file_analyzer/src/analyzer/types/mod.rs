@@ -1970,7 +1970,7 @@ impl Analyzer<'_, '_> {
         .with_context(|| "tried to merge type elements".to_string())
     }
 
-    fn merge_type_element(&mut self, span: Span, to: &mut TypeElement, from: TypeElement) -> VResult<()> {
+    fn merge_type_element(&self, span: Span, to: &mut TypeElement, from: TypeElement) -> VResult<()> {
         run(|| match (to, from) {
             (TypeElement::Property(to), TypeElement::Property(from)) => {
                 if let Some(to_type) = &to.type_ann {

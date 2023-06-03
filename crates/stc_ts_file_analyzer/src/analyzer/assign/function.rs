@@ -692,7 +692,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Implementation of `assign_param`.
-    fn assign_param_type(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_param_type(&self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> VResult<()> {
         let _tracing = dev_span!("assign_param_type");
 
         let span = opts.span;

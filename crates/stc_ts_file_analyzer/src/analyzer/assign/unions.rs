@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
     ///
     ///  - lhs = `(["a", number] | ["b", number] | ["c", string]);`
     ///  - rhs = `[("b" | "a"), 1];`
-    pub(super) fn assign_to_union(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
+    pub(super) fn assign_to_union(&self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
         match r_res {

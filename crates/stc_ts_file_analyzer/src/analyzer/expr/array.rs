@@ -555,12 +555,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty)
     }
 
-    pub(crate) fn get_rest_elements<'a>(
-        &mut self,
-        span: Option<Span>,
-        iterator: Cow<'a, Type>,
-        start_index: usize,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_rest_elements<'a>(&self, span: Option<Span>, iterator: Cow<'a, Type>, start_index: usize) -> VResult<Cow<'a, Type>> {
         let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
@@ -592,7 +587,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(iterator.into_owned()))
     }
 
-    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator<'a>(&self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
         let start = Instant::now();
         let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
 
@@ -623,7 +618,7 @@ impl Analyzer<'_, '_> {
         Ok(iterator)
     }
 
-    fn get_iterator_inner<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
+    fn get_iterator_inner<'a>(&self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
         let ty_str = force_dump_type_as_string(&ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
@@ -768,7 +763,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If it's true, this method will try `ty.next().value`.
     pub(crate) fn get_iterator_element_type<'a>(
-        &mut self,
+        &self,
         span: Span,
         ty: Cow<'a, Type>,
         try_next_value: bool,

@@ -383,7 +383,7 @@ impl Analyzer<'_, '_> {
     /// };
     /// var e: typeof E1;
     /// ```
-    pub(super) fn enum_to_type_lit(&mut self, e: &ArcCow<Enum>) -> VResult<TypeLit> {
+    pub(super) fn enum_to_type_lit(&self, e: &ArcCow<Enum>) -> VResult<TypeLit> {
         let mut members = vec![];
 
         for m in &e.members {
