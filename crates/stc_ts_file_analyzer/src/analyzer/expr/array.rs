@@ -904,7 +904,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty)
     }
 
-    pub(crate) fn calculate_tuple_element_count(&mut self, span: Span, ty: &Type) -> VResult<Option<usize>> {
+    pub(crate) fn calculate_tuple_element_count(&self, span: Span, ty: &Type) -> VResult<Option<usize>> {
         let ty = self.normalize(
             Some(span),
             Cow::Borrowed(ty),

@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Handle index signatures.
-    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+    pub(crate) fn expand_mapped(&self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         let _guard = stack::track(span)?;
         let _tracing = dev_span!("expand_mapped");
 
@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
+    fn expand_mapped_inner(&self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Index(Index { ty: keyof_operand, .. })) => {
                 return self.expand_mapped_type_with_keyof(span, keyof_operand, keyof_operand, m)
@@ -135,7 +135,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn expand_mapped_type_with_keyof(
-        &mut self,
+        &self,
         span: Span,
         keyof_operand: &Type,
         original_keyof_operand: &Type,
@@ -446,7 +446,7 @@ impl Analyzer<'_, '_> {
     /// Evaluate a type and convert it to keys.
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
-    fn convert_type_to_keys_for_mapped_type(&mut self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
+    fn convert_type_to_keys_for_mapped_type(&self, span: Span, ty: &Type, name_type: Option<&Type>) -> VResult<Option<Vec<Key>>> {
         let _tracing = dev_span!("convert_type_to_keys_for_mapped_type");
 
         let _stack = stack::track(span)?;
@@ -875,7 +875,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn apply_mapped_flags_to_type(
-        &mut self,
+        &self,
         span: Span,
         ty: Type,
         optional: Option<TruePlusMinus>,

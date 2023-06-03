@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
     /// TODO: Implement
     ///
     /// Ported from `checkTypeRelatedTo` of `tsc`.
-    fn check_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
+    fn check_type_related_to(&self, source: &Type, target: &Type, relation: Relation) -> bool {
         false
     }
 }
