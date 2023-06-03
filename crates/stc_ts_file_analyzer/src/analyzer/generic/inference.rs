@@ -162,7 +162,7 @@ impl Default for InferencePriority {
 impl Analyzer<'_, '_> {
     /// Ported from `inferFromMatchingTypes` of `tsc`.
     pub(super) fn infer_from_matching_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         sources: &[Type],
@@ -215,7 +215,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `tsc`.
     pub(super) fn infer_type_using_union(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Union,
@@ -497,7 +497,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferToTemplateLiteralType` of `tsc`.
     pub(super) fn infer_to_tpl_lit_type(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -1317,7 +1317,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_type_using_interface(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Interface,
@@ -1599,7 +1599,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_type_using_readonly(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Readonly,
@@ -1610,7 +1610,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_types_using_class(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Class,
@@ -1621,7 +1621,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_types_using_class_def(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &ClassDef,
@@ -1750,7 +1750,7 @@ impl Analyzer<'_, '_> {
 
     /// Prevent generalizations if a type parameter extends literal.
     pub(super) fn prevent_generalization_of_inferred_types(
-        &mut self,
+        &self,
         type_params: &[TypeParam],
         inferred: &mut InferData,
         is_from_type_ann: bool,

@@ -119,7 +119,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
+    pub(crate) fn extends(&self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
         let _tracing = if cfg!(debug_assertions) {
             let child = dump_type_as_string(child);
             let parent = dump_type_as_string(parent);
