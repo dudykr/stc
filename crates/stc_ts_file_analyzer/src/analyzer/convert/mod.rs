@@ -1288,7 +1288,8 @@ impl Analyzer<'_, '_> {
 
         let span = i.span;
         let id = i.into();
-        let static_method = self.scope.borrow().first(|scope| {
+        let b = self.scope.borrow();
+        let static_method = b.first(|scope| {
             let parent = scope.parent();
             let parent = match parent {
                 Some(v) => v,

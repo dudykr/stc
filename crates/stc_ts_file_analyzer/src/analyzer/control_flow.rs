@@ -902,11 +902,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut actual_ty = None;
+                let b = self.scope.borrow();
                 if let Some(var_info) = self
                     .scope
                     .borrow()
                     .get_var(&i.id.clone().into())
-                    .or_else(|| self.scope.borrow().search_parent(&i.id.clone().into()))
+                    .or_else(|| b.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
                         declared_ty.assert_valid();

@@ -1130,7 +1130,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn check_type_element_for_call(
-        &mut self,
+        &self,
         span: Span,
         kind: ExtractKind,
         candidates: &mut Vec<CallCandidate>,
@@ -1230,7 +1230,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn call_property_of_type_elements(
-        &mut self,
+        &self,
         kind: ExtractKind,
         expr: ReEvalMode,
         span: Span,
@@ -2045,7 +2045,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    pub(super) fn extract_callee_candidates(&mut self, span: Span, kind: ExtractKind, callee: &Type) -> VResult<Vec<CallCandidate>> {
+    pub(super) fn extract_callee_candidates(&self, span: Span, kind: ExtractKind, callee: &Type) -> VResult<Vec<CallCandidate>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let callee = self
