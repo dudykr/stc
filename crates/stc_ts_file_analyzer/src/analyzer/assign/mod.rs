@@ -1122,17 +1122,16 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Interface(Interface { extends, .. }), Type::Tuple(Tuple { elems, .. })) => {
-                let lhs = elems.iter().map(|TupleElement { ty, .. }| ty);
                 for parent in extends {
-                    let params = parent.type_args.clone().unwrap().params;
                     let rhs = self
                         .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
                         .freezed();
                     if let Some(Array { elem_type, .. }) = rhs.array() {
-                        if let Some(Union { types, .. }) = elem_type.union_type() {
-                            for (lhs, rhs) in lhs.clone().zip(types) {
-                                if let (Some(_), Some(_)) = (lhs.to_owned().keyword(), rhs.clone().keyword()) {
-                                    return self.assign_with_opts(data, lhs, &rhs, opts);
+                        if let Some(Union { types: rhss, .. }) = elem_type.union_type() {
+                            let lhss = elems.iter().map(|TupleElement { ty, .. }| ty);
+                            for (lhs, rhs) in lhss.zip(rhss.iter()) {
+                                if let (Some(_), Some(_)) = (lhs.clone().keyword(), rhs.clone().keyword()) {
+                                    return self.assign_with_opts(data, lhs, rhs, opts);
                                 }
                             }
                         }
