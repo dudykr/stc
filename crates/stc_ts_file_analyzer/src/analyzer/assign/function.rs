@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeOrSpread, TypeParamDecl};
+use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, SpreadLike, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -816,16 +816,17 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn relate_spread_likes<'l, 'r, LI, RI>(
-        &mut self,
+    fn relate_spread_likes<'a, 'l, 'r, T, LI, RI>(
+        &'a mut self,
         span: Span,
         li: &mut Peekable<LI>,
         ri: &mut Peekable<RI>,
-        relate: &mut dyn FnMut(&mut Self, &Type, &Type) -> VResult<()>,
+        relate: &mut dyn FnMut(&'a mut Self, &Type, &Type) -> VResult<()>,
     ) -> VResult<()>
     where
-        LI: Iterator<Item = &'l TypeOrSpread> + Clone,
-        RI: Iterator<Item = &'r TypeOrSpread> + Clone,
+        T: SpreadLike,
+        LI: Iterator<Item = &'l T> + Clone,
+        RI: Iterator<Item = &'r T> + Clone,
     {
         let _tracing = dev_span!("relate_spread_likes");
         let li_count = li.clone().count();
@@ -835,18 +836,18 @@ impl Analyzer<'_, '_> {
             let l = li.next().unwrap();
             let r = ri.next().unwrap();
 
-            match (l.spread, r.spread) {
-                (Some(..), Some(..)) => {
-                    relate(self, &l.ty, &r.ty).context("failed to relate a spread item to another one")?;
+            match (l.is_spread(), r.is_spread()) {
+                (true, true) => {
+                    relate(self, &l.ty(), &r.ty()).context("failed to relate a spread item to another one")?;
                 }
-                (Some(..), None) => {
+                (true, false) => {
                     for idx in 0..max(li_count, ri_count) {
                         let le = self
                             .access_property(
                                 span,
-                                &l.ty,
+                                &l.ty(),
                                 &Key::Num(RNumber {
-                                    span: l.span,
+                                    span: l.span(),
                                     value: idx as f64,
                                     raw: None,
                                 }),
@@ -861,14 +862,14 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .unwrap_or_else(|_| *l.ty.clone());
+                            .unwrap_or_else(|_| l.ty().clone());
 
                         let re = self
                             .access_property(
                                 span,
-                                &r.ty,
+                                &r.ty(),
                                 &Key::Num(RNumber {
-                                    span: r.span,
+                                    span: r.span(),
                                     value: idx as f64,
                                     raw: None,
                                 }),
@@ -882,14 +883,14 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .unwrap_or_else(|_| *r.ty.clone());
+                            .unwrap_or_else(|_| r.ty().clone());
 
                         relate(self, &le, &re).with_context(|| {
                             format!(
                                 "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
                                 idx,
-                                force_dump_type_as_string(&l.ty),
-                                force_dump_type_as_string(&r.ty),
+                                force_dump_type_as_string(&l.ty()),
+                                force_dump_type_as_string(&r.ty()),
                                 force_dump_type_as_string(&le),
                                 force_dump_type_as_string(&re)
                             )
@@ -898,14 +899,14 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
-                (None, Some(_)) => {
+                (false, true) => {
                     for idx in 0..max(li_count, ri_count) {
                         let le = self
                             .access_property(
                                 span,
-                                &l.ty,
+                                &l.ty(),
                                 &Key::Num(RNumber {
-                                    span: l.span,
+                                    span: l.span(),
                                     value: idx as f64,
                                     raw: None,
                                 }),
@@ -919,14 +920,14 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .unwrap_or_else(|_| *l.ty.clone());
+                            .unwrap_or_else(|_| l.ty().clone());
 
                         let re = self
                             .access_property(
                                 span,
-                                &r.ty,
+                                &r.ty(),
                                 &Key::Num(RNumber {
-                                    span: r.span,
+                                    span: r.span(),
                                     value: idx as f64,
                                     raw: None,
                                 }),
@@ -941,14 +942,14 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .unwrap_or_else(|_| *r.ty.clone());
+                            .unwrap_or_else(|_| r.ty().clone());
 
                         relate(self, &le, &re).with_context(|| {
                             format!(
                                 "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
                                 idx,
-                                force_dump_type_as_string(&l.ty),
-                                force_dump_type_as_string(&r.ty),
+                                force_dump_type_as_string(l.ty()),
+                                force_dump_type_as_string(r.ty()),
                                 force_dump_type_as_string(&le),
                                 force_dump_type_as_string(&re)
                             )
@@ -957,8 +958,8 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
-                (None, None) => {
-                    relate(self, &l.ty, &r.ty).context("failed to relate a non-spread item")?;
+                (false, false) => {
+                    relate(self, &l.ty(), &r.ty()).context("failed to relate a non-spread item")?;
                 }
             }
         }
@@ -1058,7 +1059,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.relate_spread_likes(span, &mut li, &mut ri, |this, l, r| {
+        self.relate_spread_likes(span, &mut li, &mut ri, &mut |this: Self, l: &FnParam, r: &FnParam| {
             //
             this.assign_param_type(data, &l, &r, opts)
         })?;
