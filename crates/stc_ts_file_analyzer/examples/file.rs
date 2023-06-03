@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 use std::{env, path::Path, sync::Arc};
 
 use rnode::{NodeIdGenerator, RNode};
@@ -89,7 +87,7 @@ fn profile_file(file_name: &Path) {
                         env,
                         cm.clone(),
                         Default::default(),
-                        box &mut storage,
+                        Box::new(&mut storage),
                         &NoopLoader,
                         if want_error {
                             None

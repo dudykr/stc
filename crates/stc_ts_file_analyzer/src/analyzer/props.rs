@@ -80,8 +80,7 @@ impl Analyzer<'_, '_> {
             *node.expr,
             RExpr::Member(RMemberExpr {
                 obj: box RExpr::Ident(RIdent {
-                    sym: js_word!("Symbol"),
-                    ..
+                    sym: js_word!("Symbol"), ..
                 }),
                 ..
             })
@@ -115,9 +114,13 @@ impl Analyzer<'_, '_> {
                 if !analyzer.is_type_valid_for_computed_key(span, &ty) {
                     check_for_validity = false;
 
-                    analyzer
-                        .storage
-                        .report(ErrorKind::InvalidTypeForComputedProperty { span, ty: box ty.clone() }.into());
+                    analyzer.storage.report(
+                        ErrorKind::InvalidTypeForComputedProperty {
+                            span,
+                            ty: Box::new(ty.clone()),
+                        }
+                        .into(),
+                    );
                 }
             }
 
@@ -172,7 +175,7 @@ impl Analyzer<'_, '_> {
             Ok(Key::Computed(ComputedKey {
                 span,
                 expr: node.expr.clone(),
-                ty: box ty,
+                ty: Box::new(ty),
             }))
         })
     }
@@ -372,7 +375,7 @@ impl Analyzer<'_, '_> {
                     key,
                     optional: false,
                     params: Default::default(),
-                    type_ann: Some(box ty),
+                    type_ann: Some(Box::new(ty)),
                     type_params: Default::default(),
                     metadata: Default::default(),
                     accessor: Default::default(),
@@ -406,7 +409,7 @@ impl Analyzer<'_, '_> {
                             key,
                             optional: false,
                             params: vec![param],
-                            type_ann: Some(box Type::any(param_span, Default::default())),
+                            type_ann: Some(Box::new(Type::any(param_span, Default::default()))),
                             type_params: Default::default(),
                             metadata: Default::default(),
                             accessor: Accessor {
@@ -552,7 +555,7 @@ impl Analyzer<'_, '_> {
             type_ann: if computed {
                 type_ann.map(Box::new)
             } else {
-                Some(box Type::any(n.span, Default::default()))
+                Some(Box::new(Type::any(n.span, Default::default())))
             },
             type_params: Default::default(),
             metadata: Default::default(),

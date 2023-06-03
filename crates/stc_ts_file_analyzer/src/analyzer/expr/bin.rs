@@ -317,8 +317,8 @@ impl Analyzer<'_, '_> {
                         self.storage.report(
                             ErrorKind::SwitchCaseTestNotCompatible {
                                 span,
-                                disc: box lt.clone(),
-                                test: box rt.clone(),
+                                disc: Box::new(lt.clone()),
+                                test: Box::new(rt.clone()),
                             }
                             .into(),
                         )
@@ -327,8 +327,8 @@ impl Analyzer<'_, '_> {
                             ErrorKind::NoOverlap {
                                 span,
                                 value: true,
-                                left: box lt.clone(),
-                                right: box rt.clone(),
+                                left: Box::new(lt.clone()),
+                                right: Box::new(rt.clone()),
                             }
                             .into(),
                         )
@@ -504,12 +504,12 @@ impl Analyzer<'_, '_> {
                             if param.is_unknown() || param.is_any() {
                                 Type::Param(TypeParam {
                                     span: *param_span,
-                                    constraint: Some(box Type::Keyword(KeywordType {
+                                    constraint: Some(Box::new(Type::Keyword(KeywordType {
                                         span: *param_span,
                                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    })),
+                                    }))),
                                     name: param_name.clone(),
                                     default: default.clone(),
                                     metadata: *metadata,
@@ -541,7 +541,7 @@ impl Analyzer<'_, '_> {
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
                             self.storage.report(
                                 ErrorKind::InvalidLhsInInstanceOf {
-                                    ty: box lt.clone(),
+                                    ty: Box::new(lt.clone()),
                                     span: left.span(),
                                 }
                                 .into(),
@@ -749,8 +749,8 @@ impl Analyzer<'_, '_> {
                 Err(ErrorKind::InvalidBinaryOp {
                     span,
                     op,
-                    left: box lt,
-                    right: box rt,
+                    left: Box::new(lt),
+                    right: Box::new(rt),
                 }
                 .into())
             }
@@ -799,8 +799,13 @@ impl Analyzer<'_, '_> {
                         || rt.is_interface()
                         || rt.is_tpl()
                     {
-                        self.storage
-                            .report(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rt.clone() }.into());
+                        self.storage.report(
+                            ErrorKind::WrongTypeForRhsOfNumericOperation {
+                                span,
+                                ty: Box::new(rt.clone()),
+                            }
+                            .into(),
+                        );
                     }
                 }
 
@@ -823,7 +828,7 @@ impl Analyzer<'_, '_> {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
                     self.storage.report(
                         ErrorKind::InvalidLhsInInstanceOf {
-                            ty: box lt.clone(),
+                            ty: Box::new(lt.clone()),
                             span: left.span(),
                         }
                         .into(),
@@ -1034,8 +1039,8 @@ impl Analyzer<'_, '_> {
                                 ErrorKind::NoOverlap {
                                     span,
                                     value: true,
-                                    left: box l_ty.clone(),
-                                    right: box r_ty.clone(),
+                                    left: Box::new(l_ty.clone()),
+                                    right: Box::new(r_ty.clone()),
                                 }
                                 .into(),
                             );
@@ -1508,8 +1513,8 @@ impl Analyzer<'_, '_> {
                                 ErrorKind::CannotCompareWithOp {
                                     span,
                                     op,
-                                    left: box l.clone(),
-                                    right: box r.clone(),
+                                    left: Box::new(l.clone()),
+                                    right: Box::new(r.clone()),
                                 }
                                 .into(),
                             );
@@ -1538,8 +1543,8 @@ impl Analyzer<'_, '_> {
                     ErrorKind::CannotCompareWithOp {
                         span,
                         op,
-                        left: box l.clone(),
-                        right: box r.clone(),
+                        left: Box::new(l.clone()),
+                        right: Box::new(r.clone()),
                     }
                     .into(),
                 );
@@ -1759,7 +1764,7 @@ impl Analyzer<'_, '_> {
                 self.storage.report(
                     ErrorKind::InvalidRhsInInstanceOf {
                         span,
-                        ty: box type_for_error.clone(),
+                        ty: Box::new(type_for_error.clone()),
                     }
                     .into(),
                 );
@@ -1769,7 +1774,7 @@ impl Analyzer<'_, '_> {
                 self.storage.report(
                     ErrorKind::InvalidRhsInInstanceOf {
                         span,
-                        ty: box type_for_error.clone(),
+                        ty: Box::new(type_for_error.clone()),
                     }
                     .into(),
                 );
@@ -1797,22 +1802,25 @@ impl Analyzer<'_, '_> {
             //
             // Ok if it's assignable to `Function`.
             Type::TypeLit(..) | Type::Interface(..) => {
-                if let Err(..) = self.assign(
-                    span,
-                    &mut Default::default(),
-                    &Type::Ref(Ref {
+                if self
+                    .assign(
                         span,
-                        type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
-                        type_args: None,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                    &ty,
-                ) {
+                        &mut Default::default(),
+                        &Type::Ref(Ref {
+                            span,
+                            type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
+                            type_args: None,
+                            metadata: Default::default(),
+                            tracker: Default::default(),
+                        }),
+                        &ty,
+                    )
+                    .is_err()
+                {
                     self.storage.report(
                         ErrorKind::InvalidRhsInInstanceOf {
                             span,
-                            ty: box type_for_error.clone(),
+                            ty: Box::new(type_for_error.clone()),
                         }
                         .into(),
                     );
@@ -2034,7 +2042,7 @@ impl Analyzer<'_, '_> {
                         } else {
                             ErrorKind::WrongTypeForRhsOfNumericOperation {
                                 span: ty.span(),
-                                ty: box ty.clone(),
+                                ty: Box::new(ty.clone()),
                             }
                             .into()
                         }),
@@ -2157,7 +2165,7 @@ impl Analyzer<'_, '_> {
                             errors.push(
                                 ErrorKind::InvalidRhsForInOperator {
                                     span: rs,
-                                    ty: box rt.clone(),
+                                    ty: Box::new(rt.clone()),
                                 }
                                 .into(),
                             )

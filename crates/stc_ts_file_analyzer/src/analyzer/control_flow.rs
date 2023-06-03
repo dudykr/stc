@@ -462,7 +462,7 @@ impl Analyzer<'_, '_> {
 
                 let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
                 elem_types.dedup_type();
-                let elem_type = box Type::new_union(DUMMY_SP, elem_types);
+                let elem_type = Box::new(Type::new_union(DUMMY_SP, elem_types));
                 *ty = Type::Array(Array {
                     span,
                     elem_type,
@@ -894,6 +894,7 @@ impl Analyzer<'_, '_> {
                             ty,
                             AssignOpts {
                                 span: i.id.span,
+                                may_check_for_common_properties: true,
                                 ..opts.assign
                             },
                         )?;
@@ -977,7 +978,7 @@ impl Analyzer<'_, '_> {
                                 return Err(ErrorKind::NotVariable {
                                     span: i.id.span,
                                     left: lhs.span(),
-                                    ty: Some(box ty.normalize().clone()),
+                                    ty: Some(Box::new(ty.normalize().clone())),
                                 }
                                 .into());
                             }
@@ -1163,7 +1164,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Check if this is correct. (in object rest context)
                 let ty = Type::Array(Array {
                     span,
-                    elem_type: box ty.clone(),
+                    elem_type: Box::new(ty.clone()),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 });

@@ -189,6 +189,11 @@ pub(crate) struct AssignOpts {
     /// If true, `assign` will fail if the params of the LHS is longer than the
     /// RHS.
     pub ensure_params_length: bool,
+
+    pub check_for_common_properties: Option<bool>,
+    pub may_check_for_common_properties: bool,
+
+    pub enable_do_not_use_return_type_while_inference: bool,
 }
 
 #[derive(Default)]
@@ -293,9 +298,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into()),
+                    Type::TypeLit(..) => {
+                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation {
+                            span,
+                            ty: Box::new(rhs.clone()),
+                        }
+                        .into())
+                    }
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span, ty: box rhs.clone() }.into())
+                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation {
+                            span,
+                            ty: Box::new(rhs.clone()),
+                        }
+                        .into())
                     }
                     _ => {}
                 }
@@ -392,8 +407,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::InvalidOpAssign {
                             span,
                             op,
-                            lhs: box l.into_owned().clone(),
-                            rhs: box r.into_owned().clone(),
+                            lhs: Box::new(l.into_owned()),
+                            rhs: Box::new(r.into_owned()),
                         }
                         .into());
                     }
@@ -416,8 +431,8 @@ impl Analyzer<'_, '_> {
                     .convert_err(|err| ErrorKind::InvalidOpAssign {
                         span,
                         op,
-                        lhs: box l.into_owned().clone(),
-                        rhs: box r.into_owned().clone(),
+                        lhs: Box::new(l.into_owned()),
+                        rhs: Box::new(r.into_owned()),
                     });
             }
             _ => {}
@@ -476,8 +491,8 @@ impl Analyzer<'_, '_> {
             | ErrorKind::ObjectAssignFailed { .. } => err,
             _ => ErrorKind::AssignFailed {
                 span: opts.span,
-                left: box left.clone(),
-                right: box right.clone(),
+                left: Box::new(left.clone()),
+                right: Box::new(right.clone()),
                 right_ident: opts.right_ident_span,
                 cause: vec![err.into()],
             },
@@ -628,7 +643,9 @@ impl Analyzer<'_, '_> {
         if to.type_eq(rhs) {
             return Ok(());
         }
-
+        if to.is_any() {
+            return Ok(());
+        }
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let mut to = self.normalize_for_assign(span, to, opts).context("tried to normalize lhs")?;
         to.freeze();
@@ -642,8 +659,8 @@ impl Analyzer<'_, '_> {
             () => {{
                 return Err(ErrorKind::AssignFailed {
                     span,
-                    left: box to.clone(),
-                    right: box rhs.clone(),
+                    left: Box::new(to.clone()),
+                    right: Box::new(rhs.clone()),
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
@@ -804,8 +821,8 @@ impl Analyzer<'_, '_> {
                 if r.is_unknown() {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: Box::new(to.clone()),
+                        right: Box::new(rhs.clone()),
                         right_ident: opts.right_ident_span,
                         cause: vec![],
                     }
@@ -1051,7 +1068,7 @@ impl Analyzer<'_, '_> {
 
         if let (Type::Conditional(lc), Type::Conditional(rc)) = (to, rhs) {
             if lc.extends_type.type_eq(&rc.extends_type) {
-                if let Ok(..) = self.assign_with_opts(data, &rc.check_type, &lc.check_type, opts) {
+                if self.assign_with_opts(data, &rc.check_type, &lc.check_type, opts).is_ok() {
                     self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
                         .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
@@ -1375,7 +1392,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign to an element of an intersection type")
                         .convert_err(|err| ErrorKind::SimpleAssignFailed {
                             span: err.span(),
-                            cause: Some(box err.into()),
+                            cause: Some(Box::new(err.into())),
                         }) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
@@ -1398,7 +1415,7 @@ impl Analyzer<'_, '_> {
                             })
                             .convert_err(|err| ErrorKind::SimpleAssignFailed {
                                 span: err.span(),
-                                cause: Some(box err.into()),
+                                cause: Some(Box::new(err.into())),
                             })?;
 
                         errors.retain(|err| !matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. }));
@@ -1442,9 +1459,9 @@ impl Analyzer<'_, '_> {
                     } else {
                         return Err(ErrorKind::AssignFailed {
                             span: opts.left_ident_span.unwrap_or(span),
-                            left: box to.clone(),
+                            left: Box::new(to.clone()),
                             right_ident: opts.right_ident_span,
-                            right: box rhs.clone().into(),
+                            right: Box::new(rhs.clone().into()),
                             cause: vec![],
                         }
                         .into());
@@ -1584,9 +1601,9 @@ impl Analyzer<'_, '_> {
                 if use_single_error {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
+                        left: Box::new(to.clone()),
                         right_ident: None,
-                        right: box rhs.clone(),
+                        right: Box::new(rhs.clone()),
                         cause: errors,
                     }
                     .into());
@@ -1992,8 +2009,8 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::AssignFailed {
                         span,
                         cause: errors,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: Box::new(to.clone()),
+                        right: Box::new(rhs.clone()),
                         right_ident: opts.right_ident_span,
                     }
                     .into());
@@ -2008,7 +2025,11 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(ErrorKind::IntersectionError { span, error: box error }.into());
+                        return Err(ErrorKind::IntersectionError {
+                            span,
+                            error: Box::new(error),
+                        }
+                        .into());
                     }
                 }
 
@@ -2204,7 +2225,7 @@ impl Analyzer<'_, '_> {
                                 )
                                 .convert_err(|err| ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
-                                    cause: Some(box err.into()),
+                                    cause: Some(Box::new(err.into())),
                                 })
                                 .context("tried to assign a type literal to an expanded keyword");
                         }
@@ -2331,8 +2352,8 @@ impl Analyzer<'_, '_> {
                 if body.is_empty() && !extends.is_empty() {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: Box::new(to.clone()),
+                        right: Box::new(rhs.clone()),
                         right_ident: opts.right_ident_span,
                         cause: errors,
                     }
@@ -2358,8 +2379,8 @@ impl Analyzer<'_, '_> {
                 if !errors.is_empty() {
                     return Err(ErrorKind::AssignFailed {
                         span,
-                        left: box to.clone(),
-                        right: box rhs.clone(),
+                        left: Box::new(to.clone()),
+                        right: Box::new(rhs.clone()),
                         right_ident: opts.right_ident_span,
                         cause: errors,
                     }
@@ -2736,9 +2757,9 @@ impl Analyzer<'_, '_> {
 
                 return Err(ErrorKind::AssignFailed {
                     span,
-                    left: box Type::StringMapping(to.clone()),
+                    left: Box::new(Type::StringMapping(to.clone())),
                     right_ident: None,
-                    right: box r.clone(),
+                    right: Box::new(r.clone()),
                     cause: vec![],
                 }
                 .into());
@@ -2759,9 +2780,9 @@ impl Analyzer<'_, '_> {
                             if value.to_uppercase() != **value {
                                 return Err(ErrorKind::AssignFailed {
                                     span: str_lit.span(),
-                                    left: box Type::StringMapping(to.clone()),
+                                    left: Box::new(Type::StringMapping(to.clone())),
                                     right_ident: None,
-                                    right: box r.clone(),
+                                    right: Box::new(r.clone()),
                                     cause: vec![],
                                 }
                                 .into());
@@ -2773,9 +2794,9 @@ impl Analyzer<'_, '_> {
                             if value.to_lowercase() != **value {
                                 return Err(ErrorKind::AssignFailed {
                                     span: str_lit.span(),
-                                    left: box Type::StringMapping(to.clone()),
+                                    left: Box::new(Type::StringMapping(to.clone())),
                                     right_ident: None,
-                                    right: box r.clone(),
+                                    right: Box::new(r.clone()),
                                     cause: vec![],
                                 }
                                 .into());
@@ -2790,9 +2811,9 @@ impl Analyzer<'_, '_> {
                                 if !ch.is_uppercase() {
                                     return Err(ErrorKind::AssignFailed {
                                         span: str_lit.span(),
-                                        left: box Type::StringMapping(to.clone()),
+                                        left: Box::new(Type::StringMapping(to.clone())),
                                         right_ident: None,
-                                        right: box r.clone(),
+                                        right: Box::new(r.clone()),
                                         cause: vec![],
                                     }
                                     .into());
@@ -2808,9 +2829,9 @@ impl Analyzer<'_, '_> {
                                 if !ch.is_lowercase() {
                                     return Err(ErrorKind::AssignFailed {
                                         span: str_lit.span(),
-                                        left: box Type::StringMapping(to.clone()),
+                                        left: Box::new(Type::StringMapping(to.clone())),
                                         right_ident: None,
-                                        right: box r.clone(),
+                                        right: Box::new(r.clone()),
                                         cause: vec![],
                                     }
                                     .into());
@@ -2827,9 +2848,9 @@ impl Analyzer<'_, '_> {
                     _ => {
                         return Err(ErrorKind::AssignFailed {
                             span: r.span(),
-                            left: box Type::StringMapping(to.clone()),
+                            left: Box::new(Type::StringMapping(to.clone())),
                             right_ident: None,
-                            right: box r.clone(),
+                            right: Box::new(r.clone()),
                             cause: vec![],
                         }
                         .into());
@@ -2838,18 +2859,18 @@ impl Analyzer<'_, '_> {
 
                 return Err(ErrorKind::NotSatisfyConstraint {
                     span: to.type_args.params[0].span(),
-                    left: box Type::Keyword(KeywordType {
+                    left: Box::new(Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         span: to.span(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
-                    right: box Type::Keyword(KeywordType {
+                    })),
+                    right: Box::new(Type::Keyword(KeywordType {
                         kind: ty,
                         span: r.span(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })),
                 }
                 .into());
             }
@@ -2867,9 +2888,9 @@ impl Analyzer<'_, '_> {
 
                 return Err(ErrorKind::AssignFailed {
                     span: r.span(),
-                    left: box Type::StringMapping(to.clone()),
+                    left: Box::new(Type::StringMapping(to.clone())),
                     right_ident: None,
-                    right: box r.clone(),
+                    right: Box::new(r.clone()),
                     cause: vec![],
                 }
                 .into());
@@ -2882,9 +2903,9 @@ impl Analyzer<'_, '_> {
                 if !self.ctx.in_declare && to.kind != string.kind {
                     return Err(ErrorKind::AssignFailed {
                         span: opts.span,
-                        left: box Type::StringMapping(to.clone()),
+                        left: Box::new(Type::StringMapping(to.clone())),
                         right_ident: None,
-                        right: box r.clone(),
+                        right: Box::new(r.clone()),
                         cause: vec![],
                     }
                     .into());
@@ -2916,9 +2937,9 @@ impl Analyzer<'_, '_> {
                         let Type::Param(param) = constraint.normalize() else {
                             return Err(ErrorKind::AssignFailed {
                                 span: opts.span,
-                                left: box Type::StringMapping(to.clone()),
+                                left: Box::new(Type::StringMapping(to.clone())),
                                 right_ident: None,
-                                right: box r.clone(),
+                                right: Box::new(r.clone()),
                                 cause: vec![],
                             }
                             .into());
@@ -2926,9 +2947,9 @@ impl Analyzer<'_, '_> {
                         if !param.type_eq(l) {
                             return Err(ErrorKind::AssignFailed {
                                 span: opts.span,
-                                left: box Type::StringMapping(to.clone()),
+                                left: Box::new(Type::StringMapping(to.clone())),
                                 right_ident: None,
-                                right: box r.clone(),
+                                right: Box::new(r.clone()),
                                 cause: vec![],
                             }
                             .into());
@@ -2936,9 +2957,9 @@ impl Analyzer<'_, '_> {
                     } else {
                         return Err(ErrorKind::AssignFailed {
                             span: opts.span,
-                            left: box Type::StringMapping(to.clone()),
+                            left: Box::new(Type::StringMapping(to.clone())),
                             right_ident: None,
-                            right: box r.clone(),
+                            right: Box::new(r.clone()),
                             cause: vec![],
                         }
                         .into());
@@ -2951,9 +2972,9 @@ impl Analyzer<'_, '_> {
                                 if !param_l.type_eq(param_r) {
                                     return Err(ErrorKind::AssignFailed {
                                         span: opts.span,
-                                        left: box Type::StringMapping(to.clone()),
+                                        left: Box::new(Type::StringMapping(to.clone())),
                                         right_ident: None,
-                                        right: box r.clone(),
+                                        right: Box::new(r.clone()),
                                         cause: vec![],
                                     }
                                     .into());
@@ -2983,9 +3004,9 @@ impl Analyzer<'_, '_> {
                                 {
                                     return Err(ErrorKind::AssignFailed {
                                         span: ref_ty.span(),
-                                        left: box Type::StringMapping(to.clone()),
+                                        left: Box::new(Type::StringMapping(to.clone())),
                                         right_ident: None,
-                                        right: box r.clone(),
+                                        right: Box::new(r.clone()),
                                         cause: vec![],
                                     }
                                     .into());
@@ -3006,9 +3027,9 @@ impl Analyzer<'_, '_> {
                                 {
                                     return Err(ErrorKind::AssignFailed {
                                         span: to.span(),
-                                        left: box Type::StringMapping(to.clone()),
+                                        left: Box::new(Type::StringMapping(to.clone())),
                                         right_ident: None,
-                                        right: box r.clone(),
+                                        right: Box::new(r.clone()),
                                         cause: vec![],
                                     }
                                     .into());
@@ -3033,9 +3054,9 @@ impl Analyzer<'_, '_> {
                             if !is_valid_union {
                                 return Err(ErrorKind::AssignFailed {
                                     span: ty.span(),
-                                    left: box Type::StringMapping(to.clone()),
+                                    left: Box::new(Type::StringMapping(to.clone())),
                                     right_ident: None,
-                                    right: box r.clone(),
+                                    right: Box::new(r.clone()),
                                     cause: vec![],
                                 }
                                 .into());
@@ -3052,9 +3073,9 @@ impl Analyzer<'_, '_> {
                             {
                                 return Err(ErrorKind::AssignFailed {
                                     span: to.span(),
-                                    left: box Type::StringMapping(to.clone()),
+                                    left: Box::new(Type::StringMapping(to.clone())),
                                     right_ident: None,
-                                    right: box r.clone(),
+                                    right: Box::new(r.clone()),
                                     cause: vec![],
                                 }
                                 .into());
@@ -3079,12 +3100,12 @@ impl Analyzer<'_, '_> {
                             // This ideally should be to.type_args.params[0].span()
                             // but that gives wrong span pos
                             span,
-                            left: box Type::Keyword(KeywordType {
+                            left: Box::new(Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                                 span: to.span(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }),
+                            })),
                             right: constraint.clone(),
                         }
                         .into());
@@ -3094,9 +3115,9 @@ impl Analyzer<'_, '_> {
             _ => {
                 return Err(ErrorKind::AssignFailed {
                     span: to.span(),
-                    left: box Type::StringMapping(to.clone()),
+                    left: Box::new(Type::StringMapping(to.clone())),
                     right_ident: None,
-                    right: box r.clone(),
+                    right: Box::new(r.clone()),
                     cause: vec![],
                 }
                 .into());

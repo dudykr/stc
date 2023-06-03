@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
         let param = match param.normalize() {
             Type::Mapped(..) => {
                 // TODO(kdy1): PERF
-                p = box param.clone().foldable().fold_with(&mut MappedIndexedSimplifier).freezed();
+                p = Box::new(param.clone().foldable().fold_with(&mut MappedIndexedSimplifier).freezed());
                 &p
             }
             _ => param,
@@ -889,16 +889,19 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )?;
-                    self.infer_type(
-                        span,
-                        inferred,
-                        &p.ret_ty,
-                        &a.ret_ty,
-                        InferTypeOpts {
-                            ignore_builtin_object_interface: true,
-                            ..opts
-                        },
-                    )?;
+
+                    if !opts.do_not_use_return_type {
+                        self.infer_type(
+                            span,
+                            inferred,
+                            &p.ret_ty,
+                            &a.ret_ty,
+                            InferTypeOpts {
+                                ignore_builtin_object_interface: true,
+                                ..opts
+                            },
+                        )?;
+                    }
 
                     if !opts.for_fn_assignment {
                         if let Some(arg_type_params) = &a.type_params {
@@ -1045,7 +1048,7 @@ impl Analyzer<'_, '_> {
                         elems: vec![TupleElement {
                             span,
                             label: None,
-                            ty: box arg.clone(),
+                            ty: Box::new(arg.clone()),
                             tracker: Default::default(),
                         }],
                         metadata: Default::default(),
@@ -1301,7 +1304,7 @@ impl Analyzer<'_, '_> {
                     &Type::Ref(Ref {
                         span,
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
-                        type_args: Some(box TypeParamInstantiation { span, params }),
+                        type_args: Some(Box::new(TypeParamInstantiation { span, params })),
                         metadata: Default::default(),
                         tracker: Default::default(),
                     })
@@ -1668,7 +1671,7 @@ impl Analyzer<'_, '_> {
                                     };
                                     let type_ann = type_ann
                                         .map(Box::new)
-                                        .or_else(|| Some(box Type::any(arg_prop.span, Default::default())));
+                                        .or_else(|| Some(Box::new(Type::any(arg_prop.span, Default::default()))));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),
@@ -1704,7 +1707,7 @@ impl Analyzer<'_, '_> {
                                         // inferred.type_elements.remove(&name)
                                         None
                                     } else {
-                                        Some(box Type::any(i.span, Default::default()))
+                                        Some(Box::new(Type::any(i.span, Default::default())))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
                                 }
@@ -1717,7 +1720,7 @@ impl Analyzer<'_, '_> {
                                         ret_ty: arg_method
                                             .ret_ty
                                             .clone()
-                                            .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
+                                            .unwrap_or_else(|| Box::new(Type::any(arg_method.span, Default::default()))),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     });
@@ -1747,7 +1750,7 @@ impl Analyzer<'_, '_> {
                                     };
                                     let type_ann = type_ann
                                         .map(Box::new)
-                                        .or_else(|| Some(box Type::any(arg_method.span, Default::default())));
+                                        .or_else(|| Some(Box::new(Type::any(arg_method.span, Default::default()))));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         span: arg_method.span,
@@ -1838,7 +1841,7 @@ impl Analyzer<'_, '_> {
                             Cow::Owned(
                                 Type::Array(Array {
                                     span: arg.span,
-                                    elem_type: box new_ty.unwrap_or_else(|| {
+                                    elem_type: Box::new(new_ty.unwrap_or_else(|| {
                                         Type::any(
                                             arg.span,
                                             KeywordTypeMetadata {
@@ -1846,7 +1849,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )
-                                    }),
+                                    })),
                                     metadata: arg.metadata,
                                     tracker: Default::default(),
                                 })
@@ -1894,7 +1897,7 @@ impl Analyzer<'_, '_> {
                                 new_elems.push(TupleElement {
                                     span: elem.span,
                                     label: elem.label.clone(),
-                                    ty: box inferred_ty.unwrap_or_else(|| Type::any(elem.span, Default::default())),
+                                    ty: Box::new(inferred_ty.unwrap_or_else(|| Type::any(elem.span, Default::default()))),
                                     tracker: Default::default(),
                                 });
                             }
@@ -1981,8 +1984,7 @@ impl Analyzer<'_, '_> {
                                     matches!(
                                         ty.normalize(),
                                         Type::Index(Index {
-                                            ty: box Type::Param(..),
-                                            ..
+                                            ty: box Type::Param(..), ..
                                         })
                                     )
                                 }) =>
@@ -2033,7 +2035,7 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            let ty = inferred.type_params.remove(name).map(|v| box v.inferred_type);
+                                            let ty = inferred.type_params.remove(name).map(|v| Box::new(v.inferred_type));
 
                                             type_elements
                                                 .entry(name.clone())
@@ -2608,12 +2610,12 @@ impl Fold<Type> for MappedReverser {
                 match member {
                     TypeElement::Property(p) => {
                         let mapped: Mapped = p.type_ann.unwrap().mapped().unwrap();
-                        let ty = box Type::TypeLit(TypeLit {
+                        let ty = Box::new(Type::TypeLit(TypeLit {
                             span,
                             members: vec![TypeElement::Property(PropertySignature { type_ann: mapped.ty, ..p })],
                             metadata,
                             tracker: Default::default(),
-                        });
+                        }));
 
                         return Type::Mapped(Mapped { ty: Some(ty), ..mapped });
                     }
@@ -2687,7 +2689,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
         TruePlusMinus::Plus => match element_ty.normalize() {
             Type::Optional(ty) => {}
             _ => {
-                let ty = box element_ty.take();
+                let ty = Box::new(element_ty.take());
                 *element_ty = Type::Optional(OptionalType {
                     span: DUMMY_SP,
                     ty,

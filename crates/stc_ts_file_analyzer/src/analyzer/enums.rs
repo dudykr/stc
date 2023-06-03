@@ -112,12 +112,12 @@ impl Analyzer<'_, '_> {
                                 RTsLit::BigInt(v) => RTsLit::BigInt(v.clone()),
                             };
 
-                            box Type::Lit(LitType {
+                            Box::new(Type::Lit(LitType {
                                 span: m.span,
                                 lit,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            })
+                            }))
                         })
                         .or_else(|err| match &m.init {
                             None => Err(err),
@@ -125,7 +125,7 @@ impl Analyzer<'_, '_> {
                                 if e.is_const {
                                     self.storage.report(err);
                                 }
-                                Ok(box Type::any(m.span, Default::default()))
+                                Ok(Box::new(Type::any(m.span, Default::default())))
                             }
                         })?;
 
@@ -402,13 +402,13 @@ impl Analyzer<'_, '_> {
                 },
                 optional: false,
                 params: Default::default(),
-                type_ann: Some(box Type::EnumVariant(EnumVariant {
+                type_ann: Some(Box::new(Type::EnumVariant(EnumVariant {
                     span: m.span,
                     def: e.cheap_clone(),
                     name: Some(key.sym),
                     metadata: Default::default(),
                     tracker: Default::default(),
-                })),
+                }))),
                 type_params: Default::default(),
                 metadata: Default::default(),
                 accessor: Accessor {
@@ -426,23 +426,23 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(KeywordType {
+                ty: Box::new(Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                }),
+                })),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(KeywordType {
+                type_ann: Some(Box::new(Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
-                })),
+                }))),
                 is_static: false,
             }));
         }
@@ -455,23 +455,23 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(KeywordType {
-                    span: DUMMY_SP,
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                }),
-            };
-            members.push(TypeElement::Index(IndexSignature {
-                span: e.span,
-                readonly: false,
-                params: vec![param],
-                type_ann: Some(box Type::Keyword(KeywordType {
+                ty: Box::new(Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })),
+            };
+            members.push(TypeElement::Index(IndexSignature {
+                span: e.span,
+                readonly: false,
+                params: vec![param],
+                type_ann: Some(Box::new(Type::Keyword(KeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
+                    tracker: Default::default(),
+                }))),
                 is_static: false,
             }));
         }

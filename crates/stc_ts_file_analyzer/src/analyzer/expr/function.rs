@@ -138,8 +138,9 @@ impl Analyzer<'_, '_> {
                 span: f.span,
                 params,
                 type_params,
-                ret_ty: box declared_ret_ty
-                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
+                ret_ty: Box::new(
+                    declared_ret_ty.unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
+                ),
                 metadata: Default::default(),
                 tracker: Default::default(),
             })
@@ -189,12 +190,12 @@ impl Analyzer<'_, '_> {
                         params_tuple_els.push(TupleElement {
                             span: param.span,
                             label: None,
-                            ty: box Type::Rest(RestType {
+                            ty: Box::new(Type::Rest(RestType {
                                 span: param.span,
                                 ty: param.ty.clone(),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }),
+                            })),
                             tracker: Default::default(),
                         });
                     }

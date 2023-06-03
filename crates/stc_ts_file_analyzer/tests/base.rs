@@ -1,4 +1,3 @@
-#![feature(box_syntax)]
 #![allow(clippy::manual_strip)]
 
 use std::{
@@ -15,14 +14,17 @@ use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
-use stc_ts_errors::{debug::debugger::Debugger, ErrorKind, DISABLE_ERROR_CONTEXT};
+use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
     env::EnvFactory,
     validator::ValidateWith,
 };
 use stc_ts_storage::{ErrorStore, Single};
-use stc_ts_testing::{conformance::parse_conformance_test, tsc::TscError};
+use stc_ts_testing::{
+    conformance::{parse_conformance_test, TestSpec},
+    tsc::TscError,
+};
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, SyntaxContext};
@@ -111,7 +113,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env, cm, Default::default(), Box::new(&mut storage), &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 
@@ -155,16 +157,6 @@ fn validate(input: &Path) -> Vec<StcError> {
         .collect()
 }
 
-#[fixture("tests/errors/**/*.ts")]
-fn errors(input: PathBuf) {
-    let stderr = DISABLE_ERROR_CONTEXT.set(&(), || run_test(input.clone(), true, false).unwrap());
-
-    if stderr.is_empty() {
-        panic!("Expected error, but got none");
-    }
-    stderr.compare_to_file(input.with_extension("swc-stderr")).unwrap();
-}
-
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
@@ -203,21 +195,44 @@ fn compare(input: PathBuf) {
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
-    let output = Command::new("npx")
-        .arg("tsc")
-        .arg("--pretty")
-        .arg("--noEmit")
-        .arg("--lib")
-        .arg("es2020")
-        .arg(input)
-        .output()
-        .expect("failed to invoke tsc");
+    let cases = parse_conformance_test(input).unwrap();
+    assert!(cases.len() == 1, "tsc mode only supports single test case");
+
+    let mut cmd = Command::new("npx");
+    cmd.arg("tsc").arg("--pretty").arg("--noEmit");
+    tsc_args(&mut cmd, &cases[0]);
+
+    let output = cmd.arg(input).output().expect("failed to invoke tsc");
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     eprintln!("tsc output: \nStdout:\n{}\nStderr:\n{}", stdout, stderr);
 
     TscError::parse_all(&stdout)
+}
+
+fn tsc_args(c: &mut Command, spec: &TestSpec) {
+    c.arg("--lib").arg(match spec.target {
+        EsVersion::Es3 => "es3",
+        EsVersion::Es5 => "es5",
+        EsVersion::Es2015 => "es2015",
+        EsVersion::Es2016 => "es2016",
+        EsVersion::Es2017 => "es2017",
+        EsVersion::Es2018 => "es2018",
+        EsVersion::Es2019 => "es2019",
+        EsVersion::Es2020 => "es2020",
+        EsVersion::Es2021 => "es2021",
+        EsVersion::Es2022 => "es2022",
+        EsVersion::EsNext => "esnext",
+    });
+
+    if spec.rule.strict_function_types {
+        c.arg("--strictFunctionTypes");
+    }
+
+    if spec.rule.strict_null_checks {
+        c.arg("--strictNullChecks");
+    }
 }
 
 /// If `for_error` is false, this function will run as type dump mode.
@@ -290,7 +305,7 @@ fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Opti
                     env,
                     cm.clone(),
                     Default::default(),
-                    box &mut storage,
+                    Box::new(&mut storage),
                     &NoopLoader,
                     if want_error {
                         None
@@ -389,7 +404,7 @@ fn pass_only(input: PathBuf) {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env, cm, Default::default(), Box::new(&mut storage), &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 

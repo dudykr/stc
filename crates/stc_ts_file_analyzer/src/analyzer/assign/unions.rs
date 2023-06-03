@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                             span,
                             &mut to_types[idx],
                             &TypeElement::Property(PropertySignature {
-                                type_ann: Some(box el_ty.clone()),
+                                type_ann: Some(Box::new(el_ty.clone())),
                                 ..el.clone()
                             }),
                         )?;
@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
                     &TupleElement {
                         span: el.span,
                         label: el.label.clone(),
-                        ty: box el_ty.clone(),
+                        ty: Box::new(el_ty.clone()),
                         tracker: Default::default(),
                     },
                 )?;

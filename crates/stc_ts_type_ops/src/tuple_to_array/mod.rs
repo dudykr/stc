@@ -28,7 +28,7 @@ impl Fold<Type> for TupleToArray {
                     types.push(*element.ty);
                 }
 
-                let elem_type = box Type::new_union(span, types);
+                let elem_type = Box::new(Type::new_union(span, types));
                 Type::Array(Array {
                     span,
                     elem_type,

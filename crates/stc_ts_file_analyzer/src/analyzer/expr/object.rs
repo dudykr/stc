@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
                                 hi: prop_ty.span().hi,
                                 ctxt: SyntaxContext::empty(),
                             },
-                            ty: box prop_ty.clone(),
+                            ty: Box::new(prop_ty.clone()),
                         }
                         .into(),
                     )
@@ -255,8 +255,13 @@ impl Analyzer<'_, '_> {
         }
 
         if !opts.do_not_check_for_undefined && self.is_always_undefined(&rhs) {
-            self.storage
-                .report(ErrorKind::NonObjectInSpread { span, ty: box rhs.clone() }.into());
+            self.storage.report(
+                ErrorKind::NonObjectInSpread {
+                    span,
+                    ty: Box::new(rhs.clone()),
+                }
+                .into(),
+            );
             return Ok(Type::any(to.span(), Default::default()));
         }
 

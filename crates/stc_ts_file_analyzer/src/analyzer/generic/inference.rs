@@ -110,6 +110,9 @@ pub(crate) struct InferTypeOpts {
     /// differently, to avoid inferring `([...T], [...T])` & `(['a', 'b'], ['c',
     /// ['d'])`  as a tuple with 4 elements.
     pub rest_type_index: Option<usize>,
+
+    /// If `true`, the return type of the function is not used.
+    pub do_not_use_return_type: bool,
 }
 
 bitflags! {
@@ -307,7 +310,7 @@ impl Analyzer<'_, '_> {
             // quality) to what we would infer for a naked type parameter.
 
             for t in targets {
-                if let Some(..) = self.get_inference_info_for_type(inferred, t) {
+                if self.get_inference_info_for_type(inferred, t).is_some() {
                     naked_type_var = Some(t.clone());
                     type_var_count += 1;
                 } else {
@@ -385,7 +388,7 @@ impl Analyzer<'_, '_> {
             type_var_count > 0
         } {
             for t in targets {
-                if let Some(..) = self.get_inference_info_for_type(inferred, t) {
+                if self.get_inference_info_for_type(inferred, t).is_some() {
                     self.infer_with_priority(span, inferred, source, t, InferencePriority::NakedTypeVariable, opts)?;
                 }
             }
@@ -1150,7 +1153,7 @@ impl Analyzer<'_, '_> {
                                 prev.metadata.prevent_tuple_to_array = true;
 
                                 let mut new_elem = arg.as_tuple().unwrap().elems[0].clone();
-                                new_elem.ty = box new_elem.ty.generalize_lit();
+                                new_elem.ty = Box::new(new_elem.ty.generalize_lit());
                                 prev.elems.push(new_elem);
 
                                 Type::Tuple(prev).freezed()
@@ -1280,7 +1283,7 @@ impl Analyzer<'_, '_> {
                 inferred,
                 &Type::Array(Array {
                     span: param.span(),
-                    elem_type: box elem_type.clone(),
+                    elem_type: Box::new(elem_type.clone()),
                     metadata: ArrayMetadata {
                         common: param.metadata(),
                         ..Default::default()
@@ -1460,7 +1463,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default()))),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })
@@ -1484,7 +1487,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default()))),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
                                     })

@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
                                     id: RIdent::new("___mapped".into(), span.with_ctxt(SyntaxContext::empty())),
                                     type_ann: None,
                                 }),
-                                ty: box constraint.clone(),
+                                ty: Box::new(constraint.clone()),
                             }],
                             type_ann: m.ty.clone(),
                             readonly: m.readonly.map_or(false, |v| match v {
@@ -167,9 +167,9 @@ impl Analyzer<'_, '_> {
 
         match keyof_operand.normalize() {
             Type::Array(array) => {
-                let elem_type = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+                let elem_type = m.ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default())));
                 let elem_type = match m.optional {
-                    Some(TruePlusMinus::True) => box elem_type.union_with_undefined(span),
+                    Some(TruePlusMinus::True) => Box::new(elem_type.union_with_undefined(span)),
                     _ => elem_type,
                 };
 
@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .enumerate()
                         .map(|(idx, elem)| {
-                            let mut ty = m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default()));
+                            let mut ty = m.ty.clone().unwrap_or_else(|| Box::new(Type::any(span, Default::default())));
 
                             if let Type::Rest(elem_rest_ty) = elem.ty.normalize() {
                                 let mut mapped_ty = m.ty.clone();
@@ -242,21 +242,21 @@ impl Analyzer<'_, '_> {
 
                                 *ty = Type::Rest(RestType {
                                     span,
-                                    ty: box Type::Mapped(Mapped {
+                                    ty: Box::new(Type::Mapped(Mapped {
                                         type_param: TypeParam {
-                                            constraint: Some(box Type::Index(Index {
+                                            constraint: Some(Box::new(Type::Index(Index {
                                                 span: elem.span,
                                                 ty: elem_rest_ty.ty.clone(),
                                                 metadata: Default::default(),
                                                 tracker: Default::default(),
-                                            })),
+                                            }))),
                                             tracker: Default::default(),
                                             ..m.type_param.clone()
                                         },
                                         ty: mapped_ty.clone(),
                                         tracker: Default::default(),
                                         ..m.clone()
-                                    }),
+                                    })),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 });
@@ -280,7 +280,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             let ty = match m.optional {
-                                Some(TruePlusMinus::True) => box ty.union_with_undefined(span),
+                                Some(TruePlusMinus::True) => Box::new(ty.union_with_undefined(span)),
                                 _ => ty,
                             };
 
@@ -802,12 +802,12 @@ impl Analyzer<'_, '_> {
                                     id: RIdent::new("__key".into(), elem.span.with_ctxt(SyntaxContext::empty())),
                                     type_ann: None,
                                 }),
-                                ty: box Type::Keyword(KeywordType {
+                                ty: Box::new(Type::Keyword(KeywordType {
                                     span: elem.span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                }),
+                                })),
                             }],
                             readonly: false,
                         });
@@ -844,12 +844,12 @@ impl Analyzer<'_, '_> {
                                 id: RIdent::new("__array_key".into(), array.span.with_ctxt(SyntaxContext::empty())),
                                 type_ann: None,
                             }),
-                            ty: box Type::Keyword(KeywordType {
+                            ty: Box::new(Type::Keyword(KeywordType {
                                 span: array.span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 metadata: Default::default(),
                                 tracker: Default::default(),
-                            }),
+                            })),
                         }],
                         readonly: false,
                     },

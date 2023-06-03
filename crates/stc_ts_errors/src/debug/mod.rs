@@ -99,37 +99,41 @@ pub fn force_dump_type_as_string(t: &Type) -> String {
             },
             cm: Lrc::new(FakeSourceMap),
             comments: None,
-            wr: box JsWriter::new(Lrc::new(SourceMap::default()), "\n", &mut buf, None),
+            wr: Box::new(JsWriter::new(Lrc::new(SourceMap::default()), "\n", &mut buf, None)),
         };
 
         let mut body = vec![];
         body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
             span: DUMMY_SP,
-            expr: box Expr::TsAs(TsAsExpr {
+            expr: Box::new(Expr::TsAs(TsAsExpr {
                 span: DUMMY_SP,
-                expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                type_ann: box RTsType::from(ALLOW_DEEP_CLONE.set(&(), || t.clone().fold_with(&mut Visualizer::default()))).into_orig(),
-            }),
+                expr: Box::new(Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP))),
+                type_ann: Box::new(
+                    RTsType::from(ALLOW_DEEP_CLONE.set(&(), || t.clone().fold_with(&mut Visualizer::default()))).into_orig(),
+                ),
+            })),
         })));
 
         if let Type::Interface(t) = t.normalize() {
             ALLOW_DEEP_CLONE.set(&(), || {
                 body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
-                    expr: box Expr::TsAs(TsAsExpr {
+                    expr: Box::new(Expr::TsAs(TsAsExpr {
                         span: DUMMY_SP,
-                        expr: box Expr::Ident(Ident::new("Member".into(), DUMMY_SP)),
-                        type_ann: box RTsType::from(
-                            Type::TypeLit(TypeLit {
-                                span: DUMMY_SP,
-                                members: t.body.clone(),
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .fold_with(&mut Visualizer::default()),
-                        )
-                        .into_orig(),
-                    }),
+                        expr: Box::new(Expr::Ident(Ident::new("Member".into(), DUMMY_SP))),
+                        type_ann: Box::new(
+                            RTsType::from(
+                                Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: t.body.clone(),
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                                .fold_with(&mut Visualizer::default()),
+                            )
+                            .into_orig(),
+                        ),
+                    })),
                 })));
             })
         }

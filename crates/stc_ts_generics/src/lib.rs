@@ -1,5 +1,4 @@
 #![feature(box_patterns)]
-#![feature(box_syntax)]
 #![feature(specialization)]
 #![allow(incomplete_features)]
 #![allow(unused_variables)]

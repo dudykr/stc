@@ -1,6 +1,5 @@
 #![allow(incomplete_features)]
 #![deny(variant_size_differences)]
-#![feature(box_syntax)]
 #![feature(specialization)]
 #![cfg_attr(not(debug_assertions), allow(unused))]
 
@@ -137,6 +136,10 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum ErrorKind {
+    /// TS2559
+    NoCommonProperty {
+        span: Span,
+    },
     /// TS7026
     ImplicitAnyBecauseThereIsNoJsxInterface {
         span: Span,
@@ -1596,7 +1599,7 @@ impl Error {
     where
         F: FnOnce(ErrorKind) -> ErrorKind,
     {
-        self.inner = box op(*self.inner);
+        self.inner = Box::new(op(*self.inner));
         self
     }
 
@@ -1652,7 +1655,8 @@ impl ErrorKind {
             // TS2339: Property not found.
             // TS2550: Property not found with a suggestion to change `lib`.
             // TS2551: Property not found with a suggestion.
-            2550 | 2551 => 2339,
+            // TS7022: Property not found with a private name.
+            2550 | 2551 | 7022 => 2339,
 
             // TS2304: Variable not found
             // TS2585: Variable not found, but with a suggestion to change 'lib',
@@ -1704,7 +1708,8 @@ impl ErrorKind {
             // TS2739: Missing properties with a type name
             // TS2740: Missing properties with type names
             // TS2741: Missing properties with comparison-like error message
-            2739 | 2740 | 2741 => 2322,
+            // TS2559: No common properties
+            2739 | 2740 | 2741 | 2559 => 2322,
 
             // TS4113: Cannot have override
             // TS4117: Cannot have override with spelling suggestion
@@ -1751,7 +1756,7 @@ impl ErrorKind {
                 vec![Error {
                     #[cfg(debug_assertions)]
                     contexts: Default::default(),
-                    inner: box self,
+                    inner: Box::new(self),
                 }]
             }
         }
@@ -2165,6 +2170,8 @@ impl ErrorKind {
             ErrorKind::TypeCannotBeUsedForIndex { .. } => 2538,
 
             ErrorKind::ImplicitAnyBecauseThereIsNoJsxInterface { .. } => 7026,
+
+            ErrorKind::NoCommonProperty { .. } => 2559,
 
             ErrorKind::ClassConstructorPrivate { .. } => 2673,
 

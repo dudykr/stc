@@ -125,7 +125,7 @@ impl ObjectUnionNormalizer {
                     }
                     types.dedup_type();
 
-                    let ty = box Type::new_intersection(DUMMY_SP, types);
+                    let ty = Box::new(Type::new_intersection(DUMMY_SP, types));
                     FnParam {
                         span: DUMMY_SP,
                         // TODO
@@ -142,7 +142,7 @@ impl ObjectUnionNormalizer {
                     }
                 })
                 .collect(),
-            ret_ty: box Type::new_union(u.span, return_types),
+            ret_ty: Box::new(Type::new_union(u.span, return_types)),
             metadata: FunctionMetadata {
                 common: u.metadata.common,
                 ..Default::default()
@@ -252,7 +252,7 @@ impl ObjectUnionNormalizer {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(box Type::new_union(DUMMY_SP, return_types)),
+                ret_ty: Some(Box::new(Type::new_union(DUMMY_SP, return_types))),
                 type_params,
                 params: new_params
                     .into_iter()
@@ -268,7 +268,7 @@ impl ObjectUnionNormalizer {
                         }
                         types.dedup_type();
 
-                        let ty = box Type::new_intersection(DUMMY_SP, types);
+                        let ty = Box::new(Type::new_intersection(DUMMY_SP, types));
                         FnParam {
                             span: DUMMY_SP,
                             // TODO
@@ -357,12 +357,12 @@ impl ObjectUnionNormalizer {
                                 },
                                 optional: true,
                                 params: Default::default(),
-                                type_ann: Some(box Type::Keyword(KeywordType {
+                                type_ann: Some(Box::new(Type::Keyword(KeywordType {
                                     span: DUMMY_SP,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
                                     tracker: Default::default(),
-                                })),
+                                }))),
                                 type_params: Default::default(),
                                 metadata: Default::default(),
                                 accessor: Default::default(),
@@ -394,12 +394,12 @@ impl ObjectUnionNormalizer {
                                     },
                                     optional: true,
                                     params: Default::default(),
-                                    type_ann: Some(box Type::TypeLit(TypeLit {
+                                    type_ann: Some(Box::new(Type::TypeLit(TypeLit {
                                         span: DUMMY_SP,
                                         members: Default::default(),
                                         metadata: Default::default(),
                                         tracker: Default::default(),
-                                    })),
+                                    }))),
                                     type_params: Default::default(),
                                     metadata: Default::default(),
                                     accessor: Default::default(),

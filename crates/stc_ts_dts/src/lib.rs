@@ -1,7 +1,6 @@
 //! Passes for generating dts.
 
 #![allow(incomplete_features)]
-#![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
 use fxhash::FxHashSet;
@@ -223,14 +222,14 @@ impl VisitMut<RClassMember> for Dts {
 impl VisitMut<RTsPropertySignature> for Dts {
     fn visit_mut(&mut self, ps: &mut RTsPropertySignature) {
         if ps.type_ann.is_none() {
-            ps.type_ann = Some(box RTsTypeAnn {
+            ps.type_ann = Some(Box::new(RTsTypeAnn {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
-                type_ann: box RTsType::TsKeywordType(RTsKeywordType {
+                type_ann: Box::new(RTsType::TsKeywordType(RTsKeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
-                }),
-            });
+                })),
+            }));
         }
     }
 }
@@ -571,14 +570,14 @@ impl VisitMut<RTsIndexSignature> for Dts {
         sig.visit_mut_children_with(self);
 
         if sig.type_ann.is_none() {
-            sig.type_ann = Some(box RTsTypeAnn {
+            sig.type_ann = Some(Box::new(RTsTypeAnn {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
-                type_ann: box RTsType::TsKeywordType(RTsKeywordType {
+                type_ann: Box::new(RTsType::TsKeywordType(RTsKeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
-                }),
-            });
+                })),
+            }));
         }
     }
 }

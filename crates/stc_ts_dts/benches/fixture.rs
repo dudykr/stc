@@ -1,4 +1,3 @@
-#![feature(box_syntax)]
 #![feature(test)]
 
 extern crate test;
@@ -204,7 +203,14 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
 
             let mut module = module.clone();
             {
-                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(
+                    env.clone(),
+                    cm.clone(),
+                    Default::default(),
+                    Box::new(&mut storage),
+                    &NoopLoader,
+                    None,
+                );
                 module.validate_with(&mut analyzer).unwrap();
             }
 

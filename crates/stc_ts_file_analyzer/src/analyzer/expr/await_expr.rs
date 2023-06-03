@@ -45,10 +45,10 @@ impl Analyzer<'_, '_> {
                 Type::Ref(Ref {
                     span,
                     type_name: RTsEntityName::Ident(RIdent::new("PromiseLike".into(), span)),
-                    type_args: Some(box TypeParamInstantiation {
+                    type_args: Some(Box::new(TypeParamInstantiation {
                         span,
                         params: vec![item.clone()],
-                    }),
+                    })),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 })

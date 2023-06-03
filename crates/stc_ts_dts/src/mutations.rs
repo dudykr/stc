@@ -79,7 +79,7 @@ impl VisitMut<RFunction> for Operator<'_> {
         f.visit_mut_children_with(self);
 
         if let Some(FunctionMut { ret_ty: Some(ret_ty) }) = self.mutations.for_fns.remove(&f.node_id) {
-            f.return_type = Some(box ret_ty.into())
+            f.return_type = Some(Box::new(ret_ty.into()))
         }
     }
 }
@@ -114,7 +114,7 @@ impl VisitMut<RClassProp> for Operator<'_> {
         p.visit_mut_children_with(self);
 
         if let Some(ClassPropMut { ty: Some(ty) }) = self.mutations.for_class_props.remove(&p.node_id) {
-            p.type_ann = Some(box ty.into())
+            p.type_ann = Some(Box::new(ty.into()))
         }
     }
 }
@@ -125,7 +125,7 @@ impl VisitMut<RBindingIdent> for Operator<'_> {
 
         if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&i.node_id) {
             if let Some(ty) = ty {
-                i.type_ann = Some(box ty.into())
+                i.type_ann = Some(Box::new(ty.into()))
             }
             if let Some(optional) = optional {
                 i.id.optional = optional;
@@ -140,7 +140,7 @@ impl VisitMut<RObjectPat> for Operator<'_> {
 
         if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&obj.node_id) {
             if let Some(ty) = ty {
-                obj.type_ann = Some(box ty.into())
+                obj.type_ann = Some(Box::new(ty.into()))
             }
             if let Some(optional) = optional {
                 obj.optional = optional;
@@ -155,7 +155,7 @@ impl VisitMut<RArrayPat> for Operator<'_> {
 
         if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&arr.node_id) {
             if let Some(ty) = ty {
-                arr.type_ann = Some(box ty.into())
+                arr.type_ann = Some(Box::new(ty.into()))
             }
             if let Some(optional) = optional {
                 arr.optional = optional;
@@ -169,7 +169,7 @@ impl VisitMut<RRestPat> for Operator<'_> {
         r.visit_mut_children_with(self);
 
         if let Some(PatMut { ty: Some(ty), optional: _ }) = self.mutations.for_pats.remove(&r.node_id) {
-            r.type_ann = Some(box ty.into())
+            r.type_ann = Some(Box::new(ty.into()))
         }
     }
 }

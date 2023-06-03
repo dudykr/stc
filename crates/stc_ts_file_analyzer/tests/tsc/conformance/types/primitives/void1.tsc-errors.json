@@ -1,0 +1,14 @@
+[
+  {
+    "file": "tests/tsc/conformance/types/primitives/void1.ts",
+    "line": 5,
+    "col": 1,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/conformance/types/primitives/void1.ts",
+    "line": 6,
+    "col": 1,
+    "code": 2322
+  }
+]

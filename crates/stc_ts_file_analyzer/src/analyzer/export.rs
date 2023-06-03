@@ -264,26 +264,26 @@ impl Analyzer<'_, '_> {
                         sym: "_default".into(),
                         optional: false,
                     },
-                    type_ann: Some(box RTsTypeAnn {
+                    type_ann: Some(Box::new(RTsTypeAnn {
                         node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: ty.into(),
-                    }),
+                    })),
                 }),
                 init: None,
                 definite: false,
             };
-            self.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+            self.data.prepend_stmts.push(RStmt::Decl(RDecl::Var(Box::new(RVarDecl {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
                 declare: true,
                 decls: vec![var],
-            })));
+            }))));
 
             if let Some(m) = &mut self.mutations {
                 m.for_export_defaults.entry(item_node_id).or_default().replace_with =
-                    Some(box RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP)));
+                    Some(Box::new(RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP))));
             }
 
             return Ok(());

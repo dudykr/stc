@@ -5,7 +5,6 @@
 #![allow(incomplete_features)]
 #![allow(clippy::needless_update)]
 #![feature(adt_const_params)]
-#![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
 

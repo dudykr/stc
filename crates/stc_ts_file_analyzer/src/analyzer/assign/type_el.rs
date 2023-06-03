@@ -65,7 +65,7 @@ impl Analyzer<'_, '_> {
             .next();
 
         if let Some(numeric_keyed_ty) = numeric_keyed_ty {
-            let any = box Type::any(span, Default::default());
+            let any = Box::new(Type::any(span, Default::default()));
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
             match *rhs.normalize() {
@@ -193,6 +193,7 @@ impl Analyzer<'_, '_> {
                         &rhs_members,
                         AssignOpts {
                             allow_unknown_rhs: Some(allow_unknown_rhs),
+                            enable_do_not_use_return_type_while_inference: false,
                             ..opts
                         },
                     )
@@ -231,6 +232,9 @@ impl Analyzer<'_, '_> {
                                 &rty,
                                 lhs_metadata,
                                 AssignOpts {
+                                    check_for_common_properties: Some(
+                                        opts.check_for_common_properties.unwrap_or(opts.may_check_for_common_properties),
+                                    ),
                                     report_assign_failure_for_missing_properties: opts
                                         .report_assign_failure_for_missing_properties
                                         .or_else(|| {
@@ -288,10 +292,10 @@ impl Analyzer<'_, '_> {
                             let r_arr = Type::Ref(Ref {
                                 span,
                                 type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
-                                type_args: Some(box TypeParamInstantiation {
+                                type_args: Some(Box::new(TypeParamInstantiation {
                                     span: DUMMY_SP,
                                     params: vec![*r_arr.elem_type.clone()],
-                                }),
+                                })),
                                 metadata: Default::default(),
                                 tracker: Default::default(),
                             });
@@ -333,10 +337,10 @@ impl Analyzer<'_, '_> {
                                 let r_arr = Type::Ref(Ref {
                                     span,
                                     type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
-                                    type_args: Some(box TypeParamInstantiation {
+                                    type_args: Some(Box::new(TypeParamInstantiation {
                                         span: DUMMY_SP,
                                         params: vec![r_elem_type],
-                                    }),
+                                    })),
                                     metadata: Default::default(),
                                     tracker: Default::default(),
                                 });
@@ -421,11 +425,11 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| match err {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err.into()),
+                                cause: Some(Box::new(err.into())),
                             },
                             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err.into()),
+                                cause: Some(Box::new(err.into())),
                             },
                             _ => err,
                         })
@@ -532,11 +536,11 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| match err {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err.into()),
+                                cause: Some(Box::new(err.into())),
                             },
                             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err.into()),
+                                cause: Some(Box::new(err.into())),
                             },
                             _ => err,
                         })
@@ -597,6 +601,8 @@ impl Analyzer<'_, '_> {
                             lhs_metadata,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
+                                check_for_common_properties: Some(false),
+                                may_check_for_common_properties: false,
                                 ..opts
                             },
                         )
@@ -604,7 +610,7 @@ impl Analyzer<'_, '_> {
                             err.convert_all(|err| match *err {
                                 ErrorKind::MissingFields { .. } => ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
-                                    cause: Some(box err),
+                                    cause: Some(Box::new(err)),
                                 }
                                 .into(),
                                 _ => err,
@@ -739,7 +745,7 @@ impl Analyzer<'_, '_> {
                         )
                         .convert_err(|err| ErrorKind::SimpleAssignFailed {
                             span: err.span(),
-                            cause: Some(box err.into()),
+                            cause: Some(Box::new(err.into())),
                         })
                         .context("failed to normalize")?;
 
@@ -789,6 +795,10 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
+                if errors.iter().all(|err| matches!(&**err, ErrorKind::NoCommonProperty { .. })) {
+                    return Err(ErrorKind::Errors { span, errors }.into());
+                }
+
                 return Err(ErrorKind::ObjectAssignFailed {
                     span,
                     errors: ErrorKind::flatten(errors),
@@ -1093,6 +1103,33 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Errors { span, errors }.into());
         }
 
+        if opts.check_for_common_properties.unwrap_or_default() && !lhs.is_empty() {
+            // TS2559: If lhs and rhs has no properties in common, it's an assignment error.
+            let mut has_common = false;
+            'outer: for l in lhs {
+                for r in rhs {
+                    if let Some(l_key) = l.key() {
+                        if let Some(r_key) = r.key() {
+                            if l_key.type_eq(r_key) {
+                                has_common = true;
+                                break 'outer;
+                            }
+                        } else {
+                            has_common = true;
+                            break 'outer;
+                        }
+                    } else {
+                        has_common = true;
+                        break 'outer;
+                    }
+                }
+            }
+
+            if !has_common {
+                let err = ErrorKind::NoCommonProperty { span };
+                return Err(err.context("no common property"));
+            }
+        }
         Ok(())
     }
 
@@ -1239,7 +1276,7 @@ impl Analyzer<'_, '_> {
                                                         type_params: rm.type_params.clone(),
                                                         params: rm.params.clone(),
                                                         ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                            box Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
+                                                            Box::new(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()))
                                                         }),
                                                         metadata: Default::default(),
                                                         tracker: Default::default(),
@@ -1417,7 +1454,7 @@ impl Analyzer<'_, '_> {
                                                     type_params: rm.type_params.clone(),
                                                     params: rm.params.clone(),
                                                     ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                        box Type::any(rm.span.with_ctxt(SyntaxContext::empty()), Default::default())
+                                                        Box::new(Type::any(rm.span.with_ctxt(SyntaxContext::empty()), Default::default()))
                                                     }),
                                                     metadata: Default::default(),
                                                     tracker: Default::default(),

@@ -53,17 +53,22 @@ impl Analyzer<'_, '_> {
                         span,
                         allow_unknown_rhs: Some(true),
                         allow_missing_fields: true,
-                        allow_assignment_of_param: true,
                         skip_call_and_constructor_elem: true,
                         treat_array_as_interfaces: true,
+                        enable_do_not_use_return_type_while_inference: true,
                         ..Default::default()
                     },
                 )?;
             };
 
             if let Err(err) = res {
-                self.storage
-                    .report(ErrorKind::InvalidInterfaceInheritance { span, cause: box err }.into());
+                self.storage.report(
+                    ErrorKind::InvalidInterfaceInheritance {
+                        span,
+                        cause: Box::new(err),
+                    }
+                    .into(),
+                );
                 return;
             }
         }

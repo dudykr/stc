@@ -28,7 +28,7 @@ impl Visit<Type> for TypeVisualizer<'_> {
                 },
                 cm: self.cm.clone(),
                 comments: None,
-                wr: box JsWriter::new(self.cm.clone(), "\n", &mut buf, None),
+                wr: Box::new(JsWriter::new(self.cm.clone(), "\n", &mut buf, None)),
             };
 
             ty.emit_with(&mut emitter).unwrap();

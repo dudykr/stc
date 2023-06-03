@@ -1,6 +1,5 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
-#![feature(box_syntax)]
 #![feature(box_patterns)]
 
 use rnode::{NodeId, Visit, VisitWith};
@@ -215,10 +214,12 @@ impl PatExt for RPat {
             | RPat::Ident(RBindingIdent { ref mut type_ann, .. })
             | RPat::Object(RObjectPat { ref mut type_ann, .. })
             | RPat::Rest(RRestPat { ref mut type_ann, .. }) => {
-                *type_ann = ty.map(|type_ann| box RTsTypeAnn {
-                    node_id: NodeId::invalid(),
-                    span: type_ann.span(),
-                    type_ann,
+                *type_ann = ty.map(|type_ann| {
+                    Box::new(RTsTypeAnn {
+                        node_id: NodeId::invalid(),
+                        span: type_ann.span(),
+                        type_ann,
+                    })
                 })
             }
 

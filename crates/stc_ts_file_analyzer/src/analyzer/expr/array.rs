@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: box element_type.clone(),
+                                ty: Box::new(element_type.clone()),
                                 tracker: Default::default(),
                             });
                         }
@@ -142,7 +142,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: box elem_type,
+                                ty: Box::new(elem_type),
                                 tracker: Default::default(),
                             });
                         }
@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
             elements.push(TupleElement {
                 span,
                 label: None,
-                ty: box ty,
+                ty: Box::new(ty),
                 tracker: Default::default(),
             });
         }
@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
         if self.ctx.in_export_default_expr && elements.is_empty() {
             return Ok(Type::Array(Array {
                 span,
-                elem_type: box Type::any(span, Default::default()),
+                elem_type: Box::new(Type::any(span, Default::default())),
                 metadata: Default::default(),
                 tracker: Default::default(),
             }));
@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
             let mut ty = Type::Array(
                 Array {
                     span,
-                    elem_type: box Type::new_union(span, types),
+                    elem_type: Box::new(Type::new_union(span, types)),
                     metadata: Default::default(),
                     tracker: Default::default(),
                 }
@@ -222,7 +222,7 @@ impl Analyzer<'_, '_> {
         if should_be_any && !self.ctx.prefer_tuple_for_array_lit {
             elements.iter_mut().for_each(|el| {
                 let span = el.ty.span().with_ctxt(SyntaxContext::empty());
-                el.ty = box Type::any(
+                el.ty = Box::new(Type::any(
                     span,
                     KeywordTypeMetadata {
                         common: CommonTypeMetadata {
@@ -231,7 +231,7 @@ impl Analyzer<'_, '_> {
                         },
                         ..Default::default()
                     },
-                );
+                ));
             });
         }
 
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
 
                     return Err(ErrorKind::NoSuchProperty {
                         span,
-                        obj: Some(box iterator.into_owned()),
+                        obj: Some(Box::new(iterator.into_owned())),
                         prop: None,
                     }
                     .into());
@@ -448,13 +448,13 @@ impl Analyzer<'_, '_> {
                 &ty,
                 &Key::Computed(ComputedKey {
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::Symbol(Symbol {
+                    expr: Box::new(RExpr::Invalid(RInvalid { span })),
+                    ty: Box::new(Type::Symbol(Symbol {
                         span,
                         id: SymbolId::async_iterator(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })),
                 }),
                 None,
                 &[],
@@ -730,13 +730,13 @@ impl Analyzer<'_, '_> {
                 &ty,
                 &Key::Computed(ComputedKey {
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::Symbol(Symbol {
+                    expr: Box::new(RExpr::Invalid(RInvalid { span })),
+                    ty: Box::new(Type::Symbol(Symbol {
                         span,
                         id: SymbolId::iterator(),
                         metadata: Default::default(),
                         tracker: Default::default(),
-                    }),
+                    })),
                 }),
                 None,
                 &[],
