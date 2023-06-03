@@ -883,7 +883,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
                 (false, true) => {
-                    li.next();
+                    ri.next();
 
                     for (idx, l) in li.into_iter().enumerate() {
                         let re = self
