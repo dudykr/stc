@@ -2755,7 +2755,10 @@ impl Analyzer<'_, '_> {
                                     tracker: Default::default(),
                                 }));
                             }
-                            if opts.use_last_element_for_tuple_on_out_of_bound && !elems.is_empty() {
+                            if opts.use_last_element_for_tuple_on_out_of_bound {
+                                if elems.is_empty() {
+                                    return Ok(Type::any(span, Default::default()));
+                                }
                                 return Ok(*elems.last().unwrap().ty.clone());
                             }
 
