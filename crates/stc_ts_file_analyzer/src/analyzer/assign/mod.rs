@@ -446,7 +446,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign(&mut self, span: Span, data: &mut AssignData, left: &Type, right: &Type) -> VResult<()> {
+    pub(crate) fn assign(&self, span: Span, data: &mut AssignData, left: &Type, right: &Type) -> VResult<()> {
         self.assign_with_opts(
             data,
             left,

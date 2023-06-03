@@ -20,12 +20,12 @@ struct IsRelatedData {}
 
 impl Analyzer<'_, '_> {
     /// Ported from `isTypeRelatedTo` of `tsc`.
-    pub(crate) fn is_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
+    pub(crate) fn is_type_related_to(&self, source: &Type, target: &Type, relation: Relation) -> bool {
         let mut data = IsRelatedData::default();
         self.is_type_related_to_inner(&mut data, source, target, relation)
     }
 
-    fn is_type_related_to_inner(&mut self, data: &mut IsRelatedData, source: &Type, target: &Type, relation: Relation) -> bool {
+    fn is_type_related_to_inner(&self, data: &mut IsRelatedData, source: &Type, target: &Type, relation: Relation) -> bool {
         if source.type_eq(target) {
             return true;
         }
@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
     ///
     /// Ported from `isSimpleTypeRelatedTo` of `tsc`.
     #[allow(clippy::nonminimal_bool)]
-    fn is_simple_type_related_to(&mut self, source: &Type, target: &Type, relation: Relation) -> bool {
+    fn is_simple_type_related_to(&self, source: &Type, target: &Type, relation: Relation) -> bool {
         let (s, t) = (source, target);
 
         if t.is_any() || t.is_unknown() || s.is_never() {

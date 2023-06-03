@@ -12,7 +12,7 @@ use crate::VResult;
 /// These methods are ported from `tsc`.
 impl Analyzer<'_, '_> {
     /// `isTypeCloselyMatchedBy` of `tsc`.
-    pub(crate) fn is_type_closely_matched_by(&mut self, source: &Type, target: &Type) -> bool {
+    pub(crate) fn is_type_closely_matched_by(&self, source: &Type, target: &Type) -> bool {
         match (source.normalize(), target.normalize()) {
             (Type::Ref(source), Type::Ref(target)) => source.type_name.type_eq(&target.type_name),
             _ => false,
@@ -27,17 +27,17 @@ impl Analyzer<'_, '_> {
     }
 
     /// `isTypeIdenticalTo` of `tsc`.
-    pub(crate) fn is_type_identical_to(&mut self, source: &Type, target: &Type) -> bool {
+    pub(crate) fn is_type_identical_to(&self, source: &Type, target: &Type) -> bool {
         self.is_type_related_to(source, target, Relation::Identity)
     }
 
     /// Ported from `isTypeAssignableTo` of `tsc`.
-    pub(crate) fn is_type_assignable_to(&mut self, span: Span, source: &Type, target: &Type) -> bool {
+    pub(crate) fn is_type_assignable_to(&self, span: Span, source: &Type, target: &Type) -> bool {
         self.assign(span, &mut Default::default(), target, source).is_ok()
     }
 
     /// Ported from `isValidNumberString` of `tsc`.
-    pub(crate) fn is_valid_num_str(&mut self, s: &str, round_trip_only: bool) -> bool {
+    pub(crate) fn is_valid_num_str(&self, s: &str, round_trip_only: bool) -> bool {
         if s.is_empty() {
             return false;
         }
@@ -60,7 +60,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `isValidBigIntString` of `tsc`.
-    pub(crate) fn is_valid_big_int_str(&mut self, s: &str, round_trip_only: bool) -> bool {
+    pub(crate) fn is_valid_big_int_str(&self, s: &str, round_trip_only: bool) -> bool {
         if s.is_empty() {
             return false;
         }
@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `isMemberOfStringMapping` of `tsc`.
-    pub(crate) fn is_member_of_string_mapping(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+    pub(crate) fn is_member_of_string_mapping(&self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
         if target.is_any() || target.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
             return Ok(true);
         }
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
-    pub(crate) fn get_string_like_type_for_type<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+    pub(crate) fn get_string_like_type_for_type<'a>(&self, ty: &'a Type) -> Cow<'a, Type> {
         if ty.is_any() || ty.is_str() || ty.is_string_mapping() || ty.is_tpl() {
             Cow::Borrowed(ty)
         } else {
