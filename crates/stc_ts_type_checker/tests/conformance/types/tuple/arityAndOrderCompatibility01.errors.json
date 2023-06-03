@@ -1,1 +1,110 @@
-[{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":15,"column":12,"code":"TS2493"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":17,"column":5,"code":"TS2461"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":18,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":19,"column":5,"code":"TS2741"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":20,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":21,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":22,"column":5,"code":"TS2741"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":23,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":24,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":25,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":26,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":27,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":28,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":29,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":30,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":31,"column":5,"code":"TS2322"},{"filename":"tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts","line":32,"column":5,"code":"TS2322"}]
+[
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 15,
+    "column": 12,
+    "code": "TS2493"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 17,
+    "column": 5,
+    "code": "TS2461"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 18,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 19,
+    "column": 5,
+    "code": "TS2741"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 20,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 21,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 22,
+    "column": 5,
+    "code": "TS2741"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 23,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 24,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 25,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 26,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 27,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 28,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 29,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 30,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 31,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 32,
+    "column": 5,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
+    "line": 40,
+    "column": 5,
+    "code": "TS2740"
+  }
+]
