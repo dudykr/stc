@@ -816,17 +816,28 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn relate_spread_likes(
+    fn relate_spread_likes<'l, 'r, LI, RI>(
         &mut self,
-        li: &mut Peekable<&mut dyn Iterator<Item = &TypeOrSpread>>,
-        ri: &mut Peekable<&mut dyn Iterator<Item = &TypeOrSpread>>,
+        li: &mut Peekable<LI>,
+        ri: &mut Peekable<RI>,
         relate: &mut dyn FnMut(&mut Self) -> VResult<()>,
-    ) -> VResult<()> {
+    ) -> VResult<()>
+    where
+        LI: Iterator<Item = &'l TypeOrSpread> + Clone,
+        RI: Iterator<Item = &'r TypeOrSpread> + Clone,
+    {
         let _tracing = dev_span!("relate_spread_likes");
 
-        while let (Some(le), Some(re)) = (li.peek(), ri.peek()) {
-            li.next();
-            ri.next();
+        while let (Some(..), Some(..)) = (li.peek(), ri.peek()) {
+            let le = li.next().unwrap();
+            let re = ri.next().unwrap();
+
+            match (le.spread, re.spread) {
+                (Some(..), Some(..)) => {}
+                (Some(..), None) => {}
+                (None, Some(_)) => {}
+                (None, None) => {}
+            }
         }
 
         Ok(())
