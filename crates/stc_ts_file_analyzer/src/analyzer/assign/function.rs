@@ -979,7 +979,7 @@ impl Analyzer<'_, '_> {
                             format!(
                                 "tried to assign a rest parameter to parameters; idx = {}, r_ty = {}",
                                 idx,
-                                force_dump_type_as_string(&r.ty)
+                                force_dump_type_as_string(&re)
                             )
                         })?;
                     }
