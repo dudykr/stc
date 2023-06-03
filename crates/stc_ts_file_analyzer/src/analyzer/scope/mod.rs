@@ -706,7 +706,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
+    pub(super) fn expand(&self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
         let _tracing = dev_span!("expand");
 
         if !self.config.is_builtin {
@@ -2046,7 +2046,7 @@ impl ScopeKind {
 
 struct Expander<'a, 'b, 'c> {
     span: Span,
-    analyzer: &'a mut Analyzer<'b, 'c>,
+    analyzer: &'a Analyzer<'b, 'c>,
     dejavu: FxHashSet<Id>,
     full: bool,
     expand_union: bool,
@@ -2746,7 +2746,7 @@ impl Fold<TypeElement> for Expander<'_, '_, '_> {
 
 /// Calls [`Analyzer::normalize`] on top-level types
 pub struct ShallowNormalizer<'a, 'b, 'c> {
-    analyzer: &'a mut Analyzer<'b, 'c>,
+    analyzer: &'a Analyzer<'b, 'c>,
 }
 
 impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {

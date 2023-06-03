@@ -423,7 +423,7 @@ impl Analyzer<'_, '_> {
     /// a = b;
     /// b = a; // error
     /// ```
-    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(super) fn assign_to_function(&self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
         let _tracing = dev_span!("assign_to_function");
 
         let span = opts.span;
