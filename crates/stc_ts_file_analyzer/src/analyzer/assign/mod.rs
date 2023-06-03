@@ -204,7 +204,7 @@ pub struct AssignData {
 impl Analyzer<'_, '_> {
     /// Denies `null` and `undefined`. This method does not check for elements
     /// of union.
-    pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> VResult<()> {
+    pub(crate) fn deny_null_or_undefined(&self, span: Span, ty: &Type) -> VResult<()> {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
         }
@@ -217,7 +217,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Used to validate assignments like `a += b`.
-    pub(crate) fn assign_with_operator(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_operator(&self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.normalize(

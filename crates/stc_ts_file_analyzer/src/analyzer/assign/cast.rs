@@ -9,7 +9,7 @@ use crate::analyzer::{types::NormalizeTypeOpts, Analyzer};
 impl Analyzer<'_, '_> {
     /// Returns true if the type can be casted to number if it's in the rvalue
     /// position.
-    pub(crate) fn can_be_casted_to_number_in_rhs(&mut self, span: Span, ty: &Type) -> bool {
+    pub(crate) fn can_be_casted_to_number_in_rhs(&self, span: Span, ty: &Type) -> bool {
         let ty = match self.normalize(
             Some(span),
             Cow::Borrowed(ty),

@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If `span` is provided, it will be used for types **created** by the
     /// method. Otherwise the span of the original type is used.
-    pub(crate) fn normalize<'a>(&mut self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn normalize<'a>(&self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
             let ty = force_dump_type_as_string(&ty);
 
