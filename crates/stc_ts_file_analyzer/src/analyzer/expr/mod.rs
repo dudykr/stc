@@ -2755,7 +2755,7 @@ impl Analyzer<'_, '_> {
                                     tracker: Default::default(),
                                 }));
                             }
-                            if opts.use_last_element_for_tuple_on_out_of_bound {
+                            if opts.use_last_element_for_tuple_on_out_of_bound && !elems.is_empty() {
                                 return Ok(*elems.last().unwrap().ty.clone());
                             }
 
@@ -2777,7 +2777,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             return Err(ErrorKind::TupleIndexError {
-                                span: n.span(),
+                                span,
                                 index: v,
                                 len: elems.len() as u64,
                             }
