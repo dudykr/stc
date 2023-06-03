@@ -746,7 +746,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expands the type if it's [Type::Ref].
-    pub(crate) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: ExpandOpts) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn expand_top_ref<'a>(&self, span: Span, ty: Cow<'a, Type>, opts: ExpandOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         if !ty.is_ref_type() {

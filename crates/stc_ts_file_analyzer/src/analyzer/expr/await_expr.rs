@@ -76,7 +76,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>, error_on_missing_then: bool) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_awaited_type<'a>(&self, span: Span, ty: Cow<'a, Type>, error_on_missing_then: bool) -> VResult<Cow<'a, Type>> {
         if let Some(arg) = unwrap_builtin_with_single_arg(&ty, "Promise").or_else(|| unwrap_builtin_with_single_arg(&ty, "PromiseLike")) {
             return self
                 .get_awaited_type(span, Cow::Borrowed(arg), false)

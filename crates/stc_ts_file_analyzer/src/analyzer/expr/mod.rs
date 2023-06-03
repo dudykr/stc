@@ -1207,7 +1207,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn access_property(
-        &mut self,
+        &self,
         span: Span,
         obj: &Type,
         prop: &Key,
@@ -4019,13 +4019,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+    pub(crate) fn type_of_ts_entity_name(&self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let _tracing = dev_span!("type_of_ts_entity_name");
 
         self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 
-    fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+    fn type_of_ts_entity_name_inner(&self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let _tracing = dev_span!("type_of_ts_entity_name_inner");
 
         let span = span.with_ctxt(SyntaxContext::empty());

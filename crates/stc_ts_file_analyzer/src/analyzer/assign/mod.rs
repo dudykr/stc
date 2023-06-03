@@ -3170,7 +3170,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// Currently only literals and unions are supported for `keys`.
-    fn assign_keys(&mut self, data: &mut AssignData, keys: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_keys(&self, data: &mut AssignData, keys: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
@@ -3189,7 +3189,7 @@ impl Analyzer<'_, '_> {
         .context("tried to assign keys")
     }
 
-    fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_to_mapped(&self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
             .normalize(Some(span), Cow::Borrowed(r), NormalizeTypeOpts { ..Default::default() })

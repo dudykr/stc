@@ -797,7 +797,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+    pub(crate) fn normalize_intersection_types(&self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
         macro_rules! never {
             () => {{
                 Ok(Some(Type::Keyword(KeywordType {
@@ -2243,7 +2243,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn report_error_for_unresolved_type(
-        &mut self,
+        &self,
         span: Span,
         type_name: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
