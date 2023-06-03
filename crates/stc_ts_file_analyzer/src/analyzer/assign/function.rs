@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         li: &mut Peekable<LI>,
         ri: &mut Peekable<RI>,
-        relate: &mut dyn FnMut(&'a mut Self, &Type, &Type) -> VResult<()>,
+        relate: &mut impl FnMut(&'a mut Self, &'l Type, &'r Type) -> VResult<()>,
     ) -> VResult<()>
     where
         T: SpreadLike,
@@ -1059,9 +1059,9 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.relate_spread_likes(span, &mut li, &mut ri, &mut |this: Self, l: &FnParam, r: &FnParam| {
+        self.relate_spread_likes(span, &mut li, &mut ri, &mut |this, l, r| {
             //
-            this.assign_param_type(data, &l, &r, opts)
+            this.assign_param_type(data, l, r, opts)
         })?;
 
         Ok(())
