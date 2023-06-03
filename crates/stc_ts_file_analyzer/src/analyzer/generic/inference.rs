@@ -167,7 +167,7 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         sources: &[Type],
         targets: &[Type],
-        matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
+        matches: impl Fn(&Analyzer, &Type, &Type) -> bool,
         opts: InferTypeOpts,
     ) -> VResult<(Vec<Type>, Vec<Type>)> {
         let _tracing = dev_span!("infer_from_matching_types");
