@@ -987,24 +987,30 @@ impl Analyzer<'_, '_> {
 
         let span = opts.span;
 
-        let mut li = l.iter().filter(|p| {
-            !matches!(
-                p.pat,
-                RPat::Ident(RBindingIdent {
-                    id: RIdent { sym: js_word!("this"), .. },
-                    ..
-                })
-            )
-        });
-        let mut ri = r.iter().filter(|p| {
-            !matches!(
-                p.pat,
-                RPat::Ident(RBindingIdent {
-                    id: RIdent { sym: js_word!("this"), .. },
-                    ..
-                })
-            )
-        });
+        let mut li = l
+            .iter()
+            .filter(|p| {
+                !matches!(
+                    p.pat,
+                    RPat::Ident(RBindingIdent {
+                        id: RIdent { sym: js_word!("this"), .. },
+                        ..
+                    })
+                )
+            })
+            .peekable();
+        let mut ri = r
+            .iter()
+            .filter(|p| {
+                !matches!(
+                    p.pat,
+                    RPat::Ident(RBindingIdent {
+                        id: RIdent { sym: js_word!("this"), .. },
+                        ..
+                    })
+                )
+            })
+            .peekable();
 
         let li_count = li.clone().count();
         let ri_count = ri.clone().count();
@@ -1052,9 +1058,9 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.relate_spread_likes(span, li, ri, |thid, l, r| {
+        self.relate_spread_likes(span, &mut li, &mut ri, |this, l, r| {
             //
-            self.assign_param_type(data, &le, &re, opts)
+            this.assign_param_type(data, &l, &r, opts)
         })?;
 
         Ok(())
