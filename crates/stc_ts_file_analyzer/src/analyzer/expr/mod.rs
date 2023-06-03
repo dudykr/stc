@@ -656,6 +656,7 @@ pub(crate) struct AccessPropertyOpts {
     ///  obj11.foo; // Error TS2339
     /// ```
     pub disallow_creating_indexed_type_from_ty_els: bool,
+    pub disallow_creating_indexed_type_for_type_params: bool,
 
     pub disallow_indexing_class_with_computed: bool,
 
@@ -2185,6 +2186,15 @@ impl Analyzer<'_, '_> {
                             return Ok(ty);
                         }
                     }
+                }
+
+                if opts.disallow_creating_indexed_type_for_type_params {
+                    return Err(ErrorKind::NoSuchProperty {
+                        span,
+                        obj: Some(Box::new(obj.clone())),
+                        prop: Some(Box::new(prop.clone())),
+                    }
+                    .context("disallow_creating_indexed_type_for_type_params = true"));
                 }
 
                 let mut prop_ty = match prop {

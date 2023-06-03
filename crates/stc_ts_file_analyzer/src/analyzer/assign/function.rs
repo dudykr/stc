@@ -864,6 +864,7 @@ impl Analyzer<'_, '_> {
                                     disallow_indexing_class_with_computed: true,
                                     disallow_inexact: true,
                                     use_last_element_for_tuple_on_out_of_bound: true,
+                                    disallow_creating_indexed_type_for_type_params: true,
                                     ..Default::default()
                                 },
                             )
@@ -903,6 +904,7 @@ impl Analyzer<'_, '_> {
                                     disallow_indexing_class_with_computed: true,
                                     disallow_inexact: true,
                                     use_last_element_for_tuple_on_out_of_bound: true,
+                                    disallow_creating_indexed_type_for_type_params: true,
                                     ..Default::default()
                                 },
                             )
