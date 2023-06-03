@@ -910,22 +910,6 @@ impl Analyzer<'_, '_> {
                 break
             };
 
-            // TODO(kdy1): What should we do?
-            if opts.allow_assignment_to_param {
-                if let Ok(()) = self.assign_param(
-                    data,
-                    r,
-                    l,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        allow_assignment_to_param: false,
-                        ..opts
-                    },
-                ) {
-                    continue;
-                }
-            }
-
             match (&l.pat, &r.pat) {
                 (RPat::Rest(..), RPat::Rest(..)) => {}
 
