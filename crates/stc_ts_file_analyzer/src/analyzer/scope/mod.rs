@@ -2285,7 +2285,7 @@ impl Expander<'_, '_, '_> {
                             Default::default(),
                         )
                         .context("tried to access property as a part of type expansion")
-                        .report(&mut self.analyzer.storage)
+                        .report(&self.analyzer.storage)
                         .unwrap_or_else(|| Type::any(span, Default::default()));
                     return Ok(Some(ty));
                 }
