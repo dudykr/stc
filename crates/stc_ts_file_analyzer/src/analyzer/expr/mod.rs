@@ -3650,11 +3650,11 @@ impl Analyzer<'_, '_> {
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
     fn type_of_raw_var(&self, i: &RIdent, type_mode: TypeOfMode) -> VResult<Type> {
-        info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
+        info!("({}) type_of_raw_var({})", self.scope.borrow().depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
         // here.
-        if let Some(cur_module) = self.scope.current_module_name() {
+        if let Some(cur_module) = self.scope.borrow().current_module_name() {
             let ty = self.find_type(&cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
@@ -3670,7 +3670,7 @@ impl Analyzer<'_, '_> {
 
         let span = i.span().with_ctxt(SyntaxContext::empty());
 
-        if let Some(ref cls_name) = self.scope.this_class_name {
+        if let Some(ref cls_name) = self.scope.borrow().this_class_name {
             if *cls_name == i {
                 warn!("Creating ref because we are currently defining a class: {}", i.sym);
                 return Ok(Type::StaticThis(StaticThis {
@@ -3686,7 +3686,7 @@ impl Analyzer<'_, '_> {
             if let js_word!("arguments") = i.sym {
                 // `arguments` cannot be used as implicit variable if target <= ES5
                 let arguments_point_to_arrow = Some(true)
-                    == self.scope.matches(|scope| {
+                    == self.scope.borrow().matches(|scope| {
                         if scope.is_root() {
                             return Some(false);
                         }
@@ -3700,7 +3700,7 @@ impl Analyzer<'_, '_> {
                 let arguments_points_async_fn = Some(true) == {
                     let ctx = self.ctx;
 
-                    self.scope.matches(|scope| {
+                    self.scope.borrow().matches(|scope| {
                         if scope.is_root() {
                             return Some(false);
                         }
@@ -3713,9 +3713,9 @@ impl Analyzer<'_, '_> {
                     })
                 };
 
-                let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
+                let is_argument_defined_in_current_scope = self.scope.borrow().vars.contains_key(&i.clone().into());
 
-                if !self.scope.is_arguments_implicitly_defined() {
+                if !self.scope.borrow().is_arguments_implicitly_defined() {
                     self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
                 } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
                     self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into());
@@ -3757,11 +3757,11 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_imported_var(&i.into())? {
-            debug!("({}) type_of({}): resolved import", self.scope.depth(), Id::from(i));
+            debug!("({}) type_of({}): resolved import", self.scope.borrow().depth(), Id::from(i));
             return Ok(ty);
         }
 
-        if let Some(v) = self.scope.vars.get(&i.into()) {
+        if let Some(v) = self.scope.borrow().vars.get(&i.into()) {
             if let VarKind::Fn = v.kind {
                 if let TypeOfMode::LValue = type_mode {
                     return Err(ErrorKind::CannotAssignToFunction { span }.into());
@@ -3796,7 +3796,7 @@ impl Analyzer<'_, '_> {
             let ty_str = dump_type_as_string(&ty);
             debug!("find_var_type returned a type: {}", ty_str);
             let mut ty = ty.into_owned();
-            if self.scope.kind().allows_respanning() {
+            if self.scope.borrow().kind().allows_respanning() {
                 if self.is_implicitly_typed(&ty) {
                     ty.metadata_mut().implicit = true;
                 }
@@ -3828,8 +3828,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Check `declaring` before checking variables.
-        if self.scope.is_declaring(&i.into()) {
-            debug!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
+        if self.scope.borrow().is_declaring(&i.into()) {
+            debug!("({}) reference in initialization: {}", self.scope.borrow().depth(), i.sym);
 
             // Report an error if a variable is used before initialization.
             (|| {
@@ -3841,7 +3841,7 @@ impl Analyzer<'_, '_> {
                 // If a method or a function scope exists before the scope declaring the
                 // variable, it means current statement will be evaluated after the variable is
                 // initialized.
-                if let Some(scope) = self.scope.first(|scope| {
+                if let Some(scope) = self.scope.borrow().first(|scope| {
                     if scope.declaring.contains(&i.into()) {
                         return true;
                     }
@@ -3862,7 +3862,7 @@ impl Analyzer<'_, '_> {
                 self.storage.report(ErrorKind::BlockScopedVarUsedBeforeInit { span }.into())
             })();
 
-            if self.scope.can_access_declaring_regardless_of_context(&i.into()) {
+            if self.scope.borrow().can_access_declaring_regardless_of_context(&i.into()) {
                 return Ok(Type::any(span, Default::default()));
             }
 
@@ -3882,7 +3882,7 @@ impl Analyzer<'_, '_> {
             if self.env.target() <= EsVersion::Es5 {
                 // `arguments` cannot be used as implicit variable if target <= ES5
                 let arguments_point_to_arrow = Some(true)
-                    == self.scope.matches(|scope| {
+                    == self.scope.borrow().matches(|scope| {
                         if scope.is_root() {
                             return Some(false);
                         }
@@ -3894,11 +3894,11 @@ impl Analyzer<'_, '_> {
                         }
                     });
 
-                if !self.scope.is_arguments_implicitly_defined() || arguments_point_to_arrow {
+                if !self.scope.borrow().is_arguments_implicitly_defined() || arguments_point_to_arrow {
                     self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
                 }
             } else {
-                if !self.scope.is_arguments_implicitly_defined() {
+                if !self.scope.borrow().is_arguments_implicitly_defined() {
                     self.storage.report(ErrorKind::NoSuchVar { span, name: i.into() }.into())
                 }
             }
@@ -3938,10 +3938,11 @@ impl Analyzer<'_, '_> {
         } else {
             if let Some(scope) = self
                 .scope
+                .borrow()
                 .first_kind(|kind| matches!(kind, ScopeKind::Class | ScopeKind::ObjectLit))
             {
                 if let ScopeKind::ObjectLit = scope.kind() {
-                    if let Some(declaring_prop) = self.scope.declaring_prop() {
+                    if let Some(declaring_prop) = self.scope.borrow().declaring_prop() {
                         if *declaring_prop.sym() == i.sym {
                             return Err(ErrorKind::NoSuchVar {
                                 span,
@@ -4210,7 +4211,7 @@ impl Analyzer<'_, '_> {
 
         if let TypeOfMode::RValue = type_mode {
             if let Some(name) = &name {
-                if let Some(mut ty) = self.scope.get_type_from_name(name) {
+                if let Some(mut ty) = self.scope.borrow().get_type_from_name(name) {
                     ty.respan(span);
                     return Ok(ty);
                 }
@@ -4376,7 +4377,7 @@ impl Analyzer<'_, '_> {
 
         let RSuper { span, .. } = *obj;
         let mut obj_ty = {
-            if self.scope.cannot_use_this_because_super_not_called() {
+            if self.scope.borrow().cannot_use_this_because_super_not_called() {
                 self.storage.report(ErrorKind::SuperUsedBeforeCallingSuper { span }.into())
             }
 

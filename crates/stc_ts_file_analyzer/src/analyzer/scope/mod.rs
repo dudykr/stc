@@ -1024,7 +1024,7 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         if cfg!(debug_assertions) {
-            debug!("({}) Analyzer.find_var(`{}`)", self.scope.depth(), name);
+            debug!("({}) Analyzer.find_var(`{}`)", self.scope.borrow().depth(), name);
         }
 
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {

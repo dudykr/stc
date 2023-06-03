@@ -22,7 +22,7 @@ impl Analyzer<'_, '_> {
 
         dedup(&mut order);
 
-        if self.scope.is_root() {
+        if self.scope.borrow().is_root() {
             // We should track type declarations.
             for &idx in &order {
                 let type_decl_id = type_decl_id(stmts[idx]);

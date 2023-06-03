@@ -812,7 +812,12 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                debug!("({}): Inferred `{}` as {}", self.scope.depth(), name, dump_type_as_string(arg));
+                debug!(
+                    "({}): Inferred `{}` as {}",
+                    self.scope.borrow().depth(),
+                    name,
+                    dump_type_as_string(arg)
+                );
 
                 self.upsert_inferred(span, inferred, name.clone(), arg, opts)?;
 
