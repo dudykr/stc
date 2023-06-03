@@ -932,45 +932,48 @@ impl Analyzer<'_, '_> {
                 (RPat::Rest(..), _) | (_, RPat::Rest(..)) => {
                     // If r is an iterator, we should assign each element to l.
                     for idx in 0..max(li_count, ri_count) {
-                        dbg!(idx);
-                        let le = self.access_property(
-                            span,
-                            &l.ty,
-                            &Key::Num(RNumber {
-                                span: l.span,
-                                value: idx as f64,
-                                raw: None,
-                            }),
-                            TypeOfMode::RValue,
-                            IdCtx::Var,
-                            AccessPropertyOpts {
-                                disallow_indexing_array_with_string: true,
-                                disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_indexing_class_with_computed: true,
-                                disallow_inexact: true,
-                                ..Default::default()
-                            },
-                        )?;
+                        let le = self
+                            .access_property(
+                                span,
+                                &l.ty,
+                                &Key::Num(RNumber {
+                                    span: l.span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| *l.ty.clone());
 
-                        let re = self.access_property(
-                            span,
-                            &r.ty,
-                            &Key::Num(RNumber {
-                                span: r.span,
-                                value: idx as f64,
-                                raw: None,
-                            }),
-                            TypeOfMode::RValue,
-                            IdCtx::Var,
-                            AccessPropertyOpts {
-                                disallow_indexing_array_with_string: true,
-                                disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_indexing_class_with_computed: true,
-                                disallow_inexact: true,
-                                use_last_element_for_tuple_on_out_of_bound: true,
-                                ..Default::default()
-                            },
-                        )?;
+                        let re = self
+                            .access_property(
+                                span,
+                                &r.ty,
+                                &Key::Num(RNumber {
+                                    span: r.span,
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    use_last_element_for_tuple_on_out_of_bound: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| *r.ty.clone());
 
                         self.assign_param_type(data, &le, &re, opts).with_context(|| {
                             format!(
