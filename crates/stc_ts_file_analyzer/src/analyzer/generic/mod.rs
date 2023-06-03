@@ -95,7 +95,7 @@ impl Analyzer<'_, '_> {
     /// This method accepts Option<&[TypeParamInstantiation]> because user may
     /// provide only some of type arguments.
     pub(super) fn infer_arg_types(
-        &mut self,
+        &self,
         span: Span,
         base: Option<&TypeParamInstantiation>,
         type_params: &[TypeParam],
@@ -361,7 +361,7 @@ impl Analyzer<'_, '_> {
 
     /// Handles `infer U`.
     pub(super) fn infer_ts_infer_types(
-        &mut self,
+        &self,
         span: Span,
         base: &Type,
         concrete: &Type,
@@ -1473,7 +1473,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_mapped_type(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Mapped,
@@ -2209,7 +2209,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_tuple_and_tuple(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Tuple,
