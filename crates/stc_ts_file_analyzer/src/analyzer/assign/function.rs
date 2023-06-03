@@ -856,6 +856,9 @@ impl Analyzer<'_, '_> {
             )
         });
 
+        let li_count = li.clone().count();
+        let ri_count = ri.clone().count();
+
         let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
         // TODO(kdy1): Consider optional parameters.
@@ -906,7 +909,7 @@ impl Analyzer<'_, '_> {
             let (Some(l), Some(r)) = (l, r) else {
                 break
             };
-            dbg!(&l, &r);
+            dbg!(&l.pat, &r.pat);
 
             // TODO(kdy1): What should we do?
             if opts.allow_assignment_to_param {
@@ -920,6 +923,7 @@ impl Analyzer<'_, '_> {
                         ..opts
                     },
                 ) {
+                    dbg!("allow_assignment_to_param");
                     continue;
                 }
             }
@@ -927,7 +931,8 @@ impl Analyzer<'_, '_> {
             match (&l.pat, &r.pat) {
                 (RPat::Rest(..), _) | (_, RPat::Rest(..)) => {
                     // If r is an iterator, we should assign each element to l.
-                    for idx in 0..max(li.clone().count(), ri.clone().count()) {
+                    for idx in 0..max(li_count, ri_count) {
+                        dbg!(idx);
                         let le = self.access_property(
                             span,
                             &l.ty,
