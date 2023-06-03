@@ -908,7 +908,15 @@ impl Analyzer<'_, '_> {
                             )
                             .unwrap_or_else(|_| r.ty().clone());
 
-                        relate(self, le.ty(), &re).context("l: non-spread; r: spread")?;
+                        relate(self, l.ty(), &re).with_context(|| {
+                            format!(
+                                "l: non-spread + {}; r: spread + {} (from {}); idx = {}",
+                                force_dump_type_as_string(&l.ty()),
+                                force_dump_type_as_string(&re),
+                                force_dump_type_as_string(&r.ty()),
+                                idx
+                            )
+                        })?;
                     }
 
                     return Ok(());
