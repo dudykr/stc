@@ -909,7 +909,6 @@ impl Analyzer<'_, '_> {
             let (Some(l), Some(r)) = (l, r) else {
                 break
             };
-            dbg!(&l.pat, &r.pat);
 
             // TODO(kdy1): What should we do?
             if opts.allow_assignment_to_param {
@@ -923,7 +922,6 @@ impl Analyzer<'_, '_> {
                         ..opts
                     },
                 ) {
-                    dbg!("allow_assignment_to_param");
                     continue;
                 }
             }
