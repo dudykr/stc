@@ -406,7 +406,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         comments: StcComments,
-        mut storage: Storage<'b>,
+        storage: Storage<'b>,
         loader: &'b dyn Load,
         debugger: Option<Debugger>,
     ) -> Self {

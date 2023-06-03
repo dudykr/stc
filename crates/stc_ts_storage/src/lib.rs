@@ -1,4 +1,8 @@
-use std::{collections::hash_map::Entry, mem::take, sync::Arc};
+use std::{
+    collections::hash_map::Entry,
+    mem::take,
+    sync::{Arc, Mutex},
+};
 
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
@@ -10,7 +14,7 @@ use swc_common::{iter::IdentifyLast, FileName, Span, SyntaxContext, TypeEq, DUMM
 
 #[derive(Debug, Default)]
 pub struct Info {
-    pub errors: Errors,
+    pub errors: Mutex<Errors>,
     pub exports: ModuleTypeData,
 }
 
@@ -18,9 +22,9 @@ pub type Storage<'b> = Box<dyn 'b + Mode>;
 
 #[auto_impl(&mut, Box)]
 pub trait ErrorStore {
-    fn report(&mut self, err: Error);
-    fn report_all(&mut self, err: Errors);
-    fn take_errors(&mut self) -> Errors;
+    fn report(&self, err: Error);
+    fn report_all(&self, err: Errors);
+    fn take_errors(&self) -> Errors;
 }
 
 #[auto_impl(&mut, Box)]
@@ -58,7 +62,7 @@ pub trait Mode: TypeStore + ErrorStore {
     fn subscope(&self) -> Storage;
 
     fn merge_back(&mut self, subscope: Storage) {
-        let mut ss = subscope;
+        let ss = subscope;
         let errors = ss.take_errors();
         self.report_all(errors);
     }
@@ -75,16 +79,16 @@ pub struct Single<'a> {
 }
 
 impl ErrorStore for Single<'_> {
-    fn report(&mut self, err: Error) {
-        self.info.errors.push(err);
+    fn report(&self, err: Error) {
+        self.info.errors.lock().unwrap().push(err);
     }
 
-    fn report_all(&mut self, err: Errors) {
-        self.info.errors.extend(err);
+    fn report_all(&self, err: Errors) {
+        self.info.errors.lock().unwrap().extend(err);
     }
 
-    fn take_errors(&mut self) -> Errors {
-        take(&mut self.info.errors)
+    fn take_errors(&self) -> Errors {
+        take(&mut self.info.errors.lock().unwrap())
     }
 }
 
@@ -230,21 +234,21 @@ pub struct File {
 pub struct Group<'a> {
     pub parent: Option<&'a Group<'a>>,
     pub files: Arc<Vec<File>>,
-    pub errors: Errors,
+    pub errors: Mutex<Errors>,
     pub info: FxHashMap<ModuleId, ModuleTypeData>,
 }
 
 impl ErrorStore for Group<'_> {
-    fn report(&mut self, err: Error) {
-        self.errors.push(err);
+    fn report(&self, err: Error) {
+        self.errors.lock().unwrap().push(err);
     }
 
-    fn report_all(&mut self, err: Errors) {
-        self.errors.extend(err);
+    fn report_all(&self, err: Errors) {
+        self.errors.lock().unwrap().extend(err);
     }
 
-    fn take_errors(&mut self) -> Errors {
-        take(&mut self.errors)
+    fn take_errors(&self) -> Errors {
+        take(&mut self.errors.lock().unwrap())
     }
 }
 
@@ -391,18 +395,18 @@ pub struct Builtin {
 }
 
 impl ErrorStore for Builtin {
-    fn report(&mut self, err: Error) {
+    fn report(&self, err: Error) {
         unreachable!("builtin error: {:?}", err);
     }
 
-    fn report_all(&mut self, err: Errors) {
+    fn report_all(&self, err: Errors) {
         if err.is_empty() {
             return;
         }
         unreachable!("builtin error: {:?}", err);
     }
 
-    fn take_errors(&mut self) -> Errors {
+    fn take_errors(&self) -> Errors {
         Default::default()
     }
 }
