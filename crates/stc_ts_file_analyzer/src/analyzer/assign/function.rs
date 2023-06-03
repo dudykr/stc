@@ -846,7 +846,7 @@ impl Analyzer<'_, '_> {
                 (true, false) => {
                     li.next();
 
-                    for (idx, re) in ri.into_iter().enumerate() {
+                    for (idx, r) in ri.into_iter().enumerate() {
                         let le = self
                             .access_property(
                                 span,
@@ -869,12 +869,12 @@ impl Analyzer<'_, '_> {
                             )
                             .unwrap_or_else(|_| l.ty().clone());
 
-                        relate(self, &le, re.ty()).with_context(|| {
+                        relate(self, &le, r.ty()).with_context(|| {
                             format!(
                                 "l: spread + {} (from {}); r: non-spread + {}; idx = {}",
                                 force_dump_type_as_string(&le),
                                 force_dump_type_as_string(&l.ty()),
-                                force_dump_type_as_string(re.ty()),
+                                force_dump_type_as_string(r.ty()),
                                 idx
                             )
                         })?;
@@ -885,7 +885,7 @@ impl Analyzer<'_, '_> {
                 (false, true) => {
                     li.next();
 
-                    for (idx, le) in li.into_iter().enumerate() {
+                    for (idx, l) in li.into_iter().enumerate() {
                         let re = self
                             .access_property(
                                 span,
