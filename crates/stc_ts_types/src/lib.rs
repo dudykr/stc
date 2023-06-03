@@ -3303,3 +3303,13 @@ impl SpreadLike for FnParam {
         &self.ty
     }
 }
+
+impl SpreadLike for TypeOrSpread {
+    fn is_spread(&self) -> bool {
+        self.spread.is_some()
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
+}
