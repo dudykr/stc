@@ -841,7 +841,7 @@ impl Analyzer<'_, '_> {
                     relate(self, &l.ty(), &r.ty()).context("failed to relate a spread item to another one")?;
                 }
                 (true, false) => {
-                    for idx in 0..max(li_count, ri_count) {
+                    for (idx, re) in ri.into_iter().enumerate() {
                         let le = self
                             .access_property(
                                 span,
@@ -864,64 +864,13 @@ impl Analyzer<'_, '_> {
                             )
                             .unwrap_or_else(|_| l.ty().clone());
 
-                        let re = self
-                            .access_property(
-                                span,
-                                &r.ty(),
-                                &Key::Num(RNumber {
-                                    span: r.span(),
-                                    value: idx as f64,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                                AccessPropertyOpts {
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    disallow_inexact: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .unwrap_or_else(|_| r.ty().clone());
-
-                        relate(self, &le, &re).with_context(|| {
-                            format!(
-                                "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
-                                idx,
-                                force_dump_type_as_string(&l.ty()),
-                                force_dump_type_as_string(&r.ty()),
-                                force_dump_type_as_string(&le),
-                                force_dump_type_as_string(&re)
-                            )
-                        })?;
+                        relate(self, &le, re.ty()).context("l: spread; r: non-spread")?;
                     }
 
                     return Ok(());
                 }
                 (false, true) => {
-                    for idx in 0..max(li_count, ri_count) {
-                        let le = self
-                            .access_property(
-                                span,
-                                &l.ty(),
-                                &Key::Num(RNumber {
-                                    span: l.span(),
-                                    value: idx as f64,
-                                    raw: None,
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                                AccessPropertyOpts {
-                                    disallow_indexing_array_with_string: true,
-                                    disallow_creating_indexed_type_from_ty_els: true,
-                                    disallow_indexing_class_with_computed: true,
-                                    disallow_inexact: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .unwrap_or_else(|_| l.ty().clone());
-
+                    for (idx, le) in li.into_iter().enumerate() {
                         let re = self
                             .access_property(
                                 span,
@@ -944,16 +893,7 @@ impl Analyzer<'_, '_> {
                             )
                             .unwrap_or_else(|_| r.ty().clone());
 
-                        relate(self, &le, &re).with_context(|| {
-                            format!(
-                                "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
-                                idx,
-                                force_dump_type_as_string(l.ty()),
-                                force_dump_type_as_string(r.ty()),
-                                force_dump_type_as_string(&le),
-                                force_dump_type_as_string(&re)
-                            )
-                        })?;
+                        relate(self, le.ty(), &re).context("l: non-spread; r: spread")?;
                     }
 
                     return Ok(());
