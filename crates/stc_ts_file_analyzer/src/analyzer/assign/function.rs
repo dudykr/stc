@@ -1027,7 +1027,15 @@ impl Analyzer<'_, '_> {
 
         self.relate_spread_likes(span, &mut li, &mut ri, &mut |this, l, r| {
             //
-            this.assign_param_type(data, l, r, opts)
+            this.assign_param_type(
+                data,
+                l,
+                r,
+                AssignOpts {
+                    allow_assignment_to_void: true,
+                    ..opts
+                },
+            )
         })
         .context("failed to relate parameters")?;
 
