@@ -2334,6 +2334,7 @@ types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
 types/intersection/intersectionTypeMembers.ts
 types/intersection/intersectionTypeOverloading.ts
+types/intersection/intersectionTypeReadonly.ts
 types/intersection/intersectionWithUnionConstraint.ts
 types/intersection/intersectionsAndEmptyObjects.ts
 types/intersection/operatorsAndIntersectionTypes.ts
