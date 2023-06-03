@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(crate) fn assign_with_opts(&self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -560,7 +560,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_inner(&self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
 
@@ -611,7 +611,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    fn assign_without_wrapping(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_without_wrapping(&self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
         if !self.config.is_builtin && span.is_dummy() {
