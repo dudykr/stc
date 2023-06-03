@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         li: &mut Peekable<LI>,
         ri: &mut Peekable<RI>,
-        relate: &mut impl FnMut(&'a mut Self, &'l Type, &'r Type) -> VResult<()>,
+        relate: &mut impl FnMut(&mut Self, &Type, &Type) -> VResult<()>,
     ) -> VResult<()>
     where
         T: SpreadLike,
@@ -833,8 +833,8 @@ impl Analyzer<'_, '_> {
         let ri_count = ri.clone().count();
 
         while let (Some(..), Some(..)) = (li.peek(), ri.peek()) {
-            let l = li.next().unwrap();
-            let r = ri.next().unwrap();
+            let l = li.next().unwrap().clone();
+            let r = ri.next().unwrap().clone();
 
             match (l.is_spread(), r.is_spread()) {
                 (true, true) => {
