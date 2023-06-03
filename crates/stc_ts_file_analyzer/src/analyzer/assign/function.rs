@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         li: &mut Peekable<LI>,
         ri: &mut Peekable<RI>,
-        relate: &mut dyn FnMut(&mut Self) -> VResult<()>,
+        relate: &mut dyn FnMut(&mut Self, &Type, &Type) -> VResult<()>,
     ) -> VResult<()>
     where
         LI: Iterator<Item = &'l TypeOrSpread> + Clone,
@@ -836,7 +836,11 @@ impl Analyzer<'_, '_> {
                 (Some(..), Some(..)) => {}
                 (Some(..), None) => {}
                 (None, Some(_)) => {}
-                (None, None) => {}
+                (None, None) => {
+                    relate(self, &le.ty, &re.ty).context("failed to relate a non-spread item")?;
+
+                    return Ok(());
+                }
             }
         }
 
