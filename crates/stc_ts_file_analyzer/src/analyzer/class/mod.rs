@@ -168,7 +168,7 @@ impl Analyzer<'_, '_> {
                     TypeOfMode::RValue,
                     IdCtx::Var,
                     AccessPropertyOpts {
-                        disallow_creating_indexed_type_from_ty_els: true,
+                        disallow_creating_indexed_type: true,
                         ..Default::default()
                     },
                 ) {
@@ -242,7 +242,7 @@ impl Analyzer<'_, '_> {
                     TypeOfMode::RValue,
                     IdCtx::Var,
                     AccessPropertyOpts {
-                        disallow_creating_indexed_type_from_ty_els: true,
+                        disallow_creating_indexed_type: true,
                         ..Default::default()
                     },
                 ) {
@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
                 TypeOfMode::RValue,
                 IdCtx::Var,
                 AccessPropertyOpts {
-                    disallow_creating_indexed_type_from_ty_els: true,
+                    disallow_creating_indexed_type: true,
                     ..Default::default()
                 },
             ) {

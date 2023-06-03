@@ -655,7 +655,7 @@ pub(crate) struct AccessPropertyOpts {
     ///
     ///  obj11.foo; // Error TS2339
     /// ```
-    pub disallow_creating_indexed_type_from_ty_els: bool,
+    pub disallow_creating_indexed_type: bool,
 
     pub disallow_indexing_class_with_computed: bool,
 
@@ -1165,7 +1165,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if has_index_signature && !opts.disallow_creating_indexed_type_from_ty_els {
+        if has_index_signature && !opts.disallow_creating_indexed_type {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
                 warn!("Creating a indexed access type from a type literal");
@@ -1278,7 +1278,7 @@ impl Analyzer<'_, '_> {
                             id_ctx,
                             AccessPropertyOpts {
                                 disallow_indexing_array_with_string: true,
-                                disallow_creating_indexed_type_from_ty_els: true,
+                                disallow_creating_indexed_type: true,
                                 is_key_computed: true,
                                 ..opts
                             },
@@ -2187,7 +2187,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if opts.disallow_creating_indexed_type_from_ty_els {
+                if opts.disallow_creating_indexed_type {
                     return Err(ErrorKind::NoSuchProperty {
                         span,
                         obj: Some(Box::new(obj.clone())),
@@ -2407,8 +2407,7 @@ impl Analyzer<'_, '_> {
                         type_mode,
                         id_ctx,
                         AccessPropertyOpts {
-                            disallow_creating_indexed_type_from_ty_els: opts.disallow_creating_indexed_type_from_ty_els
-                                || has_better_default,
+                            disallow_creating_indexed_type: opts.disallow_creating_indexed_type || has_better_default,
                             ..opts
                         },
                     )
@@ -2600,7 +2599,7 @@ impl Analyzer<'_, '_> {
                         id_ctx,
                         AccessPropertyOpts {
                             use_undefined_for_tuple_index_error,
-                            disallow_creating_indexed_type_from_ty_els: true,
+                            disallow_creating_indexed_type: true,
                             is_in_union: true,
                             ..opts
                         },

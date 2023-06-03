@@ -954,7 +954,7 @@ impl Analyzer<'_, '_> {
                                     IdCtx::Var,
                                     AccessPropertyOpts {
                                         disallow_indexing_array_with_string: true,
-                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_creating_indexed_type: true,
                                         disallow_indexing_class_with_computed: true,
                                         disallow_inexact: true,
                                         ..Default::default()
@@ -973,7 +973,7 @@ impl Analyzer<'_, '_> {
                                     IdCtx::Var,
                                     AccessPropertyOpts {
                                         disallow_indexing_array_with_string: true,
-                                        disallow_creating_indexed_type_from_ty_els: true,
+                                        disallow_creating_indexed_type: true,
                                         disallow_indexing_class_with_computed: true,
                                         disallow_inexact: true,
                                         use_last_element_for_tuple_on_out_of_bound: true,

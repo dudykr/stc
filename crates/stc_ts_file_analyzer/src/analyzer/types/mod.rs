@@ -566,7 +566,7 @@ impl Analyzer<'_, '_> {
                             TypeOfMode::RValue,
                             IdCtx::Type,
                             AccessPropertyOpts {
-                                disallow_creating_indexed_type_from_ty_els: true,
+                                disallow_creating_indexed_type: true,
                                 disallow_inexact: true,
                                 do_not_use_any_for_object: true,
                                 ..Default::default()
