@@ -1121,24 +1121,24 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            (Type::Tuple(Tuple { elems, .. }), Type::Interface(Interface { extends, .. })) => {
-                let lhs = elems.iter().map(|TupleElement { ty, .. }| ty);
-                for parent in extends {
-                    let params = parent.type_args.clone().unwrap().params;
-                    let rhs = self
-                        .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
-                        .freezed();
-                    if let Some(Array { elem_type, .. }) = rhs.array() {
-                        if let Some(Union { types, .. }) = elem_type.union_type() {
-                            for (lhs, rhs) in lhs.clone().zip(types) {
-                                if let (Some(_), Some(_)) = (lhs.to_owned().keyword(), rhs.clone().keyword()) {
-                                    return self.assign_with_opts(data, lhs, &rhs, opts);
-                                }
-                            }
-                        }
-                    };
-                }
-            }
+            // (Type::Tuple(Tuple { elems, .. }), Type::Interface(Interface { extends, .. })) => {
+            //     let lhs = elems.iter().map(|TupleElement { ty, .. }| ty);
+            //     for parent in extends {
+            //         let params = parent.type_args.clone().unwrap().params;
+            //         let rhs = self
+            //             .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
+            //             .freezed();
+            //         if let Some(Array { elem_type, .. }) = rhs.array() {
+            //             if let Some(Union { types, .. }) = elem_type.union_type() {
+            //                 for (lhs, rhs) in lhs.clone().zip(types) {
+            //                     if let (Some(_), Some(_)) = (lhs.to_owned().keyword(), rhs.clone().keyword()) {
+            //                         return self.assign_with_opts(data, lhs, &rhs, opts);
+            //                     }
+            //                 }
+            //             }
+            //         };
+            //     }
+            // }
             _ => {}
         }
 
@@ -1505,6 +1505,7 @@ impl Analyzer<'_, '_> {
                     .assign_with_opts(data, ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
             }
+
             _ => {}
         }
 
