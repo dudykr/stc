@@ -99,7 +99,7 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts.true_facts += prev_facts;
         self.cur_facts.false_facts += prev_false_facts;
-        if !self.scope.return_values.borrow().in_conditional {
+        if !self.scope.borrow().return_values.in_conditional {
             let mut v = LoopBreakerFinder { found: false };
             body.visit_with(&mut v);
             let has_break = v.found;
@@ -412,7 +412,7 @@ impl Analyzer<'_, '_> {
             };
             elem_ty.freeze();
 
-            child.scope.declaring.clear();
+            child.scope.borrow_mut().declaring.clear();
 
             child.validate_lhs_of_for_loop(left, &elem_ty, kind);
 

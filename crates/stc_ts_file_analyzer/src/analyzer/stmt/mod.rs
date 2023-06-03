@@ -50,12 +50,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let old_in_conditional = self.scope.return_values.in_conditional;
-        self.scope.return_values.in_conditional |= matches!(s, RStmt::If(_) | RStmt::Switch(_));
+        let old_in_conditional = self.scope.borrow().return_values.in_conditional;
+        self.scope.borrow_mut().return_values.in_conditional |= matches!(s, RStmt::If(_) | RStmt::Switch(_));
 
         s.visit_children_with(self);
 
-        self.scope.return_values.in_conditional = old_in_conditional;
+        self.scope.borrow_mut().return_values.in_conditional = old_in_conditional;
 
         let end = Instant::now();
 
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
 
         // Of `s` is always executed and we enter infinite loop, return type should be
         // never
-        if !self.scope.return_values.in_conditional {
+        if !self.scope.borrow().return_values.in_conditional {
             let mut v = LoopBreakerFinder { found: false };
             body.visit_with(&mut v);
             let has_break = v.found;

@@ -92,13 +92,13 @@ impl Analyzer<'_, '_> {
             }
 
             let debug_declaring = if cfg!(debug_assertions) {
-                Some(self.scope.declaring.clone())
+                Some(self.scope.borrow().declaring.clone())
             } else {
                 None
             };
             let ids: Vec<Id> = find_ids_in_pat(&v.name);
-            let prev_declaring_len = self.scope.declaring.len();
-            self.scope.declaring.extend(ids);
+            let prev_declaring_len = self.scope.borrow().declaring.len();
+            self.scope.borrow_mut().declaring.extend(ids);
 
             macro_rules! inject_any {
                 () => {
@@ -138,8 +138,8 @@ impl Analyzer<'_, '_> {
                             m.for_var_decls.entry(node_id).or_default().remove_init = true;
                         }
                     }
-                    self.scope.declaring.drain(prev_declaring_len..);
-                    debug_assert_eq!(Some(self.scope.declaring.clone()), debug_declaring);
+                    self.scope.borrow_mut().declaring.drain(prev_declaring_len..);
+                    debug_assert_eq!(Some(self.scope.borrow().declaring.clone()), debug_declaring);
                 }};
             }
 
@@ -171,7 +171,11 @@ impl Analyzer<'_, '_> {
                 // };
                 let creates_new_this = matches!(&**init, RExpr::Object(..));
 
-                let old_this = if creates_new_this { self.scope.this.take() } else { None };
+                let old_this = if creates_new_this {
+                    self.scope.borrow_mut().this.take()
+                } else {
+                    None
+                };
 
                 let declared_ty = v.name.get_ty();
                 let declared_ty_include_this =
@@ -194,13 +198,13 @@ impl Analyzer<'_, '_> {
                         match init.validate_with_args(self, (TypeOfMode::RValue, None, $ty)) {
                             Ok(ty) => {
                                 if creates_new_this {
-                                    self.scope.this = old_this;
+                                    self.scope.borrow_mut().this = old_this;
                                 }
                                 ty.freezed()
                             }
                             Err(err) => {
                                 if creates_new_this {
-                                    self.scope.this = old_this;
+                                    self.scope.borrow_mut().this = old_this;
                                 }
                                 if self.config.is_builtin {
                                     unreachable!("failed to assign builtin: \nError: {:?}", err)
@@ -262,7 +266,7 @@ impl Analyzer<'_, '_> {
                         ty.freeze();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
-                        self.scope.this = Some(
+                        self.scope.borrow_mut().this = Some(
                             if matches!(
                                 ty.normalize(),
                                 Type::Query(QueryType {
@@ -275,10 +279,10 @@ impl Analyzer<'_, '_> {
                                 })
                             ) || self.ctx.in_class_member
                             {
-                                if self.scope.this().is_some() {
-                                    self.scope.this().unwrap().into_owned()
+                                if self.scope.borrow().this().is_some() {
+                                    self.scope.borrow().this().unwrap().into_owned()
                                 } else {
-                                    if matches!(self.scope.kind(), ScopeKind::ArrowFn) {
+                                    if matches!(self.scope.borrow().kind(), ScopeKind::ArrowFn) {
                                         // ```ts
                                         // const Test8 = () => {
                                         //     let x: typeof this.no = 1;
@@ -466,7 +470,7 @@ impl Analyzer<'_, '_> {
                         ty.assert_valid();
                         ty.freeze();
 
-                        if self.scope.is_root() {
+                        if self.scope.borrow().is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
                                 let ty = ty.clone();
 
