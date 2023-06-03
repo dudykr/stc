@@ -499,7 +499,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let ty = ty.normalize();
