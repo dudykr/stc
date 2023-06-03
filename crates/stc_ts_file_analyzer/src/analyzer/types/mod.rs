@@ -2369,7 +2369,7 @@ impl Analyzer<'_, '_> {
     ///     // To use the fact that `a` is not `P`, we check for the parent type of `ty
     /// }
     /// ```
-    fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
+    fn exclude_type(&self, span: Span, ty: &mut Type, excluded: &Type) {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         if ty.type_eq(excluded) {

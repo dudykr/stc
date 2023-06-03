@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferToMultipleTypes` of `tsc`.
     pub(super) fn infer_to_multiple_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -399,7 +399,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferFromTypes` of `tsc`.
     pub(super) fn infer_from_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -410,7 +410,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_with_priority(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,

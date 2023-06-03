@@ -2289,7 +2289,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_of_fn_param(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &FnParam,
@@ -2336,7 +2336,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn rename_inferred(&mut self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
+    fn rename_inferred(&self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
         info!("rename_inferred");
 
         if arg_type_params.params.iter().any(|v| inferred.errored.contains(&v.name)) {
@@ -2396,7 +2396,7 @@ fn array_elem_type(t: &Type) -> Option<&Type> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
+    pub(super) fn rename_type_params(&self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
         if self.config.is_builtin {
             return Ok(ty);
         }
