@@ -3070,11 +3070,21 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { ref types, .. }) => {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
+                let mut errors = vec![];
+
                 for ty in types {
-                    if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
-                        new.push(v);
+                    match self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
+                        Ok(ty) => new.push(ty),
+                        Err(err) => errors.push(err),
                     }
                 }
+
+                if errors.len() > 0 && new.is_empty() && errors.iter().any(|e| e.is_readonly_error()) {
+                    if let Some(e) = errors.first() {
+                        return Err(e.clone());
+                    }
+                }
+
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
                     new.retain(|prop_ty| match prop_ty.normalize() {
