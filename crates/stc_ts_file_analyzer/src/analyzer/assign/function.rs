@@ -866,8 +866,9 @@ impl Analyzer<'_, '_> {
 
                         relate(self, &le, re.ty()).with_context(|| {
                             format!(
-                                "l: spread + {}; r: non-spread + {}; idx = {}",
+                                "l: spread + {} (from {}); r: non-spread + {}; idx = {}",
                                 force_dump_type_as_string(&le),
+                                force_dump_type_as_string(&l.ty()),
                                 force_dump_type_as_string(re.ty()),
                                 idx
                             )
