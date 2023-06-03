@@ -190,9 +190,9 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
-        let old_this = self.scope.this.take();
+        let old_this = self.scope.borrow_mut().this.take();
         let res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
-        self.scope.this = old_this;
+        self.scope.borrow_mut().this = old_this;
 
         res
     }
@@ -210,7 +210,7 @@ impl Analyzer<'_, '_> {
         debug_assert!(self.ctx.in_computed_prop_name);
 
         for used in used_type_params {
-            let scope = self.scope.first_kind(|kind| match kind {
+            let scope = self.scope.borrow().first_kind(|kind| match kind {
                 ScopeKind::Fn
                 | ScopeKind::Method { .. }
                 | ScopeKind::Module
@@ -448,7 +448,7 @@ impl Analyzer<'_, '_> {
                         // We mark as wip
                         if !computed {
                             if let RPropName::Ident(i) = &p.key {
-                                child.scope.declaring_prop = Some(i.into());
+                                child.scope.borrow_mut().declaring_prop = Some(i.into());
                             };
                         }
 
@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
 
                         let ret_ty = try_opt!(p.function.return_type.validate_with(child));
                         let ret_ty = ret_ty.map(|ty| ty.freezed());
-                        child.scope.declared_return_type = ret_ty.clone();
+                        child.scope.borrow_mut().declared_return_type = ret_ty.clone();
 
                         let mut inferred = None;
 

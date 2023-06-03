@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
         let prev_false_facts = orig_facts.false_facts.take();
         let mut facts_of_prev_body_eval = CondFacts::default();
         let mut last = false;
-        let mut orig_vars = Some(self.scope.vars.clone());
+        let mut orig_vars = Some(self.scope.borrow().vars.clone());
 
         let mut max = 10;
 
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
                 },
                 |analyzer: &mut Analyzer| {
                     if last {
-                        analyzer.scope.vars = orig_vars.take().unwrap();
+                        analyzer.scope.borrow_mut().vars = orig_vars.take().unwrap();
                     }
                 },
             )?;
@@ -99,7 +99,7 @@ impl Analyzer<'_, '_> {
 
         self.cur_facts.true_facts += prev_facts;
         self.cur_facts.false_facts += prev_false_facts;
-        if !self.scope.return_values.in_conditional {
+        if !self.scope.return_values.borrow().in_conditional {
             let mut v = LoopBreakerFinder { found: false };
             body.visit_with(&mut v);
             let has_break = v.found;
@@ -329,8 +329,8 @@ impl Analyzer<'_, '_> {
                     vec![]
                 }
             };
-            debug_assert_eq!(child.scope.declaring, Vec::<Id>::new());
-            child.scope.declaring.extend(created_vars);
+            debug_assert_eq!(child.scope.borrow().declaring, Vec::<Id>::new());
+            child.scope.borrow_mut().declaring.extend(created_vars);
 
             child.ctx.allow_ref_declaring = matches!(
                 left,

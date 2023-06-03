@@ -10,8 +10,8 @@ use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn get_property_type_from_this(&self, span: Span, p: &Id) -> Option<Type> {
-        if self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class() {
-            if let Some(declaring) = &self.scope.declaring_prop() {
+        if self.scope.borrow().is_this_ref_to_object_lit() || self.scope.borrow().is_this_ref_to_class() {
+            if let Some(declaring) = &self.scope.borrow().declaring_prop() {
                 if *p.sym() == *declaring.sym() {
                     return Some(Type::any(
                         span,
@@ -27,8 +27,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.scope.is_this_ref_to_class() {
-            for (_, m) in self.scope.class_members() {
+        if self.scope.borrow().is_this_ref_to_class() {
+            for (_, m) in self.scope.borrow().class_members() {
                 match m {
                     ClassMember::Method(Method {
                         key: Key::Normal { sym, .. },
@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
 
     /// Expand `this` contained in `ty`.
     pub(crate) fn expand_this_in_type(&mut self, ty: &mut Type) {
-        let this_ty = self.scope.this();
+        let this_ty = self.scope.borrow().this();
 
         if let Some(this) = this_ty.map(Cow::into_owned) {
             ty.visit_mut_with(&mut ThisReplacer {

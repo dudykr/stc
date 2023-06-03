@@ -946,7 +946,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                     }
                     if i.sym == js_word!("this") {
-                        if let Some(this) = self.scope.this().map(Cow::into_owned) {
+                        if let Some(this) = self.scope.borrow().this().map(Cow::into_owned) {
                             return Ok(this);
                         } else {
                             return Ok(Type::This(ThisType {
@@ -1036,7 +1036,8 @@ impl Analyzer<'_, '_> {
             is_actual_type_modified_in_loop: false,
         });
 
-        let mut scope = Some(&self.scope);
+        let b = self.scope.borrow();
+        let mut scope = Some(&*b);
 
         while let Some(s) = scope {
             if let Some(var) = s.vars.get(name) {
@@ -1067,7 +1068,8 @@ impl Analyzer<'_, '_> {
             }
 
             // println!("({}) find_var_type({})", self.scope.depth(), name);
-            let mut scope = Some(&self.scope);
+            let b = self.scope.borrow();
+            let mut scope = Some(&*b);
             while let Some(s) = scope {
                 if let Some(v) = s.facts.vars.get(&Name::from(name)) {
                     v.assert_clone_cheap();
@@ -1104,7 +1106,11 @@ impl Analyzer<'_, '_> {
 
             if let Some(var) = self.find_var(name) {
                 if cfg!(debug_assertions) {
-                    debug!("({}) find_var_type({}): Handled from scope.find_var", self.scope.depth(), name);
+                    debug!(
+                        "({}) find_var_type({}): Handled from scope.find_var",
+                        self.scope.borrow().depth(),
+                        name
+                    );
                 }
 
                 let name = Name::from(name);
@@ -1121,7 +1127,7 @@ impl Analyzer<'_, '_> {
                 };
                 ty.assert_clone_cheap();
 
-                if let Some(excludes) = self.scope.facts.excludes.get(&name) {
+                if let Some(excludes) = self.scope.borrow().facts.excludes.get(&name) {
                     if let Some(ty::Union { ref mut types, .. }) = ty.as_union_type_mut() {
                         for ty in types {
                             let span = (*ty).span();
@@ -1212,7 +1218,7 @@ impl Analyzer<'_, '_> {
             })
         });
 
-        if let Some(class) = &self.scope.get_this_class_name() {
+        if let Some(class) = &self.scope.borrow().get_this_class_name() {
             if *class == *name {
                 // TODO(kdy1): Maybe change this to special variant.
                 return Some(ItemRef::Single(iter::once(&STATIC_THIS)));
@@ -1220,7 +1226,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(debug_assertions) {
-            debug!("({}) Scope.find_type(`{}`)", self.scope.depth(), name);
+            debug!("({}) Scope.find_type(`{}`)", self.scope.borrow().depth(), name);
         }
 
         let mut src = vec![];
@@ -1235,7 +1241,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(ty) = self.scope.find_type(name) {
+        if let Some(ty) = self.scope.borrow().find_type(name) {
             if self.ctx.in_module {
                 // In module mode, we should not merge user-defined types with builtin.
                 // As `src` contains builtin types, we remove them.
@@ -1280,7 +1286,7 @@ impl Analyzer<'_, '_> {
             ty.assert_clone_cheap();
         }
 
-        op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
+        op(self.scope.borrow().vars.entry(name).or_insert_with(|| VarInfo {
             kind: VarKind::Error,
             initialized: true,
             ty: ty.clone(),
@@ -1306,20 +1312,25 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
             debug!(
                 "[({})/vars/destructor]: Declaring {:?} as {}",
-                self.scope.depth(),
+                self.scope.borrow().depth(),
                 key,
                 dump_type_as_string(&ty)
             );
-            self.scope.destructure_vars.insert(key, ty.freezed());
+            self.scope.borrow_mut().destructure_vars.insert(key, ty.freezed());
             Ok(true)
         } else {
-            debug!("[({})/vars/destructor]: Declaring {:?} without type", self.scope.depth(), key);
+            debug!(
+                "[({})/vars/destructor]: Declaring {:?} without type",
+                self.scope.borrow().depth(),
+                key
+            );
             Ok(false)
         }
     }
 
     pub fn find_destructor(&self, key: DestructureId) -> Option<Cow<Type>> {
-        let mut scope = Some(&self.scope);
+        let b = self.scope.borrow();
+        let mut scope = Some(&*b);
         while let Some(s) = scope {
             if let Some(v) = s.destructure_vars.get(&key) {
                 v.assert_clone_cheap();
@@ -1355,9 +1366,14 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = &ty {
             ty.assert_valid();
-            debug!("[({})/vars]: Declaring {} as {}", self.scope.depth(), name, dump_type_as_string(ty));
+            debug!(
+                "[({})/vars]: Declaring {} as {}",
+                self.scope.borrow().depth(),
+                name,
+                dump_type_as_string(ty)
+            );
         } else {
-            debug!("[({})/vars]: Declaring {} without type", self.scope.depth(), name,);
+            debug!("[({})/vars]: Declaring {} without type", self.scope.borrow().depth(), name,);
         }
 
         if let Some(ty) = &actual_ty {
@@ -1478,7 +1494,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.scope.is_root() || self.scope.is_module() {
+        if self.scope.borrow().is_root() || self.scope.borrow().is_module() {
             self.storage.store_private_var(
                 self.ctx.module_id,
                 name.clone(),
@@ -1488,14 +1504,14 @@ impl Analyzer<'_, '_> {
 
         let mut skip_storing_type = false;
 
-        match self.scope.vars.entry(name.clone()) {
+        match self.scope.borrow_mut().vars.entry(name.clone()) {
             Entry::Occupied(e) => {
                 //println!("\tdeclare_var: found entry");
                 let (k, mut v) = e.remove_entry();
 
                 macro_rules! restore {
                     () => {{
-                        self.scope.vars.insert(k, v);
+                        self.scope.borrow_mut().vars.insert(k, v);
                     }};
                 }
 
@@ -1629,7 +1645,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.scope.vars.insert(k, v);
+                self.scope.borrow_mut().vars.insert(k, v);
             }
             Entry::Vacant(e) => {
                 //println!("\tdeclare_var: no entry");
@@ -2079,7 +2095,7 @@ impl Expander<'_, '_, '_> {
 
         match type_name {
             RTsEntityName::Ident(ref i) => {
-                if let Some(class) = &self.analyzer.scope.get_this_class_name() {
+                if let Some(class) = &self.analyzer.scope.borrow().get_this_class_name() {
                     if *class == *i {
                         return Ok(Some(Type::This(ThisType {
                             span,
@@ -2261,7 +2277,12 @@ impl Expander<'_, '_, '_> {
                     return Ok(Some(Type::any(span, Default::default())));
                 }
 
-                error!("({}) Failed to find type: {}{:?}", self.analyzer.scope.depth(), i.sym, i.span.ctxt);
+                error!(
+                    "({}) Failed to find type: {}{:?}",
+                    self.analyzer.scope.borrow().depth(),
+                    i.sym,
+                    i.span.ctxt
+                );
             }
 
             // Handle enum variant type.
@@ -2298,7 +2319,7 @@ impl Expander<'_, '_, '_> {
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> VResult<Option<Type>> {
         let _tracing = dev_span!("Expander::expand_ref");
 
-        let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
+        let trying_primitive_expansion = self.analyzer.scope.borrow_mut().expand_triage_depth != 0;
 
         let Ref {
             span: r_span,
@@ -2359,16 +2380,16 @@ impl Expander<'_, '_, '_> {
 
         self.full |= matches!(ty, Type::Mapped(..));
 
-        let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
+        let trying_primitive_expansion = self.analyzer.scope.borrow().expand_triage_depth != 0;
 
         // If we are trying to expand types as primitive, we ignore config
         let is_expansion_prevented = !trying_primitive_expansion && self.analyzer.is_expansion_prevented(&ty);
 
-        if self.analyzer.scope.expand_triage_depth != 0 {
-            self.analyzer.scope.expand_triage_depth += 1;
+        if self.analyzer.scope.borrow().expand_triage_depth != 0 {
+            self.analyzer.scope.borrow_mut().expand_triage_depth += 1;
         }
 
-        if self.analyzer.scope.expand_triage_depth > 30 {
+        if self.analyzer.scope.borrow().expand_triage_depth > 30 {
             return ty;
         }
 
@@ -2383,15 +2404,15 @@ impl Expander<'_, '_, '_> {
                     }
                 }
 
-                if self.expand_top_level && self.analyzer.scope.expand_triage_depth == 0 {
+                if self.expand_top_level && self.analyzer.scope.borrow().expand_triage_depth == 0 {
                     let old_full = self.full;
 
-                    self.analyzer.scope.expand_triage_depth += 1;
+                    self.analyzer.scope.borrow_mut().expand_triage_depth += 1;
                     self.full = true;
 
                     let candidate = ty.clone().fold_with(self);
 
-                    self.analyzer.scope.expand_triage_depth = 0;
+                    self.analyzer.scope.borrow_mut().expand_triage_depth = 0;
                     self.full = old_full;
 
                     return candidate;

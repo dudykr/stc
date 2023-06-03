@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
         ty.visit_mut_with(&mut v);
     }
 
-    fn is_type_param_dead(&mut self, name: &Id) -> bool {
+    fn is_type_param_dead(&self, name: &Id) -> bool {
         fn is_dead(s: &Scope, name: &Id) -> bool {
             if s.is_root() {
                 return true;
@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        is_dead(&self.scope, name)
+        is_dead(&self.scope.borrow(), name)
     }
 }
 
