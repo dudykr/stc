@@ -301,7 +301,7 @@ pub trait ResultExt<T>: Into<Result<T, Error>> {
         }
     }
 
-    fn report(self, storage: &mut Storage) -> Option<T> {
+    fn report(self, storage: &Storage) -> Option<T> {
         match self.into() {
             Ok(v) => Some(v),
             Err(err) => {

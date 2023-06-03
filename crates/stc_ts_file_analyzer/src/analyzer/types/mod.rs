@@ -2039,7 +2039,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping, span_for_validation: Span) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&self, span: Span, ty: &StringMapping, span_for_validation: Span) -> VResult<Type> {
         let arg = &ty.type_args;
 
         let normalized_ty = match self
