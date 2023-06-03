@@ -436,7 +436,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Optimize
-    fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> VResult<Type> {
+    fn expand_key_in_mapped(&self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> VResult<Type> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
         type_params.insert(mapped_type_param, key.ty().into_owned().freezed());
