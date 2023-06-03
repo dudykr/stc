@@ -3079,7 +3079,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if errors.len() > 0 && new.is_empty() && errors.iter().any(|e| e.is_readonly_error()) {
+                if !errors.is_empty() && new.is_empty() && errors.iter().any(|e| e.is_readonly_error()) {
                     if let Some(e) = errors.first() {
                         return Err(e.clone());
                     }
