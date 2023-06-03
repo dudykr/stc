@@ -1604,7 +1604,7 @@ impl Analyzer<'_, '_> {
     /// Note: `span` is only used while expanding type (to prevent
     /// panic) in the case of [Type::Ref].
     pub(crate) fn convert_type_to_type_lit<'a>(
-        &mut self,
+        &self,
         span: Span,
         ty: Cow<'a, Type>,
         opts: ConvertTypeToLitOpts,

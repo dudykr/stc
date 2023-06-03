@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
     /// let b: { key: string } = foo;
     /// ```
     pub(crate) fn assign_to_type_elements(
-        &mut self,
+        &self,
         data: &mut AssignData,
         lhs_span: Span,
         lhs: &[TypeElement],
@@ -1004,7 +1004,7 @@ impl Analyzer<'_, '_> {
         true
     }
 
-    pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
+    pub(super) fn try_assign_using_parent(&self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let span = opts.span;
 
         match r.normalize() {

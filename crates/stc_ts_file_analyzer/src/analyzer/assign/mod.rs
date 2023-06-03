@@ -3110,7 +3110,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+    fn extract_keys(&self, span: Span, ty: &Type) -> VResult<Type> {
         (|| -> VResult<_> {
             let ty = self.normalize(
                 Some(span),
@@ -3320,7 +3320,7 @@ impl Analyzer<'_, '_> {
     /// Returns true for `A | B | | C = A | B` and similar cases.
     ///
     /// Should be called iff lhs is a union type.
-    fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> VResult<bool> {
+    fn should_use_special_union_assignment(&self, span: Span, r: &Type) -> VResult<bool> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
@@ -3339,7 +3339,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): I'm not sure about this.
-    fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
+    fn variance(&self, ty: &Conditional) -> VResult<Variance> {
         let can_be_covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
         let can_be_contravariant =
@@ -3352,11 +3352,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn is_covariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
+    fn is_covariant(&self, check_type: &Type, output_type: &Type) -> VResult<bool> {
         Ok(check_type.type_eq(output_type))
     }
 
-    fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
+    fn is_contravariant(&self, check_type: &Type, output_type: &Type) -> VResult<bool> {
         if let Type::Index(Index { ty, .. }) = output_type.normalize() {
             if output_type.type_eq(&**ty) {
                 return Ok(true);

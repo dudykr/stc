@@ -3498,7 +3498,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returned type reflects conditional type facts.
-    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+    pub(super) fn type_of_var(&self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let _tracing = dev_span!("type_of_var");
 
         let span = i.span();
