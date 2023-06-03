@@ -3288,3 +3288,28 @@ impl_freeze!(Key);
 impl_freeze!(Enum);
 impl_freeze!(ClassDef);
 impl_freeze!(Mapped);
+
+pub trait SpreadLike: 'static + Spanned + Clone {
+    fn is_spread(&self) -> bool;
+    fn ty(&self) -> &Type;
+}
+
+impl SpreadLike for FnParam {
+    fn is_spread(&self) -> bool {
+        matches!(&self.pat, RPat::Rest(..))
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
+}
+
+impl SpreadLike for TypeOrSpread {
+    fn is_spread(&self) -> bool {
+        self.spread.is_some()
+    }
+
+    fn ty(&self) -> &Type {
+        &self.ty
+    }
+}
