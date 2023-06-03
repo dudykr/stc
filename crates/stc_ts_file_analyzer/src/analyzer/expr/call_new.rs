@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
                 self.validate_args(args).report(&mut self.storage);
 
-                self.scope.mark_as_super_called();
+                self.scope.borrow_mut().mark_as_super_called();
 
                 return Ok(Type::any(span, Default::default()));
             }
@@ -298,7 +298,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         let _tracing = dev_span!("extract_call_new_expr_member");
 
-        debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
+        debug_assert_eq!(self.scope.borrow().kind(), ScopeKind::Call);
 
         let marks = self.marks();
 
@@ -608,8 +608,8 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let old_this = self.scope.this.take();
-        self.scope.this = Some(this.clone());
+        let old_this = self.scope.borrow_mut().this.take();
+        self.scope.borrow_mut().this = Some(this.clone());
 
         let res = (|| {
             let obj_type = self
@@ -968,7 +968,7 @@ impl Analyzer<'_, '_> {
             })
         })()
         .with_context(|| format!("tried to call a property of an object ({})", force_dump_type_as_string(obj_type)));
-        self.scope.this = old_this;
+        self.scope.borrow_mut().this = old_this;
         res
     }
 
@@ -1341,7 +1341,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => {
-                            self.scope.is_call_arg_count_unknown = true;
+                            self.scope.borrow_mut().is_call_arg_count_unknown = true;
                             new_arg_types.push(TypeOrSpread {
                                 span: *span,
                                 spread: None,
@@ -1350,7 +1350,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         Type::Array(arr) => {
-                            self.scope.is_call_arg_count_unknown = true;
+                            self.scope.borrow_mut().is_call_arg_count_unknown = true;
                             new_arg_types.push(arg.clone());
                         }
 
@@ -1359,7 +1359,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         _ => {
-                            self.scope.is_call_arg_count_unknown = true;
+                            self.scope.borrow_mut().is_call_arg_count_unknown = true;
 
                             let elem_type = self
                                 .get_iterator_element_type(arg.span(), arg_ty, false, Default::default())
@@ -1431,7 +1431,7 @@ impl Analyzer<'_, '_> {
         if let ExtractKind::New = kind {
             match ty.normalize() {
                 Type::ClassDef(ref cls) => {
-                    self.scope.this = Some(Type::Class(Class {
+                    self.scope.borrow_mut().this = Some(Type::Class(Class {
                         span,
                         def: cls.clone(),
                         metadata: Default::default(),
@@ -1629,7 +1629,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::StaticThis(..) => {
-                    if let Some(class_name) = self.scope.this_class_name() {
+                    if let Some(class_name) = self.scope.borrow().this_class_name() {
                         return Ok(Type::Instance(Instance {
                             span,
                             ty: Box::new(Type::Query(QueryType {
@@ -2764,7 +2764,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(type_params) = type_params {
             for param in type_params {
-                info!("({}) Defining {}", self.scope.depth(), param.name);
+                info!("({}) Defining {}", self.scope.borrow().depth(), param.name);
 
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
@@ -3768,7 +3768,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            if analyzer.scope.is_call_arg_count_unknown || !exact {
+            if analyzer.scope.borrow().is_call_arg_count_unknown || !exact {
                 return ArgCheckResult::MayBe;
             }
             ArgCheckResult::Exact

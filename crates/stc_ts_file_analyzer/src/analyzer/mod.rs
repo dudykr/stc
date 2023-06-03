@@ -1,5 +1,5 @@
 use std::{
-    cell::Cell,
+    cell::{Cell, RefCell},
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
@@ -236,7 +236,7 @@ pub struct Analyzer<'scope, 'b> {
 
     export_equals_span: Span,
 
-    scope: Scope<'scope>,
+    scope: RefCell<Scope<'scope>>,
 
     ctx: Ctx,
 

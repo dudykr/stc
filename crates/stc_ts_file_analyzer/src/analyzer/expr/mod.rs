@@ -162,19 +162,22 @@ impl Analyzer<'_, '_> {
                         self.storage.report(ErrorKind::ThisInConstructorParam { span }.into())
                     }
 
-                    if self.scope.cannot_use_this_because_super_not_called() {
+                    if self.scope.borrow().cannot_use_this_because_super_not_called() {
                         self.storage.report(ErrorKind::ThisUsedBeforeCallingSuper { span }.into())
                     }
 
-                    let is_ref_to_module = matches!(self.scope.kind(), ScopeKind::Module)
+                    let is_ref_to_module = matches!(self.scope.borrow().kind(), ScopeKind::Module)
                         || (self.ctx.in_computed_prop_name
-                            && matches!(self.scope.scope_of_computed_props().map(|s| s.kind()), Some(ScopeKind::Module)));
+                            && matches!(
+                                self.scope.borrow().scope_of_computed_props().map(|s| s.kind()),
+                                Some(ScopeKind::Module)
+                            ));
                     if is_ref_to_module {
                         self.storage.report(ErrorKind::ThisRefToModuleOrNamespace { span }.into())
                     }
 
                     // Use globalThis
-                    if !self.scope.is_this_defined() {
+                    if !self.scope.borrow().is_this_defined() {
                         return Ok(Type::Query(QueryType {
                             span,
                             expr: Box::new(QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
@@ -186,10 +189,11 @@ impl Analyzer<'_, '_> {
                         }));
                     }
 
+                    let b = self.scope.borrow();
                     let scope = if self.ctx.in_computed_prop_name {
-                        self.scope.scope_of_computed_props()
+                        b.scope_of_computed_props()
                     } else {
-                        Some(&self.scope)
+                        Some(&*b)
                     };
                     if let Some(scope) = scope {
                         if let Some(ty) = scope.this() {
@@ -256,7 +260,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Await(e) => e.validate_with_args(self, type_ann.as_deref()),
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
-                    self.scope.this_class_name = ident.as_ref().map(|i| i.into());
+                    self.scope.borrow().this_class_name = ident.as_ref().map(|i| i.into());
                     Ok(class.validate_with_args(self, type_ann.as_deref())?.into())
                 }
 
@@ -376,7 +380,7 @@ impl Analyzer<'_, '_> {
             let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(RBindingIdent { id: ref i, .. })) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
-                    let any_span = if analyzer.scope.declaring.contains(&i.into()) {
+                    let any_span = if analyzer.scope.borrow().declaring.contains(&i.into()) {
                         Some(span)
                     } else {
                         None
@@ -513,7 +517,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(stc_ts_types::Function { params, .. }) = ty.as_fn_type_mut() {
                                     if !rhs_is_arrow {
                                         if !left_function_declare_not_this_type {
-                                            analyzer.scope.this = Some(*params[0].ty.to_owned());
+                                            analyzer.scope.borrow_mut().this = Some(*params[0].ty.to_owned());
                                         } else {
                                             // bound this (lhs to rhs)
                                             if let RPatOrExpr::Pat(box RPat::Expr(box RExpr::Member(RMemberExpr {
@@ -525,7 +529,7 @@ impl Analyzer<'_, '_> {
                                                     .type_of_var(obj, TypeOfMode::LValue, None)
                                                     .context("tried to get type of lhs of an assignment")
                                                 {
-                                                    analyzer.scope.this = Some(value);
+                                                    analyzer.scope.borrow_mut().this = Some(value);
                                                 }
                                             }
                                         }
@@ -551,7 +555,7 @@ impl Analyzer<'_, '_> {
                         Some(ty) if right_function_declared_this => {
                             let mut ty = ty.clone();
                             if let Some(stc_ts_types::Function { params, .. }) = ty.as_fn_type_mut() {
-                                if let Some(this) = &analyzer.scope.this {
+                                if let Some(this) = &analyzer.scope.borrow().this {
                                     params[0] = FnParam {
                                         ty: Box::new(
                                             Type::Instance(Instance {
@@ -727,7 +731,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             if let RExpr::Ident(ref i) = **e {
-                if self.scope.declaring.contains(&i.into()) {
+                if self.scope.borrow().declaring.contains(&i.into()) {
                     is_any = true;
                 }
             }
@@ -1570,9 +1574,9 @@ impl Analyzer<'_, '_> {
                 Type::This(..) | Type::StaticThis(..) => {
                     if !computed
                         && !self.ctx.in_computed_prop_name
-                        && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
+                        && (self.scope.borrow().is_this_ref_to_object_lit() || self.scope.borrow().is_this_ref_to_class())
                     {
-                        if let Some(declaring) = &self.scope.declaring_prop() {
+                        if let Some(declaring) = &self.scope.borrow().declaring_prop() {
                             if prop == declaring.sym() {
                                 return Ok(Type::any(span, Default::default()));
                             }
@@ -1586,7 +1590,7 @@ impl Analyzer<'_, '_> {
                 Type::This(..) | Type::StaticThis(..) if self.ctx.is_static() => {
                     // Handle static access to class itself while *declaring* the class.
                     #[allow(clippy::unnecessary_to_owned)]
-                    for (_, member) in self.scope.class_members().to_vec() {
+                    for (_, member) in self.scope.borrow().class_members().to_vec() {
                         match member {
                             ClassMember::Method(member @ Method { is_static: true, .. }) => {
                                 if self.key_matches(span, &member.key, prop, false) {
@@ -1614,7 +1618,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class(true) {
+                    if let Some(super_class) = self.scope.borrow().get_super_class(true) {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1628,14 +1632,14 @@ impl Analyzer<'_, '_> {
                     .context("tried to access this in a static class member"));
                 }
 
-                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
+                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.borrow().is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
                         return Ok(Type::any(span, Default::default()));
                     }
 
                     // TODO(kdy1): Remove clone
-                    let members = self.scope.object_lit_members().to_vec();
+                    let members = self.scope.borrow().object_lit_members().to_vec();
                     if let Some(mut v) = self.access_property_of_type_elements(span, obj, prop, type_mode, &members, opts)? {
                         v.metadata_mut().infected_by_this_in_object_literal = true;
                         return Ok(v);
@@ -1644,10 +1648,10 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span, Default::default()));
                 }
 
-                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
+                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.borrow().is_this_ref_to_class() => {
                     // We are currently declaring a class.
                     #[allow(clippy::unnecessary_to_owned)]
-                    for (_, member) in self.scope.class_members().to_vec() {
+                    for (_, member) in self.scope.borrow().class_members().to_vec() {
                         match &member {
                             // No-op, as constructor parameter properties are handled by
                             // Validate<Class>.
@@ -1700,7 +1704,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class(false) {
+                    if let Some(super_class) = self.scope.borrow().get_super_class(false) {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1709,13 +1713,13 @@ impl Analyzer<'_, '_> {
                     if !computed {
                         return Err(ErrorKind::NoSuchPropertyInClass {
                             span,
-                            class_name: self.scope.get_this_class_name(),
+                            class_name: self.scope.borrow().get_this_class_name(),
                             prop: prop.clone(),
                         }
                         .context("tried to access this in class"));
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class(false) {
+                    if let Some(super_class) = self.scope.borrow().get_super_class(false) {
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1741,7 +1745,7 @@ impl Analyzer<'_, '_> {
                 Type::StaticThis(StaticThis { span, metadata, .. }) => {
                     // Handle static access to class itself while *declaring* the class.
                     #[allow(clippy::unnecessary_to_owned)]
-                    for (_, member) in self.scope.class_members().to_vec() {
+                    for (_, member) in self.scope.borrow().class_members().to_vec() {
                         match member {
                             ClassMember::Method(member @ Method { is_static: true, .. }) => {
                                 if self.key_matches(*span, &member.key, prop, false) {
@@ -1774,7 +1778,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if let Some(super_class) = self.scope.get_super_class(true) {
+                    if let Some(super_class) = self.scope.borrow().get_super_class(true) {
                         if let Ok(v) = self.access_property(*span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
@@ -1795,10 +1799,11 @@ impl Analyzer<'_, '_> {
         }
 
         if let Type::This(..) = obj.normalize() {
+            let b = self.scope.borrow();
             let scope = if self.ctx.in_computed_prop_name {
-                self.scope.scope_of_computed_props()
+                b.scope_of_computed_props()
             } else {
-                Some(&self.scope)
+                Some(&*b)
             };
             if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
                 if this.normalize_instance().is_this() {
@@ -2048,7 +2053,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
-                                if let Some(declaring) = self.scope.declaring_prop.as_ref() {
+                                if let Some(declaring) = self.scope.borrow().declaring_prop.as_ref() {
                                     if class_prop.key == *declaring.sym() {
                                         return Err(ErrorKind::ReferencedInInit { span }.into());
                                     }
@@ -2347,8 +2352,8 @@ impl Analyzer<'_, '_> {
 
             Type::Array(Array { elem_type, .. }) => {
                 let elem_type = elem_type.clone().freezed();
-                if self.scope.should_store_type_params() {
-                    self.scope.store_type_param(Id::word("T".into()), *elem_type.clone());
+                if self.scope.borrow().should_store_type_params() {
+                    self.scope.borrow().store_type_param(Id::word("T".into()), *elem_type.clone());
                 }
 
                 if let Key::Computed(prop) = prop {
@@ -3021,7 +3026,7 @@ impl Analyzer<'_, '_> {
 
             Type::This(..) => {
                 // TODO(kdy1): Use parent scope in computed property names.
-                if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
+                if let Some(this) = self.scope.borrow().this().map(|this| this.into_owned()) {
                     if self.ctx.in_computed_prop_name {
                         if !self.ctx.in_class_member {
                             self.storage
@@ -3041,11 +3046,11 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span, Default::default()));
                 }
 
+                let b = self.scope.borrow();
                 let scope = if self.ctx.in_computed_prop_name {
-                    self.scope.scope_of_computed_props()
+                    b.scope_of_computed_props()
                 } else {
-                    self.scope
-                        .first(|scope| !matches!(scope.kind(), ScopeKind::TypeParams | ScopeKind::Flow))
+                    b.first(|scope| !matches!(scope.kind(), ScopeKind::TypeParams | ScopeKind::Flow))
                 };
 
                 match scope.map(|scope| scope.kind()) {
@@ -3218,7 +3223,7 @@ impl Analyzer<'_, '_> {
                     match &r.type_name {
                         RTsEntityName::TsQualifiedName(_) => {}
                         RTsEntityName::Ident(i) => {
-                            if let Some(class) = self.scope.get_this_class_name() {
+                            if let Some(class) = self.scope.borrow().get_this_class_name() {
                                 if class == *i {
                                     return self.access_property(
                                         span,
@@ -3367,7 +3372,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Clarify this.
     fn type_to_query_if_required(&self, span: Span, i: &RIdent, ty: Type) -> Type {
-        if self.scope.is_in_call() {
+        if self.scope.borrow().is_in_call() {
             return ty;
         }
 
@@ -3514,7 +3519,7 @@ impl Analyzer<'_, '_> {
         let id: Id = i.into();
         let name: Name = i.into();
 
-        if self.scope.is_declaring_fn(&id) {
+        if self.scope.borrow().is_declaring_fn(&id) {
             // We will expand this type query to proper type while calculating returns types
             // of a function.
             return Ok(Type::Query(QueryType {

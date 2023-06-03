@@ -738,9 +738,9 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn expand_type_params_using_scope(&self, ty: Type) -> VResult<Type> {
-        let type_params = take(&mut self.scope.type_params);
+        let type_params = take(&mut self.scope.borrow_mut().type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
-        self.scope.type_params = type_params;
+        self.scope.borrow_mut().type_params = type_params;
 
         res
     }
@@ -775,7 +775,7 @@ impl Analyzer<'_, '_> {
         }
 
         let v = self.data.unmergable_type_decls.entry(id.clone()).or_default();
-        v.push((span, self.scope.depth()));
+        v.push((span, self.scope.borrow().depth()));
 
         if v.len() < 2 {
             return;
@@ -784,10 +784,10 @@ impl Analyzer<'_, '_> {
         let v = v
             .iter()
             .filter(|(x_span, depth)| {
-                if *depth == self.scope.depth() {
+                if *depth == self.scope.borrow().depth() {
                     if *depth == 0 {
                         true
-                    } else if let Some(x) = self.scope.types.get(&id) {
+                    } else if let Some(x) = self.scope.borrow().types.get(&id) {
                         x.span() != span
                     } else {
                         false
@@ -815,7 +815,7 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("register_type");
 
         if cfg!(debug_assertions) {
-            debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
+            debug!("[({})/types] Registering: {:?}", self.scope.borrow().depth(), name);
         }
 
         let should_check_for_mixed_default_exports = ty.is_module();
@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
                     .export_stored_type(ty.span(), self.ctx.module_id, name.clone(), name.clone());
             }
 
-            self.scope.register_type(name, ty.clone(), false);
+            self.scope.borrow_mut().register_type(name, ty.clone(), false);
 
             ty
         } else {
@@ -902,12 +902,12 @@ impl Analyzer<'_, '_> {
 
             // Override class definitions.
             if should_override {
-                if let Some(kind) = self.scope.get_var(&name).map(|v| v.kind) {
+                if let Some(kind) = self.scope.borrow().get_var(&name).map(|v| v.kind) {
                     self.override_var(kind, name.clone(), ty.clone()).report(&mut self.storage);
                 }
             }
 
-            if (self.scope.is_root() || self.scope.is_module()) && !ty.is_type_param() {
+            if (self.scope.borrow().is_root() || self.scope.borrow().is_module()) && !ty.is_type_param() {
                 self.storage
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone(), should_override);
 

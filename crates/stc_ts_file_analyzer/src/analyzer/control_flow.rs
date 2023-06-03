@@ -765,7 +765,7 @@ impl Analyzer<'_, '_> {
                             if let Ok(prev) = self.type_of_var(left, TypeOfMode::RValue, None) {
                                 let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
 
-                                if let Some(var) = self.scope.vars.get_mut(&Id::from(left)) {
+                                if let Some(var) = self.scope.borrow_mut().vars.get_mut(&Id::from(left)) {
                                     var.actual_ty = Some(new_actual_ty.freezed());
                                 }
                             }
@@ -838,7 +838,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let is_in_loop = self.scope.is_in_loop_body();
+        let is_in_loop = self.scope.borrow().is_in_loop_body();
 
         let ctx = Ctx {
             in_actual_type: true,
@@ -884,7 +884,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Ident(i) => {
                 // Verify using immutable references.
-                if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
+                if let Some(var_info) = self.scope.borrow().get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
                         var_ty.freeze();
 
@@ -904,8 +904,9 @@ impl Analyzer<'_, '_> {
                 let mut actual_ty = None;
                 if let Some(var_info) = self
                     .scope
+                    .borrow()
                     .get_var(&i.id.clone().into())
-                    .or_else(|| self.scope.search_parent(&i.id.clone().into()))
+                    .or_else(|| self.scope.borrow().search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
                         declared_ty.assert_valid();
@@ -952,7 +953,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Update actual types.
-                if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
+                if let Some(var_info) = self.scope.borrow_mut().get_var_mut(&i.id.clone().into()) {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
                     let mut new_ty = actual_ty.unwrap_or_else(|| ty.clone());
                     new_ty.assert_valid();
@@ -961,7 +962,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
+                let var_info = if let Some(var_info) = self.scope.borrow().search_parent(&i.id.clone().into()) {
                     let actual_ty = actual_ty.unwrap_or_else(|| orig_ty.clone());
                     actual_ty.assert_valid();
                     actual_ty.assert_clone_cheap();
@@ -985,7 +986,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.id.clone().into()) {
+                    return if self.ctx.allow_ref_declaring && self.scope.borrow().declaring.contains(&i.id.clone().into()) {
                         Ok(())
                     } else {
                         // undefined symbol
@@ -1000,7 +1001,7 @@ impl Analyzer<'_, '_> {
                 // Variable is defined on parent scope.
                 //
                 // We copy var info with enhanced type.
-                self.scope.insert_var(i.id.clone().into(), var_info);
+                self.scope.borrow_mut().insert_var(i.id.clone().into(), var_info);
 
                 Ok(())
             }

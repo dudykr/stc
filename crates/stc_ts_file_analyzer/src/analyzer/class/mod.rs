@@ -347,8 +347,8 @@ impl Analyzer<'_, '_> {
             if !v.has_valid_super_call {
                 self.storage.report(ErrorKind::SuperNotCalled { span: c.span }.into());
             } else {
-                debug_assert_eq!(self.scope.kind(), ScopeKind::Class);
-                *self.scope.class.need_super_call.borrow_mut() = true;
+                debug_assert_eq!(self.scope.borrow().kind(), ScopeKind::Class);
+                *self.scope.borrow_mut().class.need_super_call.borrow_mut() = true;
             }
 
             for span in v.nested_super_calls {
@@ -409,7 +409,7 @@ impl Analyzer<'_, '_> {
 
                     param.visit_with(&mut visitor);
 
-                    child.scope.declaring.extend(names.clone());
+                    child.scope.borrow_mut().declaring.extend(names.clone());
 
                     let p: FnParam = {
                         let ctx = Ctx {
@@ -423,7 +423,7 @@ impl Analyzer<'_, '_> {
 
                     ps.push(p);
 
-                    child.scope.remove_declaring(names);
+                    child.scope.borrow_mut().remove_declaring(names);
                 }
 
                 if let Some(body) = &c.body {
@@ -710,7 +710,7 @@ impl Analyzer<'_, '_> {
         let key_span = c.key.span();
 
         if c.is_override {
-            if let Some(super_class) = &self.scope.get_super_class(false) {
+            if let Some(super_class) = &self.scope.borrow().get_super_class(false) {
                 if self
                     .access_property(
                         key_span,
@@ -741,7 +741,7 @@ impl Analyzer<'_, '_> {
                     child.ctx.in_static_method = c.is_static;
                     child.ctx.is_fn_param = true;
 
-                    child.scope.declaring_prop = match &key {
+                    child.scope.borrow_mut().declaring_prop = match &key {
                         Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
                         _ => None,
                     };
@@ -790,13 +790,13 @@ impl Analyzer<'_, '_> {
                     }
 
                     let params = {
-                        let prev_len = child.scope.declaring_parameters.len();
+                        let prev_len = child.scope.borrow().declaring_parameters.len();
                         let ids: Vec<Id> = find_ids_in_pat(&c.function.params);
-                        child.scope.declaring_parameters.extend(ids);
+                        child.scope.borrow_mut().declaring_parameters.extend(ids);
 
                         let res = c.function.params.validate_with(child);
 
-                        child.scope.declaring_parameters.truncate(prev_len);
+                        child.scope.borrow_mut().declaring_parameters.truncate(prev_len);
 
                         res?
                     };
@@ -814,7 +814,7 @@ impl Analyzer<'_, '_> {
 
                     let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
                     let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
-                    child.scope.declared_return_type = declared_ret_ty.clone();
+                    child.scope.borrow_mut().declared_return_type = declared_ret_ty.clone();
 
                     let span = c.function.span;
                     let is_async = c.function.is_async;
@@ -1654,7 +1654,7 @@ impl Analyzer<'_, '_> {
         };
 
         c.decorators.visit_with(self);
-        let name = self.scope.this_class_name.take();
+        let name = self.scope.borrow_mut().this_class_name.take();
         if let Some(i) = &name {
             match &**i.sym() {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
@@ -1681,7 +1681,7 @@ impl Analyzer<'_, '_> {
             child.ctx.super_references_super_class = true;
             child.ctx.in_class_with_super = c.super_class.is_some();
 
-            child.scope.declaring_type_params.extend(
+            child.scope.borrow_mut().declaring_type_params.extend(
                 c.type_params
                     .iter()
                     .flat_map(|decl| &decl.params)
@@ -1689,7 +1689,7 @@ impl Analyzer<'_, '_> {
             );
 
             // Register the class.
-            child.scope.this_class_name = name.clone();
+            child.scope.borrow_mut().this_class_name = name.clone();
 
             // We handle type parameters first.
             let type_params = try_opt!(c.type_params.validate_with(child)).map(Box::new);
@@ -1853,7 +1853,7 @@ impl Analyzer<'_, '_> {
             child.report_errors_for_statics_mixed_with_instances(c).report(&mut child.storage);
             child.report_errors_for_duplicate_class_members(c).report(&mut child.storage);
 
-            child.scope.super_class = super_class.clone();
+            child.scope.borrow_mut().super_class = super_class.clone();
             {
                 // Validate constructors
                 let constructors_with_body = c
@@ -1897,7 +1897,7 @@ impl Analyzer<'_, '_> {
                     if let RClassMember::TsIndexSignature(..) = node {
                         let m = node.validate_with_args(child, type_ann)?;
                         if let Some(member) = m {
-                            child.scope.this_class_members.push((index, member));
+                            child.scope.borrow_mut().this_class_members.push((index, member));
                         }
                     }
                 }
@@ -1920,7 +1920,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 let member = member.fold_with(&mut LitGeneralizer {});
-                                child.scope.this_class_members.push((index, member));
+                                child.scope.borrow_mut().this_class_members.push((index, member));
                             }
                         }
                         _ => {}
@@ -2004,7 +2004,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 // Register a class property.
 
-                                child.scope.this_class_members.push((
+                                child.scope.borrow_mut().this_class_members.push((
                                     index,
                                     ClassMember::Property(stc_ts_types::ClassProperty {
                                         span: p.span,
@@ -2047,7 +2047,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 let member = member.fold_with(&mut LitGeneralizer);
-                                child.scope.this_class_members.push((index, member));
+                                child.scope.borrow_mut().this_class_members.push((index, member));
                             }
                         }
                         _ => {}
@@ -2067,7 +2067,7 @@ impl Analyzer<'_, '_> {
                         } else {
                             cons_with_body = Some(member.clone());
                         }
-                        child.scope.this_class_members.push((index, member.into()));
+                        child.scope.borrow_mut().this_class_members.push((index, member.into()));
                     }
                     child
                         .report_errors_for_wrong_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
@@ -2090,7 +2090,7 @@ impl Analyzer<'_, '_> {
                     .body
                     .iter()
                     .enumerate()
-                    .filter(|(index, _)| child.scope.this_class_members.iter().all(|(idx, _)| *idx != *index))
+                    .filter(|(index, _)| child.scope.borrow().this_class_members.iter().all(|(idx, _)| *idx != *index))
                     .map(|v| v.0)
                     .collect::<Vec<_>>();
 
@@ -2099,11 +2099,11 @@ impl Analyzer<'_, '_> {
                 for index in order {
                     let ty = c.body[index].validate_with_args(child, type_ann)?;
                     if let Some(ty) = ty {
-                        child.scope.this_class_members.push((index, ty));
+                        child.scope.borrow_mut().this_class_members.push((index, ty));
                     }
                 }
 
-                take(&mut child.scope.this_class_members)
+                take(&mut child.scope.borrow_mut().this_class_members)
             };
 
             let body = child.combine_class_properties(body);
@@ -2156,7 +2156,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassExpr, type_ann: Option<&Type>) -> VResult<()> {
-        self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
+        self.scope.get_mut().this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with_args(self, type_ann) {
             Ok(ty) => ty.into(),
             Err(err) => {
@@ -2165,7 +2165,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        let old_this = self.scope.this.take();
+        let old_this = self.scope.borrow_mut().this.take();
         // self.scope.this = Some(ty.clone());
 
         let c = self
@@ -2199,7 +2199,7 @@ impl Analyzer<'_, '_> {
             })
             .report(&mut self.storage);
 
-        self.scope.this = old_this;
+        self.scope.borrow_mut().this = old_this;
 
         Ok(())
     }
@@ -2389,7 +2389,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) = ty.normalize()
             {
-                if let Some(name) = &self.scope.this_class_name {
+                if let Some(name) = &self.scope.borrow().this_class_name {
                     if *name == i {
                         Err(ErrorKind::SelfReferentialSuperClass { span: i.span })?
                     }
@@ -2424,7 +2424,7 @@ impl Analyzer<'_, '_> {
     fn visit_class_decl_inner(&mut self, c: &RClassDecl) {
         c.ident.visit_with(self);
 
-        self.scope.this_class_name = Some(c.ident.clone().into());
+        self.scope.borrow_mut().this_class_name = Some(c.ident.clone().into());
         let ty = match c.class.validate_with_args(self, None) {
             Ok(ty) => ty.into(),
             Err(err) => {
@@ -2434,7 +2434,7 @@ impl Analyzer<'_, '_> {
         };
         let ty = ty.freezed();
 
-        let old_this = self.scope.this.take();
+        let old_this = self.scope.borrow_mut().this.take();
         // self.scope.this = Some(ty.clone());
 
         let ty = self.register_type(c.ident.clone().into(), ty);
@@ -2458,7 +2458,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.scope.this = old_this;
+        self.scope.borrow_mut().this = old_this;
     }
 }
 

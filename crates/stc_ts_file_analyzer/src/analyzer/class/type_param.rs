@@ -6,8 +6,9 @@ use swc_common::Span;
 use crate::analyzer::{Analyzer, ScopeKind};
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn is_type_param_declared_in_containing_class(&mut self, id: &Id) -> bool {
+    pub(crate) fn is_type_param_declared_in_containing_class(&self, id: &Id) -> bool {
         self.scope
+            .borrow()
             .first(|scope| {
                 let parent = scope.parent();
                 let parent = match parent {
