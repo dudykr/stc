@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::max};
+use std::{borrow::Cow, cmp::max, iter::Peekable};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -7,7 +7,7 @@ use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeOrSpread, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -812,6 +812,22 @@ impl Analyzer<'_, '_> {
             }
             _ => err,
         })?;
+
+        Ok(())
+    }
+
+    fn relate_spread_likes(
+        &mut self,
+        li: &mut Peekable<&mut dyn Iterator<Item = &TypeOrSpread>>,
+        ri: &mut Peekable<&mut dyn Iterator<Item = &TypeOrSpread>>,
+        relate: &mut dyn FnMut(&mut Self) -> VResult<()>,
+    ) -> VResult<()> {
+        let _tracing = dev_span!("relate_spread_likes");
+
+        while let (Some(le), Some(re)) = (li.peek(), ri.peek()) {
+            let le = li.next();
+            let re = ri.next();
+        }
 
         Ok(())
     }
