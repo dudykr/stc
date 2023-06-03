@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
 
     /// `inferToMultipleTypesWithPriority`
     pub(super) fn infer_to_multiple_types_with_priority(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -447,7 +447,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferFromContravariantTypes` of `tsc`.
     pub(super) fn infer_from_contravariant_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -463,7 +463,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `getInferenceInfoForType` of `tsc`.
-    fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
+    fn get_inference_info_for_type<'a>(&self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
         if let Type::Param(param) = ty {
             return inferred.type_params.get_mut(&param.name);
         }
@@ -472,7 +472,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `getSingleTypeVariableFromIntersectionTypes` of `tsc`.
-    fn get_single_type_variable_from_intersection_types(&mut self, span: Span, inferred: &mut InferData, types: &[Type]) -> Option<Type> {
+    fn get_single_type_variable_from_intersection_types(&self, span: Span, inferred: &mut InferData, types: &[Type]) -> Option<Type> {
         let mut type_var: Option<Type> = None;
 
         for ty in types {
