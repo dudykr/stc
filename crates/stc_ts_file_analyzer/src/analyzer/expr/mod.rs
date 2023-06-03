@@ -823,7 +823,7 @@ impl Analyzer<'_, '_> {
     /// # Parameters
     ///
     /// - `declared`: Key of declared property.
-    pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
+    pub(crate) fn key_matches(&self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
         let _tracing = dev_span!("key_matches");
 
         match declared {

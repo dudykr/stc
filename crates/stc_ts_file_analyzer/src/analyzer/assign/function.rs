@@ -28,7 +28,7 @@ use crate::{
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_fn_like(
-        &mut self,
+        &self,
         data: &mut AssignData,
         is_call: bool,
         l_type_params: Option<&TypeParamDecl>,
@@ -668,7 +668,7 @@ impl Analyzer<'_, '_> {
     /// # Notes
     ///
     ///  - `string` is assignable to `...args: any[]`.
-    fn assign_param(&mut self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
+    fn assign_param(&self, data: &mut AssignData, l: &FnParam, r: &FnParam, opts: AssignOpts) -> VResult<()> {
         let _tracing = dev_span!("assign_param");
 
         let span = opts.span;
@@ -832,7 +832,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
-    pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
+    pub(crate) fn assign_params(&self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let _tracing = dev_span!("assign_params");
 
         let span = opts.span;

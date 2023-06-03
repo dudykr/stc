@@ -978,7 +978,7 @@ impl Analyzer<'_, '_> {
     /// let e5 = f(data, data2); // Error
     /// ```
     pub(super) fn insert_inferred_raw(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         name: Id,
@@ -1024,14 +1024,7 @@ impl Analyzer<'_, '_> {
         self.upsert_inferred(span, inferred, name, &ty, opts)
     }
 
-    pub(super) fn upsert_inferred(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        name: Id,
-        arg: &Type,
-        opts: InferTypeOpts,
-    ) -> VResult<()> {
+    pub(super) fn upsert_inferred(&self, span: Span, inferred: &mut InferData, name: Id, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
         let arg = match arg.normalize() {
             Type::Union(arg) if opts.exclude_null_and_undefined => {
                 Cow::Owned(Type::new_union(arg.span, arg.types.iter().filter(|ty| !ty.is_null_or_undefined()).cloned()).freezed())
@@ -1224,7 +1217,7 @@ impl Analyzer<'_, '_> {
 
     /// Infer types, using `param` and `arg`.
     pub(crate) fn infer_type_with_types(
-        &mut self,
+        &self,
         span: Span,
         type_params: &[TypeParam],
         param: &Type,

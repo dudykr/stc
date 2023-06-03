@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> VResult<TypeElement> {
+    pub(crate) fn fn_to_type_element(&self, f: &Function) -> VResult<TypeElement> {
         Ok(TypeElement::Call(CallSignature {
             span: f.span.with_ctxt(SyntaxContext::empty()),
             params: f.params.clone(),

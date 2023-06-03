@@ -1197,7 +1197,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn normalize_intersection_of_type_elements(
-        &mut self,
+        &self,
         span: Span,
         elements: &[TypeElement],
         property_types: &mut Vec<TypeElement>,
@@ -1550,7 +1550,7 @@ impl Analyzer<'_, '_> {
     /// ## excluded
     ///
     /// Members of base class.
-    pub(crate) fn collect_class_members(&mut self, excluded: &[&ClassMember], ty: &Type) -> VResult<Option<Vec<ClassMember>>> {
+    pub(crate) fn collect_class_members(&self, excluded: &[&ClassMember], ty: &Type) -> VResult<Option<Vec<ClassMember>>> {
         if self.config.is_builtin {
             return Ok(None);
         }
@@ -1916,7 +1916,7 @@ impl Analyzer<'_, '_> {
         }))
     }
 
-    fn merge_type_elements(&mut self, span: Span, mut els: Vec<TypeElement>) -> VResult<Vec<TypeElement>> {
+    fn merge_type_elements(&self, span: Span, mut els: Vec<TypeElement>) -> VResult<Vec<TypeElement>> {
         run(|| {
             // As merging is not common, we optimize it by creating a new vector only if
             // there's a conflict
