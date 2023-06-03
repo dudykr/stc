@@ -953,7 +953,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn access_property_of_type_elements(
-        &mut self,
+        &self,
         span: Span,
         obj: &Type,
         prop: &Key,
@@ -1386,7 +1386,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn access_property_inner(
-        &mut self,
+        &self,
         span: Span,
         obj: &Type,
         prop: &Key,

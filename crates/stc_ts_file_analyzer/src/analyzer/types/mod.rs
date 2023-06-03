@@ -1252,7 +1252,7 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
+    fn instantiate_for_normalization(&self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = force_dump_type_as_string(ty);
 
@@ -1333,7 +1333,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn report_possibly_null_or_undefined(&mut self, span: Span, ty: &Type) -> VResult<()> {
+    pub(crate) fn report_possibly_null_or_undefined(&self, span: Span, ty: &Type) -> VResult<()> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -1395,7 +1395,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
+    pub(crate) fn can_be_undefined(&self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
         let _tracing = dev_span!("can_be_undefined", include_null = include_null);
 
         let ty = self
@@ -1441,7 +1441,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
+    pub(crate) fn expand_type_ann<'a>(&self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
         let _tracing = dev_span!("expand_type_ann");
 
         let ty = match ty {
@@ -1455,7 +1455,7 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
-    pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> VResult<TypeLit> {
+    pub(crate) fn create_prototype_of_class_def(&self, def: &ClassDef) -> VResult<TypeLit> {
         let _tracing = dev_span!("create_prototype_of_class_def");
 
         let mut members = vec![];
