@@ -977,8 +977,11 @@ impl Analyzer<'_, '_> {
 
                         self.assign_param_type(data, &le, &re, opts).with_context(|| {
                             format!(
-                                "tried to assign a rest parameter to parameters; idx = {}, r_ty = {}",
+                                "tried to assign a rest parameter to parameters;\nidx = {};\nlt: {};\nrt: {};\nle = {};\nre = {};",
                                 idx,
+                                force_dump_type_as_string(&l.ty),
+                                force_dump_type_as_string(&r.ty),
+                                force_dump_type_as_string(&le),
                                 force_dump_type_as_string(&re)
                             )
                         })?;
