@@ -927,6 +927,8 @@ impl Analyzer<'_, '_> {
             }
 
             match (&l.pat, &r.pat) {
+                (RPat::Rest(..), RPat::Rest(..)) => {}
+
                 (RPat::Rest(..), _) | (_, RPat::Rest(..)) => {
                     // If r is an iterator, we should assign each element to l.
                     for idx in 0..max(li_count, ri_count) {
