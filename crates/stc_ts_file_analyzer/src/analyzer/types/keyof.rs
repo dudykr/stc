@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
     ///     k3 = '2';  // Error
     /// }
     /// ```
-    pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+    pub(crate) fn keyof(&self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         if !self.config.is_builtin {

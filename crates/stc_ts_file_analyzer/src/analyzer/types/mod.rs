@@ -1511,7 +1511,7 @@ impl Analyzer<'_, '_> {
 
     /// Exclude types from `ty` using type facts with key `name`, for
     /// the current scope.
-    pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
+    pub(crate) fn exclude_types_using_fact(&self, span: Span, name: &Name, ty: &mut Type) {
         let _tracing = dev_span!("exclude_types_using_fact");
 
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
@@ -1533,7 +1533,7 @@ impl Analyzer<'_, '_> {
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
-    pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
+    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Type) -> Type {
         let _tracing = dev_span!("apply_type_facts", name = tracing::field::debug(name));
 
         let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
@@ -2485,7 +2485,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
+    fn exclude_types(&self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
         ty.freeze();
 
         let mapped_ty = self.normalize(

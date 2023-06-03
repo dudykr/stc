@@ -9,7 +9,7 @@ use swc_common::Span;
 use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn get_property_type_from_this(&mut self, span: Span, p: &Id) -> Option<Type> {
+    pub(crate) fn get_property_type_from_this(&self, span: Span, p: &Id) -> Option<Type> {
         if self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class() {
             if let Some(declaring) = &self.scope.declaring_prop() {
                 if *p.sym() == *declaring.sym() {

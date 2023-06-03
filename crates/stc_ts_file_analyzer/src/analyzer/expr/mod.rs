@@ -3366,7 +3366,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Clarify this.
-    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Type) -> Type {
+    fn type_to_query_if_required(&self, span: Span, i: &RIdent, ty: Type) -> Type {
         if self.scope.is_in_call() {
             return ty;
         }
@@ -3392,7 +3392,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand type parameters using `type_args`.
-    pub(crate) fn expand_generics_with_type_args(&mut self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
+    pub(crate) fn expand_generics_with_type_args(&self, span: Span, ty: Type, type_args: &TypeParamInstantiation) -> VResult<Type> {
         let _tracing = dev_span!("expand_generics_with_type_args");
 
         match ty.normalize() {
@@ -3644,7 +3644,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
-    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult<Type> {
+    fn type_of_raw_var(&self, i: &RIdent, type_mode: TypeOfMode) -> VResult<Type> {
         info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
