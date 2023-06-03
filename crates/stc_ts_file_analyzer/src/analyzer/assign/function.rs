@@ -833,14 +833,19 @@ impl Analyzer<'_, '_> {
         let ri_count = ri.clone().count();
 
         while let (Some(..), Some(..)) = (li.peek(), ri.peek()) {
-            let l = li.next().unwrap().clone();
-            let r = ri.next().unwrap().clone();
+            let l = li.peek().copied().cloned().unwrap();
+            let r = ri.peek().copied().cloned().unwrap();
 
             match (l.is_spread(), r.is_spread()) {
                 (true, true) => {
+                    li.next();
+                    ri.next();
+
                     relate(self, &l.ty(), &r.ty()).context("failed to relate a spread item to another one")?;
                 }
                 (true, false) => {
+                    li.next();
+
                     for (idx, re) in ri.into_iter().enumerate() {
                         let le = self
                             .access_property(
@@ -878,6 +883,8 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
                 (false, true) => {
+                    li.next();
+
                     for (idx, le) in li.into_iter().enumerate() {
                         let re = self
                             .access_property(
@@ -907,6 +914,9 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
                 (false, false) => {
+                    li.next();
+                    ri.next();
+
                     relate(self, &l.ty(), &r.ty()).context("failed to relate a non-spread item")?;
                 }
             }
