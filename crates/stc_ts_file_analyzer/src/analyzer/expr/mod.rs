@@ -2187,6 +2187,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if opts.disallow_creating_indexed_type_from_ty_els {
+                    return Err(ErrorKind::NoSuchProperty {
+                        span,
+                        obj: Some(Box::new(obj.clone())),
+                        prop: Some(Box::new(prop.clone())),
+                    }
+                    .context("type parameter"));
+                }
+
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
                     Key::Normal { span, sym } => Box::new(Type::Lit(LitType {
@@ -2756,6 +2765,9 @@ impl Analyzer<'_, '_> {
                                 }));
                             }
                             if opts.use_last_element_for_tuple_on_out_of_bound {
+                                if elems.is_empty() {
+                                    return Ok(Type::any(span, Default::default()));
+                                }
                                 return Ok(*elems.last().unwrap().ty.clone());
                             }
 
@@ -2777,7 +2789,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             return Err(ErrorKind::TupleIndexError {
-                                span: n.span(),
+                                span,
                                 index: v,
                                 len: elems.len() as u64,
                             }
