@@ -95,9 +95,9 @@ impl Analyzer<'_, '_> {
             }
 
             let params = {
-                let prev_len = child.scope.declaring_parameters.len();
+                let prev_len = child.scope.borrow().declaring_parameters.len();
                 let ids: Vec<Id> = find_ids_in_pat(&f.params);
-                child.scope.declaring_parameters.extend(ids);
+                child.scope.borrow().declaring_parameters.extend(ids);
 
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
@@ -108,7 +108,7 @@ impl Analyzer<'_, '_> {
                 };
                 let res = f.params.validate_with(&mut *child.with_ctx(ctx));
 
-                child.scope.declaring_parameters.truncate(prev_len);
+                child.scope.borrow().declaring_parameters.truncate(prev_len);
 
                 res?
             };
@@ -122,7 +122,7 @@ impl Analyzer<'_, '_> {
             }
             .freezed();
 
-            child.scope.declared_return_type = declared_ret_ty.clone();
+            child.scope.borrow().declared_return_type = declared_ret_ty.clone();
 
             if let Some(ty) = &mut declared_ret_ty {
                 ty.freeze();
@@ -357,8 +357,8 @@ impl Analyzer<'_, '_> {
             // }
 
             if let Some(name) = name {
-                assert_eq!(self.scope.declaring_fn, None);
-                self.scope.declaring_fn = Some(name.into());
+                assert_eq!(self.scope.borrow().declaring_fn, None);
+                self.scope.borrow().declaring_fn = Some(name.into());
             }
 
             let mut fn_ty: ty::Function = f.validate_with_args(self, name)?;
@@ -402,7 +402,7 @@ impl Analyzer<'_, '_> {
             };
 
             if let Some(name) = name {
-                self.scope.declaring_fn = None;
+                self.scope.borrow().declaring_fn = None;
             }
 
             fn_ty

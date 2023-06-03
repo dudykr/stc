@@ -4384,7 +4384,7 @@ impl Analyzer<'_, '_> {
             self.report_error_for_super_reference_in_compute_keys(span, false);
 
             if self.ctx.super_references_super_class {
-                if let Some(v) = self.scope.get_super_class(self.ctx.is_static()) {
+                if let Some(v) = self.scope.borrow().get_super_class(self.ctx.is_static()) {
                     v
                 } else {
                     self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
@@ -4498,6 +4498,7 @@ impl Analyzer<'_, '_> {
 
         match self
             .scope
+            .borrow()
             .first_kind(|kind| match kind {
                 ScopeKind::TypeParams
                 | ScopeKind::Flow

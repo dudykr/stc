@@ -928,7 +928,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.scope.register_type(name, ty.clone(), should_override);
+            self.scope.borrow_mut().register_type(name, ty.clone(), should_override);
 
             ty
         }

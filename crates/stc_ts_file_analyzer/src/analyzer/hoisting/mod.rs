@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
         }
 
         for idx in order {
-            if self.scope.is_root() {
+            if self.scope.borrow().is_root() {
                 let module_id = self.storage.module_id(idx);
                 self.ctx.module_id = module_id;
             }
@@ -45,7 +45,7 @@ impl Analyzer<'_, '_> {
                 let node_id = stmts[idx].node_id();
                 stmts[idx].visit_with(self);
 
-                if self.scope.is_root() {
+                if self.scope.borrow().is_root() {
                     let prepended = self.data.prepend_stmts.drain(..);
                     let appended = self.data.append_stmts.drain(..);
 
