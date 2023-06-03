@@ -825,8 +825,8 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("relate_spread_likes");
 
         while let (Some(le), Some(re)) = (li.peek(), ri.peek()) {
-            let le = li.next();
-            let re = ri.next();
+            li.next();
+            ri.next();
         }
 
         Ok(())
