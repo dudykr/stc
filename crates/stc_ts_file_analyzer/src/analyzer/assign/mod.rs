@@ -1127,9 +1127,9 @@ impl Analyzer<'_, '_> {
                         .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
                         .freezed();
                     if let Some(Array { elem_type, .. }) = rhs.array() {
-                        if let Some(Union { types: rhss, .. }) = elem_type.union_type() {
-                            let lhss = elems.iter().map(|TupleElement { ty, .. }| ty);
-                            for (lhs, rhs) in lhss.zip(rhss.iter()) {
+                        if let Some(Union { types: rhs_types, .. }) = elem_type.union_type() {
+                            let lhs_types = elems.iter().map(|TupleElement { ty, .. }| ty);
+                            for (lhs, rhs) in lhs_types.zip(rhs_types.iter()) {
                                 if let (Some(_), Some(_)) = (lhs.clone().keyword(), rhs.clone().keyword()) {
                                     return self.assign_with_opts(data, lhs, rhs, opts);
                                 }
