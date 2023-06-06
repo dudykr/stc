@@ -35,8 +35,6 @@ var o2: [string, number] = y;
 var o3: [string, number] = y;
 
 x = y;
-// x = z; // should get TS2322 but pass
 y = x;
 y = z;
-// z = x; // should pass but got TS2322
 z = y;
