@@ -2074,7 +2074,7 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
 
-                    TsKeywordTypeKind::TsNumberKeyword => match *rhs {
+                    TsKeywordTypeKind::TsNumberKeyword => match rhs {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
                         }) => return Ok(()),
@@ -2102,6 +2102,14 @@ impl Analyzer<'_, '_> {
                             }
 
                             fail!()
+                        }
+                        Type::Tpl(tpl) => {
+                            // if !tpl.types.is_empty() {
+                            let t = tpl.types.clone();
+                            if t.clone().iter().any(|t| t.is_bool()) {
+                                fail!()
+                            }
+                            // }
                         }
                         _ => {}
                     },
