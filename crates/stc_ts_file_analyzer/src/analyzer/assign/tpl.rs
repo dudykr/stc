@@ -2,7 +2,7 @@
 
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
-use stc_ts_types::{IntrinsicKind, LitType, StringMapping, TplType, Type};
+use stc_ts_types::{IntrinsicKind, KeywordType, LitType, StringMapping, TplType, Type};
 use stc_utils::dev_span;
 use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -76,7 +76,49 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for `source`
                 match &*value.value {
-                    "true" | "false" | "null" | "undefined" => return Ok(true),
+                    "false" | "true" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_bool()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                    "null" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_null()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                    "undefined" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_undefined()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
                     _ => {}
                 }
 
