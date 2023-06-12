@@ -75,7 +75,49 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for `source`
                 match &*value.value {
-                    "true" | "false" | "null" | "undefined" => return Ok(true),
+                    "false" | "true" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_bool()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                    "null" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_null()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                    "undefined" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_undefined()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
                     _ => {}
                 }
 

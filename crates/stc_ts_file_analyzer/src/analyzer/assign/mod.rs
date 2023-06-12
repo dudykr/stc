@@ -551,7 +551,6 @@ impl Analyzer<'_, '_> {
                         },
                     )?
                     .into_owned();
-
                 return Ok(Cow::Owned(ty));
             }
             _ => {}
@@ -580,7 +579,6 @@ impl Analyzer<'_, '_> {
         let _stack = stack::track(opts.span)?;
 
         data.dejavu.push((left.clone(), right.clone()));
-
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
             let l = force_dump_type_as_string(left);
