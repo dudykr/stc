@@ -5,7 +5,7 @@ use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
 use stc_ts_types::{IntrinsicKind, KeywordType, LitType, StringMapping, TplType, Type};
 use stc_utils::dev_span;
 use swc_common::{Span, TypeEq};
-use swc_ecma_ast::{TsKeywordType, TsKeywordTypeKind};
+use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
     analyzer::{

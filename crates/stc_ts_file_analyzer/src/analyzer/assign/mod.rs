@@ -2111,10 +2111,7 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsBigIntKeyword,
                                     ..
                                 }) => false,
-                                Type::Lit(ty) => match ty.lit {
-                                    RTsLit::BigInt(..) | RTsLit::Number(..) => false,
-                                    _ => true,
-                                },
+                                Type::Lit(ty) => !matches!(ty.lit, RTsLit::BigInt(..) | RTsLit::Number(..)),
                                 _ => true,
                             }) {
                                 fail!()
