@@ -2102,12 +2102,23 @@ impl Analyzer<'_, '_> {
                             fail!()
                         }
                         Type::Tpl(TplType { ref types, .. }) => {
-                            // if !tpl.types.is_empty() {
-                            // let t = tpl.types.clone();
-                            if types.iter().any(|t| t.is_bool()) {
+                            if types.iter().any(|t| match t.normalize() {
+                                Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    ..
+                                })
+                                | Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                                    ..
+                                }) => false,
+                                Type::Lit(ty) => match ty.lit {
+                                    RTsLit::BigInt(..) | RTsLit::Number(..) => false,
+                                    _ => true,
+                                },
+                                _ => true,
+                            }) {
                                 fail!()
                             }
-                            // }
                         }
                         _ => {}
                     },
