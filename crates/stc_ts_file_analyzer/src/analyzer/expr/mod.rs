@@ -4355,6 +4355,23 @@ impl Analyzer<'_, '_> {
         if should_be_optional && include_optional_chaining_undefined {
             Ok(ty.union_with_undefined(span))
         } else {
+            if self.rule().no_unchecked_indexed_access {
+                let indexed_access = match obj_ty.normalize() {
+                    Type::IndexedAccessType(_) | Type::Array(_) => true,
+                    Type::TypeLit(ty) => ty.members.iter().any(|t| matches!(t, TypeElement::Index(ty))),
+                    _ => false,
+                };
+
+                let field_is_symbol = match &prop {
+                    Key::Computed(key) => key.ty.is_symbol_like(),
+                    _ => false,
+                };
+
+                if !field_is_symbol && indexed_access {
+                    return Ok(ty.union_with_undefined(span));
+                }
+            }
+
             if !self.config.is_builtin {
                 debug_assert_ne!(ty.span(), DUMMY_SP);
             }
