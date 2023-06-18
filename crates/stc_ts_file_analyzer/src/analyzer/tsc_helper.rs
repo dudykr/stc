@@ -72,7 +72,13 @@ impl Analyzer<'_, '_> {
         } else if s.starts_with("0b") || s.starts_with("0B") {
             BigInt::parse_bytes(s[2..].as_bytes(), 2)
         } else {
-            s.parse::<BigInt>().ok()
+            // BigInt strings only accepts numbers
+            // 1000n or 1_000n are both considered invalid
+            if s.parse::<i64>().is_ok() {
+                s.parse::<BigInt>().ok()
+            } else {
+                None
+            }
         };
         if let Some(v) = v {
             !round_trip_only || v.to_string() == s
