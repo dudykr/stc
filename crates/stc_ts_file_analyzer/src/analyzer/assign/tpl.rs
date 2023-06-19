@@ -134,9 +134,21 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Tpl(source) => {
+                if source.quasis.len() == 1 && source.types.is_empty() {
+                    let ty = Type::Lit(LitType {
+                        span,
+                        lit: RTsLit::Str(source.quasis[0].clone().value.into()),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    });
+
+                    return self.is_valid_type_for_tpl_lit_placeholder(span, &ty, target);
+                }
+
                 if source.quasis.len() == 2 && source.quasis[0].value == "" && source.quasis[1].value == "" {
                     // TODO(kdy1): Return `Ok(self.is_type_assignable_to(span, &source.types[0],
                     // target))` instead
+
                     if self.is_type_assignable_to(span, &source.types[0], target) {
                         return Ok(true);
                     }
