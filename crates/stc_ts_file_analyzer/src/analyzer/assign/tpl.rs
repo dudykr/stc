@@ -58,7 +58,6 @@ impl Analyzer<'_, '_> {
             source = tracing::field::display(&force_dump_type_as_string(source)),
             target = tracing::field::display(&force_dump_type_as_string(target)),
         );
-
         if source.type_eq(target) || target.is_any() || target.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
             return Ok(true);
         }

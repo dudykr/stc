@@ -7,8 +7,8 @@ use stc_ts_errors::{
 };
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType, Mapped,
-    PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeParam,
+    PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, TplType, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -2100,6 +2100,22 @@ impl Analyzer<'_, '_> {
                             }
 
                             fail!()
+                        }
+                        Type::Tpl(TplType { ref types, .. }) => {
+                            if types.iter().any(|t| match t.normalize() {
+                                Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    ..
+                                })
+                                | Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                                    ..
+                                }) => false,
+                                Type::Lit(ty) => !matches!(ty.lit, RTsLit::BigInt(..) | RTsLit::Number(..)),
+                                _ => true,
+                            }) {
+                                fail!()
+                            }
                         }
                         _ => {}
                     },
