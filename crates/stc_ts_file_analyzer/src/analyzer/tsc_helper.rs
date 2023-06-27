@@ -72,7 +72,19 @@ impl Analyzer<'_, '_> {
         } else if s.starts_with("0b") || s.starts_with("0B") {
             BigInt::parse_bytes(s[2..].as_bytes(), 2)
         } else {
-            s.parse::<BigInt>().ok()
+            let unsigned_literal = s.strip_prefix('-').unwrap_or(s);
+
+            // numeric string starting with more than one 0 are incorrect
+            if unsigned_literal.starts_with("00") {
+                None
+            }
+            // BigInt strings only accepts numbers
+            // 1000n or 1_000n are both considered invalid
+            else if unsigned_literal.chars().all(|c| c.is_ascii_digit()) {
+                s.parse::<BigInt>().ok()
+            } else {
+                None
+            }
         };
         if let Some(v) = v {
             !round_trip_only || v.to_string() == s
