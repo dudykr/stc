@@ -49,7 +49,9 @@ where
             let deps = self.declared_by.get(used);
 
             if let Some(deps) = deps {
-                buf.extend(deps.iter());
+                if let Some(min) = deps.iter().min() {
+                    buf.push(*min)
+                }
             }
         }
 
