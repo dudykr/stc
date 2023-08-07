@@ -6,7 +6,7 @@ use stc_ts_generics::{
     ExpandGenericOpts,
 };
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Id, Interface, KeywordType, Readonly, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
+use stc_ts_types::{Id, Index, Interface, KeywordType, Readonly, TypeElement, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
@@ -241,10 +241,7 @@ impl Analyzer<'_, '_> {
 
                 return self.extends(span, child, &parent, opts);
             }
-            _ => {}
-        }
-
-        match parent {
+            Type::Index(Index { ty, .. }) if ty.is_any() && child.is_index() => return Some(true),
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
