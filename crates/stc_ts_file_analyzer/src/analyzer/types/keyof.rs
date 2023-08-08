@@ -12,10 +12,9 @@ use stc_utils::{cache::Freeze, ext::TypeVecExt, stack, try_cache};
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::Instrument;
 
 use crate::{
-    analyzer::{scope::ItemRef, types::NormalizeTypeOpts, Analyzer},
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
     VResult,
 };
 
