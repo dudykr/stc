@@ -578,7 +578,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(ty);
                             }
 
-                            // TODO(sunrabbit123): scope of normalize should be obj_ty scope
+                            // TODO(): scope of normalize should be obj_ty scope
                             return self.with_child(super::ScopeKind::ObjectLit, Default::default(), |child| {
                                 child.scope.this = Some(*obj_ty);
                                 child
