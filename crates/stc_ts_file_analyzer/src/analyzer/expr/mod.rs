@@ -1550,7 +1550,6 @@ impl Analyzer<'_, '_> {
                 },
                 _ => {}
             }
-
             return Err(ErrorKind::Unimplemented {
                 span,
                 msg: format!("access_property_inner: global_this: {:?}", prop),
@@ -3052,6 +3051,13 @@ impl Analyzer<'_, '_> {
                     Some(ScopeKind::Fn) => {
                         // TODO
                         return Ok(Type::any(span, Default::default()));
+                    }
+                    Some(ScopeKind::Method { is_static: false }) => {
+                        if let Some(Some(parent)) = scope.map(|s| s.parent()) {
+                            if let Some(this) = parent.this().map(|v| v.into_owned()).or(parent.get_super_class(false)) {
+                                return self.access_property(span, &this, prop, type_mode, id_ctx, opts);
+                            }
+                        }
                     }
                     None => {
                         // Global this
