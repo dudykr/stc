@@ -381,45 +381,43 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 Type::EnumVariant(e) => {
-                    if matches!(e.name, None) {
-                        if e.def.has_num || e.def.has_str {
-                            return self.keyof(
-                                span,
-                                &if e.def.has_num && e.def.has_str {
-                                    Type::new_intersection(
-                                        span,
-                                        [
-                                            Type::Keyword(KeywordType {
-                                                span,
-                                                kind: TsKeywordTypeKind::TsStringKeyword,
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            }),
-                                            Type::Keyword(KeywordType {
-                                                span,
-                                                kind: TsKeywordTypeKind::TsNumberKeyword,
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            }),
-                                        ],
-                                    )
-                                } else if e.def.has_num {
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })
-                                } else {
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    })
-                                },
-                            );
-                        }
+                    if matches!(e.name, None) && (e.def.has_num || e.def.has_str) {
+                        return self.keyof(
+                            span,
+                            &if e.def.has_num && e.def.has_str {
+                                Type::new_intersection(
+                                    span,
+                                    [
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsStringKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                    ],
+                                )
+                            } else if e.def.has_num {
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                            } else {
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                            },
+                        );
                     }
                 }
                 _ => {}
