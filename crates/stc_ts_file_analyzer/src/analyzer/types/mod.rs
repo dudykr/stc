@@ -578,13 +578,14 @@ impl Analyzer<'_, '_> {
                                 return Ok(ty);
                             }
 
-                            // TODO(): scope of normalize should be obj_ty scope
-                            return self.with_child(super::ScopeKind::ObjectLit, Default::default(), |child| {
-                                child.scope.this = Some(*obj_ty);
-                                child
-                                    .normalize(span, Cow::Owned(prop_ty), opts)
+                            let prev_this = self.scope.this.take();
+                            self.scope.this = Some(*obj_ty);
+                            let result = {
+                                self.normalize(span, Cow::Owned(prop_ty), opts)
                                     .context("tried to normalize the type of property")
-                            });
+                            };
+                            self.scope.this = prev_this;
+                            return result;
                         }
                         // TODO(kdy1):
 
