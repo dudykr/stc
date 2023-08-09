@@ -578,12 +578,14 @@ impl Analyzer<'_, '_> {
                                 return Ok(ty);
                             }
 
-                            let ty = self
-                                .normalize(span, Cow::Owned(prop_ty), opts)
-                                .context("tried to normalize the type of property")?
-                                .into_owned();
-
-                            return Ok(Cow::Owned(ty));
+                            let prev_this = self.scope.this.take();
+                            self.scope.this = Some(*obj_ty);
+                            let result = {
+                                self.normalize(span, Cow::Owned(prop_ty), opts)
+                                    .context("tried to normalize the type of property")
+                            };
+                            self.scope.this = prev_this;
+                            return result;
                         }
                         // TODO(kdy1):
 

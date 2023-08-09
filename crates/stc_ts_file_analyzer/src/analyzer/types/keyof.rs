@@ -297,6 +297,12 @@ impl Analyzer<'_, '_> {
                         .context("tried to get keys of Array (builtin)");
                 }
 
+                Type::This(this) => {
+                    if let Some(ty) = self.scope.this().map(Cow::into_owned) {
+                        return self.keyof(this.span, &ty);
+                    }
+                }
+
                 Type::Interface(..) | Type::Enum(..) => {
                     let ty = self
                         .convert_type_to_type_lit(span, ty.freezed(), Default::default())?
