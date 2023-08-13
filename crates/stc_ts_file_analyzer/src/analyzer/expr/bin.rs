@@ -2091,32 +2091,7 @@ impl Analyzer<'_, '_> {
                     ty => {
                         if let Err(err) = self.assign_with_opts(
                             &mut Default::default(),
-                            &Type::Union(Union {
-                                span,
-                                types: vec![
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                ],
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed(),
+                            &Type::get_any_key_type(span),
                             ty,
                             AssignOpts {
                                 span: ls,
