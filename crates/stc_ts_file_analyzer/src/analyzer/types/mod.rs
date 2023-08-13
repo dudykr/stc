@@ -555,23 +555,56 @@ impl Analyzer<'_, '_> {
                             disallow_unknown_object_property: true,
                             ..self.ctx
                         };
-                        let prop_ty = self.with_ctx(ctx).access_property(
-                            actual_span,
-                            &obj_ty,
-                            &Key::Computed(ComputedKey {
-                                span: actual_span,
-                                expr: Box::new(RExpr::Invalid(RInvalid { span: actual_span })),
-                                ty: index_ty.clone(),
-                            }),
-                            TypeOfMode::RValue,
-                            IdCtx::Type,
-                            AccessPropertyOpts {
-                                disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_inexact: true,
-                                do_not_use_any_for_object: true,
-                                ..Default::default()
-                            },
-                        );
+                        let prop_ty = {
+                            let type_mode = if ctx.in_fn_with_return_type {
+                                TypeOfMode::LValue
+                            } else {
+                                TypeOfMode::RValue
+                            };
+
+                            let mut result = self.with_ctx(ctx).access_property(
+                                actual_span,
+                                &obj_ty,
+                                &Key::Computed(ComputedKey {
+                                    span: actual_span,
+                                    expr: Box::new(RExpr::Invalid(RInvalid { span: actual_span })),
+                                    ty: index_ty.clone(),
+                                }),
+                                type_mode,
+                                IdCtx::Type,
+                                AccessPropertyOpts {
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_inexact: true,
+                                    do_not_use_any_for_object: true,
+                                    ..Default::default()
+                                },
+                            );
+
+                            if result.is_err() {
+                                if let Type::Param(TypeParam { constraint: Some(ty), .. }) = index_ty.normalize() {
+                                    let prop = self.normalize(span, Cow::Borrowed(ty), opts)?.into_owned();
+                                    result = self.with_ctx(ctx).access_property(
+                                        actual_span,
+                                        &obj_ty,
+                                        &Key::Computed(ComputedKey {
+                                            span: actual_span,
+                                            expr: Box::new(RExpr::Invalid(RInvalid { span: actual_span })),
+                                            ty: Box::new(prop),
+                                        }),
+                                        type_mode,
+                                        IdCtx::Type,
+                                        AccessPropertyOpts {
+                                            disallow_creating_indexed_type_from_ty_els: true,
+                                            disallow_inexact: true,
+                                            do_not_use_any_for_object: true,
+                                            ..Default::default()
+                                        },
+                                    );
+                                }
+                            }
+
+                            result
+                        };
 
                         if let Ok(prop_ty) = prop_ty {
                             if ty.type_eq(&prop_ty) {
