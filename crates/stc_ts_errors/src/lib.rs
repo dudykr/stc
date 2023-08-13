@@ -2201,6 +2201,8 @@ impl ErrorKind {
 
             ErrorKind::RestParamMustBeLast { .. } => 1014,
 
+            ErrorKind::ImportFailed { .. } => 2305,
+
             _ => 0,
         }
     }

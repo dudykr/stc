@@ -606,6 +606,26 @@ impl Resolve for TestFileSystem {
             return Ok(FileName::Real(filename.into()));
         }
 
+        if module_specifier == "." {
+            let path = PathBuf::from(base.to_string());
+            match path.parent() {
+                Some(cur_dir) => {
+                    for (name, _) in self.files.iter() {
+                        if format!("{}/index.ts", cur_dir.display()) == *name || format!("{}/index.tsx", cur_dir.display()) == *name {
+                            return Ok(FileName::Real(name.into()));
+                        }
+                    }
+                }
+                None => {
+                    for (name, _) in self.files.iter() {
+                        if "index.ts" == *name || "index.tsx" == *name {
+                            return Ok(FileName::Real(name.into()));
+                        }
+                    }
+                }
+            }
+        }
+
         todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);
     }
 }
