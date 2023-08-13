@@ -1808,6 +1808,7 @@ jsdoc/parseThrowsTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsx/tsxEmitSpreadAttribute.ts
+moduleResolution/importFromDot.ts
 moduleResolution/packageJsonImportsExportsOptionCompat.ts
 nonjsExtensions/declarationFileForJsonImport.ts
 override/override10.ts
