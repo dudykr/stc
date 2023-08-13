@@ -4,11 +4,7 @@
   "extra_errors": {
     "TS2345": 8,
     "TS2339": 2,
-    "TS0": 3,
-    "TS2322": 8
     "TS2322": 12
-    "TS0": 3,
-    "TS2322": 8
   },
   "extra_error_lines": {
     "TS2345": [
