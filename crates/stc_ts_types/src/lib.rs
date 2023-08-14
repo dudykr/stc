@@ -1900,6 +1900,35 @@ impl Type {
             _ => None,
         }
     }
+
+    pub fn get_any_key_type(span: Span) -> Type {
+        let string = Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
+        let number = Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsNumberKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
+        let symbol = Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsSymbolKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
+
+        Type::Union(Union {
+            span,
+            types: vec![string, number, symbol],
+            metadata: Default::default(),
+            tracker: Default::default(),
+        })
+        .freezed()
+    }
 }
 
 impl Type {

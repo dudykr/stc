@@ -6,7 +6,7 @@ use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature,
-    Readonly, Ref, Type, TypeElement, Union,
+    Readonly, Ref, Type, TypeElement,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt, stack, try_cache};
 use swc_atoms::js_word;
@@ -90,32 +90,7 @@ impl Analyzer<'_, '_> {
                         .context("tried applying `keyof` to a literal by delegating to keyword type handler")
                 }
                 Type::Keyword(KeywordType { kind, .. }) => match kind {
-                    TsKeywordTypeKind::TsAnyKeyword => {
-                        let string = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        let number = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        let symbol = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        return Ok(Type::Union(Union {
-                            span,
-                            types: vec![string, number, symbol],
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
-                    }
+                    TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsNeverKeyword => return Ok(Type::get_any_key_type(span)),
                     TsKeywordTypeKind::TsVoidKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword
                     | TsKeywordTypeKind::TsNullKeyword
@@ -157,33 +132,6 @@ impl Analyzer<'_, '_> {
 
                     TsKeywordTypeKind::TsBigIntKeyword => {}
                     TsKeywordTypeKind::TsSymbolKeyword => {}
-                    TsKeywordTypeKind::TsNeverKeyword => {
-                        return Ok(Type::Union(Union {
-                            span,
-                            types: vec![
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsStringKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            ],
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }))
-                    }
                     TsKeywordTypeKind::TsIntrinsicKeyword => {}
                 },
 
