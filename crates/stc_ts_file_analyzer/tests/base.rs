@@ -191,7 +191,7 @@ fn compare(input: PathBuf) {
     }
     let stderr = run_test(input, false, false).unwrap();
 
-    panic!("Wanted {:?}\n{}", expected, stderr)
+    panic!("\nWanted {:?}\nBut, We got {:?}\n\n{}", expected, actual, stderr)
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
