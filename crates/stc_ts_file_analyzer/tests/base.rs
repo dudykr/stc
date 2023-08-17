@@ -41,8 +41,9 @@ struct StcError {
     code: usize,
 }
 
-fn get_env() -> Env {
-    let mut libs = vec![];
+fn get_env_from_path(path: &Path, mut libs: Vec<Lib>) -> Env {
+    let case = parse_conformance_test(path).unwrap().into_iter().next().unwrap();
+    libs.extend(&case.libs);
     let ls = &[
         "es2022.full",
         "es2021.full",
@@ -59,15 +60,7 @@ fn get_env() -> Env {
     libs.sort();
     libs.dedup();
 
-    Env::simple(
-        Rule {
-            strict_function_types: true,
-            ..Default::default()
-        },
-        EsVersion::latest(),
-        ModuleConfig::None,
-        &libs,
-    )
+    Env::simple(case.rule, case.target, case.module_config, &libs)
 }
 
 fn validate(input: &Path) -> Vec<StcError> {
@@ -78,7 +71,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
             let fm = cm.load_file(input).unwrap();
 
-            let env = get_env();
+            let env = get_env_from_path(input, vec![]);
 
             let generator = module_id::ModuleIdGenerator::default();
             let path = Arc::new(FileName::Real(input.to_path_buf()));
@@ -252,22 +245,7 @@ fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Opti
 
             let handler = Arc::new(handler);
             let fm = cm.load_file(&file_name).unwrap();
-            let mut libs = vec![];
-            let ls = &[
-                "es2020.full",
-                "es2019.full",
-                "es2018.full",
-                "es2017.full",
-                "es2016.full",
-                "es2015.full",
-            ];
-            for s in ls {
-                libs.extend(Lib::load(s))
-            }
-            libs.sort();
-            libs.dedup();
-
-            let env = Env::simple(case.rule, case.target, case.module_config, &libs);
+            let env = get_env_from_path(&file_name, vec![]);
             let stable_env = env.shared().clone();
             let generator = module_id::ModuleIdGenerator::default();
             let path = Arc::new(FileName::Real(file_name.clone()));
