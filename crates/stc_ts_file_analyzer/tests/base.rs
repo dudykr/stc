@@ -233,8 +233,6 @@ fn run_test(file_name: PathBuf, want_error: bool, disable_logging: bool) -> Opti
     let filename = file_name.display().to_string();
     println!("{}", filename);
 
-    let case = parse_conformance_test(&file_name).unwrap().into_iter().next().unwrap();
-
     let result = testing::Tester::new()
         .print_errors(|cm, handler| -> Result<(), _> {
             let _tracing = if disable_logging {
