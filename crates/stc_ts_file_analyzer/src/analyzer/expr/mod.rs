@@ -2295,6 +2295,12 @@ impl Analyzer<'_, '_> {
                 return Err(ErrorKind::IsTypeUnknown { span }.into());
             }
 
+            // Type::Keyword(KeywordType {
+            //     kind: TsKeywordTypeKind::TsObjectKeyword,
+            //     ..
+            // }) if matches!(type_mode, TypeOfMode::LValue) && prop.ty().is_type_param() => {
+            //     return Ok(Type::never(span, Default::default()));
+            // }
             Type::Keyword(KeywordType { kind, .. }) if !self.config.is_builtin => {
                 if let Key::Computed(prop) = prop {
                     if let (
@@ -2513,6 +2519,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_mode == TypeOfMode::LValue {
+                    if prop.ty().is_type_param() && members.is_empty() {
+                        return Ok(Type::never(span, Default::default()));
+                    }
                     return Ok(Type::any(span, Default::default()));
                 }
 
