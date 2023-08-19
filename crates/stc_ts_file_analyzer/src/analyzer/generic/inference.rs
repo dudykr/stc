@@ -624,16 +624,24 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_num() {
-                                            return Type::Lit(LitType {
-                                                span,
-                                                lit: RTsLit::Number(RNumber {
-                                                    span,
-                                                    value: src.parse().unwrap(),
-                                                    raw: None,
-                                                }),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            });
+                                            match src.parse() {
+                                                Ok(v) => {
+                                                    return Type::Lit(LitType {
+                                                        span,
+                                                        lit: RTsLit::Number(RNumber { span, value: v, raw: None }),
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                                Err(..) => {
+                                                    return Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                            }
                                         }
 
                                         if l.is_enum_type() || l.is_enum_variant() {
