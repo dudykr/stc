@@ -1807,6 +1807,7 @@ jsdoc/parseLinkTag.ts
 jsdoc/parseThrowsTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
+jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
 jsx/tsxEmitSpreadAttribute.ts
 moduleResolution/importFromDot.ts
 moduleResolution/packageJsonImportsExportsOptionCompat.ts

@@ -6,9 +6,9 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType, Mapped,
-    PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeParam,
+    Array, Conditional, EnumVariant, Index, IndexedAccessType, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType,
+    Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -521,12 +521,72 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty {
+        match ty.normalize() {
             Type::EnumVariant(e @ EnumVariant { name: Some(..), .. }) => {
                 if opts.ignore_enum_variant_name {
                     return Ok(Cow::Owned(Type::EnumVariant(EnumVariant { name: None, ..e.clone() })));
                 }
             }
+            Type::IndexedAccessType(IndexedAccessType {
+                obj_type:
+                    obj @ box Type::Param(TypeParam {
+                        span: p_span,
+                        name,
+                        constraint,
+                        ..
+                    }),
+                index_type:
+                    box Type::Index(Index {
+                        ty:
+                            box Type::Param(TypeParam {
+                                constraint: None,
+                                default: None,
+                                name: rhs_param_name,
+                                ..
+                            }),
+                        ..
+                    }),
+                ..
+            }) if name.eq(rhs_param_name) => {
+                let create_index_accessed_type = |ty: Box<Type>, obj| {
+                    Type::IndexedAccessType(IndexedAccessType {
+                        span,
+                        readonly: false,
+                        obj_type: obj,
+                        index_type: ty,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                };
+
+                let gen_keyword_type = |kind| {
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                };
+
+                return Ok(Cow::Owned(Type::new_union(
+                    span,
+                    [
+                        create_index_accessed_type(
+                            Box::new(gen_keyword_type(TsKeywordTypeKind::TsStringKeyword)),
+                            Box::new(*obj.clone()),
+                        ),
+                        create_index_accessed_type(
+                            Box::new(gen_keyword_type(TsKeywordTypeKind::TsNumberKeyword)),
+                            Box::new(*obj.clone()),
+                        ),
+                        create_index_accessed_type(
+                            Box::new(gen_keyword_type(TsKeywordTypeKind::TsSymbolKeyword)),
+                            Box::new(*obj.clone()),
+                        ),
+                    ],
+                )));
+            }
+
             Type::Conditional(..)
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
@@ -1965,10 +2025,23 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
+
+                if let Type::Param(TypeParam {
+                    constraint: Some(box c), ..
+                }) = rhs
+                {
+                    if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(c), Default::default()) {
+                        return self
+                            .assign_with_opts(data, to, result.normalize(), opts)
+                            .context("tried to assign a type_param at union");
+                    }
+                }
+
                 let normalized = lu.types.iter().any(|ty| match ty.normalize() {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });
+
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 let should_use_single_error = normalized
                     || lu.types.iter().all(|ty| {
@@ -1984,6 +2057,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_type_param()
                             || ty.is_class()
                             || ty.is_class_def()
+                            || ty.is_indexed_access_type()
                     });
 
                 if should_use_single_error {
