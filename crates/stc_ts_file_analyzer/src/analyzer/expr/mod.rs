@@ -3161,12 +3161,11 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    let expanded = self
+                    if let Some(obj) = self
                         .expand_mapped(span, m)
-                        .context("tried to expand a mapped type to access property")?;
-
-                    if let Some(obj) = &expanded {
-                        return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
+                        .context("tried to expand a mapped type to access property")?
+                    {
+                        return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
                     }
 
                     if let Some(Type::Index(Index { ty, .. })) = constraint.as_ref().map(Type::normalize) {
