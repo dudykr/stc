@@ -3129,81 +3129,93 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint.as_ref().map(Type::normalize) {
-                    Some(Type::Index(Index {
-                        ty: box Type::Array(..), ..
-                    })) => {
-                        if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
-                            return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
+                let result = (|obj| {
+                    match constraint.as_ref().map(Type::normalize) {
+                        Some(Type::Index(Index {
+                            ty: box Type::Array(..), ..
+                        })) => {
+                            if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
+                                return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
+                            }
                         }
+
+                        Some(index @ Type::Keyword(..)) | Some(index @ Type::Param(..)) => {
+                            // {
+                            //     [P in string]: number;
+                            // };
+                            if let Ok(()) = self.assign(span, &mut Default::default(), index, &prop.ty()) {
+                                // We handle `Partial<string>` at here.
+                                let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
+
+                                let ty = match m.optional {
+                                    Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => ty.union_with_undefined(span),
+                                    Some(TruePlusMinus::Minus) => {
+                                        self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty)
+                                    }
+                                    _ => ty,
+                                };
+                                return Ok(ty);
+                            }
+                        }
+
+                        _ => {}
                     }
 
-                    Some(index @ Type::Keyword(..)) | Some(index @ Type::Param(..)) => {
-                        // {
-                        //     [P in string]: number;
-                        // };
-                        if let Ok(()) = self.assign(span, &mut Default::default(), index, &prop.ty()) {
-                            // We handle `Partial<string>` at here.
-                            let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
+                    let expanded = self
+                        .expand_mapped(span, m)
+                        .context("tried to expand a mapped type to access property")?;
 
-                            let ty = match m.optional {
-                                Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => ty.union_with_undefined(span),
-                                Some(TruePlusMinus::Minus) => self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty),
-                                _ => ty,
-                            };
-                            return Ok(ty);
-                        }
+                    if let Some(obj) = &expanded {
+                        return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
                     }
 
-                    _ => {}
-                }
-
-                let expanded = self
-                    .expand_mapped(span, m)
-                    .context("tried to expand a mapped type to access property")?;
-
-                if let Some(obj) = &expanded {
-                    return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
-                }
-
-                if let Some(Type::Index(Index { ty, .. })) = constraint.as_ref().map(Type::normalize) {
-                    // Check if we can index the object with given key.
-                    if let Ok(index_type) = self.keyof(span, ty) {
-                        if let Ok(()) = self.assign_with_opts(
-                            &mut Default::default(),
-                            &index_type,
-                            &prop.ty(),
-                            AssignOpts {
-                                span,
-                                ..Default::default()
-                            },
-                        ) {
-                            let mut result_ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
-
-                            replace_type(
-                                &mut result_ty,
-                                |ty| match ty.normalize() {
-                                    Type::Param(ty) => ty.name == m.type_param.name,
-                                    _ => false,
+                    if let Some(Type::Index(Index { ty, .. })) = constraint.as_ref().map(Type::normalize) {
+                        // Check if we can index the object with given key.
+                        if let Ok(index_type) = self.keyof(span, ty) {
+                            if let Ok(()) = self.assign_with_opts(
+                                &mut Default::default(),
+                                &index_type,
+                                &prop.ty(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
                                 },
-                                |_| Some(index_type.clone()),
-                            );
+                            ) {
+                                let mut result_ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
 
-                            return Ok(result_ty);
+                                replace_type(
+                                    &mut result_ty,
+                                    |ty| match ty.normalize() {
+                                        Type::Param(ty) => ty.name == m.type_param.name,
+                                        _ => false,
+                                    },
+                                    |_| Some(index_type.clone()),
+                                );
+
+                                return Ok(result_ty);
+                            }
                         }
                     }
-                }
 
-                warn!("Creating an indexed access type with mapped type as the object");
+                    warn!("Creating an indexed access type with mapped type as the object");
 
-                return Ok(Type::IndexedAccessType(IndexedAccessType {
-                    span,
-                    readonly: false,
-                    obj_type: Box::new(obj),
-                    index_type: Box::new(prop.ty().into_owned()),
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                }));
+                    return Ok(Type::IndexedAccessType(IndexedAccessType {
+                        span,
+                        readonly: false,
+                        obj_type: Box::new(obj),
+                        index_type: Box::new(prop.ty().into_owned()),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    }));
+                })(obj.clone())
+                .map(|v| {
+                    if let Some(TruePlusMinus::True) = m.optional {
+                        Type::new_union(span, vec![v, Type::undefined(span, Default::default())])
+                    } else {
+                        v
+                    }
+                });
+                return result;
             }
 
             Type::Ref(r) => {
