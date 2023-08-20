@@ -533,6 +533,7 @@ impl Analyzer<'_, '_> {
                 // variable whose constraint includes one of the
                 // allowed template literal placeholder types, infer from a
                 // literal type corresponding to the constraint.
+                // ref: https://github.com/microsoft/TypeScript/blob/b5557271a51704e0469dd86974335a4775a68ffd/src/compiler/checker.ts#L25342
                 if source.is_str_lit() && (target.is_type_param() || target.is_infer()) {
                     if let Type::Infer(InferType {
                         type_param:
@@ -624,16 +625,24 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_num() {
-                                            return Type::Lit(LitType {
-                                                span,
-                                                lit: RTsLit::Number(RNumber {
-                                                    span,
-                                                    value: src.parse().unwrap(),
-                                                    raw: None,
-                                                }),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            });
+                                            match src.parse() {
+                                                Ok(v) => {
+                                                    return Type::Lit(LitType {
+                                                        span,
+                                                        lit: RTsLit::Number(RNumber { span, value: v, raw: None }),
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                                Err(..) => {
+                                                    return Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                            }
                                         }
 
                                         if l.is_enum_type() || l.is_enum_variant() {

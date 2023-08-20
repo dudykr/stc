@@ -2513,6 +2513,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_mode == TypeOfMode::LValue {
+                    if prop.ty().is_type_param() && members.is_empty() {
+                        return Ok(Type::never(span, Default::default()));
+                    }
                     return Ok(Type::any(span, Default::default()));
                 }
 
