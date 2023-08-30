@@ -1589,6 +1589,11 @@ pub enum ErrorKind {
     RestParamMustBeLast {
         span: Span,
     },
+
+    // TS2536
+    CannotBeUsedToIndexType {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2203,6 +2208,7 @@ impl ErrorKind {
 
             ErrorKind::ImportFailed { .. } => 2305,
 
+            ErrorKind::CannotBeUsedToIndexType { .. } => 2536,
             _ => 0,
         }
     }
@@ -2234,6 +2240,10 @@ impl ErrorKind {
 
     pub fn is_type_not_found(&self) -> bool {
         matches!(self, Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. })
+    }
+
+    pub fn is_cannot_be_used_index_ty(&self) -> bool {
+        self.code() == 2536
     }
 
     #[cold]
