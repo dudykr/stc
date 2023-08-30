@@ -2174,6 +2174,45 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 {
+                    let validate_type_param = |name: &Id| {
+                        match prop.ty().normalize() {
+                            Type::Param(TypeParam { constraint: Some(ty), .. }) => {
+                                if let Type::Index(Index {
+                                    ty: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                    ..
+                                }) = ty.normalize()
+                                {
+                                    if !name.eq(constraint_name) {
+                                        return Err(ErrorKind::CannotBeUsedToIndexType { span }.into());
+                                    }
+                                }
+                            }
+
+                            Type::Index(Index {
+                                ty: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                ..
+                            }) if !name.eq(constraint_name) => return Err(ErrorKind::CannotBeUsedToIndexType { span }.into()),
+                            _ => {}
+                        }
+                        Ok(())
+                    };
+
+                    if let Some(ty) = constraint {
+                        if let Type::Param(TypeParam { name: constraint_name, .. }) = ty.normalize() {
+                            match validate_type_param(name) {
+                                Ok(..) => {}
+                                Err(err) => validate_type_param(constraint_name)?,
+                            };
+                        }
+                    } else {
+                        match validate_type_param(name) {
+                            Ok(..) => {}
+                            Err(err) => return Err(err),
+                        };
+                    }
+                }
+
+                {
                     // Check for `T extends { a: { x: any } }`
                     if let Some(constraint) = constraint {
                         let ctx = Ctx {

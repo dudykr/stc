@@ -581,6 +581,12 @@ impl Analyzer<'_, '_> {
                             );
 
                             if result.is_err() {
+                                match result {
+                                    Err(err) if err.is_cannot_be_used_index_ty() => {
+                                        return Err(err);
+                                    }
+                                    _ => (),
+                                }
                                 if let Type::Param(TypeParam { constraint: Some(ty), .. }) = index_ty.normalize() {
                                     let prop = self.normalize(span, Cow::Borrowed(ty), opts)?.into_owned();
                                     result = self.with_ctx(ctx).access_property(
