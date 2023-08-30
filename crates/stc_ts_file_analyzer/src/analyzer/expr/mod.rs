@@ -16,7 +16,7 @@ use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string},
-    DebugExt, ErrorKind, Errors,
+    DebugExt, Error, ErrorKind, Errors,
 };
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
@@ -2176,6 +2176,11 @@ impl Analyzer<'_, '_> {
                 {
                     let validate_type_param = |name: &Id| {
                         match prop.ty().normalize() {
+                            Type::Index(Index {
+                                ty: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                ..
+                            }) if !name.eq(constraint_name) => return Err::<(), Error>(ErrorKind::CannotBeUsedToIndexType { span }.into()),
+
                             Type::Param(TypeParam { constraint: Some(ty), .. }) => {
                                 if let Type::Index(Index {
                                     ty: box Type::Param(TypeParam { name: constraint_name, .. }),
@@ -2187,29 +2192,21 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             }
-
-                            Type::Index(Index {
-                                ty: box Type::Param(TypeParam { name: constraint_name, .. }),
-                                ..
-                            }) if !name.eq(constraint_name) => return Err(ErrorKind::CannotBeUsedToIndexType { span }.into()),
                             _ => {}
                         }
                         Ok(())
                     };
 
-                    if let Some(ty) = constraint {
-                        if let Type::Param(TypeParam { name: constraint_name, .. }) = ty.normalize() {
-                            match validate_type_param(name) {
-                                Ok(..) => {}
-                                Err(err) => validate_type_param(constraint_name)?,
-                            };
-                        }
-                    } else {
-                        match validate_type_param(name) {
-                            Ok(..) => {}
-                            Err(err) => return Err(err),
-                        };
-                    }
+                    constraint
+                        .as_ref()
+                        .and_then(|ty| {
+                            if let Type::Param(TypeParam { name: constraint_name, .. }) = ty.normalize() {
+                                Some(validate_type_param(name)).map(|res| res.or(validate_type_param(constraint_name)))
+                            } else {
+                                Some(Ok(()))
+                            }
+                        })
+                        .unwrap_or(validate_type_param(name))?;
                 }
 
                 {
