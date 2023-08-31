@@ -314,10 +314,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(TypeParam { constraint, .. }) => {
-                    if let Some(box c) = constraint {
-                        return self.keyof(span, c);
-                    }
-
+                    // if let Some(box c) = constraint {
+                    //     return self.keyof(span, c);
+                    // }
                     return Ok(Type::Index(Index {
                         span,
                         ty: Box::new(ty.into_owned()),

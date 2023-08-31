@@ -2219,14 +2219,21 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
 
-                    let accessable = if matches!(
+                    let accessable = matches!(
                         constraint.normalize(),
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsObjectKeyword,
                             ..
                         })
-                    ) {
-                        if let Type::Param(TypeParam { constraint: Some(ty), .. }) = prop.ty().normalize() {
+                    ) || if let Type::Param(TypeParam {
+                        constraint: Some(ty),
+                        name: origin_name,
+                        ..
+                    }) = prop.ty().normalize()
+                    {
+                        if name.eq(origin_name) {
+                            true
+                        } else {
                             if let Type::Index(Index {
                                 ty: box Type::Param(TypeParam { name: constraint_name, .. }),
                                 ..
@@ -2236,8 +2243,6 @@ impl Analyzer<'_, '_> {
                             } else {
                                 true
                             }
-                        } else {
-                            true
                         }
                     } else {
                         true
