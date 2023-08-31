@@ -2219,7 +2219,7 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
 
-                    let accessable = matches!(
+                    let accessible = matches!(
                         constraint.normalize(),
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsObjectKeyword,
@@ -2248,7 +2248,7 @@ impl Analyzer<'_, '_> {
                         true
                     };
 
-                    if accessable {
+                    if accessible {
                         if let Ok(ty) = self.with_ctx(ctx).access_property(span, constraint, prop, type_mode, id_ctx, opts) {
                             if let Type::IndexedAccessType(IndexedAccessType {
                                 obj_type: box Type::Param(TypeParam { name: constraint_name, .. }),
