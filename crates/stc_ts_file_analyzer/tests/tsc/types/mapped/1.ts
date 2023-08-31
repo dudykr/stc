@@ -10,7 +10,7 @@ function f2<T, K extends keyof T>(x: T, k: K) {
 }
 
 function f3<T, U extends T>(x: T, y: U, k: keyof T) {
-    // x[k] = y[k];
+    x[k] = y[k];
 }
 
 function f10<T>(x: T, y: Partial<T>, k: keyof T) {

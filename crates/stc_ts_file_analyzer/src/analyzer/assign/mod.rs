@@ -2646,38 +2646,35 @@ impl Analyzer<'_, '_> {
                     .context("tried to assign to a rest type")
             }
 
-            // (
-            //     Type::IndexedAccessType(IndexedAccessType {
-            //         obj_type: box Type::Param(TypeParam { name: lhs_name, .. }),
-            //         index_type: lhs_idx,
-            //         ..
-            //     }),
-            //     Type::IndexedAccessType(IndexedAccessType {
-            //         obj_type:
-            //             box Type::Param(TypeParam {
-            //                 constraint: Some(box Type::Param(TypeParam { name: rhs_name, .. })),
-            //                 ..
-            //             }),
-            //         index_type: rhs_idx,
-            //         ..
-            //     }),
-            // ) if lhs_name.eq(rhs_name)
-            //     && lhs_idx.is_index()
-            //     && rhs_idx.is_index()
-            //     && matches!((
-            //     lhs_idx.as_index().map(|ty| ty.ty.normalize()),
-            //     rhs_idx.as_index().map(|ty| ty.ty.normalize()),
-            // ), (
-            //         Some(Type::Param(TypeParam {
-            //             name: lhs_ty_param_name, ..
-            //         })),
-            //         Some(Type::Param(TypeParam {
-            //             name: rhs_ty_param_name, ..
-            //         })),
-            //     ) if lhs_ty_param_name.eq(rhs_ty_param_name)) =>
-            // {
-            //     return Ok(());
-            // }
+            (
+                Type::IndexedAccessType(IndexedAccessType {
+                    obj_type: box Type::Param(TypeParam { name: lhs_name, .. }),
+                    index_type: lhs_idx,
+                    ..
+                }),
+                Type::IndexedAccessType(IndexedAccessType {
+                    obj_type:
+                        box Type::Param(TypeParam {
+                            constraint: Some(box Type::Param(TypeParam { name: rhs_name, .. })),
+                            ..
+                        }),
+                    index_type: rhs_idx,
+                    ..
+                }),
+            ) if lhs_name.eq(rhs_name) && lhs_idx.is_index() && rhs_idx.is_index() => {
+                return Ok(());
+                // && matches!((
+                //     lhs_idx.as_index().map(|ty| ty.ty.normalize()),
+                //     rhs_idx.as_index().map(|ty| ty.ty.normalize()),
+                // ), (
+                //         Some(Type::Param(TypeParam {
+                //             name: lhs_ty_param_name, ..
+                //         })),
+                //         Some(Type::Param(TypeParam {
+                //             name: rhs_ty_param_name, ..
+                //         })),
+                //     ) if lhs_ty_param_name.eq(rhs_ty_param_name))
+            }
             (Type::IndexedAccessType(..), _) | (_, Type::IndexedAccessType(..)) => {
                 fail!()
             }
