@@ -1179,6 +1179,41 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
+            // function f3<T, U extends T>(x: T, y: U, k: keyof T) {
+            //     x[k] = y[k];
+            // }
+            (
+                Type::IndexedAccessType(IndexedAccessType {
+                    obj_type: box Type::Param(TypeParam { name: lhs_name, .. }),
+                    index_type: lhs_idx,
+                    ..
+                }),
+                Type::IndexedAccessType(IndexedAccessType {
+                    obj_type:
+                        box Type::Param(TypeParam {
+                            constraint: Some(box Type::Param(TypeParam { name: rhs_name, .. })),
+                            ..
+                        }),
+                    index_type: rhs_idx,
+                    ..
+                }),
+            ) if lhs_name.eq(rhs_name) && lhs_idx.is_index() && rhs_idx.is_index() => {
+                if matches!((
+                    lhs_idx.as_index().map(|ty| ty.ty.normalize()),
+                    rhs_idx.as_index().map(|ty| ty.ty.normalize()),
+                ), (
+                        Some(Type::Param(TypeParam {
+                            name: lhs_ty_param_name, ..
+                        })),
+                        Some(Type::Param(TypeParam {
+                            name: rhs_ty_param_name, ..
+                        })),
+                    ) if lhs_ty_param_name.eq(rhs_ty_param_name))
+                {
+                    return Ok(());
+                }
+            }
+
             _ => {}
         }
 

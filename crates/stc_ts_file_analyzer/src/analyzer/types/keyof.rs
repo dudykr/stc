@@ -6,7 +6,7 @@ use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature,
-    Readonly, Ref, Type, TypeElement,
+    Readonly, Ref, Type, TypeElement, TypeParam,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt, stack, try_cache};
 use swc_atoms::js_word;
@@ -313,7 +313,10 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::new_union(span, key_types));
                 }
 
-                Type::Param(..) => {
+                Type::Param(TypeParam { constraint, .. }) => {
+                    // if let Some(box c) = constraint {
+                    //     return self.keyof(span, c);
+                    // }
                     return Ok(Type::Index(Index {
                         span,
                         ty: Box::new(ty.into_owned()),

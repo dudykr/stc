@@ -2174,14 +2174,93 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 {
-                    // Check for `T extends { a: { x: any } }`
-                    if let Some(constraint) = constraint {
-                        let ctx = Ctx {
-                            ignore_errors: true,
-                            ..self.ctx
+                    let validate_type_param = |name: &Id| {
+                        match prop.ty().normalize() {
+                            Type::Param(TypeParam { constraint: Some(ty), .. }) => {
+                                if let Type::Index(Index {
+                                    ty: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                    ..
+                                }) = ty.normalize()
+                                {
+                                    if !name.eq(constraint_name) {
+                                        return Err(ErrorKind::CannotBeUsedToIndexType { span }.into());
+                                    }
+                                }
+                            }
+
+                            Type::Index(Index {
+                                ty: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                ..
+                            }) if !name.eq(constraint_name) => return Err(ErrorKind::CannotBeUsedToIndexType { span }.into()),
+                            _ => {}
+                        }
+                        Ok(())
+                    };
+
+                    if let Some(ty) = constraint {
+                        if let Type::Param(TypeParam { name: constraint_name, .. }) = ty.normalize() {
+                            match validate_type_param(name) {
+                                Ok(..) => {}
+                                Err(err) => validate_type_param(constraint_name)?,
+                            };
+                        }
+                    } else {
+                        match validate_type_param(name) {
+                            Ok(..) => {}
+                            Err(err) => return Err(err),
                         };
+                    }
+                }
+
+                // Check for `T extends { a: { x: any } }`
+                if let Some(constraint) = constraint {
+                    let ctx = Ctx {
+                        ignore_errors: true,
+                        ..self.ctx
+                    };
+
+                    let accessible = matches!(
+                        constraint.normalize(),
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsObjectKeyword,
+                            ..
+                        })
+                    ) || if let Type::Param(TypeParam {
+                        constraint: Some(ty),
+                        name: origin_name,
+                        ..
+                    }) = prop.ty().normalize()
+                    {
+                        if name.eq(origin_name) {
+                            true
+                        } else {
+                            if let Type::Index(Index {
+                                ty: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                ..
+                            }) = ty.normalize()
+                            {
+                                !name.eq(constraint_name)
+                            } else {
+                                true
+                            }
+                        }
+                    } else {
+                        true
+                    };
+
+                    if accessible {
                         if let Ok(ty) = self.with_ctx(ctx).access_property(span, constraint, prop, type_mode, id_ctx, opts) {
-                            return Ok(ty);
+                            if let Type::IndexedAccessType(IndexedAccessType {
+                                obj_type: box Type::Param(TypeParam { name: constraint_name, .. }),
+                                ..
+                            }) = ty.normalize()
+                            {
+                                if name.eq(constraint_name) {
+                                    return Ok(ty);
+                                }
+                            } else {
+                                return Ok(ty);
+                            }
                         }
                     }
                 }
@@ -2220,7 +2299,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 warn!("Creating an indexed access type with type parameter as the object");
-
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,

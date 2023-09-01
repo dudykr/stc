@@ -1,0 +1,14 @@
+[
+  {
+    "file": "tests/tsc/types/mapped/2.ts",
+    "line": 5,
+    "col": 5,
+    "code": 2536
+  },
+  {
+    "file": "tests/tsc/types/mapped/2.ts",
+    "line": 6,
+    "col": 12,
+    "code": 2536
+  }
+]
