@@ -929,12 +929,7 @@ impl Analyzer<'_, '_> {
 
         if sum >= 2 {
             if sum == 2 && is_undefined && is_void {
-                return Ok(Some(Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    metadata: KeywordTypeMetadata { ..Default::default() },
-                    tracker: Default::default(),
-                })));
+                return Ok(Some(Type::undefined(span, Default::default())));
             }
             return never!();
         }
@@ -2498,18 +2493,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut unknown = vec![
-                    Type::Keyword(KeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                    Type::Keyword(KeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
+                    Type::null(*span, Default::default()),
+                    Type::undefined(*span, Default::default()),
                     Type::TypeLit(TypeLit {
                         span: *span,
                         members: vec![],

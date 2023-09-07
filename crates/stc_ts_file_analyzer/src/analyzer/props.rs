@@ -300,11 +300,10 @@ impl Analyzer<'_, '_> {
                 false
             }
 
-            Type::Union(u) => u.types.iter().all(|ty| {
-                ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                    || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                    || self.is_type_valid_for_computed_key(span, ty)
-            }),
+            Type::Union(u) => u
+                .types
+                .iter()
+                .all(|ty| ty.is_null_or_undefined() || self.is_type_valid_for_computed_key(span, ty)),
 
             _ => false,
         }
