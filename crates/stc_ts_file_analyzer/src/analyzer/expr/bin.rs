@@ -300,6 +300,7 @@ impl Analyzer<'_, '_> {
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
                 let is_eq = op == op!("===") || op == op!("==");
+                let is_strict_eq = op == op!("===") || op == op!("!==");
 
                 self.add_type_facts_for_typeof(span, left, right, is_eq, &lt, &rt)
                     .report(&mut self.storage);
