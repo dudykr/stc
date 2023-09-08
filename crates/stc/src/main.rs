@@ -1,5 +1,3 @@
-extern crate swc_node_base;
-
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::Error;
