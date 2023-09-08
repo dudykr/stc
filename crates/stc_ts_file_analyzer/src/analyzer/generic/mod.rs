@@ -114,7 +114,7 @@ impl Analyzer<'_, '_> {
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
         );
 
-        let start = Instant::now();
+        // let start = Instant::now();
 
         let mut inferred = InferData::default();
 
@@ -357,9 +357,9 @@ impl Analyzer<'_, '_> {
 
         let map = self.finalize_inference(span, type_params, inferred);
 
-        let end = Instant::now();
+        // let end = Instant::now();
 
-        warn!("infer_arg_types is finished. (time = {:?})", end - start);
+        // warn!("infer_arg_types is finished. (time = {:?})", end - start);
 
         Ok(map)
     }

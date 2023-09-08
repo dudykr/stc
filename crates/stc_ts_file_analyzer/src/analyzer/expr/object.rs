@@ -60,12 +60,12 @@ impl Analyzer<'_, '_> {
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         let _tracing = dev_span!("normalize_union");
 
-        let start = Instant::now();
+        // let start = Instant::now();
         ty.visit_mut_with(&mut ObjectUnionNormalizer { preserve_specified });
 
-        let end = Instant::now();
+        // let end = Instant::now();
 
-        debug!("Normalized unions (time = {:?})", end - start);
+        // debug!("Normalized unions (time = {:?})", end - start);
     }
 
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {

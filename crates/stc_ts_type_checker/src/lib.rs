@@ -89,19 +89,21 @@ impl Checker {
 
     /// After calling this method, you can get errors using `.take_errors()`
     pub fn check(&self, entry: Arc<FileName>) -> ModuleId {
-        let start = Instant::now();
+        // let start = Instant::now();
 
         let modules = self.module_loader.load_module(&entry, true).expect("failed to load entry");
 
-        let end = Instant::now();
-        log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
+        // let end = Instant::now();
+        // log::debug!("Loading of `{}` and dependencies took {:?}", entry, end -
+        // start);
 
-        let start = Instant::now();
+        // let start = Instant::now();
 
         self.analyze_module(None, entry.clone());
 
-        let end = Instant::now();
-        log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
+        // let end = Instant::now();
+        // log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end -
+        // start);
 
         modules.entry.id
     }
@@ -236,7 +238,7 @@ impl Checker {
         }
 
         {
-            let start = Instant::now();
+            // let start = Instant::now();
             let mut did_work = false;
             let v = self.module_types.read().get(&id).cloned().unwrap();
             // We now wait for dependency without holding lock
@@ -248,9 +250,9 @@ impl Checker {
                 })
                 .clone();
 
-            let dur = Instant::now() - start;
+            // let dur = Instant::now() - start;
             if !did_work {
-                log::warn!("Waited for {}: {:?}", path, dur);
+                // log::warn!("Waited for {}: {:?}", path, dur);
             }
 
             res
@@ -258,7 +260,7 @@ impl Checker {
     }
 
     fn analyze_non_circular_module(&self, module_id: ModuleId, path: Arc<FileName>) -> Type {
-        let start = Instant::now();
+        // let start = Instant::now();
 
         let is_dts = match &*path {
             FileName::Real(path) => path.to_string_lossy().ends_with(".d.ts"),
@@ -287,7 +289,7 @@ impl Checker {
         };
         let mut mutations;
         {
-            let start = Instant::now();
+            // let start = Instant::now();
             let mut a = Analyzer::root(
                 self.env.clone(),
                 self.cm.clone(),
@@ -299,9 +301,9 @@ impl Checker {
 
             module.visit_with(&mut a);
 
-            let end = Instant::now();
-            let dur = end - start;
-            log::debug!("[Timing] Analysis of {} took {:?}", path, dur);
+            // let end = Instant::now();
+            // let dur = end - start;
+            // log::debug!("[Timing] Analysis of {} took {:?}", path, dur);
 
             mutations = a.mutations.unwrap();
         }
@@ -336,8 +338,8 @@ impl Checker {
 
         self.dts_modules.insert(module_id, module);
 
-        let dur = Instant::now() - start;
-        log::trace!("[Timing] Full analysis of {} took {:?}", path, dur);
+        // let dur = Instant::now() - start;
+        // log::trace!("[Timing] Full analysis of {} took {:?}", path, dur);
 
         type_info
     }

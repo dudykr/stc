@@ -31,7 +31,7 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let start = Instant::now();
+    // let start = Instant::now();
 
     env_logger::init();
 
@@ -56,9 +56,9 @@ async fn main() -> Result<(), Error> {
     rayon::ThreadPoolBuilder::new().build_global().unwrap();
 
     {
-        let end = Instant::now();
+        // let end = Instant::now();
 
-        log::info!("Initialization took {:?}", end - start);
+        // log::info!("Initialization took {:?}", end - start);
     }
 
     let globals = Arc::<Globals>::default();
@@ -66,7 +66,7 @@ async fn main() -> Result<(), Error> {
     match command {
         Command::Test(cmd) => {
             let libs = {
-                let start = Instant::now();
+                // let start = Instant::now();
 
                 let mut libs = match cmd.libs {
                     Some(libs) => libs.iter().flat_map(|s| Lib::load(s)).collect::<Vec<_>>(),
@@ -75,9 +75,9 @@ async fn main() -> Result<(), Error> {
                 libs.sort();
                 libs.dedup();
 
-                let end = Instant::now();
+                // let end = Instant::now();
 
-                log::info!("Loading builtin libraries took {:?}", end - start);
+                // log::info!("Loading builtin libraries took {:?}", end - start);
 
                 libs
             };
@@ -89,7 +89,7 @@ async fn main() -> Result<(), Error> {
             let path = PathBuf::from(cmd.file);
 
             {
-                let start = Instant::now();
+                // let start = Instant::now();
 
                 let checker = Checker::new(
                     cm.clone(),
@@ -101,14 +101,15 @@ async fn main() -> Result<(), Error> {
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
 
-                let end = Instant::now();
+                // let end = Instant::now();
 
-                log::info!("Loading typing libraries took {:?}", end - start);
+                // log::info!("Loading typing libraries took {:?}", end -
+                // start);
             }
 
             let mut errors = vec![];
 
-            let start = Instant::now();
+            // let start = Instant::now();
             GLOBALS.set(&globals, || {
                 let mut checker = Checker::new(
                     cm.clone(),
@@ -123,21 +124,21 @@ async fn main() -> Result<(), Error> {
                 errors.extend(checker.take_errors());
             });
 
-            let end = Instant::now();
+            // let end = Instant::now();
 
-            log::info!("Checking took {:?}", end - start);
+            // log::info!("Checking took {:?}", end - start);
 
             {
-                let start = Instant::now();
+                // let start = Instant::now();
                 for err in &errors {
                     err.emit(&handler);
                 }
 
-                let end = Instant::now();
+                // let end = Instant::now();
 
                 log::info!("Found {} errors", errors.len());
 
-                log::info!("Error reporting took {:?}", end - start);
+                // log::info!("Error reporting took {:?}", end - start);
             }
         }
         Command::Lsp(cmd) => {
@@ -145,9 +146,9 @@ async fn main() -> Result<(), Error> {
         }
     }
 
-    let end = Instant::now();
+    // let end = Instant::now();
 
-    log::info!("Done in {:?}", end - start);
+    // log::info!("Done in {:?}", end - start);
 
     Ok(())
 }

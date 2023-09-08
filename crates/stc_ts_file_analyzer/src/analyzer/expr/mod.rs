@@ -1229,7 +1229,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let start = Instant::now();
+        // let start = Instant::now();
         obj.assert_valid();
 
         // Try some easier assignments.
@@ -1353,19 +1353,19 @@ impl Analyzer<'_, '_> {
                 )
             })
         }
-        let end = Instant::now();
-        let dur = end - start;
+        // let end = Instant::now();
+        // let dur = end - start;
 
-        if dur >= Duration::from_micros(100) {
-            let line_col = self.line_col(span);
-            debug!(
-                kind = "perf",
-                op = "access_property",
-                "({}) access_property: (time = {:?})",
-                line_col,
-                end - start
-            );
-        }
+        // if dur >= Duration::from_micros(100) {
+        //     let line_col = self.line_col(span);
+        //     debug!(
+        //         kind = "perf",
+        //         op = "access_property",
+        //         "({}) access_property: (time = {:?})",
+        //         line_col,
+        //         end - start
+        //     );
+        // }
 
         let mut ty = res?;
 

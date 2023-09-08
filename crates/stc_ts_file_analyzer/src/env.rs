@@ -1,5 +1,6 @@
-use std::{collections::hash_map::Entry, error::Error, path::Path, sync::Arc, time::Instant};
+use std::{collections::hash_map::Entry, error::Error, path::Path, sync::Arc};
 
+// use std::time::Instant;
 use dashmap::DashMap;
 use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
@@ -110,7 +111,7 @@ pub trait BuiltInGen: Sized {
     {
         info!("Merging builtin");
 
-        let start = Instant::now();
+        // let start = Instant::now();
 
         let mut types = FxHashMap::default();
         let mut vars = FxHashMap::default();
@@ -283,7 +284,7 @@ pub trait BuiltInGen: Sized {
             ty.freeze();
         }
 
-        let dur = Instant::now() - start;
+        // let dur = Instant::now() - start;
 
         Self::new(vars, types)
     }

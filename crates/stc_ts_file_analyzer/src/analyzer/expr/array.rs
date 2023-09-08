@@ -593,12 +593,13 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
-        let start = Instant::now();
+        // let start = Instant::now();
         let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
 
-        let end = Instant::now();
+        // let end = Instant::now();
 
-        debug!(kind = "perf", op = "get_iterator", "get_iterator (time = {:?}", end - start);
+        // debug!(kind = "perf", op = "get_iterator", "get_iterator (time = {:?}", end -
+        // start);
 
         let iterator = iterator?;
 

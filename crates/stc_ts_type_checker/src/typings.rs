@@ -23,12 +23,13 @@ impl Checker {
 
         if let Ok(entry) = result {
             let entry = Arc::new(FileName::Real(entry));
-            let start = Instant::now();
+            // let start = Instant::now();
 
             self.analyze_module(None, entry);
 
-            let end = Instant::now();
-            log::debug!("Loading typings at `{}` took {:?}", dir.display(), end - start);
+            // let end = Instant::now();
+            // log::debug!("Loading typings at `{}` took {:?}", dir.display(),
+            // end - start);
         }
     }
 

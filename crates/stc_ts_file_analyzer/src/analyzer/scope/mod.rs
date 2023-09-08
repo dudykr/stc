@@ -2707,20 +2707,20 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
         let before = dump_type_as_string(&ty);
-        let start = Instant::now();
+        // let start = Instant::now();
         let expanded = self.expand_type(ty).fixed();
-        let end = Instant::now();
+        // let end = Instant::now();
 
         if !self.analyzer.config.is_builtin {
             expanded.assert_valid();
         }
 
-        debug!(
-            "[expander (time = {:?})]: {} => {}",
-            end - start,
-            before,
-            dump_type_as_string(&expanded)
-        );
+        // debug!(
+        //     "[expander (time = {:?})]: {} => {}",
+        //     end - start,
+        //     before,
+        //     dump_type_as_string(&expanded)
+        // );
 
         expanded
     }
