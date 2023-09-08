@@ -3,6 +3,7 @@
     "ahash",
     "arity",
     "autocrlf",
+    "bindgen",
     "bitflags",
     "bitor",
     "bivariant",
