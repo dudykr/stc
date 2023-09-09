@@ -6,8 +6,8 @@ use std::{
 
 use fxhash::FxHashMap;
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat,
-    RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase,
+    ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -300,8 +300,7 @@ impl Analyzer<'_, '_> {
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
                 let is_eq = op == op!("===") || op == op!("==");
-                let is_strict_eq = op == op!("===") || op == op!("!==");
-
+                let is_strict = op == op!("===") || op == op!("!==");
                 self.add_type_facts_for_typeof(span, left, right, is_eq, &lt, &rt)
                     .report(&mut self.storage);
 
@@ -349,7 +348,7 @@ impl Analyzer<'_, '_> {
                     self.add_deep_type_fact(span, name, ty.clone().freezed(), is_eq);
                 }
 
-                self.add_type_facts_for_opt_chains(span, left, right, &lt, &rt)
+                self.add_type_facts_for_opt_chains(span, left, right, &lt, &rt, is_eq, is_strict)
                     .report(&mut self.storage);
 
                 if let Some((l, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
@@ -1105,7 +1104,16 @@ impl Analyzer<'_, '_> {
     ///
     /// The condition in the if statement above will be `true` if `f.geometry`
     /// is `undefined`.
-    fn add_type_facts_for_opt_chains(&mut self, span: Span, l: &RExpr, r: &RExpr, lt: &Type, rt: &Type) -> VResult<()> {
+    fn add_type_facts_for_opt_chains(
+        &mut self,
+        span: Span,
+        l: &RExpr,
+        r: &RExpr,
+        lt: &Type,
+        rt: &Type,
+        is_eq: bool,
+        is_strict: bool,
+    ) -> VResult<()> {
         /// Convert expression to names.
         ///
         /// This may return multiple names if there are optional chaining
@@ -1119,6 +1127,23 @@ impl Analyzer<'_, '_> {
                     let mut names = non_undefined_names(&me.obj);
 
                     names.extend(e.try_into().ok());
+                    names
+                }
+
+                RExpr::Call(RCallExpr {
+                    callee: RCallee::Expr(c), ..
+                }) => {
+                    let mut names = non_undefined_names(c);
+                    names.extend(e.try_into().ok());
+
+                    names
+                }
+
+                RExpr::Ident(..) => {
+                    let mut names: Vec<Name> = vec![];
+
+                    names.extend(e.try_into().ok());
+
                     names
                 }
 
@@ -1162,8 +1187,24 @@ impl Analyzer<'_, '_> {
             }
         }) {
             if !self.can_be_undefined(span, r_ty, false)? {
-                for name in names {
-                    self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                if !is_eq {
+                    for name in names {
+                        self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                } else if is_strict {
+                    for name in names {
+                        self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                }
+            } else if r_ty.is_undefined() && !is_eq {
+                if is_strict {
+                    for name in names {
+                        self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                } else {
+                    for name in names {
+                        self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::NEUndefinedOrNull);
+                    }
                 }
             }
         }
