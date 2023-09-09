@@ -1020,56 +1020,49 @@ impl Analyzer<'_, '_> {
                             // A type guard of the form typeof x === s and typeof x !== s,
                             // where s is a string literal with any value but 'string', 'number' or
                             // 'boolean'
+                            let default_extends_type = vec![
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            ];
+
                             let name = Name::try_from(&**arg).unwrap();
 
                             if is_eq {
                                 //  - typeof x === s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in true facts.
-                                self.cur_facts.true_facts.excludes.entry(name).or_default().extend(vec![
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                ]);
+                                self.cur_facts
+                                    .true_facts
+                                    .excludes
+                                    .entry(name)
+                                    .or_default()
+                                    .extend(default_extends_type);
                             } else {
                                 //  - typeof x !== s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in false facts.
-                                self.cur_facts.false_facts.excludes.entry(name).or_default().extend(vec![
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                ]);
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name)
+                                    .or_default()
+                                    .extend(default_extends_type);
                             }
                             None
                         }
@@ -1192,9 +1185,6 @@ impl Analyzer<'_, '_> {
     }
 
     fn can_compare_with_eq(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
-        let disc_ty = disc_ty.normalize();
-        let case_ty = case_ty.normalize();
-
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
         }
@@ -1203,10 +1193,8 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if self.ctx.in_switch_case_test {
-            if disc_ty.is_intersection() {
-                return Ok(true);
-            }
+        if self.ctx.in_switch_case_test && disc_ty.is_intersection() {
+            return Ok(true);
         }
 
         self.has_overlap(
