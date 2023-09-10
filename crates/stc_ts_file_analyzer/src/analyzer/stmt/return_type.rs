@@ -563,12 +563,10 @@ impl Analyzer<'_, '_> {
 
             self.scope.return_values.yield_types.push(item_ty);
         } else {
-            self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
-                span: e.span,
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }));
+            self.scope
+                .return_values
+                .yield_types
+                .push(Type::undefined(e.span, Default::default()));
         }
 
         Ok(Type::any(e.span, Default::default()))

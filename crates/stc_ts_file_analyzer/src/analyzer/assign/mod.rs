@@ -270,14 +270,11 @@ impl Analyzer<'_, '_> {
         let mut skip_check_null_or_undefined_of_rhs = false;
         match op {
             op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
-                if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) = rhs
-                {
+                if rhs.is_null_or_undefined() {
                     if op == op!("**=") {
                         skip_check_null_or_undefined_of_rhs = true;
                     }
+
                     if op != op!("**=") && !self.rule().strict_null_checks && (l.is_num() || l.is_enum_variant()) {
                         skip_check_null_or_undefined_of_rhs = true;
                     } else {

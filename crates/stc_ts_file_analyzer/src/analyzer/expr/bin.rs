@@ -426,20 +426,7 @@ impl Analyzer<'_, '_> {
                         };
 
                         let exclude_types = if is_loose_comparison_with_null_or_undefined {
-                            vec![
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsNullKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            ]
+                            Type::null_and_undefined(span, Default::default())
                         } else {
                             exclude.freezed()
                         };
@@ -1874,16 +1861,7 @@ impl Analyzer<'_, '_> {
             let actual = name.slice_to(name.len() - 1);
 
             if has_undefined && candidates.is_empty() {
-                return Ok((
-                    actual,
-                    Type::Keyword(KeywordType {
-                        span: u.span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                    excluded.freezed(),
-                ));
+                return Ok((actual, Type::undefined(span, Default::default()), excluded.freezed()));
             }
             let ty = Type::new_union(span, candidates).freezed();
             return Ok((actual, ty, excluded.freezed()));
@@ -2280,20 +2258,7 @@ impl Analyzer<'_, '_> {
                                         temp_vec.clone()
                                     } else {
                                         if is_loose_comparison {
-                                            vec![
-                                                Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsNullKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                                Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                            ]
+                                            Type::null_and_undefined(span, Default::default())
                                         } else {
                                             vec![]
                                         }
@@ -2344,20 +2309,7 @@ impl Analyzer<'_, '_> {
                                 temp_vec.clone()
                             } else {
                                 if is_loose_comparison {
-                                    vec![
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsNullKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                    ]
+                                    Type::null_and_undefined(span, Default::default())
                                 } else {
                                     vec![]
                                 }

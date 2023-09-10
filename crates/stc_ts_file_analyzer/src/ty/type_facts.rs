@@ -127,14 +127,9 @@ impl Analyzer<'_, '_> {
                         Type::new_union_without_dedup(
                             span,
                             vec![
+                                Type::null(span, Default::default()),
                                 Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsObjectKeyword,
-                                    metadata: Default::default(),
-                                    span,
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    kind: TsKeywordTypeKind::TsNullKeyword,
                                     metadata: Default::default(),
                                     span,
                                     tracker: Default::default(),
@@ -467,25 +462,18 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         // typeof x === 'object'
         // => x = {} | null
         if ty.is_unknown() && self.facts.contains(TypeFacts::TypeofEQObject) {
-            ty = Type::Union(Union {
+            ty = Type::new_union(
                 span,
-                types: vec![
+                vec![
                     Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsObjectKeyword,
                         metadata: Default::default(),
                         tracker: Default::default(),
                     }),
-                    Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
+                    Type::null(span, Default::default()),
                 ],
-                metadata: Default::default(),
-                tracker: Default::default(),
-            })
+            )
             .freezed();
         }
 

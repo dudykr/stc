@@ -299,12 +299,7 @@ impl Analyzer<'_, '_> {
 
                 if !errors.is_empty() {
                     if can_use_undefined && errors.len() != u.types.len() {
-                        types.push(Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
+                        types.push(Type::undefined(span, Default::default()));
                         types.dedup_type();
                         return Ok(Cow::Owned(Type::new_union(span, types)));
                     }
