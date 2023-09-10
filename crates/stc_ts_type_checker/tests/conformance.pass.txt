@@ -1699,6 +1699,7 @@ externalModules/multipleExportDefault6.ts
 externalModules/nameDelimitedBySlashes.ts
 externalModules/nameWithFileExtension.ts
 externalModules/reexportClassDefinition.ts
+externalModules/relativePathMustResolve.ts
 externalModules/topLevelAwait.3.ts
 externalModules/topLevelFileModule.ts
 externalModules/topLevelFileModuleMissing.ts
