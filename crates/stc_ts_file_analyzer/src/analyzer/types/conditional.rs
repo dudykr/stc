@@ -202,7 +202,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn overwrite_conditional(&mut self, span: Span, c: &Conditional) -> Type {
+    pub(crate) fn overwrite_conditional(&self, span: Span, c: &Conditional) -> Type {
         if Self::has_type_param_for_conditional(&c.check_type) {
             if c.check_type.type_eq(&c.true_type) {
                 Type::new_intersection(span, [*(c.check_type).clone(), *(c.extends_type).clone()]).freezed()
@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn expand_conditional_type(&mut self, span: Span, ty: Type) -> Type {
+    pub(crate) fn expand_conditional_type(&self, span: Span, ty: Type) -> Type {
         let _tracing = dev_span!("expand_conditional_type");
 
         if !ty.is_conditional() {

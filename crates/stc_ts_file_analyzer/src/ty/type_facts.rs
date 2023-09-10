@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
-    pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+    pub fn apply_type_facts_to_type(&self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.config.is_builtin {
             return ty;
         }
@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
 
 struct TypeFactsHandler<'a, 'b, 'c> {
     /// Used to expand references.
-    analyzer: &'a mut Analyzer<'b, 'c>,
+    analyzer: &'a Analyzer<'b, 'c>,
     facts: TypeFacts,
 }
 

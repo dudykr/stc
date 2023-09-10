@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
     /// let b: { key: string } = foo;
     /// ```
     pub(crate) fn assign_to_type_elements(
-        &mut self,
+        &self,
         data: &mut AssignData,
         lhs_span: Span,
         lhs: &[TypeElement],
@@ -951,7 +951,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn should_report_properties(&mut self, span: Span, lhs: &[TypeElement], rhs: &Type) -> bool {
+    fn should_report_properties(&self, span: Span, lhs: &[TypeElement], rhs: &Type) -> bool {
         let type_call_signatures = lhs
             .iter()
             .filter_map(|m| match m {
@@ -1004,7 +1004,7 @@ impl Analyzer<'_, '_> {
         true
     }
 
-    pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
+    pub(super) fn try_assign_using_parent(&self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let span = opts.span;
 
         match r.normalize() {
@@ -1040,7 +1040,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn handle_assignment_of_type_elements_to_type_elements(
-        &mut self,
+        &self,
         data: &mut AssignData,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
@@ -1174,7 +1174,7 @@ impl Analyzer<'_, '_> {
     /// b = a // ok
     /// ```
     fn assign_type_elements_to_type_element(
-        &mut self,
+        &self,
         data: &mut AssignData,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
@@ -1627,7 +1627,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(crate) fn index_signature_matches(&mut self, span: Span, index_ty: &Type, prop_ty: &Type) -> VResult<bool> {
+    pub(crate) fn index_signature_matches(&self, span: Span, index_ty: &Type, prop_ty: &Type) -> VResult<bool> {
         if (prop_ty.is_num() && index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
             || (prop_ty.is_str() && index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword))
         {

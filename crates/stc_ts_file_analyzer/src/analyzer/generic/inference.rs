@@ -162,12 +162,12 @@ impl Default for InferencePriority {
 impl Analyzer<'_, '_> {
     /// Ported from `inferFromMatchingTypes` of `tsc`.
     pub(super) fn infer_from_matching_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         sources: &[Type],
         targets: &[Type],
-        matches: impl Fn(&mut Analyzer, &Type, &Type) -> bool,
+        matches: impl Fn(&Analyzer, &Type, &Type) -> bool,
         opts: InferTypeOpts,
     ) -> VResult<(Vec<Type>, Vec<Type>)> {
         let _tracing = dev_span!("infer_from_matching_types");
@@ -215,7 +215,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `tsc`.
     pub(super) fn infer_type_using_union(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Union,
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferToMultipleTypes` of `tsc`.
     pub(super) fn infer_to_multiple_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -399,7 +399,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferFromTypes` of `tsc`.
     pub(super) fn infer_from_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -410,7 +410,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_with_priority(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
 
     /// `inferToMultipleTypesWithPriority`
     pub(super) fn infer_to_multiple_types_with_priority(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -447,7 +447,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferFromContravariantTypes` of `tsc`.
     pub(super) fn infer_from_contravariant_types(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -463,7 +463,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `getInferenceInfoForType` of `tsc`.
-    fn get_inference_info_for_type<'a>(&mut self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
+    fn get_inference_info_for_type<'a>(&self, inferred: &'a mut InferData, ty: &Type) -> Option<&'a mut InferenceInfo> {
         if let Type::Param(param) = ty {
             return inferred.type_params.get_mut(&param.name);
         }
@@ -472,7 +472,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `getSingleTypeVariableFromIntersectionTypes` of `tsc`.
-    fn get_single_type_variable_from_intersection_types(&mut self, span: Span, inferred: &mut InferData, types: &[Type]) -> Option<Type> {
+    fn get_single_type_variable_from_intersection_types(&self, span: Span, inferred: &mut InferData, types: &[Type]) -> Option<Type> {
         let mut type_var: Option<Type> = None;
 
         for ty in types {
@@ -497,7 +497,7 @@ impl Analyzer<'_, '_> {
 
     /// Ported from `inferToTemplateLiteralType` of `tsc`.
     pub(super) fn infer_to_tpl_lit_type(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         source: &Type,
@@ -786,7 +786,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `inferTypesFromTemplateLiteralType` of `tsc`.
-    pub(crate) fn infer_types_from_tpl_lit_type(&mut self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
+    pub(crate) fn infer_types_from_tpl_lit_type(&self, span: Span, source: &Type, target: &TplType) -> VResult<Option<Vec<Type>>> {
         match source.normalize() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(source), ..
@@ -846,7 +846,7 @@ impl Analyzer<'_, '_> {
     #[allow(unused_assignments)]
     #[allow(clippy::needless_range_loop)]
     fn infer_from_lit_parts_to_tpl_lit(
-        &mut self,
+        &self,
         span: Span,
         source_texts: &[Atom],
         source_types: &[Type],
@@ -953,7 +953,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn insert_inferred(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         tp: &TypeParam,
@@ -987,7 +987,7 @@ impl Analyzer<'_, '_> {
     /// let e5 = f(data, data2); // Error
     /// ```
     pub(super) fn insert_inferred_raw(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         name: Id,
@@ -1033,14 +1033,7 @@ impl Analyzer<'_, '_> {
         self.upsert_inferred(span, inferred, name, &ty, opts)
     }
 
-    pub(super) fn upsert_inferred(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        name: Id,
-        arg: &Type,
-        opts: InferTypeOpts,
-    ) -> VResult<()> {
+    pub(super) fn upsert_inferred(&self, span: Span, inferred: &mut InferData, name: Id, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
         let arg = match arg.normalize() {
             Type::Union(arg) if opts.exclude_null_and_undefined => {
                 Cow::Owned(Type::new_union(arg.span, arg.types.iter().filter(|ty| !ty.is_null_or_undefined()).cloned()).freezed())
@@ -1233,7 +1226,7 @@ impl Analyzer<'_, '_> {
 
     /// Infer types, using `param` and `arg`.
     pub(crate) fn infer_type_with_types(
-        &mut self,
+        &self,
         span: Span,
         type_params: &[TypeParam],
         param: &Type,
@@ -1262,7 +1255,7 @@ impl Analyzer<'_, '_> {
     /// Handle some special builtin types
 
     pub(super) fn infer_builtin(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Type,
@@ -1333,7 +1326,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_type_using_interface(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Interface,
@@ -1368,7 +1361,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_interface_and_interface(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Interface,
@@ -1382,7 +1375,7 @@ impl Analyzer<'_, '_> {
 
     /// Compare fields.
     pub(super) fn infer_type_using_type_lit_and_type_lit(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &TypeLit,
@@ -1394,7 +1387,7 @@ impl Analyzer<'_, '_> {
 
     /// Returns `Ok(true)` if this method know how to infer types.
     pub(super) fn infer_type_by_converting_to_type_lit(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Type,
@@ -1422,7 +1415,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_type_elements_and_type_elements(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &[TypeElement],
@@ -1615,7 +1608,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_type_using_readonly(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Readonly,
@@ -1626,7 +1619,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_types_using_class(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Class,
@@ -1637,7 +1630,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn infer_types_using_class_def(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &ClassDef,
@@ -1766,7 +1759,7 @@ impl Analyzer<'_, '_> {
 
     /// Prevent generalizations if a type parameter extends literal.
     pub(super) fn prevent_generalization_of_inferred_types(
-        &mut self,
+        &self,
         type_params: &[TypeParam],
         inferred: &mut InferData,
         is_from_type_ann: bool,

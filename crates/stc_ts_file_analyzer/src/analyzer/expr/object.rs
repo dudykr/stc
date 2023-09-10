@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
+    pub(super) fn normalize_union(&self, ty: &mut Type, preserve_specified: bool) {
         let _tracing = dev_span!("normalize_union");
 
         let start = Instant::now();

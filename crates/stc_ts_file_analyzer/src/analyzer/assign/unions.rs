@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
     ///
     ///  - lhs = `(["a", number] | ["b", number] | ["c", string]);`
     ///  - rhs = `[("b" | "a"), 1];`
-    pub(super) fn assign_to_union(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
+    pub(super) fn assign_to_union(&self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
         match r_res {
@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> VResult<Type> {
+    fn flatten_unions_for_assignment(&self, span: Span, ty: Cow<Type>) -> VResult<Type> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
         match ty.normalize() {
@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> VResult<()> {
+    fn append_type_element_to_type(&self, span: Span, to: &mut Type, el: &TypeElement) -> VResult<()> {
         if let TypeElement::Property(el) = el {
             if let Some(el_ty) = &el.type_ann {
                 if let Some(ty) = self.expand_union_for_assignment(span, el_ty) {
@@ -129,7 +129,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> VResult<()> {
+    fn append_tuple_element_to_type(&self, span: Span, to: &mut Type, el: &TupleElement) -> VResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
             let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
@@ -174,7 +174,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expands `boolean` to `true | false`.
-    fn expand_union_for_assignment(&mut self, span: Span, t: &Type) -> Option<Union> {
+    fn expand_union_for_assignment(&self, span: Span, t: &Type) -> Option<Union> {
         let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
 
         match t.normalize() {

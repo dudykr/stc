@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If `span` is provided, it will be used for types **created** by the
     /// method. Otherwise the span of the original type is used.
-    pub(crate) fn normalize<'a>(&mut self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn normalize<'a>(&self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
             let ty = force_dump_type_as_string(&ty);
 
@@ -839,7 +839,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+    pub(crate) fn normalize_intersection_types(&self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
         macro_rules! never {
             () => {{
                 Ok(Some(Type::Keyword(KeywordType {
@@ -1239,7 +1239,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn normalize_intersection_of_type_elements(
-        &mut self,
+        &self,
         span: Span,
         elements: &[TypeElement],
         property_types: &mut Vec<TypeElement>,
@@ -1294,7 +1294,7 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
+    fn instantiate_for_normalization(&self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = force_dump_type_as_string(ty);
 
@@ -1375,7 +1375,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn report_possibly_null_or_undefined(&mut self, span: Span, ty: &Type) -> VResult<()> {
+    pub(crate) fn report_possibly_null_or_undefined(&self, span: Span, ty: &Type) -> VResult<()> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -1437,7 +1437,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
+    pub(crate) fn can_be_undefined(&self, span: Span, ty: &Type, include_null: bool) -> VResult<bool> {
         let _tracing = dev_span!("can_be_undefined", include_null = include_null);
 
         let ty = self
@@ -1483,7 +1483,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn expand_type_ann<'a>(&mut self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
+    pub(crate) fn expand_type_ann<'a>(&self, span: Span, ty: Option<&'a Type>) -> VResult<Option<Cow<'a, Type>>> {
         let _tracing = dev_span!("expand_type_ann");
 
         let ty = match ty {
@@ -1497,7 +1497,7 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
-    pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> VResult<TypeLit> {
+    pub(crate) fn create_prototype_of_class_def(&self, def: &ClassDef) -> VResult<TypeLit> {
         let _tracing = dev_span!("create_prototype_of_class_def");
 
         let mut members = vec![];
@@ -1553,13 +1553,14 @@ impl Analyzer<'_, '_> {
 
     /// Exclude types from `ty` using type facts with key `name`, for
     /// the current scope.
-    pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
+    pub(crate) fn exclude_types_using_fact(&self, span: Span, name: &Name, ty: &mut Type) {
         let _tracing = dev_span!("exclude_types_using_fact");
 
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
         let mut types_to_exclude = vec![];
-        let mut s = Some(&self.scope);
+        let b = self.scope.borrow();
+        let mut s = Some(&*b);
 
         while let Some(scope) = s {
             types_to_exclude.extend(scope.facts.excludes.get(name).cloned().into_iter().flatten());
@@ -1575,10 +1576,11 @@ impl Analyzer<'_, '_> {
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
-    pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
+    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Type) -> Type {
         let _tracing = dev_span!("apply_type_facts", name = tracing::field::debug(name));
 
-        let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
+        let type_facts =
+            self.scope.borrow().get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
 
         debug!("[types/fact] Facts for {:?} is {:?}", name, type_facts);
 
@@ -1592,7 +1594,7 @@ impl Analyzer<'_, '_> {
     /// ## excluded
     ///
     /// Members of base class.
-    pub(crate) fn collect_class_members(&mut self, excluded: &[&ClassMember], ty: &Type) -> VResult<Option<Vec<ClassMember>>> {
+    pub(crate) fn collect_class_members(&self, excluded: &[&ClassMember], ty: &Type) -> VResult<Option<Vec<ClassMember>>> {
         if self.config.is_builtin {
             return Ok(None);
         }
@@ -1646,7 +1648,7 @@ impl Analyzer<'_, '_> {
     /// Note: `span` is only used while expanding type (to prevent
     /// panic) in the case of [Type::Ref].
     pub(crate) fn convert_type_to_type_lit<'a>(
-        &mut self,
+        &self,
         span: Span,
         ty: Cow<'a, Type>,
         opts: ConvertTypeToLitOpts,
@@ -1958,7 +1960,7 @@ impl Analyzer<'_, '_> {
         }))
     }
 
-    fn merge_type_elements(&mut self, span: Span, mut els: Vec<TypeElement>) -> VResult<Vec<TypeElement>> {
+    fn merge_type_elements(&self, span: Span, mut els: Vec<TypeElement>) -> VResult<Vec<TypeElement>> {
         run(|| {
             // As merging is not common, we optimize it by creating a new vector only if
             // there's a conflict
@@ -2012,7 +2014,7 @@ impl Analyzer<'_, '_> {
         .with_context(|| "tried to merge type elements".to_string())
     }
 
-    fn merge_type_element(&mut self, span: Span, to: &mut TypeElement, from: TypeElement) -> VResult<()> {
+    fn merge_type_element(&self, span: Span, to: &mut TypeElement, from: TypeElement) -> VResult<()> {
         run(|| match (to, from) {
             (TypeElement::Property(to), TypeElement::Property(from)) => {
                 if let Some(to_type) = &to.type_ann {
@@ -2081,7 +2083,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &StringMapping, span_for_validation: Span) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&self, span: Span, ty: &StringMapping, span_for_validation: Span) -> VResult<Type> {
         let arg = &ty.type_args;
 
         let normalized_ty = match self
@@ -2285,7 +2287,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn report_error_for_unresolved_type(
-        &mut self,
+        &self,
         span: Span,
         type_name: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
@@ -2411,7 +2413,7 @@ impl Analyzer<'_, '_> {
     ///     // To use the fact that `a` is not `P`, we check for the parent type of `ty
     /// }
     /// ```
-    fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
+    fn exclude_type(&self, span: Span, ty: &mut Type, excluded: &Type) {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         if ty.type_eq(excluded) {
@@ -2527,7 +2529,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
+    fn exclude_types(&self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
         ty.freeze();
 
         let mapped_ty = self.normalize(

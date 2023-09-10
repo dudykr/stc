@@ -1,5 +1,5 @@
 use std::{
-    cell::Cell,
+    cell::{Cell, RefCell},
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
@@ -236,7 +236,7 @@ pub struct Analyzer<'scope, 'b> {
 
     export_equals_span: Span,
 
-    scope: Scope<'scope>,
+    scope: RefCell<Scope<'scope>>,
 
     ctx: Ctx,
 
@@ -406,7 +406,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         comments: StcComments,
-        mut storage: Storage<'b>,
+        storage: Storage<'b>,
         loader: &'b dyn Load,
         debugger: Option<Debugger>,
     ) -> Self {
@@ -480,7 +480,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             storage,
             mutations,
             export_equals_span: DUMMY_SP,
-            scope,
+            scope: RefCell::new(scope),
             config: InnerConfig { is_builtin, is_dts },
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
@@ -599,7 +599,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         };
         let data = take(&mut self.data);
 
-        let child_scope = Scope::new(&self.scope, kind, facts);
+        let scope = self.scope.borrow();
+        let child_scope = Scope::new(&scope, kind, facts);
         let (ret, errors, cur_facts, mut child_scope, mutations, data) = {
             let mut child = self.new(child_scope, data);
             child.mutations = mutations;
@@ -618,7 +619,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 ret,
                 errors,
                 child.cur_facts,
-                child.scope.remove_parent(),
+                child.scope.borrow_mut().remove_parent(),
                 child.mutations.take(),
                 take(&mut child.data),
             )
@@ -631,8 +632,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         hook(self);
 
-        self.scope.move_types_from_child(&mut child_scope);
-        self.scope.move_vars_from_child(&mut child_scope);
+        self.scope.borrow_mut().move_types_from_child(&mut child_scope);
+        self.scope.borrow_mut().move_vars_from_child(&mut child_scope);
         if kind == ScopeKind::Module {
             self.data.for_module = module_data;
         }
@@ -642,7 +643,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             // These kinds of scope eats return statements
             ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::ArrowFn | ScopeKind::Fn => {}
             _ => {
-                self.scope.return_values += child_scope.return_values;
+                self.scope.borrow_mut().return_values += child_scope.return_values;
             }
         }
 
@@ -1017,7 +1018,7 @@ impl Analyzer<'_, '_> {
         let mut ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
-                child.scope.cur_module_name = match &decl.id {
+                child.scope.borrow_mut().cur_module_name = match &decl.id {
                     RTsModuleName::Ident(i) => Some(i.into()),
                     RTsModuleName::Str(_) => None,
                 };

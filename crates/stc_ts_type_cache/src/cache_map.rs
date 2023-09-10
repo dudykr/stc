@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{cell::RefCell, marker::PhantomData};
 
 use stc_utils::cache::Freeze;
 use swc_common::TypeEq;
@@ -12,7 +12,7 @@ where
     V: Freeze,
     M: CacheMode<K>,
 {
-    data: Vec<(K, V)>,
+    data: RefCell<Vec<(K, V)>>,
     _marker: PhantomData<M>,
 }
 
@@ -42,7 +42,7 @@ where
     }
 
     pub fn get(&self, key: &K) -> Option<V> {
-        for (k, v) in &self.data {
+        for (k, v) in &*self.data.borrow() {
             if k.type_eq(key) {
                 return Some(v.clone());
             }
@@ -52,10 +52,10 @@ where
     }
 
     /// Returns the inserted value.
-    pub fn insert(&mut self, key: K, mut value: V) -> V {
+    pub fn insert(&self, key: K, mut value: V) -> V {
         value.freeze();
 
-        self.data.push((key, value.clone()));
+        self.data.borrow_mut().push((key, value.clone()));
 
         value
     }

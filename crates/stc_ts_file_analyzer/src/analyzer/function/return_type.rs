@@ -43,7 +43,7 @@ impl VisitMut<Type> for FnReturnTypeHandler<'_, '_, '_> {
                     copied: false,
                     ty: Some(ty),
                     ..
-                }) = self.analyzer.scope.vars.get(&var_name.clone().into())
+                }) = self.analyzer.scope.borrow().vars.get(&var_name.clone().into())
                 {
                     *ret_ty = ty.clone();
                 }

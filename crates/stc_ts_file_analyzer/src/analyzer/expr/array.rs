@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
-    pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_element_from_iterator<'a>(&self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
         debug!("Calculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
@@ -382,7 +382,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(value_ty))
     }
 
-    fn try_next_method_of_iterator(&mut self, span: Span, iterator: &Type, awaited: bool) -> VResult<Type> {
+    fn try_next_method_of_iterator(&self, span: Span, iterator: &Type, awaited: bool) -> VResult<Type> {
         let _tracing = dev_span!("try_next_method_of_iterator");
 
         let mut item = self
@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_async_iterator_element_type<'a>(
-        &mut self,
+        &self,
         span: Span,
         ty: Cow<'a, Type>,
         try_next_method: bool,
@@ -432,7 +432,7 @@ impl Analyzer<'_, '_> {
 
         if !self.data.checked_for_async_iterator {
             self.data.checked_for_async_iterator = true;
-            self.env.get_global_type(span, &"AsyncIterator".into()).report(&mut self.storage);
+            self.env.get_global_type(span, &"AsyncIterator".into()).report(&self.storage);
         }
 
         if let Ok(item) = self.try_next_method_of_iterator(span, &ty, true) {
@@ -490,7 +490,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty.into_owned()))
     }
 
-    pub(crate) fn get_value_type_from_iterator_result(&mut self, span: Span, iterator_result: &Type) -> VResult<Type> {
+    pub(crate) fn get_value_type_from_iterator_result(&self, span: Span, iterator_result: &Type) -> VResult<Type> {
         let iterator_result = self.normalize(
             Some(span),
             Cow::Borrowed(iterator_result),
@@ -555,12 +555,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty)
     }
 
-    pub(crate) fn get_rest_elements<'a>(
-        &mut self,
-        span: Option<Span>,
-        iterator: Cow<'a, Type>,
-        start_index: usize,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_rest_elements<'a>(&self, span: Option<Span>, iterator: Cow<'a, Type>, start_index: usize) -> VResult<Cow<'a, Type>> {
         let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
@@ -592,7 +587,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(iterator.into_owned()))
     }
 
-    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator<'a>(&self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
         let start = Instant::now();
         let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
 
@@ -623,7 +618,7 @@ impl Analyzer<'_, '_> {
         Ok(iterator)
     }
 
-    fn get_iterator_inner<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
+    fn get_iterator_inner<'a>(&self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
         let ty_str = force_dump_type_as_string(&ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
@@ -768,7 +763,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If it's true, this method will try `ty.next().value`.
     pub(crate) fn get_iterator_element_type<'a>(
-        &mut self,
+        &self,
         span: Span,
         ty: Cow<'a, Type>,
         try_next_value: bool,
@@ -874,7 +869,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns the type of `iterator.next().value`.
-    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> VResult<Type> {
+    fn get_next_value_type_of_iterator(&self, span: Span, iterator: Cow<Type>) -> VResult<Type> {
         let next_ret_ty = self
             .call_property(
                 span,
@@ -909,7 +904,7 @@ impl Analyzer<'_, '_> {
         Ok(elem_ty)
     }
 
-    pub(crate) fn calculate_tuple_element_count(&mut self, span: Span, ty: &Type) -> VResult<Option<usize>> {
+    pub(crate) fn calculate_tuple_element_count(&self, span: Span, ty: &Type) -> VResult<Option<usize>> {
         let ty = self.normalize(
             Some(span),
             Cow::Borrowed(ty),

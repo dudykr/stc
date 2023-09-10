@@ -204,7 +204,7 @@ pub struct AssignData {
 impl Analyzer<'_, '_> {
     /// Denies `null` and `undefined`. This method does not check for elements
     /// of union.
-    pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> VResult<()> {
+    pub(crate) fn deny_null_or_undefined(&self, span: Span, ty: &Type) -> VResult<()> {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
         }
@@ -217,7 +217,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Used to validate assignments like `a += b`.
-    pub(crate) fn assign_with_operator(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_operator(&self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.normalize(
@@ -446,7 +446,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign(&mut self, span: Span, data: &mut AssignData, left: &Type, right: &Type) -> VResult<()> {
+    pub(crate) fn assign(&self, span: Span, data: &mut AssignData, left: &Type, right: &Type) -> VResult<()> {
         self.assign_with_opts(
             data,
             left,
@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(crate) fn assign_with_opts(&self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -499,7 +499,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&self, span: Span, ty: &'a Type, opts: AssignOpts) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let ty = ty.normalize();
@@ -619,7 +619,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_inner(&self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
 
@@ -669,7 +669,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    fn assign_without_wrapping(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_without_wrapping(&self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
         if !self.config.is_builtin && span.is_dummy() {
@@ -2810,7 +2810,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only if `to` is not expandable.
-    pub(super) fn assign_to_intrinsic(&mut self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(super) fn assign_to_intrinsic(&self, data: &mut AssignData, to: &StringMapping, r: &Type, opts: AssignOpts) -> VResult<()> {
         match r.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -3217,7 +3217,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+    fn extract_keys(&self, span: Span, ty: &Type) -> VResult<Type> {
         (|| -> VResult<_> {
             let ty = self.normalize(
                 Some(span),
@@ -3277,7 +3277,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// Currently only literals and unions are supported for `keys`.
-    fn assign_keys(&mut self, data: &mut AssignData, keys: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_keys(&self, data: &mut AssignData, keys: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
@@ -3296,7 +3296,7 @@ impl Analyzer<'_, '_> {
         .context("tried to assign keys")
     }
 
-    fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_to_mapped(&self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
             .normalize(Some(span), Cow::Borrowed(r), NormalizeTypeOpts { ..Default::default() })
@@ -3427,7 +3427,7 @@ impl Analyzer<'_, '_> {
     /// Returns true for `A | B | | C = A | B` and similar cases.
     ///
     /// Should be called iff lhs is a union type.
-    fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> VResult<bool> {
+    fn should_use_special_union_assignment(&self, span: Span, r: &Type) -> VResult<bool> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
@@ -3446,7 +3446,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): I'm not sure about this.
-    fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
+    fn variance(&self, ty: &Conditional) -> VResult<Variance> {
         let can_be_covariant = self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
         let can_be_contravariant =
@@ -3459,11 +3459,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn is_covariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
+    fn is_covariant(&self, check_type: &Type, output_type: &Type) -> VResult<bool> {
         Ok(check_type.type_eq(output_type))
     }
 
-    fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
+    fn is_contravariant(&self, check_type: &Type, output_type: &Type) -> VResult<bool> {
         if let Type::Index(Index { ty, .. }) = output_type.normalize() {
             if output_type.type_eq(&**ty) {
                 return Ok(true);

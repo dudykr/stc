@@ -45,7 +45,7 @@ pub(crate) struct ExtendsOpts {
 /// Generic expander.
 impl Analyzer<'_, '_> {
     pub(in super::super) fn instantiate_type_params_using_args(
-        &mut self,
+        &self,
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
+    pub(in super::super) fn expand_type_params<T>(&self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
@@ -119,7 +119,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
+    pub(crate) fn extends(&self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
         let _tracing = if cfg!(debug_assertions) {
             let child = dump_type_as_string(child);
             let parent = dump_type_as_string(parent);

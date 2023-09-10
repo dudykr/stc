@@ -874,7 +874,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !self.config.is_builtin && !found && self.ctx.in_actual_type {
-                        if self.scope.get_var(&i.into()).is_some() {
+                        if self.scope.borrow().get_var(&i.into()).is_some() {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
@@ -882,7 +882,7 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !self.config.is_builtin && self.ctx.in_actual_type {
-                        if self.scope.get_var(&i.into()).is_some() {
+                        if self.scope.borrow().get_var(&i.into()).is_some() {
                             self.storage
                                 .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
@@ -1288,7 +1288,8 @@ impl Analyzer<'_, '_> {
 
         let span = i.span;
         let id = i.into();
-        let static_method = self.scope.first(|scope| {
+        let b = self.scope.borrow();
+        let static_method = b.first(|scope| {
             let parent = scope.parent();
             let parent = match parent {
                 Some(v) => v,

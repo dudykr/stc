@@ -135,7 +135,7 @@ impl Analyzer<'_, '_> {
                 let id: Option<Id> = c.ident.as_ref().map(|v| v.into());
                 let orig_name = id.clone();
 
-                self.scope.this_class_name = id.clone();
+                self.scope.borrow_mut().this_class_name = id.clone();
 
                 let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 

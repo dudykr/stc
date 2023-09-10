@@ -95,7 +95,7 @@ impl Analyzer<'_, '_> {
     /// This method accepts Option<&[TypeParamInstantiation]> because user may
     /// provide only some of type arguments.
     pub(super) fn infer_arg_types(
-        &mut self,
+        &self,
         span: Span,
         base: Option<&TypeParamInstantiation>,
         type_params: &[TypeParam],
@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
 
     /// Handles `infer U`.
     pub(super) fn infer_ts_infer_types(
-        &mut self,
+        &self,
         span: Span,
         base: &Type,
         concrete: &Type,
@@ -492,7 +492,7 @@ impl Analyzer<'_, '_> {
     /// arr([1, u]) // Ok
     /// arr([{}, u]) // Ok
     /// ```
-    fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type(&self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, opts: InferTypeOpts) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -525,7 +525,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Optimize
-    fn infer_type_inner(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
+    fn infer_type_inner(&self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type, mut opts: InferTypeOpts) -> VResult<()> {
         if self.config.is_builtin {
             return Ok(());
         }
@@ -817,7 +817,12 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                debug!("({}): Inferred `{}` as {}", self.scope.depth(), name, dump_type_as_string(arg));
+                debug!(
+                    "({}): Inferred `{}` as {}",
+                    self.scope.borrow().depth(),
+                    name,
+                    dump_type_as_string(arg)
+                );
 
                 self.upsert_inferred(span, inferred, name.clone(), arg, opts)?;
 
@@ -1478,7 +1483,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_mapped_type(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Mapped,
@@ -2214,7 +2219,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_using_tuple_and_tuple(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &Tuple,
@@ -2294,7 +2299,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_of_fn_param(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         param: &FnParam,
@@ -2315,7 +2320,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn infer_type_of_fn_params(
-        &mut self,
+        &self,
         span: Span,
         inferred: &mut InferData,
         params: &[FnParam],
@@ -2341,7 +2346,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn rename_inferred(&mut self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
+    fn rename_inferred(&self, span: Span, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> VResult<()> {
         info!("rename_inferred");
 
         if arg_type_params.params.iter().any(|v| inferred.errored.contains(&v.name)) {
@@ -2425,7 +2430,7 @@ fn array_elem_type(t: &Type) -> Option<&Type> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
+    pub(super) fn rename_type_params(&self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
         if self.config.is_builtin {
             return Ok(ty);
         }

@@ -99,7 +99,7 @@ impl Analyzer<'_, '_> {
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
                     is_unreachable = analyzer.ctx.in_unreachable;
-                    take(&mut analyzer.scope.return_values)
+                    take(&mut analyzer.scope.get_mut().return_values)
                 })
             };
 
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if types.is_empty() {
-                    if let Some(declared) = self.scope.declared_return_type().cloned() {
+                    if let Some(declared) = self.scope.borrow().declared_return_type().cloned() {
                         // TODO(kdy1): Change this to `get_iterable_element_type`
                         if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
                             types.push(el_ty.into_owned());
@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
             return Ok(ret_ty);
         }
 
-        if let Some(declared) = self.scope.declared_return_type().cloned() {
+        if let Some(declared) = self.scope.borrow().declared_return_type().cloned() {
             if !is_async && !is_generator {
                 if ret_ty.is_none() && !is_unreachable {
                     if let Type::Keyword(KeywordType {
@@ -359,7 +359,7 @@ impl Analyzer<'_, '_> {
             };
             let mut a = self.with_ctx(ctx);
 
-            let type_ann = a.scope.declared_return_type().cloned();
+            let type_ann = a.scope.borrow().declared_return_type().cloned();
             node.arg.validate_with_args(&mut *a, (TypeOfMode::RValue, None, type_ann.as_ref()))
         } {
             res?
@@ -374,7 +374,7 @@ impl Analyzer<'_, '_> {
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
         ty.freeze();
 
-        if let Some(declared) = self.scope.declared_return_type().cloned() {
+        if let Some(declared) = self.scope.borrow().declared_return_type().cloned() {
             let declared = Type::Instance(Instance {
                 span: declared.span(),
                 ty: Box::new(declared),
@@ -481,7 +481,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.scope.return_values.return_types.push(ty);
+        self.scope.borrow_mut().return_values.return_types.push(ty);
 
         Ok(())
     }
@@ -510,7 +510,7 @@ impl Analyzer<'_, '_> {
             }
             .freezed();
 
-            if let Some(declared) = self.scope.declared_return_type().cloned() {
+            if let Some(declared) = self.scope.borrow().declared_return_type().cloned() {
                 match if self.ctx.in_async {
                     self.get_async_iterator_element_type(e.span, Cow::Owned(declared), true)
                         .context("tried to get an element type from an async iterator for normal yield")
@@ -561,9 +561,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.scope.return_values.yield_types.push(item_ty);
+            self.scope.borrow_mut().return_values.yield_types.push(item_ty);
         } else {
-            self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
+            self.scope.borrow_mut().return_values.yield_types.push(Type::Keyword(KeywordType {
                 span: e.span,
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 metadata: Default::default(),

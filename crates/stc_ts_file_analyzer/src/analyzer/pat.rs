@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
             .transpose()?
             .freezed();
 
-        let prev_declaring_len = self.scope.declaring.len();
+        let prev_declaring_len = self.scope.borrow().declaring.len();
         // Declaring names
         let mut names = vec![];
 
@@ -261,7 +261,7 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::ThisNotAllowedInAccessor { span: p.span() }.into());
                     }
                     if ty.is_some() {
-                        self.scope.this = ty.clone();
+                        self.scope.borrow_mut().this = ty.clone();
                     }
                 }
 
@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
 
                 p.visit_with(&mut visitor);
 
-                self.scope.declaring.extend(names.clone());
+                self.scope.borrow_mut().declaring.extend(names.clone());
 
                 if !self.config.is_builtin {
                     ty = match self.add_vars(
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
             PatMode::Decl => None,
         };
 
-        self.scope.declaring.truncate(prev_declaring_len);
+        self.scope.borrow_mut().declaring.truncate(prev_declaring_len);
 
         // Mark pattern as optional if default value exists
         if let RPat::Assign(assign_pat) = p {
@@ -431,7 +431,7 @@ impl Analyzer<'_, '_> {
 
         match p {
             RPat::Ident(i) if i.id.sym == *"this" => {
-                self.scope.this = Some(ty.clone());
+                self.scope.borrow_mut().this = Some(ty.clone());
             }
             _ => {}
         }

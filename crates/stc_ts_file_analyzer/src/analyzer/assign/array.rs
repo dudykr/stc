@@ -19,7 +19,7 @@ use crate::{
 impl Analyzer<'_, '_> {
     /// Returns `Ok(Some())` if the assignment is handled.
     pub(super) fn assign_to_tuple(
-        &mut self,
+        &self,
         data: &mut AssignData,
         l: &Tuple,
         l_type: &Type,

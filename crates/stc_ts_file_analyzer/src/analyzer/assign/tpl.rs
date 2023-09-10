@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
     /// orders.
     ///
     /// After splitting, we can check if each element is assignable.
-    pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
+    pub(crate) fn assign_to_tpl(&self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r_ty = r_ty.normalize();
 
@@ -52,7 +52,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Ported from `isValidTypeForTemplateLiteralPlaceholder` of `tsc`
-    pub(crate) fn is_valid_type_for_tpl_lit_placeholder(&mut self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
+    pub(crate) fn is_valid_type_for_tpl_lit_placeholder(&self, span: Span, source: &Type, target: &Type) -> VResult<bool> {
         let _tracing = dev_span!(
             "is_valid_type_for_tpl_lit_placeholder",
             source = tracing::field::display(&force_dump_type_as_string(source)),
