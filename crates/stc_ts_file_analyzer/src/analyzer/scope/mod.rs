@@ -5,7 +5,6 @@ use std::{
     iter,
     mem::{replace, take},
     slice,
-    time::Instant,
 };
 
 use fxhash::{FxHashMap, FxHashSet};
@@ -26,7 +25,9 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{AssertCloneCheap, Freeze, ALLOW_DEEP_CLONE},
-    dev_span, stack,
+    dev_span,
+    perf_timer::PerfTimer,
+    stack,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -2707,9 +2708,8 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
         let before = dump_type_as_string(&ty);
-        let start = Instant::now();
+        let timer = PerfTimer::noop();
         let expanded = self.expand_type(ty).fixed();
-        let end = Instant::now();
 
         if !self.analyzer.config.is_builtin {
             expanded.assert_valid();
@@ -2717,7 +2717,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
         debug!(
             "[expander (time = {:?})]: {} => {}",
-            end - start,
+            timer.elapsed(),
             before,
             dump_type_as_string(&expanded)
         );
