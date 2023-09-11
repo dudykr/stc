@@ -1413,15 +1413,7 @@ impl Analyzer<'_, '_> {
                                                         l_index_ret_ty,
                                                         &Type::new_union(
                                                             span,
-                                                            vec![
-                                                                *r_prop_ty.clone(),
-                                                                Type::Keyword(KeywordType {
-                                                                    span,
-                                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                                    metadata: Default::default(),
-                                                                    tracker: Default::default(),
-                                                                }),
-                                                            ],
+                                                            vec![*r_prop_ty.clone(), Type::undefined(span, Default::default())],
                                                         ),
                                                         opts,
                                                     )

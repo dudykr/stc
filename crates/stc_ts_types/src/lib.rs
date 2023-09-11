@@ -1991,6 +1991,19 @@ impl Type {
         })
     }
 
+    pub fn null_and_undefined(span: Span, metadata: KeywordTypeMetadata) -> Vec<Self> {
+        vec![Self::null(span, metadata), Self::undefined(span, metadata)]
+    }
+
+    pub fn null(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsNullKeyword,
+            metadata,
+            tracker: Default::default(),
+        })
+    }
+
     pub fn undefined(span: Span, metadata: KeywordTypeMetadata) -> Self {
         Type::Keyword(KeywordType {
             span,

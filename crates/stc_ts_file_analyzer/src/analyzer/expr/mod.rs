@@ -2611,12 +2611,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !opts.disallow_inexact && metadata.inexact {
-                    return Ok(Type::Keyword(KeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
+                    return Ok(Type::undefined(span, Default::default()));
                 }
 
                 return Err(ErrorKind::NoSuchProperty {
@@ -2719,12 +2714,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     if !errors.is_empty() {
                         if is_all_tuple && errors.len() != types.len() {
-                            result_types.push(Type::Keyword(KeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            }));
+                            result_types.push(Type::undefined(span, Default::default()));
                             result_types.dedup_type();
                             let ty = Type::new_union(span, result_types);
                             ty.assert_valid();
@@ -2827,13 +2817,9 @@ impl Analyzer<'_, '_> {
 
                         if v as usize >= elems.len() {
                             if opts.use_undefined_for_tuple_index_error {
-                                return Ok(Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }));
+                                return Ok(Type::undefined(span, Default::default()));
                             }
+
                             if opts.use_last_element_for_tuple_on_out_of_bound {
                                 return Ok(*elems.last().unwrap().ty.clone());
                             }
@@ -2847,12 +2833,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     .context("returning undefined because it's l-value context"),
                                 );
-                                return Ok(Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }));
+                                return Ok(Type::undefined(span, Default::default()));
                             }
 
                             return Err(ErrorKind::TupleIndexError {
@@ -4782,13 +4763,9 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
         if i.sym == js_word!("undefined") {
-            return Ok(Type::Keyword(KeywordType {
-                span: i.span.with_ctxt(SyntaxContext::empty()),
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                metadata: Default::default(),
-                tracker: Default::default(),
-            }));
+            return Ok(Type::undefined(i.span.with_ctxt(SyntaxContext::empty()), Default::default()));
         }
+
         let ty = self.type_of_var(i, mode, type_args)?;
         if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
             // `i` is truthy
@@ -4839,20 +4816,10 @@ impl Analyzer<'_, '_> {
             RLit::Null(RNull { span }) => {
                 if self.ctx.in_export_default_expr {
                     // TODO(kdy1): strict mode
-                    return Ok(Type::Keyword(KeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }));
+                    return Ok(Type::any(*span, Default::default()));
                 }
 
-                Ok(Type::Keyword(KeywordType {
-                    span: *span,
-                    kind: TsKeywordTypeKind::TsNullKeyword,
-                    metadata: Default::default(),
-                    tracker: Default::default(),
-                }))
+                Ok(Type::null(*span, Default::default()))
             }
             RLit::Regex(v) => Ok(Type::Ref(Ref {
                 span: v.span,

@@ -16,7 +16,7 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{Context, Error};
+use anyhow::{bail, Context, Error};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -662,7 +662,7 @@ impl LoadFile for TestFileSystem {
             }
         }
 
-        todo!("load_file: {:?} ", filename);
+        bail!("not found module");
     }
 }
 
