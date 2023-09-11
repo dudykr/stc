@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take, time::Instant};
+use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take};
 
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
@@ -21,7 +21,9 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    dev_span, stack,
+    dev_span,
+    perf_timer::PerfTimer,
+    stack,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -114,7 +116,7 @@ impl Analyzer<'_, '_> {
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
         );
 
-        // let start = Instant::now();
+        let timer = PerfTimer::noop();
 
         let mut inferred = InferData::default();
 
@@ -357,9 +359,7 @@ impl Analyzer<'_, '_> {
 
         let map = self.finalize_inference(span, type_params, inferred);
 
-        // let end = Instant::now();
-
-        // warn!("infer_arg_types is finished. (time = {:?})", end - start);
+        warn!("infer_arg_types is finished. (time = {:?})", timer.elapsed());
 
         Ok(map)
     }

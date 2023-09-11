@@ -1,4 +1,4 @@
-use std::{borrow::Cow, time::Instant};
+use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit};
@@ -15,6 +15,7 @@ use stc_utils::{
     cache::Freeze,
     dev_span,
     ext::{SpanExt, TypeVecExt},
+    perf_timer::PerfTimer,
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -299,12 +300,7 @@ impl Analyzer<'_, '_> {
 
                 if !errors.is_empty() {
                     if can_use_undefined && errors.len() != u.types.len() {
-                        types.push(Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
+                        types.push(Type::undefined(span, Default::default()));
                         types.dedup_type();
                         return Ok(Cow::Owned(Type::new_union(span, types)));
                     }
@@ -593,13 +589,10 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
-        // let start = Instant::now();
+        let timer = PerfTimer::noop();
         let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
 
-        // let end = Instant::now();
-
-        // debug!(kind = "perf", op = "get_iterator", "get_iterator (time = {:?}", end -
-        // start);
+        debug!(kind = "perf", op = "get_iterator", "get_iterator (time = {:?}", timer.elapsed());
 
         let iterator = iterator?;
 

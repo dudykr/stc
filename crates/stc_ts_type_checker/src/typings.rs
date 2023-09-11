@@ -2,11 +2,11 @@ use std::{
     fs::read_dir,
     path::{Path, PathBuf},
     sync::Arc,
-    time::Instant,
 };
 
 use rayon::prelude::*;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
+use stc_utils::perf_timer::PerfTimer;
 use swc_common::FileName;
 
 use crate::Checker;
@@ -23,13 +23,11 @@ impl Checker {
 
         if let Ok(entry) = result {
             let entry = Arc::new(FileName::Real(entry));
-            // let start = Instant::now();
+            let timer = PerfTimer::log_debug();
 
             self.analyze_module(None, entry);
 
-            // let end = Instant::now();
-            // log::debug!("Loading typings at `{}` took {:?}", dir.display(),
-            // end - start);
+            timer.log(&format!("Loading typings at `{}`", dir.display()));
         }
     }
 

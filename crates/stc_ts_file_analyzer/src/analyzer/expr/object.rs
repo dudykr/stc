@@ -1,4 +1,4 @@
-use std::{borrow::Cow, time::Instant};
+use std::borrow::Cow;
 
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
@@ -6,7 +6,7 @@ use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::ObjectUnionNormalizer, Fix};
 use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, TypeParam, Union, UnionMetadata};
-use stc_utils::{cache::Freeze, dev_span};
+use stc_utils::{cache::Freeze, dev_span, perf_timer::PerfTimer};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
@@ -60,12 +60,10 @@ impl Analyzer<'_, '_> {
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         let _tracing = dev_span!("normalize_union");
 
-        // let start = Instant::now();
+        let timer = PerfTimer::noop();
         ty.visit_mut_with(&mut ObjectUnionNormalizer { preserve_specified });
 
-        // let end = Instant::now();
-
-        // debug!("Normalized unions (time = {:?})", end - start);
+        debug!("Normalized unions (time = {:?})", timer.elapsed());
     }
 
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {

@@ -80,12 +80,7 @@ impl Analyzer<'_, '_> {
                             .assign_with_opts(
                                 &mut Default::default(),
                                 ty,
-                                &Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
+                                &Type::undefined(span, Default::default()),
                                 AssignOpts {
                                     span,
                                     ..Default::default()

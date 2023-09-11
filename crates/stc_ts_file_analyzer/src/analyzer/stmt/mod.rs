@@ -1,10 +1,8 @@
-use std::time::Instant;
-
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RDecl, RExpr, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{LitType, Type};
-use stc_utils::{dev_span, stack};
+use stc_utils::{dev_span, perf_timer::PerfTimer, stack};
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
 use tracing::{trace, warn};
@@ -42,7 +40,7 @@ impl Analyzer<'_, '_> {
         let _tracing = dev_span!("Stmt", line_col = &*line_col);
 
         warn!("Statement start");
-        // let start = Instant::now();
+        let timer = PerfTimer::noop();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
             if !matches!(s, RStmt::Decl(RDecl::TsInterface(..) | RDecl::TsTypeAlias(..))) {
@@ -57,15 +55,13 @@ impl Analyzer<'_, '_> {
 
         self.scope.return_values.in_conditional = old_in_conditional;
 
-        // let end = Instant::now();
-
-        // warn!(
-        //     kind = "perf",
-        //     op = "validate (Stmt)",
-        //     "({}): Statement validation done. (time = {:?}",
-        //     line_col,
-        //     end - start
-        // );
+        warn!(
+            kind = "perf",
+            op = "validate (Stmt)",
+            "({}): Statement validation done. (time = {:?}",
+            line_col,
+            timer.elapsed()
+        );
 
         Ok(())
     }

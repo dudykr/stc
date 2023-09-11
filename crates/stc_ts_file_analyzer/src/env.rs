@@ -111,8 +111,6 @@ pub trait BuiltInGen: Sized {
     {
         info!("Merging builtin");
 
-        // let start = Instant::now();
-
         let mut types = FxHashMap::default();
         let mut vars = FxHashMap::default();
         let mut storage = Builtin::default();
@@ -283,8 +281,6 @@ pub trait BuiltInGen: Sized {
             ty.fix();
             ty.freeze();
         }
-
-        // let dur = Instant::now() - start;
 
         Self::new(vars, types)
     }

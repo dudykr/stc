@@ -2728,6 +2728,7 @@ name = "stc_utils"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
+ "log",
  "once_cell",
  "rustc-hash",
  "scoped-tls",
