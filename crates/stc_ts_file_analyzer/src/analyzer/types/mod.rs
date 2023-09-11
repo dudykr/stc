@@ -1443,6 +1443,10 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
+        if ty.is_unknown() {
+            return Ok(true);
+        }
+
         if include_null {
             if ty.is_null() {
                 return Ok(true);
