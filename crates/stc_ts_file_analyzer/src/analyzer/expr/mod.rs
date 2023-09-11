@@ -2,7 +2,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use optional_chaining::is_obj_opt_chaining;
@@ -27,7 +27,7 @@ use stc_ts_types::{
     PropertySignature, QueryExpr, QueryType, QueryTypeMetadata, Readonly, StaticThis, ThisType, TplElem, TplType, TplTypeMetadata,
     TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, stack};
+use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt, panic_ctx, perf_timer::PerfTimer, stack};
 use swc_atoms::js_word;
 use swc_common::{SourceMapper, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, VarDeclKind};
@@ -1229,7 +1229,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let start = Instant::now();
+        let timer = PerfTimer::noop();
         obj.assert_valid();
 
         // Try some easier assignments.
@@ -1353,17 +1353,16 @@ impl Analyzer<'_, '_> {
                 )
             })
         }
-        let end = Instant::now();
-        let dur = end - start;
 
-        if dur >= Duration::from_micros(100) {
+        let elapsed = timer.elapsed();
+        if elapsed >= Duration::from_micros(100) {
             let line_col = self.line_col(span);
             debug!(
                 kind = "perf",
                 op = "access_property",
                 "({}) access_property: (time = {:?})",
                 line_col,
-                end - start
+                elapsed
             );
         }
 

@@ -1,4 +1,4 @@
-use std::{collections::hash_map::Entry, error::Error, path::Path, sync::Arc, time::Instant};
+use std::{collections::hash_map::Entry, error::Error, path::Path, sync::Arc};
 
 use dashmap::DashMap;
 use once_cell::sync::{Lazy, OnceCell};
@@ -109,8 +109,6 @@ pub trait BuiltInGen: Sized {
         I: IntoIterator<Item = RModuleItem>,
     {
         info!("Merging builtin");
-
-        let start = Instant::now();
 
         let mut types = FxHashMap::default();
         let mut vars = FxHashMap::default();
@@ -282,8 +280,6 @@ pub trait BuiltInGen: Sized {
             ty.fix();
             ty.freeze();
         }
-
-        let dur = Instant::now() - start;
 
         Self::new(vars, types)
     }
