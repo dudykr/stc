@@ -778,7 +778,7 @@ pub struct Module {
 
 impl Debug for Module {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "module {{")?;
+        writeln!(f, "module {:?}{{", &self.name)?;
 
         writeln!(f, "  types:")?;
 
