@@ -1,4 +1,8 @@
-use std::{cell::RefCell, io::BufWriter, path::PathBuf, str::FromStr, sync::Arc};
+use std::{
+    path::PathBuf,
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
@@ -26,7 +30,7 @@ type Out = CheckAndAnnotateOutput;
 pub fn check_and_annotate_types(src: &str) -> Out {
     let globals = Arc::<Globals>::default();
     let cm = Arc::new(SourceMap::default());
-    let buf = Arc::new(RefCell::new(BufWriter::new(Vec::new())));
+    let buf = Arc::new(Mutex::new(Vec::new()));
     let env = GLOBALS.set(&globals, || {
         Env::new(
             StableEnv::new(),
@@ -65,7 +69,7 @@ pub fn check_and_annotate_types(src: &str) -> Out {
     }
 
     let out = CheckAndAnnotateOutput {
-        error: String::from_utf8_lossy(buf.borrow().get_ref()).into_owned(),
+        error: String::from_utf8_lossy(&buf.lock().unwrap()).into_owned(),
     };
 
     #[cfg(target_arch = "wasm32")]
@@ -85,21 +89,18 @@ pub struct CheckAndAnnotateOutput {
 }
 
 pub struct PassThroughWriter {
-    pub buf: Arc<RefCell<BufWriter<Vec<u8>>>>,
+    pub buf: Arc<Mutex<Vec<u8>>>,
 }
 
 impl std::io::Write for PassThroughWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.buf.borrow_mut().write(buf)
+        self.buf.lock().unwrap().write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        self.buf.borrow_mut().flush()
+        self.buf.lock().unwrap().flush()
     }
 }
-
-unsafe impl Send for PassThroughWriter {}
-unsafe impl Sync for PassThroughWriter {}
 
 pub struct VoidResolver;
 
