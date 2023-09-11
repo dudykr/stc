@@ -18,27 +18,27 @@ impl<'l> PerfTimer<'l> {
     }
 
     pub fn log_trace() -> Self {
-        Self::with_logger(&logger_impls::log_trace)
+        Self::with_logger(&loggers::log_trace)
     }
 
     pub fn log_debug() -> Self {
-        Self::with_logger(&logger_impls::log_debug)
+        Self::with_logger(&loggers::log_debug)
     }
 
     pub fn log_info() -> Self {
-        Self::with_logger(&logger_impls::log_info)
+        Self::with_logger(&loggers::log_info)
     }
 
     pub fn log_warn() -> Self {
-        Self::with_logger(&logger_impls::log_warn)
+        Self::with_logger(&loggers::log_warn)
     }
 
     pub fn tracing_debug() -> Self {
-        Self::with_logger(&logger_impls::tracing_debug)
+        Self::with_logger(&loggers::tracing_debug)
     }
 
     pub fn tracing_warn() -> Self {
-        Self::with_logger(&logger_impls::tracing_warn)
+        Self::with_logger(&loggers::tracing_warn)
     }
 }
 
@@ -52,7 +52,7 @@ impl<'l> PerfTimer<'l> {
     }
 }
 
-mod logger_impls {
+mod loggers {
     use std::time::Duration;
 
     pub fn log_trace(scope: &str, duration: Duration) {
