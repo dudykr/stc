@@ -6,7 +6,6 @@ Symbols/ES5SymbolProperty6.ts
 Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
 ambient/ambientDeclarations.ts
-ambient/ambientDeclarationsExternal.ts
 ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient/ambientEnumDeclaration1.ts
 ambient/ambientEnumDeclaration2.ts
@@ -1680,7 +1679,6 @@ externalModules/exportAssignImportedIdentifier.ts
 externalModules/exportAssignTypes.ts
 externalModules/exportAssignmentAndDeclaration.ts
 externalModules/exportAssignmentGenericType.ts
-externalModules/exportAssignmentOfExportNamespaceWithDefault.ts
 externalModules/exportAssignmentTopLevelIdentifier.ts
 externalModules/exportClassNameWithObjectAMD.ts
 externalModules/exportClassNameWithObjectCommonJS.ts
@@ -1812,7 +1810,6 @@ jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
 jsx/tsxEmitSpreadAttribute.ts
-jsx/tsxReactEmitSpreadAttribute.ts
 moduleResolution/importFromDot.ts
 moduleResolution/packageJsonImportsExportsOptionCompat.ts
 nonjsExtensions/declarationFileForJsonImport.ts
@@ -2198,14 +2195,8 @@ parser/ecmascript6/Symbols/parserSymbolProperty6.ts
 parser/ecmascript6/Symbols/parserSymbolProperty7.ts
 parser/ecmascript6/Symbols/parserSymbolProperty8.ts
 parser/ecmascript6/Symbols/parserSymbolProperty9.ts
-references/library-reference-1.ts
 references/library-reference-14.ts
-references/library-reference-3.ts
-references/library-reference-4.ts
 references/library-reference-6.ts
-references/library-reference-7.ts
-references/library-reference-8.ts
-references/library-reference-scoped-packages.ts
 salsa/constructorNameInObjectLiteralAccessor.ts
 salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
