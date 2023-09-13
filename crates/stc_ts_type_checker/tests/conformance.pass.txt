@@ -2375,6 +2375,7 @@ types/literal/stringLiteralsWithSwitchStatements03.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
 types/literal/stringLiteralsWithTypeAssertions01.ts
 types/literal/templateLiteralTypes2.ts
+types/literal/templateLiteralTypes4.ts
 types/literal/templateLiteralTypesPatternsPrefixSuffixAssignability.ts
 types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts

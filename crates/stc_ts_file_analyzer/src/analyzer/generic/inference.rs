@@ -684,16 +684,28 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_bigint() {
-                                            return Type::Lit(LitType {
-                                                span,
-                                                lit: RTsLit::BigInt(RBigInt {
-                                                    span,
-                                                    value: Box::new(src.parse().unwrap()),
-                                                    raw: None,
-                                                }),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            });
+                                            match src.parse() {
+                                                Ok(v) => {
+                                                    return Type::Lit(LitType {
+                                                        span,
+                                                        lit: RTsLit::BigInt(RBigInt {
+                                                            span,
+                                                            value: Box::new(v),
+                                                            raw: None,
+                                                        }),
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                                Err(..) => {
+                                                    return Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsBigIntKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                            }
                                         }
 
                                         if l.is_bigint_lit() {
