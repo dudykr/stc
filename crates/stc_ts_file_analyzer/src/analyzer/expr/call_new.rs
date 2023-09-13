@@ -349,6 +349,13 @@ impl Analyzer<'_, '_> {
                 //     })
                 //     .into());
                 // }
+                if self.env.target().eq(&swc_ecma_ast::EsVersion::Es5) {
+                    Err(ErrorKind::NoSuchType {
+                        span: i.span(),
+                        name: i.into(),
+                    })?
+                }
+
                 Err(ErrorKind::UndefinedSymbol {
                     sym: i.into(),
                     span: i.span(),
