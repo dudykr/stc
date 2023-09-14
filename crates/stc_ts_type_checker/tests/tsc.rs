@@ -626,7 +626,7 @@ impl Resolve for TestFileSystem {
             }
         }
 
-        todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);
+        bail!("resolve: current = {:?}; target ={:?}", base, module_specifier);
     }
 }
 
