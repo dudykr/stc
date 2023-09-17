@@ -475,6 +475,7 @@ es2018/es2018IntlAPIs.ts
 es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
 es2019/globalThisTypeIndexAccess.ts
+es2019/importMeta/importMetaNarrowing.ts
 es2020/bigintMissingES2019.ts
 es2020/bigintMissingES2020.ts
 es2020/bigintMissingESNext.ts
@@ -1018,6 +1019,7 @@ es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02_ES6.ts
+es6/templates/taggedTemplateStringsPldirectives/ts-expect-error-nocheck.ts
 es6/templates/taggedTemplateStringsWithIncompatibleTypedTags.ts
 es6/templates/taggedTemplateStringsWithIncompatibleTypedTagsES6.ts
 es6/templates/taggedTemplateStringsWithManyCallAndMemberExpressions.ts
@@ -1148,6 +1150,7 @@ es6/templates/templateStringWithEmbeddedObjectLiteral.ts
 es6/templates/templateStringWithEmbeddedObjectLiteralES6.ts
 es6/templates/templateStringWithEmbeddedTemplateString.ts
 es6/templates/templateStringWithEmbeddedTemplateStringES6.ts
+es6/templates/templateStringWithEmbeddedTypdirectives/ts-expect-error-nocheck.ts
 es6/templates/templateStringWithEmbeddedTypeAssertionOnAddition.ts
 es6/templates/templateStringWithEmbeddedTypeAssertionOnAdditionES6.ts
 es6/templates/templateStringWithEmbeddedTypeOfOperator.ts
