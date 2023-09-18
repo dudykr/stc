@@ -20,7 +20,8 @@ impl Analyzer<'_, '_> {
             }
 
             MetaPropKind::ImportMeta => {
-                if let Ok(ty) = self.env.get_global_type(e.span(), &"ImportMeta".into()) {
+                if let Ok(mut ty) = self.env.get_global_type(e.span(), &"ImportMeta".into()) {
+                    ty.reposition(e.span());
                     return Ok(ty);
                 }
 
