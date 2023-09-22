@@ -300,12 +300,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         },
     };
 
-    let main_src = Arc::new(fs::read_to_string(file_name).unwrap());
-    // Postpone multi-file tests.
-    if main_src.contains("<reference path") {
-        panic!("`<reference path` is not supported yet");
-    }
-
     let mut stats = Stats::default();
     dbg!(&libs);
     for err in &mut expected_errors {

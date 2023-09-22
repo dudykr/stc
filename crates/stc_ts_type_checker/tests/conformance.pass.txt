@@ -2204,6 +2204,7 @@ salsa/constructorNameInObjectLiteralAccessor.ts
 salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
 salsa/propertyAssignmentUseParentType3.ts
+salsa/sourceFileMergeWithFunction.ts
 salsa/typeFromPropertyAssignment30.ts
 salsa/typeFromPropertyAssignment38.ts
 scanner/ecmascript3/scannerES3NumericLiteral1.ts
