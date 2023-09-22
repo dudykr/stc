@@ -445,23 +445,14 @@ impl Analyzer<'_, '_> {
                 for prev in property_types.iter_mut() {
                     if let TypeElement::Property(prev) = prev {
                         if prev.key.type_eq(&p.key) {
-                            let prev_type = prev
-                                .type_ann
-                                .clone()
-                                .map(|v| *v)
-                                .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
-                            let other = p
-                                .type_ann
-                                .clone()
-                                .map(|v| *v)
-                                .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                            let prev_type = prev.type_ann.clone().map(|v| *v).unwrap_or(Type::any(span, Default::default()));
+                            let other = p.type_ann.clone().map(|v| *v).unwrap_or(Type::any(span, Default::default()));
 
-                            let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
-
-                            if let Some(new) = new {
+                            if let Some(new) = self.normalize_intersection_types(span, &[prev_type, other], opts)? {
                                 if new.is_never() {
                                     return never!();
                                 }
+
                                 prev.type_ann = Some(Box::new(new));
                                 continue 'outer;
                             }
