@@ -14,19 +14,14 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use super::NormalizeTypeOpts;
 use crate::{analyzer::Analyzer, VResult};
 
+macro_rules! never {
+    ($span:ident) => {{
+        Ok(Some(Type::never($span, Default::default())))
+    }};
+}
+
 impl Analyzer<'_, '_> {
     pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
-        macro_rules! never {
-            () => {{
-                Ok(Some(Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsNeverKeyword,
-                    metadata: KeywordTypeMetadata { ..Default::default() },
-                    tracker: Default::default(),
-                })))
-            }};
-        }
-
         let mut normalized_types = vec![];
         // set normalize all
         for el in types.iter() {
@@ -67,7 +62,7 @@ impl Analyzer<'_, '_> {
         }
         // has never; return never
         if normalized_types.iter().any(|ty| ty.is_never()) {
-            return never!();
+            return never!(span);
         }
         // has any, return any
         if normalized_types.iter().any(|ty| ty.is_any()) {
@@ -91,7 +86,7 @@ impl Analyzer<'_, '_> {
         let is_type_lit = normalized_types.iter().any(|ty| ty.is_type_lit());
 
         if (is_null || is_undefined) && is_type_lit {
-            return never!();
+            return never!(span);
         }
 
         let sum = u32::from(is_symbol)
@@ -108,7 +103,7 @@ impl Analyzer<'_, '_> {
             if sum == 2 && is_undefined && is_void {
                 return Ok(Some(Type::undefined(span, Default::default())));
             }
-            return never!();
+            return never!(span);
         }
 
         if normalized_types.len() == 2 {
@@ -116,7 +111,7 @@ impl Analyzer<'_, '_> {
             if ((a.is_str_lit() && b.is_str_lit()) || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
                 && !a.type_eq(b)
             {
-                return never!();
+                return never!(span);
             }
             if let (Type::Conditional(c), other) | (other, Type::Conditional(c)) = (a.normalize(), b.normalize()) {
                 return Ok(Some(
@@ -139,7 +134,7 @@ impl Analyzer<'_, '_> {
 
         if enum_variant_len > 0 {
             if normalized_types.iter().any(|ty| matches!(ty.normalize(), Type::Lit(..))) {
-                return never!();
+                return never!(span);
             }
             if let Some(first_enum) = enum_variant_iter.first() {
                 let mut enum_temp = first_enum.normalize();
@@ -152,14 +147,14 @@ impl Analyzer<'_, '_> {
                             }
 
                             if en.def.id != el.def.id {
-                                return never!();
+                                return never!(span);
                             }
 
                             // eq two argument enum_name
                             if let Ok(el_lit) = self.expand_enum_variant(elem.clone()) {
                                 if let Ok(etl) = self.expand_enum_variant(enum_temp.clone()) {
                                     if !etl.type_eq(&el_lit) {
-                                        return never!();
+                                        return never!(span);
                                     }
                                 }
                             }
@@ -215,10 +210,10 @@ impl Analyzer<'_, '_> {
                             });
 
                             if str_lits.is_empty() && is_str {
-                                return never!();
+                                return never!(span);
                             }
                             if num_lits.is_empty() && is_num {
-                                return never!();
+                                return never!(span);
                             }
                             if str_lits.is_empty() && is_num || num_lits.is_empty() && is_str {
                                 return Ok(Some(elem.clone().freezed()));
@@ -231,7 +226,7 @@ impl Analyzer<'_, '_> {
                                 } else if is_num {
                                     num_lits
                                 } else {
-                                    return never!();
+                                    return never!(span);
                                 },
                             );
 
@@ -273,12 +268,6 @@ impl Analyzer<'_, '_> {
     }
 
     fn flat_intersection_type(&mut self, span: Span, mut normalized_types: Vec<Type>) -> VResult<Option<Type>> {
-        macro_rules! never {
-            () => {{
-                Ok(Some(Type::never(span, Default::default())))
-            }};
-        }
-
         let normalized_len = normalized_types.len();
         normalized_types.freeze();
 
@@ -402,12 +391,12 @@ impl Analyzer<'_, '_> {
             new_types.retain(|ty| !ty.is_never());
 
             acc_type = match new_types.len() {
-                0 => return never!(),
+                0 => return never!(span),
                 1 => {
                     if let Some(ty) = new_types.pop() {
                         ty
                     } else {
-                        return never!();
+                        return never!(span);
                     }
                 }
                 _ => Type::new_union(span, new_types).freezed(),
@@ -428,17 +417,6 @@ impl Analyzer<'_, '_> {
         property_types: &mut Vec<TypeElement>,
         opts: NormalizeTypeOpts,
     ) -> VResult<Option<Type>> {
-        macro_rules! never {
-            () => {{
-                Ok(Some(Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsNeverKeyword,
-                    metadata: KeywordTypeMetadata { ..Default::default() },
-                    tracker: Default::default(),
-                })))
-            }};
-        }
-
         // Intersect property types
         'outer: for e in elements.iter() {
             if let TypeElement::Property(p) = e {
@@ -450,7 +428,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(new) = self.normalize_intersection_types(span, &[prev_type, other], opts)? {
                                 if new.is_never() {
-                                    return never!();
+                                    return never!(span);
                                 }
 
                                 prev.type_ann = Some(Box::new(new));
