@@ -1594,6 +1594,11 @@ pub enum ErrorKind {
     CannotBeUsedToIndexType {
         span: Span,
     },
+
+    // TS18016
+    PrivateIdentifiersAreNotAllowedOutsideClassBodies {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2209,6 +2214,9 @@ impl ErrorKind {
             ErrorKind::ImportFailed { .. } => 2305,
 
             ErrorKind::CannotBeUsedToIndexType { .. } => 2536,
+
+            ErrorKind::PrivateIdentifiersAreNotAllowedOutsideClassBodies { .. } => 18016,
+
             _ => 0,
         }
     }
