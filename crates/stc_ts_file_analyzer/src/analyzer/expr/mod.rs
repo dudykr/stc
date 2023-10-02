@@ -1381,6 +1381,8 @@ impl Analyzer<'_, '_> {
             ty.reposition(span);
         }
 
+        ty.freeze();
+
         Ok(ty)
     }
 
