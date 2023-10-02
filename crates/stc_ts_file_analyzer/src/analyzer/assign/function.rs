@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::max};
+use std::{borrow::Cow, cmp::max, iter::Peekable};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -7,10 +7,10 @@ use stc_ts_errors::{
     debug::{dump_type_map, force_dump_type_as_string},
     DebugExt, ErrorKind,
 };
-use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, Type, TypeElement, TypeParamDecl};
+use stc_ts_types::{Constructor, FnParam, Function, IdCtx, Key, KeywordType, LitType, SpreadLike, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, dev_span, stack};
 use swc_atoms::js_word;
-use swc_common::{Spanned, SyntaxContext, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
@@ -816,6 +816,125 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    fn relate_spread_likes<'a, 'l, 'r, T, LI, RI>(
+        &'a mut self,
+        span: Span,
+        li: &mut Peekable<LI>,
+        ri: &mut Peekable<RI>,
+        relate: &mut impl FnMut(&mut Self, &Type, &Type) -> VResult<()>,
+    ) -> VResult<()>
+    where
+        T: SpreadLike,
+        LI: Iterator<Item = &'l T> + Clone,
+        RI: Iterator<Item = &'r T> + Clone,
+    {
+        let _tracing = dev_span!("relate_spread_likes");
+        let li_count = li.clone().count();
+        let ri_count = ri.clone().count();
+
+        while let (Some(..), Some(..)) = (li.peek(), ri.peek()) {
+            let l = li.peek().copied().cloned().unwrap();
+            let r = ri.peek().copied().cloned().unwrap();
+
+            match (l.is_spread(), r.is_spread()) {
+                (true, true) => {
+                    li.next();
+                    ri.next();
+
+                    relate(self, &l.ty(), &r.ty()).context("failed to relate a spread item to another one")?;
+                }
+                (true, false) => {
+                    li.next();
+
+                    for (idx, r) in ri.into_iter().enumerate() {
+                        let le = self
+                            .access_property(
+                                span,
+                                &l.ty(),
+                                &Key::Num(RNumber {
+                                    span: l.span(),
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    use_last_element_for_tuple_on_out_of_bound: true,
+                                    disallow_creating_indexed_type_for_type_params: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| l.ty().clone());
+
+                        relate(self, &le, r.ty()).with_context(|| {
+                            format!(
+                                "l: spread + {} (from {}); r: non-spread + {}; idx = {}",
+                                force_dump_type_as_string(&le),
+                                force_dump_type_as_string(&l.ty()),
+                                force_dump_type_as_string(r.ty()),
+                                idx
+                            )
+                        })?;
+                    }
+
+                    return Ok(());
+                }
+                (false, true) => {
+                    ri.next();
+
+                    for (idx, l) in li.into_iter().enumerate() {
+                        let re = self
+                            .access_property(
+                                span,
+                                &r.ty(),
+                                &Key::Num(RNumber {
+                                    span: r.span(),
+                                    value: idx as f64,
+                                    raw: None,
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                                AccessPropertyOpts {
+                                    disallow_indexing_array_with_string: true,
+                                    disallow_creating_indexed_type_from_ty_els: true,
+                                    disallow_indexing_class_with_computed: true,
+                                    disallow_inexact: true,
+                                    use_last_element_for_tuple_on_out_of_bound: true,
+                                    disallow_creating_indexed_type_for_type_params: true,
+                                    ..Default::default()
+                                },
+                            )
+                            .unwrap_or_else(|_| r.ty().clone());
+
+                        relate(self, l.ty(), &re).with_context(|| {
+                            format!(
+                                "l: non-spread + {}; r: spread + {} (from {}); idx = {}",
+                                force_dump_type_as_string(&l.ty()),
+                                force_dump_type_as_string(&re),
+                                force_dump_type_as_string(&r.ty()),
+                                idx
+                            )
+                        })?;
+                    }
+
+                    return Ok(());
+                }
+                (false, false) => {
+                    li.next();
+                    ri.next();
+
+                    relate(self, &l.ty(), &r.ty()).context("failed to relate a non-spread item")?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// # Validation of parameter count
     ///
     /// A parameter named `this` is excluded.
@@ -837,24 +956,33 @@ impl Analyzer<'_, '_> {
 
         let span = opts.span;
 
-        let mut li = l.iter().filter(|p| {
-            !matches!(
-                p.pat,
-                RPat::Ident(RBindingIdent {
-                    id: RIdent { sym: js_word!("this"), .. },
-                    ..
-                })
-            )
-        });
-        let mut ri = r.iter().filter(|p| {
-            !matches!(
-                p.pat,
-                RPat::Ident(RBindingIdent {
-                    id: RIdent { sym: js_word!("this"), .. },
-                    ..
-                })
-            )
-        });
+        let mut li = l
+            .iter()
+            .filter(|p| {
+                !matches!(
+                    p.pat,
+                    RPat::Ident(RBindingIdent {
+                        id: RIdent { sym: js_word!("this"), .. },
+                        ..
+                    })
+                )
+            })
+            .peekable();
+        let mut ri = r
+            .iter()
+            .filter(|p| {
+                !matches!(
+                    p.pat,
+                    RPat::Ident(RBindingIdent {
+                        id: RIdent { sym: js_word!("this"), .. },
+                        ..
+                    })
+                )
+            })
+            .peekable();
+
+        let li_count = li.clone().count();
+        let ri_count = ri.clone().count();
 
         let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
@@ -899,124 +1027,19 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        loop {
-            let l = li.next();
-            let r = ri.next();
-
-            let (Some(l), Some(r)) = (l, r) else {
-                break
-            };
-
-            // TODO(kdy1): What should we do?
-            if opts.allow_assignment_to_param {
-                if let Ok(()) = self.assign_param(
-                    data,
-                    r,
-                    l,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        allow_assignment_to_param: false,
-                        ..opts
-                    },
-                ) {
-                    continue;
-                }
-            }
-
-            // A rest pattern is always the last
-            match (&l.pat, &r.pat) {
-                (RPat::Rest(..), RPat::Rest(..)) => {
-                    self.assign_param(data, l, r, opts)
-                        .with_context(|| "tried to assign a rest parameter to another rest parameter".to_string())?;
-                    break;
-                }
-
-                (RPat::Rest(..), _) => {
-                    // TODO(kdy1): Implement correct logic
-
-                    return Ok(());
-                }
-
-                (_, RPat::Rest(..)) => {
-                    // If r is an iterator, we should assign each element to l.
-                    if let Ok(r_iter) = self.get_iterator(span, Cow::Borrowed(&r.ty), Default::default()) {
-                        if let Ok(l_iter) = self.get_iterator(span, Cow::Borrowed(&l.ty), Default::default()) {
-                            for idx in 0..max(li.clone().count(), ri.clone().count()) {
-                                let le = self.access_property(
-                                    span,
-                                    &l_iter,
-                                    &Key::Num(RNumber {
-                                        span: l.span,
-                                        value: idx as f64,
-                                        raw: None,
-                                    }),
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    AccessPropertyOpts {
-                                        disallow_indexing_array_with_string: true,
-                                        disallow_creating_indexed_type_from_ty_els: true,
-                                        disallow_indexing_class_with_computed: true,
-                                        disallow_inexact: true,
-                                        ..Default::default()
-                                    },
-                                )?;
-
-                                let re = self.access_property(
-                                    span,
-                                    &r_iter,
-                                    &Key::Num(RNumber {
-                                        span: r.span,
-                                        value: idx as f64,
-                                        raw: None,
-                                    }),
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    AccessPropertyOpts {
-                                        disallow_indexing_array_with_string: true,
-                                        disallow_creating_indexed_type_from_ty_els: true,
-                                        disallow_indexing_class_with_computed: true,
-                                        disallow_inexact: true,
-                                        use_last_element_for_tuple_on_out_of_bound: true,
-                                        ..Default::default()
-                                    },
-                                )?;
-
-                                self.assign_param_type(data, &le, &re, opts).with_context(|| {
-                                    format!(
-                                        "tried to assign a rest parameter to parameters; r_ty = {}",
-                                        force_dump_type_as_string(&r.ty)
-                                    )
-                                })?;
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    self.assign_param(data, l, r, opts)
-                        .context("tried to assign a rest parameter to parameters where r-ty is not a tuple")?;
-
-                    for l in li {
-                        self.assign_param(data, l, r, opts)
-                            .context("tried to assign a rest parameter to parameters where r-ty is not a tuple (iter)")?;
-                    }
-
-                    return Ok(());
-                }
-
-                _ => {
-                    self.assign_param(
-                        data,
-                        l,
-                        r,
-                        AssignOpts {
-                            allow_unknown_type: true,
-                            ..opts
-                        },
-                    )?;
-                }
-            }
-        }
+        self.relate_spread_likes(span, &mut li, &mut ri, &mut |this, l, r| {
+            //
+            this.assign_param_type(
+                data,
+                l,
+                r,
+                AssignOpts {
+                    allow_assignment_to_void: true,
+                    ..opts
+                },
+            )
+        })
+        .context("failed to relate parameters")?;
 
         Ok(())
     }

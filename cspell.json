@@ -57,6 +57,7 @@
     "osascript",
     "overriden",
     "partialeq",
+    "Peekable",
     "petgraph",
     "pmutil",
     "Postprocess",

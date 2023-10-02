@@ -256,7 +256,12 @@ impl Analyzer<'_, '_> {
                                     ..opts
                                 },
                             )
-                            .context("tried to assign to type elements by converting rhs to a type literal");
+                            .with_context(|| {
+                                format!(
+                                    "tried to assign to type elements by converting rhs to a type literal: {}",
+                                    force_dump_type_as_string(&rty)
+                                )
+                            });
                     }
 
                     return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
