@@ -1219,31 +1219,49 @@ impl Analyzer<'_, '_> {
         let mut prev_keys: Vec<Cow<_>> = vec![];
 
         for elem in elems {
-            if let TypeElement::Property(PropertySignature {
-                accessor:
-                    Accessor {
-                        getter: false,
-                        setter: false,
-                        ..
-                    },
-                ..
-            }) = elem
-            {
-                if let Some(key) = elem.key() {
-                    let key = key.normalize();
-                    let key_ty = key.ty();
-
-                    if key_ty.is_symbol() {
-                        continue;
-                    }
-                    if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(prev_key)) {
-                        self.storage
-                            .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
-                        self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
-                    } else {
-                        prev_keys.push(key);
+            match elem {
+                TypeElement::Method(MethodSignature { .. }) => {
+                    if let Some(key) = elem.key() {
+                        if key.is_private() && !self.ctx.in_class_member {
+                            self.storage
+                                .report(ErrorKind::PrivateIdentifiersAreNotAllowedOutsideClassBodies { span: key.span() }.into());
+                            continue;
+                        }
                     }
                 }
+                TypeElement::Property(PropertySignature {
+                    accessor:
+                        Accessor {
+                            getter: false,
+                            setter: false,
+                            ..
+                        },
+                    ..
+                }) => {
+                    if let Some(key) = elem.key() {
+                        if key.is_private() && !self.ctx.in_class_member {
+                            self.storage
+                                .report(ErrorKind::PrivateIdentifiersAreNotAllowedOutsideClassBodies { span: key.span() }.into());
+                            continue;
+                        }
+                        // if key.ty() call PrivateKey, cause unimplemented panic
+
+                        let key = key.normalize();
+                        let key_ty = key.ty();
+
+                        if key_ty.is_symbol() {
+                            continue;
+                        }
+                        if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(prev_key)) {
+                            self.storage
+                                .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
+                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
+                        } else {
+                            prev_keys.push(key);
+                        }
+                    }
+                }
+                _ => {}
             }
         }
     }
