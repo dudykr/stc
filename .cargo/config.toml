@@ -1,3 +1,6 @@
+[alias]
+xtask = "run --package xtask --"
+
 [build]
 rustflags = ["-Z", "thinlto=no", "-Z", "share-generics=y"]
 
