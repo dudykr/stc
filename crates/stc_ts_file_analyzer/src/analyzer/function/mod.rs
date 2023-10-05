@@ -348,11 +348,7 @@ impl Analyzer<'_, '_> {
             //         true,
             //         // Allow overriding
             //         true,
-            //     ) {
-            //         Ok(()) => {}
-            //         Err(err) => {
-            //             self.storage.report(err);
-            //         }
+            //     ) { Ok(()) => {} Err(err) => { self.storage.report(err); }
             //     }
             // }
 

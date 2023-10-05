@@ -62,7 +62,7 @@ impl From<ErrorKind> for Error {
 impl Error {
     #[track_caller]
     pub fn context(self, context: impl Display) -> Error {
-        return self.context_impl(Location::caller(), context);
+        self.context_impl(Location::caller(), context)
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]

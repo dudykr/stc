@@ -27,6 +27,7 @@ impl Analyzer<'_, '_> {
     /// orders.
     ///
     /// After splitting, we can check if each element is assignable.
+    #[allow(clippy::needless_pass_by_ref_mut)]
     pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r_ty = r_ty.normalize();
