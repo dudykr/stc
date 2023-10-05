@@ -312,7 +312,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             if is_file_similar(err.file.as_deref(), Some(last)) {
                 // If this is the last file, we have to shift the errors.
                 err.line += err_shift_n;
-            } else {
             }
         } else {
             // If sub files is empty, it means that it's a single-file test, and
