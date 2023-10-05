@@ -1,5 +1,6 @@
 [workspace]
 members = ["crates/stc", "crates/binding_wasm"]
+resolver = "2"
 
 [profile.release]
 lto = "off"

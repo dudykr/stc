@@ -116,8 +116,8 @@ pub(crate) struct InferTypeOpts {
 }
 
 bitflags! {
+    #[derive(Default)]
     pub struct InferencePriority: i32 {
-        const None = 0;
         /// Naked type variable in union or intersection type
         const NakedTypeVariable = 1 << 0;
         /// Speculative tuple inference
@@ -153,10 +153,10 @@ bitflags! {
     }
 }
 
-impl Default for InferencePriority {
-    fn default() -> Self {
-        Self::None
-    }
+impl InferencePriority {
+    // Defining outside bitflags! to avoid clippy::bad_bit_mask lint in generated
+    // code.
+    pub const None: Self = Self::empty();
 }
 
 impl Analyzer<'_, '_> {

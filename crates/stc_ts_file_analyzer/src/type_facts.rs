@@ -3,15 +3,15 @@
 use bitflags::bitflags;
 use swc_common::add_bitflags;
 
-impl Default for TypeFacts {
-    fn default() -> Self {
-        Self::None
-    }
+impl TypeFacts {
+    // Defining outside bitflags! to avoid clippy::bad_bit_mask lint in generated
+    // code.
+    pub const None: Self = Self::empty();
 }
 
 bitflags! {
+    #[derive(Default)]
     pub struct TypeFacts: u32 {
-        const None = 0;
         /// typeof x === "string"
         const TypeofEQString = 1 << 0;
         /// typeof x === "number"
