@@ -41,7 +41,7 @@ pub(crate) struct NodeId<T>(usize, PhantomData<T>);
 
 impl<T> Clone for NodeId<T> {
     fn clone(&self) -> Self {
-        NodeId(self.0, self.1)
+        *self
     }
 }
 
@@ -57,7 +57,7 @@ impl<T> Eq for NodeId<T> {}
 
 impl<T> PartialOrd for NodeId<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.0.partial_cmp(&other.0)
+        Some(self.cmp(other))
     }
 }
 

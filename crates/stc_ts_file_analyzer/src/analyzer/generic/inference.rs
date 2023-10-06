@@ -116,8 +116,8 @@ pub(crate) struct InferTypeOpts {
 }
 
 bitflags! {
+    #[derive(Default)]
     pub struct InferencePriority: i32 {
-        const None = 0;
         /// Naked type variable in union or intersection type
         const NakedTypeVariable = 1 << 0;
         /// Speculative tuple inference
@@ -153,10 +153,10 @@ bitflags! {
     }
 }
 
-impl Default for InferencePriority {
-    fn default() -> Self {
-        Self::None
-    }
+impl InferencePriority {
+    // Defining outside bitflags! to avoid clippy::bad_bit_mask lint in generated
+    // code.
+    pub const None: Self = Self::empty();
 }
 
 impl Analyzer<'_, '_> {
@@ -684,16 +684,28 @@ impl Analyzer<'_, '_> {
                                         }
 
                                         if r.is_bigint() {
-                                            return Type::Lit(LitType {
-                                                span,
-                                                lit: RTsLit::BigInt(RBigInt {
-                                                    span,
-                                                    value: Box::new(src.parse().unwrap()),
-                                                    raw: None,
-                                                }),
-                                                metadata: Default::default(),
-                                                tracker: Default::default(),
-                                            });
+                                            match src.parse() {
+                                                Ok(v) => {
+                                                    return Type::Lit(LitType {
+                                                        span,
+                                                        lit: RTsLit::BigInt(RBigInt {
+                                                            span,
+                                                            value: Box::new(v),
+                                                            raw: None,
+                                                        }),
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                                Err(..) => {
+                                                    return Type::Keyword(KeywordType {
+                                                        span,
+                                                        kind: TsKeywordTypeKind::TsBigIntKeyword,
+                                                        metadata: Default::default(),
+                                                        tracker: Default::default(),
+                                                    })
+                                                }
+                                            }
                                         }
 
                                         if l.is_bigint_lit() {

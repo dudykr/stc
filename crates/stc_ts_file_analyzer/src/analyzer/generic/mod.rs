@@ -111,10 +111,7 @@ impl Analyzer<'_, '_> {
         #[cfg(debug_assertions)]
         let _tracing = dev_span!("infer_arg_types");
 
-        warn!(
-            "infer_arg_types: {:?}",
-            type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
-        );
+        warn!("infer_arg_types: {:?}", type_params.iter().map(|p| &p.name).join(", "));
 
         let timer = PerfTimer::noop();
 

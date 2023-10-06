@@ -5,12 +5,12 @@
 #[macro_use]
 extern crate pmutil;
 
-use std::{collections::HashMap, fs::read_dir, path::Path, sync::Arc};
+use std::{collections::HashMap, env, fs::read_dir, path::Path};
 
 use inflector::Inflector;
 use pmutil::Quote;
 use proc_macro2::Span;
-use swc_common::{comments::SingleThreadedComments, FilePathMapping, SourceMap};
+use swc_common::{comments::SingleThreadedComments, sync::Lrc, FilePathMapping, SourceMap};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_macros_common::{call_site, print};
 use syn::{punctuated::Punctuated, Token};
@@ -18,7 +18,7 @@ use syn::{punctuated::Punctuated, Token};
 #[proc_macro]
 pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
     swc_common::GLOBALS.set(&swc_common::Globals::new(), || {
-        let cm = Arc::new(SourceMap::new(FilePathMapping::empty()));
+        let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
 
         let mut deps = HashMap::<String, Vec<String>>::default();
 
@@ -37,11 +37,11 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         let mut contents = HashMap::<String, String>::default();
 
-        let dir_str = ::std::env::var("CARGO_MANIFEST_DIR").expect("failed to read CARGO_MANIFEST_DIR");
+        let dir_str = env::var("CARGO_MANIFEST_DIR").expect("failed to read CARGO_MANIFEST_DIR");
         let dir = Path::new(&dir_str).join("lib");
         let mut tokens = q();
 
-        let mut files = read_dir(&dir)
+        let mut files = read_dir(dir)
             .expect("failed to read $CARGO_MANIFEST_DIR/lib")
             .filter_map(|entry| {
                 let entry = entry.expect("failed to read file of directory");

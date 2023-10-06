@@ -242,6 +242,7 @@ classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers9.ts
 classes/members/instanceAndStaticMembers/typeOfThisInstanceMemberNarrowedWithLoopAntecedent.ts
 classes/members/privateNames/privateNameAccessorsCallExpression.ts
 classes/members/privateNames/privateNameAmbientNoImplicitAny.ts
+classes/members/privateNames/privateNameAndPropertySignature.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
 classes/members/privateNames/privateNameClassExpressionLoop.ts
 classes/members/privateNames/privateNameComputedPropertyName1.ts
@@ -475,6 +476,7 @@ es2018/es2018IntlAPIs.ts
 es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
 es2019/globalThisTypeIndexAccess.ts
+es2019/importMeta/importMetaNarrowing.ts
 es2020/bigintMissingES2019.ts
 es2020/bigintMissingES2020.ts
 es2020/bigintMissingESNext.ts
@@ -1018,6 +1020,7 @@ es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02_ES6.ts
+es6/templates/taggedTemplateStringsPldirectives/ts-expect-error-nocheck.ts
 es6/templates/taggedTemplateStringsWithIncompatibleTypedTags.ts
 es6/templates/taggedTemplateStringsWithIncompatibleTypedTagsES6.ts
 es6/templates/taggedTemplateStringsWithManyCallAndMemberExpressions.ts
@@ -1148,6 +1151,7 @@ es6/templates/templateStringWithEmbeddedObjectLiteral.ts
 es6/templates/templateStringWithEmbeddedObjectLiteralES6.ts
 es6/templates/templateStringWithEmbeddedTemplateString.ts
 es6/templates/templateStringWithEmbeddedTemplateStringES6.ts
+es6/templates/templateStringWithEmbeddedTypdirectives/ts-expect-error-nocheck.ts
 es6/templates/templateStringWithEmbeddedTypeAssertionOnAddition.ts
 es6/templates/templateStringWithEmbeddedTypeAssertionOnAdditionES6.ts
 es6/templates/templateStringWithEmbeddedTypeOfOperator.ts
@@ -2201,6 +2205,7 @@ salsa/constructorNameInObjectLiteralAccessor.ts
 salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
 salsa/propertyAssignmentUseParentType3.ts
+salsa/sourceFileMergeWithFunction.ts
 salsa/typeFromPropertyAssignment30.ts
 salsa/typeFromPropertyAssignment38.ts
 scanner/ecmascript3/scannerES3NumericLiteral1.ts
@@ -2375,6 +2380,7 @@ types/literal/stringLiteralsWithSwitchStatements03.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
 types/literal/stringLiteralsWithTypeAssertions01.ts
 types/literal/templateLiteralTypes2.ts
+types/literal/templateLiteralTypes4.ts
 types/literal/templateLiteralTypesPatternsPrefixSuffixAssignability.ts
 types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts

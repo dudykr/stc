@@ -333,7 +333,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 Type::EnumVariant(e) => {
-                    if matches!(e.name, None) && (e.def.has_num || e.def.has_str) {
+                    if e.name.is_none() && (e.def.has_num || e.def.has_str) {
                         return self.keyof(
                             span,
                             &if e.def.has_num && e.def.has_str {
