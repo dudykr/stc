@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc, time::Instant};
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Error;
 use clap::Parser;

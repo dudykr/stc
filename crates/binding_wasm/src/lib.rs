@@ -62,7 +62,7 @@ pub fn check_and_annotate_types(src: &str) -> Out {
 
         (types, checker.take_errors())
     });
-    let types = types.map(|types| format!("{:?}", types)).unwrap_or_else(|| "".to_owned());
+    let _types = types.map(|types| format!("{:?}", types)).unwrap_or_else(|| "".to_owned());
 
     for err in &errors {
         err.emit(&handler);
