@@ -1,8 +1,5 @@
 #![feature(never_type)]
 
-/// Use good memory allocator.
-extern crate swc_node_base;
-
 use std::{
     collections::{HashMap, HashSet},
     env, fmt,
