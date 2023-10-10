@@ -1,10 +1,11 @@
 use clap::{Parser, Subcommand};
 
 mod file_analyzer;
+mod notify;
+mod run_cargo;
 mod type_checker;
-mod utils;
 
-pub(crate) use utils::*;
+pub(crate) use notify::*;
 
 #[derive(Parser)]
 /// Project task runner
@@ -55,11 +56,14 @@ fn main() -> anyhow::Result<()> {
                 anyhow::bail!("cannot specify both --all and test name");
             }
 
-            file_analyzer::test_base(&file_analyzer::TestBaseArgs {
-                log: args.fast.then_some("off"),
-                name: args.name.as_deref(),
-                ignored: false,
-            })
+            let mut test_args = file_analyzer::TestBaseArgs::new();
+            if args.fast {
+                test_args = test_args.fast();
+            }
+            if let Some(test_name) = &args.name {
+                test_args = test_args.with_name(test_name);
+            }
+            test_args.run()
         }
         Command::AutoUnignore => file_analyzer::auto_unignore(),
         Command::TestChecker(args) => match args.name {

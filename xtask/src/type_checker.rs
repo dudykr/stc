@@ -1,6 +1,6 @@
 use anyhow::ensure;
 
-use crate::utils::CargoTestArgs;
+use crate::run_cargo::CargoTestArgs;
 
 pub fn check() -> anyhow::Result<()> {
     test_regressions()?;
@@ -17,22 +17,16 @@ pub fn test(test: &str) -> anyhow::Result<()> {
 }
 
 fn test_regressions() -> anyhow::Result<()> {
-    use crate::file_analyzer::{test_base, TestBaseArgs};
+    use crate::file_analyzer::TestBaseArgs;
     // Prevent regression using faster checks
-    test_base(&TestBaseArgs {
-        name: None,
-        log: Some("off"),
-        ignored: false,
-    })
+    TestBaseArgs::new().fast().run()
 }
 
 fn cargo_test_tsc(log: &str, test: &str) -> std::process::Command {
-    let mut cmd = crate::cargo_test(&CargoTestArgs {
-        log: Some(log),
-        package: "stc_ts_type_checker",
-        test: Some("tsc"),
-        name: None,
-    });
+    let mut cmd = CargoTestArgs::new("stc_ts_type_checker")
+        .with_log(log)
+        .with_test("tsc")
+        .to_command();
     cmd.env("TEST", test);
     cmd
 }
