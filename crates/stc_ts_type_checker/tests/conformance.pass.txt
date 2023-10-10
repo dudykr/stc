@@ -6,7 +6,6 @@ Symbols/ES5SymbolProperty6.ts
 Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
 ambient/ambientDeclarations.ts
-ambient/ambientDeclarationsExternal.ts
 ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient/ambientEnumDeclaration1.ts
 ambient/ambientEnumDeclaration2.ts
@@ -1823,7 +1822,6 @@ jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
 jsx/tsxEmitSpreadAttribute.ts
-jsx/tsxReactEmitSpreadAttribute.ts
 moduleResolution/importFromDot.ts
 moduleResolution/packageJsonImportsExportsOptionCompat.ts
 nonjsExtensions/declarationFileForJsonImport.ts
@@ -2041,7 +2039,6 @@ parser/ecmascript5/Protected/Protected3.ts
 parser/ecmascript5/Protected/Protected5.ts
 parser/ecmascript5/Protected/Protected8.ts
 parser/ecmascript5/Protected/Protected9.ts
-parser/ecmascript5/RegressionTests/parser509534.ts
 parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
@@ -2344,7 +2341,6 @@ types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitou
 types/forAwait/types.forAwait.es2018.1.ts
 types/forAwait/types.forAwait.es2018.2.ts
 types/forAwait/types.forAwait.es2018.3.ts
-types/import/importTypeAmbientMissing.ts
 types/import/importTypeAmdBundleRewrite.ts
 types/intersection/contextualIntersectionType.ts
 types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
