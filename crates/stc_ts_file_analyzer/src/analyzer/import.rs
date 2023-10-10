@@ -32,6 +32,7 @@ impl Analyzer<'_, '_> {
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
+                dbg!(&base, dst);
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
@@ -40,6 +41,8 @@ impl Analyzer<'_, '_> {
         let data = match self.data.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
+                dbg!(&base, dst);
+
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
@@ -79,6 +82,11 @@ impl Analyzer<'_, '_> {
         if self.config.is_builtin {
             return;
         }
+
+        #[inline]
+        fn is_relative_path(path: &str) -> bool {
+            path.starts_with("./") || path.starts_with("../")
+        }
         // We first load non-circular imports.
         let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, items);
 
@@ -86,12 +94,14 @@ impl Analyzer<'_, '_> {
         let mut normal_imports = vec![];
         for (ctxt, import) in imports {
             let span = import.span;
-
             let base = self.storage.path(ctxt);
             let dep_id = self.loader.module_id(&base, &import.src);
             let dep_id = match dep_id {
                 Some(v) => v,
-                None => {
+                _ if !is_relative_path(&import.src) => {
+                    continue;
+                }
+                _ => {
                     self.storage.report(ErrorKind::ModuleNotFound { span }.into());
                     continue;
                 }
