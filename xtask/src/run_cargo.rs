@@ -1,5 +1,7 @@
 //! Provide general helpers to run a nested cargo command.
 
+use std::path::PathBuf;
+
 /// tracing static filter level, to improve performance at the cost of needing
 /// to rebuild.
 #[derive(Debug)]
@@ -47,6 +49,7 @@ pub struct CargoTestArgs<'a> {
     log_max_level: Option<LogFilterLevel>,
     log: Option<&'a str>,
     package: &'a str,
+    lib: bool,
     test: Option<&'a str>,
     name: Option<&'a str>,
 }
@@ -61,6 +64,7 @@ impl<'a> CargoTestArgs<'a> {
             log_max_level: None,
             log: None,
             package,
+            lib: false,
             test: None,
             name: None,
         }
@@ -82,6 +86,13 @@ impl<'a> CargoTestArgs<'a> {
         self
     }
 
+    /// Set cargo test --lib to run the unit tests in the library
+    #[must_use]
+    pub fn with_lib(mut self, lib: bool) -> Self {
+        self.lib = lib;
+        self
+    }
+
     /// Set cargo test --test file to run, e.g. base or prof
     #[must_use]
     pub fn with_test(mut self, test: &'a str) -> Self {
@@ -99,6 +110,9 @@ impl<'a> CargoTestArgs<'a> {
     /// Return a Command that can be further configured and run.
     pub fn to_command(&self) -> std::process::Command {
         let mut cmd = std::process::Command::new("cargo");
+        // normalize working dir
+        cmd.current_dir(root_dir());
+
         if let Some(log) = self.log {
             cmd.env("RUST_LOG", log);
         }
@@ -114,6 +128,9 @@ impl<'a> CargoTestArgs<'a> {
         if let Some(level) = &self.log_max_level {
             cmd.arg("--features").arg(level.as_max_level_feature());
         }
+        if self.lib {
+            cmd.arg("--lib");
+        }
         if let Some(test) = self.test {
             cmd.arg("--test").arg(test);
         }
@@ -122,4 +139,12 @@ impl<'a> CargoTestArgs<'a> {
         }
         cmd
     }
+}
+
+pub fn root_dir() -> PathBuf {
+    let mut manifest_dir =
+        PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").expect("$CARGO_MANIFEST_DIR not set: are you using 'cargo xtask ...'?"));
+    // xtask manifest should be at: <root>/xtask/Cargo.toml
+    manifest_dir.pop();
+    manifest_dir
 }

@@ -18,7 +18,7 @@ struct Cli {
 enum Command {
     /// Run tests for stc_ts_file_analyzer
     TestAnalyzer(TestAnalyzerArgs),
-    /// Automatically find a test to work on.
+    /// Automatically unignore stc_ts_file_analyzer tests that pass.
     AutoUnignore,
     /// Run tests for stc_ts_type_checker
     TestChecker(TestCheckerArgs),

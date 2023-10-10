@@ -4,7 +4,10 @@ use std::path::Path;
 
 use anyhow::ensure;
 
-use crate::run_cargo::{CargoTestArgs, LogFilterLevel};
+use crate::{
+    run_cargo,
+    run_cargo::{CargoTestArgs, LogFilterLevel},
+};
 
 /// Command builder for running tests/base.rs
 pub struct TestBaseArgs<'a> {
@@ -16,7 +19,7 @@ impl<'a> TestBaseArgs<'a> {
     /// Create an empty TestBaseArgs.
     pub fn new() -> Self {
         Self {
-            inner: CargoTestArgs::new("stc_ts_file_analyzer").with_test("base"),
+            inner: CargoTestArgs::new("stc_ts_file_analyzer").with_test("base").with_lib(true),
             ignored: false,
         }
     }
@@ -42,6 +45,13 @@ impl<'a> TestBaseArgs<'a> {
         self
     }
 
+    /// Set cargo test --lib to run the unit tests in the library
+    #[must_use]
+    pub fn with_lib(mut self, lib: bool) -> Self {
+        self.inner = self.inner.with_lib(lib);
+        self
+    }
+
     /// cargo test --ignored: Whether to run ignored tests. Used by
     /// auto-unignore.
     #[must_use]
@@ -60,11 +70,7 @@ impl<'a> TestBaseArgs<'a> {
     pub fn to_command(&self) -> std::process::Command {
         let mut cmd = self.inner.to_command();
 
-        cmd.env("UPDATE", "1")
-            .arg("--lib")
-            .arg("--")
-            .arg("-Zunstable-options")
-            .arg("--report-time");
+        cmd.env("UPDATE", "1").arg("--").arg("-Zunstable-options").arg("--report-time");
 
         if self.ignored {
             cmd.arg("--ignored");
@@ -85,14 +91,15 @@ impl<'a> TestBaseArgs<'a> {
         // appropriate println!("cargo:rerun-if-changed=<path>");
 
         let mut cmd = self.to_command();
+        println!("{cmd:?}");
 
         let status = cmd.status()?;
-        ensure!(status.success(), "test base failed: {status}");
+        ensure!(status.success(), "analyzer test base failed: {status}");
         Ok(())
     }
 }
 
-/// Implements xtask auto-unignore
+/// Implements xtask auto-unignore: un-ignore tests that pass.
 pub fn auto_unignore() -> anyhow::Result<()> {
     // Remove any ignored tests cached outputs so they are re-run.
     // (shouldn't all tests be re-run?)
@@ -100,7 +107,11 @@ pub fn auto_unignore() -> anyhow::Result<()> {
 
     // Ignore the result of testing, we just want the updated .tsc-errors.json as a
     // side-effect.
-    let _ = TestBaseArgs::new().with_ignored().run();
+    let _ = TestBaseArgs::new()
+        .with_log_max_level(LogFilterLevel::Off)
+        .with_lib(false)
+        .with_ignored()
+        .run();
 
     // Remove failed tests caches again, only successful tests should be committed.
     unignore_cleanup()?;
@@ -111,7 +122,7 @@ pub fn auto_unignore() -> anyhow::Result<()> {
 fn unignore_cleanup() -> anyhow::Result<()> {
     println!("Deleting cache for ignored tests");
     // find ./tests/tsc -name '\.*.tsc-errors.json' -type f -delete
-    return walk(Path::new("crates/stc_ts_file_analyzer/tests/tsc"));
+    return walk(&run_cargo::root_dir().join("crates/stc_ts_file_analyzer/tests/tsc"));
 
     fn walk(dir: &Path) -> anyhow::Result<()> {
         for entry in std::fs::read_dir(dir)? {
